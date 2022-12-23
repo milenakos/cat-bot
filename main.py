@@ -303,7 +303,7 @@ async def on_message(message):
 		await message.reply("...")
 	if "proglet" in text.lower():
 		await message.add_reaction(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="professor_cat"))
-	if ("@Cat Bot#9575" in text or f"<@{BOT_ID}>" in text or f"<@!{BOT_ID}>" in text) and not has_ach(message.guild.id, message.author.id, "who_ping"):
+	if ("@" + str(bot.user) in text or f"<@{BOT_ID}>" in text or f"<@!{BOT_ID}>" in text) and not has_ach(message.guild.id, message.author.id, "who_ping"):
 		ach_data = give_ach(message.guild.id, message.author.id, "who_ping")
 		embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
 		await message.reply(embed=embed)
