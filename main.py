@@ -8,6 +8,7 @@ from random import randint, choice
 
 OWNER_ID = 553093932012011520 # for dms
 GUILD_ID = 966586000417619998 # for emojis
+BOT_ID = 966695034340663367
 
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
@@ -39,8 +40,6 @@ delays = [120, 1200]
 timeout = 0
 starting_time = 0
 message_thing = 0
-
-BOT_ID = bot.user.id
 
 super_prefix = ""
 
