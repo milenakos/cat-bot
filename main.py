@@ -248,7 +248,7 @@ async def on_message(message):
 		if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
 			await message.add_reaction(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat"))
 	if "robotop" in message.author.name.lower() and "i rate **cat" in message.content.lower():
-		icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="no_cat_throphy") + " "
+		icon = str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="no_cat_throphy")) + " "
 		await message.reply("**RoboTop**, I rate **you** 0 cats " + icon * 5)
 	if text.lower().startswith("cat?") and not has_ach(message.guild.id, message.author.id, "???"):
 		ach_data = give_ach(message.guild.id, message.author.id, "???")
