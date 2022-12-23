@@ -10,5 +10,5 @@ good luck on that.
 
    `todo`
 
-2. inside of file, on first few lines change bot id, guild id, and bot it. you will need to create a guild and upload all emojis there.
+2. inside of file, on first few lines change bot id, guild id, and bot id. you will need to create a guild and upload all emojis there.
 3. hope it works
