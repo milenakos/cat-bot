@@ -289,7 +289,7 @@ async def on_message(message):
 		ach_data = give_ach(message.guild.id, message.author.id, "fuwu")
 		embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
 		await message.reply(embed=embed)
-	if text == "cellua bad" and not has_ach(message.guild.id, message.author.id, "cellua"):
+	if re.search("ce[lI]{2}ua bad", text.lower()) and not has_ach(message.guild.id, message.author.id, "cellua"):
 		ach_data = give_ach(message.guild.id, message.author.id, "cellua")
 		embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
 		await message.reply(embed=embed)
