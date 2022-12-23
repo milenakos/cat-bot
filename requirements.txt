@@ -1,0 +1,4 @@
+requests
+nextcord
+natsort
+Pillow
