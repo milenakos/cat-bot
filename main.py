@@ -316,7 +316,7 @@ async def on_message(message):
 		embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
 		await message.reply(embed=embed)
 	if text.lower() == "please do not the cat":
-		safe = message.author.replace("@", "`@`")
+		safe = str(message.author).replace("@", "`@`")
 		await message.reply(f"ok then\n{safe}#{str(message.author.discriminator)} lost 1 fine cat!!!1!")
 		remove_cat(message.guild.id, message.author.id, "Fine")
 		if not has_ach(message.guild.id, message.author.id, "pleasedonotthecat"):
