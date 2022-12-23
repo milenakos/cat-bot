@@ -13,6 +13,31 @@ BOT_ID = 966695034340663367
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
 
+CAT_TYPES = (
+	["Fine"] * 1000
+	+ ["Nice"] * 750
+	+ ["Good"] * 500
+	+ ["Rare"] * 350
+	+ ["Wild"] * 275
+	+ ["Baby"] * 230
+	+ ["Epic"] * 200
+	+ ["Sus"] * 175
+	+ ["Brave"] * 150
+	+ ["Rickroll"] * 125
+	+ ["Reverse"] * 100
+	+ ["Superior"] * 80
+	+ ["TheTrashCell"] * 50
+	+ ["Legendary"] * 35
+	+ ["Mythic"] * 25
+	+ ["8bit"] * 20
+	+ ["Corrupt"] * 15
+	+ ["Professor"] * 10
+	+ ["Divine"] * 8
+	+ ["Real"] * 5
+	+ ["Ultimate"] * 3
+	+ ["eGirl"] * 2
+)
+
 with open("db.json", "r") as f:
 	try:
 		db = json.load(f)
@@ -166,32 +191,7 @@ async def myLoop():
 			if fire[i]:
 				if not db["cat"][str(i)]:
 					file = discord.File("cat.png", filename="cat.png")
-					cat_types = (
-						["Fine"] * 1000
-						+ ["Nice"] * 750
-						+ ["Good"] * 500
-						+ ["Rare"] * 350
-						+ ["Wild"] * 275
-						+ ["Baby"] * 230
-						+ ["Epic"] * 200
-						+ ["Sus"] * 175
-						+ ["Brave"] * 150
-						+ ["Rickroll"] * 125
-						+ ["Reverse"] * 100
-						+ ["Superior"] * 80
-						+ ["TheTrashCell"] * 50
-						+ ["Legendary"] * 35
-						+ ["Mythic"] * 25
-						+ ["8bit"] * 20
-						+ ["Corrupt"] * 15
-						+ ["Professor"] * 10
-						+ ["Divine"] * 8
-						+ ["Real"] * 5
-						+ ["Ultimate"] * 3
-						+ ["eGirl"] * 2
-					)
-	
-					localcat = choice(cat_types)
+					localcat = choice(CAT_TYPES)
 					db["cattype"][str(i)] = localcat
 					icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower()+"cat")   
 					channeley = await bot.fetch_channel(int(i))
@@ -476,32 +476,7 @@ async def spawn_cat():
 		fire[message_thing.channel.id] = False
 		if not db["cat"][str(message_thing.channel.id)]:
 			file = discord.File("cat.png", filename="cat.png")
-			cat_types = (
-				["Fine"] * 1000
-				+ ["Nice"] * 750
-				+ ["Good"] * 500
-				+ ["Rare"] * 350
-				+ ["Wild"] * 275
-				+ ["Baby"] * 230
-				+ ["Epic"] * 200
-				+ ["Sus"] * 175
-				+ ["Brave"] * 150
-				+ ["Rickroll"] * 125
-				+ ["Reverse"] * 100
-				+ ["Superior"] * 80
-				+ ["TheTrashCell"] * 50
-				+ ["Legendary"] * 35
-				+ ["Mythic"] * 25
-				+ ["8bit"] * 20
-				+ ["Corrupt"] * 15
-				+ ["Professor"] * 10
-				+ ["Divine"] * 8
-				+ ["Real"] * 5
-				+ ["Ultimate"] * 3
-				+ ["eGirl"] * 2
-			)
-
-			localcat = choice(cat_types)
+			localcat = choice(CAT_TYPES)
 			db["cattype"][str(message_thing.channel.id)] = localcat
 			icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower()+"cat")   
 			message_is_sus = await message_thing.channel.send(str(icon) + " " + db["cattype"][str(message_thing.channel.id)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
