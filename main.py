@@ -434,6 +434,9 @@ async def help(message: discord.Interaction):
 
 @bot.slash_command(description="Give feedback, report bugs or suggest ideas")
 async def feedback(message: discord.Interaction, feedback: str):
+	if len(str(message.user) + "\n" + feedback) >= 2000:
+		await message.response.send_message("ah hell nah man, ur msg is too long :skull:", ephemeral=True)
+		return
 	milenakoos = await bot.fetch_user(OWNER_ID)
 	await milenakoos.send(str(message.user) + "\n" + feedback)
 	await message.response.send_message("your feedback was directed to the bot owner!", ephemeral=True)
