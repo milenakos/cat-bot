@@ -1022,32 +1022,7 @@ async def force(message: discord.Interaction):
 	channeley = message.channel
 	fire[channeley.id] = False
 	file = discord.File("cat.png", filename="cat.png")
-	cat_types = (
-		["Fine"] * 1000
-		+ ["Nice"] * 750
-		+ ["Good"] * 500
-		+ ["Rare"] * 350
-		+ ["Wild"] * 275
-		+ ["Baby"] * 230
-		+ ["Epic"] * 200
-		+ ["Sus"] * 175
-		+ ["Brave"] * 150
-		+ ["Rickroll"] * 125
-		+ ["Reverse"] * 100
-		+ ["Superior"] * 80
-		+ ["TheTrashCell"] * 50
-		+ ["Legendary"] * 35
-		+ ["Mythic"] * 25
-		+ ["8bit"] * 20
-		+ ["Corrupt"] * 15
-		+ ["Professor"] * 10
-		+ ["Divine"] * 8
-		+ ["Real"] * 5
-		+ ["Ultimate"] * 3
-		+ ["eGirl"] * 2
-	)
-	
-	localcat = choice(cat_types)
+	localcat = choice(CAT_TYPES)
 	db["cattype"][str(channeley.id)] = localcat
 	icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower()+"cat")   
 	message_lmao =  await message.channel.send(str(icon) + " " + db["cattype"][str(channeley.id)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
