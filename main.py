@@ -317,7 +317,7 @@ async def on_message(message):
 		await message.reply(embed=embed)
 	if text.lower() == "please do not the cat":
 		safe = str(message.author).replace("@", "`@`")
-		await message.reply(f"ok then\n{safe}#{str(message.author.discriminator)} lost 1 fine cat!!!1!")
+		await message.reply(f"ok then\n{safe} lost 1 fine cat!!!1!")
 		remove_cat(message.guild.id, message.author.id, "Fine")
 		if not has_ach(message.guild.id, message.author.id, "pleasedonotthecat"):
 			ach_data = give_ach(message.guild.id, message.author.id, "pleasedonotthecat")
