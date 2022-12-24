@@ -482,12 +482,12 @@ async def dream(message: discord.Interaction, text: str):
 
 	artifact = answers[0].resp.artifacts[0]
 	if artifact.finish_reason == generation.FILTER:
-	        await message.followup.send("I'm not sure I can send this here...")
+		await message.followup.send("I'm not sure I can send this here...")
 	if artifact.type == generation.ARTIFACT_IMAGE:
-	        img = Image.open(io.BytesIO(artifact.binary))
-	        img.save("ai_gen.png")
-	        file = discord.File("ai_gen.png", filename="ai_gen.png")
-                await message.followup.send(file=file)
+		img = Image.open(io.BytesIO(artifact.binary))
+		img.save("ai_gen.png")
+		file = discord.File("ai_gen.png", filename="ai_gen.png")
+		await message.followup.send(file=file)
 	
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str):
