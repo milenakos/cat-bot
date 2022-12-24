@@ -551,7 +551,6 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
 	try:
 		custom = db[str(message.guild.id)][str(person_id.id)]["custom"]
 	except Exception as e:
-		await message.channel.send(e)
 		db[str(message.guild.id)][str(person_id.id)]["custom"] = False
 		custom = False
 		do_save = True
