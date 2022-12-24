@@ -404,7 +404,7 @@ async def on_message(message):
 		give_ach(message.guild.id, int(text[10:].split(" ")[1]), text[10:].split(" ")[2])
 		await message.reply("success")
 	if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
-		stuff = message.split(" ")
+		stuff = text.split(" ")
 		db[message.guild.id][int(stuff[1])]["custom"] = stuff[2]
 		await message.reply("success")
 	if text.lower().startswith("car") and not text.lower().startswith("cart"):
