@@ -406,6 +406,7 @@ async def on_message(message):
 	if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
 		stuff = text.split(" ")
 		db[str(message.guild.id)][stuff[1]]["custom"] = stuff[2]
+		save()
 		await message.reply("success")
 	if text.lower().startswith("car") and not text.lower().startswith("cart"):
 		file = discord.File("car.png", filename="car.png")
