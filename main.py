@@ -405,8 +405,8 @@ async def on_message(message):
 		await message.reply("success")
 	if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
 		stuff = message.split(" ")
-                db[message.guild.id][int(stuff[1])]["custom"] = stuff[2]
-                await message.reply("success")
+		db[message.guild.id][int(stuff[1])]["custom"] = stuff[2]
+		await message.reply("success")
 	if text.lower().startswith("car") and not text.lower().startswith("cart"):
 		file = discord.File("car.png", filename="car.png")
 		embed = discord.Embed(title="car!", color=0x6E593C).set_image(url="attachment://car.png")
