@@ -403,6 +403,10 @@ async def on_message(message):
 	if text.lower().startswith("cat!beggar") and message.author.id == OWNER_ID:
 		give_ach(message.guild.id, int(text[10:].split(" ")[1]), text[10:].split(" ")[2])
 		await message.reply("success")
+	if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
+		stuff = message.split(" ")
+                db[message.guild.id][int(stuff[1])]["custom"] = stuff[2]
+                await message.reply("success")
 	if text.lower().startswith("car") and not text.lower().startswith("cart"):
 		file = discord.File("car.png", filename="car.png")
 		embed = discord.Embed(title="car!", color=0x6E593C).set_image(url="attachment://car.png")
@@ -542,6 +546,12 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
 	)
 	give_collector = True
 	do_save = False
+	try:
+		custom = db[str(message.guild.id)][str(person_id.id)]["custom"]
+	except Exception:
+		db[str(message.guild.id)][str(person_id.id)]["custom"] = False
+		custom = False
+		do_save = True
 	db_var_two_electric_boogaloo = db[str(message.guild.id)][str(person_id.id)]
 	for i in cattypes:
 		icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=i.lower()+"cat")
@@ -556,6 +566,9 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
 			is_empty = False
 		if cat_num <= 0:
 			give_collector = False
+	if custom:
+		icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=custom.lower()+"cat")
+		embedVar.add_field(name=f"{icon} {custom}", value=1, inline=True)
 	if is_empty:
 		embedVar.add_field(name="None", value="u hav no cats :cat_sad:", inline=True)
 	if do_save:
