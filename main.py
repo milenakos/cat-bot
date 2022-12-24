@@ -405,7 +405,8 @@ async def on_message(message):
 		await message.reply("success")
 	if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
 		stuff = text.split(" ")
-		db[str(message.guild.id)][stuff[1]]["custom"] = stuff[2]
+		register_member(str(stuff[1]), str(message.guild.id))
+		db[str(message.guild.id)][str(stuff[1])]["custom"] = stuff[2]
 		save()
 		await message.reply("success")
 	if text.lower().startswith("car") and not text.lower().startswith("cart"):
