@@ -487,7 +487,7 @@ async def dream(message: discord.Interaction, text: str):
 	        img = Image.open(io.BytesIO(artifact.binary))
 	        img.save("ai_gen.png")
 	        file = discord.File("ai_gen.png", filename="ai_gen.png")
-		await message.followup.send(file=file)
+                await message.followup.send(file=file)
 	
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str):
