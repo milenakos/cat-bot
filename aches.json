@@ -28,5 +28,5 @@
   "dataminer": {"title": "Dataminer", "description": "say `cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6`", "is_hidden": true, "category": "Hidden"},
   "website_user": {"title": "Website User", "description": "catbot.milenakos.repl.co", "is_hidden": false, "category": "Random"},
   "secret": {"title": "Tax Fraud", "description": "evade paying your cat taxes", "is_hidden": true, "category": "Hidden"},
-  "trolled": {"title": "Trolled", "description": "TROLLED SO HARD LMAOOO :joy:", "is_hidden": false, "category": "Cat Hunt"},
+  "trolled": {"title": "Trolled", "description": "TROLLED SO HARD LMAOOO :joy:", "is_hidden": false, "category": "Cat Hunt"}
 }
