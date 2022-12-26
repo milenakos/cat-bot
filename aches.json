@@ -29,5 +29,4 @@
   "website_user": {"title": "Website User", "description": "catbot.milenakos.repl.co", "is_hidden": false, "category": "Random"},
   "secret": {"title": "Tax Fraud", "description": "evade paying your cat taxes", "is_hidden": true, "category": "Hidden"},
   "trolled": {"title": "Trolled", "description": "TROLLED SO HARD LMAOOO :joy:", "is_hidden": false, "category": "Cat Hunt"},
-  "simp": {"title": "Simp", "description": "you looked into her inventory", "is_hidden": true, "category": "Random"}
 }
