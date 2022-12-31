@@ -605,7 +605,7 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
 		embedVar.add_field(name="None", value="u hav no cats :cat_sad:", inline=True)
 	if do_save:
 		save()
-	embedVar.description += f"\nTotal cats: {total}"
+	embedVar.set_footer(text=f"Total cats: {total}")
 	await message.followup.send(embed=embedVar)
 	if me:
 		if not has_ach(message.guild.id, message.user.id, "collecter") and give_collector:
