@@ -5,8 +5,8 @@ from nextcord import ButtonStyle
 from nextcord.ui import Button, View
 from typing import Optional
 from random import randint, choice
-from stability_sdk import client
-import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
+#from stability_sdk import client
+#import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
 from PIL import Image
 
 OWNER_ID = 553093932012011520 # for dms
@@ -69,10 +69,10 @@ timeout = 0
 starting_time = 0
 message_thing = 0
 
-stability_api = client.StabilityInference(
-        key=os.environ['STABILITY_KEY'], # API Key reference.
-        engine="stable-diffusion-v1-5"
-)
+#stability_api = client.StabilityInference(
+#        key=os.environ['STABILITY_KEY'], # API Key reference.
+#        engine="stable-diffusion-v1-5"
+#)
 
 super_prefix = ""
 
@@ -468,7 +468,7 @@ async def admin(message: discord.Interaction):
 async def info(message: discord.Interaction):
 	embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/WCTzD3YQEk)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\nBot made by Milenakos#3310\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\nThanks to:\n**???** for the cat image\n**SLOTHS2005#1326** for getting troh to add cat as an emoji\n**aws.random.cat** for random cats API\n**@weilbyte on GitHub** for TikTok TTS API\n**TheTrashCell#0001** for making cat, suggestions, and a lot more.\n\n**CrazyDiamond469#3422, Phace#9474, SLOTHS2005#1326, frinkifail#1809, Aflyde#3846, TheTrashCell#0001 and Sior Simotideis#4198** for being test monkeys\n\n**And everyone for the support!**")
 	await message.response.send_message(embed=embedVar)
-
+"""
 @bot.slash_command(description="Generate images from text using Stable Diffusion")
 async def dream(message: discord.Interaction, text: str):
 	await message.response.defer()
@@ -488,7 +488,7 @@ async def dream(message: discord.Interaction, text: str):
 		img.save("ai_gen.png")
 		file = discord.File("ai_gen.png", filename="ai_gen.png")
 		await message.followup.send(file=file)
-
+"""
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str):
 	stuff = requests.post("https://tiktok-tts.weilnet.workers.dev/api/generation", headers={"Content-Type": "application/json"}, json={"text": text, "voice": "en_us_002"})
