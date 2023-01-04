@@ -193,6 +193,7 @@ async def myLoop():
 		activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
 	)
 	summon_id = db["summon_ids"]
+	savey = False
 	myLoop.change_interval(seconds = randint(delays[0], delays[1]))
 	for i in summon_id:
 		try:
@@ -209,7 +210,13 @@ async def myLoop():
 			if not fire[i]:
 				fire[i] = True
 		except Exception as e:
-			print("summon", e)
+			print("cleaning", i, e)
+			clone = db["summon_ids"]
+			clone.remove(i)
+			db["summon_ids"] = clone
+			savey = True
+	if savey:
+		save()
 	super_prefix = ""
 
 @bot.event
