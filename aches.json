@@ -20,7 +20,7 @@
   "crasher": {"title": "Crasher", "description": "cause the cat bot to crash", "is_hidden": false, "category": "Unfair"},
   "4k": {"title": "Cought in 4k", "description": "get cought in 4k", "is_hidden": true, "category": "Random"},
   "curious": {"title": "Curious", "description": "try to open a private embed", "is_hidden": true, "category": "Random"},
-  "car": {"title": "Car", "description": ":car::car:", "is_hidden": false, "category": "Random"},
+  "car": {"title": "Car", "description": ":red_car::red_car:", "is_hidden": false, "category": "Random"},
   "catn": {"title": "Cat'n", "description": "no cat??? :megamind:", "is_hidden": true, "category": "Hidden"},
   "coupon_user": {"title": "Coupon User", "description": "use a coupon for a 10% discount on all cats!!!", "is_hidden": true, "category": "Hidden"},
   "???": {"title": "???", "description": "???", "is_hidden": false, "category": "Random"},
