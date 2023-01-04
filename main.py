@@ -491,17 +491,18 @@ async def dream(message: discord.Interaction, text: str):
 """
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str):
+	await message.response.defer()
 	stuff = requests.post("https://tiktok-tts.weilnet.workers.dev/api/generation", headers={"Content-Type": "application/json"}, json={"text": text, "voice": "en_us_002"})
 	try:
 		data = "" + stuff.json()["data"]
 	except TypeError:
-		await message.response.send_message("i dont speak your language (remove non-english characters)", ephemeral=True)
+		await message.followup.send("i dont speak your language (remove non-english characters, or make message shorter)")
 		return
 	with open("result.mp3", "wb") as f:
 		ba = "data:audio/mpeg;base64," + data
 		f.write(base64.b64decode(ba))
 	file = discord.File("result.mp3", filename="result.mp3")
-	await message.response.send_message(file=file)
+	await message.followup.send(file=file)
 
 @tasks.loop(seconds = 1)
 async def spawn_cat():
