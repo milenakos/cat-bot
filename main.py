@@ -441,7 +441,7 @@ async def on_message(message):
 		embed = discord.Embed(title="cart!", color=0x6E593C).set_image(url="attachment://cart.png")
 		await message.reply(file=file, embed=embed)
 	if 'indev2' in text.lower():
-		await message.add_reaction(':frog:')
+		await message.add_reaction('frog')
 	await bot.process_commands(message)
 
 @bot.slash_command(description="Send Help")
