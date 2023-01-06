@@ -537,6 +537,7 @@ async def nerdmode(message: discord.Interaction, person: discord.Member, timeout
 	if timeout < 0:
 		await message.response.send_message("uhh i think time is supposed to be a number", ephemeral=True)
 		return
+	register_member(message.guild.id, person.id)
 	timestamp = round(time.time()) + timeout
 	db[str(message.guild.id)][str(person.id)]["timeout"] = timestamp
 	if timeout > 0:
