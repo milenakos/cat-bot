@@ -520,7 +520,7 @@ async def tiktok(message: discord.Interaction, text: str):
 	file = discord.File("result.mp3", filename="result.mp3")
 	await message.followup.send(file=file)
 
-@bot.slash_command(desciprion="Prevent someone from catching cats for a certain time period", default_member_permissions=8)
+@bot.slash_command(description="Prevent someone from catching cats for a certain time period", default_member_permissions=8)
 async def nerdmode(message: discord.Interaction, person: discord.Member, time: int):
 	if time < 1:
 		await message.response.send_message("uhh i think time is supposed to be a number", ephemeral=True)
