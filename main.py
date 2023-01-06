@@ -12,6 +12,7 @@ from PIL import Image
 OWNER_ID = 553093932012011520 # for dms
 GUILD_ID = 966586000417619998 # for emojis
 BOT_ID = 966695034340663367
+BACKUP_ID = 1060545763194707998 # channel id for backups, private extremely recommended
 
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
@@ -218,9 +219,9 @@ async def myLoop():
 	if savey:
 		save()
 	super_prefix = ""
-	milenakoos = await bot.fetch_user(OWNER_ID)
+	backupchannel = await bot.fetch_channel(BACKUP_ID)
 	thing = discord.File("db.json", filename="db.json")
-	await milenakoos.send(file=thing)
+	await backupchannel.send(file=thing)
 
 @bot.event
 async def on_ready():
