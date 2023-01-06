@@ -17,6 +17,9 @@ BACKUP_ID = 1060545763194707998 # channel id for backups, private extremely reco
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
 
+GITHUB_MODE = True
+GITHUB_CHANNEL_ID = 1060199660150599751
+
 CAT_TYPES = (
 	["Fine"] * 1000
 	+ ["Nice"] * 750
@@ -236,6 +239,9 @@ async def on_message(message):
 	text = message.content
 	if message.author.id == bot.user.id:
 		return
+	if GITHUB_MODE and message.channel.id == GITHUB_CHANNEL_ID:
+		os.system("git pull")
+		os.execv(sys.executable, ['python'] + sys.argv)
 	if not (" " in text) and len(text) > 7 and text.isalnum():
 		s = text.lower()
 		total_vow = 0
