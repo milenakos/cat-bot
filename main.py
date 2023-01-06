@@ -1124,12 +1124,13 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 	save()
 	await message.response.send_message(embed=discord.Embed(color=0x6E593C, description=f'Done! rip <@{person_id.id}>. f\'s in chat.'))
 
-@achlist.error
+# @dream.error     
 @help.error
 @feedback.error
 @admin.error
 @info.error
 @tiktok.error
+@nerdmode.error
 @daily.error
 @inv.error
 @ping.error
@@ -1146,7 +1147,9 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 @say.error
 @setup.error
 @forget.error
+@fake.error
 @force.error
+@achlist.error
 @giveach.error
 @reset.error
 async def on_command_error(ctx, error):
