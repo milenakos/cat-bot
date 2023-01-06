@@ -357,6 +357,7 @@ async def on_message(message):
 		embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
 		await message.reply(embed=embed)
 	if text.lower() == "cat":
+		register_member(message.guild.id, message.author.id)
 		try:
 			timestamp = db[str(message.guild.id)][str(message.author.id)]["timeout"]
 		except Exception:
@@ -371,7 +372,6 @@ async def on_message(message):
 			await message.add_reaction(icon)
 		elif is_cat:
 			current_time = time.time()
-			register_member(message.guild.id, message.author.id)
 			cat_temp = db["cat"][str(message.channel.id)]
 			db["cat"][str(message.channel.id)] = False
 			save()
