@@ -355,9 +355,9 @@ async def on_message(message):
 		await message.reply(embed=embed)
 	if text.lower() == "cat":
 		try:
-			timestamp = db[str(message.server.id)][str(message.author.id)]["timeout"]
+			timestamp = db[str(message.guild.id)][str(message.author.id)]["timeout"]
 		except Exception:
-			db[str(message.server.id)][str(message.author.id)]["timeout"] = 0
+			db[str(message.guild.id)][str(message.author.id)]["timeout"] = 0
 			timestamp = 0
 		try:
 			is_cat = db["cat"][str(message.channel.id)]
