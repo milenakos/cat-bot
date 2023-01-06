@@ -355,9 +355,9 @@ async def on_message(message):
 		await message.reply(embed=embed)
 	if text.lower() == "cat":
 		try:
-			timestamp = db[message.server.id][message.author.id]["timeout"]
+			timestamp = db[str(message.server.id)][str(message.author.id)]["timeout"]
 		except Exception:
-			db[message.server.id][message.author.id]["timeout"] = 0
+			db[str(message.server.id)][str(message.author.id)]["timeout"] = 0
 			timestamp = 0
 		try:
 			is_cat = db["cat"][str(message.channel.id)]
@@ -526,7 +526,7 @@ async def nerdmode(message: discord.Interaction, person: discord.Member, timeout
 		await message.response.send_message("uhh i think time is supposed to be a number", ephemeral=True)
 		return
 	timestamp = round(time.time()) + timeout
-	db[message.guild.id][person.id]["timeout"] = timestamp
+	db[str(message.guild.id)][str(person.id)]["timeout"] = timestamp
 	await message.response.send_message(f"{person} is now in nerd mode until <t:{timestamp}:R>")
 	
 @bot.slash_command(description="Get Daily cats")
