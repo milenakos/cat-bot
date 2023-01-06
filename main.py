@@ -861,7 +861,7 @@ async def leaderboards(message: discord.Interaction):
 		for i in db[str(message.guild.id)].keys():
 			value = 0
 			for a, b in db[str(message.guild.id)][i].items():
-				if a != "time" and a != "timeslow" and a != "ach":
+				if a != "time" and a != "timeslow" and a != "ach" and a != "custom" and a != "timeout":
 					try:
 						value += b
 						if b > 0 and rarities.index(a) > rarest:
