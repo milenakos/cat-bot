@@ -522,12 +522,15 @@ async def tiktok(message: discord.Interaction, text: str):
 
 @bot.slash_command(description="Prevent someone from catching cats for a certain time period", default_member_permissions=8)
 async def nerdmode(message: discord.Interaction, person: discord.Member, timeout: int):
-	if timeout < 1:
+	if timeout < 0:
 		await message.response.send_message("uhh i think time is supposed to be a number", ephemeral=True)
 		return
 	timestamp = round(time.time()) + timeout
 	db[str(message.guild.id)][str(person.id)]["timeout"] = timestamp
-	await message.response.send_message(f"{person} is now in nerd mode until <t:{timestamp}:R>")
+	if timeout > 0:
+		await message.response.send_message(f"{person} is now in nerd mode until <t:{timestamp}:R>")
+	else:
+		await message.response.send_message(f"{person} is no longer in nerd mode.")
 	
 @bot.slash_command(description="Get Daily cats")
 async def daily(message: discord.Interaction):
