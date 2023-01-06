@@ -526,7 +526,7 @@ async def nerdmode(message: discord.Interaction, person: discord.Member, timeout
 		await message.response.send_message("uhh i think time is supposed to be a number", ephemeral=True)
 		return
 	timestamp = round(time.time()) + timeout
-	db[message.server.id][person.id]["timeout"] = timestamp
+	db[message.guild.id][person.id]["timeout"] = timestamp
 	await message.response.send_message(f"{person} is now in nerd mode until <t:{timestamp}:R>")
 	
 @bot.slash_command(description="Get Daily cats")
