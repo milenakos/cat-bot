@@ -59,6 +59,8 @@ f = open("aches.json", "r")
 ach_list = json.load(f)
 f.close()
 
+ach_names = ach_list.keys()
+
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="idk how this works but you need to have spaces in it or it may crash", intents=intents)
@@ -643,14 +645,6 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
 			embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
 			await message.channel.send(embed=embed)
 
-@bot.slash_command(description="View list of achievements names", default_member_permissions=8)
-async def achlist(message: discord.Interaction):
-	stringy = ""
-	for k,v in ach_list.items():
-		stringy = stringy + k + " - " + v["title"] + "\n"
-	embed = discord.Embed(title="Ach IDs", description=stringy, color=0x6E593C)
-	await message.response.send_message(embed=embed)
-
 @bot.slash_command(description="Pong")
 async def ping(message: discord.Interaction):
 	await message.response.send_message(f"cat has brain delay of {round(bot.latency * 1000)} ms " + str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")))
@@ -1079,6 +1073,7 @@ async def fake(message: discord.Interaction):
 		ach_data = give_ach(message.guild.id, message.user.id, "trolled")
 		embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
 		await message.response.send_message("OMG TROLLED SO HARD LMAOOOO :joy:", embed=embed, ephemeral=True)
+		return
 	await message.response.send_message("OMG TROLLED SO HARD LMAOOOO :joy:", ephemeral=True)
 
 @bot.slash_command(description="Force cats to appear", default_member_permissions=8)
@@ -1100,7 +1095,7 @@ async def force(message: discord.Interaction):
 
 
 @bot.slash_command(description="Give achievements to people", default_member_permissions=8)
-async def giveach(message: discord.Interaction, person_id: discord.Member, ach_id: str):
+async def giveach(message: discord.Interaction, person_id: discord.Member, ach_id: str = discord.SlashOption(choices=ach_names)):
 	all_of_aches = ach_list.keys()
 	try:
 		if ach_id in all_of_aches:
