@@ -232,6 +232,10 @@ async def on_message(message):
 	text = message.content
 	if message.author.id == bot.user.id:
 		return
+	if text == "backup":
+		milenakoos = await bot.fetch_user(OWNER_ID)
+		thing = discord.File("db.json", filename="db.json")
+		await milenakoos.send(file=thing)
 	if not (" " in text) and len(text) > 7 and text.isalnum():
 		s = text.lower()
 		total_vow = 0
