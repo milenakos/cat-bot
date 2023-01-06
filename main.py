@@ -355,10 +355,15 @@ async def on_message(message):
 		await message.reply(embed=embed)
 	if text.lower() == "cat":
 		try:
+			timestamp = db[message.server.id][message.author.id]["timeout"]
+		except Exception:
+			db[message.server.id][message.author.id]["timeout"] = 0
+			timestamp = 0
+		try:
 			is_cat = db["cat"][str(message.channel.id)]
 		except Exception:
 			is_cat = False
-		if not is_cat:
+		if not is_cat or timestamp > time.time():
 			icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
 			await message.add_reaction(icon)
 		elif is_cat:
@@ -472,7 +477,7 @@ async def feedback(message: discord.Interaction, feedback: str):
 async def admin(message: discord.Interaction):
 	embedVar = discord.Embed(
 		title="Send Admin Help", description=discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat"), color=0x6E593C
-	).add_field(name="Admin Commands", value="**/setup** - makes cat bot send cats in the channel this command is ran in\n**/forget** - reverse of /setup (i forgor :skull:)\n**/summon** - makes cats disappear and reappear out of thin air\n**/giveach** - gib (or take) achievements to people\n**/force** - makes cat appear in chat\n**/say** - chat as cat\n**/reset** - fully resets one's account")
+	).add_field(name="Admin Commands", value="**/setup** - makes cat bot send cats in the channel this command is ran in\n**/forget** - reverse of /setup (i forgor :skull:)\n**/summon** - makes cats disappear and reappear out of thin air\n**/giveach** - gib (or take) achievements to people\n**/force** - makes cat appear in chat\n**/say** - chat as cat\n**/reset** - fully resets one's account\n**/nerdmode** - stops someone from catching cats for a certain time period")
 	await message.response.send_message(embed=embedVar)
 
 @bot.slash_command(description="View information about the bot")
@@ -515,23 +520,15 @@ async def tiktok(message: discord.Interaction, text: str):
 	file = discord.File("result.mp3", filename="result.mp3")
 	await message.followup.send(file=file)
 
-@tasks.loop(seconds = 1)
-async def spawn_cat():
-	global message_thing, timeout, starting_time
-	if time.time() - starting_time <= timeout:
-		fire[message_thing.channel.id] = False
-		if not db["cat"][str(message_thing.channel.id)]:
-			file = discord.File("cat.png", filename="cat.png")
-			localcat = choice(CAT_TYPES)
-			db["cattype"][str(message_thing.channel.id)] = localcat
-			icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower()+"cat")   
-			message_is_sus = await message_thing.channel.send(str(icon) + " " + db["cattype"][str(message_thing.channel.id)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
-			db["cat"][str(message_thing.channel.id)] = message_is_sus.id
-			save()
-	else:
-		await message_thing.channel.send("this concludes the cat rain.")
-		spawn_cat.close()
-
+@bot.slash_command(desciprion="Prevent someone from catching cats for a certain time period", default_member_permissions=8)
+async def nerdmode(message: discord.Interaction, person: discord.Member, time: int):
+	if time < 1:
+		await message.response.send_message("uhh i think time is supposed to be a number", ephemeral=True)
+		return
+	timestamp = round(time.time()) + time
+	db[message.server.id][person.id]["timeout"] = timestamp
+	await message.response.send_message(f"{person} is now in nerd mode until <t:{timestamp:R>")
+	
 @bot.slash_command(description="Get Daily cats")
 async def daily(message: discord.Interaction):
 	await message.response.send_message("there is no daily cats why did you even try this")
