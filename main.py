@@ -1096,21 +1096,10 @@ async def force(message: discord.Interaction):
 
 @bot.slash_command(description="Give achievements to people", default_member_permissions=8)
 async def giveach(message: discord.Interaction, person_id: discord.Member, ach_id: str = discord.SlashOption(choices=ach_names)):
-	all_of_aches = ach_list.keys()
-	try:
-		if ach_id in all_of_aches:
-			valid = True
-		else:
-			valid = False
-	except KeyError:
-		valid = False
-	if valid:
-		reverse = has_ach(message.guild.id, person_id.id, ach_id, False)
-		give_ach(message.guild.id, person_id, ach_id, reverse)
-		embed = discord.Embed(title="Success!", description=f"Successfully set {ach_id} to {not reverse} for <@{person_id.id}>!", color=0x6E593C)
-		await message.response.send_message(embed=embed)
-	else:
-		await message.response.send_message("i cant find that achievement! run `/achlist` for all of achievement ids!", ephemeral=True)
+	reverse = has_ach(message.guild.id, person_id.id, ach_id, False)
+	give_ach(message.guild.id, person_id, ach_id, reverse)
+	embed = discord.Embed(title="Success!", description=f"Successfully set {ach_id} to {not reverse} for <@{person_id.id}>!", color=0x6E593C)
+	await message.response.send_message(embed=embed)
 	
 @bot.slash_command(description="Reset people", default_member_permissions=8)
 async def reset(message: discord.Interaction, person_id: discord.Member):
@@ -1125,7 +1114,6 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 @tiktok.error
 @daily.error
 @inv.error
-@achlist.error
 @ping.error
 @donate.error
 @cat.error
