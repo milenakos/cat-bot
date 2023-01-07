@@ -670,7 +670,7 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
 		if not has_ach(message.guild.id, message.user.id, "rich") and person_id == BOT_ID and cat_type == "Ultimate" and int(amount) >= 5:
 			ach_data = give_ach(message.guild.id, message.user.id, "rich")
 			embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-			await message.response.send_message(embed=embed)
+			await message.channel.send(embed=embed)
 	else:
 		await message.response.send_message("no", ephemeral=True)
 
