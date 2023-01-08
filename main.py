@@ -686,10 +686,8 @@ async def cursed(message: discord.Interaction):
 	
 @bot.slash_command(description="Get a warning")
 async def warning(message: discord.Interaction):
-        file = discord.File("warning.png", filename="warning.png")
+        file = discord.File("warning.PNG", filename="warning.PNG")
         await message.response.send_message(file=file)
-
-
 
 @bot.slash_command(description="Get Your balance")
 async def bal(message: discord.Interaction):
@@ -1132,7 +1130,8 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 	save()
 	await message.response.send_message(embed=discord.Embed(color=0x6E593C, description=f'Done! rip <@{person_id.id}>. f\'s in chat.'))
 
-# @dream.error     
+# @dream.error
+@warning.error
 @help.error
 @feedback.error
 @admin.error
