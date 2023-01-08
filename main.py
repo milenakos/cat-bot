@@ -1083,7 +1083,7 @@ async def fake(message: discord.Interaction):
 	await message.response.send_message("OMG TROLLED SO HARD LMAOOOO :joy:", ephemeral=True)
 
 @bot.slash_command(description="Force cats to appear", default_member_permissions=8)
-async def force(message: discord.Interaction):
+async def force(message: discord.Interaction, cat_type: Optional[str] = discord.SlashOption(required=False, choices=cattypes)):
 	try:
 		if db["cat"][str(message.channel.id)]: return
 	except Exception:
@@ -1091,7 +1091,10 @@ async def force(message: discord.Interaction):
 	channeley = message.channel
 	fire[channeley.id] = False
 	file = discord.File("cat.png", filename="cat.png")
-	localcat = choice(CAT_TYPES)
+	if not cat_type:
+		localcat = choice(CAT_TYPES)
+	else:
+		localcat = cat_type
 	db["cattype"][str(channeley.id)] = localcat
 	icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower()+"cat")   
 	message_lmao =  await message.channel.send(str(icon) + " " + db["cattype"][str(channeley.id)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
