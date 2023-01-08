@@ -1037,7 +1037,7 @@ async def leaderboards(message: discord.Interaction):
 @bot.slash_command(description="Give cats to people", default_member_permissions=8)
 async def summon(message: discord.Interaction, person_id: discord.Member, amount: int, cat_type: str = discord.SlashOption(choices=cattypes)):
 	add_cat(message.guild.id, person_id.id, cat_type, amount)
-	embed = discord.Embed(title="Success!", description=f"gave {person_id.id} {amount} {cat_type} cats")
+	embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount} {cat_type}x cats", color=0x007F0E)
 	await message.response.send_message(embed=embed)
 	
 @bot.slash_command(description="Say stuff as cat", default_member_permissions=8)
