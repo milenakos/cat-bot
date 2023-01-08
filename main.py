@@ -1085,8 +1085,11 @@ async def fake(message: discord.Interaction):
 @bot.slash_command(description="Force cats to appear", default_member_permissions=8)
 async def force(message: discord.Interaction, cat_type: Optional[str] = discord.SlashOption(required=False, choices=cattypes)):
 	try:
-		if db["cat"][str(message.channel.id)]: return
+		if db["cat"][str(message.channel.id)]:
+			await message.response.send_message("there is already a cat", ephemeral=True)
+			return
 	except Exception:
+		await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
 		return
 	channeley = message.channel
 	fire[channeley.id] = False
