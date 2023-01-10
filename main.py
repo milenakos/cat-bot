@@ -1138,6 +1138,8 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 	await message.response.send_message(embed=discord.Embed(color=0x6E593C, description=f'Done! rip <@{person_id.id}>. f\'s in chat.'))
 
 # @dream.error
+@myLoop.error
+@on_message.error
 @warning.error
 @help.error
 @feedback.error
