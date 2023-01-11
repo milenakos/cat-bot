@@ -559,7 +559,7 @@ async def nerdmode(message: discord.Interaction, person: discord.Member, timeout
 @bot.slash_command(description="Use if cat spawning is broken", default_member_permissions=8)
 async def sweep(message: discord.Interaction):	
 	db["cat"][str(message.channel.id)] = False
-	await message.reply("success")
+	await message.response.send_message("success")
 	
 @bot.slash_command(description="Get Daily cats")
 async def daily(message: discord.Interaction):
