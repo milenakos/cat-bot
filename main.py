@@ -202,20 +202,30 @@ async def myLoop():
 	savey = False
 	myLoop.change_interval(seconds = randint(delays[0], delays[1]))
 	for i in summon_id:
+		a = (i == 974777368860319824)
 		try:
 			if fire[i]:
+				if a: print("firing")
 				if not db["cat"][str(i)]:
+					if a: print("no cat")
 					file = discord.File("cat.png", filename="cat.png")
 					localcat = choice(CAT_TYPES)
+					if a: print("chose cat")
 					db["cattype"][str(i)] = localcat
+					if a: print("set db")
 					icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower()+"cat")   
 					channeley = await bot.fetch_channel(int(i))
+					if a: print("fetched")
 					message_is_sus = await channeley.send(super_prefix + str(icon) + " " + db["cattype"][str(i)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
+					if a: print("sent")
 					db["cat"][str(i)] = message_is_sus.id
 					save()
+					if a: print("saved")
 			if not fire[i]:
+				if a: print("not firing")
 				fire[i] = True
 		except Exception as e:
+			if a: print("oops")
 			print("cleaning", i, e)
 			clone = db["summon_ids"]
 			clone.remove(i)
