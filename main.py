@@ -202,30 +202,20 @@ async def myLoop():
 	savey = False
 	myLoop.change_interval(seconds = randint(delays[0], delays[1]))
 	for i in summon_id:
-		a = (i == 974777368860319824)
 		try:
 			if fire[i]:
-				if a: print("firing")
 				if not db["cat"][str(i)]:
-					if a: print("no cat")
 					file = discord.File("cat.png", filename="cat.png")
 					localcat = choice(CAT_TYPES)
-					if a: print("chose cat")
 					db["cattype"][str(i)] = localcat
-					if a: print("set db")
 					icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower()+"cat")   
 					channeley = await bot.fetch_channel(int(i))
-					if a: print("fetched")
 					message_is_sus = await channeley.send(super_prefix + str(icon) + " " + db["cattype"][str(i)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
-					if a: print("sent")
 					db["cat"][str(i)] = message_is_sus.id
 					save()
-					if a: print("saved")
 			if not fire[i]:
-				if a: print("not firing")
 				fire[i] = True
 		except Exception as e:
-			if a: print("oops")
 			print("cleaning", i, e)
 			clone = db["summon_ids"]
 			clone.remove(i)
@@ -453,6 +443,15 @@ async def on_message(message):
 	if text.lower().startswith("cat!sweep") and message.author.id == OWNER_ID:
 		db["cat"][str(message.channel.id)] = False
 		await message.reply("success")
+	if text.lower().startswith("cat!setup") and message.author.id == OWNER_ID:
+                abc = db["summon_ids"]
+		abc.append(int(message.channel.id))
+		db["summon_ids"] = abc
+		db["cat"][str(message.channel.id)] = False
+		db["cattype"][str(message.channel.id)] = ""
+		fire[str(message.channel.id)] = True
+		save()
+		await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
 	if text.lower().startswith("cat!news") and message.author.id == OWNER_ID:
 		for i in summon_id:
 			try:
