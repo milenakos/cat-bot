@@ -444,7 +444,7 @@ async def on_message(message):
 		db["cat"][str(message.channel.id)] = False
 		await message.reply("success")
 	if text.lower().startswith("cat!setup") and message.author.id == OWNER_ID:
-                abc = db["summon_ids"]
+		abc = db["summon_ids"]
 		abc.append(int(message.channel.id))
 		db["summon_ids"] = abc
 		db["cat"][str(message.channel.id)] = False
