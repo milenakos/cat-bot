@@ -451,7 +451,7 @@ async def on_message(message):
 		db["cattype"][str(message.channel.id)] = ""
 		fire[str(message.channel.id)] = True
 		save()
-		await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
+		await message.reply(f"ok, now i will also send cats in <#{message.channel.id}>")
 	if text.lower().startswith("cat!news") and message.author.id == OWNER_ID:
 		for i in summon_id:
 			try:
