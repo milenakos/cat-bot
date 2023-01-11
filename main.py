@@ -440,12 +440,22 @@ async def on_message(message):
 	if text.lower().startswith("cat!beggar") and message.author.id == OWNER_ID:
 		give_ach(message.guild.id, int(text[10:].split(" ")[1]), text[10:].split(" ")[2])
 		await message.reply("success")
-	if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
-		stuff = text.split(" ")
-		register_member(str(stuff[1]), str(message.guild.id))
-		db[str(message.guild.id)][str(stuff[1])]["custom"] = stuff[2]
-		save()
+	if text.lower().startswith("cat!sweep") and message.author.id == OWNER_ID:
+		db["cat"][str(message.channel.id)] = False
 		await message.reply("success")
+	if text.lower().startswith("cat!news") and message.author.id == OWNER_ID:
+		for i in summon_id:
+			try:
+				channeley = await bot.fetch_channel(int(i))
+				await channeley.send(text[8:])
+			except Exception:
+				pass
+	if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
+                stuff = text.split(" ")
+                register_member(str(stuff[1]), str(message.guild.id))
+                db[str(message.guild.id)][str(stuff[1])]["custom"] = stuff[2]
+                save()
+                await message.reply("success")
 	if text.lower().startswith("car") and not text.lower().startswith("cart"):
 		file = discord.File("car.png", filename="car.png")
 		embed = discord.Embed(title="car!", color=0x6E593C).set_image(url="attachment://car.png")
@@ -490,7 +500,7 @@ async def feedback(message: discord.Interaction, feedback: str):
 async def admin(message: discord.Interaction):
 	embedVar = discord.Embed(
 		title="Send Admin Help", description=discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat"), color=0x6E593C
-	).add_field(name="Admin Commands", value="**/setup** - makes cat bot send cats in the channel this command is ran in\n**/forget** - reverse of /setup (i forgor :skull:)\n**/summon** - makes cats disappear and reappear out of thin air\n**/giveach** - gib (or take) achievements to people\n**/force** - makes cat appear in chat\n**/say** - chat as cat\n**/reset** - fully resets one's account\n**/nerdmode** - stops someone from catching cats for a certain time period")
+	).add_field(name="Admin Commands", value="**/setup** - makes cat bot send cats in the channel this command is ran in\n**/forget** - reverse of /setup (i forgor :skull:)\n**/sweep** - use if cats stopped spawning for some reason**/summon** - makes cats disappear and reappear out of thin air\n**/giveach** - gib (or take) achievements to people\n**/force** - makes cat appear in chat\n**/say** - chat as cat\n**/reset** - fully resets one's account\n**/nerdmode** - stops someone from catching cats for a certain time period")
 	await message.response.send_message(embed=embedVar)
 
 @bot.slash_command(description="View information about the bot")
@@ -545,6 +555,11 @@ async def nerdmode(message: discord.Interaction, person: discord.Member, timeout
 		await message.response.send_message(f"{person} is now in nerd mode until <t:{timestamp}:R>")
 	else:
 		await message.response.send_message(f"{person} is no longer in nerd mode.")
+
+@bot.slash_command(description="Use if cat spawning is broken", default_member_permissions=8)
+async def sweep(message: discord.Interaction):	
+	db["cat"][str(message.channel.id)] = False
+	await message.reply("success")
 	
 @bot.slash_command(description="Get Daily cats")
 async def daily(message: discord.Interaction):
@@ -1141,6 +1156,7 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 @myLoop.error
 @warning.error
 @help.error
+@sweep.error
 @feedback.error
 @admin.error
 @info.error
