@@ -366,6 +366,10 @@ async def on_message(message):
 		ach_data = give_ach(message.guild.id, message.author.id, "test_ach")
 		embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
 		await message.reply(embed=embed)
+	if text.lower() == "egril" and not has_ach(message.guild.id, message.author.id, "egril"):
+                ach_data = give_ach(message.guild.id, message.author.id, "egril")
+                embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
+                await message.reply(embed=embed)
 	if text.lower() == "cat":
 		register_member(message.guild.id, message.author.id)
 		try:
@@ -540,6 +544,14 @@ async def dream(message: discord.Interaction, text: str):
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str):
 	await message.response.defer()
+	if text == "bwomp":
+		file = discord.File("bwomp.mp3", filename="bwomp.mp3")
+		await message.followup.send(file=file)
+		if not has_ach(message.guild.id, message.user.id, "bwomp"):
+			ach_data = give_ach(message.guild.id, message.user.id, "bwomp")
+			embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
+			await message.channel.send(embed=embed)
+		return
 	stuff = requests.post("https://tiktok-tts.weilnet.workers.dev/api/generation", headers={"Content-Type": "application/json"}, json={"text": text, "voice": "en_us_002"})
 	try:
 		data = "" + stuff.json()["data"]
