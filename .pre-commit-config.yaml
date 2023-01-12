@@ -1,11 +1,3 @@
-## Pre-commit setup
-
-ci:
-  autofix_commit_msg: |
-    style: auto fixes from pre-commit hooks
-  autoupdate_commit_msg: |
-    ci(pre-commit): autoupdate hook versions
-
 repos:
   - repo: https://github.com/PyCQA/autoflake
     rev: v2.0.0
@@ -32,10 +24,6 @@ repos:
       - id: isort
         args: ["--profile", "black", "--extend-skip", "examples"]
         name: Running isort in all files.
-      - id: isort
-        args: ["--profile", "black", "--thirdparty", "nextcord"]
-        name: Running isort in examples.
-        files: ^examples/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
@@ -46,10 +34,6 @@ repos:
         name: Check for case conflict on file names for case insensitive systems.
       - id: check-merge-conflict
         name: Check for merge conflict syntax.
-      - id: check-toml
-        name: Check TOML files for valid syntax.
-      - id: check-yaml
-        name: Check YAML files for valid syntax.
       - id: debug-statements
         name: Check for debug statements.
       - id: end-of-file-fixer
