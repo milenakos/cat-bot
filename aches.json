@@ -29,5 +29,7 @@
   "website_user": {"title": "Website User", "description": "catbot.milenakos.repl.co", "is_hidden": false, "category": "Random"},
   "secret": {"title": "Tax Fraud", "description": "evade paying your cat taxes", "is_hidden": true, "category": "Hidden"},
   "trolled": {"title": "Trolled", "description": "TROLLED SO HARD LMAOOO :joy:", "is_hidden": false, "category": "Cat Hunt"},
-  "pleasedothecat": {"title": "Please do the cat", "description": "accept cat", "is_hidden": true, "category": "Random"}
+  "pleasedothecat": {"title": "Please do the cat", "description": "accept cat", "is_hidden": true, "category": "Random"},
+  "egril": {"title": "Electronic Grill", "description": "what can this possibly mean", "is_hidden": false, "category": "Random"},
+  "bwomp": {"title": "Bwomp", "description": "is that a geometry dash reference???", "is_hidden": false, "category": "Random"}
 }
