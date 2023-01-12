@@ -1145,7 +1145,7 @@ async def force(message: discord.Interaction, cat_type: Optional[str] = discord.
 @bot.slash_command(description="View list of achievements names", default_member_permissions=8)
 async def achlist(message: discord.Interaction):
 	stringy = ""
-	for k,v in ach_list.items():
+	for k, v in ach_list.items():
 		stringy = stringy + k + " - " + v["title"] + "\n"
 	embed = discord.Embed(title="Ach IDs", description=stringy, color=0x6E593C)
 	await message.response.send_message(embed=embed)
