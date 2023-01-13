@@ -542,10 +542,10 @@ async def dream(message: discord.Interaction, text: str):
 			if response.status != 200:
 				await message.followup.send("failed lmao")
 				return
-			with open("ai_gen.png", "wb") as f:
+			with io.BytesIo() as f:
 				f.write(await response.read())
-			file = discord.File("ai_gen.png", filename="ai_gen.png")
-			await message.followup.send(file=file)
+				f.seek(0)
+				await message.followup.send(file=discord.File(fp=f, filename='output.png'))
 
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str):
