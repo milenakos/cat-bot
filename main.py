@@ -18,6 +18,8 @@ TOKEN = os.environ['token']
 GITHUB_MODE = True
 GITHUB_CHANNEL_ID = 1060965767044149249
 
+BANNED_ID = [558979299177136164] # banned from using /dream
+
 CAT_TYPES = (
 	["Fine"] * 1000
 	+ ["Nice"] * 750
@@ -516,6 +518,9 @@ async def info(message: discord.Interaction):
 
 @bot.slash_command(description="Generate images from text using Stable Diffusion")
 async def dream(message: discord.Interaction, text: str):
+	if message.author.id in BANNED_ID:
+		await message.followup.send("You do not have access to that command.")
+		return
 	await message.response.defer()
 
 	url = "https://api.stability.ai/v1alpha/generation/stable-diffusion-v1-5/text-to-image"
@@ -542,10 +547,9 @@ async def dream(message: discord.Interaction, text: str):
 			if response.status != 200:
 				await message.followup.send("failed lmao")
 				return
-			with io.BytesIo() as f:
+			with open("ai_gen.png", wb) as f:
 				f.write(await response.read())
-				f.seek(0)
-				await message.followup.send(file=discord.File(fp=f, filename='output.png'))
+			await message.followup.send(file=discord.File("ai_gen.png", filename='output.png'))
 
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str):
@@ -567,7 +571,7 @@ async def tiktok(message: discord.Interaction, text: str):
 	with open("result.mp3", "wb") as f:
 		ba = "data:audio/mpeg;base64," + data
 		f.write(base64.b64decode(ba))
-	file = discord.File("result.mp3", filename="result.mp3")
+		file = discord.File(fp=f, filename="result.mp3")
 	await message.followup.send(file=file)
 
 @bot.slash_command(description="Prevent someone from catching cats for a certain time period", default_member_permissions=8)
