@@ -524,6 +524,9 @@ async def info(message: discord.Interaction):
 @bot.slash_command(description="Generate images from text using Stable Diffusion")
 async def dream(message: discord.Interaction, text: str):
 	await message.response.defer()
+	await bot.loop.create_task(generate(text, message))
+	
+async def generate(text, message):
 	answers = stability_api.generate(
 	    prompt=text,
 	    cfg_scale=8.0,
