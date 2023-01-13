@@ -13,5 +13,5 @@ Good luck on that.
    
    Calion made a nice file explaining all the db values [here](https://calion.repl.co/static/catbot/db.txt)
 
-2. Go inside of the `main.py` file, on first few lines you can change some config values, such as owner ID, guild ID, and bot ID. You will need to create a guild and upload all emojis to that guild. You can download all the emojis [here](https://calion.repl.co/static/catbot/cats.zip) (it also comes with a getthem.bash if for whatever reason you want to wget all the emojis urself)
+2. Go inside of the `main.py` file, on first few lines you can change some config values, such as owner ID, guild ID, and bot ID. You will need to create a guild and upload all emojis to that guild. You can download all the emojis [here](https://calion.repl.co/static/catbot/emojis.zip) (it also comes with a getthem.bash if for whatever reason you want to wget all the emojis urself)
 3. Done!
