@@ -518,7 +518,7 @@ async def info(message: discord.Interaction):
 async def dream(message: discord.Interaction, text: str):
 	await message.response.defer()
 
-	url = "https://api.stability.ai/v1alpha/generation/stable-diffusion-512-v2-0/text-to-image"
+	url = "https://api.stability.ai/v1alpha/generation/stable-diffusion-v1-5/text-to-image"
 	payload = {
 		"cfg_scale": 8,
 		"height": 512,
