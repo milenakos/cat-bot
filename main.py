@@ -192,7 +192,7 @@ async def myLoop():
 	global super_prefix, bot, fire, summon_id, delays
 	member_count = 0
 	await bot.change_presence(
-		activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
+		activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers with {len(bot.users)} people")
 	)
 	summon_id = db["summon_ids"]
 	savey = False
@@ -227,7 +227,7 @@ async def myLoop():
 @bot.event
 async def on_ready():
 	await bot.change_presence(
-		activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
+		activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers with {len(bot.users)} people")
 	)
 	myLoop.start()
 
@@ -548,9 +548,10 @@ async def dream(message: discord.Interaction, text: str):
 			if response.status != 200:
 				await message.followup.send("failed lmao")
 				return
-			with open("ai_gen.png", "wb") as f:
+			with io.BytesIO() as f:
 				f.write(await response.read())
-			await message.followup.send(file=discord.File("ai_gen.png", filename='output.png'))
+				f.seek(0)
+				await message.followup.send(file=discord.File(fp=f, filename='output.png'))
 
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str):
@@ -569,11 +570,11 @@ async def tiktok(message: discord.Interaction, text: str):
 	except TypeError:
 		await message.followup.send("i dont speak your language (remove non-english characters, or make message shorter)")
 		return
-	with open("result.mp3", "wb") as f:
+	with io.BytesIO() as f:
 		ba = "data:audio/mpeg;base64," + data
 		f.write(base64.b64decode(ba))
-	file = discord.File("result.mp3", filename="result.mp3")
-	await message.followup.send(file=file)
+		f.seek(0)
+		await message.followup.send(file=discord.File(fp=f, filename='output.png'))
 
 @bot.slash_command(description="Prevent someone from catching cats for a certain time period", default_member_permissions=8)
 async def nerdmode(message: discord.Interaction, person: discord.Member, timeout: int):
