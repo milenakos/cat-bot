@@ -518,7 +518,7 @@ async def info(message: discord.Interaction):
 
 @bot.slash_command(description="Generate images from text using Stable Diffusion")
 async def dream(message: discord.Interaction, text: str):
-	if message.author.id in BANNED_ID:
+	if message.user.id in BANNED_ID:
 		await message.followup.send("You do not have access to that command.")
 		return
 	await message.response.defer()
@@ -571,7 +571,7 @@ async def tiktok(message: discord.Interaction, text: str):
 	with open("result.mp3", "wb") as f:
 		ba = "data:audio/mpeg;base64," + data
 		f.write(base64.b64decode(ba))
-		file = discord.File(fp=f, filename="result.mp3")
+	file = discord.File("result.mp3", filename="result.mp3")
 	await message.followup.send(file=file)
 
 @bot.slash_command(description="Prevent someone from catching cats for a certain time period", default_member_permissions=8)
