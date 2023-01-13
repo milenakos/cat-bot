@@ -532,7 +532,7 @@ async def dream(message: discord.Interaction, text: str):
 	    samples=1
 	)
 
-	artifact = answers[0].resp.artifacts[0]
+	artifact = answers[0].artifacts[0]
 	if artifact.finish_reason == generation.FILTER:
 		await message.followup.send("I'm not sure I can send this here...")
 	if artifact.type == generation.ARTIFACT_IMAGE:
