@@ -574,7 +574,7 @@ async def tiktok(message: discord.Interaction, text: str):
 		ba = "data:audio/mpeg;base64," + data
 		f.write(base64.b64decode(ba))
 		f.seek(0)
-		await message.followup.send(file=discord.File(fp=f, filename='output.png'))
+		await message.followup.send(file=discord.File(fp=f, filename='output.mp3'))
 
 @bot.slash_command(description="Prevent someone from catching cats for a certain time period", default_member_permissions=8)
 async def nerdmode(message: discord.Interaction, person: discord.Member, timeout: int):
