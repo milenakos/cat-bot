@@ -192,7 +192,7 @@ async def myLoop():
 	global super_prefix, bot, fire, summon_id, delays
 	member_count = 0
 	await bot.change_presence(
-		activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers with {len(bot.users)} people")
+		activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
 	)
 	summon_id = db["summon_ids"]
 	savey = False
@@ -227,7 +227,7 @@ async def myLoop():
 @bot.event
 async def on_ready():
 	await bot.change_presence(
-		activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers with {len(bot.users)} people")
+		activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
 	)
 	myLoop.start()
 
