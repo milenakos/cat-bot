@@ -547,7 +547,7 @@ async def dream(message: discord.Interaction, text: str):
 			if response.status != 200:
 				await message.followup.send("failed lmao")
 				return
-			with open("ai_gen.png", wb) as f:
+			with open("ai_gen.png", "wb") as f:
 				f.write(await response.read())
 			await message.followup.send(file=discord.File("ai_gen.png", filename='output.png'))
 
