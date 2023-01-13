@@ -543,7 +543,7 @@ async def dream(message: discord.Interaction, text: str):
 				await message.followup.send("failed lmao")
 				return
 			with open("ai_gen.png", "wb") as f:
-				f.write(response.content)
+				f.write(await response.content)
 			file = discord.File("ai_gen.png", filename="ai_gen.png")
 			await message.followup.send(file=file)
 
