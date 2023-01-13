@@ -1,12 +1,10 @@
 import nextcord as discord
-import msg2img, base64, sys, re, time, json, requests, natsort, traceback, os, io
+import msg2img, base64, sys, re, time, json, requests, natsort, traceback, os, io, aiohttp
 from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
 from nextcord.ui import Button, View
 from typing import Optional
 from random import randint, choice
-from stability_sdk import client
-import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
 from PIL import Image
 
 OWNER_ID = 553093932012011520 # for dms
@@ -74,11 +72,6 @@ delays = [120, 1200]
 timeout = 0
 starting_time = 0
 message_thing = 0
-
-stability_api = client.StabilityInference(
-        key=os.environ['STABILITY_KEY'], # API Key reference.
-        engine="stable-diffusion-v1-5"
-)
 
 super_prefix = ""
 
@@ -524,26 +517,35 @@ async def info(message: discord.Interaction):
 @bot.slash_command(description="Generate images from text using Stable Diffusion")
 async def dream(message: discord.Interaction, text: str):
 	await message.response.defer()
-	await bot.loop.create_task(generate(text, message))
-	
-async def generate(text, message):
-	answers = stability_api.generate(
-	    prompt=text,
-	    cfg_scale=8.0,
-	    width=512, # Generation width, defaults to 512 if not included.
-	    height=512, # Generation height, defaults to 512 if not included.
-	    samples=1
-	)
 
-	for resp in answers:
-		for artifact in resp.artifacts:
-			if artifact.finish_reason == generation.FILTER:
-				await message.followup.send("I'm not sure I can send this here...")
-			elif artifact.type == generation.ARTIFACT_IMAGE:
-				img = Image.open(io.BytesIO(artifact.binary))
-				img.save("ai_gen.png")
-				file = discord.File("ai_gen.png", filename="ai_gen.png")
-				await message.followup.send(file=file)
+	url = "https://api.stability.ai/v1alpha/generation/stable-diffusion-512-v2-0/text-to-image"
+	payload = {
+		"cfg_scale": 8,
+		"height": 512,
+		"width": 512,
+		"samples": 1,
+		"text_prompts": [
+			{
+				"text": text,
+				weight": 1
+			}
+		],
+	}
+	headers = {
+		"Content-Type": "application/json",
+		"Accept": "image/png",
+		"Authorization": os.environ['STABILITY_KEY']
+	}
+
+	async with aiohttp.ClientSession() as session:
+		async with session.post(url, json=payload, headers=headers) as response:
+			if response.status != 200:
+				await message.followup.send("failed lmao")
+				return
+			with open("ai_gen.png", "wb") as f:
+				f.write(response.content)
+			file = discord.File("ai_gen.png", filename="ai_gen.png")
+			await message.followup.send(file=file)
 
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str):
