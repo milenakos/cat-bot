@@ -190,7 +190,6 @@ def give_ach(server_id, person_id, ach_id, reverse=False):
 @tasks.loop(seconds = randint(delays[0], delays[1]))
 async def myLoop():
 	global super_prefix, bot, fire, summon_id, delays
-	member_count = 0
 	await bot.change_presence(
 		activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
 	)
