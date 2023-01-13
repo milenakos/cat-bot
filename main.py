@@ -527,7 +527,7 @@ async def dream(message: discord.Interaction, text: str):
 		"text_prompts": [
 			{
 				"text": text,
-				weight": 1
+				"weight": 1
 			}
 		],
 	}
