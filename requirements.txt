@@ -2,4 +2,3 @@ requests
 nextcord
 natsort
 Pillow
-stability_sdk
