@@ -19,6 +19,9 @@ GITHUB_CHANNEL_ID = 1060965767044149249
 
 BANNED_ID = [] # banned from using /dream and /tiktok
 
+# trigger warning
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" NONOWORDS = ["nicka", "nicker", "niga", "nigga"]
+
 CAT_TYPES = (
 	["Fine"] * 1000
 	+ ["Nice"] * 750
@@ -556,6 +559,10 @@ async def tiktok(message: discord.Interaction, text: str):
 	if message.user.id in BANNED_ID:
 		await message.followup.send("You do not have access to that command.", ephemeral=True)
 		return
+	for i in NONOWORDS:
+		if i in text.lower():
+			await message.followup.send("Do not.", ephemeral=True)
+			return
 	if text == "bwomp":
 		file = discord.File("bwomp.mp3", filename="bwomp.mp3")
 		await message.followup.send(file=file)
