@@ -135,7 +135,7 @@ def msg2img(message, bot, text_override=None):
             font=botfont,
             fill=(255, 255, 255),
         )
-        move = botfont.getsize("BOT")[0] + 18
+        move = botfont.getsize("BOT")[0] + 20
     pencil.text(
         (122, 55), text.strip(), font=font2, fill=(255, 255, 255)
     )  # draw message text
