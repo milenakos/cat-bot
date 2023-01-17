@@ -116,13 +116,13 @@ def msg2img(message, bot, text_override=None):
 
     pencil.text((122, 8), nick, font=font, fill=color)  # draw author name
     if is_bot:
-        font = ImageFont.truetype("whitneysemibold.otf", 20)
+        botfont = ImageFont.truetype("whitneysemibold.otf", 20)
 
         pencil.rounded_rectangle(
             (
                 129 + font.getsize(nick)[0] + 34 + 5,
                 8 + 6,
-                129 + font.getsize(nick)[0] + 48 + font.getsize("BOT")[0],
+                129 + font.getsize(nick)[0] + 48 + botfont.getsize("BOT")[0],
                 10 + 7 + 25,
             ),
             fill=(88, 101, 242),
@@ -132,10 +132,10 @@ def msg2img(message, bot, text_override=None):
         pencil.text(
             (131 + font.getsize(nick)[0] + 42, 10 + 6),
             "BOT",
-            font=font,
+            font=botfont,
             fill=(255, 255, 255),
         )
-        move = font.getsize("BOT")[0] + 55
+        move = botfont.getsize("BOT")[0] + 55
     pencil.text(
         (122, 55), text.strip(), font=font2, fill=(255, 255, 255)
     )  # draw message text
