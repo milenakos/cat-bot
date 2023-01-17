@@ -438,7 +438,7 @@ async def on_message(message):
 				ach_data = give_ach(message.guild.id, message.author.id, "slow_catcher")
 				embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
 				await message.channel.send(embed=embed)
-	if ':sob:' in text.lower():
+	if '😭' in text.lower():
 		icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
 		await message.add_reaction(icon)
 	if text.lower().startswith("cat!beggar") and message.author.id == OWNER_ID:
