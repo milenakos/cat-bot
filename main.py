@@ -880,10 +880,17 @@ async def achs(message: discord.Interaction):
 	
 	await message.response.send_message(embed=embedVar, view=myview)
 
-@bot.message_command()
-async def catch(message: discord.Interaction, msg):
+@bot.message_command(name="catch (Whitney)")
+async def catch_old(message: discord.Interaction, msg):
+	catch(message, msg, False)
+
+@bot.message_command(name="catch (gg sans)")
+async def catch_new(message: discord.Interaction, msg):
+        catch(message, msg, True)
+
+async def catch(message: discord.Interaction, msg, sansgg):
 	try:
-		msg2img.msg2img(msg, bot)
+		msg2img.msg2img(msg, bot, sansgg)
 		file = discord.File("generated.png", filename="generated.png")
 		await message.response.send_message("cought in 4k", file=file)
 	except Exception:
