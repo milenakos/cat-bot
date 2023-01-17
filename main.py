@@ -555,14 +555,14 @@ async def dream(message: discord.Interaction, text: str):
 
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str):
-	await message.response.defer()
 	if message.user.id in BANNED_ID:
-		await message.followup.send("You do not have access to that command.", ephemeral=True)
+		await message.response.send_message("You do not have access to that command.", ephemeral=True)
 		return
 	for i in NONOWORDS:
 		if i in text.lower():
-			await message.followup.send("Do not.", ephemeral=True)
+			await message.response.send_message("Do not.", ephemeral=True)
 			return
+	await message.response.defer()
 	if text == "bwomp":
 		file = discord.File("bwomp.mp3", filename="bwomp.mp3")
 		await message.followup.send(file=file)
