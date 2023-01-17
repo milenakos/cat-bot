@@ -7,6 +7,7 @@ def msg2img(message, bot, sansgg=False):
     move = 0
     is_bot = message.author.bot
     is_pinged = bot.user in message.mentions
+    text = message.content
     if message.mention_everyone:
         is_pinged = True
     save_to = "generated.png"
@@ -68,7 +69,7 @@ def msg2img(message, bot, sansgg=False):
 
     font = ImageFont.truetype("whitneysemibold.otf", 32)  # load fonts
     if sansgg:
-        font2 = ImageFont.truetype("ggsans-Medium.otf", 32)  # load fonts
+        font2 = ImageFont.truetype("ggsans-Medium.ttf", 32)  # load fonts
     else:
         font2 = ImageFont.truetype("whitneymedium.otf", 32)  # load fonts
     font3 = ImageFont.truetype("whitneysemibold.otf", 23)  # load fonts
