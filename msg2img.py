@@ -120,22 +120,22 @@ def msg2img(message, bot, text_override=None):
 
         pencil.rounded_rectangle(
             (
-                129 + font.getsize(nick)[0] + 9,
-                8 + 6,
-                129 + font.getsize(nick)[0] + 18 + botfont.getsize("BOT")[0],
-                10 + 7 + 25,
+                129 + font.getsize(nick)[0] + 5,
+                8 + 5,
+                129 + font.getsize(nick)[0] + 14 + botfont.getsize("BOT")[0],
+                10 + 6 + 25,
             ),
             fill=(88, 101, 242),
             radius=3,
         )
 
         pencil.text(
-            (131 + font.getsize(nick)[0] + 12, 10 + 6),
+            (131 + font.getsize(nick)[0] + 8, 10 + 4),
             "BOT",
             font=botfont,
             fill=(255, 255, 255),
         )
-        move = botfont.getsize("BOT")[0] + 15
+        move = botfont.getsize("BOT")[0] + 18
     pencil.text(
         (122, 55), text.strip(), font=font2, fill=(255, 255, 255)
     )  # draw message text
