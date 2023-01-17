@@ -519,7 +519,7 @@ async def info(message: discord.Interaction):
 async def dream(message: discord.Interaction, text: str):
 	await message.response.defer()
 	if message.user.id in BANNED_ID:
-		await message.followup.send("You do not have access to that command.")
+		await message.followup.send("You do not have access to that command.", ephemeral=True)
 		return
 	url = "https://api.stability.ai/v1alpha/generation/stable-diffusion-v1-5/text-to-image"
 	payload = {
@@ -554,7 +554,7 @@ async def dream(message: discord.Interaction, text: str):
 async def tiktok(message: discord.Interaction, text: str):
 	await message.response.defer()
 	if message.user.id in BANNED_ID:
-		await message.followup.send("You do not have access to that command.")
+		await message.followup.send("You do not have access to that command.", ephemeral=True)
 		return
 	if text == "bwomp":
 		file = discord.File("bwomp.mp3", filename="bwomp.mp3")
