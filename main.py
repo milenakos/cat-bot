@@ -17,7 +17,7 @@ TOKEN = os.environ['token']
 GITHUB_MODE = True
 GITHUB_CHANNEL_ID = 1060965767044149249
 
-BANNED_ID = [558979299177136164] # banned from using /dream
+BANNED_ID = [558979299177136164] # banned from using /dream and /tiktok
 
 CAT_TYPES = (
 	["Fine"] * 1000
@@ -518,9 +518,7 @@ async def info(message: discord.Interaction):
 @bot.slash_command(description="Generate images from text using Stable Diffusion")
 async def dream(message: discord.Interaction, text: str):
 	await message.response.defer()
-	if message.user.id in BANNED_ID:
-		await message.followup.send("You do not have access to that command.")
-		return
+ccc
 
 	url = "https://api.stability.ai/v1alpha/generation/stable-diffusion-v1-5/text-to-image"
 	payload = {
@@ -554,6 +552,9 @@ async def dream(message: discord.Interaction, text: str):
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str):
 	await message.response.defer()
+        if message.user.id in BANNED_ID:
+                await message.followup.send("You do not have access to that command.")
+                return
 	if text == "bwomp":
 		file = discord.File("bwomp.mp3", filename="bwomp.mp3")
 		await message.followup.send(file=file)
