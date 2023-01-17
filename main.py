@@ -8,7 +8,7 @@ from random import randint, choice
 
 OWNER_ID = 553093932012011520 # for dms
 GUILD_ID = 966586000417619998 # for emojis
-BOT_ID = 966695034340663367
+BOT_ID = 966695034340663367	
 BACKUP_ID = 1060545763194707998 # channel id for backups, private extremely recommended
 
 TOKEN = os.environ['token']
@@ -552,9 +552,9 @@ ccc
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str):
 	await message.response.defer()
-        if message.user.id in BANNED_ID:
-                await message.followup.send("You do not have access to that command.")
-                return
+	if message.user.id in BANNED_ID:
+		await message.followup.send("You do not have access to that command.")
+		return
 	if text == "bwomp":
 		file = discord.File("bwomp.mp3", filename="bwomp.mp3")
 		await message.followup.send(file=file)
