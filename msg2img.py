@@ -91,7 +91,7 @@ def msg2img(message, bot, sansgg=False):
     bg_color = (54, 57, 63)
     if is_pinged:
         bg_color = (73, 68, 60)
-    new_img = Image.new("RGBA", (1067, 65 + the_size_and_stuff), bg_color)
+    new_img = Image.new("RGBA", (1067, 75 + the_size_and_stuff), bg_color)
     pencil = ImageDraw.Draw(new_img)
     pfp = requests.get(message.author.display_avatar.url, stream=True).raw
     im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
