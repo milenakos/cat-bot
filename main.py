@@ -17,7 +17,7 @@ TOKEN = os.environ['token']
 GITHUB_MODE = True
 GITHUB_CHANNEL_ID = 1060965767044149249
 
-BANNED_ID = [558979299177136164] # banned from using /dream and /tiktok
+BANNED_ID = [558979299177136164, 1029044762340241509] # banned from using /dream and /tiktok
 
 CAT_TYPES = (
 	["Fine"] * 1000
