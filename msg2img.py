@@ -3,16 +3,12 @@ from datetime import datetime
 import requests
 
 
-def msg2img(message, bot, text_override=None):
+def msg2img(message, bot, sansgg=False):
     move = 0
     is_bot = message.author.bot
     is_pinged = bot.user in message.mentions
     if message.mention_everyone:
         is_pinged = True
-    if text_override == None:
-        text = message.content
-    else:
-        text = text_override
     save_to = "generated.png"
     try:
         nick = message.author.nick
@@ -71,7 +67,10 @@ def msg2img(message, bot, text_override=None):
         return lines, pings
 
     font = ImageFont.truetype("whitneysemibold.otf", 32)  # load fonts
-    font2 = ImageFont.truetype("whitneymedium.otf", 32)  # load fonts
+    if sansgg:
+        font2 = ImageFont.truetype("ggsans-Medium.otf", 32)  # load fonts
+    else:
+        font2 = ImageFont.truetype("whitneymedium.otf", 32)  # load fonts
     font3 = ImageFont.truetype("whitneysemibold.otf", 23)  # load fonts
 
     text_temp = ""
