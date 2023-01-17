@@ -138,7 +138,7 @@ def msg2img(message, bot, sansgg=False):
         )
         move = botfont.getsize("BOT")[0] + 20
     with Pilmoji(new_img) as pilmoji:
-        pilmoji.text((122, 55), text.strip(), (255, 255, 255), font2)
+        pilmoji.text((122, 55), text.strip(), (255, 255, 255), font2, emoji_scale_factor=45/33)
 
     now = message.created_at
     # there is probably easier way than this but ehhh
