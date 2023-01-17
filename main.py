@@ -5,7 +5,6 @@ from nextcord import ButtonStyle
 from nextcord.ui import Button, View
 from typing import Optional
 from random import randint, choice
-from PIL import Image
 
 OWNER_ID = 553093932012011520 # for dms
 GUILD_ID = 966586000417619998 # for emojis
@@ -518,10 +517,10 @@ async def info(message: discord.Interaction):
 
 @bot.slash_command(description="Generate images from text using Stable Diffusion")
 async def dream(message: discord.Interaction, text: str):
+	await message.response.defer()
 	if message.user.id in BANNED_ID:
 		await message.followup.send("You do not have access to that command.")
 		return
-	await message.response.defer()
 
 	url = "https://api.stability.ai/v1alpha/generation/stable-diffusion-v1-5/text-to-image"
 	payload = {
