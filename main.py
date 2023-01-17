@@ -518,8 +518,9 @@ async def info(message: discord.Interaction):
 @bot.slash_command(description="Generate images from text using Stable Diffusion")
 async def dream(message: discord.Interaction, text: str):
 	await message.response.defer()
-ccc
-
+	if message.user.id in BANNED_ID:
+		await message.followup.send("You do not have access to that command.")
+		return
 	url = "https://api.stability.ai/v1alpha/generation/stable-diffusion-v1-5/text-to-image"
 	payload = {
 		"cfg_scale": 8,
