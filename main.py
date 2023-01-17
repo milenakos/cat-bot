@@ -1218,7 +1218,8 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 @bal.error
 @random.error
 @achs.error
-@catch.error
+@catch_old.error
+@catch_new.error
 @pointLaugh.error
 @leaderboards.error
 @summon.error
