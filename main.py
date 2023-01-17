@@ -886,15 +886,15 @@ async def catch_old(message: discord.Interaction, msg):
 
 @bot.message_command(name="catch (gg sans)")
 async def catch_new(message: discord.Interaction, msg):
-        await catch(message, msg, True)
+	await catch(message, msg, True)
 
 async def catch(message: discord.Interaction, msg, sansgg):
 	try:
 		msg2img.msg2img(msg, bot, sansgg)
 		file = discord.File("generated.png", filename="generated.png")
 		await message.response.send_message("cought in 4k", file=file)
-	except Exception:
-		await message.response.send_message("the message appears to have commited no live anymore", ephemeral=True)
+	except Exception as e:
+		await message.response.send_message(f"the message appears to have commited no live anymore\n\n{e}", ephemeral=True)
 	register_member(message.guild.id, msg.author.id)
 	if not has_ach(message.guild.id, msg.author.id, "4k") and msg.author.id != BOT_ID:
 		ach_data = give_ach(message.guild.id, message.user.id, "4k")
