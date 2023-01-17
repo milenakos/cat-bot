@@ -1,6 +1,7 @@
 from PIL import Image, ImageFont, ImageDraw, ImageColor
 from datetime import datetime
-import requests, pilmoji
+import requests
+from pilmoji import Pilmoji
 
 
 def msg2img(message, bot, sansgg=False):
@@ -136,7 +137,7 @@ def msg2img(message, bot, sansgg=False):
             fill=(255, 255, 255),
         )
         move = botfont.getsize("BOT")[0] + 20
-    with pilmoji.Pilmoji(new_img) as pilmoji:
+    with Pilmoji(new_img) as pilmoji:
         pilmoji.text((122, 55), text.strip(), (255, 255, 255), font2)
 
     now = message.created_at
