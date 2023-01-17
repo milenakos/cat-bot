@@ -882,11 +882,11 @@ async def achs(message: discord.Interaction):
 
 @bot.message_command(name="catch (Whitney)")
 async def catch_old(message: discord.Interaction, msg):
-	catch(message, msg, False)
+	await catch(message, msg, False)
 
 @bot.message_command(name="catch (gg sans)")
 async def catch_new(message: discord.Interaction, msg):
-        catch(message, msg, True)
+        await catch(message, msg, True)
 
 async def catch(message: discord.Interaction, msg, sansgg):
 	try:
