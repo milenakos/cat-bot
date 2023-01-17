@@ -2,3 +2,4 @@ requests
 nextcord
 natsort
 Pillow
+Pilmoji
