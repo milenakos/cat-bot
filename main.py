@@ -240,7 +240,7 @@ async def on_message(message):
 		return
 	if GITHUB_MODE and message.channel.id == GITHUB_CHANNEL_ID:
 		os.system("git pull")
-		myLoop.stop()
+		myLoop.cancel()
 		os.execv(sys.executable, ['python'] + sys.argv)
 	if not (" " in text) and len(text) > 7 and text.isalnum():
 		s = text.lower()
