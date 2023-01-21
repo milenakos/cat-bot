@@ -543,7 +543,7 @@ async def dream(message: discord.Interaction, text: str):
 	headers = {
 		"Content-Type": "application/json",
 		"Accept": "application/json",
-		"Authorization": os.environ['STABILITY_KEvvvvvvY']
+		"Authorization": os.environ['STABILITY_KEY']
 	}
 
 	async with aiohttp.ClientSession() as session:
