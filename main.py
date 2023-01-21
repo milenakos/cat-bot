@@ -910,6 +910,10 @@ async def catch(message: discord.Interaction, msg, sansgg):
 		embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
 		await message.channel.send(embed=embed)
 
+@bot.message_command(name="Whitney vs gg sans")
+async def comparison(message: discord.Interaction, msg):
+	await message.response.send_message(file=discord.File("ggsanswhitney.png", filename="ggsanswhitney.png"))
+		
 @bot.message_command()
 async def pointLaugh(message: discord.Interaction, msg):
 	icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
