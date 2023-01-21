@@ -553,6 +553,7 @@ async def dream(message: discord.Interaction, text: str):
 				return
 			answer = await response.json()
 			answer = answer["artifacts"][0]
+			print(answer)
 			if answer["finishReason"] == "CONTENT_FILTERED":
 				await message.followup.send("🤨")
 				return
@@ -560,7 +561,7 @@ async def dream(message: discord.Interaction, text: str):
 			with io.BytesIO() as f:
 				f.write(decoded)
 				f.seek(0)
-				await message.followup.send(content=answer["finishReason"], file=discord.File(fp=f, filename='output.png'))
+				await message.followup.send(file=discord.File(fp=f, filename='output.png'))
 
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str):
