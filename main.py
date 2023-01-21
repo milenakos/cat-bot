@@ -542,8 +542,8 @@ async def dream(message: discord.Interaction, text: str):
 	}
 	headers = {
 		"Content-Type": "application/json",
-		"Accept": "image/png",
-		"Authorization": os.environ['STABILITY_KEY']
+		"Accept": "application/json",
+		"Authorization": os.environ['STABILITY_KEvvvvvvY']
 	}
 
 	async with aiohttp.ClientSession() as session:
@@ -551,8 +551,14 @@ async def dream(message: discord.Interaction, text: str):
 			if response.status != 200:
 				await message.followup.send("failed lmao")
 				return
+			answer = await response.json()
+			answer = answer["artifacts"][0]
+			if answer["finishReason"] == "CONTENT_FILTERED":
+				await message.followup.send("🤨")
+				return
+			decoded = base64.decodebytes(answer["base64"].encode("ascii"))
 			with io.BytesIO() as f:
-				f.write(await response.read())
+				f.write(decoded)
 				f.seek(0)
 				await message.followup.send(file=discord.File(fp=f, filename='output.png'))
 
