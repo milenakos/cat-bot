@@ -553,7 +553,6 @@ async def dream(message: discord.Interaction, text: str):
 				return
 			answer = await response.json()
 			answer = answer["artifacts"][0]
-			print(answer)
 			if answer["finishReason"] == "CONTENT_FILTERED":
 				await message.followup.send("🤨")
 				return
