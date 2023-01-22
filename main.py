@@ -17,10 +17,10 @@ TOKEN = os.environ['token']
 GITHUB_MODE = True
 GITHUB_CHANNEL_ID = 1060965767044149249
 
-BANNED_ID = [] # banned from using /dream and /tiktok
+BANNED_ID = [1029044762340241509] # banned from using /dream and /tiktok
 
 # trigger warning
-NONOWORDS = ["n" + "" + "i" + "" + "c" + "" + "" + "k" + "a" + "", "n" + "" + "i" + "" + "c" + "" + "k" + "" + "e" + "" + "r", "n" + "" + "" + "i" + "" + "g" + "" + "a" + "", "n" + "" + "i" + "" + "g" + "" + "" + "g" + "" + "" + "a"]
+NONOWORDS = ["n" + "" + "i" + "" + "c" + "" + "" + "k" + "a" + "", "n" + "" + "i" + "" + "c" + "" + "k" + "" + "e" + "" + "r", "n" + "" + "" + "i" + "" + "g" + "" + "a" + "", "n" + "" + "i" + "" + "g" + "" + "" + "g" + "" + "" + "a", "n" + "" + "i" + "" + "g" + "" + "" + "g" + "" + "" + "e" + "" + "r"]
 
 CAT_TYPES = (
 	["Fine"] * 1000
