@@ -745,7 +745,7 @@ async def battlepass(message: discord.Interaction):
 	current_level = get_cat(message.guild.id, message.user.id, "battlepass")
 	embedVar = discord.Embed(title="Cat Battlepass™", description="who thought this was a good idea", color=0x6E593C)
 	
-	def battlelevel(levels, id):
+	def battlelevel(levels, id, home=False):
 		nonlocal message
 		searching = levels["levels"][id]
 		req = searching["req"]
@@ -753,8 +753,11 @@ async def battlepass(message: discord.Interaction):
 		thetype = searching["reward"]
 		amount = searching["reward_amount"]
 		if req == "catch":
-			progress = int(get_cat(message.guild.id, message.user.id, "progress"))
-			return f"Catch {num-progress} more cats. \nReward: {amount} {thetype} cats."
+			amount = num
+			if home:
+				progress = int(get_cat(message.guild.id, message.user.id, "progress"))
+				amount = f"{num-progress} more"
+			return f"Catch {amount} cats. \nReward: {amount} {thetype} cats."
 		elif req == "catch_fast":
 			return f"Catch a cat in under {num} seconds.\nReward: {amount} {thetype} cats."
 		elif req == "catch_type":
@@ -765,8 +768,8 @@ async def battlepass(message: discord.Interaction):
 	if battle["levels"][current_level]["req"] == "nothing":
 		current = ":black_large_square:"
 	if current_level != 0:
-		embedVar.add_field(name=f"✅ Level {current_level}", value=battlelevel(battle, current_level-1), inline=False)
-	embedVar.add_field(name=f"{current} Level {current_level+1}", value=battlelevel(battle, current_level), inline=False)
+		embedVar.add_field(name=f"✅ Level {current_level} (complete)", value=battlelevel(battle, current_level-1), inline=False)
+	embedVar.add_field(name=f"{current} Level {current_level+1}", value=battlelevel(battle, current_level, True), inline=False)
 	embedVar.add_field(name=f"Level {current_level+2}", value=battlelevel(battle, current_level+1), inline=False)
 	
 	await message.followup.send(embed=embedVar)
