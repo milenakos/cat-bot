@@ -746,13 +746,15 @@ async def battlepass(message: discord.Interaction):
 	embedVar = discord.Embed(title="Cat Battlepass™", description="who thought this was a good idea", color=0x6E593C)
 	
 	def battlelevel(levels, id):
+		nonlocal message
 		searching = levels["levels"][id]
 		req = searching["req"]
 		num = searching["req_data"]
 		thetype = searching["reward"]
 		amount = searching["reward_amount"]
 		if req == "catch":
-			return f"Catch {num} cats.\nReward: {amount} {thetype} cats."
+			progress = int(get_cat(message.guild.id, message.user.id, "progress"))
+			return f"Catch {num-progress} more cats. \nReward: {amount} {thetype} cats."
 		elif req == "catch_fast":
 			return f"Catch a cat in under {num} seconds.\nReward: {amount} {thetype} cats."
 		elif req == "catch_type":
