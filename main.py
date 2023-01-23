@@ -461,6 +461,7 @@ async def on_message(message):
 					await do_reward(message, battlelevel)
 			if battlelevel["req"] == "catch_type" and le_emoji == battlelevel["req_data"]:
 				await do_reward(message, battlelevel)
+	
 	if ':sob:' in text.lower() or "😭" in text.lower():
 		icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
 		await message.add_reaction(icon)
@@ -756,7 +757,11 @@ async def battlepass(message: discord.Interaction):
 			return f"Catch a cat in under {num} seconds.\nReward: {amount} {thetype} cats."
 		elif req == "catch_type":
                         return f"Catch a {num} cat.\nReward: {amount} {thetype} cats."
+		return "You have achieved the end of the battle pass."
 	
+	current = "🟨"
+	if levels[current_level]["req"] == "nothing":
+		current = ""
 	if current_level != 0:
 		embedVar.add_field(name=f"✅ Level {current_level}", value=battlelevel(battle, current_level-1), inline=False)
 	embedVar.add_field(name=f"🟨 Level {current_level+1}", value=battlelevel(battle, current_level), inline=False)
