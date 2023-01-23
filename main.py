@@ -57,9 +57,11 @@ with open("db.json", "r") as f:
 		with open("db.json", "r") as f:
 			db = json.load(f)
 
-f = open("aches.json", "r")
-ach_list = json.load(f)
-f.close()
+with open("aches.json", "r") as f:
+	ach_list = json.load(f)
+
+with open("battlepass.json", "r") as f:
+	battle = json.load(f)
 
 ach_names = ach_list.keys()
 
@@ -438,6 +440,22 @@ async def on_message(message):
 				ach_data = give_ach(message.guild.id, message.author.id, "slow_catcher")
 				embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
 				await message.channel.send(embed=embed)
+			
+			def do_reward(guild, user, level):
+				db[str(message.guild.id)][str(message.user.id)]["progress"] = 0
+                		save()
+				add_cat(guild, user, level["reward"], level["reward_amount"])
+				add_cat(guild, user, "battlepass")
+			
+			battlelevel = battle["levels"][get_cat(message.guild.id, message.author.id, "battlepass")]
+			if battlelevel["req"] == "catch_fast" and do_time and time_cought < battlelevel["req_data"]:
+				do_reward(message.guild.id, message.author.id, battlelevel)
+			if battlelevel["req"] == "catch":
+				add_cat(message.author.id, message.guild.id, "progress")
+				if get_cat(message.author.id, message.guild.id, "progress") == battlelevel["req_data"]:
+					do_reward(message.guild.id, message.author.id, battlelevel)
+			if battlelevel["req"] == "catch_type" and le_emoji == battlelevel["req_data"]:
+				do_reward(message.guild.id, message.author.id, battlelevel)
 	if ':sob:' in text.lower() or "😭" in text.lower():
 		icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
 		await message.add_reaction(icon)
@@ -721,10 +739,6 @@ async def battlepass(message: discord.Interaction):
 	current_level = get_cat(message.guild.id, message.user.id, "battlepass")
 	embedVar = discord.Embed(title="Cat Battlepass™", description="who thought this was a good idea", color=0x6E593C)
 	
-	battle = {}
-	with open("battlepass.json", "r") as f:
-                battle = json.load(f)
-	
 	def battlelevel(levels, id):
 		searching = levels["levels"][id]
 		req = searching["req"]
@@ -971,7 +985,7 @@ async def leaderboards(message: discord.Interaction):
 		for i in db[str(message.guild.id)].keys():
 			value = 0
 			for a, b in db[str(message.guild.id)][i].items():
-				if a != "time" and a != "timeslow" and a != "ach" and a != "custom" and a != "timeout" and a != "battlepass":
+				if a != "time" and a != "timeslow" and a != "ach" and a != "custom" and a != "timeout" and a != "battlepass" and a != "progress":
 					try:
 						value += b
 						if b > 0 and rarities.index(a) > rarest:
