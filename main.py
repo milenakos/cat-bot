@@ -761,10 +761,10 @@ async def battlepass(message: discord.Interaction):
 	
 	current = "🟨"
 	if levels[current_level]["req"] == "nothing":
-		current = ""
+		current = ":black_large_square:"
 	if current_level != 0:
 		embedVar.add_field(name=f"✅ Level {current_level}", value=battlelevel(battle, current_level-1), inline=False)
-	embedVar.add_field(name=f"🟨 Level {current_level+1}", value=battlelevel(battle, current_level), inline=False)
+	embedVar.add_field(name=f"{current} Level {current_level+1}", value=battlelevel(battle, current_level), inline=False)
 	embedVar.add_field(name=f"Level {current_level+2}", value=battlelevel(battle, current_level+1), inline=False)
 	
 	await message.followup.send(embed=embedVar)
