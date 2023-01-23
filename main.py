@@ -453,7 +453,7 @@ async def on_message(message):
                                 await message.channel.send(embed=embed)
 			
 			battlelevel = battle["levels"][get_cat(message.guild.id, message.author.id, "battlepass")]
-			if battlelevel["req"] == "catch_fast" and do_time and time_cought < battlelevel["req_data"]:
+			if battlelevel["req"] == "catch_fast" and do_time and time_caught < battlelevel["req_data"]:
 				await do_reward(message, battlelevel)
 			if battlelevel["req"] == "catch":
 				add_cat(message.author.id, message.guild.id, "progress")
