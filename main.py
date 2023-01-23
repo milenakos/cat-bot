@@ -441,7 +441,7 @@ async def on_message(message):
 				embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
 				await message.channel.send(embed=embed)
 			
-			def do_reward(message, level):
+			async def do_reward(message, level):
                                 db[str(message.guild.id)][str(message.author.id)]["progress"] = 0
                                 save()
                                 reward = level["reward"]
@@ -453,13 +453,13 @@ async def on_message(message):
 			
 			battlelevel = battle["levels"][get_cat(message.guild.id, message.author.id, "battlepass")]
 			if battlelevel["req"] == "catch_fast" and do_time and time_cought < battlelevel["req_data"]:
-				do_reward(message, battlelevel)
+				await do_reward(message, battlelevel)
 			if battlelevel["req"] == "catch":
 				add_cat(message.author.id, message.guild.id, "progress")
 				if get_cat(message.author.id, message.guild.id, "progress") == battlelevel["req_data"]:
-					do_reward(message, battlelevel)
+					await do_reward(message, battlelevel)
 			if battlelevel["req"] == "catch_type" and le_emoji == battlelevel["req_data"]:
-				do_reward(message, battlelevel)
+				await do_reward(message, battlelevel)
 	if ':sob:' in text.lower() or "😭" in text.lower():
 		icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
 		await message.add_reaction(icon)
