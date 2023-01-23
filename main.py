@@ -711,6 +711,40 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
 			embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
 			await message.channel.send(embed=embed)
 
+@bot.slash_command(description="I like fortnite")
+async def battlepass(message: discord.Interaction):
+	await message.interaction.defer()
+	register_member(message.user.id, message.guild.id)
+	if not get_cat(message.guild.id, message.user.id, "battlepass"):
+		db[message.guild.id][message.user.id]["battlepass"] = 0
+		save()
+	current_level = get_cat(message.guild.id, message.user.id, "battlepass")
+	embedVar = discord.Embed(title="Cat Battlepass™", description="who thought this was a good idea", color=0x6E593C)
+	
+	battle = {}
+	with open("battlepass.json", "r") as f:
+                battle = json.load(f)
+	
+	def battlelevel(levels, id):
+		searching = levels["levels"][id]
+		req = searching["req"]
+		num = searching["req_data"]
+		thetype = searching["reward"]
+		amount = searching["reward_amount"]
+		if req == "catch":
+			return f"Catch {num} cats.\nReward: {amount} {thetype} cats."
+		elif req == "catch_fast":
+			return f"Catch a cat in under {num} seconds.\nReward: {amount} {thetype} cats."
+		elif req == "catch_type":
+                        return f"Catch a {num} cat.\nReward: {amount} {thetype} cats."
+	
+	if current_level != 0:
+		embedVar.add_field(name=f"✅ Level {current_level}", value=battlelevel(battle, current_level-1), inline=False)
+	embedVar.add_field(name=f"🟨 Level {current_level+1}", value=battlelevel(battle, current_level-1), inline=False)
+	embedVar.add_field(name=f"Level {current_level+2}", value=battlelevel(battle, current_level-1), inline=False)
+	
+	await message.followup.send(embed=embedVar)
+			
 @bot.slash_command(description="Pong")
 async def ping(message: discord.Interaction):
 	await message.response.send_message(f"cat has brain delay of {round(bot.latency * 1000)} ms " + str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")))
@@ -937,7 +971,7 @@ async def leaderboards(message: discord.Interaction):
 		for i in db[str(message.guild.id)].keys():
 			value = 0
 			for a, b in db[str(message.guild.id)][i].items():
-				if a != "time" and a != "timeslow" and a != "ach" and a != "custom" and a != "timeout":
+				if a != "time" and a != "timeslow" and a != "ach" and a != "custom" and a != "timeout" and a != "battlepass":
 					try:
 						value += b
 						if b > 0 and rarities.index(a) > rarest:
