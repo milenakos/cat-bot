@@ -760,7 +760,7 @@ async def battlepass(message: discord.Interaction):
 		return "You have achieved the end of the battle pass."
 	
 	current = "🟨"
-	if levels[current_level]["req"] == "nothing":
+	if battle[current_level]["req"] == "nothing":
 		current = ":black_large_square:"
 	if current_level != 0:
 		embedVar.add_field(name=f"✅ Level {current_level}", value=battlelevel(battle, current_level-1), inline=False)
