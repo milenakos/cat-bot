@@ -713,7 +713,7 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
 
 @bot.slash_command(description="I like fortnite")
 async def battlepass(message: discord.Interaction):
-	await message.interaction.defer()
+	await message.response.defer()
 	register_member(message.user.id, message.guild.id)
 	if not get_cat(message.guild.id, message.user.id, "battlepass"):
 		db[message.guild.id][message.user.id]["battlepass"] = 0
@@ -1258,6 +1258,7 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 @nerdmode.error
 @daily.error
 @inv.error
+@battlepass.error
 @ping.error
 @donate.error
 @cat.error
