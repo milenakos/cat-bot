@@ -441,21 +441,25 @@ async def on_message(message):
 				embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
 				await message.channel.send(embed=embed)
 			
-			def do_reward(guild, user, level):
-                                db[str(message.guild.id)][str(message.user.id)]["progress"] = 0
+			def do_reward(message, level):
+                                db[str(message.guild.id)][str(message.author.id)]["progress"] = 0
                                 save()
-                                add_cat(guild, user, level["reward"], level["reward_amount"])
-                                add_cat(guild, user, "battlepass")
+				reward = level["reward"]
+				reward_amount = level["reward_amount"]
+                                add_cat(message.guild.id, message.author.id, reward, reward_amount)
+                                new = add_cat(message.guild.id, message.author.id, "battlepass")
+                                embed = discord.Embed(title=f"{new-1} complete!", description=f"You have recieved {reward_amount} {reward} cats", color=0x007F0E).set_author(name="Battlepass level!")
+                                await message.channel.send(embed=embed)
 			
 			battlelevel = battle["levels"][get_cat(message.guild.id, message.author.id, "battlepass")]
 			if battlelevel["req"] == "catch_fast" and do_time and time_cought < battlelevel["req_data"]:
-				do_reward(message.guild.id, message.author.id, battlelevel)
+				do_reward(message, battlelevel)
 			if battlelevel["req"] == "catch":
 				add_cat(message.author.id, message.guild.id, "progress")
 				if get_cat(message.author.id, message.guild.id, "progress") == battlelevel["req_data"]:
-					do_reward(message.guild.id, message.author.id, battlelevel)
+					do_reward(message, battlelevel)
 			if battlelevel["req"] == "catch_type" and le_emoji == battlelevel["req_data"]:
-				do_reward(message.guild.id, message.author.id, battlelevel)
+				do_reward(message, battlelevel)
 	if ':sob:' in text.lower() or "😭" in text.lower():
 		icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
 		await message.add_reaction(icon)
