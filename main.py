@@ -444,8 +444,8 @@ async def on_message(message):
 			def do_reward(message, level):
                                 db[str(message.guild.id)][str(message.author.id)]["progress"] = 0
                                 save()
-				reward = level["reward"]
-				reward_amount = level["reward_amount"]
+                                reward = level["reward"]
+                                reward_amount = level["reward_amount"]
                                 add_cat(message.guild.id, message.author.id, reward, reward_amount)
                                 new = add_cat(message.guild.id, message.author.id, "battlepass")
                                 embed = discord.Embed(title=f"{new-1} complete!", description=f"You have recieved {reward_amount} {reward} cats", color=0x007F0E).set_author(name="Battlepass level!")
