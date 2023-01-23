@@ -447,8 +447,9 @@ async def on_message(message):
                                 reward = level["reward"]
                                 reward_amount = level["reward_amount"]
                                 add_cat(message.guild.id, message.author.id, reward, reward_amount)
+                                icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=reward.lower()+"cat")
                                 new = add_cat(message.guild.id, message.author.id, "battlepass")
-                                embed = discord.Embed(title=f"{new-1} complete!", description=f"You have recieved {reward_amount} {reward} cats", color=0x007F0E).set_author(name="Battlepass level!")
+                                embed = discord.Embed(title=f"Level {new} complete!", description=f"You have recieved {icon} {reward_amount} {reward} cats!", color=0x007F0E).set_author(name="Battlepass level!", icon_url="https://pomf2.lain.la/f/zncxu6ej.png")
                                 await message.channel.send(embed=embed)
 			
 			battlelevel = battle["levels"][get_cat(message.guild.id, message.author.id, "battlepass")]
