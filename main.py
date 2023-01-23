@@ -753,11 +753,11 @@ async def battlepass(message: discord.Interaction):
 		thetype = searching["reward"]
 		amount = searching["reward_amount"]
 		if req == "catch":
-			amount = num
+			num_str = num
 			if home:
 				progress = int(get_cat(message.guild.id, message.user.id, "progress"))
-				amount = f"{num-progress} more"
-			return f"Catch {amount} cats. \nReward: {amount} {thetype} cats."
+				num_str = f"{num-progress} more"
+			return f"Catch {num_str} cats. \nReward: {amount} {thetype} cats."
 		elif req == "catch_fast":
 			return f"Catch a cat in under {num} seconds.\nReward: {amount} {thetype} cats."
 		elif req == "catch_type":
