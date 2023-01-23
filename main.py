@@ -443,9 +443,9 @@ async def on_message(message):
 			
 			def do_reward(guild, user, level):
 				db[str(message.guild.id)][str(message.user.id)]["progress"] = 0
-                		save()
-				add_cat(guild, user, level["reward"], level["reward_amount"])
-				add_cat(guild, user, "battlepass")
+                                save()
+                                add_cat(guild, user, level["reward"], level["reward_amount"])
+                                add_cat(guild, user, "battlepass")
 			
 			battlelevel = battle["levels"][get_cat(message.guild.id, message.author.id, "battlepass")]
 			if battlelevel["req"] == "catch_fast" and do_time and time_cought < battlelevel["req_data"]:
