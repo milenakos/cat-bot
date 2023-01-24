@@ -418,7 +418,7 @@ async def on_message(message):
 			
 			le_emoji = db["cattype"][str(message.channel.id)]
 			icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=le_emoji.lower()+"cat")
-			await message.channel.send(message.author.name.replace("@", "`@`") + "#" + str(message.author.discriminator) + " cought " + str(icon) + " " + db["cattype"][str(message.channel.id)] + " cat!!!!1!\nYou now have " + str(add_cat(message.guild.id, message.author.id, db["cattype"][str(message.channel.id)])) + " cats of dat type!!!\nthis fella was cought in " + caught_time[:-1] + "!!!!\n\nDiscord is having slash command issues right now, beware")
+			await message.channel.send(message.author.name.replace("@", "`@`") + "#" + str(message.author.discriminator) + " cought " + str(icon) + " " + db["cattype"][str(message.channel.id)] + " cat!!!!1!\nYou now have " + str(add_cat(message.guild.id, message.author.id, db["cattype"][str(message.channel.id)])) + " cats of dat type!!!\nthis fella was cought in " + caught_time[:-1] + "!!!!!")
 			if do_time and time_caught < get_time(message.guild.id, message.author.id):
 				set_time(message.guild.id, message.author.id, time_caught)
 			if do_time and time_caught > get_time(message.guild.id, message.author.id, "slow"):
