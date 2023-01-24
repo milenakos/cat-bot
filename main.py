@@ -456,8 +456,8 @@ async def on_message(message):
 			if battlelevel["req"] == "catch_fast" and do_time and time_caught < battlelevel["req_data"]:
 				await do_reward(message, battlelevel)
 			if battlelevel["req"] == "catch":
-				add_cat(message.author.id, message.guild.id, "progress")
-				if get_cat(message.author.id, message.guild.id, "progress") == battlelevel["req_data"]:
+				add_cat(message.guild.id, message.author.id, "progress")
+				if get_cat(message.guild.id, message.author.id, "progress") == battlelevel["req_data"]:
 					await do_reward(message, battlelevel)
 			if battlelevel["req"] == "catch_type" and le_emoji == battlelevel["req_data"]:
 				await do_reward(message, battlelevel)
