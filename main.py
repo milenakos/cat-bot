@@ -742,6 +742,10 @@ async def battlepass(message: discord.Interaction):
 	if not get_cat(message.guild.id, message.user.id, "battlepass"):
 		db[str(message.guild.id)][str(message.user.id)]["battlepass"] = 0
 		save()
+	if not get_cat(message.guild.id, message.user.id, "progress"):
+		db[str(message.guild.id)][str(message.user.id)]["progress"] = 0
+		save()
+
 	current_level = get_cat(message.guild.id, message.user.id, "battlepass")
 	embedVar = discord.Embed(title="Cat Battlepass™", description="who thought this was a good idea", color=0x6E593C)
 	
