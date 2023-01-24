@@ -6,6 +6,11 @@
     {"req": "catch", "req_data": 5, "reward": "Wild", "reward_amount": 1},
     {"req": "catch_fast", "req_data": 10, "reward": "Nice", "reward_amount": 3},
     {"req": "catch_type", "req_data": "Epic", "reward": "Nice", "reward_amount": 5},
+    {"req": "catch_fast", "req_data": 7, "reward": "Good", "reward_amount": 4},
+    {"req": "catch", "req_data": 7, "reward": "Epic", "reward_amount": 1},
+    {"req": "catch_type", "req_data": "Fine", "reward": "Fine", "reward_amount": 1},
+    {"req": "catch_fast", "req_data": 6, "reward": "Epic", "reward_amount": 3},
+    {"req": "catch", "req_data": 9, "reward": "Good", "reward_amount": 6},
     {"req": "nothing", "req_data": "0", "reward": "Fine", "reward_amount": 0},
     {"req": "nothing", "req_data": "0", "reward": "Fine", "reward_amount": 0}
  ]
