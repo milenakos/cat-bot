@@ -452,6 +452,13 @@ async def on_message(message):
                                 embed = discord.Embed(title=f"Level {new} complete!", description=f"You have recieved {icon} {reward_amount} {reward} cats!", color=0x007F0E).set_author(name="Battlepass level!", icon_url="https://pomf2.lain.la/f/zncxu6ej.png")
                                 await message.channel.send(embed=embed)
 			
+			if not get_cat(message.guild.id, message.user.id, "battlepass"):
+				db[str(message.guild.id)][str(message.user.id)]["battlepass"] = 0
+				save()
+			if not get_cat(message.guild.id, message.user.id, "progress"):
+				db[str(message.guild.id)][str(message.user.id)]["progress"] = 0
+				save()
+
 			battlelevel = battle["levels"][get_cat(message.guild.id, message.author.id, "battlepass")]
 			if battlelevel["req"] == "catch_fast" and do_time and time_caught < battlelevel["req_data"]:
 				await do_reward(message, battlelevel)
@@ -766,7 +773,7 @@ async def battlepass(message: discord.Interaction):
 			return f"Catch a cat in under {num} seconds.\nReward: {amount} {thetype} cats."
 		elif req == "catch_type":
                         return f"Catch a {num} cat.\nReward: {amount} {thetype} cats."
-		return "You have achieved the end of the battle pass."
+		return "Touch grass.\nReward: 1 ~~e~~Girl~~cats~~friend."
 	
 	current = "🟨"
 	if battle["levels"][current_level]["req"] == "nothing":
