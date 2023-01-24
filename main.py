@@ -193,7 +193,7 @@ def give_ach(server_id, person_id, ach_id, reverse=False):
 
 @tasks.loop(seconds = randint(delays[0], delays[1]))
 async def myLoop():
-	global super_prefix, bot, fire, summon_id, delays
+	global bot, fire, summon_id, delays
 	await bot.change_presence(
 		activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
 	)
@@ -209,7 +209,7 @@ async def myLoop():
 					db["cattype"][str(i)] = localcat
 					icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower()+"cat")   
 					channeley = await bot.fetch_channel(int(i))
-					message_is_sus = await channeley.send(super_prefix + str(icon) + " " + db["cattype"][str(i)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
+					message_is_sus = await channeley.send(str(icon) + " " + db["cattype"][str(i)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
 					db["cat"][str(i)] = message_is_sus.id
 					save()
 			if not fire[i]:
@@ -222,7 +222,6 @@ async def myLoop():
 			savey = True
 	if savey:
 		save()
-	super_prefix = ""
 	backupchannel = await bot.fetch_channel(BACKUP_ID)
 	thing = discord.File("db.json", filename="db.json")
 	await backupchannel.send(file=thing)
@@ -392,13 +391,7 @@ async def on_message(message):
 			try:
 				var = await message.channel.fetch_message(cat_temp)
 				catchtime = var.created_at
-				super_prefix_redux = var.content.split("\n")[0]
 				await var.delete()
-				
-				if "cat has appeared! Type \"cat\" to catch it!" in super_prefix_redux:
-					super_prefix_redux = ""
-				else:
-					super_prefix_redux += "\n"
 
 				time_caught = (round((current_time - time.mktime(catchtime.timetuple())) * 100) / 100)
 				days = time_caught // 86400
