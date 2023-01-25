@@ -231,8 +231,11 @@ async def on_ready():
 	await bot.change_presence(
 		activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
 	)
-	myLoop.cancel()
-	myLoop.start()
+	try:
+		myLoop.start()
+	except Exception:
+		myLoop.cancel()
+		myLoop.start()
 
 @bot.event
 async def on_message(message):
