@@ -199,11 +199,14 @@ async def myLoop():
 	)
 	summon_id = db["summon_ids"]
 	myLoop.change_interval(seconds = randint(delays[0], delays[1]))
+	file = discord.File("cat.png", filename="cat.png")
 	for i in summon_id:
 		try:
+			if not i.guild:
+				channeley = await bot.fetch_channel(int(i))
+				message_is_sus = await channeley.send("\"How did you even come up with this\" cat has appeared! Type \"cat\" to not catch it ig because you cant...", file=file)
 			if fire[i]:
 				if not db["cat"][str(i)]:
-					file = discord.File("cat.png", filename="cat.png")
 					localcat = choice(CAT_TYPES)
 					db["cattype"][str(i)] = localcat
 					icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower()+"cat")   
