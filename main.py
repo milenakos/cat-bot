@@ -205,6 +205,7 @@ async def myLoop():
 			if not i.guild:
 				channeley = await bot.fetch_channel(int(i))
 				message_is_sus = await channeley.send("\"How did you even come up with this\" cat has appeared! Type \"cat\" to not catch it ig because you cant...", file=file)
+				continue
 			if fire[i]:
 				if not db["cat"][str(i)]:
 					localcat = choice(CAT_TYPES)
