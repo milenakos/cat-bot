@@ -204,6 +204,7 @@ async def myLoop():
 		try:
 			if fire[i]:
 				if not db["cat"][str(i)]:
+					file = discord.File("cat.png", filename="cat.png")
 					localcat = choice(CAT_TYPES)
 					db["cattype"][str(i)] = localcat
 					icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower()+"cat")   
