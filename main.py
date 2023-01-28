@@ -844,7 +844,7 @@ if TOP_GG_TOKEN:
 			embedVar = discord.Embed(title="Vote redeemed!", description="You have recieved 5 Fine cats.\nVote again in 12 hours.", color=0x007F0E)
 			await message.response.send_message(embed=embedVar)
 		else:
-			embedVar = discord.Embed(title="Vote for Cat Bot", description="[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve 5 Fine cats.", color=0x6E593C)
+			embedVar = discord.Embed(title="Vote for Cat Bot", description="[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve 5 Fine cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
 			await message.response.send_message(embed=embedVar)
 	
 @bot.slash_command(description="Get a random cat")
