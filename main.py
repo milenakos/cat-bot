@@ -836,7 +836,7 @@ async def bal(message: discord.Interaction):
 if TOP_GG_TOKEN:
 	@bot.slash_command(description="Vote on topgg for free cats")
 	async def vote(message: discord.Interaction):
-		vote_status = await bot.get_user_vote(message.user.id)
+		vote_status = await bot.topggpy.get_user_vote(message.user.id)
 		if vote_status and get_cat(0, message.user.id, "vote_time") + 43200 >= time.time():
 			# valid vote
 			add_cat(message.guild.id, message.user.id, "Fine", 5)
