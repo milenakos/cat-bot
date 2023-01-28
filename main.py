@@ -837,12 +837,16 @@ if TOP_GG_TOKEN:
 	@bot.slash_command(description="Vote on topgg for free cats")
 	async def vote(message: discord.Interaction):
 		vote_status = await bot.topggpy.get_user_vote(message.user.id)
-		if vote_status and get_cat(0, message.user.id, "vote_time") + 43200 <= time.time():
-			# valid vote
-			add_cat(message.guild.id, message.user.id, "Fine", 5)
-			add_cat(0, message.user.id, "vote_time", time.time(), True)
-			embedVar = discord.Embed(title="Vote redeemed!", description="You have recieved 5 Fine cats.\nVote again in 12 hours.", color=0x007F0E)
-			await message.response.send_message(embed=embedVar)
+		if vote_status:
+			if get_cat(0, message.user.id, "vote_time") + 43200 <= time.time():
+				# valid vote
+				add_cat(message.guild.id, message.user.id, "Fine", 5)
+				add_cat(0, message.user.id, "vote_time", time.time(), True)
+				embedVar = discord.Embed(title="Vote redeemed!", description="You have recieved 5 Fine cats.\nVote again in 12 hours.", color=0x007F0E)
+				await message.response.send_message(embed=embedVar)
+			else:
+				embedVar = discord.Embed(title="Already voted!", description="You have already [vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nPlease wait 12 hours and vote again to recieve 5 more Fine cats.", color=0x6E593C)
+                        	await message.response.send_message(embed=embedVar)
 		else:
 			embedVar = discord.Embed(title="Vote for Cat Bot", description="[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve 5 Fine cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
 			await message.response.send_message(embed=embedVar)
