@@ -14,6 +14,9 @@ BACKUP_ID = 1060545763194707998 # channel id for backups, private extremely reco
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
 
+# set to False to not use top gg
+TOP_GG_TOKEN = os.environ['topggtoken']
+
 GITHUB_MODE = True
 GITHUB_CHANNEL_ID = 1060965767044149249
 
@@ -68,6 +71,9 @@ ach_names = ach_list.keys()
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="idk how this works but you need to have spaces in it or it may crash", intents=intents)
+
+if TOP_GG_TOKEN:
+	bot.topggpy = topgg.DBLClient(bot, TOP_GG_TOKEN)
 
 cattypes = ["Fine", "Nice", "Good", "Rare", "Wild", "Baby", "Epic", "Sus", "Brave", "Rickroll", "Reverse", "Superior", "TheTrashCell", "Legendary", "Mythic", "8bit", "Corrupt", "Professor", "Divine", "Real", "Ultimate", "eGirl"]
 
@@ -826,6 +832,20 @@ async def bal(message: discord.Interaction):
 	embed = discord.Embed(title="cat coins", color=0x6E593C).set_image(url="attachment://money.png")
 	await message.response.send_message(file=file, embed=embed)
 
+if TOP_GG_TOKEN:
+	@bot.slash_command(description="Vote on topgg for free cats")
+	async def vote(message: discord.Interactions):
+		vote_status = await bot.get_user_vote(message.user.id)
+		if vote_status and get_cat(0, message.user.id, "vote_time") + 43200 >= time.time():
+			# valid vote
+			add_cat(message.guild.id, message.user.id, "Fine", 5)
+			add_cat(0, message.user.id, "vote_time", time.time(), True)
+			embedVar = discord.Embed(title="Vote redeemed!", description="You have recieved 5 Fine cats.\nVote again in 12 hours.", color=0x007F0E)
+			await message.response.send_message(embed=embedVar)
+		else:
+			embedVar = discord.Embed(title="Vote for Cat Bot", description="[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve 5 Fine cats.", color=0x6E593C)
+			await message.response.send_message(embed=embedVar)
+	
 @bot.slash_command(description="Get a random cat")
 async def random(message: discord.Interaction): 
 	counter = 0
@@ -1293,6 +1313,7 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 @battlepass.error
 @ping.error
 @donate.error
+@vote.error
 @cat.error
 @cursed.error
 @bal.error
