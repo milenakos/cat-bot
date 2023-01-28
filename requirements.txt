@@ -3,3 +3,4 @@ nextcord
 natsort
 Pillow
 Pilmoji
+topggpy
