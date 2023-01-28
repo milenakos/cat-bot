@@ -73,6 +73,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="idk how this works but you need to have spaces in it or it may crash", intents=intents)
 
 if TOP_GG_TOKEN:
+	import topgg
 	bot.topggpy = topgg.DBLClient(bot, TOP_GG_TOKEN)
 
 cattypes = ["Fine", "Nice", "Good", "Rare", "Wild", "Baby", "Epic", "Sus", "Brave", "Rickroll", "Reverse", "Superior", "TheTrashCell", "Legendary", "Mythic", "8bit", "Corrupt", "Professor", "Divine", "Real", "Ultimate", "eGirl"]
