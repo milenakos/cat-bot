@@ -3,4 +3,4 @@ nextcord
 natsort
 Pillow
 Pilmoji
-topggpy
+git+https://github.com/top-gg/python-sdk/
