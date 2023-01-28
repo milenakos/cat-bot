@@ -817,7 +817,7 @@ async def cursed(message: discord.Interaction):
 	
 @bot.slash_command(description="Get a warning")
 async def warning(message: discord.Interaction):
-        file = discord.File("warning.PNG", filename="warning.PNG")
+        file = discord.File("warning.png", filename="warning.png")
         await message.response.send_message(file=file)
 
 @bot.slash_command(description="Get Your balance")
