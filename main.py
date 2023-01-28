@@ -74,7 +74,7 @@ bot = commands.Bot(command_prefix="idk how this works but you need to have space
 
 if TOP_GG_TOKEN:
 	import topgg
-	bot.topggpy = topgg.DBLClient(TOP_GG_TOKEN)
+	bot.topggpy = topgg.DBLClient(TOP_GG_TOKEN, default_bot_id=BOT_ID)
 
 cattypes = ["Fine", "Nice", "Good", "Rare", "Wild", "Baby", "Epic", "Sus", "Brave", "Rickroll", "Reverse", "Superior", "TheTrashCell", "Legendary", "Mythic", "8bit", "Corrupt", "Professor", "Divine", "Real", "Ultimate", "eGirl"]
 
