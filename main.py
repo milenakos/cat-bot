@@ -1022,16 +1022,6 @@ async def pointLaugh(message: discord.Interaction, msg):
 
 @bot.slash_command(description="View the leaderboards")
 async def leaderboards(message: discord.Interaction):
-	def atof(text):
-		try:
-			retval = float(text)
-		except ValueError:
-			retval = text
-		return retval
-
-	def natural_keys(text):
-		return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
-	
 	async def catlb(interaction):
 		nonlocal message
 		await interaction.response.defer()
@@ -1071,7 +1061,7 @@ async def leaderboards(message: discord.Interaction):
 		else:
 			string = "No one has any cats. Atleast thats my theory. A GAME THE~~~"
 		current = 1
-		for i, num in largest.items():
+		for i, num in largest:
 			string = string + str(current) + ". " + str(num) + i + "\n"
 			current += 1
 		embedVar = discord.Embed(
@@ -1118,7 +1108,7 @@ async def leaderboards(message: discord.Interaction):
 		for i in db[str(message.guild.id)].keys():
 			value = get_time(message.guild.id, i, time_type)
 			if int(value) < 0:
-				set_time(message.guild.id, i, default_value, time_type)
+				set_time(message.guild.id, i, int(default_value), time_type)
 				continue
 			if str(value) != default_value:
 				thingy = round((value / devider) * 100) / 100
@@ -1132,7 +1122,7 @@ async def leaderboards(message: discord.Interaction):
 		largest = [(key, -value) for value, key in largest]
 		string = ""
 		current = 1
-		for i, num in the_dict.items():
+		for i, num in largest:
 			string = string + str(current) + ". " + str(num) + i + "\n"
 			current += 1
 		embedVar = discord.Embed(
