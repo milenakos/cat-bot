@@ -1060,7 +1060,7 @@ async def leaderboards(message: discord.Interaction):
 					msg_author_msg = str(value) + " cats: <@" + i + ">"
 				results.append(str(value) + " cats: <@" + i + ">")
 			place += 1
-		results.sort(key=natural_keys)
+		results.sort(key=natural_keys, reverse=True)
 		if msg_author_msg != 6942069:
 			msg_author_place = results.index(msg_author_msg) + 1
 		catmoji = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=rarities[rarest].lower()+"cat")
@@ -1115,20 +1115,25 @@ async def leaderboards(message: discord.Interaction):
 		default_value = "99999999999999"
 		reverse_sort = False
 		title = "Time"
+		unit = "sec"
+		devider = 1
 		if slow:
 			time_type = "slow"
 			default_value = "0"
 			reverse_sort = True
 			title = "Slow"
+			unit = "h"
+			devider = 3600
 		for i in db[str(message.guild.id)].keys():
 			value = get_time(message.guild.id, i, time_type)
 			if int(value) < 0:
 				set_time(message.guild.id, i, default_value, time_type)
 				continue
 			if str(value) != default_value:
+				thingy = round((value // devider) * 100) // 100
 				if str(message.user.id) == str(i):
-					msg_author_msg = str(value) + " sec: <@" + i + ">"
-				results.append(str(value) + " sec: <@" + i + ">")
+					msg_author_msg = str(thingy) + f" {unit}: <@" + i + ">"
+				results.append(str(thingy) + f" {unit}: <@" + i + ">")
 				place += 1
 		results.sort(key=natural_keys, reverse=reverse_sort)
 		if msg_author_msg != 6942069:
