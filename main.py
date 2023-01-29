@@ -1,5 +1,5 @@
 import nextcord as discord
-import msg2img, base64, sys, re, time, json, requests, natsort, traceback, os, io, aiohttp
+import msg2img, base64, sys, re, time, json, requests, traceback, os, io, aiohttp
 from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
 from nextcord.ui import Button, View
@@ -936,7 +936,7 @@ async def achs(message: discord.Interaction):
 				await message.channel.send(embed=embed)
 
 	def insane_view_generator(category):
-		myview = View(timeout=180)
+		myview = View()
 		buttons_list = []
 		lambdas_list = []
 		
@@ -984,7 +984,7 @@ async def achs(message: discord.Interaction):
 	button = Button(label="View all achievements", style=ButtonStyle.blurple)
 	button.callback = send_full
 
-	myview = View(timeout=180)
+	myview = View()
 	myview.add_item(button)
 	
 	await message.response.send_message(embed=embedVar, view=myview)
@@ -1022,8 +1022,16 @@ async def pointLaugh(message: discord.Interaction, msg):
 
 @bot.slash_command(description="View the leaderboards")
 async def leaderboards(message: discord.Interaction):
-    # this needs a bit of a cleanup doesnt it
-    
+	def atof(text):
+		try:
+			retval = float(text)
+		except ValueError:
+			retval = text
+		return retval
+
+	def natural_keys(text):
+		return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
+	
 	async def catlb(interaction):
 		nonlocal message
 		await interaction.response.defer()
@@ -1052,7 +1060,7 @@ async def leaderboards(message: discord.Interaction):
 					msg_author_msg = str(value) + " cats: <@" + i + ">"
 				results.append(str(value) + " cats: <@" + i + ">")
 			place += 1
-		results = natsort.natsorted(results, reverse=True)
+		results.sort(key=natural_keys)
 		if msg_author_msg != 6942069:
 			msg_author_place = results.index(msg_author_msg) + 1
 		catmoji = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=rarities[rarest].lower()+"cat")
@@ -1088,28 +1096,41 @@ async def leaderboards(message: discord.Interaction):
 		button3 = Button(label="Slowest", style=ButtonStyle.blurple)
 		button3.callback = slowlb
 				
-		myview = View(timeout=180)
+		myview = View()
 		myview.add_item(button1)
 		myview.add_item(button2)
 		myview.add_item(button3)
 							
 		await interaction.edit(embed=embedVar, view=myview)
-
-	async def fastlb(interaction):
+		
+	async def fastlb(interaction, slow=False):
 		nonlocal message
 		await interaction.response.defer()
 		results = []
 		place = 1
 		msg_author_msg = 6942069
 		register_guild(message.guild.id)
+		
+		time_type = ""
+		default_value = "99999999999999"
+		reverse_sort = False
+		title = "Time"
+		if slow:
+			time_type = "slow"
+			default_value = "0"
+			reverse_sort = True
+			title = "Slow"
 		for i in db[str(message.guild.id)].keys():
-			value = get_time(message.guild.id, i)
-			if str(value) != "99999999999999":
+			value = get_time(message.guild.id, i, time_type)
+			if int(value) < 0:
+				set_time(message.guild.id, i, default_value, time_type)
+				continue
+			if str(value) != default_value:
 				if str(message.user.id) == str(i):
 					msg_author_msg = str(value) + " sec: <@" + i + ">"
 				results.append(str(value) + " sec: <@" + i + ">")
 				place += 1
-		results = natsort.realsorted(results, reverse=False)
+		results.sort(key=natural_keys, reverse=reverse_sort)
 		if msg_author_msg != 6942069:
 			msg_author_place = results.index(msg_author_msg) + 1
 		string = ""
@@ -1123,20 +1144,28 @@ async def leaderboards(message: discord.Interaction):
 		if msg_author_msg != 6942069 and msg_author_place > 15:
 			string = string + "**" + str(msg_author_place + 1) + ". " + results[msg_author_place - 1] + "**\n"
 		embedVar = discord.Embed(
-			title="Time Leaderboards:", description=string, color=0x6E593C
+			title=f"{title} Leaderboards:", description=string, color=0x6E593C
 		).set_footer(text="if two people have same pb, random dad joke determines who places above")
 		
 		button1 = Button(label="Cats", style=ButtonStyle.blurple)
 		button1.callback = catlb
 					
-		button2 = Button(label="Fastest", style=ButtonStyle.green)
-		button2.callback = fastlb
-		button2.disabled = True
-					
-		button3 = Button(label="Slowest", style=ButtonStyle.blurple)
-		button3.callback = slowlb
+		if slow:
+			button2 = Button(label="Fastest", style=ButtonStyle.blurple)
+			button2.callback = fastlb
+
+			button3 = Button(label="Slowest", style=ButtonStyle.green)
+			button3.callback = slowlb
+			button2.disabled = True
+		else:
+			button2 = Button(label="Fastest", style=ButtonStyle.green)
+			button2.callback = fastlb
+			button2.disabled = True
+
+			button3 = Button(label="Slowest", style=ButtonStyle.blurple)
+			button3.callback = slowlb
 							
-		myview = View(timeout=180)
+		myview = View()
 		myview.add_item(button1)
 		myview.add_item(button2)
 		myview.add_item(button3)
@@ -1144,54 +1173,7 @@ async def leaderboards(message: discord.Interaction):
 		await interaction.edit(embed=embedVar, view=myview)
 
 	async def slowlb(interaction):
-		nonlocal message
-		await interaction.response.defer()
-		results = []
-		place = 1
-		msg_author_msg = 6942069
-		register_guild(message.guild.id)
-		for i in db[str(message.guild.id)].keys():
-			value = get_time(message.guild.id, i, "slow")
-			if str(value) != "0":
-				value = value / 3600
-				value = str(round(value * 100) / 100)
-				if str(message.user.id) == str(i):
-					msg_author_msg = str(value) + " h: <@" + i + ">"
-				results.append(str(value) + " h: <@" + i + ">")
-				place += 1
-		results = natsort.realsorted(results, reverse=True)
-		if msg_author_msg != 6942069:
-			msg_author_place = results.index(msg_author_msg) + 1
-		string = ""
-		for num, i in enumerate(results[:15]):
-			if msg_author_msg != 6942069 and num == msg_author_place - 1:
-				string = string + "**" + str(num + 1) + ". " + i + "**\n"
-			else:
-				string = string + str(num + 1) + ". " + i + "\n"
-		if len(results) > 15:
-			string = string + "...\n"
-		if msg_author_msg != 6942069 and msg_author_place > 15:
-			string = string + "**" + str(msg_author_place + 1) + ". " + results[msg_author_place - 1] + "**\n"
-		embedVar = discord.Embed(
-			title="Slow Leaderboards:", description=string, color=0x6E593C
-		).set_footer(text="if two people have same pb, vmquan determines who places above")
-		
-		button1 = Button(label="Cats", style=ButtonStyle.blurple)
-		button1.callback = catlb
-								
-		button2 = Button(label="Fastest", style=ButtonStyle.blurple)
-		button2.callback = fastlb
-								
-		button3 = Button(label="Slowest", style=ButtonStyle.green)
-		button3.callback = slowlb
-		button3.disabled = True
-										
-		myview = View(timeout=180)
-		myview.add_item(button1)
-		myview.add_item(button2)
-		myview.add_item(button3)
-													
-		await interaction.edit(embed=embedVar, view=myview)
+		await fastlb(interaction, True)
 
 	embed = discord.Embed(title="The Leaderboards", description="select your leaderboard using buttons below", color=0x6E593C)
 	button1 = Button(label="Cats", style=ButtonStyle.blurple)
@@ -1203,7 +1185,7 @@ async def leaderboards(message: discord.Interaction):
 	button3 = Button(label="Slowest", style=ButtonStyle.blurple)
 	button3.callback = slowlb
 													
-	myview = View(timeout=180)
+	myview = View()
 	myview.add_item(button1)
 	myview.add_item(button2)
 	myview.add_item(button3)
