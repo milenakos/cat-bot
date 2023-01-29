@@ -1312,6 +1312,7 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 	save()
 	await message.response.send_message(embed=discord.Embed(color=0x6E593C, description=f'Done! rip <@{person_id.id}>. f\'s in chat.'))
 
+# remove decorators for disabled commands, such as /status or /vote
 @dream.error
 @myLoop.error
 @warning.error
@@ -1327,6 +1328,7 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 @battlepass.error
 @ping.error
 @donate.error
+@status.error
 @vote.error
 @cat.error
 @cursed.error
