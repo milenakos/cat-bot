@@ -1065,9 +1065,8 @@ async def leaderboards(message: discord.Interaction):
 			title="Leaderboards:", description=string, color=0x6E593C
 		).set_footer(text="if two people have same amount of cats, nuke output determines who places above")
 		
-		button1 = Button(label="Cats", style=ButtonStyle.green)
+		button1 = Button(label="Refresh", style=ButtonStyle.green)
 		button1.callback = catlb
-		button1.disabled = True
 		
 		button2 = Button(label="Fastest", style=ButtonStyle.blurple)
 		button2.callback = fastlb
@@ -1133,14 +1132,12 @@ async def leaderboards(message: discord.Interaction):
 			button2 = Button(label="Fastest", style=ButtonStyle.blurple)
 			button2.callback = fastlb
 
-			button3 = Button(label="Slowest", style=ButtonStyle.green)
+			button3 = Button(label="Refresh", style=ButtonStyle.green)
 			button3.callback = slowlb
-			button3.disabled = True
 		else:
-			button2 = Button(label="Fastest", style=ButtonStyle.green)
+			button2 = Button(label="Refresh", style=ButtonStyle.green)
 			button2.callback = fastlb
-			button2.disabled = True
-
+			
 			button3 = Button(label="Slowest", style=ButtonStyle.blurple)
 			button3.callback = slowlb
 							
