@@ -1125,7 +1125,7 @@ async def leaderboards(message: discord.Interaction):
 				the_dict[f" {unit}: <@" + i + ">"] = thingy
 				place += 1
 		heap = [(-value, key) for key,value in the_dict.items()]
-                if slow:
+		if slow:
 			largest = heapq.nlargest(15, heap)
 		else:
 			largest = heapq.nsmallest(15, heap)
