@@ -1,5 +1,5 @@
 import nextcord as discord
-import msg2img, base64, sys, re, time, json, requests, traceback, os, io, aiohttp
+import msg2img, base64, sys, re, time, json, requests, traceback, os, io, aiohttp, heapq
 from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
 from nextcord.ui import Button, View
@@ -1035,13 +1035,12 @@ async def leaderboards(message: discord.Interaction):
 	async def catlb(interaction):
 		nonlocal message
 		await interaction.response.defer()
-		results = []
 		rarest = -1
 		rarest_holder = [f"<@{BOT_ID}>"]
 		rarities = cattypes
 		place = 1
-		msg_author_msg = 6942069
 		register_guild(message.guild.id)
+		the_dict = {}
 		for i in db[str(message.guild.id)].keys():
 			value = 0
 			for a, b in db[str(message.guild.id)][i].items():
@@ -1056,13 +1055,11 @@ async def leaderboards(message: discord.Interaction):
 					except Exception:
 						pass
 			if value > 0:
-				if str(message.user.id) == str(i):
-					msg_author_msg = str(value) + " cats: <@" + i + ">"
-				results.append(str(value) + " cats: <@" + i + ">")
+				the_dict[" cats: <@" + i + ">"] = value
 			place += 1
-		results.sort(key=natural_keys, reverse=True)
-		if msg_author_msg != 6942069:
-			msg_author_place = results.index(msg_author_msg) + 1
+		heap = [(-value, key) for key,value in the_dict.items()]
+		largest = heapq.nlargest(15, heap)
+		largest = [(key, -value) for value, key in largest]
 		catmoji = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=rarities[rarest].lower()+"cat")
 		if rarest != -1:
 			if len(rarest_holder) <= 3:
@@ -1073,15 +1070,10 @@ async def leaderboards(message: discord.Interaction):
 				string = f"Rarest cat: {catmoji} ({joined} and others)\n"
 		else:
 			string = "No one has any cats. Atleast thats my theory. A GAME THE~~~"
-		for num, i in enumerate(results[:15]):
-			if msg_author_msg != 6942069 and num == msg_author_place - 1:
-				string = string + "**" + str(num + 1) + ". " + i + "**\n"
-			else:
-				string = string + str(num + 1) + ". " + i + "\n"
-		if len(results) > 15:
-			string = string + "...\n"
-		if msg_author_msg != 6942069 and msg_author_place > 15:
-			string = string + "**" + str(msg_author_place + 1) + ". " + results[msg_author_place - 1] + "**\n"
+		current = 1
+		for i, num in largest.items():
+			string = string + str(current) + ". " + str(num) + i + "\n"
+			current += 1
 		embedVar = discord.Embed(
 			title="Leaderboards:", description=string, color=0x6E593C
 		).set_footer(text="if two people have same amount of cats, nuke output determines who places above")
@@ -1106,9 +1098,8 @@ async def leaderboards(message: discord.Interaction):
 	async def fastlb(interaction, slow=False):
 		nonlocal message
 		await interaction.response.defer()
-		results = []
+		the_dict = {}
 		place = 1
-		msg_author_msg = 6942069
 		register_guild(message.guild.id)
 		
 		time_type = ""
@@ -1131,23 +1122,19 @@ async def leaderboards(message: discord.Interaction):
 				continue
 			if str(value) != default_value:
 				thingy = round((value / devider) * 100) / 100
-				if str(message.user.id) == str(i):
-					msg_author_msg = str(thingy) + f" {unit}: <@" + i + ">"
-				results.append(str(thingy) + f" {unit}: <@" + i + ">")
+				the_dict[f" {unit}: <@" + i + ">"] = thingy
 				place += 1
-		results.sort(key=natural_keys, reverse=reverse_sort)
-		if msg_author_msg != 6942069:
-			msg_author_place = results.index(msg_author_msg) + 1
+		heap = [(-value, key) for key,value in the_dict.items()]
+                if slow:
+			largest = heapq.nlargest(15, heap)
+		else:
+			largest = heapq.nsmallest(15, heap)
+                largest = [(key, -value) for value, key in largest]
 		string = ""
-		for num, i in enumerate(results[:15]):
-			if msg_author_msg != 6942069 and num == msg_author_place - 1:
-				string = string + "**" + str(num + 1) + ". " + i + "**\n"
-			else:
-				string = string + str(num + 1) + ". " + i + "\n"
-		if len(results) > 15:
-			string = string + "...\n"
-		if msg_author_msg != 6942069 and msg_author_place > 15:
-			string = string + "**" + str(msg_author_place + 1) + ". " + results[msg_author_place - 1] + "**\n"
+		current = 1
+		for i, num in the_dict.items():
+			string = string + str(current) + ". " + str(num) + i + "\n"
+			current += 1
 		embedVar = discord.Embed(
 			title=f"{title} Leaderboards:", description=string, color=0x6E593C
 		).set_footer(text="if two people have same pb, random dad joke determines who places above")
