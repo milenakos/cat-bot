@@ -1109,7 +1109,7 @@ async def leaderboards(message: discord.Interaction):
 					msg_author_msg = str(value) + " sec: <@" + i + ">"
 				results.append(str(value) + " sec: <@" + i + ">")
 				place += 1
-		results = natsort.natsorted(results, reverse=False)
+		results = natsort.realsorted(results, reverse=False)
 		if msg_author_msg != 6942069:
 			msg_author_place = results.index(msg_author_msg) + 1
 		string = ""
@@ -1159,7 +1159,7 @@ async def leaderboards(message: discord.Interaction):
 					msg_author_msg = str(value) + " h: <@" + i + ">"
 				results.append(str(value) + " h: <@" + i + ">")
 				place += 1
-		results = natsort.natsorted(results, reverse=True)
+		results = natsort.realsorted(results, reverse=True)
 		if msg_author_msg != 6942069:
 			msg_author_place = results.index(msg_author_msg) + 1
 		string = ""
