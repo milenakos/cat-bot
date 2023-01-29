@@ -1,6 +1,5 @@
 requests
 nextcord
-natsort
 Pillow
 Pilmoji
 git+https://github.com/top-gg/python-sdk/
