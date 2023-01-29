@@ -837,18 +837,19 @@ if TOP_GG_TOKEN:
 	@bot.slash_command(description="Vote on topgg for free cats")
 	async def vote(message: discord.Interaction):
 		vote_status = await bot.topggpy.get_user_vote(message.user.id)
+		icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="goodcat")
 		if vote_status:
 			if get_cat(0, message.user.id, "vote_time") + 43200 <= time.time():
 				# valid vote
-				add_cat(message.guild.id, message.user.id, "Fine", 5)
+				add_cat(message.guild.id, message.user.id, "Good", 5)
 				add_cat(0, message.user.id, "vote_time", time.time(), True)
-				embedVar = discord.Embed(title="Vote redeemed!", description="You have recieved 5 Fine cats.\nVote again in 12 hours.", color=0x007F0E)
+				embedVar = discord.Embed(title="Vote redeemed!", description=f"You have recieved {icon} 5 Good cats.\nVote again in 12 hours.", color=0x007F0E)
 				await message.response.send_message(embed=embedVar)
 			else:
-				embedVar = discord.Embed(title="Already voted!", description="You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nPlease wait 12 hours and vote again to recieve 5 more Fine cats.", color=0x6E593C)
+				embedVar = discord.Embed(title="Already voted!", description=f"You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nPlease wait 12 hours and vote again to recieve {icon} 5 more Good cats.", color=0x6E593C)
 				await message.response.send_message(embed=embedVar)
 		else:
-			embedVar = discord.Embed(title="Vote for Cat Bot", description="[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve 5 Fine cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
+			embedVar = discord.Embed(title="Vote for Cat Bot", description=f"[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve {icon} 5 Good cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
 			await message.response.send_message(embed=embedVar)
 	
 @bot.slash_command(description="Get a random cat")
