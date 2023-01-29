@@ -213,7 +213,7 @@ async def myLoop():
                     file = discord.File("cat.png", filename="cat.png")
                     localcat = choice(CAT_TYPES)
                     db["cattype"][str(i)] = localcat
-                    icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower()+"cat")
+                    icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower() + "cat")
                     channeley = await bot.fetch_channel(int(i))
                     message_is_sus = await channeley.send(str(icon) + " " + db["cattype"][str(i)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
                     db["cat"][str(i)] = message_is_sus.id
@@ -421,7 +421,7 @@ async def on_message(message):
                 pass
 
             le_emoji = db["cattype"][str(message.channel.id)]
-            icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=le_emoji.lower()+"cat")
+            icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=le_emoji.lower() + "cat")
             await message.channel.send(message.author.name.replace("@", "`@`") + "#" + str(message.author.discriminator) + " cought " + str(icon) + " " + db["cattype"][str(message.channel.id)] + " cat!!!!1!\nYou now have " + str(add_cat(message.guild.id, message.author.id, db["cattype"][str(message.channel.id)])) + " cats of dat type!!!\nthis fella was cought in " + caught_time[:-1] + "!!!!")
             if do_time and time_caught < get_time(message.guild.id, message.author.id):
                 set_time(message.guild.id, message.author.id, time_caught)
@@ -444,7 +444,7 @@ async def on_message(message):
                 reward = level["reward"]
                 reward_amount = level["reward_amount"]
                 add_cat(message.guild.id, message.author.id, reward, reward_amount)
-                icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=reward.lower()+"cat")
+                icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=reward.lower() + "cat")
                 new = add_cat(message.guild.id, message.author.id, "battlepass")
                 embed = discord.Embed(title=f"Level {new} complete!", description=f"You have recieved {icon} {reward_amount} {reward} cats!", color=0x007F0E).set_author(name="Battlepass level!", icon_url="https://pomf2.lain.la/f/zncxu6ej.png")
                 await message.channel.send(embed=embed)
@@ -709,7 +709,7 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
         do_save = True
     db_var_two_electric_boogaloo = db[str(message.guild.id)][str(person_id.id)]
     for i in cattypes:
-        icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=i.lower()+"cat")
+        icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=i.lower() + "cat")
         try:
             cat_num = db_var_two_electric_boogaloo[i]
         except KeyError:
@@ -723,7 +723,7 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
         if cat_num <= 0:
             give_collector = False
     if custom:
-        icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=custom.lower()+"cat")
+        icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=custom.lower() + "cat")
         embedVar.add_field(name=f"{icon} {custom}", value=1, inline=True)
     if is_empty:
         embedVar.add_field(name="None", value="u hav no cats :cat_sad:", inline=True)
@@ -770,7 +770,7 @@ async def battlepass(message: discord.Interaction):
             num_str = num
             if home:
                 progress = int(get_cat(message.guild.id, message.user.id, "progress"))
-                num_str = f"{num-progress} more"
+                num_str = f"{num - progress} more"
             return f"Catch {num_str} cats. \nReward: {amount} {thetype} cats."
         elif req == "catch_fast":
             return f"Catch a cat in under {num} seconds.\nReward: {amount} {thetype} cats."
@@ -782,9 +782,9 @@ async def battlepass(message: discord.Interaction):
     if battle["levels"][current_level]["req"] == "nothing":
         current = ":black_large_square:"
     if current_level != 0:
-        embedVar.add_field(name=f"✅ Level {current_level} (complete)", value=battlelevel(battle, current_level-1), inline=False)
-    embedVar.add_field(name=f"{current} Level {current_level+1}", value=battlelevel(battle, current_level, True), inline=False)
-    embedVar.add_field(name=f"Level {current_level+2}", value=battlelevel(battle, current_level+1), inline=False)
+        embedVar.add_field(name=f"✅ Level {current_level} (complete)", value=battlelevel(battle, current_level - 1), inline=False)
+    embedVar.add_field(name=f"{current} Level {current_level + 1}", value=battlelevel(battle, current_level, True), inline=False)
+    embedVar.add_field(name=f"Level {current_level + 2}", value=battlelevel(battle, current_level + 1), inline=False)
 
     await message.followup.send(embed=embedVar)
 
@@ -809,7 +809,7 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
         if not has_ach(message.guild.id, person_id, "anti_donator"):
             ach_data = give_ach(message.guild.id, person_id, "anti_donator")
             embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-            await message.channel.send(embed=embed.set_footer(text="unlocked by "+person.name+", not you"))
+            await message.channel.send(embed=embed.set_footer(text="unlocked by " + person.name + ", not you"))
         if not has_ach(message.guild.id, message.user.id, "rich") and person_id == BOT_ID and cat_type == "Ultimate" and int(amount) >= 5:
             ach_data = give_ach(message.guild.id, message.user.id, "rich")
             embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
@@ -909,14 +909,14 @@ async def achs(message: discord.Interaction):
         )
         for k, v in ach_list.items():
             if v["category"] == category:
-                icon = str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="no_cat_throphy"))     + " "
+                icon = str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="no_cat_throphy")) + " "
                 if has_ach(message.guild.id, message.user.id, k, False, db_var):
-                    newembed.add_field(name=str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="cat_throphy"))+" "+v["title"], value=v["description"], inline=True)
+                    newembed.add_field(name=str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="cat_throphy")) + " " + v["title"], value=v["description"], inline=True)
                 elif category != "Hidden":
                     if v["is_hidden"]:
-                        newembed.add_field(name=icon+v["title"], value="???", inline=True)
+                        newembed.add_field(name=icon + v["title"], value="???", inline=True)
                     else:
-                        newembed.add_field(name=icon+v["title"], value=v["description"], inline=True)
+                        newembed.add_field(name=icon + v["title"], value=v["description"], inline=True)
 
         return newembed
 
@@ -1222,7 +1222,7 @@ async def force(message: discord.Interaction, cat_type: Optional[str] = discord.
     else:
         localcat = cat_type
     db["cattype"][str(channeley.id)] = localcat
-    icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower()+"cat")
+    icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower() + "cat")
     message_lmao =  await message.channel.send(str(icon) + " " + db["cattype"][str(channeley.id)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
     db["cat"][str(channeley.id)] = message_lmao.id
     save()
