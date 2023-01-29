@@ -1018,7 +1018,7 @@ async def pointLaugh(message: discord.Interaction, msg):
 	await message.response.send_message(icon, ephemeral=True)
 
 @bot.slash_command(description="View the leaderboards")
-async def leaderboards(message: discord.Interaction):		
+async def leaderboards(message: discord.Interaction):
 	async def lb_handler(interaction, type):
 		nonlocal message
 		await interaction.response.defer()
@@ -1034,8 +1034,8 @@ async def leaderboards(message: discord.Interaction):
 		the_dict = {}
 		register_guild(message.guild.id)
 		rarest = -1
-                rarest_holder = [f"<@{BOT_ID}>"]
-                rarities = cattypes
+		rarest_holder = [f"<@{BOT_ID}>"]
+		rarities = cattypes
 		
 		if fast:
 			time_type = ""
