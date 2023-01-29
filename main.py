@@ -1129,7 +1129,7 @@ async def leaderboards(message: discord.Interaction):
 			largest = heapq.nlargest(15, heap)
 		else:
 			largest = heapq.nsmallest(15, heap)
-                largest = [(key, -value) for value, key in largest]
+		largest = [(key, -value) for value, key in largest]
 		string = ""
 		current = 1
 		for i, num in the_dict.items():
