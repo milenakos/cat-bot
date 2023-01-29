@@ -100,7 +100,7 @@ def save():
 	with open("backup.txt", "w") as f:
 		f.write(str(db))
 
-def add_cat(server_id, person_id, cattype, val=1, overwrite=False, lazy=False):
+def add_cat(server_id, person_id, cattype, val=1, overwrite=False):
 	register_member(server_id, person_id)
 	try:
 		if overwrite:
@@ -108,9 +108,8 @@ def add_cat(server_id, person_id, cattype, val=1, overwrite=False, lazy=False):
 		else:
 			db[str(server_id)][str(person_id)][cattype] = db[str(server_id)][str(person_id)][cattype] + val
 	except Exception as e:
-		if lazy:
-			print("add_cat", e)
-			db[str(server_id)][str(person_id)][cattype] = val
+		print("add_cat", e)
+		db[str(server_id)][str(person_id)][cattype] = val
 	save()
 	return db[str(server_id)][str(person_id)][cattype]
 
@@ -159,10 +158,8 @@ def get_time(server_id, person_id, type=None):
 		result = db[str(server_id)][str(person_id)]["time" + type]
 	except Exception:
 		if type == "":
-			add_cat(server_id, person_id, "time", 99999999999999, True)
 			result = 99999999999999
 		else:
-			add_cat(server_id, person_id, "time" + type, 0, True)
 			result = 0
 	return result
 
