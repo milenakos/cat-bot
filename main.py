@@ -1075,6 +1075,8 @@ async def leaderboards(message: discord.Interaction):
 							pass
 			if str(value) != default_value:
 				thingy = round((value / devider) * 100) / 100
+				if thingy == int(thingy):
+					thingy = int(thingy) # trim .0
 				the_dict[f" {unit}: <@" + i + ">"] = thingy
 		
 		heap = [(-value, key) for key,value in the_dict.items()]
