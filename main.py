@@ -1130,7 +1130,7 @@ async def leaderboards(message: discord.Interaction):
 				set_time(message.guild.id, i, default_value, time_type)
 				continue
 			if str(value) != default_value:
-				thingy = round((value // devider) * 100) // 100
+				thingy = round((value / devider) * 100) / 100
 				if str(message.user.id) == str(i):
 					msg_author_msg = str(thingy) + f" {unit}: <@" + i + ">"
 				results.append(str(thingy) + f" {unit}: <@" + i + ">")
