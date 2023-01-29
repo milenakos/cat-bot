@@ -1018,105 +1018,83 @@ async def pointLaugh(message: discord.Interaction, msg):
 	await message.response.send_message(icon, ephemeral=True)
 
 @bot.slash_command(description="View the leaderboards")
-async def leaderboards(message: discord.Interaction):
-	async def catlb(interaction):
+async def leaderboards(message: discord.Interaction):		
+	async def lb_handler(interaction, type):
 		nonlocal message
 		await interaction.response.defer()
-		rarest = -1
-		rarest_holder = [f"<@{BOT_ID}>"]
-		rarities = cattypes
-		place = 1
-		register_guild(message.guild.id)
-		the_dict = {}
-		for i in db[str(message.guild.id)].keys():
-			value = 0
-			for a, b in db[str(message.guild.id)][i].items():
-				if a != "time" and a != "timeslow" and a != "ach" and a != "custom" and a != "timeout" and a != "battlepass" and a != "progress":
-					try:
-						value += b
-						if b > 0 and rarities.index(a) > rarest:
-							rarest = rarities.index(a)
-							rarest_holder = ["<@" + i + ">"]
-						elif b > 0 and rarities.index(a) == rarest:
-							rarest_holder.append("<@" + i + ">")
-					except Exception:
-						pass
-			if value > 0:
-				the_dict[" cats: <@" + i + ">"] = value
-			place += 1
-		heap = [(-value, key) for key,value in the_dict.items()]
-		largest = heapq.nsmallest(15, heap)
-		largest = [(key, -value) for value, key in largest]
-		catmoji = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=rarities[rarest].lower()+"cat")
-		if rarest != -1:
-			if len(rarest_holder) <= 3:
-				joined = ", ".join(rarest_holder)
-				string = f"Rarest cat: {catmoji} ({joined}'s)\n"
-			else:
-				joined = ", ".join(rarest_holder[:3])
-				string = f"Rarest cat: {catmoji} ({joined} and others)\n"
+		main = False
+		fast = False
+		slow = False
+		if type == "fast":
+			fast = True
+		elif type == "slow":
+			slow = True
 		else:
-			string = "No one has any cats. Atleast thats my theory. A GAME THE~~~"
-		current = 1
-		for i, num in largest:
-			string = string + str(current) + ". " + str(num) + i + "\n"
-			current += 1
-		embedVar = discord.Embed(
-			title="Leaderboards:", description=string, color=0x6E593C
-		).set_footer(text="if two people have same amount of cats, nuke output determines who places above")
-		
-		button1 = Button(label="Refresh", style=ButtonStyle.green)
-		button1.callback = catlb
-		
-		button2 = Button(label="Fastest", style=ButtonStyle.blurple)
-		button2.callback = fastlb
-		
-		button3 = Button(label="Slowest", style=ButtonStyle.blurple)
-		button3.callback = slowlb
-				
-		myview = View()
-		myview.add_item(button1)
-		myview.add_item(button2)
-		myview.add_item(button3)
-							
-		await interaction.edit(embed=embedVar, view=myview)
-		
-	async def fastlb(interaction, slow=False):
-		nonlocal message
-		await interaction.response.defer()
+			main = True
 		the_dict = {}
-		place = 1
 		register_guild(message.guild.id)
+		rarest = -1
+                rarest_holder = [f"<@{BOT_ID}>"]
+                rarities = cattypes
 		
-		time_type = ""
-		default_value = "99999999999999"
-		reverse_sort = False
-		title = "Time"
-		unit = "sec"
-		devider = 1
-		if slow:
+		if fast:
+			time_type = ""
+			default_value = "99999999999999"
+			title = "Time"
+			unit = "sec"
+			devider = 1
+		elif slow:
 			time_type = "slow"
 			default_value = "0"
-			reverse_sort = True
 			title = "Slow"
 			unit = "h"
 			devider = 3600
+		else:
+                        default_value = "0"
+                        title = ""
+                        unit = "cats"
+                        devider = 1
 		for i in db[str(message.guild.id)].keys():
-			value = get_time(message.guild.id, i, time_type)
-			if int(value) < 0:
-				set_time(message.guild.id, i, int(default_value), time_type)
-				continue
+			if not main:
+				value = get_time(message.guild.id, i, time_type)
+				if int(value) < 0:
+					set_time(message.guild.id, i, int(default_value), time_type)
+					continue
+			else:
+				value = 0
+				for a, b in db[str(message.guild.id)][i].items():
+					if a != "time" and a != "timeslow" and a != "ach" and a != "custom" and a != "timeout" and a != "battlepass" and a != "progress":
+						try:
+							value += b
+							if b > 0 and rarities.index(a) > rarest:
+								rarest = rarities.index(a)
+								rarest_holder = ["<@" + i + ">"]
+							elif b > 0 and rarities.index(a) == rarest:
+								rarest_holder.append("<@" + i + ">")
+						except Exception:
+							pass
 			if str(value) != default_value:
 				thingy = round((value / devider) * 100) / 100
 				the_dict[f" {unit}: <@" + i + ">"] = thingy
-				place += 1
+		
 		heap = [(-value, key) for key,value in the_dict.items()]
-		if slow:
-			largest = heapq.nsmallest(15, heap)
-		else:
+		if fast:
 			largest = heapq.nlargest(15, heap)
+		else:
+			largest = heapq.nsmallest(15, heap)
 		largest = [(key, -value) for value, key in largest]
 		string = ""
+		
+		if main:
+			catmoji = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=rarities[rarest].lower() + "cat")
+			if rarest != -1:
+				if len(rarest_holder) <= 3:
+					joined = ", ".join(rarest_holder)
+					string = f"Rarest cat: {catmoji} ({joined}'s)\n"
+				else:
+					joined = ", ".join(rarest_holder[:3])
+					string = f"Rarest cat: {catmoji} ({joined} and others)\n"
+		
 		current = 1
 		for i, num in largest:
 			string = string + str(current) + ". " + str(num) + i + "\n"
@@ -1125,21 +1103,24 @@ async def leaderboards(message: discord.Interaction):
 			title=f"{title} Leaderboards:", description=string, color=0x6E593C
 		).set_footer(text="if two people have same pb, random dad joke determines who places above")
 		
-		button1 = Button(label="Cats", style=ButtonStyle.blurple)
-		button1.callback = catlb
-					
-		if slow:
-			button2 = Button(label="Fastest", style=ButtonStyle.blurple)
-			button2.callback = fastlb
-
-			button3 = Button(label="Refresh", style=ButtonStyle.green)
-			button3.callback = slowlb
+		if not main:
+			button1 = Button(label="Cats", style=ButtonStyle.blurple)
 		else:
-			button2 = Button(label="Refresh", style=ButtonStyle.green)
-			button2.callback = fastlb
-			
+			button1 = Button(label="Refresh", style=ButtonStyle.green)	
+		
+		if not fast:
+			button2 = Button(label="Fastest", style=ButtonStyle.blurple)
+		else:
+			button2 = Button(label="Refresh", style=ButtonStyle.green)     
+		
+		if not slow:
 			button3 = Button(label="Slowest", style=ButtonStyle.blurple)
-			button3.callback = slowlb
+		else:
+			button3 = Button(label="Refresh", style=ButtonStyle.green)
+		
+		button1.callback = catlb
+		button2.callback = fastlb
+		button3.callback = slowlb
 							
 		myview = View()
 		myview.add_item(button1)
@@ -1149,7 +1130,13 @@ async def leaderboards(message: discord.Interaction):
 		await interaction.edit(embed=embedVar, view=myview)
 
 	async def slowlb(interaction):
-		await fastlb(interaction, True)
+		await lb_handler(interaction, "slow")
+		
+	async def fastlb(interaction):
+                await lb_handler(interaction, "fast")
+	
+	async def catlb(interaction):
+                await lb_handler(interaction, "main")
 
 	embed = discord.Embed(title="The Leaderboards", description="select your leaderboard using buttons below", color=0x6E593C)
 	button1 = Button(label="Cats", style=ButtonStyle.blurple)
