@@ -22,6 +22,8 @@ GITHUB_CHANNEL_ID = 1060965767044149249
 
 BANNED_ID = [1029044762340241509] # banned from using /dream and /tiktok
 
+STATUS_PAGE_URL = "https://status.milenakos.tk" # leave empty to disable
+
 # trigger warning
 NONOWORDS = ["n" + "" + "i" + "" + "c" + "" + "" + "k" + "a" + "", "n" + "" + "i" + "" + "c" + "" + "k" + "" + "e" + "" + "r", "n" + "" + "" + "i" + "" + "g" + "" + "a" + "", "n" + "" + "i" + "" + "g" + "" + "" + "g" + "" + "" + "a", "n" + "" + "i" + "" + "g" + "" + "" + "g" + "" + "" + "e" + "" + "r"]
 
@@ -550,6 +552,12 @@ async def info(message: discord.Interaction):
 	embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/WCTzD3YQEk)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\nBot made by Milenakos#3310\nWith contributions by: Calion#0501, youtissoum#5935 and uku1928#8305.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\nThanks to:\n**???** for the cat image\n**SLOTHS2005#1326** for getting troh to add cat as an emoji\n**aws.random.cat** for random cats API\n**@weilbyte on GitHub** for TikTok TTS API\n**TheTrashCell#0001** for making cat, suggestions, and a lot more.\n\n**CrazyDiamond469#3422, Phace#9474, SLOTHS2005#1326, frinkifail#1809, Aflyde#3846, TheTrashCell#0001 and Sior Simotideis#4198** for being test monkeys\n\n**And everyone for the support!**")
 	await message.response.send_message(embed=embedVar)
 
+if STATUS_PAGE_URL:
+	@bot.slash_command(description="View status of Cat Bot")
+	async def status(message: discord.Interaction):
+		embedVar = discord.Embed(title="Cat Bot Status", color=0x6E593C, description=f"You can view live status page of Cat Bot [here]({STATUS_PAGE_URL}).\n You can also [join Cat Bot server](https://discord.gg/WCTzD3YQEk) to recieve live notifications of downtimes.")
+		await message.response.send_message(embed=embedVar)
+	
 @bot.slash_command(description="Generate images from text using Stable Diffusion")
 async def dream(message: discord.Interaction, text: str):
 	await message.response.defer()
