@@ -1048,7 +1048,7 @@ async def leaderboards(message: discord.Interaction):
 				the_dict[" cats: <@" + i + ">"] = value
 			place += 1
 		heap = [(-value, key) for key,value in the_dict.items()]
-		largest = heapq.nlargest(15, heap)
+		largest = heapq.nsmallest(15, heap)
 		largest = [(key, -value) for value, key in largest]
 		catmoji = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=rarities[rarest].lower()+"cat")
 		if rarest != -1:
@@ -1116,9 +1116,9 @@ async def leaderboards(message: discord.Interaction):
 				place += 1
 		heap = [(-value, key) for key,value in the_dict.items()]
 		if slow:
-			largest = heapq.nlargest(15, heap)
-		else:
 			largest = heapq.nsmallest(15, heap)
+		else:
+			largest = heapq.nlargest(15, heap)
 		largest = [(key, -value) for value, key in largest]
 		string = ""
 		current = 1
