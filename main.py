@@ -72,7 +72,7 @@ ach_names = ach_list.keys()
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix="cat!", intents=intents)
+bot = commands.Bot(command_prefix="Cat Bot by Milenakos#3310", intents=intents, help_command=None)
 
 if TOP_GG_TOKEN:
     import topgg
@@ -1255,10 +1255,6 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
     del db[str(message.guild.id)][str(person_id.id)]
     save()
     await message.response.send_message(embed=discord.Embed(color=0x6E593C, description=f'Done! rip <@{person_id.id}>. f\'s in chat.'))
-
-@bot.command(name='help')
-async def _help(ctx):
-    await ctx.reply("This bot does not support text commands. Please see /help to get started.")
 
 # remove decorators for disabled commands, such as /status or /vote
 @dream.error
