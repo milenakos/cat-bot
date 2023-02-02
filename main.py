@@ -10,6 +10,7 @@ OWNER_ID = 553093932012011520 # for dms
 GUILD_ID = 966586000417619998 # for emojis
 BOT_ID = 966695034340663367
 BACKUP_ID = 1060545763194707998 # channel id for backups, private extremely recommended
+TIMEZONE_OFFSET = -3600 # in seconds
 
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
@@ -156,6 +157,9 @@ def get_time(server_id, person_id, type=None):
     if type == None: type = ""
     try:
         result = db[str(server_id)][str(person_id)]["time" + type]
+        if isinstance(result, str):
+            db[str(server_id)][str(person_id)]["time" + type] = float(result)
+            save()
     except Exception:
         if type == "":
             result = 99999999999999
@@ -395,7 +399,7 @@ async def on_message(message):
                 catchtime = var.created_at
                 await var.delete()
 
-                time_caught = (round((current_time - time.mktime(catchtime.timetuple())) * 100) / 100)
+                time_caught = (round((current_time - time.mktime(catchtime.timetuple())) * 100) / 100) + TIME_OFFSET
                 days = time_caught // 86400
                 time_left = time_caught - (days * 86400)
                 hours = time_left // 3600
