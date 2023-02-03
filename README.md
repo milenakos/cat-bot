@@ -1,4 +1,4 @@
-# Cat Bot [![Better Uptime Badge](https://betteruptime.com/status-badges/v1/monitor/luqt.svg)](https://betteruptime.com/?utm_source=status_badge)
+# Cat Bot [![Better Uptime Badge](https://betteruptime.com/status-badges/v1/monitor/luqt.svg)](https://status.milenakos.tk)
 Discord Cat Bot Source Code
 
 [Invite Cat Bot](https://discord.com/api/oauth2/authorize?client_id=966695034340663367&permissions=277025778752&scope=bot%20applications.commands)
