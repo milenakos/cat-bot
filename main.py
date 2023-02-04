@@ -10,7 +10,8 @@ OWNER_ID = 553093932012011520 # for dms
 GUILD_ID = 966586000417619998 # for emojis
 BOT_ID = 966695034340663367
 BACKUP_ID = 1060545763194707998 # channel id for backups, private extremely recommended
-TIMEZONE_OFFSET = -3600 # in seconds
+TIMEZONE_OFFSET = 3600 # in seconds
+# gmt + 1 == TIMEZONE_OFFSET = 3600
 
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
@@ -648,7 +649,7 @@ async def sweep(message: discord.Interaction):
 
 @bot.slash_command(description="Get Daily cats")
 async def daily(message: discord.Interaction):
-    await message.response.send_message("there is no daily cats why did you even try this")
+    await message.response.send_message("there is no daily cats why did you even try this\nthere ARE cats for voting tho, check out `/vote`")
     if not has_ach(message.guild.id, message.user.id, "daily"):
         ach_data = give_ach(message.guild.id, message.user.id, "daily")
         embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
@@ -1307,9 +1308,9 @@ async def on_command_error(ctx, error):
             await ctx.channel.send("i don't have permissions to do that. (try reinviting the bot)")
     else:
         try:
-            await ctx.reply("cat crashed lmao\ni send crash reports to milenakos so yes")
+            await ctx.reply("cat crashed lmao\ni automatically sent crash reports so yes")
         except:
-            await ctx.channel.send("cat crashed lmao\ni send crash reports to milenakos so yes")
+            await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
         milenakoos = await bot.fetch_user(OWNER_ID)
         try:
             if not has_ach(ctx.guild.id, ctx.user.id, "crasher"):
