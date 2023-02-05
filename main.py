@@ -229,7 +229,7 @@ async def myLoop():
             print("error", i, e)
     backupchannel = await bot.fetch_channel(BACKUP_ID)
     thing = discord.File("db.json", filename="db.json")
-    await backupchannel.send(file=thing)
+    await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
 
 @bot.event
 async def on_ready():
