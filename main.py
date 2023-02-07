@@ -586,7 +586,12 @@ async def dream(message: discord.Interaction, text: str):
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=payload, headers=headers) as response:
             if response.status != 200:
-                await message.followup.send(f"failed lmao\n\nHTTP {response.status}")
+                if response.status == 400:
+                    await message.followup.send("we ran out of api credits, they will be refilled shortly.")
+                    milenakoos = await bot.fetch_user(OWNER_ID)
+                    await milenakoos.send("/dream api token ran out!")
+                else:
+                    await message.followup.send(f"failed lmao\n\nHTTP {response.status}")
                 return
             answer = await response.json()
             answer = answer["artifacts"][0]
