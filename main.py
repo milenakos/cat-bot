@@ -1301,11 +1301,16 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 async def on_command_error(ctx, error):
     if error == KeyboardInterrupt:
         return
-    if error == discord.errors.Forbidden:
+    elif error == discord.errors.Forbidden:
         try:
             await ctx.reply("i don't have permissions to do that. (try reinviting the bot)")
         except:
             await ctx.channel.send("i don't have permissions to do that. (try reinviting the bot)")
+    elif error == discord.errors.NotFound:
+        try:
+            await ctx.reply("took too long, try running the command again")
+        except:
+            await ctx.channel.send("took too long, try running the command again")
     else:
         try:
             await ctx.reply("cat crashed lmao\ni automatically sent crash reports so yes")
