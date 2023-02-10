@@ -11,6 +11,11 @@
     {"req": "catch_type", "req_data": "Fine", "reward": "Fine", "reward_amount": 1},
     {"req": "catch_fast", "req_data": 6, "reward": "Epic", "reward_amount": 3},
     {"req": "catch", "req_data": 9, "reward": "Good", "reward_amount": 6},
+    {"req": "catch_type", "req_data": "Good", "reward": "Nice", "reward_amount": 2},
+    {"req": "catch_fast", "req_data": 69, "reward": "Nice", "reward_amount": 1},
+    {"req": "catch", "req_data": 11, "reward": "Epic", "reward_amount": 2},
+    {"req": "catch_type", "req_data": "Sus", "reward": "Rickroll", "reward_amount": 1},
+    {"req": "catch_fast", "req_data": 5, "reward": "Baby", "reward_amount": 3},
     {"req": "nothing", "req_data": "0", "reward": "Fine", "reward_amount": 0},
     {"req": "nothing", "req_data": "0", "reward": "Fine", "reward_amount": 0}
  ]
