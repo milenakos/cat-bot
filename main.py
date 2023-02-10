@@ -692,7 +692,7 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
     if catch_time >= "99999999999999":
         catch_time = "never"
     else:
-        catch_time = round(catch_time * 100) / 100
+        catch_time = str(round(float(catch_time) * 100) / 100)
     slow_time = get_time(message.guild.id, person_id.id, "slow")
     if str(slow_time) == "0":
         slow_time = "never"
