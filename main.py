@@ -26,8 +26,8 @@ BANNED_ID = [1029044762340241509] # banned from using /dream and /tiktok
 
 STATUS_PAGE_URL = "https://status.milenakos.tk" # leave empty to disable
 
-# trigger warning
-NONOWORDS = ["n" + "" + "i" + "" + "c" + "" + "" + "k" + "a" + "", "n" + "" + "i" + "" + "c" + "" + "k" + "" + "e" + "" + "r", "n" + "" + "" + "i" + "" + "g" + "" + "a" + "", "n" + "" + "i" + "" + "g" + "" + "" + "g" + "" + "" + "a", "n" + "" + "i" + "" + "g" + "" + "" + "g" + "" + "" + "e" + "" + "r"]
+# trigger warning, base64 encoded for your convinience
+NONOWORDS = [base64.b64decode(i).decode('utf-8') for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
 
 CAT_TYPES = (
         ["Fine"] * 1000
