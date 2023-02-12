@@ -786,7 +786,7 @@ async def battlepass(message: discord.Interaction):
             return f"Catch a cat in under {num} seconds.\nReward: {amount} {thetype} cats."
         elif req == "catch_type":
             an = ""
-            if num[0] in "aieuo":
+            if num[0].lower() in "aieuo":
                 an = "n"
             return f"Catch a{an} {num} cat.\nReward: {amount} {thetype} cats."
         return "Touch grass.\nReward: 1 ~~e~~Girl~~cats~~friend."
