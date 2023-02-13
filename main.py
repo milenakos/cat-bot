@@ -382,6 +382,7 @@ async def on_message(message):
         except Exception:
             db[str(message.guild.id)][str(message.author.id)]["timeout"] = 0
             timestamp = 0
+            save()
         try:
             is_cat = db["cat"][str(message.channel.id)]
         except Exception:
@@ -477,6 +478,7 @@ async def on_message(message):
         await message.reply("success")
     if text.lower().startswith("cat!sweep") and message.author.id == OWNER_ID:
         db["cat"][str(message.channel.id)] = False
+        save()
         await message.reply("success")
     if text.lower().startswith("cat!setup") and message.author.id == OWNER_ID:
         abc = db["summon_ids"]
@@ -642,6 +644,7 @@ async def nerdmode(message: discord.Interaction, person: discord.Member, timeout
     register_member(message.guild.id, person.id)
     timestamp = round(time.time()) + timeout
     db[str(message.guild.id)][str(person.id)]["timeout"] = timestamp
+    save()
     if timeout > 0:
         await message.response.send_message(f"{person} is now in nerd mode until <t:{timestamp}:R>")
     else:
@@ -650,6 +653,7 @@ async def nerdmode(message: discord.Interaction, person: discord.Member, timeout
 @bot.slash_command(description="Use if cat spawning is broken", default_member_permissions=8)
 async def sweep(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
+    save()
     await message.response.send_message("success")
 
 @bot.slash_command(description="Get Daily cats")
