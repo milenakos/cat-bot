@@ -4,14 +4,78 @@ Discord Cat Bot Source Code
 [Invite Cat Bot](https://discord.com/api/oauth2/authorize?client_id=966695034340663367&permissions=277025778752&scope=bot%20applications.commands)
 
 # Setup
-Good luck on that.
-1. Create a `db.json` file. Here is a template of an empty db:
+
+## Prerequisites
+
+- Python 3
+- Git (optional)
+
+----
+
+1. Clone the repository. You can use green "Code" button at the top or a git command:
+
+   `git clone https://github.com/milena-kos/cat-bot.git`
+
+2. Install requirements:
+
+   `pip install -r requirements.txt`
+
+3. Create a `db.json` file. Here is a template of an empty db:
 
    `{"cat": {}, "summon_ids": []}`
    
    Put that there if you are just starting out.
    
-   Calion made a nice file explaining all the db values [here](https://calion.repl.co/info)
+   More detailed explanation on how Cat Bot stores stuff can be found [here](https://calion.repl.co/info), made by Calion.
 
-2. Go inside of the `main.py` file, on first few lines you can change some config values, such as owner ID, guild ID, and bot ID. You will need to create a guild and upload all emojis to that guild. You can download all the emojis [here](https://calion.repl.co/static/catbot/emojis.zip) (it also comes with a getthem.bash if for whatever reason you want to wget all the emojis urself)
-3. Done!
+4. Go inside of the `main.py` file, on first few lines you can change some config values, such as owner ID, guild ID, bot ID, and Discord token.
+> **Note**
+>
+> You will need to create a guild and upload all emojis to that guild, making sure your bot can view the guild. You can download all the emojis [here](https://calion.repl.co/static/catbot/emojis.zip)
+
+5. Done!
+
+# Customisation
+Most stuff can be customised by just using CTRL+F in main.py, but im gonna explain some stuff you might be intereted in.
+
+## How to add cat types
+Add your cat type name to both `CAT_TYPES` and `cattypes` lists near the top of the main.py file, the same way it is already written.
+
+> **Note**
+>
+> Emojis are automatically grub from your guild, you will need to upload the emoji with a name of:
+>
+> `<your cat name all lowercase> + cat`
+>
+> Example: `supercat`
+
+## How to give custom cats
+Identical to the last section, you will have to add an emoji to your guild.
+
+Then, run:
+
+`cat!custom <user id> <custom cat name>`
+
+Example: `cat!custom 966695034340663367 Nerd`
+
+## How to add/change battlepass levels
+Go inside `battlepass.json`, and modify the levels there.
+
+For each line there is 4 parameters:
+- `"req"`: action you need to do to get the level. Can be `catch`, `catch_type`, or `catch_fast`
+- `"req_data"`: the secondary value to the requirement. Amount of cats for `catch`, amount of seconds for `catch_fast`, or a cat type for `catch_type`
+- `"reward"`: cat which will be given after completing the level
+- `"reward_amount"`: amount of cats for completing the level
+
+> **Note**
+>
+> ALWAYS leave 2 empty levels at the end of your battlepass.
+
+## How to add achievement
+Go inside `aches.json`, and add an achievement.
+
+The fields should be self-explanatory.
+
+Unlike battlepass levels, you will need to actually code the achievement.
+
+Good luck, I believe in you.
