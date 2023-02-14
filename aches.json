@@ -1,4 +1,5 @@
 {
+  "first": {"title": "First cat!", "description": "The journey begins...", "is_hidden": false, "category": "Cat Hunt"},
   "donator": {"title": "Donator", "description": "donate your cats to someone", "is_hidden": false, "category": "Cat Hunt"},
   "anti_donator": {"title": "Anti-Donator", "description": "get donated to", "is_hidden": false, "category": "Cat Hunt"},
   "randomizer": {"title": "Randomizer", "description": "look at a random cat", "is_hidden": false, "category": "Random"},
