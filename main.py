@@ -432,6 +432,13 @@ async def on_message(message):
             if do_time and time_caught > get_time(message.guild.id, message.author.id, "slow"):
                 set_time(message.guild.id, message.author.id, time_caught, "slow")
 
+            if not has_ach(message.guild.id, message.author.id, "first"):
+                ach_data = give_ach(message.guild.id, message.author.id, "first")
+                embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
+                if get_cat(message.guild.id, message.author.id, "Fine") > 20:
+                    embed.set_footer(text="well thats rather comedical isnt it")
+                await message.channel.send(embed=embed)
+            
             if do_time and not has_ach(message.guild.id, message.author.id, "fast_catcher") and get_time(message.guild.id, message.author.id) <= 5:
                 ach_data = give_ach(message.guild.id, message.author.id, "fast_catcher")
                 embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
