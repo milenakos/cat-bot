@@ -6,25 +6,32 @@ from nextcord.ui import Button, View
 from typing import Optional
 from random import randint, choice
 
-OWNER_ID = 553093932012011520 # for dms
+### Setup values start
+
+OWNER_ID = 553093932012011520 # for dms and owner-exclusive commands
 GUILD_ID = 966586000417619998 # for emojis
-BOT_ID = 966695034340663367
-BACKUP_ID = 1060545763194707998 # channel id for backups, private extremely recommended
+BOT_ID = 966695034340663367 ## todo: replace with bot.user.id
+BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely recommended
+
 TIMEZONE_OFFSET = 3600 # in seconds
 # gmt + 1 == TIMEZONE_OFFSET = 3600
 
+# discord bot token, use os.environ for more security
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
 
 # set to False to not use top gg
 TOP_GG_TOKEN = os.environ['topggtoken']
 
+# this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 GITHUB_MODE = True
 GITHUB_CHANNEL_ID = 1060965767044149249
 
 BANNED_ID = [1029044762340241509] # banned from using /dream and /tiktok
 
 STATUS_PAGE_URL = "https://status.milenakos.tk" # leave empty to disable
+
+### Setup values end
 
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode('utf-8') for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
