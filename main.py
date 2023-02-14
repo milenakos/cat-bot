@@ -814,8 +814,9 @@ async def battlepass(message: discord.Interaction):
 
 @bot.slash_command(description="Pong")
 async def ping(message: discord.Interaction):
+    await message.response.defer()
     latency = round(bot.latency * 1000)
-    await message.response.send_message(f"cat has brain delay of {latency} ms " + str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")))
+    await message.followup.send(f"cat has brain delay of {latency} ms " + str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")))
 
 @bot.slash_command(description="give cats now")
 async def donate(message: discord.Interaction, person: discord.Member, cat_type: str = discord.SlashOption(choices=cattypes), amount: Optional[int] = discord.SlashOption(required=False)):
