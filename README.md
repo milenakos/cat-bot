@@ -79,3 +79,7 @@ The fields should be self-explanatory.
 Unlike battlepass levels, you will need to actually code the achievement.
 
 Good luck, I believe in you.
+
+# License
+
+Cat Bot is licensed under Creative Commons Zero v1.0 Universal license. View `LICENSE` for more information.
