@@ -1227,7 +1227,7 @@ async def forget(message: discord.Interaction):
 
 @bot.slash_command(description="LMAO TROLLED SO HARD :JOY:")
 async def fake(message: discord.Interaction):
-    file = discord.File("cat.png", filename="cat.png")
+    file = discord.File("australian cat.png", filename="australian cat.png")
     icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="egirlcat")
     await message.channel.send(str(icon) + " eGirl cat hasn't appeared! Type \"cat\" to catch ratio!", file=file)
     if not has_ach(message.guild.id, message.user.id, "trolled"):
