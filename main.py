@@ -606,7 +606,7 @@ async def dream(message: discord.Interaction, text: str):
                     await message.followup.send("we ran out of api credits, they will be refilled shortly.")
                     milenakoos = await bot.fetch_user(OWNER_ID)
                     await milenakoos.send("/dream api token ran out!")
-                else if response.status == 429:
+                elif response.status == 429:
                     await message.followup.send("Too many requests, try again later.")
                 else:
                     await message.followup.send(f"failed lmao\n\nHTTP {response.status}")
