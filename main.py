@@ -883,7 +883,8 @@ if TOP_GG_TOKEN:
                 embedVar = discord.Embed(title="Vote redeemed!", description=f"You have recieved {icon} 5 Good cats.\nVote again in 12 hours.", color=0x007F0E)
                 await message.response.send_message(embed=embedVar)
             else:
-                embedVar = discord.Embed(title="Already voted!", description=f"You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nPlease wait 12 hours and vote again to recieve {icon} 5 more Good cats.", color=0x6E593C)
+                countdown = get_cat(0, message.user.id, "vote_time") + 43200
+                embedVar = discord.Embed(title="Already voted!", description=f"You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve {icon} 5 more Good cats.", color=0x6E593C)
                 await message.response.send_message(embed=embedVar)
         else:
             embedVar = discord.Embed(title="Vote for Cat Bot", description=f"[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve {icon} 5 Good cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
