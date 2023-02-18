@@ -25,7 +25,7 @@ TOP_GG_TOKEN = os.environ['topggtoken']
 
 # set to False to disable /dream
 # token for stability ai, at https://beta.dreamstudio.ai/
-STABILITY_TOKEN = os.environ['STABILITY_KEY']
+STABILITY_KEY = os.environ['STABILITY_KEY']
 
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 GITHUB_MODE = True
