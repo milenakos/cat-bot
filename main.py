@@ -1131,7 +1131,7 @@ async def leaderboards(message: discord.Interaction):
             catmoji = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=rarities[rarest].lower() + "cat")
             if rarest != -1:
                 rarest_holder = list(dict(sorted(rarest_holder.items(), key=lambda item: item[1], reverse=True)).keys())
-                if len(rarest_holder) <= 3:
+                if len(rarest_holder) <= 5:
                     joined = ", ".join(rarest_holder)
                     string = f"Rarest cat: {catmoji} ({joined}'s)\n"
                 else:
