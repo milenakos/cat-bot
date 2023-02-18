@@ -1074,7 +1074,7 @@ async def leaderboards(message: discord.Interaction):
         the_dict = {}
         register_guild(message.guild.id)
         rarest = -1
-        rarest_holder = [f"<@{BOT_ID}>"]
+        rarest_holder = {f"<@{BOT_ID}>": 0}
         rarities = cattypes
 
         if fast:
@@ -1108,9 +1108,9 @@ async def leaderboards(message: discord.Interaction):
                             value += b
                             if b > 0 and rarities.index(a) > rarest:
                                 rarest = rarities.index(a)
-                                rarest_holder = ["<@" + i + ">"]
+                                rarest_holder = {"<@" + i + ">": b}
                             elif b > 0 and rarities.index(a) == rarest:
-                                rarest_holder.append("<@" + i + ">")
+                                rarest_holder["<@" + i + ">"] = b
                         except Exception:
                             pass
             if str(value) != default_value:
@@ -1119,7 +1119,7 @@ async def leaderboards(message: discord.Interaction):
                     thingy = int(thingy) # trim .0
                 the_dict[f" {unit}: <@" + i + ">"] = thingy
 
-        heap = [(-value, key) for key,value in the_dict.items()]
+        heap = [(-value, key) for key, value in the_dict.items()]
         if fast:
             largest = heapq.nlargest(15, heap)
         else:
@@ -1130,6 +1130,7 @@ async def leaderboards(message: discord.Interaction):
         if main:
             catmoji = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=rarities[rarest].lower() + "cat")
             if rarest != -1:
+                rarest_holder = list(dict(sorted(rarest_holder.items(), key=lambda item: item[1], reverse=True)).keys())
                 if len(rarest_holder) <= 3:
                     joined = ", ".join(rarest_holder)
                     string = f"Rarest cat: {catmoji} ({joined}'s)\n"
