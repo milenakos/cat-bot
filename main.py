@@ -20,8 +20,12 @@ TIMEZONE_OFFSET = 3600 # in seconds
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
 
-# set to False to not use top gg
+# set to False to disable /vote
 TOP_GG_TOKEN = os.environ['topggtoken']
+
+# set to False to disable /dream
+# token for stability ai, at https://beta.dreamstudio.ai/
+STABILITY_TOKEN = os.environ['STABILITY_KEY']
 
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 GITHUB_MODE = True
@@ -29,7 +33,7 @@ GITHUB_CHANNEL_ID = 1060965767044149249
 
 BANNED_ID = [1029044762340241509] # banned from using /dream and /tiktok
 
-STATUS_PAGE_URL = "https://status.milenakos.tk" # leave empty to disable
+STATUS_PAGE_URL = "https://status.milenakos.tk/" # leave empty to disable
 
 ### Setup values end
 
@@ -574,53 +578,54 @@ if STATUS_PAGE_URL:
         embedVar = discord.Embed(title="Cat Bot Status", color=0x6E593C, description=f"You can view live status page of Cat Bot [here]({STATUS_PAGE_URL}).\n You can also [join Cat Bot server](https://discord.gg/WCTzD3YQEk) to recieve live notifications of downtimes.")
         await message.response.send_message(embed=embedVar)
 
-@bot.slash_command(description="Generate images from text using Stable Diffusion")
-async def dream(message: discord.Interaction, text: str):
-    await message.response.defer()
-    if message.user.id in BANNED_ID:
-        await message.followup.send("You do not have access to that command.", ephemeral=True)
-        return
-    url = "https://api.stability.ai/v1alpha/generation/stable-diffusion-v1-5/text-to-image"
-    payload = {
-            "cfg_scale": 8,
-            "height": 512,
-            "width": 512,
-            "samples": 1,
-            "text_prompts": [
-                    {
-                            "text": text,
-                            "weight": 1
-                    }
-            ],
-    }
-    headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Authorization": os.environ['STABILITY_KEY']
-    }
+if STABILITY_KEY:
+    @bot.slash_command(description="Generate images from text using Stable Diffusion")
+    async def dream(message: discord.Interaction, text: str):
+        await message.response.defer()
+        if message.user.id in BANNED_ID:
+            await message.followup.send("You do not have access to that command.", ephemeral=True)
+            return
+        url = "https://api.stability.ai/v1alpha/generation/stable-diffusion-v1-5/text-to-image"
+        payload = {
+                "cfg_scale": 8,
+                "height": 512,
+                "width": 512,
+                "samples": 1,
+                "text_prompts": [
+                        {
+                                "text": text,
+                                "weight": 1
+                        }
+                ],
+        }
+        headers = {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Authorization": STABILITY_KEY
+        }
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, json=payload, headers=headers) as response:
-            if response.status != 200:
-                if response.status == 400:
-                    await message.followup.send("we ran out of api credits, they will be refilled shortly.")
-                    milenakoos = await bot.fetch_user(OWNER_ID)
-                    await milenakoos.send("/dream api token ran out!")
-                elif response.status == 429:
-                    await message.followup.send("Too many requests, try again later.")
-                else:
-                    await message.followup.send(f"failed lmao\n\nHTTP {response.status}")
-                return
-            answer = await response.json()
-            answer = answer["artifacts"][0]
-            if answer["finishReason"] == "CONTENT_FILTERED":
-                await message.followup.send("🤨")
-                return
-            decoded = base64.decodebytes(answer["base64"].encode("ascii"))
-            with io.BytesIO() as f:
-                f.write(decoded)
-                f.seek(0)
-                await message.followup.send(file=discord.File(fp=f, filename='output.png'))
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload, headers=headers) as response:
+                if response.status != 200:
+                    if response.status == 400:
+                        await message.followup.send("we ran out of api credits, they will be refilled shortly.")
+                        milenakoos = await bot.fetch_user(OWNER_ID)
+                        await milenakoos.send("/dream api token ran out!")
+                    elif response.status == 429:
+                        await message.followup.send("Too many requests, try again later.")
+                    else:
+                        await message.followup.send(f"failed lmao\n\nHTTP {response.status}")
+                    return
+                answer = await response.json()
+                answer = answer["artifacts"][0]
+                if answer["finishReason"] == "CONTENT_FILTERED":
+                    await message.followup.send("🤨")
+                    return
+                decoded = base64.decodebytes(answer["base64"].encode("ascii"))
+                with io.BytesIO() as f:
+                    f.write(decoded)
+                    f.seek(0)
+                    await message.followup.send(file=discord.File(fp=f, filename='output.png'))
 
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str):
