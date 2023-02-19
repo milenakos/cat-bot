@@ -753,6 +753,9 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
             db[str(message.guild.id)][str(person_id.id)][i] = 0
             cat_num = 0
             do_save = True
+        if isinstance(cat_num, float):
+            db[str(message.guild.id)][str(person_id.id)][i] = int(cat_num)
+            cat_num = int(cat_num)
         if cat_num != 0:
             total += cat_num
             embedVar.add_field(name=f"{icon} {i}", value=cat_num, inline=True)
@@ -857,7 +860,7 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
             await message.channel.send(embed=embed)
         if amount >= 5 and person_id != OWNER_ID and cat_type == "Fine":
             tax_amount = round(amount * 0.2)
-            payed = False
+
             async def pay(interaction):
                 if interaction.user.id == message.user.id:
                     await interaction.edit_original_message(view=None)
