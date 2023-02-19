@@ -857,6 +857,7 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
             await message.channel.send(embed=embed)
         if amount >= 5 and person_id != OWNER_ID and cat_type == "Fine":
             tax_amount = round(amount * 0.2)
+            payed = False
             async def pay(interaction):
                 if interaction.user.id == message.user.id:
                     await interaction.edit_original_message(view=None)
@@ -888,7 +889,7 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
 
             myview.add_item(button)
             myview.add_item(button2)
-            await message.channel.send(embed=embed, view=myview)
+            await message.followup.send(embed=embed, view=myview)
     else:
         await message.response.send_message("no", ephemeral=True)
 
