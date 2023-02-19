@@ -756,6 +756,7 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
         if isinstance(cat_num, float):
             db[str(message.guild.id)][str(person_id.id)][i] = int(cat_num)
             cat_num = int(cat_num)
+            do_save = True
         if cat_num != 0:
             total += cat_num
             embedVar.add_field(name=f"{icon} {i}", value=cat_num, inline=True)
