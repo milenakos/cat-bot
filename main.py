@@ -93,6 +93,8 @@ if TOP_GG_TOKEN:
 
 cattypes = ["Fine", "Nice", "Good", "Rare", "Wild", "Baby", "Epic", "Sus", "Brave", "Rickroll", "Reverse", "Superior", "TheTrashCell", "Legendary", "Mythic", "8bit", "Corrupt", "Professor", "Divine", "Real", "Ultimate", "eGirl"]
 
+funny = ["why did you click this this arent yours", "absolutely not", "cat bot not responding, try again later", "you cant", "can you please stop", "try again", "403 not allowed", "stop", "get a life"]
+
 summon_id = db["summon_ids"]
 
 delays = [120, 1200]
@@ -853,6 +855,38 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
             ach_data = give_ach(message.guild.id, message.user.id, "rich")
             embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
             await message.channel.send(embed=embed)
+        if amount >= 5 and person_id != OWNER_ID and cat_type == "Fine":
+            tax_amount = amount * 0.2
+            async def pay(interaction):
+                if interaction.user.id == message.user.id:
+                    remove_cat(interaction.guild.id, interaction.user.id, "Fine", tax_amount)
+                    await interaction.response.send_message(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
+                else:
+                    await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            
+            async def evade(interaction):
+                if interaction.user.id == message.user.id:
+                    if not has_ach(message.guild.id, person_id, "secret"):
+                        ach_data = give_ach(message.guild.id, person_id, "secret")
+                        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
+                        await message.channel.send(embed=embed)
+                    await interaction.response.send_message(f"You evaded the tax of {tax_amount} Fine cats.")
+                else:
+                    await interaction.response.send_message(random.choice(funny), ephemeral=True)
+                
+            embed = discord.Embed(title="HOLD UP", description="thats rather large amount of fine cats! you will need to pay cat tax of 20% your transaction, do you agree?", color=0x6E593C)
+            
+            button = Button(label="Pay!", style=ButtonStyle.green)
+            button.callback = pay
+            
+            button2 = Button(label="Evade the tax", style=ButtonStyle.red)
+            button2.callback = evade
+
+            myview = View()
+
+            myview.add_item(button)
+            myview.add_item(button2)
+            await message.channel.send(embed=embed, view=myview)
     else:
         await message.response.send_message("no", ephemeral=True)
 
@@ -965,7 +999,6 @@ async def achs(message: discord.Interaction):
         if interaction.user.id == message.user.id:
             await interaction.response.send_message(embed=gen_new("Cat Hunt"), ephemeral=True, view=insane_view_generator("Cat Hunt"))
         else:
-            funny = ["why did you click this this arent yours", "absolutely not", "cat bot not responding, try again later", "you cant", "can you please stop", "try again", "403 not allowed", "stop", "get a life"]
             await interaction.response.send_message(choice(funny), ephemeral=True)
             if not has_ach(message.guild.id, interaction.user.id, "curious"):
                 ach_data = give_ach(message.guild.id, interaction.user.id, "curious")
