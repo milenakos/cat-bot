@@ -864,7 +864,7 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
 
             async def pay(interaction):
                 if interaction.user.id == message.user.id:
-                    await interaction.edit_original_message(view=None)
+                    await interaction.message.edit(view=None)
                     remove_cat(interaction.guild.id, interaction.user.id, "Fine", tax_amount)
                     await interaction.response.send_message(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
                 else:
@@ -872,7 +872,7 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
             
             async def evade(interaction):
                 if interaction.user.id == message.user.id:
-                    await interaction.edit_original_message(view=None)
+                    await interaction.message.edit(view=None)
                     if not has_ach(message.guild.id, person_id, "secret"):
                         ach_data = give_ach(message.guild.id, person_id, "secret")
                         embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
@@ -893,7 +893,7 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
 
             myview.add_item(button)
             myview.add_item(button2)
-            await message.followup.send(embed=embed, view=myview)
+            await message.channel.send(embed=embed, view=myview)
     else:
         await message.response.send_message("no", ephemeral=True)
 
