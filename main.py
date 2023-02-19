@@ -856,13 +856,14 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
             embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
             await message.channel.send(embed=embed)
         if amount >= 5 and person_id != OWNER_ID and cat_type == "Fine":
-            tax_amount = amount * 0.2
+            tax_amount = round(amount * 0.2)
             async def pay(interaction):
                 if interaction.user.id == message.user.id:
                     remove_cat(interaction.guild.id, interaction.user.id, "Fine", tax_amount)
                     await interaction.response.send_message(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
+                    await interaction.edit_original_message(view=None)
                 else:
-                    await interaction.response.send_message(random.choice(funny), ephemeral=True)
+                    await interaction.response.send_message(choice(funny), ephemeral=True)
             
             async def evade(interaction):
                 if interaction.user.id == message.user.id:
@@ -871,8 +872,9 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
                         embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
                         await message.channel.send(embed=embed)
                     await interaction.response.send_message(f"You evaded the tax of {tax_amount} Fine cats.")
+                    await interaction.edit_original_message(view=None)
                 else:
-                    await interaction.response.send_message(random.choice(funny), ephemeral=True)
+                    await interaction.response.send_message(choice(funny), ephemeral=True)
                 
             embed = discord.Embed(title="HOLD UP", description="thats rather large amount of fine cats! you will need to pay cat tax of 20% your transaction, do you agree?", color=0x6E593C)
             
