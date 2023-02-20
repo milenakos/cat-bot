@@ -842,7 +842,7 @@ async def ping(message: discord.Interaction):
 async def donate(message: discord.Interaction, person: discord.Member, cat_type: str = discord.SlashOption(choices=cattypes), amount: Optional[int] = discord.SlashOption(required=False)):
     if not amount: amount = 1
     person_id = person.id
-    if get_cat(message.guild.id, message.user.id, cat_type) >= amount and amount > 0:
+    if get_cat(message.guild.id, message.user.id, cat_type) >= amount and amount > 0 and message.user.id != person_id:
         remove_cat(message.guild.id, message.user.id, cat_type, amount)
         add_cat(message.guild.id, person_id, cat_type, amount)
         embed = discord.Embed(title="Success!", description=f"Successfully transfered {amount} {cat_type} cats from <@{message.user.id}> to <@{person_id}>!", color=0x6E593C)
