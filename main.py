@@ -881,7 +881,7 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
                 else:
                     await interaction.response.send_message(choice(funny), ephemeral=True)
                 
-            embed = discord.Embed(title="HOLD UP", description="thats rather large amount of fine cats! you will need to pay cat tax of 20% your transaction, do you agree?", color=0x6E593C)
+            embed = discord.Embed(title="HOLD UP!", description="Thats rather large amount of fine cats! You will need to pay a cat tax of 20% your transaction, do you agree?", color=0x6E593C)
             
             button = Button(label="Pay!", style=ButtonStyle.green)
             button.callback = pay
