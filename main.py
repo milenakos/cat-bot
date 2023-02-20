@@ -415,7 +415,7 @@ async def on_message(message):
 
                 print(time.mktime(catchtime.timetuple()))
                 print(current_time)
-                time_caught = round((current_time - catchtime.timestamp() * 100) / 100
+                time_caught = round((current_time - catchtime.timestamp() * 100) / 100)
                 days = time_caught // 86400
                 time_left = time_caught - (days * 86400)
                 hours = time_left // 3600
