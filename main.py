@@ -413,9 +413,8 @@ async def on_message(message):
                 catchtime = var.created_at
                 await var.delete()
 
-                then = time.mktime(catchtime.timetuple()) + catchtime.microsecond/1e6
-                print(then, current_time)
-                time_caught = round(((current_time - then) * 100) / 100)
+                then = time.mktime(catchtime.timetuple()) + catchtime.microsecond / 1e6
+                time_caught = round(((current_time - then) * 100)) / 100
                 days = time_caught // 86400
                 time_left = time_caught - (days * 86400)
                 hours = time_left // 3600
@@ -433,13 +432,12 @@ async def on_message(message):
                     acc_seconds = round(seconds * 100) / 100
                     caught_time = caught_time + str(acc_seconds) + " seconds "
                 do_time = True
+                if time_caught <= 0:
+                    do_time = False
             except Exception:
                 do_time = False
                 caught_time = "undefined amounts of time "
                 pass
-        
-            if time_caught <= 0:
-                do_time = False
 
             le_emoji = db["cattype"][str(message.channel.id)]
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=le_emoji.lower() + "cat")
