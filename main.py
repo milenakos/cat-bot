@@ -435,6 +435,9 @@ async def on_message(message):
                 do_time = False
                 caught_time = "undefined amounts of time "
                 pass
+        
+            if time_caught <= 0:
+                do_time = False
 
             le_emoji = db["cattype"][str(message.channel.id)]
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=le_emoji.lower() + "cat")
