@@ -7,11 +7,9 @@ from typing import Optional
 from random import randint, choice
 
 ### Setup values start
+
 GUILD_ID = 966586000417619998 # for emojis
 BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely recommended
-
-TIMEZONE_OFFSET = 3600 # in seconds
-# gmt + 1 == TIMEZONE_OFFSET = 3600
 
 # discord bot token, use os.environ for more security
 TOKEN = os.environ['token']
@@ -405,7 +403,7 @@ async def on_message(message):
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
             await message.add_reaction(icon)
         elif is_cat:
-            current_time = time.time()
+            current_time = time.gmtime()
             cat_temp = db["cat"][str(message.channel.id)]
             db["cat"][str(message.channel.id)] = False
             save()
@@ -415,7 +413,7 @@ async def on_message(message):
                 catchtime = var.created_at
                 await var.delete()
 
-                time_caught = (round((current_time - time.mktime(catchtime.timetuple())) * 100) / 100) - TIMEZONE_OFFSET
+                time_caught = (round((current_time - time.mktime(catchtime.timetuple())) * 100) / 100)
                 days = time_caught // 86400
                 time_left = time_caught - (days * 86400)
                 hours = time_left // 3600
