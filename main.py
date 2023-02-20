@@ -95,6 +95,7 @@ delays = [120, 1200]
 timeout = 0
 starting_time = 0
 message_thing = 0
+milenakoos = 0
 
 super_prefix = ""
 
