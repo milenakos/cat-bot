@@ -7,10 +7,7 @@ from typing import Optional
 from random import randint, choice
 
 ### Setup values start
-
-OWNER_ID = 553093932012011520 # for dms and owner-exclusive commands
 GUILD_ID = 966586000417619998 # for emojis
-BOT_ID = 966695034340663367 ## todo: replace with bot.user.id
 BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely recommended
 
 TIMEZONE_OFFSET = 3600 # in seconds
@@ -89,7 +86,7 @@ bot = commands.Bot(command_prefix="Cat Bot by Milenakos#3310", intents=intents, 
 
 if TOP_GG_TOKEN:
     import topgg
-    bot.topggpy = topgg.DBLClient(TOP_GG_TOKEN, default_bot_id=BOT_ID)
+    bot.topggpy = topgg.DBLClient(TOP_GG_TOKEN, default_bot_id=bot.user.id)
 
 cattypes = ["Fine", "Nice", "Good", "Rare", "Wild", "Baby", "Epic", "Sus", "Brave", "Rickroll", "Reverse", "Superior", "TheTrashCell", "Legendary", "Mythic", "8bit", "Corrupt", "Professor", "Divine", "Real", "Ultimate", "eGirl"]
 
@@ -250,6 +247,9 @@ async def on_ready():
     await bot.change_presence(
             activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
     )
+    appinfo = await bot.application_info()
+    milenakoos = appinfo.owner
+    OWNER_ID = milenakoos.id
     myLoop.cancel()
     myLoop.start()
 
@@ -349,7 +349,7 @@ async def on_message(message):
         await message.reply("...")
     if "proglet" in text.lower():
         await message.add_reaction(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="professor_cat"))
-    if ("@" + str(bot.user) in text or f"<@{BOT_ID}>" in text or f"<@!{BOT_ID}>" in text) and not has_ach(message.guild.id, message.author.id, "who_ping"):
+    if ("@" + str(bot.user) in text or f"<@{bot.user.id}>" in text or f"<@!{bot.user.id}>" in text) and not has_ach(message.guild.id, message.author.id, "who_ping"):
         ach_data = give_ach(message.guild.id, message.author.id, "who_ping")
         embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
         await message.reply(embed=embed)
@@ -558,7 +558,6 @@ async def feedback(message: discord.Interaction, feedback: str):
     if len(str(message.user) + "\n" + feedback) >= 2000:
         await message.response.send_message("ah hell nah man, ur msg is too long :skull:", ephemeral=True)
         return
-    milenakoos = await bot.fetch_user(OWNER_ID)
     await milenakoos.send(str(message.user) + "\n" + feedback)
     await message.response.send_message("your feedback was directed to the bot owner!", ephemeral=True)
 
@@ -611,7 +610,6 @@ if STABILITY_KEY:
                 if response.status != 200:
                     if response.status == 400:
                         await message.followup.send("we ran out of api credits, they will be refilled shortly.")
-                        milenakoos = await bot.fetch_user(OWNER_ID)
                         await milenakoos.send("/dream api token ran out!")
                     elif response.status == 429:
                         await message.followup.send("Too many requests, try again later.")
@@ -855,7 +853,7 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
             ach_data = give_ach(message.guild.id, person_id, "anti_donator")
             embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
             await message.channel.send(embed=embed.set_footer(text="unlocked by " + person.name + ", not you"))
-        if not has_ach(message.guild.id, message.user.id, "rich") and person_id == BOT_ID and cat_type == "Ultimate" and int(amount) >= 5:
+        if not has_ach(message.guild.id, message.user.id, "rich") and person_id == bot.user.id and cat_type == "Ultimate" and int(amount) >= 5:
             ach_data = give_ach(message.guild.id, message.user.id, "rich")
             embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
             await message.channel.send(embed=embed)
@@ -1082,7 +1080,7 @@ async def catch(message: discord.Interaction, msg, sansgg):
     except Exception as e:
         await message.response.send_message(f"the message appears to have commited no live anymore\n\n{e}", ephemeral=True)
     register_member(message.guild.id, msg.author.id)
-    if not has_ach(message.guild.id, msg.author.id, "4k") and msg.author.id != BOT_ID:
+    if not has_ach(message.guild.id, msg.author.id, "4k") and msg.author.id != bot.user.id:
         ach_data = give_ach(message.guild.id, message.user.id, "4k")
         embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
         await message.channel.send(embed=embed)
@@ -1114,7 +1112,7 @@ async def leaderboards(message: discord.Interaction):
         the_dict = {}
         register_guild(message.guild.id)
         rarest = -1
-        rarest_holder = {f"<@{BOT_ID}>": 0}
+        rarest_holder = {f"<@{bot.user.id}>": 0}
         rarities = cattypes
 
         if fast:
@@ -1394,7 +1392,6 @@ async def on_command_error(ctx, error):
             await ctx.reply("cat crashed lmao\ni automatically sent crash reports so yes")
         except:
             await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
-        milenakoos = await bot.fetch_user(OWNER_ID)
         try:
             if not has_ach(ctx.guild.id, ctx.user.id, "crasher"):
                 ach_data = give_ach(ctx.guild.id, ctx.user.id, "crasher")
