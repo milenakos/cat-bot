@@ -413,9 +413,8 @@ async def on_message(message):
                 catchtime = var.created_at
                 await var.delete()
 
-                print(current_time)
-                print(catchtime, time.mktime(catchtime.timetuple()))
-                time_caught = round(((current_time - time.mktime(catchtime.timetuple())) * 100) / 100)
+                then = time.mktime(catchtime.timetuple())*1e3 + catchtime.microsecond/1e3
+                time_caught = round(((current_time - then) * 100) / 100)
                 days = time_caught // 86400
                 time_left = time_caught - (days * 86400)
                 hours = time_left // 3600
