@@ -25,7 +25,7 @@ TOP_GG_TOKEN = os.environ['topggtoken']
 STABILITY_KEY = os.environ['STABILITY_KEY']
 
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
-GITHUB_MODE = True
+# set to False to disable
 GITHUB_CHANNEL_ID = 1060965767044149249
 
 BANNED_ID = [1029044762340241509] # banned from using /dream and /tiktok
@@ -260,7 +260,7 @@ async def on_message(message):
     text = message.content
     if message.author.id == bot.user.id:
         return
-    if GITHUB_MODE and message.channel.id == GITHUB_CHANNEL_ID:
+    if GITHUB_CHANNEL_ID and message.channel.id == GITHUB_CHANNEL_ID:
         os.system("git pull")
         myLoop.cancel()
         os.execv(sys.executable, ['python'] + sys.argv)
