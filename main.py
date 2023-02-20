@@ -403,7 +403,7 @@ async def on_message(message):
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
             await message.add_reaction(icon)
         elif is_cat:
-            current_time = time.time() - datetime.datetime.now().astimezone().tzinfo.utcoffset(datetime.datetime.now()).seconds # this is laughable, i hate time
+            current_time = time.time() - float(datetime.datetime.now().astimezone().tzinfo.utcoffset(datetime.datetime.now()).seconds) # this is laughable, i hate time
             cat_temp = db["cat"][str(message.channel.id)]
             db["cat"][str(message.channel.id)] = False
             save()
