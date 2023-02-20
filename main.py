@@ -403,7 +403,7 @@ async def on_message(message):
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
             await message.add_reaction(icon)
         elif is_cat:
-            current_time = time.time()
+            current_time = time.mktime(time.gmtime())
             cat_temp = db["cat"][str(message.channel.id)]
             db["cat"][str(message.channel.id)] = False
             save()
@@ -413,9 +413,7 @@ async def on_message(message):
                 catchtime = var.created_at
                 await var.delete()
 
-                print(time.mktime(catchtime.timetuple()))
-                print(current_time)
-                time_caught = round((current_time - catchtime.timestamp() * 100) / 100)
+                time_caught = round(((current_time - time.mktime(catchtime.timetuple())) * 100) / 100)
                 days = time_caught // 86400
                 time_left = time_caught - (days * 86400)
                 hours = time_left // 3600
