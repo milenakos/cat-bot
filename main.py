@@ -240,6 +240,7 @@ async def myLoop():
 
 @bot.event
 async def on_ready():
+    global milenakoos
     print("cat is now online")
     await bot.change_presence(
             activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
