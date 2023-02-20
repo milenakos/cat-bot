@@ -726,9 +726,9 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
     else:
         slow_time = slow_time / 3600
         slow_time = str(round(slow_time * 100) / 100)
-    if slow_time <= 0:
+    if int(slow_time) <= 0:
         set_time(message.guild.id, person_id.id, 0, "slow")
-    if catch_time <= 0:
+    if int(catch_time) <= 0:
         set_time(message.guild.id, person_id.id, 99999999999999)
      
     if me:
