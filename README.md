@@ -28,12 +28,14 @@ Discord Cat Bot Source Code
    
    More detailed explanation on how Cat Bot stores stuff can be found [here](https://calion.repl.co/info), made by Calion.
 
-4. Go inside of the `main.py` file, on first few lines you can change some config values, such as owner ID, guild ID, bot ID, and Discord token.
+4. Go inside of the `main.py` file, on first few lines you can change some config values, such as guild ID, backup channel ID, and Discord token.
 > **Note**
 >
 > You will need to create a guild and upload all emojis to that guild, making sure your bot can view the guild. You can download all the emojis [here](https://calion.repl.co/static/catbot/emojis.zip)
 
-5. Done!
+5. Run the bot with `python main.py`
+
+6. Done!
 
 # Customisation
 Most stuff can be customised by just using CTRL+F in main.py, but im gonna explain some stuff you might be intereted in.
