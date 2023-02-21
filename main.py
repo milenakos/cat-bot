@@ -94,6 +94,7 @@ timeout = 0
 starting_time = 0
 message_thing = 0
 milenakoos = 0
+OWNER_ID = 0
 
 super_prefix = ""
 
@@ -238,7 +239,7 @@ async def myLoop():
 
 @bot.event
 async def on_ready():
-    global milenakoos
+    global milenakoos, OWNER_ID
     print("cat is now online")
     await bot.change_presence(
             activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
@@ -726,11 +727,13 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
     else:
         slow_time = slow_time / 3600
         slow_time = str(round(slow_time * 100) / 100)
-    if float(slow_time) <= 0:
-        set_time(message.guild.id, person_id.id, 0, "slow")
-    if float(catch_time) <= 0:
-        set_time(message.guild.id, person_id.id, 99999999999999)
-     
+    try:
+        if float(slow_time) <= 0:
+            set_time(message.guild.id, person_id.id, 0, "slow")
+        if float(catch_time) <= 0:
+            set_time(message.guild.id, person_id.id, 99999999999999)
+    except Exception: pass
+   
     if me:
         your = "Your"
     else:
