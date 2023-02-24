@@ -568,7 +568,7 @@ async def feedback(message: discord.Interaction, feedback: str):
 async def admin(message: discord.Interaction):
     embedVar = discord.Embed(
             title="Send Admin Help", description=discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat"), color=0x6E593C
-    ).add_field(name="Admin Commands", value="**/setup** - makes cat bot send cats in the channel this command is ran in\n**/forget** - reverse of /setup (i forgor :skull:)\n**/sweep** - use if cats stopped spawning for some reason**/summon** - makes cats disappear and reappear out of thin air\n**/giveach** - gib (or take) achievements to people\n**/force** - makes cat appear in chat\n**/say** - chat as cat\n**/reset** - fully resets one's account\n**/nerdmode** - stops someone from catching cats for a certain time period")
+    ).add_field(name="Admin Commands", value="**/setup** - makes cat bot send cats in the channel this command is ran in\n**/forget** - reverse of /setup (i forgor :skull:)\n**/sweep** - use if cats stopped spawning for some reason\n**/summon** - makes cats disappear and reappear out of thin air\n**/giveach** - gib (or take) achievements to people\n**/force** - makes cat appear in chat\n**/say** - chat as cat\n**/reset** - fully resets one's account\n**/nerdmode** - stops someone from catching cats for a certain time period")
     await message.response.send_message(embed=embedVar)
 
 @bot.slash_command(description="View information about the bot")
