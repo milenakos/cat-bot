@@ -1012,9 +1012,8 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
         view.add_item(accept)
         view.add_item(deny)
         view.add_item(add)
-        
-        descs = ["no way", "thats insane bro", "impossible", "holy f", "wtf", "aint no way"]
-        coolembed = discord.Embed(color=0x6E593C, title=f"{person1.name} and {person2.name} trade", description=choice(descs))
+
+        coolembed = discord.Embed(color=0x6E593C, title=f"{person1.name} and {person2.name} trade", description="no way")
         
         icon = "⬜"
         if person1accept:
