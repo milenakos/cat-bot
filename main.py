@@ -951,6 +951,9 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
             person1accept = not person1accept
         elif interaction.user == person2:
             person2accept = not person2accept
+        
+        await interaction.response.defer()
+        await update_trade_embed(interaction)
             
         if person1accept and person2accept:
             # we (finally) finish the trade
@@ -963,7 +966,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
                 add_cat(interaction.guild.id, person1.id, k, v)
             
             await interaction.response.defer()
-            await interaction.message.edit("Trade finished!", embed=None, view=None)
+            await interaction.message.edit("Trade finished!", view=None)
             if not has_ach(message.guild.id, person1.id, "extrovert"):
                 ach_data = give_ach(message.guild.id, person1.id, "extrovert")
                 embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=person1.name)
@@ -972,10 +975,6 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
                 ach_data = give_ach(message.guild.id, person2.id, "extrovert")
                 embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=person2.name)
                 await message.channel.send(embed=embed)
-            return
-        
-        await interaction.response.defer()
-        await update_trade_embed(interaction)
         
     async def addb(interaction):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
