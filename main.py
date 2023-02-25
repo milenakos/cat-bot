@@ -984,12 +984,12 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
             currentuser = 1
             if person1accept:
                 person1accept = False
-                await update_trade_embed()
+                await update_trade_embed(interaction)
         elif interaction.user == person2:
             currentuser = 2
             if person2accept:
                 person2accept = False
-                await update_trade_embed()
+                await update_trade_embed(interaction)
         await handle_modal(currentuser, interaction)
                 
     async def handle_modal(currentuser, interaction):
