@@ -908,6 +908,12 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
 async def trade(message: discord.Interaction, person_id: discord.Member):
     person1 = message.user
     person2 = person_id
+        
+    if person1 == person2:
+        if not has_ach(message.guild.id, message.user.id, "introvert"):
+            ach_data = give_ach(message.guild.id, message.user.id, "introvert")
+            embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
+            await message.channel.send(embed=embed)
     
     person1accept = False
     person2accept = False
