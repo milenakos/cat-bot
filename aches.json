@@ -2,6 +2,7 @@
   "first": {"title": "First cat!", "description": "The journey begins...", "is_hidden": false, "category": "Cat Hunt"},
   "donator": {"title": "Donator", "description": "donate your cats to someone", "is_hidden": false, "category": "Cat Hunt"},
   "anti_donator": {"title": "Anti-Donator", "description": "get donated to", "is_hidden": false, "category": "Cat Hunt"},
+  "extrovert": {"title": "Extrovert", "description": "finish a trade with someone", "is_hidden": false, "category": "Cat Hunt"},
   "randomizer": {"title": "Randomizer", "description": "look at a random cat", "is_hidden": false, "category": "Random"},
   "pineapple": {"title": "Pineapple", "description": "you said \"pineapple\". i have no idea why", "is_hidden": false, "category": "Random"},
   "fast_catcher": {"title": "Fast Catcher", "description": "catch a cat in under 5 seconds", "is_hidden": false, "category": "Cat Hunt"},
