@@ -1071,7 +1071,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
         async def callback(self, interaction: discord.Interaction):
             nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
             try:
-                if int(self.amount.value) < 0:
+                if int(self.amount.value) <= 0:
                     raise Exception
             except Exception:
                 await interaction.send("plz number?", ephemeral=True)
