@@ -965,7 +965,6 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
                 remove_cat(interaction.guild.id, person2.id, k, v)
                 add_cat(interaction.guild.id, person1.id, k, v)
             
-            await interaction.response.defer()
             await interaction.message.edit("Trade finished!", view=None)
             if not has_ach(message.guild.id, person1.id, "extrovert"):
                 ach_data = give_ach(message.guild.id, person1.id, "extrovert")
