@@ -14,6 +14,7 @@
   "dm": {"title": "DM", "description": "dm cat", "is_hidden": true, "category": "Random"},
   "cancer": {"title": "Cancer", "description": "say \"new cells cause cancer\"", "is_hidden": true, "category": "Unfair"},
   "who_ping": {"title": "who ping", "description": "ping cat bot", "is_hidden": true, "category": "Random"},
+  "introvert": {"title": "Introvert", "description": "Trade with yourself", "is_hidden": false, "category": "Random"},
   "pleasedonotthecat": {"title": "Please do not the cat", "description": "reject cat", "is_hidden": true, "category": "Random"},
   "worship": {"title": "Cat Worshipper", "description": "have both :place_of_worship: and <:staring_cat:966697804611321908> in your message", "is_hidden": true, "category": "Random"},
   "test_ach": {"title": "Test Achievement", "description": "run the cat!ach command", "is_hidden": true, "category": "Random"},
