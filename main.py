@@ -1013,7 +1013,8 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
         view.add_item(deny)
         view.add_item(add)
         
-        coolembed = discord.Embed(color=0x6E593C, title=f"{person1.name} and {person2.name} trade", description='no way')
+        descs = ["no way", "thats insane bro", "impossible", "holy f", "wtf", "aint no way"]
+        coolembed = discord.Embed(color=0x6E593C, title=f"{person1.name} and {person2.name} trade", description=choice(descs))
         
         icon = "⬜"
         if person1accept:
@@ -1021,7 +1022,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
         valuestr = ""
         for k, v in person1gives.items():
             aicon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=k.lower() + "cat")
-            valuestr += str(aicon) + k + " " + str(v) + "\n"
+            valuestr += str(aicon) + " " + k + " " + str(v) + "\n"
         if not valuestr: valuestr = "No cats offered!"
         coolembed.add_field(name=f"{icon} {person1.name}", inline=True, value=valuestr)
         
@@ -1031,7 +1032,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
         valuestr = ""
         for k, v in person2gives.items():
             aicon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=k.lower() + "cat")
-            valuestr += str(aicon) + k + " " + str(v) + "\n"
+            valuestr += str(aicon) + " " + k + " " + str(v) + "\n"
         if not valuestr: valuestr = "No cats offered!"
         coolembed.add_field(name=f"{icon} {person2.name}", inline=True, value=valuestr)
         
