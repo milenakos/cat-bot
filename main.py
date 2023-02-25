@@ -964,12 +964,12 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
             
             await interaction.response.defer()
             await interaction.message.edit("Trade finished!", embed=None, view=None)
-            if not has_ach(message.guild.id, person1, "extrovert"):
-                ach_data = give_ach(message.guild.id, person1, "extrovert")
+            if not has_ach(message.guild.id, person1.id, "extrovert"):
+                ach_data = give_ach(message.guild.id, person1.id, "extrovert")
                 embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
                 await message.channel.send(embed=embed)
-            if not has_ach(message.guild.id, person2, "extrovert"):
-                ach_data = give_ach(message.guild.id, person2, "extrovert")
+            if not has_ach(message.guild.id, person2.id, "extrovert"):
+                ach_data = give_ach(message.guild.id, person2.id, "extrovert")
                 embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
                 await message.channel.send(embed=embed)
             return
