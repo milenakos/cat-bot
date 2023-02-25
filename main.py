@@ -921,6 +921,9 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
     person1gives = {}
     person2gives = {}
     
+    if person2.id == bot.user.id:
+        person2gives = {"eGirl": 9999999}
+    
     async def denyb(interaction):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
         if interaction.user != person1 and interaction.user != person2:
