@@ -904,6 +904,184 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
     else:
         await message.response.send_message("no", ephemeral=True)
 
+@bot.slash_command(description="Trade cats!")
+async def trade(message: discord.Interaction, person_id: discord.Member):
+    person1 = message.user
+    person2 = person_id
+    
+    person1accept = False
+    person2accept = False
+    
+    person1gives = {}
+    person2gives = {}
+    
+    async def denyb(interaction):
+        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
+        if interaction.user != person1 and interaction.user != person2:
+            await interaction.response.send_message(choice(funny), ephemeral=True)
+            return
+        
+        # we undo the accepting instead of completely denying
+        if interaction.user == person1 and person1accept:
+            person1accept = False
+            await update_trade_embed(interaction)
+            await interaction.respond()
+            return
+        elif interaction.user == person2 and person2accept:
+            person2accept = False
+            await update_trade_embed(interaction)
+            await interaction.respond()
+            return
+        
+        await interaction.response.defer()
+        await interaction.message.edit(f"<@{interaction.user.id}> has cancelled the trade.", embed=None, view=None)
+            
+    async def acceptb(interaction):
+        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
+        if interaction.user != person1 and interaction.user != person2:
+            await interaction.response.send_message(choice(funny), ephemeral=True)
+            return
+        if interaction.user == person1:
+            person1accept = not person1accept
+        elif interaction.user == person2:
+            person2accept = not person2accept
+            
+        if person1accept and person2accept:
+            # we (finally) finish the trade
+            for k, v in person1gives.items():
+                remove_cat(interaction.guild.id, person1.id, k, v)
+                add_cat(interaction.guild.id, person2.id, k, v)
+                
+            for k, v in person2gives.items():
+                remove_cat(interaction.guild.id, person2.id, k, v)
+                add_cat(interaction.guild.id, person1.id, k, v)
+            await interaction.response.defer()
+            await interaction.message.edit("Trade finished!", embed=None, view=None)
+            return
+        
+        await interaction.response.defer()
+        await update_trade_embed(interaction)
+        
+    async def addb(interaction):
+        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
+        if interaction.user != person1 and interaction.user != person2:
+            await interaction.response.send_message(choice(funny), ephemeral=True)
+            return
+        if interaction.user == person1:
+            currentuser = 1
+            if person1accept:
+                person1accept = False
+                await update_trade_embed()
+        elif interaction.user == person2:
+            currentuser = 2
+            if person2accept:
+                person2accept = False
+                await update_trade_embed()
+        await handle_modal(currentuser, interaction)
+                
+    async def handle_modal(currentuser, interaction):
+        modal = TradeModal(currentuser)
+        await interaction.response.send_modal(modal)
+    
+    def gen_embed():
+        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
+        view = View()
+    
+        accept = Button(label="Accept", style=ButtonStyle.green)
+        accept.callback = acceptb
+        
+        deny = Button(label="Deny", style=ButtonStyle.red)
+        deny.callback = denyb
+        
+        add = Button(label="Offer cats", style=ButtonStyle.blurple)
+        add.callback = addb
+        
+        view.add_item(accept)
+        view.add_item(deny)
+        view.add_item(add)
+        
+        coolembed = discord.Embed(color=0x6E593C, title=f"{person1.name} and {person2.name} trade", description='no way')
+        
+        icon = "⬜"
+        if person1accept:
+            icon = "✅"
+        valuestr = ""
+        for k, v in person1gives.items():
+            aicon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=k.lower() + "cat")
+            valuestr += str(aicon) + k + " " + str(v) + "\n"
+        if not valuestr: valuestr = "No cats offered!"
+        coolembed.add_field(name=f"{icon} {person1.name}", inline=True, value=valuestr)
+        
+        icon = "⬜"
+        if person2accept:
+            icon = "✅"
+        valuestr = ""
+        for k, v in person2gives.items():
+            aicon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=k.lower() + "cat")
+            valuestr += str(aicon) + k + " " + str(v) + "\n"
+        if not valuestr: valuestr = "No cats offered!"
+        coolembed.add_field(name=f"{icon} {person2.name}", inline=True, value=valuestr)
+        
+        return coolembed, view
+    
+    embed, view = gen_embed()
+    await message.response.send_message(embed=embed, view=view)
+        
+    async def update_trade_embed(interaction):
+        embed, view = gen_embed()
+        await interaction.message.edit(embed=embed, view=view)
+        
+    class TradeModal(discord.ui.Modal):
+        def __init__(self, currentuser):
+            super().__init__(
+                "Add cats to the trade",
+                timeout=5 * 60,  # 5 minutes
+            )
+            self.currentuser = currentuser
+            
+            self.cattype = discord.ui.TextInput(
+                min_length=1,
+                max_length=50,
+                label="Cat type",
+                placeholder="Fine"
+            )
+            self.add_item(self.cattype)
+
+            self.amount = discord.ui.TextInput(
+                label="Amount of cats to offer",
+                min_length=1,
+                max_length=50,
+                placeholder="1"
+            )
+            self.add_item(self.amount)
+
+        async def callback(self, interaction: discord.Interaction):
+            nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
+            try:
+                if int(self.amount.value) < 0:
+                    raise Exception
+            except Exception:
+                await interaction.send("plz number?", ephemeral=True)
+                return
+            if self.cattype.value not in cattypes:
+                await interaction.send("add a valid cat type 💀💀💀", ephemeral=True)
+                return
+            if get_cat(interaction.guild.id, interaction.user.id, self.cattype.value) < int(self.amount.value):
+                await interaction.send("hell naww dude you dont even have that many cats 💀💀💀", ephemeral=True)
+                return
+            if self.currentuser == 1:
+                try:
+                    person1gives[self.cattype.value] += int(self.amount.value)
+                except KeyError:
+                    person1gives[self.cattype.value] = int(self.amount.value)
+            else:
+                try:
+                    person2gives[self.cattype.value] += int(self.amount.value)
+                except KeyError:
+                    person2gives[self.cattype.value] = int(self.amount.value)
+            await interaction.response.defer()
+            await update_trade_embed(interaction)
+
 @bot.slash_command(description="Get Cat")
 async def cat(message: discord.Interaction):
     file = discord.File("cat.png", filename="cat.png")
@@ -1371,6 +1549,7 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 @random.error
 @achs.error
 @catch_old.error
+@trade.error
 @catch_new.error
 @pointLaugh.error
 @leaderboards.error
