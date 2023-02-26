@@ -1279,11 +1279,11 @@ async def achs(message: discord.Interaction):
 
     await message.response.send_message(embed=embedVar, view=myview)
 
-@bot.message_command(name="catch (Whitney)")
+@bot.message_command(name="catch (Classic)")
 async def catch_old(message: discord.Interaction, msg):
     await catch(message, msg, False)
 
-@bot.message_command(name="catch (gg sans)")
+@bot.message_command(name="catch (Modern)")
 async def catch_new(message: discord.Interaction, msg):
     await catch(message, msg, True)
 
@@ -1299,10 +1299,6 @@ async def catch(message: discord.Interaction, msg, sansgg):
         ach_data = give_ach(message.guild.id, message.user.id, "4k")
         embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
         await message.channel.send(embed=embed)
-
-@bot.message_command(name="Whitney vs gg sans")
-async def comparison(message: discord.Interaction, msg):
-    await message.response.send_message(file=discord.File("ggsanswhitney.png", filename="ggsanswhitney.png"))
 
 @bot.message_command()
 async def pointLaugh(message: discord.Interaction, msg):
