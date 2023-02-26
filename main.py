@@ -256,8 +256,8 @@ async def on_ready():
         myLoop.cancel()
         myLoop.start()
         loopactive = True
-    except Exception:
-        pass
+    except Exception as e:
+        print(e)
 
 @bot.event
 async def on_message(message):
@@ -267,8 +267,8 @@ async def on_message(message):
             myLoop.cancel()
             myLoop.start()
             loopactive = True
-        except Exception:
-            pass
+        except Exception as e:
+            print(e)
     text = message.content
     if message.author.id == bot.user.id:
         return
