@@ -1279,11 +1279,11 @@ async def achs(message: discord.Interaction):
 
     await message.response.send_message(embed=embedVar, view=myview)
 
-@bot.message_command(name="catch (Classic)")
+@bot.message_command(name="catch (Legacy)")
 async def catch_old(message: discord.Interaction, msg):
     await catch(message, msg, False)
 
-@bot.message_command(name="catch (Modern)")
+@bot.message_command(name="catch")
 async def catch_new(message: discord.Interaction, msg):
     await catch(message, msg, True)
 
