@@ -98,6 +98,8 @@ OWNER_ID = 0
 
 super_prefix = ""
 
+loopactive = False
+
 fire = {}
 for i in summon_id:
     fire[i] = False
@@ -239,7 +241,7 @@ async def myLoop():
 
 @bot.event
 async def on_ready():
-    global milenakoos, OWNER_ID
+    global milenakoos, OWNER_ID, loopactive
     print("cat is now online")
     await bot.change_presence(
             activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
@@ -250,12 +252,22 @@ async def on_ready():
     if TOP_GG_TOKEN:
         import topgg
         bot.topggpy = topgg.DBLClient(TOP_GG_TOKEN, default_bot_id=bot.user.id)
-    myLoop.cancel()
-    myLoop.start()
+    try:
+        myLoop.cancel()
+        myLoop.start()
+        loopactive = True
+    except Exception:
+        pass
 
 @bot.event
 async def on_message(message):
-    global fire, summon_id, delays
+    global fire, summon_id, delays, loopactive
+    if not loopactive:
+        try:
+            myLoop.start()
+            loopactive = True
+        except Exception:
+            pass
     text = message.content
     if message.author.id == bot.user.id:
         return
