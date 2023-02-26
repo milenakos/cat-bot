@@ -545,21 +545,6 @@ async def on_message(message):
         await message.add_reaction('🐸')
     await bot.process_commands(message)
 
-@bot.slash_command(description="Send Help")
-async def help(message: discord.Interaction):
-    embedVar = discord.Embed(
-            title="Send Help", description=discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat"), color=0x6E593C
-    ).add_field(
-            name="Cat Hunt Commands",
-            inline=False,
-            value="**/inv** - your cats\n**/leaderboards** - da cat leaderboad\n**/donate** - donate your cats to another person\n**/achs** - view your achievements\n**/feedback** - give suggestions, report bugs, and everything in between",
-    ).add_field(
-            name="Info Commands",
-            inline=False,
-            value="**/random** - get random cat image\n**right click > apps > catch** - catch someone in 4k\n**/tiktok** - read message as tiktok woman tts\n**/dream** - use funny ai to create images from text\n**/help** - this command\n**/admin** - help for server admins\n**/cat** - get staring cat image\n**/info** - get info bout bot and credits",
-    )
-    await message.response.send_message(embed=embedVar)
-
 @bot.slash_command(description="Give feedback, report bugs or suggest ideas")
 async def feedback(message: discord.Interaction, feedback: str):
     if len(str(message.user) + "\n" + feedback) >= 2000:
