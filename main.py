@@ -264,6 +264,7 @@ async def on_message(message):
     global fire, summon_id, delays, loopactive
     if not loopactive:
         try:
+            myLoop.cancel()
             myLoop.start()
             loopactive = True
         except Exception:
