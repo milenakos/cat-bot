@@ -98,8 +98,6 @@ OWNER_ID = 0
 
 super_prefix = ""
 
-loopactive = False
-
 fire = {}
 for i in summon_id:
     fire[i] = False
@@ -212,8 +210,7 @@ def give_ach(server_id, person_id, ach_id, reverse=False):
 
 @tasks.loop(seconds = randint(delays[0], delays[1]))
 async def myLoop():
-    global bot, fire, summon_id, delays, loopactive
-    loopactive = True
+    global bot, fire, summon_id, delays
     await bot.change_presence(
             activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
     )
@@ -242,7 +239,7 @@ async def myLoop():
 
 @bot.event
 async def on_ready():
-    global milenakoos, OWNER_ID, loopactive
+    global milenakoos, OWNER_ID
     print("cat is now online")
     await bot.change_presence(
             activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
@@ -256,20 +253,13 @@ async def on_ready():
     try:
         myLoop.cancel()
         myLoop.start()
-        loopactive = True
     except Exception as e:
-        print(e)
+        myLoop.cancel()
+        myLoop.start()
 
 @bot.event
 async def on_message(message):
-    global fire, summon_id, delays, loopactive
-    if not loopactive:
-        try:
-            myLoop.cancel()
-            myLoop.start()
-            loopactive = True
-        except Exception as e:
-            print(e)
+    global fire, summon_id, delays
     text = message.content
     if message.author.id == bot.user.id:
         return
