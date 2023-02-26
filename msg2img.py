@@ -89,7 +89,7 @@ def msg2img(message, bot, sansgg=False):
         color = ImageColor.getrgb(color)
 
     bg_color = (54, 57, 63)
-    if sans_gg:
+    if sansgg:
         bg_color = (49, 51, 56)
     if is_pinged:
         bg_color = (73, 68, 60)
