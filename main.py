@@ -147,7 +147,7 @@ def register_member(server_id, person_id):
         if db[str(server_id)][str(person_id)][search]:
             pass
     except KeyError:
-        db[str(server_id)][str(person_id)] = {}
+        db[str(server_id)][str(person_id)] = {"Fine": 0}
         save()
 
 def get_cat(server_id, person_id, cattype):
