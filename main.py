@@ -919,18 +919,6 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
             await interaction.response.send_message(choice(funny), ephemeral=True)
             return
         
-        # we undo the accepting instead of completely denying
-        if interaction.user == person1 and person1accept:
-            person1accept = False
-            await update_trade_embed(interaction)
-            await interaction.response.defer()
-            return
-        elif interaction.user == person2 and person2accept:
-            person2accept = False
-            await update_trade_embed(interaction)
-            await interaction.response.defer()
-            return
-        
         await interaction.response.defer()
         await interaction.message.edit(f"<@{interaction.user.id}> has cancelled the trade.", embed=None, view=None)
             
