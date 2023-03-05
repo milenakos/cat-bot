@@ -1059,7 +1059,14 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
             if self.cattype.value not in cattypes:
                 await interaction.send("add a valid cat type 💀💀💀", ephemeral=True)
                 return
-            if get_cat(interaction.guild.id, interaction.user.id, self.cattype.value) < int(self.amount.value):
+            try:
+                if self.currentuser == 1:
+                    currset = person1gives[self.cattype.value]
+                else:
+                    currset = person2gives[self.cattype.value]
+            except KeyError:
+                currset = 0
+            if get_cat(interaction.guild.id, interaction.user.id, self.cattype.value) < int(self.amount.value) + currset:
                 await interaction.send("hell naww dude you dont even have that many cats 💀💀💀", ephemeral=True)
                 return
             if self.currentuser == 1:
