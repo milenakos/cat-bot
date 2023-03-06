@@ -903,7 +903,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
             ach_data = give_ach(message.guild.id, message.user.id, "introvert")
             embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
             await message.channel.send(embed=embed)
-    
+
     person1accept = False
     person2accept = False
     
@@ -936,16 +936,24 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
         await update_trade_embed(interaction)
             
         if person1accept and person2accept:
+            fullsuccess = ""
             # we (finally) finish the trade
             for k, v in person1gives.items():
-                remove_cat(interaction.guild.id, person1.id, k, v)
-                add_cat(interaction.guild.id, person2.id, k, v)
+                # double check incase cats went away while trade was going on
+                if get_cat(interaction.guild.id, person1.id, k) >= v:
+                    remove_cat(interaction.guild.id, person1.id, k, v)
+                    add_cat(interaction.guild.id, person2.id, k, v)
+                else:
+                    fullsuccess = " with errors"
                 
             for k, v in person2gives.items():
-                remove_cat(interaction.guild.id, person2.id, k, v)
-                add_cat(interaction.guild.id, person1.id, k, v)
+                if get_cat(interaction.guild.id, person2.id, k) >= v:
+                    remove_cat(interaction.guild.id, person2.id, k, v)
+                    add_cat(interaction.guild.id, person1.id, k, v)
+                else:ff
+                    fullsuccess = " with errors"
             
-            await interaction.message.edit("Trade finished!", view=None)
+            await interaction.message.edit(f"Trade finished {fullsuccess}!", view=None)
             if not has_ach(message.guild.id, person1.id, "extrovert"):
                 ach_data = give_ach(message.guild.id, person1.id, "extrovert")
                 embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=person1.name)
