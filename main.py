@@ -529,6 +529,7 @@ async def on_message(message):
     if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
         stuff = text.split(" ")
         register_member(str(stuff[1]), str(message.guild.id))
+        db["0"][str(stuff[1])] = {}
         db["0"][str(stuff[1])]["custom"] = stuff[2]
         save()
         await message.reply("success")
@@ -744,6 +745,7 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
     try:
         custom = db["0"][str(person_id.id)]["custom"]
     except Exception as e:
+        db["0"][str(person_id.id)] = {}
         db["0"][str(person_id.id)]["custom"] = False
         custom = False
         do_save = True
