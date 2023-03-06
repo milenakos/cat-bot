@@ -82,7 +82,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="Cat Bot by Milenakos#3310", intents=intents, help_command=None)
 
-cattypes = ["Fine", "Nice", "Good", "Rare", "Wild", "Baby", "Epic", "Sus", "Brave", "Rickroll", "Reverse", "Superior", "TheTrashCell", "Legendary", "Mythic", "8bit", "Corrupt", "Professor", "Divine", "Real", "Ultimate", "eGirl"]
+cattypes = set(CAT_TYPES)
 
 funny = ["why did you click this this arent yours", "absolutely not", "cat bot not responding, try again later", "you cant", "can you please stop", "try again", "403 not allowed", "stop", "get a life"]
 
@@ -706,6 +706,10 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
             else:
                 unlocked += 1
     total_achs = len(ach_list) - minus_achs_count
+    if minus_achs != 0:
+        minus_achs = f" + {minus_achs}"
+    else:
+        minus_achs = ""
 
     catch_time = str(get_time(message.guild.id, person_id.id))
     is_empty = True
@@ -732,7 +736,7 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
         your = person_id.name + "'s"
 
     embedVar = discord.Embed(
-            title=your + " cats:", description=f"{your} fastest catch is: {catch_time} s\nand {your} slowest catch is: {slow_time} h\nAchievements unlocked: {unlocked}/{total_achs} + {minus_achs}", color=0x6E593C
+            title=your + " cats:", description=f"{your} fastest catch is: {catch_time} s\nand {your} slowest catch is: {slow_time} h\nAchievements unlocked: {unlocked}/{total_achs}{minus_achs}", color=0x6E593C
     )
     give_collector = True
     do_save = False
@@ -1202,8 +1206,12 @@ async def achs(message: discord.Interaction):
             else:
                 unlocked += 1
     total_achs = len(ach_list) - minus_achs_count
+    if minus_achs != 0:
+        minus_achs = f" + {minus_achs}"
+    else:
+        minus_achs = ""
     embedVar = discord.Embed(
-            title="Your achievements:", description=f"{unlocked}/{total_achs} + {minus_achs}", color=0x6E593C
+            title="Your achievements:", description=f"{unlocked}/{total_achs}{minus_achs}", color=0x6E593C
     )
 
     def gen_new(category):
@@ -1212,7 +1220,7 @@ async def achs(message: discord.Interaction):
         if category == "Hidden":
             hidden_suffix = "\n\nThis is a \"Hidden\" category. Achievements here only show up after you complete them."
         newembed = discord.Embed(
-                title=category, description=f"Achievements unlocked (total): {unlocked}/{total_achs} + {minus_achs}{hidden_suffix}", color=0x6E593C
+                title=category, description=f"Achievements unlocked (total): {unlocked}/{total_achs}{minus_achs}{hidden_suffix}", color=0x6E593C
         )
         for k, v in ach_list.items():
             if v["category"] == category:
