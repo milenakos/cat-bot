@@ -950,7 +950,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
                 if get_cat(interaction.guild.id, person2.id, k) >= v:
                     remove_cat(interaction.guild.id, person2.id, k, v)
                     add_cat(interaction.guild.id, person1.id, k, v)
-                else:ff
+                else:
                     fullsuccess = " with errors"
             
             await interaction.message.edit(f"Trade finished {fullsuccess}!", view=None)
