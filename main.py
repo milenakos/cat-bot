@@ -838,6 +838,9 @@ async def ping(message: discord.Interaction):
 async def donate(message: discord.Interaction, person: discord.Member, cat_type: str = discord.SlashOption(choices=cattypes), amount: Optional[int] = discord.SlashOption(required=False)):
     if not amount: amount = 1
     person_id = person.id
+    if get_cat(message.guild.id, message.user.id, "trade") == 1:
+        await interaction.response.send_message(f"You are currently in a trade. Please finish it first.", ephemeral=True)
+        return
     if get_cat(message.guild.id, message.user.id, cat_type) >= amount and amount > 0 and message.user.id != person_id:
         remove_cat(message.guild.id, message.user.id, cat_type, amount)
         add_cat(message.guild.id, person_id, cat_type, amount)
@@ -904,6 +907,16 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
             embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
             await message.channel.send(embed=embed)
 
+    if get_cat(message.guild.id, person1.id, "trade") == 1:
+        await interaction.response.send_message(f"{person1.name} is in another trade.", ephemeral=True)
+        return
+    if get_cat(message.guild.id, person2.id, "trade") == 1:
+        await interaction.response.send_message(f"{person2.name} is in another trade.", ephemeral=True)
+        return
+    
+    add_cat(message.guild.id, person1.id, "trade")
+    add_cat(message.guild.id, person2.id, "trade")
+        
     person1accept = False
     person2accept = False
     
@@ -920,6 +933,8 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
             return
         
         await interaction.response.defer()
+        remove_cat(message.guild.id, person1.id, "trade")
+        remove_cat(message.guild.id, person2.id, "trade")
         await interaction.message.edit(f"<@{interaction.user.id}> has cancelled the trade.", embed=None, view=None)
             
     async def acceptb(interaction):
@@ -952,7 +967,8 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
                     add_cat(interaction.guild.id, person1.id, k, v)
                 else:
                     fullsuccess = " with errors"
-            
+            remove_cat(message.guild.id, person1.id, "trade")
+            remove_cat(message.guild.id, person2.id, "trade")
             await interaction.message.edit(f"Trade finished{fullsuccess}!", view=None)
             if not has_ach(message.guild.id, person1.id, "extrovert"):
                 ach_data = give_ach(message.guild.id, person1.id, "extrovert")
@@ -983,6 +999,13 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
     async def handle_modal(currentuser, interaction):
         modal = TradeModal(currentuser)
         await interaction.response.send_modal(modal)
+        
+    async def untrade(interaction):
+        person1accept = False
+        person2accept = False
+        remove_cat(message.guild.id, person1.id, "trade")
+        remove_cat(message.guild.id, person2.id, "trade")
+        await interaction.message.edit(f"Trade abandoned!", view=None)
     
     def gen_embed():
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
@@ -990,6 +1013,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
     
         accept = Button(label="Accept", style=ButtonStyle.green)
         accept.callback = acceptb
+        accept.on_timeout = untrade
         
         deny = Button(label="Deny", style=ButtonStyle.red)
         deny.callback = denyb
@@ -1332,7 +1356,7 @@ async def leaderboards(message: discord.Interaction):
             else:
                 value = 0
                 for a, b in db[str(message.guild.id)][i].items():
-                    if a != "time" and a != "timeslow" and a != "ach" and a != "custom" and a != "timeout" and a != "battlepass" and a != "progress":
+                    if a in cattypes:
                         try:
                             value += b
                             if b > 0 and rarities.index(a) > rarest:
