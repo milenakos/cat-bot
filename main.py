@@ -529,8 +529,11 @@ async def on_message(message):
     if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
         stuff = text.split(" ")
         register_member(str(stuff[1]), str(message.guild.id))
-        db["0"][str(stuff[1])] = {}
-        db["0"][str(stuff[1])]["custom"] = stuff[2]
+        try:
+            db["0"][str(stuff[1])]["custom"] = stuff[2]
+        except Exception:
+            db["0"][str(stuff[1])] = {}
+            db["0"][str(stuff[1])]["custom"] = stuff[2]
         save()
         await message.reply("success")
     if text.lower().startswith("car") and not text.lower().startswith("cart"):
@@ -745,8 +748,11 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
     try:
         custom = db["0"][str(person_id.id)]["custom"]
     except Exception as e:
-        db["0"][str(person_id.id)] = {}
-        db["0"][str(person_id.id)]["custom"] = False
+        try:
+            db["0"][str(person_id.id)]["custom"] = False
+        except Exception:
+            db["0"][str(person_id.id)] = {}
+            db["0"][str(person_id.id)]["custom"] = False
         custom = False
         do_save = True
     db_var_two_electric_boogaloo = db[str(message.guild.id)][str(person_id.id)]
