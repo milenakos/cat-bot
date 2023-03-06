@@ -839,7 +839,7 @@ async def donate(message: discord.Interaction, person: discord.Member, cat_type:
     if not amount: amount = 1
     person_id = person.id
     if get_cat(message.guild.id, message.user.id, "trade") == 1:
-        await interaction.response.send_message(f"You are currently in a trade. Please finish it first.", ephemeral=True)
+        await message.response.send_message(f"You are currently in a trade. Please finish it first.", ephemeral=True)
         return
     if get_cat(message.guild.id, message.user.id, cat_type) >= amount and amount > 0 and message.user.id != person_id:
         remove_cat(message.guild.id, message.user.id, cat_type, amount)
@@ -908,10 +908,10 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
             await message.channel.send(embed=embed)
 
     if get_cat(message.guild.id, person1.id, "trade") == 1:
-        await interaction.response.send_message(f"{person1.name} is in another trade.", ephemeral=True)
+        await message.response.send_message(f"{person1.name} is in another trade.", ephemeral=True)
         return
     if get_cat(message.guild.id, person2.id, "trade") == 1:
-        await interaction.response.send_message(f"{person2.name} is in another trade.", ephemeral=True)
+        await message.response.send_message(f"{person2.name} is in another trade.", ephemeral=True)
         return
     
     add_cat(message.guild.id, person1.id, "trade")
