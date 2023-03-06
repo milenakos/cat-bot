@@ -953,7 +953,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
                 else:
                     fullsuccess = " with errors"
             
-            await interaction.message.edit(f"Trade finished {fullsuccess}!", view=None)
+            await interaction.message.edit(f"Trade finished{fullsuccess}!", view=None)
             if not has_ach(message.guild.id, person1.id, "extrovert"):
                 ach_data = give_ach(message.guild.id, person1.id, "extrovert")
                 embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=person1.name)
