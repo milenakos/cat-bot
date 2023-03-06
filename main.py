@@ -86,6 +86,9 @@ cattypes = ["Fine", "Nice", "Good", "Rare", "Wild", "Baby", "Epic", "Sus", "Brav
 
 funny = ["why did you click this this arent yours", "absolutely not", "cat bot not responding, try again later", "you cant", "can you please stop", "try again", "403 not allowed", "stop", "get a life"]
 
+trades = {}
+# we dont want trades to be persistent between restarts
+
 summon_id = db["summon_ids"]
 
 delays = [120, 1200]
@@ -838,9 +841,11 @@ async def ping(message: discord.Interaction):
 async def donate(message: discord.Interaction, person: discord.Member, cat_type: str = discord.SlashOption(choices=cattypes), amount: Optional[int] = discord.SlashOption(required=False)):
     if not amount: amount = 1
     person_id = person.id
-    if get_cat(message.guild.id, message.user.id, "trade") == 1:
-        await message.response.send_message(f"You are currently in a trade. Please finish it first.", ephemeral=True)
-        return
+    try:
+        if trades[str(message.user.id)]:
+            await message.response.send_message(f"You are currently in a trade. Please finish it first.", ephemeral=True)
+            return
+    except Exception: pass # no value = not in a trade
     if get_cat(message.guild.id, message.user.id, cat_type) >= amount and amount > 0 and message.user.id != person_id:
         remove_cat(message.guild.id, message.user.id, cat_type, amount)
         add_cat(message.guild.id, person_id, cat_type, amount)
@@ -907,15 +912,19 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
             embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
             await message.channel.send(embed=embed)
 
-    if get_cat(message.guild.id, person1.id, "trade") == 1:
-        await message.response.send_message(f"{person1.name} is in another trade.", ephemeral=True)
-        return
-    if get_cat(message.guild.id, person2.id, "trade") == 1:
-        await message.response.send_message(f"{person2.name} is in another trade.", ephemeral=True)
-        return
+    try:
+        if trades[str(person1.id)]:
+            await message.response.send_message(f"{person1.name} is in another trade.", ephemeral=True)
+            return
+    except Exception: pass
+    try:
+        if trades[str(person2.id)]:
+            await message.response.send_message(f"{person2.name} is in another trade.", ephemeral=True)
+            return
+    except Exception: pass
     
-    add_cat(message.guild.id, person1.id, "trade")
-    add_cat(message.guild.id, person2.id, "trade")
+    trades[str(person1.id)] = True
+    trades[str(person2.id)] = True
         
     person1accept = False
     person2accept = False
@@ -933,8 +942,8 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
             return
         
         await interaction.response.defer()
-        remove_cat(message.guild.id, person1.id, "trade")
-        remove_cat(message.guild.id, person2.id, "trade")
+        trades[str(person1.id)] = False
+        trades[str(person2.id)] = False
         await interaction.message.edit(f"<@{interaction.user.id}> has cancelled the trade.", embed=None, view=None)
             
     async def acceptb(interaction):
@@ -967,8 +976,8 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
                     add_cat(interaction.guild.id, person1.id, k, v)
                 else:
                     fullsuccess = " with errors"
-            remove_cat(message.guild.id, person1.id, "trade")
-            remove_cat(message.guild.id, person2.id, "trade")
+            trades[str(person1.id)] = False
+            trades[str(person2.id)] = False
             await interaction.message.edit(f"Trade finished{fullsuccess}!", view=None)
             if not has_ach(message.guild.id, person1.id, "extrovert"):
                 ach_data = give_ach(message.guild.id, person1.id, "extrovert")
@@ -1003,8 +1012,8 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
     async def untrade(interaction):
         person1accept = False
         person2accept = False
-        remove_cat(message.guild.id, person1.id, "trade")
-        remove_cat(message.guild.id, person2.id, "trade")
+        trades[str(person1.id)] = False
+        trades[str(person2.id)] = False
         await interaction.message.edit(f"Trade abandoned!", view=None)
     
     def gen_embed():
