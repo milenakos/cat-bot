@@ -526,6 +526,9 @@ async def on_message(message):
     if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
         stuff = text.split(" ")
         register_member(str(stuff[1]), str(message.guild.id))
+        if stuff[2] == "None":
+            del db["0"][str(stuff[1])]["custom"]
+            return
         try:
             db["0"][str(stuff[1])]["custom"] = stuff[2]
         except Exception:
