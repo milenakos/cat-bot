@@ -1602,7 +1602,7 @@ async def on_command_error(ctx, error):
         except:
             await ctx.channel.send("i don't have permissions to do that. (try reinviting the bot)")
     elif "errors.NotFound" in str(error):
-      y:
+        try:
             await ctx.reply("took too long, try running the command again")
         except:
             await ctx.channel.send("took too long, try running the command again")
