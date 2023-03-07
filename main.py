@@ -528,12 +528,12 @@ async def on_message(message):
         register_member(str(stuff[1]), str(message.guild.id))
         if stuff[2] == "None":
             del db["0"][str(stuff[1])]["custom"]
-            return
-        try:
-            db["0"][str(stuff[1])]["custom"] = stuff[2]
-        except Exception:
-            db["0"][str(stuff[1])] = {}
-            db["0"][str(stuff[1])]["custom"] = stuff[2]
+        else:
+            try:
+                db["0"][str(stuff[1])]["custom"] = stuff[2]
+            except Exception:
+                db["0"][str(stuff[1])] = {}
+                db["0"][str(stuff[1])]["custom"] = stuff[2]
         save()
         await message.reply("success")
     if text.lower().startswith("car") and not text.lower().startswith("cart"):
