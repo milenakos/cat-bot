@@ -1594,6 +1594,7 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 @giveach.error
 @reset.error
 async def on_command_error(ctx, error):
+    print(str(error)) # i am a very professional developer
     if "KeyboardInterrupt" in str(error):
         return
     elif "errors.Forbidden" in str(error):
