@@ -1594,16 +1594,15 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 @giveach.error
 @reset.error
 async def on_command_error(ctx, error):
-    print(str(error)) # i am a very professional developer
-    if "KeyboardInterrupt" in str(error):
+    if "KeyboardInterrupt" in str(type(error)):
         return
-    elif "errors.Forbidden" in str(error):
+    elif "errors.Forbidden" in str(type(error)):
         try:
             await ctx.reply("i don't have permissions to do that. (try reinviting the bot)")
         except:
             await ctx.channel.send("i don't have permissions to do that. (try reinviting the bot)")
     elif "errors.NotFound" in str(error):
-        try:
+      y:
             await ctx.reply("took too long, try running the command again")
         except:
             await ctx.channel.send("took too long, try running the command again")
