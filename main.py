@@ -1564,7 +1564,7 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 @dream.error
 @myLoop.error
 @warning.error
-@sweep.error
+@repair.error
 @feedback.error
 @admin.error
 @info.error
