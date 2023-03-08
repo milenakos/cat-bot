@@ -671,7 +671,7 @@ async def nerdmode(message: discord.Interaction, person: discord.Member, timeout
         await message.response.send_message(f"{person} is no longer in nerd mode.")
 
 @bot.slash_command(description="Use if cat spawning is broken", default_member_permissions=8)
-async def sweep(message: discord.Interaction):
+async def repair(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
     save()
     await message.response.send_message("success")
@@ -1472,7 +1472,7 @@ async def say(message: discord.Interaction, text: str):
 @bot.slash_command(description="Setup cat in current channel", default_member_permissions=8)
 async def setup(message: discord.Interaction):
     if int(message.channel.id) in db["summon_ids"]:
-        await message.response.send_message("bruh you already setup cat here are you dumb\n\nthere might already be a cat sitting in chat. type `cat` to catch it.")
+        await message.response.send_message("bruh you already setup cat here are you dumb\n\nthere might already be a cat sitting in chat. type `cat` to catch it.\nalternatively, you can try `/repair` if it still doesnt work")
         return
     abc = db["summon_ids"]
     abc.append(int(message.channel.id))
