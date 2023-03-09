@@ -237,6 +237,11 @@ async def myLoop():
     thing = discord.File("db.json", filename="db.json")
     await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
 
+@myLoop.after_loop
+async def finish():
+    if myLoop.is_being_cancelled() and GITHUB_CHANNEL_ID:
+        os.execv(sys.executable, ['python'] + sys.argv)
+
 @bot.event
 async def on_ready():
     global milenakoos, OWNER_ID
@@ -261,9 +266,6 @@ async def on_message(message):
     if GITHUB_CHANNEL_ID and message.channel.id == GITHUB_CHANNEL_ID:
         os.system("git pull")
         myLoop.stop()
-        while myLoop.is_running():
-            pass
-        os.execv(sys.executable, ['python'] + sys.argv)
     if not (" " in text) and len(text) > 7 and text.isalnum():
         s = text.lower()
         total_vow = 0
