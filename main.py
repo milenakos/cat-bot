@@ -250,12 +250,7 @@ async def on_ready():
     if TOP_GG_TOKEN:
         import topgg
         bot.topggpy = topgg.DBLClient(TOP_GG_TOKEN, default_bot_id=bot.user.id)
-    try:
-        myLoop.cancel()
-        myLoop.start()
-    except Exception as e:
-        myLoop.cancel()
-        myLoop.start()
+    myLoop.start()
 
 @bot.event
 async def on_message(message):
@@ -265,7 +260,9 @@ async def on_message(message):
         return
     if GITHUB_CHANNEL_ID and message.channel.id == GITHUB_CHANNEL_ID:
         os.system("git pull")
-        myLoop.cancel()
+        myLoop.stop()
+        while myLoop.is_running():
+            pass
         os.execv(sys.executable, ['python'] + sys.argv)
     if not (" " in text) and len(text) > 7 and text.isalnum():
         s = text.lower()
