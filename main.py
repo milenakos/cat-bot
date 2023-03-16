@@ -267,7 +267,7 @@ async def on_ready():
         import topgg
         bot.topggpy = topgg.DBLClient(TOP_GG_TOKEN, default_bot_id=bot.user.id)
     myLoop.start()
-    update_presense.start()
+    update_presence.start()
 
 @bot.event
 async def on_message(message):
