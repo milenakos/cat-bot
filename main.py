@@ -93,7 +93,6 @@ delays = [120, 1200]
 timeout = 0
 starting_time = 0
 message_thing = 0
-total_members = 0
 milenakoos = 0
 OWNER_ID = 0
 
@@ -108,6 +107,14 @@ def save():
         json.dump(db, f)
     with open("backup.txt", "w") as f:
         f.write(str(db))
+
+try:
+    if not db["total_members"]:
+        raise
+except KeyError:
+    db["total_members"] = 0
+    save()
+
 
 def add_cat(server_id, person_id, cattype, val=1, overwrite=False):
     register_member(server_id, person_id)
@@ -211,7 +218,8 @@ def give_ach(server_id, person_id, ach_id, reverse=False):
 
 @tasks.loop(seconds = randint(delays[0], delays[1]))
 async def myLoop():
-    global bot, fire, summon_id, delays, total_members
+    global bot, fire, summon_id, delays
+    total_members = db["total_members"]
     await bot.change_presence(
             activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers with {total_members} people")
     )
@@ -245,13 +253,13 @@ async def finish():
 
 @tasks.loop(seconds=3600)
 async def update_presence():
-    global total_members
     # while servers are updated on every loop, members are more resource and api-calls intensive, thus update once a hour
     total = 0
     for i in bot.guilds:
         g = await bot.fetch_guild(i.id)
         total += g.approximate_member_count
-    total_members = total
+    db["total_members"] = total
+    save()
         
 @bot.event
 async def on_ready():
