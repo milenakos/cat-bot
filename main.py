@@ -93,6 +93,7 @@ delays = [120, 1200]
 timeout = 0
 starting_time = 0
 message_thing = 0
+total_members = 0
 milenakoos = 0
 OWNER_ID = 0
 
@@ -210,9 +211,9 @@ def give_ach(server_id, person_id, ach_id, reverse=False):
 
 @tasks.loop(seconds = randint(delays[0], delays[1]))
 async def myLoop():
-    global bot, fire, summon_id, delays
+    global bot, fire, summon_id, delays, total_members
     await bot.change_presence(
-            activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
+            activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers with {total_members} people")
     )
     summon_id = db["summon_ids"]
     myLoop.change_interval(seconds = randint(delays[0], delays[1]))
@@ -242,6 +243,16 @@ async def finish():
     if myLoop.is_being_cancelled() and GITHUB_CHANNEL_ID:
         os.execv(sys.executable, ['python'] + sys.argv)
 
+@tasks.loop(seconds=3600)
+async def update_presence():
+    global total_members
+    # while servers are updated on every loop, members are more resource and api-calls intensive, thus update once a hour
+    total = 0
+    for i in bot.guilds:
+        g = await bot.fetch_guild(i.id)
+        total += g.approximate_member_count
+    total_members = total
+        
 @bot.event
 async def on_ready():
     global milenakoos, OWNER_ID
@@ -256,6 +267,7 @@ async def on_ready():
         import topgg
         bot.topggpy = topgg.DBLClient(TOP_GG_TOKEN, default_bot_id=bot.user.id)
     myLoop.start()
+    update_presense.start()
 
 @bot.event
 async def on_message(message):
