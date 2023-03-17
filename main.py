@@ -516,6 +516,9 @@ async def on_message(message):
     if ':sob:' in text.lower() or "😭" in text.lower():
         icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
         await message.add_reaction(icon)
+    if "silly" in text.lower():
+        icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="sillycat")
+        await message.add_reaction(icon)
     if text.lower().startswith("cat!beggar") and message.author.id == OWNER_ID:
         give_ach(message.guild.id, int(text[10:].split(" ")[1]), text[10:].split(" ")[2])
         await message.reply("success")
