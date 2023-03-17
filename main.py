@@ -459,7 +459,8 @@ async def on_message(message):
                 do_time = True
                 if time_caught <= 0:
                     do_time = False
-            except Exception:
+            except Exception as e:
+                print(e)
                 do_time = False
                 caught_time = "undefined amounts of time "
                 pass
