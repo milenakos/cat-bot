@@ -1,5 +1,5 @@
 import nextcord as discord
-import msg2img, base64, sys, re, time, json, requests, traceback, os, io, aiohttp, heapq, datetime
+import msg2img, base64, sys, re, time, json, requests, traceback, os, io, aiohttp, heapq
 from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
 from nextcord.ui import Button, View
@@ -427,7 +427,7 @@ async def on_message(message):
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
             await message.add_reaction(icon)
         elif is_cat:
-            current_time = time.time() - float(datetime.datetime.now().astimezone().tzinfo.utcoffset(datetime.datetime.now()).seconds) # this is laughable, i hate time
+            current_time = message.created_at
             cat_temp = db["cat"][str(message.channel.id)]
             db["cat"][str(message.channel.id)] = False
             save()
