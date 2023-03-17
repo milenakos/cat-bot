@@ -22,7 +22,7 @@ Discord Cat Bot Source Code
 
 3. Create a `db.json` file. Here is a template of an empty db:
 
-   `{"cat": {}, "summon_ids": []}`
+   `{"cat": {}, "summon_ids": [], "0": {}, "cattype": {}}`
    
    Put that there if you are just starting out.
    
