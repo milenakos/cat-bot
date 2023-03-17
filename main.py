@@ -428,6 +428,7 @@ async def on_message(message):
             await message.add_reaction(icon)
         elif is_cat:
             current_time = message.created_at
+            current_time = time.mktime(current_time.timetuple()) + current_time.microsecond / 1e6
             cat_temp = db["cat"][str(message.channel.id)]
             db["cat"][str(message.channel.id)] = False
             save()
