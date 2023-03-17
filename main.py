@@ -246,11 +246,6 @@ async def myLoop():
     thing = discord.File("db.json", filename="db.json")
     await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
 
-@myLoop.after_loop
-async def finish():
-    if myLoop.is_being_cancelled() and GITHUB_CHANNEL_ID:
-        os.execv(sys.executable, ['python'] + sys.argv)
-
 @tasks.loop(seconds=3600)
 async def update_presence():
     # while servers are updated on every loop, members are more resource and api-calls intensive, thus update once a hour
@@ -285,7 +280,7 @@ async def on_message(message):
         return
     if GITHUB_CHANNEL_ID and message.channel.id == GITHUB_CHANNEL_ID:
         os.system("git pull")
-        myLoop.stop()
+        os.execv(sys.executable, ['python'] + sys.argv)
     if not (" " in text) and len(text) > 7 and text.isalnum():
         s = text.lower()
         total_vow = 0
