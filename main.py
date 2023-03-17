@@ -1,5 +1,5 @@
 import nextcord as discord
-import msg2img, base64, sys, re, time, json, requests, traceback, os, io, aiohttp, heapq
+import msg2img, base64, sys, re, time, json, requests, traceback, os, io, aiohttp, heapq, datetime
 from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
 from nextcord.ui import Button, View
@@ -439,7 +439,6 @@ async def on_message(message):
                 await var.delete()
 
                 then = time.mktime(catchtime.timetuple()) + catchtime.microsecond / 1e6
-                print(current_time, then) # profressional developer skilz
                 time_caught = round(((current_time - then) * 100)) / 100
                 days = time_caught // 86400
                 time_left = time_caught - (days * 86400)
