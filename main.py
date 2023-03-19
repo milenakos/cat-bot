@@ -279,6 +279,11 @@ async def on_message(message):
     if GITHUB_CHANNEL_ID and message.channel.id == GITHUB_CHANNEL_ID:
         os.system("git pull")
         os.execv(sys.executable, ['python'] + sys.argv)
+    if "robotop" in message.author.name.lower() and "i rate **cat" in message.content.lower():
+        icon = str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="no_cat_throphy")) + " "
+        await message.reply("**RoboTop**, I rate **you** 0 cats " + icon * 5)
+    if message.author.bot:
+        return
     if not (" " in text) and len(text) > 7 and text.isalnum():
         s = text.lower()
         total_vow = 0
@@ -309,9 +314,6 @@ async def on_message(message):
             const_perc = len(text) / (len(text) - total_vow)
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
             await message.add_reaction(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat"))
-    if "robotop" in message.author.name.lower() and "i rate **cat" in message.content.lower():
-        icon = str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="no_cat_throphy")) + " "
-        await message.reply("**RoboTop**, I rate **you** 0 cats " + icon * 5)
     if text.lower().startswith("cat?") and not has_ach(message.guild.id, message.author.id, "???"):
         ach_data = give_ach(message.guild.id, message.author.id, "???")
         embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
@@ -319,7 +321,7 @@ async def on_message(message):
     if text == "lol_i_have_dmed_the_cat_bot_and_got_an_ach" and not message.guild:
         await message.channel.send("which part of \"send in server\" was unclear?")
         return
-    elif message.guild == None and message.author.id != bot.user.id:
+    elif message.guild == None :
         await message.channel.send("good job! please send \"lol_i_have_dmed_the_cat_bot_and_got_an_ach\" in server to get your ach!")
         return
     if "V1;" in text:
