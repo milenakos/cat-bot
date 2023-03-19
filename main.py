@@ -321,7 +321,7 @@ async def on_message(message):
     if text == "lol_i_have_dmed_the_cat_bot_and_got_an_ach" and not message.guild:
         await message.channel.send("which part of \"send in server\" was unclear?")
         return
-    elif message.guild == None :
+    elif message.guild == None:
         await message.channel.send("good job! please send \"lol_i_have_dmed_the_cat_bot_and_got_an_ach\" in server to get your ach!")
         return
     if "V1;" in text:
