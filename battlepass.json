@@ -1,6 +1,6 @@
 {
   "levels": [
-    {"req": "catch", "req_data": 1, "reward": "Nice", "reward_amount": 1},
+    {"req": "catch", "req_data": 2, "reward": "Nice", "reward_amount": 1},
     {"req": "catch_fast", "req_data": 15, "reward": "Fine", "reward_amount": 3},
     {"req": "catch_type", "req_data": "Rare", "reward": "Rare", "reward_amount": 1},
     {"req": "catch", "req_data": 5, "reward": "Wild", "reward_amount": 1},
