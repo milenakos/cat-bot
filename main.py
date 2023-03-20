@@ -570,7 +570,7 @@ async def on_message(message):
     await bot.process_commands(message)
 
 @bot.slash_command(description="no way its cat rain")
-async def rain(message: discord.Interaction, type: str = discord.SlashOption(choices=["short", "normal", "long"])):
+async def rain(message: discord.Interaction, type: str = discord.SlashOption(choices=["shortrain", "normalrain", "longrain"])):
     if get_cat(type, message.user.id, type) != 0:
         typemap = {"short": 5, "normal": 25, "long": 50}
         amount = typemap[type]
