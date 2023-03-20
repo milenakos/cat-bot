@@ -569,6 +569,16 @@ async def on_message(message):
         await message.add_reaction('🐸')
     await bot.process_commands(message)
 
+@bot.slash_command(description="no way its cat rain")
+async def rain(message: dicord.Interaction, type: str = discord.SlashOption(choices=["short", "normal", "long"]))
+    if get_cat(type, message.user.id, type) != 0:
+        typemap = {"short": 5, "normal": 25, "long": 50}
+        amount = typemap[type]
+        add_cat(message.guild.id, message.user.id, "Fine", amount)
+        await message.response.send_message(f":umbrella: Cats rained and you got {amount} Fine cats!")
+    else:
+        await message.response.send_message("You don't have cat rain of that type!", ephemeral=True)
+
 @bot.slash_command(description="Give feedback, report bugs or suggest ideas")
 async def feedback(message: discord.Interaction, feedback: str):
     if len(str(message.user) + "\n" + feedback) >= 2000:
