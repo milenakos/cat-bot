@@ -224,6 +224,7 @@ async def myLoop():
     summon_id = db["summon_ids"]
     myLoop.change_interval(seconds = randint(delays[0], delays[1]))
     file = discord.File("cat.png", filename="cat.png")
+    print("Started cat loop (don't shutdown)")
     for i in summon_id:
         try:
             if fire[i]:
@@ -235,11 +236,12 @@ async def myLoop():
                     channeley = await bot.fetch_channel(int(i))
                     message_is_sus = await channeley.send(str(icon) + " " + db["cattype"][str(i)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
                     db["cat"][str(i)] = message_is_sus.id
-                    save()
             if not fire[i]:
                 fire[i] = True
-        except Exception as e:
-            print("error", i, e)
+        except Exception:
+            pass
+    print("Finished cat loop")
+    save()
     backupchannel = await bot.fetch_channel(BACKUP_ID)
     thing = discord.File("db.json", filename="db.json")
     await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
@@ -278,6 +280,7 @@ async def on_message(message):
         return
     if GITHUB_CHANNEL_ID and message.channel.id == GITHUB_CHANNEL_ID:
         os.system("git pull")
+        save()
         os.execv(sys.executable, ['python'] + sys.argv)
     if not (" " in text) and len(text) > 7 and text.isalnum():
         s = text.lower()
