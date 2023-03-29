@@ -572,6 +572,17 @@ async def on_message(message):
         await message.add_reaction('🐸')
     await bot.process_commands(message)
 
+@bot.event
+async def on_guild_join(guild):
+    def verify(ch):
+        return ch and ch.permissions_for(guild.me).send_messages
+    
+    ch = find(lambda x: x.name == 'cat', guild.text_channels)
+    if not verify(ch): ch = find(lambda x: x.name == 'bots', guild.text_channels)
+    if not verify(ch): ch = guild.text_channels[0]
+        
+    await ch.send("Thanks for adding me!\nTo setup a channel to summon cats in, use /setup!\nHave a nice day :)")        
+       
 @bot.slash_command(description="Give feedback, report bugs or suggest ideas")
 async def feedback(message: discord.Interaction, feedback: str):
     if len(str(message.user) + "\n" + feedback) >= 2000:
