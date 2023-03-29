@@ -576,9 +576,14 @@ async def on_message(message):
 async def on_guild_join(guild):
     def verify(ch):
         return ch and ch.permissions_for(guild.me).send_messages
+
+    def find(patt, channels):
+        for i in channels:
+            if patt in i.name:
+                return i
     
-    ch = find(lambda x: "cat" in x.name, guild.text_channels)
-    if not verify(ch): ch = find(lambda x: "bots" in x.name, guild.text_channels)
+    ch = find("cat", guild.text_channels)
+    if not verify(ch): ch = find("bots", guild.text_channels)
     if not verify(ch): ch = guild.text_channels[0]
         
     await ch.send("Thanks for adding me!\nTo setup a channel to summon cats in, use /setup!\nHave a nice day :)")        
