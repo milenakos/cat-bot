@@ -1200,7 +1200,7 @@ async def random(message: discord.Interaction):
         response = requests.get('https://api.thecatapi.com/v1/images/search')
         try:
             data = response.json()
-            await message.response.send_message(data['url'])
+            await message.response.send_message(data[0]['url'])
             counter += 1
             if not has_ach(message.guild.id, message.user.id, "randomizer"):
                 ach_data = give_ach(message.guild.id, message.user.id, "randomizer")
