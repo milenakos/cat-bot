@@ -18,15 +18,11 @@ TOKEN = os.environ['token']
 # set to False to disable /vote
 TOP_GG_TOKEN = os.environ['topggtoken']
 
-# set to False to disable /dream
-# token for stability ai, at https://beta.dreamstudio.ai/
-STABILITY_KEY = os.environ['STABILITY_KEY']
-
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 # set to False to disable
 GITHUB_CHANNEL_ID = 1060965767044149249
 
-BANNED_ID = [1029044762340241509] # banned from using /dream and /tiktok
+BANNED_ID = [1029044762340241509] # banned from using /tiktok
 
 ### Setup values end
 
@@ -610,54 +606,6 @@ async def info(message: discord.Interaction):
         embedVar.timestamp = datetime.datetime.fromtimestamp(int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8")))
         embedVar.set_footer(text="Last updated:")
     await message.response.send_message(embed=embedVar)
-
-if STABILITY_KEY:
-    @bot.slash_command(description="Generate images from text using Stable Diffusion")
-    async def dream(message: discord.Interaction, text: str):
-        await message.response.defer()
-        if message.user.id in BANNED_ID:
-            await message.followup.send("You do not have access to that command.", ephemeral=True)
-            return
-        url = "https://api.stability.ai/v1alpha/generation/stable-diffusion-v1-5/text-to-image"
-        payload = {
-                "cfg_scale": 8,
-                "height": 512,
-                "width": 512,
-                "samples": 1,
-                "text_prompts": [
-                        {
-                                "text": text,
-                                "weight": 1
-                        }
-                ],
-        }
-        headers = {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": STABILITY_KEY
-        }
-
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, json=payload, headers=headers) as response:
-                if response.status != 200:
-                    if response.status == 400:
-                        await message.followup.send("we ran out of api credits, they will be refilled shortly.")
-                        await milenakoos.send("/dream api token ran out!")
-                    elif response.status == 429:
-                        await message.followup.send("Too many requests, try again later.")
-                    else:
-                        await message.followup.send(f"failed lmao\n\nHTTP {response.status}")
-                    return
-                answer = await response.json()
-                answer = answer["artifacts"][0]
-                if answer["finishReason"] == "CONTENT_FILTERED":
-                    await message.followup.send("🤨")
-                    return
-                decoded = base64.decodebytes(answer["base64"].encode("ascii"))
-                with io.BytesIO() as f:
-                    f.write(decoded)
-                    f.seek(0)
-                    await message.followup.send(file=discord.File(fp=f, filename='output.png'))
 
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str):
@@ -1593,8 +1541,8 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
     save()
     await message.response.send_message(embed=discord.Embed(color=0x6E593C, description=f'Done! rip <@{person_id.id}>. f\'s in chat.'))
 
-# remove decorators for disabled commands, such as /dream or /vote
-@dream.error
+# remove decorators for disabled commands, such as /vote
+@vote.error
 @myLoop.error
 @warning.error
 @repair.error
@@ -1608,7 +1556,6 @@ async def reset(message: discord.Interaction, person_id: discord.Member):
 @battlepass.error
 @ping.error
 @donate.error
-@vote.error
 @cat.error
 @cursed.error
 @bal.error
