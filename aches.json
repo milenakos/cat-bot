@@ -8,7 +8,7 @@
   "fast_catcher": {"title": "Fast Catcher", "description": "catch a cat in under 5 seconds", "is_hidden": false, "category": "Cat Hunt"},
   "slow_catcher": {"title": "Slow Catcher", "description": "catch a cat in over a hour", "is_hidden": false, "category": "Cat Hunt"},
   "daily": {"title": "Daily Catter", "description": "get daily cats", "is_hidden": false, "category": "Random"},
-  "beggar": {"title": "Beggar", "description": "beg milenakos for this ach", "is_hidden": false, "category": "Unfair"},
+  "beggar": {"title": "Beggar", "description": "beg milenakos (or server admins) for this ach", "is_hidden": false, "category": "Unfair"},
   "rich": {"title": "R I C H", "description": "donate 5 ultimates to cat bot", "is_hidden": false, "category": "Unfair"},
   "cellua": {"title": "CelLua", "description": "you said \"cellua bad\". they are coming after both you and me", "is_hidden": true, "category": "Unfair"},
   "collecter": {"title": "Collecter", "description": "get all cat types", "is_hidden": true, "category": "Cat Hunt"},
