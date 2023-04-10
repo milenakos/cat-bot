@@ -1537,9 +1537,12 @@ async def giveach(message: discord.Interaction, person_id: discord.Member, ach_i
 
 @bot.slash_command(description="Reset people", default_member_permissions=8)
 async def reset(message: discord.Interaction, person_id: discord.Member):
-    del db[str(message.guild.id)][str(person_id.id)]
-    save()
-    await message.response.send_message(embed=discord.Embed(color=0x6E593C, description=f'Done! rip <@{person_id.id}>. f\'s in chat.'))
+    try:
+        del db[str(message.guild.id)][str(person_id.id)]
+        save()
+        await message.response.send_message(embed=discord.Embed(color=0x6E593C, description=f'Done! rip <@{person_id.id}>. f\'s in chat.'))
+    except KeyError:
+        await message.response.send_message("ummm? this person isnt even registered in cat bot wtf are you wiping?????", ephemeral=True)
 
 # remove decorators for disabled commands, such as /vote
 @vote.error
