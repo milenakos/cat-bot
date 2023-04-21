@@ -1318,6 +1318,7 @@ async def pointLaugh(message: discord.Interaction, msg):
 
 @bot.slash_command(description="View the leaderboards")
 async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[str] = discord.SlashOption(choices=["Cats", "Fastest", "Slowest"], required=False)):
+    if not leaderboard_type: leaderboard_type = "Cats"
     async def lb_handler(interaction, type, do_edit=None):
         nonlocal message
         if do_edit == None: do_edit = True
@@ -1444,25 +1445,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
     async def catlb(interaction):
         await lb_handler(interaction, "main")
         
-    if leaderboard_type:
-        await lb_handler(message, {"Fastest": "fast", "Slowest": "slow", "Cats": "main"}[leaderboard_type], False)
-    else:
-        embed = discord.Embed(title="The Leaderboards", description="select your leaderboard using buttons below", color=0x6E593C)
-        button1 = Button(label="Cats", style=ButtonStyle.blurple)
-        button1.callback = catlb
-
-        button2 = Button(label="Fastest", style=ButtonStyle.blurple)
-        button2.callback = fastlb
-
-        button3 = Button(label="Slowest", style=ButtonStyle.blurple)
-        button3.callback = slowlb
-
-        myview = View()
-        myview.add_item(button1)
-        myview.add_item(button2)
-        myview.add_item(button3)
-
-        await message.response.send_message(embed=embed, view=myview)
+    await lb_handler(message, {"Fastest": "fast", "Slowest": "slow", "Cats": "main"}[leaderboard_type], False)
 
 @bot.slash_command(description="Give cats to people", default_member_permissions=8)
 async def summon(message: discord.Interaction, person_id: discord.Member, amount: int, cat_type: str = discord.SlashOption(choices=cattypes)):
