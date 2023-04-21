@@ -1433,7 +1433,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         if do_edit:
             await interaction.edit(embed=embedVar, view=myview)
         else:
-            await interaction.response.send_message(embed=embedVar, view=myview)
+            await interaction.followup.send(embed=embedVar, view=myview)
 
     async def slowlb(interaction):
         await lb_handler(interaction, "slow")
