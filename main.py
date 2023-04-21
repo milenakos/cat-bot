@@ -258,8 +258,9 @@ async def update_presence():
 async def on_ready():
     global milenakoos, OWNER_ID
     print("cat is now online")
+    total_members = db["total_members"]
     await bot.change_presence(
-            activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers")
+            activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers with {total_members} people")
     )
     appinfo = await bot.application_info()
     milenakoos = appinfo.owner
@@ -1317,8 +1318,9 @@ async def pointLaugh(message: discord.Interaction, msg):
 
 @bot.slash_command(description="View the leaderboards")
 async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[str] = discord.SlashOption(choices=["Cats", "Fastest", "Slowest"], required=False)):
-    async def lb_handler(interaction, type):
+    async def lb_handler(interaction, type, do_edit=None):
         nonlocal message
+        if not do_edit: do_edit = True
         await interaction.response.defer()
         main = False
         fast = False
@@ -1428,7 +1430,10 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         myview.add_item(button2)
         myview.add_item(button3)
 
-        await interaction.edit(embed=embedVar, view=myview)
+        if do_edit:
+            await interaction.edit(embed=embedVar, view=myview)
+        else:
+            await interaction.response.send(embed=embedVar, view=myview)
 
     async def slowlb(interaction):
         await lb_handler(interaction, "slow")
@@ -1437,14 +1442,10 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         await lb_handler(interaction, "fast")
 
     async def catlb(interaction):
-        await lb_handler(interaction, "main")
+        await lb_handler(interaction, "cats")
         
-    if leaderboard_type == "Cats":
-        await catlb(message)
-    elif leaderboard_type == "Fast":
-        await fastlb(message)
-    elif leaderboard_type == "Slow":
-        await slowlb(message)
+    if leaderboard_type:
+        await lb_handler(message, leaderboard_type.lower(), False)
     else:
         embed = discord.Embed(title="The Leaderboards", description="select your leaderboard using buttons below", color=0x6E593C)
         button1 = Button(label="Cats", style=ButtonStyle.blurple)
