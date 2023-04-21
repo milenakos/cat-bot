@@ -1292,7 +1292,7 @@ async def achs(message: discord.Interaction):
 
     await message.response.send_message(embed=embedVar, view=myview)
 
-@bot.messsage_command(name="catch")
+@bot.message_command(name="catch")
 async def catch(message: discord.Interaction, msg):
     try:
         msg2img.msg2img(msg, bot, True)
