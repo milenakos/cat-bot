@@ -684,7 +684,7 @@ async def daily(message: discord.Interaction):
         await message.channel.send(embed=embed)
 
 @bot.slash_command(description="View your inventory")
-async def inv(message: discord.Interaction, person_id: Optional[discord.Member] = discord.SlashOption(required=False, description="Person to view the inventory of!")):
+async def inv(message: discord.Interaction, person_id: Optional[discord.Member] = discord.SlashOption(required=False, name="user", description="Person to view the inventory of!")):
     if person_id is None:
         me = True
         person_id = message.user
@@ -851,7 +851,7 @@ async def ping(message: discord.Interaction):
 @bot.slash_command(description="give cats now")
 async def donate(message: discord.Interaction, \
                  person: discord.Member = discord.SlashOption(description="Whom to donate?"), \
-                 cat_type: str = discord.SlashOption(choices=cattypes, description="Select a donate cat type"), \
+                 cat_type: str = discord.SlashOption(choices=cattypes, name="type", description="Select a donate cat type"), \
                  amount: Optional[int] = discord.SlashOption(required=False, description="And how much?")):
     if not amount: amount = 1
     person_id = person.id
@@ -911,7 +911,7 @@ async def donate(message: discord.Interaction, \
         await message.response.send_message("no", ephemeral=True)
 
 @bot.slash_command(description="Trade cats!")
-async def trade(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(description="why would you need description")):
+async def trade(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="why would you need description")):
     person1 = message.user
     person2 = person_id
         
@@ -1313,7 +1313,7 @@ async def pointLaugh(message: discord.Interaction, msg):
     await message.response.send_message(icon, ephemeral=True)
 
 @bot.slash_command(description="View the leaderboards")
-async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[str] = discord.SlashOption(choices=["Cats", "Fastest", "Slowest"], required=False)):
+async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[str] = discord.SlashOption(name="type", description="The leaderboard type to view!", choices=["Cats", "Fastest", "Slowest"], required=False)):
     if not leaderboard_type: leaderboard_type = "Cats"
     async def lb_handler(interaction, type, do_edit=None):
         nonlocal message
@@ -1444,7 +1444,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
     await lb_handler(message, {"Fastest": "fast", "Slowest": "slow", "Cats": "main"}[leaderboard_type], False)
 
 @bot.slash_command(description="Give cats to people", default_member_permissions=8)
-async def summon(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(description="who"), \
+async def summon(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
                  amount: int = discord.SlashOption(description="how many"), \
                  cat_type: str = discord.SlashOption(choices=cattypes, description="what")):
     add_cat(message.guild.id, person_id.id, cat_type, amount)
@@ -1494,7 +1494,7 @@ async def fake(message: discord.Interaction):
     await message.response.send_message("OMG TROLLED SO HARD LMAOOOO :joy:", ephemeral=True)
 
 @bot.slash_command(description="Force cats to appear", default_member_permissions=8)
-async def force(message: discord.Interaction, cat_type: Optional[str] = discord.SlashOption(required=False, choices=cattypes, description="select a cat type ok")):
+async def force(message: discord.Interaction, cat_type: Optional[str] = discord.SlashOption(required=False, choices=cattypes, name="type", description="select a cat type ok")):
     try:
         if db["cat"][str(message.channel.id)]:
             await message.response.send_message("there is already a cat", ephemeral=True)
@@ -1525,7 +1525,8 @@ async def achlist(message: discord.Interaction):
     await message.response.send_message(embed=embed)
 
 @bot.slash_command(description="Give achievements to people", default_member_permissions=8)
-async def giveach(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(description="who"), ach_id: str = discord.SlashOption(description="use /achlist to view all ach ids")):
+async def giveach(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
+                  ach_id: str = discord.SlashOption(name="id", description="use /achlist to view all ach ids")):
     try:
         if ach_id in ach_names:
             valid = True
@@ -1542,7 +1543,7 @@ async def giveach(message: discord.Interaction, person_id: discord.Member = disc
         await message.response.send_message("i cant find that achievement! run `/achlist` for all of achievement ids!", ephemeral=True)
 
 @bot.slash_command(description="Reset people", default_member_permissions=8)
-async def reset(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(description="who")):
+async def reset(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who")):
     try:
         del db[str(message.guild.id)][str(person_id.id)]
         save()
