@@ -379,8 +379,7 @@ async def on_message(message):
         embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
         await message.reply(embed=embed)
     if text.lower() == "please do not the cat":
-        safe = str(message.author).replace("@", "`@`")
-        await message.reply(f"ok then\n{safe} lost 1 fine cat!!!1!")
+        await message.reply(f"ok then\n{str(message.author)} lost 1 fine cat!!!1!")
         remove_cat(message.guild.id, message.author.id, "Fine")
         if not has_ach(message.guild.id, message.author.id, "pleasedonotthecat"):
             ach_data = give_ach(message.guild.id, message.author.id, "pleasedonotthecat")
@@ -461,7 +460,26 @@ async def on_message(message):
 
             le_emoji = db["cattype"][str(message.channel.id)]
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=le_emoji.lower() + "cat")
-            await message.channel.send(message.author.name.replace("@", "`@`") + "#" + str(message.author.discriminator) + " cought " + str(icon) + " " + db["cattype"][str(message.channel.id)] + " cat!!!!1!\nYou now have " + str(add_cat(message.guild.id, message.author.id, db["cattype"][str(message.channel.id)])) + " cats of dat type!!!\nthis fella was cought in " + caught_time[:-1] + "!!!!")
+            if le_emoji == "Corrupt":
+                coughstring = "{discrim}#{name} coought{cattype} c{icon}at!!!!404!\nYou now BEEP {catcount} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!"
+            elif le_emoji == "eGirl":
+                coughstring = "{name}#{discrim} cowought {icon} {cattype} cat~~ ^^\nYou-u now *blushes* hawe {catcount} cats of dat tywe~!!!\nthis fella was <3 cought in {time}!!!!"
+            elif le_emoji == "Rickroll":
+                coughstring = "{name}#{discrim} cought {icon} {cattype} cat!!!!1!\nYou will never give up {catcount} cats of dat type!!!\nYou wouldn't let them down even after {time}!!!!"
+            elif le_emoji == "Sus":
+                coughstring = "{name}#{discrim} cought {icon} {cattype} cat!!!!1!\nYou have vented infront of {catcount} cats of dat type!!!\nthis sussy baka was cought in {time}!!!!"
+            elif le_emoji == "Professor":
+                coughstring = "{name}#{discrim} caught {icon} {cattype} cat!\nThou now hast {catcount} cats of that type!\nThis fellow was caught 'i {time}!"
+            elif le_emoji == "8bit":
+                coughstring = "{name}#{discrim} c0ught {icon} {cattype} cat!!!!1!\nY0u n0w h0ve {catcount} cats 0f dat type!!!\nth1s fe11a was c0ught 1n {time}!!!!"
+            else:
+                coughstring = "{name}#{discrim} cought {icon} {cattype} cat!!!!1!\nYou now have {catcount} cats of dat type!!!\nthis fella was cought in {time}!!!!"
+            await message.channel.send(coughstring.format(name=message.author.name,
+                                                           dicrim=message.author.discriminator,
+                                                           icon=icon,
+                                                           cattype=le_emoji,
+                                                           catcount=add_cat(message.guild.id, message.author.id, le_emoji),
+                                                           time=caught_time[:-1]))
             if do_time and time_caught < get_time(message.guild.id, message.author.id):
                 set_time(message.guild.id, message.author.id, time_caught)
             if do_time and time_caught > get_time(message.guild.id, message.author.id, "slow"):
