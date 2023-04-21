@@ -1440,11 +1440,11 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         await lb_handler(interaction, "main")
         
     if leaderboard_type == "Cats":
-        catlb(message)
+        await catlb(message)
     elif leaderboard_type == "Fast":
-        fastlb(message)
+        await fastlb(message)
     elif leaderboard_type == "Slow":
-        slowlb(message)
+        await slowlb(message)
     else:
         embed = discord.Embed(title="The Leaderboards", description="select your leaderboard using buttons below", color=0x6E593C)
         button1 = Button(label="Cats", style=ButtonStyle.blurple)
