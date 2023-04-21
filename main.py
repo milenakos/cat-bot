@@ -1316,7 +1316,7 @@ async def pointLaugh(message: discord.Interaction, msg):
     await message.response.send_message(icon, ephemeral=True)
 
 @bot.slash_command(description="View the leaderboards")
-async def leaderboards(message: discord.Interaction):
+async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[str] = discord.SlashOption(choices=["Cats", "Fastest", "Slowest"], required=False)):
     async def lb_handler(interaction, type):
         nonlocal message
         await interaction.response.defer()
@@ -1438,23 +1438,30 @@ async def leaderboards(message: discord.Interaction):
 
     async def catlb(interaction):
         await lb_handler(interaction, "main")
+        
+    if leaderboard_type == "Cats":
+        catlb(message)
+    elif leaderboard_type == "Fast":
+        fastlb(message)
+    elif leaderboard_type == "Slow":
+        slowlb(message)
+    else:
+        embed = discord.Embed(title="The Leaderboards", description="select your leaderboard using buttons below", color=0x6E593C)
+        button1 = Button(label="Cats", style=ButtonStyle.blurple)
+        button1.callback = catlb
 
-    embed = discord.Embed(title="The Leaderboards", description="select your leaderboard using buttons below", color=0x6E593C)
-    button1 = Button(label="Cats", style=ButtonStyle.blurple)
-    button1.callback = catlb
+        button2 = Button(label="Fastest", style=ButtonStyle.blurple)
+        button2.callback = fastlb
 
-    button2 = Button(label="Fastest", style=ButtonStyle.blurple)
-    button2.callback = fastlb
+        button3 = Button(label="Slowest", style=ButtonStyle.blurple)
+        button3.callback = slowlb
 
-    button3 = Button(label="Slowest", style=ButtonStyle.blurple)
-    button3.callback = slowlb
+        myview = View()
+        myview.add_item(button1)
+        myview.add_item(button2)
+        myview.add_item(button3)
 
-    myview = View()
-    myview.add_item(button1)
-    myview.add_item(button2)
-    myview.add_item(button3)
-
-    await message.response.send_message(embed=embed, view=myview)
+        await message.response.send_message(embed=embed, view=myview)
 
 @bot.slash_command(description="Give cats to people", default_member_permissions=8)
 async def summon(message: discord.Interaction, person_id: discord.Member, amount: int, cat_type: str = discord.SlashOption(choices=cattypes)):
