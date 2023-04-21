@@ -1320,7 +1320,7 @@ async def pointLaugh(message: discord.Interaction, msg):
 async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[str] = discord.SlashOption(choices=["Cats", "Fastest", "Slowest"], required=False)):
     async def lb_handler(interaction, type, do_edit=None):
         nonlocal message
-        if not do_edit: do_edit = True
+        if do_edit == None: do_edit = True
         await interaction.response.defer()
         main = False
         fast = False
