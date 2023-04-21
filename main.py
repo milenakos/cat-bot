@@ -1571,7 +1571,7 @@ async def reset(message: discord.Interaction, person_id: discord.Member = discor
 @random.error
 @achs.error
 @trade.error
-@catch_new.error
+@catch.error
 @pointLaugh.error
 @leaderboards.error
 @summon.error
