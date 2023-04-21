@@ -417,7 +417,7 @@ async def on_message(message):
             is_cat = db["cat"][str(message.channel.id)]
         except Exception:
             is_cat = False
-        if not is_cat or timestamp > time.time() or message.author.bot:
+        if not is_cat or timestamp > time.time() or (message.author.bot and message.author.id not in WHITELISTED_BOTS):
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
             await message.add_reaction(icon)
         elif is_cat:
