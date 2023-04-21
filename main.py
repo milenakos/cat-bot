@@ -24,6 +24,8 @@ GITHUB_CHANNEL_ID = 1060965767044149249
 
 BANNED_ID = [1029044762340241509] # banned from using /tiktok
 
+WHITELISTED_BOTS = [1087001524774912050] # bots which are allowed to catch cats
+
 ### Setup values end
 
 # trigger warning, base64 encoded for your convinience
@@ -318,7 +320,7 @@ async def on_message(message):
     if text == "lol_i_have_dmed_the_cat_bot_and_got_an_ach" and not message.guild:
         await message.channel.send("which part of \"send in server\" was unclear?")
         return
-    elif message.guild == None and message.author.id != bot.user.id:
+    elif message.guild == None:
         await message.channel.send("good job! please send \"lol_i_have_dmed_the_cat_bot_and_got_an_ach\" in server to get your ach!")
         return
     if "V1;" in text:
@@ -415,7 +417,7 @@ async def on_message(message):
             is_cat = db["cat"][str(message.channel.id)]
         except Exception:
             is_cat = False
-        if not is_cat or timestamp > time.time():
+        if not is_cat or timestamp > time.time() or message.author.bot:
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
             await message.add_reaction(icon)
         elif is_cat:
