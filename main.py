@@ -510,9 +510,6 @@ async def on_message(message):
             if battlelevel["req"] == "catch_type" and le_emoji == battlelevel["req_data"]:
                 await do_reward(message, battlelevel)
 
-    if ':sob:' in text.lower() or "😭" in text.lower():
-        icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
-        await message.add_reaction(icon)
     if "silly" in text.lower():
         icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="sillycat")
         await message.add_reaction(icon)
