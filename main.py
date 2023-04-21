@@ -598,7 +598,12 @@ async def on_guild_join(guild):
     
     ch = find("cat", guild.text_channels)
     if not verify(ch): ch = find("bots", guild.text_channels)
-    if not verify(ch): ch = guild.text_channels[0]
+    if not verify(ch):
+        chindex = 1
+        ch = guild.text_channels[0]
+        while not verify(ch):
+            ch = guild.text_channels[chindex]
+            chindex += 1
         
     await ch.send("Thanks for adding me!\nTo setup a channel to summon cats in, use /setup!\nHave a nice day :)")        
        
