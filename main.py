@@ -84,8 +84,6 @@ funny = ["why did you click this this arent yours", "absolutely not", "cat bot n
 
 summon_id = db["summon_ids"]
 
-delays = [120, 1200]
-
 timeout = 0
 starting_time = 0
 message_thing = 0
@@ -212,15 +210,13 @@ def give_ach(server_id, person_id, ach_id, reverse=False):
     save()
     return ach_list[ach_id]
 
-@tasks.loop(seconds = randint(delays[0], delays[1]))
 async def myLoop():
-    global bot, fire, summon_id, delays
+    global bot, fire, summon_id
     total_members = db["total_members"]
     await bot.change_presence(
             activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers with {total_members} people")
     )
     summon_id = db["summon_ids"]
-    myLoop.change_interval(seconds = randint(delays[0], delays[1]))
     file = discord.File("cat.png", filename="cat.png")
     print("Started cat loop (don't shutdown)")
     for i in summon_id:
@@ -268,12 +264,14 @@ async def on_ready():
     if TOP_GG_TOKEN:
         import topgg
         bot.topggpy = topgg.DBLClient(TOP_GG_TOKEN, default_bot_id=bot.user.id)
-    myLoop.start()
     update_presence.start()
+    while True:
+        time.sleep(random.randint(120, 1200))
+        await myLoop()
 
 @bot.event
 async def on_message(message):
-    global fire, summon_id, delays
+    global fire, summon_id
     text = message.content
     if message.author.id == bot.user.id:
         return
