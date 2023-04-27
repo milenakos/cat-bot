@@ -1,5 +1,5 @@
 import nextcord as discord
-import msg2img, base64, sys, re, time, json, requests, traceback, os, io, aiohttp, heapq, datetime, subprocess
+import msg2img, base64, sys, re, time, json, requests, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio
 from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
 from nextcord.ui import Button, View
@@ -266,7 +266,7 @@ async def on_ready():
         bot.topggpy = topgg.DBLClient(TOP_GG_TOKEN, default_bot_id=bot.user.id)
     update_presence.start()
     while True:
-        time.sleep(random.randint(120, 1200))
+        await asyncio.sleep(randint(120, 1200))
         await myLoop()
 
 @bot.event
