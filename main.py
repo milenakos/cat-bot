@@ -1556,7 +1556,6 @@ async def reset(message: discord.Interaction, person_id: discord.Member = discor
 
 # remove decorators for disabled commands, such as /vote
 @vote.error
-@myLoop.error
 @warning.error
 @repair.error
 @feedback.error
