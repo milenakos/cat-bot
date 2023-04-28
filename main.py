@@ -266,8 +266,11 @@ async def on_ready():
         bot.topggpy = topgg.DBLClient(TOP_GG_TOKEN, default_bot_id=bot.user.id)
     update_presence.start()
     while True:
-        await asyncio.sleep(randint(120, 1200))
-        await myLoop()
+        try:
+            await asyncio.sleep(randint(120, 1200))
+            await myLoop()
+        except Exception:
+            pass
 
 @bot.event
 async def on_message(message):
