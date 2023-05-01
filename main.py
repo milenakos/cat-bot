@@ -1584,7 +1584,6 @@ async def reset(message: discord.Interaction, person_id: discord.Member = discor
 @forget.error
 @fake.error
 @force.error
-@achlist.error
 @giveach.error
 @reset.error
 async def on_command_error(ctx, error):
