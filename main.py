@@ -74,7 +74,6 @@ with open("battlepass.json", "r") as f:
 
 ach_names = ach_list.keys()
 ach_titles = {value["title"].lower(): key for (key, value) in ach_list.items()}
-print(ach_titles) # profesional developer :sungals:
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -1535,7 +1534,8 @@ async def giveach(message: discord.Interaction, person_id: discord.Member = disc
     except KeyError:
         valid = False
     if not valid and ach_id.lower() in ach_titles.keys():
-        ach_id = ach_titles[ach_id]
+        ach_id = ach_titles[ach_id.lower()]
+        valid = True
     if valid:
         reverse = has_ach(message.guild.id, person_id.id, ach_id)
         ach_data = give_ach(message.guild.id, person_id.id, ach_id, reverse)
