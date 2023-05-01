@@ -1539,10 +1539,10 @@ async def giveach(message: discord.Interaction, person_id: discord.Member = disc
     if valid:
         reverse = has_ach(message.guild.id, person_id.id, ach_id)
         ach_data = give_ach(message.guild.id, person_id.id, ach_id, reverse)
-        color, title = 0x007F0E, "Achievement forced!"
+        color, title, icon = 0x007F0E, "Achievement forced!", "https://pomf2.lain.la/f/hbxyiv9l.png"
         if reverse:
-            color, title = 0xff0000, "Achievement removed!"
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=color).set_author(name=title, icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=f"for {person_id}")
+            color, title, icon = 0xff0000, "Achievement removed!", "https://pomf2.lain.la/f/b8jxc27g.png"
+        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=color).set_author(name=title, icon_url=icon).set_footer(text=f"for {person_id}")
         await message.response.send_message(embed=embed)
     else:
         await message.response.send_message("i cant find that achievement! try harder next time.", ephemeral=True)
