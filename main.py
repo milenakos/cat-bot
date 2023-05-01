@@ -73,6 +73,7 @@ with open("battlepass.json", "r") as f:
     battle = json.load(f)
 
 ach_names = ach_list.keys()
+ach_titles = {value["title"]: key for (key, value) in ach_list.items()}
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -1522,17 +1523,9 @@ async def force(message: discord.Interaction, cat_type: Optional[str] = discord.
     save()
     await message.response.send_message("done", ephemeral=True)
 
-@bot.slash_command(description="View list of achievements names", default_member_permissions=8)
-async def achlist(message: discord.Interaction):
-    stringy = ""
-    for k, v in ach_list.items():
-        stringy = stringy + k + " - " + v["title"] + "\n"
-    embed = discord.Embed(title="Ach IDs", description=stringy, color=0x6E593C)
-    await message.response.send_message(embed=embed)
-
 @bot.slash_command(description="Give achievements to people", default_member_permissions=8)
 async def giveach(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
-                  ach_id: str = discord.SlashOption(name="id", description="use /achlist to view all ach ids")):
+                  ach_id: str = discord.SlashOption(name="name", description="name or id of the achievement")):
     try:
         if ach_id in ach_names:
             valid = True
@@ -1540,13 +1533,18 @@ async def giveach(message: discord.Interaction, person_id: discord.Member = disc
             valid = False
     except KeyError:
         valid = False
+    if not valid and ach_id in ach_titles.keys():
+        ach_id = ach_titles[ach_id]
     if valid:
         reverse = has_ach(message.guild.id, person_id.id, ach_id)
-        give_ach(message.guild.id, person_id.id, ach_id, reverse)
-        embed = discord.Embed(title="Success!", description=f"Successfully set {ach_id} to {not reverse} for <@{person_id.id}>!", color=0x6E593C)
+        ach_data = give_ach(message.guild.id, person_id.id, ach_id, reverse)
+        color, title = 0x007F0E, "Achievement forced!"
+        if reverse:
+            color, title = 0xff0000, "Achievement removed!"
+        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=color).set_author(name=title, icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=f"for {person_id}")
         await message.response.send_message(embed=embed)
     else:
-        await message.response.send_message("i cant find that achievement! run `/achlist` for all of achievement ids!", ephemeral=True)
+        await message.response.send_message("i cant find that achievement! try harder next time.", ephemeral=True)
 
 @bot.slash_command(description="Reset people", default_member_permissions=8)
 async def reset(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who")):
