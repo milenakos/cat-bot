@@ -218,13 +218,13 @@ async def myLoop():
             activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers with {total_members} people")
     )
     summon_id = db["summon_ids"]
-    file = discord.File("cat.png", filename="cat.png")
+    imgfile = open("cat.png", "rb")
     print("Started cat loop (don't shutdown)")
     for i in summon_id:
         try:
             if fire[i]:
                 if not db["cat"][str(i)]:
-                    file = discord.File("cat.png", filename="cat.png")
+                    file = discord.File(imgfile, filename="cat.png")
                     localcat = choice(CAT_TYPES)
                     db["cattype"][str(i)] = localcat
                     icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower() + "cat")
@@ -235,6 +235,7 @@ async def myLoop():
                 fire[i] = True
         except Exception:
             pass
+    db["summon_ids"] = list(dict.fromkeys(summon_id)) # remove all duplicates
     print("Finished cat loop")
     save()
     backupchannel = await bot.fetch_channel(BACKUP_ID)
@@ -459,7 +460,6 @@ async def on_message(message):
                 print(e)
                 do_time = False
                 caught_time = "undefined amounts of time "
-                pass
 
             le_emoji = db["cattype"][str(message.channel.id)]
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=le_emoji.lower() + "cat")
