@@ -218,13 +218,13 @@ async def myLoop():
             activity=discord.Activity(type=discord.ActivityType.playing, name=f"/help | Providing life support for {len(bot.guilds)} servers with {total_members} people")
     )
     summon_id = db["summon_ids"]
-    imgfile = open("cat.png", "rb")
+    imgfile = open("cat.png", "rb").read()
     print("Started cat loop (don't shutdown)")
     for i in summon_id:
         try:
             if fire[i]:
                 if not db["cat"][str(i)]:
-                    file = discord.File(imgfile, filename="cat.png")
+                    file = discord.File(fp=imgfile)
                     localcat = choice(CAT_TYPES)
                     db["cattype"][str(i)] = localcat
                     icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower() + "cat")
