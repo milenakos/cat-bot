@@ -1308,7 +1308,7 @@ async def catch(message: discord.Interaction, msg):
         await message.response.send_message(f"the message appears to have commited no live anymore\n\n{e}", ephemeral=True)
     register_member(message.guild.id, msg.author.id)
     if not has_ach(message.guild.id, msg.author.id, "4k") and msg.author.id != bot.user.id:
-        ach_data = give_ach(message.guild.id, msg.user.id, "4k")
+        ach_data = give_ach(message.guild.id, msg.author.id, "4k")
         embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
         await message.channel.send(embed=embed)
 
