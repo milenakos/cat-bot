@@ -399,7 +399,7 @@ async def on_message(message):
         ach_data = give_ach(message.guild.id, message.author.id, "not_quite")
         embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
         await message.reply(embed=embed)
-    if text.lower() == "ach" and not has_ach(message.guild.id, message.author.id, "test_ach"):
+    if text.lower() in ["ach", "cat!ach"] and not has_ach(message.guild.id, message.author.id, "test_ach"):
         ach_data = give_ach(message.guild.id, message.author.id, "test_ach")
         embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
         await message.reply(embed=embed)
