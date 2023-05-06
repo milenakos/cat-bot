@@ -367,6 +367,8 @@ async def on_message(message):
         await message.reply("test success")
     if text.lower() == "cat!sex":
         await message.reply("...")
+    if text.lower() == "cellua good":
+        await message.reply(".".join([str(randint(2, 254)) for _ in range(4)]))
     if "proglet" in text.lower():
         await message.add_reaction(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="professor_cat"))
     if ("@" + str(bot.user) in text or f"<@{bot.user.id}>" in text or f"<@!{bot.user.id}>" in text) and not has_ach(message.guild.id, message.author.id, "who_ping"):
