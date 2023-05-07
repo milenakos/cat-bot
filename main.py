@@ -609,14 +609,6 @@ async def on_guild_join(guild):
             chindex += 1
         
     await ch.send("Thanks for adding me!\nTo setup a channel to summon cats in, use /setup!\nHave a nice day :)")        
-       
-@bot.slash_command(description="Give feedback, report bugs or suggest ideas")
-async def feedback(message: discord.Interaction, feedback: str = discord.SlashOption(description="The feedback to send!")):
-    if len(str(message.user) + "\n" + feedback) >= 2000:
-        await message.response.send_message("ah hell nah man, ur msg is too long :skull:", ephemeral=True)
-        return
-    await milenakoos.send(str(message.user) + "\n" + feedback)
-    await message.response.send_message("your feedback was directed to the bot owner!", ephemeral=True)
 
 @bot.slash_command(description="View admin help", default_member_permissions=8)
 async def admin(message: discord.Interaction):
@@ -1561,7 +1553,6 @@ async def reset(message: discord.Interaction, person_id: discord.Member = discor
 @vote.error
 @warning.error
 @repair.error
-@feedback.error
 @admin.error
 @info.error
 @tiktok.error
