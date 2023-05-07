@@ -264,7 +264,7 @@ async def on_ready():
     OWNER_ID = milenakoos.id
     if TOP_GG_TOKEN:
         import topgg
-        bot.topggpy = topgg.DBLClient(TOP_GG_TOKEN, default_bot_id=bot.user.id)
+        bot.topggpy = topgg.DBLClient(TOP_GG_TOKEN, default_bot_id=bot.user.id, autopost=True)
     update_presence.start()
     while True:
         try:
