@@ -229,7 +229,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
         embed = discord.Embed(title=ach_data["title"], description=desc, color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=f"Unlocked by {author_string}")
         if send_type == "reply": await message.reply(embed=embed)
         elif send_type == "send": await message.channel.send(embed=embed)
-        elif send_type == "followup": await message.followup.send(embed=embed, ephermeral=True)
+        elif send_type == "followup": await message.followup.send(embed=embed, ephemeral=True)
         elif send_type == "response": await message.response.send_message(embed=embed)
 
 async def myLoop():
