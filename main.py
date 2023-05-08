@@ -309,7 +309,7 @@ async def on_message(message):
         ["f[0oо]w[0oо]", "re", "fuwu"],
         ["ce[li]{2}ua bad", "re", "cellua"],
         ["new cells cause cancer", "exact", "cancer"],
-        [bot.user.id, "in", "who_ping"],
+        [str(bot.user.id), "in", "who_ping"],
         ["lol_i_have_dmed_the_cat_bot_and_got_an_ach", "exact", "dm"],
         ["dog", "exact", "not_quite"],
         ["egril", "exact", "egril"]]
