@@ -212,6 +212,7 @@ def give_ach(server_id, person_id, ach_id, reverse=False):
     return ach_list[ach_id]
 
 async def achemb(message, ach_id, send_type, author=None):
+    global bot
     if not author:
         try:
             author = message.author.id
