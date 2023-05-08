@@ -211,9 +211,8 @@ def give_ach(server_id, person_id, ach_id, reverse=False):
     save()
     return ach_list[ach_id]
 
-async def achemb(message, ach_id, send_type, author=None):
-    global bot
-    if not author:
+async def achemb(message, ach_id, send_type, author_string=None):
+    if not author_string:
         try:
             author = message.author.id
             author_string = message.author
@@ -221,7 +220,7 @@ async def achemb(message, ach_id, send_type, author=None):
             author = message.user.id
             author_string = message.user
     else:
-        author_string = await bot.get_user(author)
+        author = author_string.id
     if not has_ach(message.guild.id, author, ach_id):
         ach_data = give_ach(message.guild.id, author, ach_id)
         desc = ach_data["description"]
@@ -828,7 +827,7 @@ async def donate(message: discord.Interaction, \
         await message.response.send_message(embed=embed)
         
         await achemb(message, "donator", "send")
-        await achemb(message, "anti_donator", "send", person_id)
+        await achemb(message, "anti_donator", "send", person)
         if person_id == bot.user.id and cat_type == "Ultimate" and int(amount) >= 5: await achemb(message, "rich", "send")
         
         if amount >= 5 and person_id != OWNER_ID and cat_type == "Fine":
@@ -930,7 +929,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
 
             await interaction.message.edit(f"Trade finished!", view=None)
             await achemb(message, "extrovert", "send")
-            await achemb(message, "extrovert", "send", person2.id)
+            await achemb(message, "extrovert", "send", person2)
         
     async def addb(interaction):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
