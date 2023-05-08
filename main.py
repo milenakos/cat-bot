@@ -211,6 +211,23 @@ def give_ach(server_id, person_id, ach_id, reverse=False):
     save()
     return ach_list[ach_id]
 
+async def achemb(message, ach_id, send_type, author=None):
+    if not author:
+        try:
+            author = message.author
+        except Exception:
+            author = message.user
+    if not has_ach(message.guild.id, author.id, ach_id):
+        ach_data = give_ach(message.guild.id, author.id, ach_id)
+        desc = ach_data["description"]
+        if ach_id == "dataminer":
+            desc = "Your head hurts -- you seem to have forgotten what you just did to get this."
+        embed = discord.Embed(title=ach_data["title"], description=desc, color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=f"Unlocked by {author}")
+        if send_type == "reply": await message.reply(embed=embed)
+        elif send_type == "send": await message.channel.send(embed=embed)
+        elif send_type == "followup": await message.followup.send(embed=embed, ephermeral=True)
+        elif send_type == "response": await message.response.send_message(embed=embed)
+
 async def myLoop():
     global bot, fire, summon_id
     total_members = db["total_members"]
@@ -279,10 +296,34 @@ async def on_message(message):
     text = message.content
     if message.author.id == bot.user.id:
         return
+    
+    achs = [["cat?", "startswith", "???"],
+        ["catn", "exact", "catn"], 
+        ["cat!coupon jr0f-pzka", "exact", "coupon_user"],
+        ["pineapple", "exact", "pineapple"],
+        ["cat!i_like_cat_website", "exact", "website_user"],
+        ["f[0oо]w[0oо]", "re", "fuwu"],
+        ["ce[li]{2}ua bad", "re", "cellua"],
+        ["new cells cause cancer", "exact", "cancer"],
+        [bot.user.id, "in", "who_ping"],
+        ["lol_i_have_dmed_the_cat_bot_and_got_an_ach", "exact", "dm"],
+        ["dog", "exact", "not_quite"],
+        ["egril", "exact", "egril"]]
+
+    reactions = [["V1;", "custom", "why_v1"],
+        ["proglet", "custom", "professor_cat"],
+        ["silly", "custom", "sillycat"],
+        ["indev2", "vanilla", "🐸"]]
+
+    responses = [["testing testing 1 2 3", "exact", "test success"],
+        ["cat!sex", "exact", "..."],
+        ["cellua good", "in", ".".join([str(randint(2, 254)) for _ in range(4)])]]
+    
     if GITHUB_CHANNEL_ID and message.channel.id == GITHUB_CHANNEL_ID:
         os.system("git pull")
         save()
         os.execv(sys.executable, ['python'] + sys.argv)
+    
     if not (" " in text) and len(text) > 7 and text.isalnum():
         s = text.lower()
         total_vow = 0
@@ -313,102 +354,54 @@ async def on_message(message):
             const_perc = len(text) / (len(text) - total_vow)
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
             await message.add_reaction(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat"))
+    
     if "robotop" in message.author.name.lower() and "i rate **cat" in message.content.lower():
         icon = str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="no_cat_throphy")) + " "
         await message.reply("**RoboTop**, I rate **you** 0 cats " + icon * 5)
-    if text.lower().startswith("cat?") and not has_ach(message.guild.id, message.author.id, "???"):
-        ach_data = give_ach(message.guild.id, message.author.id, "???")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.reply(embed=embed)
+
     if text == "lol_i_have_dmed_the_cat_bot_and_got_an_ach" and not message.guild:
         await message.channel.send("which part of \"send in server\" was unclear?")
         return
     elif message.guild == None:
         await message.channel.send("good job! please send \"lol_i_have_dmed_the_cat_bot_and_got_an_ach\" in server to get your ach!")
         return
-    if "V1;" in text:
-        icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="why_v1")
-        await message.add_reaction(icon)
-    if text == "catn" and not has_ach(message.guild.id, message.author.id, "catn"):
-        ach_data = give_ach(message.guild.id, message.author.id, "catn")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.reply(embed=embed)
-    if text == "cat!coupon JR0F-PZKA" and not has_ach(message.guild.id, message.author.id, "coupon_user"):
-        ach_data = give_ach(message.guild.id, message.author.id, "coupon_user")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.reply(embed=embed)
-    if text == "pineapple" and not has_ach(message.guild.id, message.author.id, "pineapple"):
-        ach_data = give_ach(message.guild.id, message.author.id, "pineapple")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.reply(embed=embed)
-    if text == "cat!i_like_cat_website" and not has_ach(message.guild.id, message.author.id, "website_user"):
-        ach_data = give_ach(message.guild.id, message.author.id, "website_user")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.reply(embed=embed)
-    if text == "cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6" and not has_ach(message.guild.id, message.author.id, "dataminer"):
+    
+    if text == "cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6":
         msg = message
         await message.delete()
-        ach_data = give_ach(msg.guild.id, msg.author.id, "dataminer")
-        embed = discord.Embed(title=ach_data["title"], description="Description is redacted to keep this ach a secret.", color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await msg.channel.send(embed=embed)
-    if re.search("f[0oо]w[0oо]", text.lower()) and not has_ach(message.guild.id, message.author.id, "fuwu"):
-        ach_data = give_ach(message.guild.id, message.author.id, "fuwu")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.reply(embed=embed)
-    if re.search("ce[li]{2}ua bad", text.lower()) and not has_ach(message.guild.id, message.author.id, "cellua"):
-        ach_data = give_ach(message.guild.id, message.author.id, "cellua")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.reply(embed=embed)
-    if text == "new cells cause cancer" and not has_ach(message.guild.id, message.author.id, "cancer"):
-        ach_data = give_ach(message.guild.id, message.author.id, "cancer")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.reply(embed=embed)
-    if text.lower() == "testing testing 1 2 3":
-        await message.reply("test success")
-    if text.lower() == "cat!sex":
-        await message.reply("...")
-    if text.lower() == "cellua good":
-        await message.reply(".".join([str(randint(2, 254)) for _ in range(4)]))
-    if "proglet" in text.lower():
-        await message.add_reaction(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="professor_cat"))
-    if ("@" + str(bot.user) in text or f"<@{bot.user.id}>" in text or f"<@!{bot.user.id}>" in text) and not has_ach(message.guild.id, message.author.id, "who_ping"):
-        ach_data = give_ach(message.guild.id, message.author.id, "who_ping")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.reply(embed=embed)
-    if text == "lol_i_have_dmed_the_cat_bot_and_got_an_ach" and message.guild and not has_ach(message.guild.id, message.author.id, "dm"):
-        ach_data = give_ach(message.guild.id, message.author.id, "dm")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.reply(embed=embed)
-    if (":place_of_worship:" in text or "🛐" in text) and (":cat:" in text or ":staring_cat:" in text or "🐱" in text) and not has_ach(message.guild.id, message.author.id, "worship"):
-        ach_data = give_ach(message.guild.id, message.author.id, "worship")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.reply(embed=embed)
+        await achemb(msg, "dataminer", "send")
+    
+    for ach in achs:
+        if (ach[1] == "startswith" and text.lower().startswith(ach[0])) or \
+        (ach[1] == "re" and re.seach(ach[0], text.lower())) or \
+        (ach[1] == "exact" and ach[0] == text.lower()) or \
+        (ach[1] == "in" and ach[0] in text.lower()):
+            await achemb(message, ach[2], "reply")
+            
+    for r in reactions:
+        if r[0] in text.lower():
+            if r[1] == "custom": await message.add_reaction(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=r[2]))
+            elif r[1] == "vanilla": await message.add_reaction(r[2])
+            
+    for resp in responses:
+        if (resp[1] == "startswith" and text.lower().startswith(resp[0])) or \
+        (resp[1] == "re" and re.seach(resp[0], text.lower())) or \
+        (resp[1] == "exact" and resp[0] == text.lower()) or \
+        (resp[1] == "in" and resp[0] in text.lower()):
+            await message.reply(resp[2])
+
+    if (":place_of_worship:" in text or "🛐" in text) and (":cat:" in text or ":staring_cat:" in text or "🐱" in text): await achemb(message, "worship", "reply")
+    if text.lower() in ["ach", "cat!ach"]: await achemb(message, "test_ach", "reply")
+    
     if text.lower() == "please do not the cat":
         await message.reply(f"ok then\n{str(message.author)} lost 1 fine cat!!!1!")
         remove_cat(message.guild.id, message.author.id, "Fine")
-        if not has_ach(message.guild.id, message.author.id, "pleasedonotthecat"):
-            ach_data = give_ach(message.guild.id, message.author.id, "pleasedonotthecat")
-            embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-            await message.reply(embed=embed)
+        await achemb(message, "pleasedonotthecat", "reply")
     if text.lower() == "please do the cat":
         thing = discord.File("socialcredit.jpg", filename="socialcredit.jpg")
         await message.reply(file=thing)
-        if not has_ach(message.guild.id, message.author.id, "pleasedothecat"):
-            ach_data = give_ach(message.guild.id, message.author.id, "pleasedothecat")
-            embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-            await message.reply(embed=embed)
-    if text.lower() == "dog" and not has_ach(message.guild.id, message.author.id, "not_quite"):
-        ach_data = give_ach(message.guild.id, message.author.id, "not_quite")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.reply(embed=embed)
-    if text.lower() in ["ach", "cat!ach"] and not has_ach(message.guild.id, message.author.id, "test_ach"):
-        ach_data = give_ach(message.guild.id, message.author.id, "test_ach")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.reply(embed=embed)
-    if text.lower() == "egril" and not has_ach(message.guild.id, message.author.id, "egril"):
-        ach_data = give_ach(message.guild.id, message.author.id, "egril")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.reply(embed=embed)
+        await achemb(message, "pleasedothecat", "reply")
+    
     if text.lower() == "cat":
         register_member(message.guild.id, message.author.id)
         try:
@@ -489,22 +482,11 @@ async def on_message(message):
             if do_time and time_caught > get_time(message.guild.id, message.author.id, "slow"):
                 set_time(message.guild.id, message.author.id, time_caught, "slow")
 
-            if not has_ach(message.guild.id, message.author.id, "first"):
-                ach_data = give_ach(message.guild.id, message.author.id, "first")
-                embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-                if get_cat(message.guild.id, message.author.id, "Fine") > 20:
-                    embed.set_footer(text="well thats rather comedical isnt it")
-                await message.channel.send(embed=embed)
+            await achemb(message, "first", "reply")
             
-            if do_time and not has_ach(message.guild.id, message.author.id, "fast_catcher") and get_time(message.guild.id, message.author.id) <= 5:
-                ach_data = give_ach(message.guild.id, message.author.id, "fast_catcher")
-                embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-                await message.channel.send(embed=embed)
+            if do_time and get_time(message.guild.id, message.author.id) <= 5: await achemb(message, "fast_catcher", "reply")
 
-            if do_time and not has_ach(message.guild.id, message.author.id, "slow_catcher") and get_time(message.guild.id, message.author.id, "slow") >= 3600:
-                ach_data = give_ach(message.guild.id, message.author.id, "slow_catcher")
-                embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-                await message.channel.send(embed=embed)
+            if do_time and get_time(message.guild.id, message.author.id, "slow") >= 3600: await achemb(message, "slow_catcher", "reply")
 
             async def do_reward(message, level):
                 db[str(message.guild.id)][str(message.author.id)]["progress"] = 0
@@ -534,9 +516,6 @@ async def on_message(message):
             if battlelevel["req"] == "catch_type" and le_emoji == battlelevel["req_data"]:
                 await do_reward(message, battlelevel)
 
-    if "silly" in text.lower():
-        icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="sillycat")
-        await message.add_reaction(icon)
     if text.lower().startswith("cat!beggar") and message.author.id == OWNER_ID:
         give_ach(message.guild.id, int(text[10:].split(" ")[1]), text[10:].split(" ")[2])
         await message.reply("success")
@@ -573,20 +552,17 @@ async def on_message(message):
                 db["0"][str(stuff[1])]["custom"] = stuff[2]
         save()
         await message.reply("success")
+    
     if text.lower().startswith("car") and not text.lower().startswith("cart"):
         file = discord.File("car.png", filename="car.png")
         embed = discord.Embed(title="car!", color=0x6E593C).set_image(url="attachment://car.png")
         await message.reply(file=file, embed=embed)
-        if not has_ach(message.guild.id, message.author.id, "car"):
-            ach_data = give_ach(message.guild.id, message.author.id, "car")
-            embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-            await message.reply(embed=embed)
+        await achemb(message, "car", "reply")
     if text.lower().startswith("cart"):
         file = discord.File("cart.png", filename="cart.png")
         embed = discord.Embed(title="cart!", color=0x6E593C).set_image(url="attachment://cart.png")
         await message.reply(file=file, embed=embed)
-    if 'indev2' in text.lower():
-        await message.add_reaction('🐸')
+    
     await bot.process_commands(message)
 
 @bot.event
@@ -638,10 +614,7 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
     if text == "bwomp":
         file = discord.File("bwomp.mp3", filename="bwomp.mp3")
         await message.followup.send(file=file)
-        if not has_ach(message.guild.id, message.user.id, "bwomp"):
-            ach_data = give_ach(message.guild.id, message.user.id, "bwomp")
-            embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-            await message.channel.send(embed=embed)
+        await achemb(message, "bwomp", "send")
         return
     stuff = requests.post("https://tiktok-tts.weilnet.workers.dev/api/generation", headers={"Content-Type": "application/json"}, json={"text": text, "voice": "en_us_002"})
     try:
@@ -678,10 +651,7 @@ async def repair(message: discord.Interaction):
 @bot.slash_command(description="Get Daily cats")
 async def daily(message: discord.Interaction):
     await message.response.send_message("there is no daily cats why did you even try this\nthere ARE cats for voting tho, check out `/vote`")
-    if not has_ach(message.guild.id, message.user.id, "daily"):
-        ach_data = give_ach(message.guild.id, message.user.id, "daily")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.channel.send(embed=embed)
+    await achemb(message, "daily", "send")
 
 @bot.slash_command(description="View your inventory")
 async def inv(message: discord.Interaction, person_id: Optional[discord.Member] = discord.SlashOption(required=False, name="user", description="Person to view the inventory of!")):
@@ -783,18 +753,9 @@ async def inv(message: discord.Interaction, person_id: Optional[discord.Member] 
     embedVar.set_footer(text=f"Total cats: {total}")
     await message.followup.send(embed=embedVar)
     if me:
-        if not has_ach(message.guild.id, message.user.id, "collecter") and give_collector:
-            ach_data = give_ach(message.guild.id, message.user.id, "collecter")
-            embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-            await message.channel.send(embed=embed)
-        if not has_ach(message.guild.id, message.user.id, "fast_catcher") and get_time(message.guild.id, message.user.id) <= 5:
-            ach_data = give_ach(message.guild.id, message.user.id, "fast_catcher")
-            embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-            await message.channel.send(embed=embed)
-        if not has_ach(message.guild.id, message.user.id, "slow_catcher") and get_time(message.guild.id, message.user.id, "slow") >= 3600:
-            ach_data = give_ach(message.guild.id, message.user.id, "slow_catcher")
-            embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-            await message.channel.send(embed=embed)
+        if give_collector: await achemb(message, "collecter", "send")
+        if get_time(message.guild.id, message.user.id) <= 5: await achemb(message, "fast_catcher", "send")
+        if get_time(message.guild.id, message.user.id, "slow") >= 3600: await achemb(message, "slow_catcher", "send")
 
 @bot.slash_command(description="I like fortnite")
 async def battlepass(message: discord.Interaction):
@@ -860,18 +821,11 @@ async def donate(message: discord.Interaction, \
         add_cat(message.guild.id, person_id, cat_type, amount)
         embed = discord.Embed(title="Success!", description=f"Successfully transfered {amount} {cat_type} cats from <@{message.user.id}> to <@{person_id}>!", color=0x6E593C)
         await message.response.send_message(embed=embed)
-        if not has_ach(message.guild.id, message.user.id, "donator"):
-            ach_data = give_ach(message.guild.id, message.user.id, "donator")
-            embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-            await message.channel.send(embed=embed)
-        if not has_ach(message.guild.id, person_id, "anti_donator"):
-            ach_data = give_ach(message.guild.id, person_id, "anti_donator")
-            embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-            await message.channel.send(embed=embed.set_footer(text="unlocked by " + person.name + ", not you"))
-        if not has_ach(message.guild.id, message.user.id, "rich") and person_id == bot.user.id and cat_type == "Ultimate" and int(amount) >= 5:
-            ach_data = give_ach(message.guild.id, message.user.id, "rich")
-            embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-            await message.channel.send(embed=embed)
+        
+        await achemb(message, "donator", "send")
+        await achemb(message, "anti_donator", "send", person_id)
+        if person_id == bot.user.id and cat_type == "Ultimate" and int(amount) >= 5: await achemb(message, "rich", "send")
+        
         if amount >= 5 and person_id != OWNER_ID and cat_type == "Fine":
             tax_amount = round(amount * 0.2)
 
@@ -886,10 +840,7 @@ async def donate(message: discord.Interaction, \
             async def evade(interaction):
                 if interaction.user.id == message.user.id:
                     await interaction.message.edit(view=None)
-                    if not has_ach(message.guild.id, person_id, "secret"):
-                        ach_data = give_ach(message.guild.id, person_id, "secret")
-                        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-                        await message.channel.send(embed=embed)
+                    await achemb(message, "secret", "send")
                     await interaction.response.send_message(f"You evaded the tax of {tax_amount} Fine cats.")
                 else:
                     await interaction.response.send_message(choice(funny), ephemeral=True)
@@ -915,11 +866,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
     person1 = message.user
     person2 = person_id
         
-    if person1 == person2:
-        if not has_ach(message.guild.id, message.user.id, "introvert"):
-            ach_data = give_ach(message.guild.id, message.user.id, "introvert")
-            embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-            await message.channel.send(embed=embed)
+    if person1 == person2: await achemb(message, "introvert", "send")
         
     person1accept = False
     person2accept = False
@@ -977,14 +924,8 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
                 add_cat(interaction.guild.id, person1.id, k, v)
 
             await interaction.message.edit(f"Trade finished!", view=None)
-            if not has_ach(message.guild.id, person1.id, "extrovert"):
-                ach_data = give_ach(message.guild.id, person1.id, "extrovert")
-                embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=person1.name)
-                await message.channel.send(embed=embed)
-            if not has_ach(message.guild.id, person2.id, "extrovert"):
-                ach_data = give_ach(message.guild.id, person2.id, "extrovert")
-                embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=person2.name)
-                await message.channel.send(embed=embed)
+            await achemb(message, "extrovert", "send")
+            await achemb(message, "extrovert", "send", person2.id)
         
     async def addb(interaction):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
@@ -1171,10 +1112,7 @@ async def random(message: discord.Interaction):
             data = response.json()
             await message.response.send_message(data[0]['url'])
             counter += 1
-            if not has_ach(message.guild.id, message.user.id, "randomizer"):
-                ach_data = give_ach(message.guild.id, message.user.id, "randomizer")
-                embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-                await message.channel.send(embed=embed)
+            await achemb(message, "randomizer", "send")
             return
         except Exception:
             pass
@@ -1233,10 +1171,7 @@ async def achs(message: discord.Interaction):
             await interaction.response.send_message(embed=gen_new("Cat Hunt"), ephemeral=True, view=insane_view_generator("Cat Hunt"))
         else:
             await interaction.response.send_message(choice(funny), ephemeral=True)
-            if not has_ach(message.guild.id, interaction.user.id, "curious"):
-                ach_data = give_ach(message.guild.id, interaction.user.id, "curious")
-                embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text="Proudly unlocked by " + interaction.user.name)
-                await message.channel.send(embed=embed)
+            await achemb(interaction, "curios", "send")
 
     def insane_view_generator(category):
         myview = View()
@@ -1301,10 +1236,7 @@ async def catch(message: discord.Interaction, msg):
     except Exception as e:
         await message.response.send_message(f"the message appears to have commited no live anymore\n\n{e}", ephemeral=True)
     register_member(message.guild.id, msg.author.id)
-    if not has_ach(message.guild.id, msg.author.id, "4k") and msg.author.id != bot.user.id:
-        ach_data = give_ach(message.guild.id, msg.author.id, "4k")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.channel.send(embed=embed)
+    if msg.author.id != bot.user.id: await achemb(message, "4k", "send")
 
 @bot.message_command()
 async def pointLaugh(message: discord.Interaction, msg):
@@ -1486,12 +1418,8 @@ async def fake(message: discord.Interaction):
     file = discord.File("australian cat.png", filename="australian cat.png")
     icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="egirlcat")
     await message.channel.send(str(icon) + " eGirl cat hasn't appeared! Type \"cat\" to catch ratio!", file=file)
-    if not has_ach(message.guild.id, message.user.id, "trolled"):
-        ach_data = give_ach(message.guild.id, message.user.id, "trolled")
-        embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-        await message.response.send_message("OMG TROLLED SO HARD LMAOOOO :joy:", embed=embed, ephemeral=True)
-        return
     await message.response.send_message("OMG TROLLED SO HARD LMAOOOO :joy:", ephemeral=True)
+    await achemb(message, "trolled", "followup")
 
 @bot.slash_command(description="Force cats to appear", default_member_permissions=8)
 async def force(message: discord.Interaction, cat_type: Optional[str] = discord.SlashOption(required=False, choices=cattypes, name="type", description="select a cat type ok")):
@@ -1598,10 +1526,7 @@ async def on_command_error(ctx, error):
         except:
             await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
         try:
-            if not has_ach(ctx.guild.id, ctx.user.id, "crasher"):
-                ach_data = give_ach(ctx.guild.id, ctx.user.id, "crasher")
-                embed = discord.Embed(title=ach_data["title"], description=ach_data["description"], color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png")
-                await ctx.channel.send(embed=embed)
+            await achemb(ctx, "crasher", "send")
         except Exception:
             pass
 
