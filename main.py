@@ -314,7 +314,7 @@ async def on_message(message):
         ["dog", "exact", "not_quite"],
         ["egril", "exact", "egril"]]
 
-    reactions = [["V1;", "custom", "why_v1"],
+    reactions = [["v1;", "custom", "why_v1"],
         ["proglet", "custom", "professor_cat"],
         ["silly", "custom", "sillycat"],
         ["indev2", "vanilla", "🐸"]]
