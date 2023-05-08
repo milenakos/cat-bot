@@ -1,3 +1,5 @@
+# i did this just to become contribiutor
+
 import nextcord as discord
 import msg2img, base64, sys, re, time, json, requests, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio
 from nextcord.ext import tasks, commands
