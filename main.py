@@ -373,7 +373,7 @@ async def on_message(message):
     
     for ach in achs:
         if (ach[1] == "startswith" and text.lower().startswith(ach[0])) or \
-        (ach[1] == "re" and re.seach(ach[0], text.lower())) or \
+        (ach[1] == "re" and re.search(ach[0], text.lower())) or \
         (ach[1] == "exact" and ach[0] == text.lower()) or \
         (ach[1] == "in" and ach[0] in text.lower()):
             await achemb(message, ach[2], "reply")
