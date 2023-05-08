@@ -214,15 +214,19 @@ def give_ach(server_id, person_id, ach_id, reverse=False):
 async def achemb(message, ach_id, send_type, author=None):
     if not author:
         try:
-            author = message.author
+            author = message.author.id
+            author_string = message.author
         except Exception:
-            author = message.user
-    if not has_ach(message.guild.id, author.id, ach_id):
-        ach_data = give_ach(message.guild.id, author.id, ach_id)
+            author = message.user.id
+            author_string = message.user
+    else:
+        author_string = await bot.get_user(author)
+    if not has_ach(message.guild.id, author, ach_id):
+        ach_data = give_ach(message.guild.id, author, ach_id)
         desc = ach_data["description"]
         if ach_id == "dataminer":
             desc = "Your head hurts -- you seem to have forgotten what you just did to get this."
-        embed = discord.Embed(title=ach_data["title"], description=desc, color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=f"Unlocked by {author}")
+        embed = discord.Embed(title=ach_data["title"], description=desc, color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=f"Unlocked by {author_string}")
         if send_type == "reply": await message.reply(embed=embed)
         elif send_type == "send": await message.channel.send(embed=embed)
         elif send_type == "followup": await message.followup.send(embed=embed, ephermeral=True)
