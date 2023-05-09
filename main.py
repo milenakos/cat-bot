@@ -1175,7 +1175,7 @@ async def achs(message: discord.Interaction):
             await interaction.response.send_message(embed=gen_new("Cat Hunt"), ephemeral=True, view=insane_view_generator("Cat Hunt"))
         else:
             await interaction.response.send_message(choice(funny), ephemeral=True)
-            await achemb(interaction, "curios", "send")
+            await achemb(interaction, "curious", "send")
 
     def insane_view_generator(category):
         myview = View()
