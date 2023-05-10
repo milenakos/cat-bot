@@ -486,11 +486,11 @@ async def on_message(message):
             if do_time and time_caught > get_time(message.guild.id, message.author.id, "slow"):
                 set_time(message.guild.id, message.author.id, time_caught, "slow")
 
-            await achemb(message, "first", "reply")
+            await achemb(message, "first", "send")
             
-            if do_time and get_time(message.guild.id, message.author.id) <= 5: await achemb(message, "fast_catcher", "reply")
+            if do_time and get_time(message.guild.id, message.author.id) <= 5: await achemb(message, "fast_catcher", "send")
 
-            if do_time and get_time(message.guild.id, message.author.id, "slow") >= 3600: await achemb(message, "slow_catcher", "reply")
+            if do_time and get_time(message.guild.id, message.author.id, "slow") >= 3600: await achemb(message, "slow_catcher", "send")
 
             async def do_reward(message, level):
                 db[str(message.guild.id)][str(message.author.id)]["progress"] = 0
