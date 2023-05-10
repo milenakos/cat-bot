@@ -473,6 +473,8 @@ async def on_message(message):
                 coughstring = "{name}{discrim} caught {icon} {cattype} cat!\nThou now hast {catcount} cats of that type!\nThis fellow was caught 'i {time}!"
             elif le_emoji == "8bit":
                 coughstring = "{name}{discrim} c0ught {icon} {cattype} cat!!!!1!\nY0u n0w h0ve {catcount} cats 0f dat type!!!\nth1s fe11a was c0ught 1n {time}!!!!"
+            elif le_emoji == "Reverse":
+                coughstring = "!!!!{time} in cought was fella this\n!!!type dat of cats {catcount} have now You\n!1!!!!cat {cattype} {icon} cought {name}{discrim}"
             else:
                 coughstring = "{name}{discrim} cought {icon} {cattype} cat!!!!1!\nYou now have {catcount} cats of dat type!!!\nthis fella was cought in {time}!!!!"
             await message.channel.send(coughstring.format(name=message.author.name,
