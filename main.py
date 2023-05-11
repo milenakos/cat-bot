@@ -568,6 +568,11 @@ async def on_message(message):
         file = discord.File("cart.png", filename="cart.png")
         embed = discord.Embed(title="cart!", color=0x6E593C).set_image(url="attachment://cart.png")
         await message.reply(file=file, embed=embed)
+        
+    for i in ["sus", "amogus", "among", "vent", "report"]:
+        if i in text.lower():
+            await achemb(message, "sussy", "send")
+            break
     
     await bot.process_commands(message)
 
@@ -1087,6 +1092,11 @@ async def bal(message: discord.Interaction):
     embed = discord.Embed(title="cat coins", color=0x6E593C).set_image(url="attachment://money.png")
     await message.response.send_message(file=file, embed=embed)
 
+@bot.slash_command(description="Brew some coffee to catch cats more efficiently")
+async def brew(message: discord.Interaction):
+   await message.response.send_message("HTTP 418: I'm a teapot. <https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418>")
+   await achemb(message, "coffee", "send")
+
 if TOP_GG_TOKEN:
     @bot.slash_command(description="Vote on topgg for free cats")
     async def vote(message: discord.Interaction):
@@ -1497,6 +1507,7 @@ async def reset(message: discord.Interaction, person_id: discord.Member = discor
 @ping.error
 @donate.error
 @cat.error
+@brew.error
 @cursed.error
 @bal.error
 @random.error
