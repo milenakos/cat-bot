@@ -17,6 +17,7 @@
   "who_ping": {"title": "who ping", "description": "ping cat bot", "is_hidden": true, "category": "Random"},
   "introvert": {"title": "Introvert", "description": "Trade with yourself", "is_hidden": false, "category": "Random"},
   "pleasedonotthecat": {"title": "Please do not the cat", "description": "reject cat", "is_hidden": true, "category": "Random"},
+  "pleasedothecat": {"title": "Please do the cat", "description": "accept cat", "is_hidden": true, "category": "Random"},
   "worship": {"title": "Cat Worshipper", "description": "have both :place_of_worship: and <:staring_cat:966697804611321908> in your message", "is_hidden": true, "category": "Random"},
   "test_ach": {"title": "Test Achievement", "description": "run the cat!ach command", "is_hidden": true, "category": "Random"},
   "fuwu": {"title": "fUwU", "description": "say fowo. yes thats it. (chat filter bypass supported)", "is_hidden": true, "category": "Unfair"},
@@ -32,7 +33,8 @@
   "website_user": {"title": "Website User", "description": "catbot.milenakos.repl.co", "is_hidden": false, "category": "Random"},
   "secret": {"title": "Tax Fraud", "description": "evade paying your cat taxes", "is_hidden": true, "category": "Hidden"},
   "trolled": {"title": "Trolled", "description": "TROLLED SO HARD LMAOOO :joy:", "is_hidden": false, "category": "Cat Hunt"},
-  "pleasedothecat": {"title": "Please do the cat", "description": "accept cat", "is_hidden": true, "category": "Random"},
+  "coffee": {"title": "Brew Coffee", "description": "nevermind im a teapot", "is_hidden": true, "category": "Random"},
+  "sussy": {"title": "Sussy", "description": "AMOGUS", "is_hidden": false, "category": "Random"},
   "egril": {"title": "Electronic Grill", "description": "what can this possibly mean", "is_hidden": false, "category": "Random"},
   "bwomp": {"title": "Bwomp", "description": "is that a geometry dash reference???", "is_hidden": false, "category": "Random"}
 }
