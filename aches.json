@@ -34,7 +34,7 @@
   "secret": {"title": "Tax Fraud", "description": "evade paying your cat taxes", "is_hidden": true, "category": "Hidden"},
   "trolled": {"title": "Trolled", "description": "TROLLED SO HARD LMAOOO :joy:", "is_hidden": false, "category": "Cat Hunt"},
   "coffee": {"title": "Brew Coffee", "description": "nevermind im a teapot", "is_hidden": true, "category": "Random"},
-  "sussy": {"title": "Sussy", "description": "AMOGUS", "is_hidden": false, "category": "Random"},
+  "sussy": {"title": "Sussy", "description": "call out sus cat for being AMOGUS", "is_hidden": false, "category": "Random"},
   "egril": {"title": "Electronic Grill", "description": "what can this possibly mean", "is_hidden": false, "category": "Random"},
   "bwomp": {"title": "Bwomp", "description": "is that a geometry dash reference???", "is_hidden": false, "category": "Random"}
 }
