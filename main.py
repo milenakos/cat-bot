@@ -568,11 +568,12 @@ async def on_message(message):
         file = discord.File("cart.png", filename="cart.png")
         embed = discord.Embed(title="cart!", color=0x6E593C).set_image(url="attachment://cart.png")
         await message.reply(file=file, embed=embed)
-        
-    for i in ["sus", "amogus", "among", "vent", "report"]:
-        if i in text.lower():
-            await achemb(message, "sussy", "send")
-            break
+    
+    if db["cattype"][str(message.channel.id)] == "Sus":
+        for i in ["sus", "amogus", "among", "vent", "report"]:
+            if i in text.lower():
+                await achemb(message, "sussy", "send")
+                break
     
     await bot.process_commands(message)
 
