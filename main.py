@@ -1405,7 +1405,7 @@ async def summon(message: discord.Interaction, person_id: discord.Member = disco
 @bot.slash_command(description="Say stuff as cat", default_member_permissions=8)
 async def say(message: discord.Interaction, text: str = discord.SlashOption(description="you will figure")):
     await message.response.send_message("success", ephemeral=True)
-    await message.channel.send(text)
+    await message.channel.send(text[:2000])
 
 @bot.slash_command(description="Setup cat in current channel", default_member_permissions=8)
 async def setup(message: discord.Interaction):
