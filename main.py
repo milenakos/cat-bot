@@ -970,10 +970,10 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
     def gen_embed():
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
         view = View()
+        view.on_timeout = untrade
     
         accept = Button(label="Accept", style=ButtonStyle.green)
         accept.callback = acceptb
-        accept.on_timeout = untrade
         
         deny = Button(label="Deny", style=ButtonStyle.red)
         deny.callback = denyb
