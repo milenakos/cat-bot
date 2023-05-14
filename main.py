@@ -393,6 +393,8 @@ async def on_message(message):
         (resp[1] == "exact" and resp[0] == text.lower()) or \
         (resp[1] == "in" and resp[0] in text.lower()):
             await message.reply(resp[2])
+        
+    if message.author in message.mentions: await message.add_reaction(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat"))
 
     if (":place_of_worship:" in text or "🛐" in text) and (":cat:" in text or ":staring_cat:" in text or "🐱" in text): await achemb(message, "worship", "reply")
     if text.lower() in ["ach", "cat!ach"]: await achemb(message, "test_ach", "reply")
