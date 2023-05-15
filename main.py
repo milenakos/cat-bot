@@ -429,7 +429,11 @@ async def on_message(message):
             cat_temp = db["cat"][str(message.channel.id)]
             db["cat"][str(message.channel.id)] = False
             save()
-            await message.delete()
+            try:
+                await message.delete()
+            except discord.errors.Forbidden:
+                await message.add_reaction("❌")
+                await message.channel.send("I don't have permission to delete messages. Please re-invite the bot or manually add that permission.")
             try:
                 var = await message.channel.fetch_message(cat_temp)
                 catchtime = var.created_at
