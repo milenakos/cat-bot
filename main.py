@@ -1080,7 +1080,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
             await interaction.response.defer()
             await update_trade_embed(interaction)
 
-@bot.slash_command(description="Get Cat")
+@bot.slash_command(description="Get Cat Image, does not give you a cat")
 async def cat(message: discord.Interaction):
     file = discord.File("cat.png", filename="cat.png")
     await message.response.send_message(file=file)
