@@ -23,6 +23,6 @@
     {"req": "catch_type", "req_data": "Reverse", "reward": "Reverse", "reward_amount": 1},
     {"req": "catch_fast", "req_data": 4, "reward": "Sus", "reward_amount": 2},
     {"req": "nothing", "req_data": "0", "reward": "Fine", "reward_amount": 0},
-    {"req": "nothing", "req_data": "0", "reward": "Fine", "reward_amount": 0}
+    {"req": "nothing2", "req_data": "0", "reward": "Fine", "reward_amount": 0}
  ]
 }
