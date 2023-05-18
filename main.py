@@ -811,7 +811,10 @@ async def battlepass(message: discord.Interaction):
             if num[0].lower() in "aieuo":
                 an = "n"
             return f"Catch a{an} {num} cat.\nReward: {amount} {thetype} cats."
-        return "Touch grass.\nReward: 1 ~~e~~Girl~~cats~~friend."
+        elif req == "nothing":
+            return "Touch grass.\nReward: 1 ~~e~~Girl~~cats~~friend."
+        else:
+            return "Complete a battlepass level.\nReward: freedom"
 
     current = "🟨"
     if battle["levels"][current_level]["req"] == "nothing":
