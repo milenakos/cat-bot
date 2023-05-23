@@ -105,7 +105,7 @@ def save():
 
 try:
     if not db["total_members"]:
-        raise
+        raise Exception
 except KeyError:
     db["total_members"] = 0
     save()
