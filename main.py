@@ -317,7 +317,7 @@ async def on_message(message):
     reactions = [["v1;", "custom", "why_v1"],
         ["proglet", "custom", "professor_cat"],
         ["silly", "custom", "sillycat"],
-        ["indev2", "vanilla", "🐸"]]
+        ["indev", "vanilla", "🐸"]]
 
     responses = [["testing testing 1 2 3", "exact", "test success"],
         ["cat!sex", "exact", "..."],
