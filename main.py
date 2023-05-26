@@ -81,7 +81,8 @@ bot = commands.Bot(command_prefix="Cat Bot by Milenakos#3310", intents=intents, 
 
 cattypes = []
 for e in CAT_TYPES:
-    if e not in cattypes: cattypes.append(e)
+    if e not in cattypes:
+        cattypes.append(e)
 
 funny = ["why did you click this this arent yours", "absolutely not", "cat bot not responding, try again later", "you cant", "can you please stop", "try again", "403 not allowed", "stop", "get a life"]
 
