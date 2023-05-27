@@ -675,7 +675,9 @@ async def repair(message: discord.Interaction):
 
 @bot.slash_command(description="Get Daily cats")
 async def daily(message: discord.Interaction):
-    await message.response.send_message("there is no daily cats why did you even try this\nthere ARE cats for voting tho, check out `/vote`")
+    suffix = ""
+    if TOP_GG_TOKEN: suffix = "\nthere ARE cats for voting tho, check out `/vote`"
+    await message.response.send_message("there is no daily cats why did you even try this" + suffix)
     await achemb(message, "daily", "send")
 
 @bot.slash_command(description="View your inventory")
@@ -1506,8 +1508,15 @@ async def reset(message: discord.Interaction, person_id: discord.Member = discor
     except KeyError:
         await message.response.send_message("ummm? this person isnt even registered in cat bot wtf are you wiping?????", ephemeral=True)
 
-# remove decorators for disabled commands, such as /vote
-@vote.error
+def conditional_decorator(dec, condition):
+    def decorator(func):
+        if not condition:
+            # Return the function unchanged, not decorated.
+            return func
+        return dec(func)
+    return decorator
+        
+@conditional_decorator(vote, TOP_GG_TOKEN)
 @warning.error
 @repair.error
 @admin.error
