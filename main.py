@@ -896,6 +896,8 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
     person1 = message.user
     person2 = person_id
         
+    blackhole = False
+        
     if person1 == person2: await achemb(message, "introvert", "send")
         
     person1accept = False
@@ -908,12 +910,14 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
         person2gives = {"eGirl": 9999999}
     
     async def denyb(interaction):
-        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
+        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, blackhole
         if interaction.user != person1 and interaction.user != person2:
             await interaction.response.send_message(choice(funny), ephemeral=True)
             return
         
-        await interaction.response.defer()
+        blackhole = True
+        person1gives = {}
+        person2gives = {}
         await interaction.message.edit(f"<@{interaction.user.id}> has cancelled the trade.", embed=None, view=None)
             
     async def acceptb(interaction):
@@ -984,7 +988,9 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
         await interaction.message.edit(f"Trade abandoned!", view=None)
     
     def gen_embed():
-        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
+        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, blackhole
+        if blackhole:
+            return discord.Embed(color=0x6E593C, title=f"Blackhole", description="How Did We Get Here?"), None
         view = View()
         view.on_timeout = untrade
     
