@@ -990,6 +990,8 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
     def gen_embed():
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, blackhole
         if blackhole:
+            await achemb(message, "blackhole", "send")
+            await achemb(message, "blackhole", "send", person2)
             return discord.Embed(color=0x6E593C, title=f"Blackhole", description="How Did We Get Here?"), None
         view = View()
         view.on_timeout = untrade
