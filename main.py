@@ -987,7 +987,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
         person2accept = False
         await interaction.message.edit(f"Trade abandoned!", view=None)
     
-    def gen_embed():
+    async def gen_embed():
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, blackhole
         if blackhole:
             await achemb(message, "blackhole", "send")
@@ -1033,11 +1033,11 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
         
         return coolembed, view
     
-    embed, view = gen_embed()
+    embed, view = await gen_embed()
     await message.response.send_message(embed=embed, view=view)
         
     async def update_trade_embed(interaction):
-        embed, view = gen_embed()
+        embed, view = await gen_embed()
         await interaction.message.edit(embed=embed, view=view)
         
     class TradeModal(discord.ui.Modal):
