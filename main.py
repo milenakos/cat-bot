@@ -883,7 +883,7 @@ async def donate(message: discord.Interaction, \
             button2 = Button(label="Evade the tax", style=ButtonStyle.red)
             button2.callback = evade
 
-            myview = View()
+            myview = View(timeout=None)
 
             myview.add_item(button)
             myview.add_item(button2)
@@ -981,11 +981,6 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
     async def handle_modal(currentuser, interaction):
         modal = TradeModal(currentuser)
         await interaction.response.send_modal(modal)
-        
-    async def untrade(interaction):
-        person1accept = False
-        person2accept = False
-        await interaction.message.edit(f"Trade abandoned!", view=None)
     
     async def gen_embed():
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, blackhole
@@ -993,8 +988,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
             await achemb(message, "blackhole", "send")
             await achemb(message, "blackhole", "send", person2)
             return discord.Embed(color=0x6E593C, title=f"Blackhole", description="How Did We Get Here?"), None
-        view = View()
-        view.on_timeout = untrade
+        view = View(timeout=None)
     
         accept = Button(label="Accept", style=ButtonStyle.green)
         accept.callback = acceptb
@@ -1217,7 +1211,7 @@ async def achs(message: discord.Interaction):
             await achemb(interaction, "curious", "send")
 
     def insane_view_generator(category):
-        myview = View()
+        myview = View(timeout=None)
         buttons_list = []
         lambdas_list = []
 
@@ -1265,7 +1259,7 @@ async def achs(message: discord.Interaction):
     button = Button(label="View all achievements", style=ButtonStyle.blurple)
     button.callback = send_full
 
-    myview = View()
+    myview = View(timeout=None)
     myview.add_item(button)
 
     await message.response.send_message(embed=embedVar, view=myview)
@@ -1393,7 +1387,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         button2.callback = fastlb
         button3.callback = slowlb
 
-        myview = View()
+        myview = View(timeout=None)
         myview.add_item(button1)
         myview.add_item(button2)
         myview.add_item(button3)
