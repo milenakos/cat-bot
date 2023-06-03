@@ -229,7 +229,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
         desc = ach_data["description"]
         if ach_id == "dataminer":
             desc = "Your head hurts -- you seem to have forgotten what you just did to get this."
-        embed = discord.Embed(title=ach_data["title"], description=desc, color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=f"Unlocked by {author_string}")
+        embed = discord.Embed(title=ach_data["title"], description=desc, color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=f"Unlocked by {author_string.name}")
         if send_type == "reply": await message.reply(embed=embed)
         elif send_type == "send": await message.channel.send(embed=embed)
         elif send_type == "followup": await message.followup.send(embed=embed, ephemeral=True)
@@ -403,7 +403,7 @@ async def on_message(message):
     if text.lower() in ["ach", "cat!ach"]: await achemb(message, "test_ach", "reply")
     
     if text.lower() == "please do not the cat":
-        await message.reply(f"ok then\n{str(message.author)} lost 1 fine cat!!!1!")
+        await message.reply(f"ok then\n{message.author.name} lost 1 fine cat!!!1!")
         remove_cat(message.guild.id, message.author.id, "Fine")
         await achemb(message, "pleasedonotthecat", "reply")
     if text.lower() == "please do the cat":
@@ -435,7 +435,6 @@ async def on_message(message):
             try:
                 await message.delete()
             except discord.errors.Forbidden:
-                await message.add_reaction("❌")
                 await message.channel.send("I don't have permission to delete messages. Please re-invite the bot or manually add that permission.")
             try:
                 var = await message.channel.fetch_message(cat_temp)
@@ -663,9 +662,9 @@ async def nerdmode(message: discord.Interaction, person: discord.Member = discor
     db[str(message.guild.id)][str(person.id)]["timeout"] = timestamp
     save()
     if timeout > 0:
-        await message.response.send_message(f"{person} is now in nerd mode until <t:{timestamp}:R>")
+        await message.response.send_message(f"{person.name} is now in nerd mode until <t:{timestamp}:R>")
     else:
-        await message.response.send_message(f"{person} is no longer in nerd mode.")
+        await message.response.send_message(f"{person.name} is no longer in nerd mode.")
 
 @bot.slash_command(description="Use if cat spawning is broken", default_member_permissions=8)
 async def repair(message: discord.Interaction):
