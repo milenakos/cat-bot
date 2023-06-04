@@ -322,7 +322,7 @@ async def on_message(message):
         ["silly", "custom", "sillycat"],
         ["indev", "vanilla", "🐸"]]
 
-    responses = [["testing testing 1 2 3", "exact", "test success"],
+    responses = [["testing testing 1 2 3", "exact", "test success", "test failure"],
         ["cat!sex", "exact", "..."],
         ["cellua good", "in", ".".join([str(randint(2, 254)) for _ in range(4)])]]
     
@@ -395,7 +395,10 @@ async def on_message(message):
         (resp[1] == "re" and re.seach(resp[0], text.lower())) or \
         (resp[1] == "exact" and resp[0] == text.lower()) or \
         (resp[1] == "in" and resp[0] in text.lower()):
-            await message.reply(resp[2])
+            if len(resp) >= 4 and randint(0, 200) == 0:
+                await message.reply(resp[3])
+            else:
+                await message.reply(resp[2])
         
     if message.author in message.mentions: await message.add_reaction(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat"))
 
