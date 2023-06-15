@@ -470,23 +470,22 @@ async def on_message(message):
             le_emoji = db["cattype"][str(message.channel.id)]
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=le_emoji.lower() + "cat")
             if le_emoji == "Corrupt":
-                coughstring = "{discrim}{name} coought{cattype} c{icon}at!!!!404!\nYou now BEEP {catcount} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!"
+                coughstring = "{name} coought{cattype} c{icon}at!!!!404!\nYou now BEEP {catcount} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!"
             elif le_emoji == "eGirl":
-                coughstring = "{name}{discrim} cowought {icon} {cattype} cat~~ ^^\nYou-u now *blushes* hawe {catcount} cats of dat tywe~!!!\nthis fella was <3 cought in {time}!!!!"
+                coughstring = "{name} cowought {icon} {cattype} cat~~ ^^\nYou-u now *blushes* hawe {catcount} cats of dat tywe~!!!\nthis fella was <3 cought in {time}!!!!"
             elif le_emoji == "Rickroll":
-                coughstring = "{name}{discrim} cought {icon} {cattype} cat!!!!1!\nYou will never give up {catcount} cats of dat type!!!\nYou wouldn't let them down even after {time}!!!!"
+                coughstring = "{name} cought {icon} {cattype} cat!!!!1!\nYou will never give up {catcount} cats of dat type!!!\nYou wouldn't let them down even after {time}!!!!"
             elif le_emoji == "Sus":
-                coughstring = "{name}{discrim} cought {icon} {cattype} cat!!!!1!\nYou have vented infront of {catcount} cats of dat type!!!\nthis sussy baka was cought in {time}!!!!"
+                coughstring = "{name} cought {icon} {cattype} cat!!!!1!\nYou have vented infront of {catcount} cats of dat type!!!\nthis sussy baka was cought in {time}!!!!"
             elif le_emoji == "Professor":
-                coughstring = "{name}{discrim} caught {icon} {cattype} cat!\nThou now hast {catcount} cats of that type!\nThis fellow was caught 'i {time}!"
+                coughstring = "{name} caught {icon} {cattype} cat!\nThou now hast {catcount} cats of that type!\nThis fellow was caught 'i {time}!"
             elif le_emoji == "8bit":
-                coughstring = "{name}{discrim} c0ught {icon} {cattype} cat!!!!1!\nY0u n0w h0ve {catcount} cats 0f dat type!!!\nth1s fe11a was c0ught 1n {time}!!!!"
+                coughstring = "{name} c0ught {icon} {cattype} cat!!!!1!\nY0u n0w h0ve {catcount} cats 0f dat type!!!\nth1s fe11a was c0ught 1n {time}!!!!"
             elif le_emoji == "Reverse":
-                coughstring = "!!!!{time} in cought was fella this\n!!!type dat of cats {catcount} have now You\n!1!!!!cat {cattype} {icon} cought {name}{discrim}"
+                coughstring = "!!!!{time} in cought was fella this\n!!!type dat of cats {catcount} have now You\n!1!!!!cat {cattype} {icon} cought {name}"
             else:
                 coughstring = "{name}{discrim} cought {icon} {cattype} cat!!!!1!\nYou now have {catcount} cats of dat type!!!\nthis fella was cought in {time}!!!!"
             await message.channel.send(coughstring.format(name=message.author.display_name.replace("@", "`@`"),
-                                                           discrim=f"#{message.author.discriminator}" if int(message.author.discriminator) else "",
                                                            icon=icon,
                                                            cattype=le_emoji,
                                                            catcount=add_cat(message.guild.id, message.author.id, le_emoji),
