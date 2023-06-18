@@ -485,7 +485,7 @@ async def on_message(message):
                 coughstring = "!!!!{time} in cought was fella this\n!!!type dat of cats {catcount} have now You\n!1!!!!cat {cattype} {icon} cought {name}"
             else:
                 coughstring = "{name} cought {icon} {cattype} cat!!!!1!\nYou now have {catcount} cats of dat type!!!\nthis fella was cought in {time}!!!!"
-            await message.channel.send(coughstring.format(name=message.author.display_name.replace("@", "`@`"),
+            await message.channel.send(coughstring.format(name=message.author.global_name.replace("@", "`@`"),
                                                            icon=icon,
                                                            cattype=le_emoji,
                                                            catcount=add_cat(message.guild.id, message.author.id, le_emoji),
