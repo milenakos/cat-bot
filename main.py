@@ -641,6 +641,9 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
         await achemb(message, "bwomp", "send")
         return
     stuff = requests.post("https://tiktok-tts.weilnet.workers.dev/api/generation", headers={"Content-Type": "application/json"}, json={"text": text, "voice": "en_us_002"})
+    if not stuff.json():
+        await message.followup.send("death")
+        return
     try:
         data = "" + stuff.json()["data"]
     except TypeError:
