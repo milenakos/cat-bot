@@ -647,11 +647,8 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
         return
     try:
         data = "" + stuff.json()["data"]
-    except TypeError:
-        await message.followup.send("i dont speak your language (remove non-english characters, or make message shorter)")
-        return
     except:
-        await message.followup.send("death")
+        await message.followup.send("i dont speak your language (remove non-english characters, or make message shorter)")
         return
     with io.BytesIO() as f:
         ba = "data:audio/mpeg;base64," + data
