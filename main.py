@@ -640,6 +640,7 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
         await message.followup.send(file=file)
         await achemb(message, "bwomp", "send")
         return
+    # not async :no_bitches:
     stuff = requests.post("https://tiktok-tts.weilnet.workers.dev/api/generation", headers={"Content-Type": "application/json"}, json={"text": text, "voice": "en_us_002"})
     if not stuff.json():
         await message.followup.send("death")
@@ -648,6 +649,9 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
         data = "" + stuff.json()["data"]
     except TypeError:
         await message.followup.send("i dont speak your language (remove non-english characters, or make message shorter)")
+        return
+    except requests.exceptions.JSONDecodeError:
+        await message.followup.send("death")
         return
     with io.BytesIO() as f:
         ba = "data:audio/mpeg;base64," + data
