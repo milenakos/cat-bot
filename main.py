@@ -650,7 +650,7 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
     except TypeError:
         await message.followup.send("i dont speak your language (remove non-english characters, or make message shorter)")
         return
-    except requests.exceptions.JSONDecodeError:
+    except:
         await message.followup.send("death")
         return
     with io.BytesIO() as f:
