@@ -366,7 +366,7 @@ async def on_message(message):
         icon = str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="no_cat_throphy")) + " "
         await message.reply("**RoboTop**, I rate **you** 0 cats " + icon * 5)
 
-	if "leafbot" in message.author.name.lower() and "hmm... i would rate catbot" in message.content.lower():
+    if "leafbot" in message.author.name.lower() and "hmm... i would rate catbot" in message.content.lower():
         icon = str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="no_cat_throphy")) + " "
         await message.reply("Hmm... I would rate you **0 cats**! " + icon * 5)
         
