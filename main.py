@@ -77,7 +77,7 @@ ach_titles = {value["title"].lower(): key for (key, value) in ach_list.items()}
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix="Cat Bot by Milenakos#3310", intents=intents, help_command=None)
+bot = commands.AutoShardedBot(command_prefix="Cat Bot by Milenakos#3310", intents=intents, help_command=None)
 
 cattypes = []
 for e in CAT_TYPES:
