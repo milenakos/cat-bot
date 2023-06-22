@@ -335,7 +335,7 @@ async def on_message(message):
         s = text.lower()
         total_vow = 0
         total_illegal = 0
-        for i in "aeuio":
+        for i in "aeuioаоуэыяёюеи":
             total_vow += s.count(i)
         illegal = ["bk", "fq", "jc", "jt", "mj", "qh", "qx", "vj",  "wz",  "zh",
                         "bq", "fv", "jd", "jv", "mq", "qj", "qy", "vk",  "xb",  "zj",
@@ -349,7 +349,10 @@ async def on_message(message):
                         "cw", "hx", "jp", "kz", "qd", "qs", "vd", "vz",  "yz",
                         "cx", "hz", "jq", "lq", "qe", "qt", "vf", "wq",  "zb",
                         "dx", "iy", "jr", "lx", "qf", "qv", "vg", "wv",  "zc",
-                        "fk", "jb", "js", "mg", "qg", "qw", "vh", "wx",  "zg"]
+                        "fk", "jb", "js", "mg", "qg", "qw", "vh", "wx",  "zg",
+                "чц", "ъъ", "ьь", "хь", "хъ", "хх", "цп", "чч", "зч", "сй", "ъь",
+                "ьъ", "цч", "цш", "щц", "цщ", "чъ", "йъ", "щъ", "шщ", "щш", "йь",
+                "щк", "щс"]
         for j in illegal:
             if j in s:
                 total_illegal += 1
