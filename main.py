@@ -5,6 +5,7 @@ from nextcord import ButtonStyle
 from nextcord.ui import Button, View
 from typing import Optional
 from random import randint, choice
+from PIL import Image
 
 ### Setup values start
 
@@ -1269,6 +1270,24 @@ async def achs(message: discord.Interaction):
 
     await message.response.send_message(embed=embedVar, view=myview)
 
+@bot.message_command()
+async def jpegify(message: discord.Interaction, msg):
+    img = None
+    for i in msg.attachments:
+        if "image" in i.content_type:
+            img = i
+            break
+    if not img:
+        await message.response.send_message("there is nothing to jpegify here lel", ephemeral=True)
+    await message.response.defer()
+    
+    image_bytes = io.BytesIO(await i.read())
+    jpeg = Image.open(image_bytes)
+    with io.BytesIO() as sexy_bytes:
+        jpeg.save(sexy_bytes, "JPEG", quality=5)
+        jpeg.seek(0)
+        await message.followup.send(file=discord.File(fp=sexy_bytes, filename='image.jpeg')
+            
 @bot.message_command(name="catch")
 async def catch(message: discord.Interaction, msg):
     try:
