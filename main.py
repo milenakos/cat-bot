@@ -1279,10 +1279,12 @@ async def jpegify(message: discord.Interaction, msg):
             break
     if not img:
         await message.response.send_message("there is nothing to jpegify here lel", ephemeral=True)
+        return
     await message.response.defer()
     
     image_bytes = io.BytesIO(await i.read())
     jpeg = Image.open(image_bytes)
+    jpeg.convert('RGB')
     with io.BytesIO() as sexy_bytes:
         jpeg.save(sexy_bytes, "JPEG", quality=5)
         jpeg.seek(0)
