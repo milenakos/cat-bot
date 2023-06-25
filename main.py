@@ -1286,7 +1286,7 @@ async def jpegify(message: discord.Interaction, msg):
     with io.BytesIO() as sexy_bytes:
         jpeg.save(sexy_bytes, "JPEG", quality=5)
         jpeg.seek(0)
-        await message.followup.send(file=discord.File(fp=sexy_bytes, filename='image.jpeg')
+        await message.followup.send(file=discord.File(fp=sexy_bytes, filename='image.jpeg'))
             
 @bot.message_command(name="catch")
 async def catch(message: discord.Interaction, msg):
