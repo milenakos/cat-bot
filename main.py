@@ -1286,7 +1286,10 @@ async def jpegify(message: discord.Interaction, msg):
     jpeg = Image.open(image_bytes)
     jpeg = jpeg.convert('RGB')
     w, h = jpeg.size
-    jpeg = jpeg.resize((w//2, h//2))
+    try:
+        jpeg = jpeg.resize((w//2, h//2))
+    except ValueError:
+        pass
     with io.BytesIO() as sexy_bytes:
         jpeg.save(sexy_bytes, "JPEG", quality=2)
         sexy_bytes.seek(0)
