@@ -1541,44 +1541,6 @@ async def reset(message: discord.Interaction, person_id: discord.Member = discor
     except KeyError:
         await message.response.send_message("ummm? this person isnt even registered in cat bot wtf are you wiping?????", ephemeral=True)
 
-def conditional_decorator(dec, condition):
-    def decorator(func):
-        if not condition:
-            # Return the function unchanged, not decorated.
-            return func
-        return dec(func)
-    return decorator
-        
-@conditional_decorator(vote, TOP_GG_TOKEN)
-@warning.error
-@repair.error
-@admin.error
-@info.error
-@tiktok.error
-@nerdmode.error
-@daily.error
-@inv.error
-@battlepass.error
-@ping.error
-@donate.error
-@cat.error
-@brew.error
-@cursed.error
-@bal.error
-@random.error
-@achs.error
-@trade.error
-@catch.error
-@pointLaugh.error
-@leaderboards.error
-@summon.error
-@say.error
-@setup.error
-@forget.error
-@fake.error
-@force.error
-@giveach.error
-@reset.error
 async def on_command_error(ctx, error):
     if "KeyboardInterrupt" in str(type(error)):
         return
@@ -1640,4 +1602,5 @@ async def on_command_error(ctx, error):
                 + serv
         )
 
+bot.on_command_error = on_command_error
 bot.run(TOKEN)
