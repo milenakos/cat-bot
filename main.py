@@ -592,8 +592,6 @@ async def on_message(message):
                     await achemb(message, "sussy", "send")
                     break
     except KeyError: pass
-    
-    await bot.process_commands(message)
 
 @bot.event
 async def on_guild_join(guild):
