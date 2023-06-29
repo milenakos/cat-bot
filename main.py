@@ -326,7 +326,8 @@ async def on_message(message):
 
     responses = [["testing testing 1 2 3", "exact", "test success"],
         ["cat!sex", "exact", "..."],
-        ["cellua good", "in", ".".join([str(randint(2, 254)) for _ in range(4)])]]
+        ["cellua good", "in", ".".join([str(randint(2, 254)) for _ in range(4)])],
+        ["google en passant", "exact", "holy hell"]]
     
     if GITHUB_CHANNEL_ID and message.channel.id == GITHUB_CHANNEL_ID:
         os.system("git pull")
