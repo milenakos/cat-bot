@@ -1504,7 +1504,7 @@ async def force(message: discord.Interaction, cat_type: Optional[str] = discord.
     message_lmao =  await message.channel.send(str(icon) + " " + db["cattype"][str(channeley.id)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
     db["cat"][str(channeley.id)] = message_lmao.id
     save()
-    await message.response.send_message("done", ephemeral=True)
+    await message.response.send_message("done!\n**Note:** you can use `/summon` to give yourself cats, there is no need to spam this", ephemeral=True)
 
 @bot.slash_command(description="Give achievements to people", default_member_permissions=8)
 async def giveach(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
