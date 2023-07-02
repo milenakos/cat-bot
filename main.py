@@ -1492,7 +1492,7 @@ async def soft_force(channeley, cat_type=None):
         localcat = cat_type
     db["cattype"][str(channeley.id)] = localcat
     icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower() + "cat")
-    message_lmao =  await message.channel.send(str(icon) + " " + db["cattype"][str(channeley.id)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
+    message_lmao =  await channeley.send(str(icon) + " " + db["cattype"][str(channeley.id)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
     db["cat"][str(channeley.id)] = message_lmao.id
     save()
 
