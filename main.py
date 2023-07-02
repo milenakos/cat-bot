@@ -657,7 +657,7 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
         f.seek(0)
         await message.followup.send(file=discord.File(fp=f, filename='output.mp3'))
 
-@bot.slash_command(description="Prevent someone from catching cats for a certain time period", default_member_permissions=32)
+@bot.slash_command(description="(ADMIN) Prevent someone from catching cats for a certain time period", default_member_permissions=32)
 async def nerdmode(message: discord.Interaction, person: discord.Member = discord.SlashOption(description="A person to timeout!"), timeout: int = discord.SlashOption(description="How many seconds?")):
     if timeout < 0:
         await message.response.send_message("uhh i think time is supposed to be a number", ephemeral=True)
@@ -671,7 +671,7 @@ async def nerdmode(message: discord.Interaction, person: discord.Member = discor
     else:
         await message.response.send_message(f"{person.name} is no longer in nerd mode.")
 
-@bot.slash_command(description="Use if cat spawning is broken", default_member_permissions=32)
+@bot.slash_command(description="(ADMIN) Use if cat spawning is broken", default_member_permissions=32)
 async def repair(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
     save()
@@ -1096,7 +1096,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
             await interaction.response.defer()
             await update_trade_embed(interaction)
 
-@bot.slash_command(description="Get Cat Image, does not give you a cat")
+@bot.slash_command(description="Get Cat Image, does not add a cat to your inventory")
 async def cat(message: discord.Interaction):
     file = discord.File("cat.png", filename="cat.png")
     await message.response.send_message(file=file)
@@ -1437,7 +1437,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         
     await lb_handler(message, {"Fastest": "fast", "Slowest": "slow", "Cats": "main"}[leaderboard_type], False)
 
-@bot.slash_command(description="Give cats to people", default_member_permissions=32)
+@bot.slash_command(description="(ADMIN) Give cats to people", default_member_permissions=32)
 async def summon(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
                  amount: int = discord.SlashOption(description="how many"), \
                  cat_type: str = discord.SlashOption(choices=cattypes, description="what")):
@@ -1445,12 +1445,12 @@ async def summon(message: discord.Interaction, person_id: discord.Member = disco
     embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount} {cat_type} cats", color=0x6E593C)
     await message.response.send_message(embed=embed)
 
-@bot.slash_command(description="Say stuff as cat", default_member_permissions=32)
+@bot.slash_command(description="(ADMIN) Say stuff as cat", default_member_permissions=32)
 async def say(message: discord.Interaction, text: str = discord.SlashOption(description="you will figure")):
     await message.response.send_message("success", ephemeral=True)
     await message.channel.send(text[:2000])
 
-@bot.slash_command(description="Setup cat in current channel", default_member_permissions=32)
+@bot.slash_command(description="(ADMIN) Setup cat in current channel", default_member_permissions=32)
 async def setup(message: discord.Interaction):
     if int(message.channel.id) in db["summon_ids"]:
         await message.response.send_message("bruh you already setup cat here are you dumb\n\nthere might already be a cat sitting in chat. type `cat` to catch it.\nalternatively, you can try `/repair` if it still doesnt work")
@@ -1464,7 +1464,7 @@ async def setup(message: discord.Interaction):
     await soft_force(message.channel)
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
 
-@bot.slash_command(description="Undo the setup", default_member_permissions=32)
+@bot.slash_command(description="(ADMIN) Undo the setup", default_member_permissions=32)
 async def forget(message: discord.Interaction):
     if int(message.channel.id) in db["summon_ids"]:
         abc = db["summon_ids"]
@@ -1492,11 +1492,11 @@ async def soft_force(channeley, cat_type=None):
         localcat = cat_type
     db["cattype"][str(channeley.id)] = localcat
     icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower() + "cat")
-    message_lmao =  await channeley.send(str(icon) + " " + db["cattype"][str(channeley.id)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
+    message_lmao = await channeley.send(str(icon) + " " + db["cattype"][str(channeley.id)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
     db["cat"][str(channeley.id)] = message_lmao.id
     save()
 
-@bot.slash_command(description="Force cats to appear", default_member_permissions=32)
+@bot.slash_command(description="(ADMIN) Force cats to appear", default_member_permissions=32)
 async def force(message: discord.Interaction, cat_type: Optional[str] = discord.SlashOption(required=False, choices=cattypes, name="type", description="select a cat type ok")):
     try:
         if db["cat"][str(message.channel.id)]:
@@ -1508,7 +1508,7 @@ async def force(message: discord.Interaction, cat_type: Optional[str] = discord.
     await soft_force(message.channel, cat_type)
     await message.response.send_message("done!\n**Note:** you can use `/summon` to give yourself cats, there is no need to spam this", ephemeral=True)
 
-@bot.slash_command(description="Give achievements to people", default_member_permissions=32)
+@bot.slash_command(description="(ADMIN) Give achievements to people", default_member_permissions=32)
 async def giveach(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
                   ach_id: str = discord.SlashOption(name="name", description="name or id of the achievement")):
     try:
@@ -1532,7 +1532,7 @@ async def giveach(message: discord.Interaction, person_id: discord.Member = disc
     else:
         await message.response.send_message("i cant find that achievement! try harder next time.", ephemeral=True)
 
-@bot.slash_command(description="Reset people", default_member_permissions=32)
+@bot.slash_command(description="(ADMIN) Reset people", default_member_permissions=32)
 async def reset(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who")):
     try:
         del db[str(message.guild.id)][str(person_id.id)]
@@ -1602,5 +1602,5 @@ async def on_command_error(ctx, error):
                 + serv
         )
 
-bot.on_command_error = on_command_error
+bot.on_error = on_command_error
 bot.run(TOKEN)
