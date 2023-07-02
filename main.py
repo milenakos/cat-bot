@@ -1461,7 +1461,7 @@ async def setup(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
     db["cattype"][str(message.channel.id)] = ""
     fire[str(message.channel.id)] = True
-    soft_force(message.channel)
+    await soft_force(message.channel)
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
 
 @bot.slash_command(description="Undo the setup", default_member_permissions=32)
@@ -1483,7 +1483,7 @@ async def fake(message: discord.Interaction):
     await message.response.send_message("OMG TROLLED SO HARD LMAOOOO :joy:", ephemeral=True)
     await achemb(message, "trolled", "followup")
 
-async def soft_force(channeley: discord.Channel, cat_type=None):
+async def soft_force(channeley, cat_type=None):
     fire[channeley.id] = False
     file = discord.File("cat.png", filename="cat.png")
     if not cat_type:
@@ -1505,7 +1505,7 @@ async def force(message: discord.Interaction, cat_type: Optional[str] = discord.
     except Exception:
         await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
         return
-    soft_force(message.channel, cat_type)
+    await soft_force(message.channel, cat_type)
     await message.response.send_message("done!\n**Note:** you can use `/summon` to give yourself cats, there is no need to spam this", ephemeral=True)
 
 @bot.slash_command(description="Give achievements to people", default_member_permissions=32)
