@@ -3,6 +3,10 @@ from datetime import datetime
 import requests
 from pilmoji import Pilmoji
 
+def getsize(font, token):
+    # thanks pillow
+    left, top, right, bottom = font.getbbox(token)
+    return right - left, bottom - top
 
 def msg2img(message, bot, sansgg=False):
     move = 0
@@ -33,7 +37,7 @@ def msg2img(message, bot, sansgg=False):
                 start_x = width_of_line
                 start_y = len(lines) * 37
                 token = token + " "
-                token_width = font.getsize(token)[0]
+                token_width = getsize(font, token)[0]
                 if width_of_line + token_width < max_width:
                     line += token
                     width_of_line += token_width
@@ -42,14 +46,14 @@ def msg2img(message, bot, sansgg=False):
                     part_moved = ""
                     saved_width_of_line = 0
                     for i in token:
-                        in_word_width += font.getsize(i)[0]
+                        in_word_width += getsize(font, i)[0]
                         if in_word_width < max_width:
                             part_moved += i
                         else:
                             lines.append(part_moved)
                             if not saved_width_of_line:
                                 saved_width_of_line = (
-                                    in_word_width - font.getsize(i)[0] + 7
+                                    in_word_width - getsize(font, i)[0] + 7
                                 )
                             in_word_width = 0
                             width_of_line = 0
@@ -123,9 +127,9 @@ def msg2img(message, bot, sansgg=False):
 
         pencil.rounded_rectangle(
             (
-                129 + font.getsize(nick)[0] + 5,
+                129 + getsize(font, nick)[0] + 5,
                 8 + 5,
-                129 + font.getsize(nick)[0] + 14 + botfont.getsize("BOT")[0],
+                129 + getsize(font, nick)[0] + 14 + getsize(botfont, "BOT")[0],
                 10 + 6 + 25,
             ),
             fill=(88, 101, 242),
@@ -133,12 +137,12 @@ def msg2img(message, bot, sansgg=False):
         )
 
         pencil.text(
-            (131 + font.getsize(nick)[0] + 8, 10 + 4),
+            (131 + getsize(font, nick)[0] + 8, 10 + 4),
             "BOT",
             font=botfont,
             fill=(255, 255, 255),
         )
-        move = botfont.getsize("BOT")[0] + 20
+        move = getsize(botfont, "BOT")[0] + 20
     with Pilmoji(new_img) as pilmoji:
         pilmoji.text((122, 55), text.strip(), (255, 255, 255), font2, emoji_scale_factor=45/33)
 
@@ -156,7 +160,7 @@ def msg2img(message, bot, sansgg=False):
         twelvehour = twelvehour[1:]
 
     pencil.text(
-        (13 + 122 + font.getsize(nick)[0] + move, 17),
+        (13 + 122 + getsize(font, nick)[0] + move, 17),
         f"Today at {twelvehour} {suffix}",
         font=font3,
         fill=ImageColor.getrgb("#A3A4AA"),
