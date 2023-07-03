@@ -106,7 +106,7 @@ def msg2img(message, bot, sansgg=False):
     draw.ellipse((0, 0, 800, 800), fill=255)  # draw circle on mask
     newer_img = Image.new("RGBA", (800, 800), bg_color)
     newer_img.paste(im2, (0, 0), mask_im)  # apply mask to avatar
-    newer_img = newer_img.resize((80, 80), Image.ANTIALIAS)
+    newer_img = newer_img.resize((80, 80), Image.LANCZOS)
     new_img.paste(newer_img, (10, 10), newer_img)
 
     for ping in pings:
