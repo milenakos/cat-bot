@@ -58,7 +58,7 @@ type_dict = {
 }
 
 CAT_TYPES = []
-for k, v in type_dict:
+for k, v in type_dict.items():
     CAT_TYPES.extend([k] * v)
 
 with open("db.json", "r") as f:
