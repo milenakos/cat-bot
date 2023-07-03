@@ -1295,12 +1295,9 @@ async def jpegify(message: discord.Interaction, msg):
             
 @bot.message_command(name="catch")
 async def catch(message: discord.Interaction, msg):
-    try:
-        msg2img.msg2img(msg, bot, True)
-        file = discord.File("generated.png", filename="generated.png")
-        await message.response.send_message("cought in 4k", file=file)
-    except Exception as e:
-        await message.response.send_message(f"the message appears to have commited no live anymore\n\n{e}", ephemeral=True)
+    msg2img.msg2img(msg, bot, True)
+    file = discord.File("generated.png", filename="generated.png")
+    await message.response.send_message("cought in 4k", file=file)
     register_member(message.guild.id, msg.author.id)
     if msg.author.id != bot.user.id: await achemb(message, "4k", "send")
 
