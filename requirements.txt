@@ -1,4 +1,4 @@
-requests
+requests[speed]
 nextcord
 Pillow==9.5.0
 Pilmoji
