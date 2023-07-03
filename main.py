@@ -32,30 +32,34 @@ WHITELISTED_BOTS = [1087001524774912050] # bots which are allowed to catch cats
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode('utf-8') for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
 
-CAT_TYPES = (
-        ["Fine"] * 1000
-        + ["Nice"] * 750
-        + ["Good"] * 500
-        + ["Rare"] * 350
-        + ["Wild"] * 275
-        + ["Baby"] * 230
-        + ["Epic"] * 200
-        + ["Sus"] * 175
-        + ["Brave"] * 150
-        + ["Rickroll"] * 125
-        + ["Reverse"] * 100
-        + ["Superior"] * 80
-        + ["TheTrashCell"] * 50
-        + ["Legendary"] * 35
-        + ["Mythic"] * 25
-        + ["8bit"] * 20
-        + ["Corrupt"] * 15
-        + ["Professor"] * 10
-        + ["Divine"] * 8
-        + ["Real"] * 5
-        + ["Ultimate"] * 3
-        + ["eGirl"] * 2
-)
+type_dict = {
+    "Fine": 1000,
+    "Nice": 750,
+    "Good": 500,
+    "Rare": 350,
+    "Wild": 275,
+    "Baby": 230,
+    "Epic": 200,
+    "Sus": 175,
+    "Brave": 150,
+    "Rickroll": 125,
+    "Reverse": 100,
+    "Superior": 80,
+    "TheTrashCell": 50,
+    "Legendary": 35,
+    "Mythic": 25,
+    "8bit": 20,
+    "Corrupt": 15,
+    "Professor": 10,
+    "Divine": 8,
+    "Real": 5,
+    "Ultimate": 3,
+    "eGirl": 2
+}
+
+CAT_TYPES = []
+for k, v in type_dict:
+    CAT_TYPES.extend([k] * v)
 
 with open("db.json", "r") as f:
     try:
@@ -1008,26 +1012,26 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
         view.add_item(add)
 
         coolembed = discord.Embed(color=0x6E593C, title=f"{person1.name} and {person2.name} trade", description="no way")
+
+        def field(personaccept, persongives, person):
+            nonlocal coolembed
+            icon = "⬜"
+            if personaccept:
+                icon = "✅"
+            valuestr = ""
+            valuenum = 0
+            for k, v in persongives.items():
+                valuenum += (len(CAT_TYPES) / type_dict[k]) * v
+                aicon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=k.lower() + "cat")
+                valuestr += str(aicon) + " " + k + " " + str(v) + "\n"
+            if not valuestr:
+                valuestr = "No cats offered!"
+            else:
+                valuestr += f"*Total value: {round(valuenum)}*"
+            coolembed.add_field(name=f"{icon} {person.name}", inline=True, value=valuestr)
         
-        icon = "⬜"
-        if person1accept:
-            icon = "✅"
-        valuestr = ""
-        for k, v in person1gives.items():
-            aicon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=k.lower() + "cat")
-            valuestr += str(aicon) + " " + k + " " + str(v) + "\n"
-        if not valuestr: valuestr = "No cats offered!"
-        coolembed.add_field(name=f"{icon} {person1.name}", inline=True, value=valuestr)
-        
-        icon = "⬜"
-        if person2accept:
-            icon = "✅"
-        valuestr = ""
-        for k, v in person2gives.items():
-            aicon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=k.lower() + "cat")
-            valuestr += str(aicon) + " " + k + " " + str(v) + "\n"
-        if not valuestr: valuestr = "No cats offered!"
-        coolembed.add_field(name=f"{icon} {person2.name}", inline=True, value=valuestr)
+        field(person1accept, person1gives, person1)
+        field(person2accept, person2gives, person2)
         
         return coolembed, view
     
