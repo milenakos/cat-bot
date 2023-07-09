@@ -616,14 +616,7 @@ async def on_guild_join(guild):
             ch = guild.text_channels[chindex]
             chindex += 1
         
-    await ch.send("Thanks for adding me!\nTo setup a channel to summon cats in, use /setup!\nHave a nice day :)")        
-
-@bot.slash_command(description="View admin help", default_member_permissions=32)
-async def admin(message: discord.Interaction):
-    embedVar = discord.Embed(
-            title="Send Admin Help", description=discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat"), color=0x6E593C
-    ).add_field(name="Admin Commands", value="**/setup** - makes cat bot send cats in the channel this command is ran in\n**/forget** - reverse of /setup (i forgor :skull:)\n**/sweep** - use if cats stopped spawning for some reason\n**/summon** - makes cats disappear and reappear out of thin air\n**/giveach** - gib (or take) achievements to people\n**/force** - makes cat appear in chat\n**/say** - chat as cat\n**/reset** - fully resets one's account\n**/nerdmode** - stops someone from catching cats for a certain time period")
-    await message.response.send_message(embed=embedVar)
+    await ch.send("Thanks for adding me!\nTo setup a channel to summon cats in, use /setup!\nHave a nice day :)")
 
 @bot.slash_command(description="View information about the bot")
 async def info(message: discord.Interaction):
@@ -662,7 +655,7 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
         await message.followup.send(file=discord.File(fp=f, filename='output.mp3'))
 
 @bot.slash_command(description="(ADMIN) Prevent someone from catching cats for a certain time period", default_member_permissions=32)
-async def nerdmode(message: discord.Interaction, person: discord.Member = discord.SlashOption(description="A person to timeout!"), timeout: int = discord.SlashOption(description="How many seconds?")):
+async def preventcatch(message: discord.Interaction, person: discord.Member = discord.SlashOption(description="A person to timeout!"), timeout: int = discord.SlashOption(description="How many seconds?")):
     if timeout < 0:
         await message.response.send_message("uhh i think time is supposed to be a number", ephemeral=True)
         return
@@ -671,9 +664,9 @@ async def nerdmode(message: discord.Interaction, person: discord.Member = discor
     db[str(message.guild.id)][str(person.id)]["timeout"] = timestamp
     save()
     if timeout > 0:
-        await message.response.send_message(f"{person.name} is now in nerd mode until <t:{timestamp}:R>")
+        await message.response.send_message(f"{person.name} can't catch cats until <t:{timestamp}:R>")
     else:
-        await message.response.send_message(f"{person.name} is no longer in nerd mode.")
+        await message.response.send_message(f"{person.name} can now catch cats again.")
 
 @bot.slash_command(description="(ADMIN) Use if cat spawning is broken", default_member_permissions=32)
 async def repair(message: discord.Interaction):
@@ -689,7 +682,7 @@ async def daily(message: discord.Interaction):
     await achemb(message, "daily", "send")
 
 @bot.slash_command(description="View your inventory")
-async def inv(message: discord.Interaction, person_id: Optional[discord.Member] = discord.SlashOption(required=False, name="user", description="Person to view the inventory of!")):
+async def inventory(message: discord.Interaction, person_id: Optional[discord.Member] = discord.SlashOption(required=False, name="user", description="Person to view the inventory of!")):
     if person_id is None:
         me = True
         person_id = message.user
@@ -848,7 +841,7 @@ async def ping(message: discord.Interaction):
     await message.followup.send(f"cat has brain delay of {latency} ms " + str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")))
 
 @bot.slash_command(description="give cats now")
-async def donate(message: discord.Interaction, \
+async def gift(message: discord.Interaction, \
                  person: discord.Member = discord.SlashOption(description="Whom to donate?"), \
                  cat_type: str = discord.SlashOption(choices=cattypes, name="type", description="Select a donate cat type"), \
                  amount: Optional[int] = discord.SlashOption(required=False, description="And how much?")):
@@ -1164,7 +1157,7 @@ async def random(message: discord.Interaction):
         counter += 1
 
 @bot.slash_command(description="View your achievements")
-async def achs(message: discord.Interaction):
+async def achievements(message: discord.Interaction):
     register_member(message.guild.id, message.user.id)
     has_ach(message.guild.id, message.user.id, "test_ach")
     db_var = db[str(message.guild.id)][str(message.user.id)]["ach"]
@@ -1439,7 +1432,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
     await lb_handler(message, {"Fastest": "fast", "Slowest": "slow", "Cats": "main"}[leaderboard_type], False)
 
 @bot.slash_command(description="(ADMIN) Give cats to people", default_member_permissions=32)
-async def summon(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
+async def givecat(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
                  amount: int = discord.SlashOption(description="how many"), \
                  cat_type: str = discord.SlashOption(choices=cattypes, description="what")):
     add_cat(message.guild.id, person_id.id, cat_type, amount)
@@ -1498,7 +1491,7 @@ async def soft_force(channeley, cat_type=None):
     save()
 
 @bot.slash_command(description="(ADMIN) Force cats to appear", default_member_permissions=32)
-async def force(message: discord.Interaction, cat_type: Optional[str] = discord.SlashOption(required=False, choices=cattypes, name="type", description="select a cat type ok")):
+async def forcespawn(message: discord.Interaction, cat_type: Optional[str] = discord.SlashOption(required=False, choices=cattypes, name="type", description="select a cat type ok")):
     try:
         if db["cat"][str(message.channel.id)]:
             await message.response.send_message("there is already a cat", ephemeral=True)
@@ -1507,10 +1500,10 @@ async def force(message: discord.Interaction, cat_type: Optional[str] = discord.
         await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
         return
     await soft_force(message.channel, cat_type)
-    await message.response.send_message("done!\n**Note:** you can use `/summon` to give yourself cats, there is no need to spam this", ephemeral=True)
+    await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this", ephemeral=True)
 
 @bot.slash_command(description="(ADMIN) Give achievements to people", default_member_permissions=32)
-async def giveach(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
+async def giveachievement(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
                   ach_id: str = discord.SlashOption(name="name", description="name or id of the achievement")):
     try:
         if ach_id in ach_names:
