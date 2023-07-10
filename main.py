@@ -1264,31 +1264,6 @@ async def achievements(message: discord.Interaction):
     myview.add_item(button)
 
     await message.response.send_message(embed=embedVar, view=myview)
-
-@bot.message_command()
-async def jpegify(message: discord.Interaction, msg):
-    img = None
-    for i in msg.attachments:
-        if "image" in i.content_type:
-            img = i
-            break
-    if not img:
-        await message.response.send_message("there is nothing to jpegify here lel", ephemeral=True)
-        return
-    await message.response.defer()
-    
-    image_bytes = io.BytesIO(await i.read())
-    jpeg = Image.open(image_bytes)
-    jpeg = jpeg.convert('RGB')
-    w, h = jpeg.size
-    try:
-        jpeg = jpeg.resize((w//2, h//2))
-    except ValueError:
-        pass
-    with io.BytesIO() as sexy_bytes:
-        jpeg.save(sexy_bytes, "JPEG", quality=2)
-        sexy_bytes.seek(0)
-        await message.followup.send(file=discord.File(fp=sexy_bytes, filename='image.jpeg'))
             
 @bot.message_command(name="catch")
 async def catch(message: discord.Interaction, msg):
