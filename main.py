@@ -1130,6 +1130,7 @@ if TOP_GG_TOKEN:
             countdown = round(get_cat(0, message.user.id, "vote_time") + 43200)
             embedVar = discord.Embed(title="Already voted!", description=f"You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve {icon} 5 more Good cats.", color=0x6E593C)
             await message.response.send_message(embed=embedVar)
+            return
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://top.gg/api/bots/{bot.user.id}/check",
                                    params={"userId": message.user.id},
