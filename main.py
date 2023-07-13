@@ -634,7 +634,7 @@ async def info(message: discord.Interaction):
         gen_credits[key] = ", ".join(peoples)
     
     embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/WCTzD3YQEk)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\n" + \
-                             f"Bot made by {gen_credits["author"]}\nWith contributions by {gen_credits["contrib"].\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n" + \
+                             f"Bot made by {gen_credits["author"]}\nWith contributions by {gen_credits["contrib"]}.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n" + \
                              f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits["emoji"]}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**weilbyte** for TikTok TTS API\n**{gen_credits["trash"]}** for making cat, suggestions, and a lot more.\n\n**{gen_credits["tester"]}** for being test monkeys\n\n**And everyone for the support!**")
     if GITHUB_CHANNEL_ID:
         embedVar.timestamp = datetime.datetime.fromtimestamp(int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8")))
