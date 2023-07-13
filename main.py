@@ -93,13 +93,8 @@ funny = ["why did you click this this arent yours", "absolutely not", "cat bot n
 
 summon_id = db["summon_ids"]
 
-timeout = 0
-starting_time = 0
-message_thing = 0
 milenakoos = 0
 OWNER_ID = 0
-
-super_prefix = ""
 
 fire = {}
 for i in summon_id:
