@@ -272,7 +272,7 @@ async def myLoop():
     async with aiohttp.ClientSession() as session:
         await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
                                 headers={"Authorization": TOP_GG_TOKEN},
-                                data={"server_count": len(bot.guilds)})
+                                json={"server_count": len(bot.guilds)})
 
 @tasks.loop(seconds=3600)
 async def update_presence():
@@ -645,7 +645,7 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
     async with aiohttp.ClientSession() as session:
         async with session.post("https://tiktok-tts.weilnet.workers.dev/api/generation",
                                 headers={"Content-Type": "application/json"},
-                                data={"text": text, "voice": "en_us_002"}) as response:
+                                json={"text": text, "voice": "en_us_002"}) as response:
             try:
                 stuff = await response.json()
                 data = "" + stuff["data"]
