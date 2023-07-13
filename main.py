@@ -616,7 +616,24 @@ async def on_guild_join(guild):
 
 @bot.slash_command(description="View information about the bot")
 async def info(message: discord.Interaction):
-    embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/WCTzD3YQEk)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\nBot made by @milenakos\nWith contributions by: @calionyt, youtissoum#5935 and uku1928#8305.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\nThanks to:\n**@pathologicals on Instagram** for the cat image\n**SLOTHS2005#1326** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**@weilbyte on GitHub** for TikTok TTS API\n**@thetrashcell** for making cat, suggestions, and a lot more.\n\n**CrazyDiamond469#3422, Phace#9474, SLOTHS2005#1326, frinkifail#1809, Aflyde#3846, @thetrashcell and Sior Simotideis#4198** for being test monkeys\n\n**And everyone for the support!**")
+    credits = {
+        "author": [553093932012011520],
+        "contrib": [576065759185338371, 819980535639572500, 432966085025857536, 646401965596868628],
+        "tester": [712639066373619754, 902862104971849769, 709374062237057074, 520293520418930690, 689345298686148732, 717052784163422244, 839458185059500032]
+        "emoji": [709374062237057074],
+        "trash": [520293520418930690]
+    }
+
+    def gen_credits(key):
+        peoples = []
+        for i in credits[key]:
+            user = await bot.get_user(i)
+            peoples.append(user.name)
+        return ", ".join(peoples)
+    
+    embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/WCTzD3YQEk)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\n" + \
+                             f"Bot made by {gen_credits("author")}\nWith contributions by {gen_credits("contrib").\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n" + \
+                             f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits("emoji")}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**weilbyte** for TikTok TTS API\n**{gen_credits("trash")}** for making cat, suggestions, and a lot more.\n\n**{gen_credits("tester")}** for being test monkeys\n\n**And everyone for the support!**")
     if GITHUB_CHANNEL_ID:
         embedVar.timestamp = datetime.datetime.fromtimestamp(int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8")))
         embedVar.set_footer(text="Last updated:")
