@@ -1,5 +1,5 @@
 import nextcord as discord
-import msg2img, base64, sys, re, time, json, requests, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio
+import msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio
 from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
 from nextcord.ui import Button, View
@@ -269,6 +269,10 @@ async def myLoop():
     backupchannel = await bot.fetch_channel(BACKUP_ID)
     thing = discord.File("db.json", filename="db.json")
     await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
+    async with aiohttp.ClientSession() as session:
+        await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
+                                headers={"Authorization": TOP_GG_TOKEN},
+                                data={"server_count": len(bot.guilds)})
 
 @tasks.loop(seconds=3600)
 async def update_presence():
@@ -291,9 +295,6 @@ async def on_ready():
     appinfo = await bot.application_info()
     milenakoos = appinfo.owner
     OWNER_ID = milenakoos.id
-    if TOP_GG_TOKEN:
-        import topgg
-        bot.topggpy = topgg.DBLClient(TOP_GG_TOKEN, default_bot_id=bot.user.id, autopost=True)
     update_presence.start()
     while True:
         try:
@@ -641,18 +642,21 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
         await message.followup.send(file=file)
         await achemb(message, "bwomp", "send")
         return
-    # not async :no_bitches:
-    stuff = requests.post("https://tiktok-tts.weilnet.workers.dev/api/generation", headers={"Content-Type": "application/json"}, json={"text": text, "voice": "en_us_002"})
-    try:
-        data = "" + stuff.json()["data"]
-    except:
-        await message.followup.send("i dont speak your language (remove non-english characters, or make message shorter)")
-        return
-    with io.BytesIO() as f:
-        ba = "data:audio/mpeg;base64," + data
-        f.write(base64.b64decode(ba))
-        f.seek(0)
-        await message.followup.send(file=discord.File(fp=f, filename='output.mp3'))
+    async with aiohttp.ClientSession() as session:
+        async with session.post("https://tiktok-tts.weilnet.workers.dev/api/generation",
+                                headers={"Content-Type": "application/json"},
+                                data={"text": text, "voice": "en_us_002"}) as response:
+            try:
+                stuff = await response.json()
+                data = "" + stuff["data"]
+            except:
+                await message.followup.send("i dont speak your language (remove non-english characters, or make message shorter)")
+                return
+            with io.BytesIO() as f:
+                ba = "data:audio/mpeg;base64," + data
+                f.write(base64.b64decode(ba))
+                f.seek(0)
+                await message.followup.send(file=discord.File(fp=f, filename='output.mp3'))
 
 @bot.slash_command(description="(ADMIN) Prevent someone from catching cats for a certain time period", default_member_permissions=32)
 async def preventcatch(message: discord.Interaction, person: discord.Member = discord.SlashOption(description="A person to timeout!"), timeout: int = discord.SlashOption(description="How many seconds?")):
@@ -1122,19 +1126,21 @@ async def brew(message: discord.Interaction):
 if TOP_GG_TOKEN:
     @bot.slash_command(description="Vote on topgg for free cats")
     async def vote(message: discord.Interaction):
-        vote_status = await bot.topggpy.get_user_vote(message.user.id)
+        if get_cat(0, message.user.id, "vote_time") + 43200 > time.time():
+            countdown = round(get_cat(0, message.user.id, "vote_time") + 43200)
+            embedVar = discord.Embed(title="Already voted!", description=f"You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve {icon} 5 more Good cats.", color=0x6E593C)
+            await message.response.send_message(embed=embedVar)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://top.gg/api/bots{bot.user.id}/check?userId={message.user.id}") as response:
+                resp = await response.json()
+                vote_status = int(resp["voted"])
         icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="goodcat")
         if vote_status:
-            if get_cat(0, message.user.id, "vote_time") + 43200 <= time.time():
-                # valid vote
-                add_cat(message.guild.id, message.user.id, "Good", 5)
-                add_cat(0, message.user.id, "vote_time", time.time(), True)
-                embedVar = discord.Embed(title="Vote redeemed!", description=f"You have recieved {icon} 5 Good cats.\nVote again in 12 hours.", color=0x007F0E)
-                await message.response.send_message(embed=embedVar)
-            else:
-                countdown = round(get_cat(0, message.user.id, "vote_time") + 43200)
-                embedVar = discord.Embed(title="Already voted!", description=f"You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve {icon} 5 more Good cats.", color=0x6E593C)
-                await message.response.send_message(embed=embedVar)
+            # valid vote
+            add_cat(message.guild.id, message.user.id, "Good", 5)
+            add_cat(0, message.user.id, "vote_time", time.time(), True)
+            embedVar = discord.Embed(title="Vote redeemed!", description=f"You have recieved {icon} 5 Good cats.\nVote again in 12 hours.", color=0x007F0E)
+            await message.response.send_message(embed=embedVar)
         else:
             embedVar = discord.Embed(title="Vote for Cat Bot", description=f"[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve {icon} 5 Good cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
             await message.response.send_message(embed=embedVar)
@@ -1142,19 +1148,20 @@ if TOP_GG_TOKEN:
 @bot.slash_command(description="Get a random cat")
 async def random(message: discord.Interaction):
     counter = 0
-    while True:
-        if counter == 11:
-            return
-        response = requests.get('https://api.thecatapi.com/v1/images/search')
-        try:
-            data = response.json()
-            await message.response.send_message(data[0]['url'])
+    async with aiohttp.ClientSession() as session:
+        while True:
+            if counter == 11:
+                return
+            try:
+                async with session.get('https://api.thecatapi.com/v1/images/search') as response:
+                    data = await response.json()
+                    await message.response.send_message(data[0]['url'])
+                    counter += 1
+                    await achemb(message, "randomizer", "send")
+                    return
+            except Exception:
+                pass
             counter += 1
-            await achemb(message, "randomizer", "send")
-            return
-        except Exception:
-            pass
-        counter += 1
 
 @bot.slash_command(description="View your achievements")
 async def achievements(message: discord.Interaction):

@@ -2,4 +2,3 @@ requests
 nextcord[speed]
 Pillow==9.5.0
 Pilmoji
-git+https://github.com/top-gg/python-sdk/
