@@ -1126,6 +1126,7 @@ async def brew(message: discord.Interaction):
 if TOP_GG_TOKEN:
     @bot.slash_command(description="Vote on topgg for free cats")
     async def vote(message: discord.Interaction):
+        icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="goodcat")
         if get_cat(0, message.user.id, "vote_time") + 43200 > time.time():
             countdown = round(get_cat(0, message.user.id, "vote_time") + 43200)
             embedVar = discord.Embed(title="Already voted!", description=f"You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve {icon} 5 more Good cats.", color=0x6E593C)
@@ -1136,9 +1137,7 @@ if TOP_GG_TOKEN:
                                    params={"userId": message.user.id},
                                    headers={"Authorization": TOP_GG_TOKEN}) as response:
                 resp = await response.json()
-                vote_status = int(resp["voted"])
-        icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="goodcat")
-        if vote_status:
+        if resp["voted"] == 1:
             # valid vote
             add_cat(message.guild.id, message.user.id, "Good", 5)
             add_cat(0, message.user.id, "vote_time", time.time(), True)
