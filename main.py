@@ -1131,7 +1131,7 @@ if TOP_GG_TOKEN:
             embedVar = discord.Embed(title="Already voted!", description=f"You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve {icon} 5 more Good cats.", color=0x6E593C)
             await message.response.send_message(embed=embedVar)
         async with aiohttp.ClientSession() as session:
-            async with session.get(f"https://top.gg/api/bots{bot.user.id}/check", params={"userId": message.user.id}) as response:
+            async with session.get(f"https://top.gg/api/bots/{bot.user.id}/check", params={"userId": message.user.id}) as response:
                 resp = await response.json()
                 vote_status = int(resp["voted"])
         icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="goodcat")
