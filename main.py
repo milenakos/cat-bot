@@ -629,7 +629,7 @@ async def info(message: discord.Interaction):
     for key in credits.keys():
         peoples = []
         for i in credits[key]:
-            user = await bot.get_user(i)
+            user = bot.get_user(i)
             peoples.append(user.name)
         gen_credits[key] = ", ".join(peoples)
     
