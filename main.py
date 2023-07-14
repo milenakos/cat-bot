@@ -616,6 +616,7 @@ async def on_guild_join(guild):
 
 @bot.slash_command(description="View information about the bot")
 async def info(message: discord.Interaction):
+    await message.response.defer()
     credits = {
         "author": [553093932012011520],
         "contrib": [576065759185338371, 819980535639572500, 432966085025857536, 646401965596868628],
@@ -642,7 +643,7 @@ async def info(message: discord.Interaction):
     if GITHUB_CHANNEL_ID:
         embedVar.timestamp = datetime.datetime.fromtimestamp(int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8")))
         embedVar.set_footer(text="Last updated:")
-    await message.response.send_message(embed=embedVar)
+    await message.followup.send(embed=embedVar)
 
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(description="The text to be read!")):
