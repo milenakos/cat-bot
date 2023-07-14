@@ -264,6 +264,8 @@ async def myLoop():
     backupchannel = await bot.fetch_channel(BACKUP_ID)
     thing = discord.File("db.json", filename="db.json")
     await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
+    if not TOP_GG_TOKEN:
+        return
     async with aiohttp.ClientSession() as session:
         await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
                                 headers={"Authorization": TOP_GG_TOKEN},
