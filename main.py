@@ -1540,40 +1540,19 @@ async def reset(message: discord.Interaction, person_id: discord.Member = discor
         await message.response.send_message("ummm? this person isnt even registered in cat bot wtf are you wiping?????", ephemeral=True)
 
 async def on_command_error(ctx, error):
+    # ctx here is interaction
     if "KeyboardInterrupt" in str(type(error)):
         return
     elif "errors.Forbidden" in str(type(error)):
-        try:
-            await ctx.reply("i don't have permissions to do that. (try reinviting the bot)")
-        except:
-            await ctx.channel.send("i don't have permissions to do that. (try reinviting the bot)")
+        await ctx.channel.send("i don't have permissions to do that. (try reinviting the bot)")
     elif "errors.NotFound" in str(type(error)):
-        try:
-            await ctx.reply("took too long, try running the command again")
-        except:
-            await ctx.channel.send("took too long, try running the command again")
+        await ctx.channel.send("took too long, try running the command again")
     else:
-        try:
-            await ctx.reply("cat crashed lmao\ni automatically sent crash reports so yes")
-        except:
-            await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
+        await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
         try:
             await achemb(ctx, "crasher", "send")
         except Exception:
             pass
-
-        try:
-            link = (
-                    "https://discord.com/channels/"
-                    + str(ctx.guild.id)
-                    + "/"
-                    + str(ctx.channel.id)
-                    + "/"
-                    + str(ctx.id)
-            )
-            print("debug", link)
-        except Exception as e:
-            link = "Error getting"
 
         try:
             cont = ctx.content
@@ -1600,5 +1579,5 @@ async def on_command_error(ctx, error):
                 + serv
         )
 
-bot.on_command_error = on_command_error
+bot.on_application_command_error = on_command_error
 bot.run(TOKEN)
