@@ -628,9 +628,12 @@ async def info(message: discord.Interaction):
 
     for key in credits.keys():
         peoples = []
-        for i in credits[key]:
-            user = bot.get_user(i)
-            peoples.append(user.name)
+        try:
+            for i in credits[key]:
+                user = await bot.fetch_user(i)
+                peoples.append(user.name)
+        except Exception:
+            pass # death
         gen_credits[key] = ", ".join(peoples)
     
     embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/WCTzD3YQEk)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\n" + \
