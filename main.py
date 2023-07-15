@@ -1,5 +1,5 @@
 import nextcord as discord
-import msg2img, base64, sys, re, time, json, requests, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio
+import msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio
 from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
 from nextcord.ui import Button, View
@@ -25,7 +25,7 @@ GITHUB_CHANNEL_ID = 1060965767044149249
 
 BANNED_ID = [1029044762340241509] # banned from using /tiktok
 
-WHITELISTED_BOTS = [1087001524774912050] # bots which are allowed to catch cats
+WHITELISTED_BOTS = [1087001524774912050, 823896940847824936] # bots which are allowed to catch cats
 
 ### Setup values end
 
@@ -82,7 +82,7 @@ ach_titles = {value["title"].lower(): key for (key, value) in ach_list.items()}
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.AutoShardedBot(command_prefix="Cat Bot by Milenakos#3310", intents=intents, help_command=None)
+bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ", intents=intents, help_command=None)
 
 cattypes = []
 for e in CAT_TYPES:
@@ -93,13 +93,8 @@ funny = ["why did you click this this arent yours", "absolutely not", "cat bot n
 
 summon_id = db["summon_ids"]
 
-timeout = 0
-starting_time = 0
-message_thing = 0
 milenakoos = 0
 OWNER_ID = 0
-
-super_prefix = ""
 
 fire = {}
 for i in summon_id:
@@ -269,6 +264,12 @@ async def myLoop():
     backupchannel = await bot.fetch_channel(BACKUP_ID)
     thing = discord.File("db.json", filename="db.json")
     await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
+    if not TOP_GG_TOKEN:
+        return
+    async with aiohttp.ClientSession() as session:
+        await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
+                                headers={"Authorization": TOP_GG_TOKEN},
+                                json={"server_count": len(bot.guilds)})
 
 @tasks.loop(seconds=3600)
 async def update_presence():
@@ -291,9 +292,6 @@ async def on_ready():
     appinfo = await bot.application_info()
     milenakoos = appinfo.owner
     OWNER_ID = milenakoos.id
-    if TOP_GG_TOKEN:
-        import topgg
-        bot.topggpy = topgg.DBLClient(TOP_GG_TOKEN, default_bot_id=bot.user.id, autopost=True)
     update_presence.start()
     while True:
         try:
@@ -617,22 +615,38 @@ async def on_guild_join(guild):
             ch = guild.text_channels[chindex]
             chindex += 1
         
-    await ch.send("Thanks for adding me!\nTo setup a channel to summon cats in, use /setup!\nHave a nice day :)")        
-
-@bot.slash_command(description="View admin help", default_member_permissions=32)
-async def admin(message: discord.Interaction):
-    embedVar = discord.Embed(
-            title="Send Admin Help", description=discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat"), color=0x6E593C
-    ).add_field(name="Admin Commands", value="**/setup** - makes cat bot send cats in the channel this command is ran in\n**/forget** - reverse of /setup (i forgor :skull:)\n**/sweep** - use if cats stopped spawning for some reason\n**/summon** - makes cats disappear and reappear out of thin air\n**/giveach** - gib (or take) achievements to people\n**/force** - makes cat appear in chat\n**/say** - chat as cat\n**/reset** - fully resets one's account\n**/nerdmode** - stops someone from catching cats for a certain time period")
-    await message.response.send_message(embed=embedVar)
+    await ch.send("Thanks for adding me!\nTo setup a channel to summon cats in, use /setup!\nHave a nice day :)")
 
 @bot.slash_command(description="View information about the bot")
 async def info(message: discord.Interaction):
-    embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/WCTzD3YQEk)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\nBot made by @milenakos\nWith contributions by: @calionyt, youtissoum#5935 and uku1928#8305.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\nThanks to:\n**@pathologicals on Instagram** for the cat image\n**SLOTHS2005#1326** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**@weilbyte on GitHub** for TikTok TTS API\n**@thetrashcell** for making cat, suggestions, and a lot more.\n\n**CrazyDiamond469#3422, Phace#9474, SLOTHS2005#1326, frinkifail#1809, Aflyde#3846, @thetrashcell and Sior Simotideis#4198** for being test monkeys\n\n**And everyone for the support!**")
+    await message.response.defer()
+    credits = {
+        "author": [553093932012011520],
+        "contrib": [576065759185338371, 819980535639572500, 432966085025857536, 646401965596868628],
+        "tester": [712639066373619754, 902862104971849769, 709374062237057074, 520293520418930690, 689345298686148732, 717052784163422244, 839458185059500032],
+        "emoji": [709374062237057074],
+        "trash": [520293520418930690]
+    }
+
+    gen_credits = {}
+
+    for key in credits.keys():
+        peoples = []
+        try:
+            for i in credits[key]:
+                user = await bot.fetch_user(i)
+                peoples.append(user.name)
+        except Exception:
+            pass # death
+        gen_credits[key] = ", ".join(peoples)
+    
+    embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/WCTzD3YQEk)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\n" + \
+                             f"Bot made by {gen_credits['author']}\nWith contributions by {gen_credits['contrib']}.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n" + \
+                             f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits['emoji']}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**weilbyte** for TikTok TTS API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**")
     if GITHUB_CHANNEL_ID:
         embedVar.timestamp = datetime.datetime.fromtimestamp(int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8")))
         embedVar.set_footer(text="Last updated:")
-    await message.response.send_message(embed=embedVar)
+    await message.followup.send(embed=embedVar)
 
 @bot.slash_command(description="Read text as TikTok's TTS woman")
 async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(description="The text to be read!")):
@@ -649,21 +663,24 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
         await message.followup.send(file=file)
         await achemb(message, "bwomp", "send")
         return
-    # not async :no_bitches:
-    stuff = requests.post("https://tiktok-tts.weilnet.workers.dev/api/generation", headers={"Content-Type": "application/json"}, json={"text": text, "voice": "en_us_002"})
-    try:
-        data = "" + stuff.json()["data"]
-    except:
-        await message.followup.send("i dont speak your language (remove non-english characters, or make message shorter)")
-        return
-    with io.BytesIO() as f:
-        ba = "data:audio/mpeg;base64," + data
-        f.write(base64.b64decode(ba))
-        f.seek(0)
-        await message.followup.send(file=discord.File(fp=f, filename='output.mp3'))
+    async with aiohttp.ClientSession() as session:
+        async with session.post("https://tiktok-tts.weilnet.workers.dev/api/generation",
+                                headers={"Content-Type": "application/json"},
+                                json={"text": text, "voice": "en_us_002"}) as response:
+            try:
+                stuff = await response.json()
+                data = "" + stuff["data"]
+            except:
+                await message.followup.send("i dont speak your language (remove non-english characters, or make message shorter)")
+                return
+            with io.BytesIO() as f:
+                ba = "data:audio/mpeg;base64," + data
+                f.write(base64.b64decode(ba))
+                f.seek(0)
+                await message.followup.send(file=discord.File(fp=f, filename='output.mp3'))
 
 @bot.slash_command(description="(ADMIN) Prevent someone from catching cats for a certain time period", default_member_permissions=32)
-async def nerdmode(message: discord.Interaction, person: discord.Member = discord.SlashOption(description="A person to timeout!"), timeout: int = discord.SlashOption(description="How many seconds?")):
+async def preventcatch(message: discord.Interaction, person: discord.Member = discord.SlashOption(description="A person to timeout!"), timeout: int = discord.SlashOption(description="How many seconds?")):
     if timeout < 0:
         await message.response.send_message("uhh i think time is supposed to be a number", ephemeral=True)
         return
@@ -672,9 +689,9 @@ async def nerdmode(message: discord.Interaction, person: discord.Member = discor
     db[str(message.guild.id)][str(person.id)]["timeout"] = timestamp
     save()
     if timeout > 0:
-        await message.response.send_message(f"{person.name} is now in nerd mode until <t:{timestamp}:R>")
+        await message.response.send_message(f"{person.name} can't catch cats until <t:{timestamp}:R>")
     else:
-        await message.response.send_message(f"{person.name} is no longer in nerd mode.")
+        await message.response.send_message(f"{person.name} can now catch cats again.")
 
 @bot.slash_command(description="(ADMIN) Use if cat spawning is broken", default_member_permissions=32)
 async def repair(message: discord.Interaction):
@@ -690,7 +707,7 @@ async def daily(message: discord.Interaction):
     await achemb(message, "daily", "send")
 
 @bot.slash_command(description="View your inventory")
-async def inv(message: discord.Interaction, person_id: Optional[discord.Member] = discord.SlashOption(required=False, name="user", description="Person to view the inventory of!")):
+async def inventory(message: discord.Interaction, person_id: Optional[discord.Member] = discord.SlashOption(required=False, name="user", description="Person to view the inventory of!")):
     if person_id is None:
         me = True
         person_id = message.user
@@ -849,7 +866,7 @@ async def ping(message: discord.Interaction):
     await message.followup.send(f"cat has brain delay of {latency} ms " + str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")))
 
 @bot.slash_command(description="give cats now")
-async def donate(message: discord.Interaction, \
+async def gift(message: discord.Interaction, \
                  person: discord.Member = discord.SlashOption(description="Whom to donate?"), \
                  cat_type: str = discord.SlashOption(choices=cattypes, name="type", description="Select a donate cat type"), \
                  amount: Optional[int] = discord.SlashOption(required=False, description="And how much?")):
@@ -1130,19 +1147,23 @@ async def brew(message: discord.Interaction):
 if TOP_GG_TOKEN:
     @bot.slash_command(description="Vote on topgg for free cats")
     async def vote(message: discord.Interaction):
-        vote_status = await bot.topggpy.get_user_vote(message.user.id)
         icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="goodcat")
-        if vote_status:
-            if get_cat(0, message.user.id, "vote_time") + 43200 <= time.time():
-                # valid vote
-                add_cat(message.guild.id, message.user.id, "Good", 5)
-                add_cat(0, message.user.id, "vote_time", time.time(), True)
-                embedVar = discord.Embed(title="Vote redeemed!", description=f"You have recieved {icon} 5 Good cats.\nVote again in 12 hours.", color=0x007F0E)
-                await message.response.send_message(embed=embedVar)
-            else:
-                countdown = round(get_cat(0, message.user.id, "vote_time") + 43200)
-                embedVar = discord.Embed(title="Already voted!", description=f"You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve {icon} 5 more Good cats.", color=0x6E593C)
-                await message.response.send_message(embed=embedVar)
+        if get_cat(0, message.user.id, "vote_time") + 43200 > time.time():
+            countdown = round(get_cat(0, message.user.id, "vote_time") + 43200)
+            embedVar = discord.Embed(title="Already voted!", description=f"You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve {icon} 5 more Good cats.", color=0x6E593C)
+            await message.response.send_message(embed=embedVar)
+            return
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://top.gg/api/bots/{bot.user.id}/check",
+                                   params={"userId": message.user.id},
+                                   headers={"Authorization": TOP_GG_TOKEN}) as response:
+                resp = await response.json()
+        if resp["voted"] == 1:
+            # valid vote
+            add_cat(message.guild.id, message.user.id, "Good", 5)
+            add_cat(0, message.user.id, "vote_time", time.time(), True)
+            embedVar = discord.Embed(title="Vote redeemed!", description=f"You have recieved {icon} 5 Good cats.\nVote again in 12 hours.", color=0x007F0E)
+            await message.response.send_message(embed=embedVar)
         else:
             embedVar = discord.Embed(title="Vote for Cat Bot", description=f"[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve {icon} 5 Good cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
             await message.response.send_message(embed=embedVar)
@@ -1150,22 +1171,23 @@ if TOP_GG_TOKEN:
 @bot.slash_command(description="Get a random cat")
 async def random(message: discord.Interaction):
     counter = 0
-    while True:
-        if counter == 11:
-            return
-        response = requests.get('https://api.thecatapi.com/v1/images/search')
-        try:
-            data = response.json()
-            await message.response.send_message(data[0]['url'])
+    async with aiohttp.ClientSession() as session:
+        while True:
+            if counter == 11:
+                return
+            try:
+                async with session.get('https://api.thecatapi.com/v1/images/search') as response:
+                    data = await response.json()
+                    await message.response.send_message(data[0]['url'])
+                    counter += 1
+                    await achemb(message, "randomizer", "send")
+                    return
+            except Exception:
+                pass
             counter += 1
-            await achemb(message, "randomizer", "send")
-            return
-        except Exception:
-            pass
-        counter += 1
 
 @bot.slash_command(description="View your achievements")
-async def achs(message: discord.Interaction):
+async def achievements(message: discord.Interaction):
     register_member(message.guild.id, message.user.id)
     has_ach(message.guild.id, message.user.id, "test_ach")
     db_var = db[str(message.guild.id)][str(message.user.id)]["ach"]
@@ -1272,31 +1294,6 @@ async def achs(message: discord.Interaction):
     myview.add_item(button)
 
     await message.response.send_message(embed=embedVar, view=myview)
-
-@bot.message_command()
-async def jpegify(message: discord.Interaction, msg):
-    img = None
-    for i in msg.attachments:
-        if "image" in i.content_type:
-            img = i
-            break
-    if not img:
-        await message.response.send_message("there is nothing to jpegify here lel", ephemeral=True)
-        return
-    await message.response.defer()
-    
-    image_bytes = io.BytesIO(await i.read())
-    jpeg = Image.open(image_bytes)
-    jpeg = jpeg.convert('RGB')
-    w, h = jpeg.size
-    try:
-        jpeg = jpeg.resize((w//2, h//2))
-    except ValueError:
-        pass
-    with io.BytesIO() as sexy_bytes:
-        jpeg.save(sexy_bytes, "JPEG", quality=2)
-        sexy_bytes.seek(0)
-        await message.followup.send(file=discord.File(fp=sexy_bytes, filename='image.jpeg'))
             
 @bot.message_command(name="catch")
 async def catch(message: discord.Interaction, msg):
@@ -1440,7 +1437,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
     await lb_handler(message, {"Fastest": "fast", "Slowest": "slow", "Cats": "main"}[leaderboard_type], False)
 
 @bot.slash_command(description="(ADMIN) Give cats to people", default_member_permissions=32)
-async def summon(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
+async def givecat(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
                  amount: int = discord.SlashOption(description="how many"), \
                  cat_type: str = discord.SlashOption(choices=cattypes, description="what")):
     add_cat(message.guild.id, person_id.id, cat_type, amount)
@@ -1499,7 +1496,7 @@ async def soft_force(channeley, cat_type=None):
     save()
 
 @bot.slash_command(description="(ADMIN) Force cats to appear", default_member_permissions=32)
-async def force(message: discord.Interaction, cat_type: Optional[str] = discord.SlashOption(required=False, choices=cattypes, name="type", description="select a cat type ok")):
+async def forcespawn(message: discord.Interaction, cat_type: Optional[str] = discord.SlashOption(required=False, choices=cattypes, name="type", description="select a cat type ok")):
     try:
         if db["cat"][str(message.channel.id)]:
             await message.response.send_message("there is already a cat", ephemeral=True)
@@ -1508,10 +1505,10 @@ async def force(message: discord.Interaction, cat_type: Optional[str] = discord.
         await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
         return
     await soft_force(message.channel, cat_type)
-    await message.response.send_message("done!\n**Note:** you can use `/summon` to give yourself cats, there is no need to spam this", ephemeral=True)
+    await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this", ephemeral=True)
 
 @bot.slash_command(description="(ADMIN) Give achievements to people", default_member_permissions=32)
-async def giveach(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
+async def giveachievement(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
                   ach_id: str = discord.SlashOption(name="name", description="name or id of the achievement")):
     try:
         if ach_id in ach_names:
@@ -1544,40 +1541,19 @@ async def reset(message: discord.Interaction, person_id: discord.Member = discor
         await message.response.send_message("ummm? this person isnt even registered in cat bot wtf are you wiping?????", ephemeral=True)
 
 async def on_command_error(ctx, error):
+    # ctx here is interaction
     if "KeyboardInterrupt" in str(type(error)):
         return
     elif "errors.Forbidden" in str(type(error)):
-        try:
-            await ctx.reply("i don't have permissions to do that. (try reinviting the bot)")
-        except:
-            await ctx.channel.send("i don't have permissions to do that. (try reinviting the bot)")
+        await ctx.channel.send("i don't have permissions to do that. (try reinviting the bot)")
     elif "errors.NotFound" in str(type(error)):
-        try:
-            await ctx.reply("took too long, try running the command again")
-        except:
-            await ctx.channel.send("took too long, try running the command again")
+        await ctx.channel.send("took too long, try running the command again")
     else:
-        try:
-            await ctx.reply("cat crashed lmao\ni automatically sent crash reports so yes")
-        except:
-            await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
+        await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
         try:
             await achemb(ctx, "crasher", "send")
         except Exception:
             pass
-
-        try:
-            link = (
-                    "https://discord.com/channels/"
-                    + str(ctx.guild.id)
-                    + "/"
-                    + str(ctx.channel.id)
-                    + "/"
-                    + str(ctx.id)
-            )
-            print("debug", link)
-        except Exception as e:
-            link = "Error getting"
 
         try:
             cont = ctx.content

@@ -39,7 +39,7 @@ Discord [Cat Bot](https://discord.com/api/oauth2/authorize?client_id=96669503434
 Most stuff can be customised by just using CTRL+F in main.py, but im gonna explain some stuff you might be intereted in.
 
 ## How to add cat types
-Add your cat type name to both `CAT_TYPES` and `cattypes` lists near the top of the main.py file, the same way it is already written.
+Add your cat type name to `type_dict` dictionary near the top of the main.py file, the same way it is already written. (number is the chance, lower = rarer)
 
 > **Note**
 >
