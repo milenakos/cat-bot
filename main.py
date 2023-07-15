@@ -1579,5 +1579,5 @@ async def on_command_error(ctx, error):
                 + serv
         )
 
-bot.on_application_command_error = on_command_error
+bot.on_command_error = on_command_error
 bot.run(TOKEN)
