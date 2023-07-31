@@ -821,7 +821,7 @@ async def battlepass(message: discord.Interaction):
         save()
 
     current_level = get_cat(message.guild.id, message.user.id, "battlepass")
-    embedVar = discord.Embed(title="Cat Battlepass™", description="who thought this was a good idea", color=0x6E593C)
+    embedVar = discord.Embed(title="Cattlepass™", description="who thought this was a good idea", color=0x6E593C)
 
     def battlelevel(levels, id, home=False):
         nonlocal message
