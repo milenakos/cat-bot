@@ -518,7 +518,7 @@ async def on_message(message):
                 add_cat(message.guild.id, message.author.id, reward, reward_amount)
                 icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=reward.lower() + "cat")
                 new = add_cat(message.guild.id, message.author.id, "battlepass")
-                embed = discord.Embed(title=f"Level {new} complete!", description=f"You have recieved {icon} {reward_amount} {reward} cats!", color=0x007F0E).set_author(name="Battlepass level!", icon_url="https://pomf2.lain.la/f/zncxu6ej.png")
+                embed = discord.Embed(title=f"Level {new} complete!", description=f"You have recieved {icon} {reward_amount} {reward} cats!", color=0x007F0E).set_author(name="Cattlepass level!", icon_url="https://pomf2.lain.la/f/zncxu6ej.png")
                 await message.channel.send(embed=embed)
 
             if not get_cat(message.guild.id, message.author.id, "battlepass"):
