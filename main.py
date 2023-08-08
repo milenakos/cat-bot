@@ -1,4 +1,4 @@
-import nextcord as discord
+,  nextcord as discord
 import msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio
 from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
@@ -621,7 +621,7 @@ async def info(message: discord.Interaction):
     await message.response.defer()
     credits = {
         "author": [553093932012011520],
-        "contrib": [576065759185338371, 819980535639572500, 432966085025857536, 646401965596868628],
+        "contrib": [576065759185338371, 819980535639572500, 432966085025857536, 646401965596868628, 696806601771974707],
         "tester": [712639066373619754, 902862104971849769, 709374062237057074, 520293520418930690, 689345298686148732, 717052784163422244, 839458185059500032],
         "emoji": [709374062237057074],
         "trash": [520293520418930690]
@@ -634,7 +634,7 @@ async def info(message: discord.Interaction):
         try:
             for i in credits[key]:
                 user = await bot.fetch_user(i)
-                peoples.append(user.name)
+                peoples.append(user.name.replace("_", r"\_"))
         except Exception:
             pass # death
         gen_credits[key] = ", ".join(peoples)
