@@ -238,8 +238,10 @@ async def achemb(message, ach_id, send_type, author_string=None):
 async def myLoop():
     global bot, fire, summon_id
     total_members = db["total_members"]
+    cat = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")
+    emoji = await commands.PartialEmojiConverter.convert(cat)
     await bot.change_presence(
-            activity=discord.Activity(type=discord.ActivityType.custom, emoji=discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat"), state=f"Providing life support for {len(bot.guilds)} servers with {total_members} people")
+            activity=discord.Activity(type=discord.ActivityType.custom, emoji=emoji, state=f"Providing life support for {len(bot.guilds)} servers with {total_members} people")
     )
     summon_id = db["summon_ids"]
     print("Started cat loop (don't shutdown)")
@@ -286,8 +288,10 @@ async def on_ready():
     global milenakoos, OWNER_ID
     print("cat is now online")
     total_members = db["total_members"]
+    cat = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")
+    emoji = await commands.PartialEmojiConverter.convert(cat)
     await bot.change_presence(
-            activity=discord.Activity(type=discord.ActivityType.custom, emoji=discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat"), state=f"Providing life support for {len(bot.guilds)} servers with {total_members} people")
+            activity=discord.Activity(type=discord.ActivityType.custom, emoji=emoji, state=f"Providing life support for {len(bot.guilds)} servers with {total_members} people")
     )
     appinfo = await bot.application_info()
     milenakoos = appinfo.owner
