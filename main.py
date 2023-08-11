@@ -239,7 +239,7 @@ async def myLoop():
     global bot, fire, summon_id
     total_members = db["total_members"]
     cat = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")
-    emoji = discord.PartialEmoji.from_string(f"staring_cat:{cat.id}")
+    emoji = discord.PartialEmoji.from_str(f"staring_cat:{cat.id}")
     await bot.change_presence(
             activity=discord.Activity(type=discord.ActivityType.custom, emoji=emoji, state=f"Providing life support for {len(bot.guilds)} servers with {total_members} people")
     )
@@ -289,7 +289,7 @@ async def on_ready():
     print("cat is now online")
     total_members = db["total_members"]
     cat = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")
-    emoji = discord.PartialEmoji.from_string(f"staring_cat:{cat.id}")
+    emoji = discord.PartialEmoji.from_str(f"staring_cat:{cat.id}")
     await bot.change_presence(
             activity=discord.Activity(type=discord.ActivityType.custom, emoji=emoji, state=f"Providing life support for {len(bot.guilds)} servers with {total_members} people")
     )
