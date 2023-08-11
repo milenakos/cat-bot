@@ -287,7 +287,7 @@ async def on_ready():
     print("cat is now online")
     total_members = db["total_members"]
     await bot.change_presence(
-            activity=discord.Activity(type=discord.ActivityType.competing, name=f"{len(bot.guilds)} servers with {total_members} people")
+            activity=discord.CustomActivity(name=f"Providing life support for {len(bot.guilds)} servers with {total_members} people")
     )
     appinfo = await bot.application_info()
     milenakoos = appinfo.owner
