@@ -437,10 +437,20 @@ async def on_message(message):
         await message.reply(f"ok then\n{message.author.name} lost 1 fine cat!!!1!")
         remove_cat(message.guild.id, message.author.id, "Fine")
         await achemb(message, "pleasedonotthecat", "reply")
+    
     if text.lower() == "please do the cat":
         thing = discord.File("socialcredit.jpg", filename="socialcredit.jpg")
         await message.reply(file=thing)
         await achemb(message, "pleasedothecat", "reply")
+    if text.lower() == "car":
+        file = discord.File("car.png", filename="car.png")
+        embed = discord.Embed(title="car!", color=0x6E593C).set_image(url="attachment://car.png")
+        await message.reply(file=file, embed=embed)
+        await achemb(message, "car", "reply")
+    if text.lower() == "cart":
+        file = discord.File("cart.png", filename="cart.png")
+        embed = discord.Embed(title="cart!", color=0x6E593C).set_image(url="attachment://cart.png")
+        await message.reply(file=file, embed=embed)
     
     if text.lower() == "cat":
         register_member(message.guild.id, message.author.id)
@@ -597,16 +607,6 @@ async def on_message(message):
                 db["0"][str(stuff[1])]["custom"] = stuff[2]
         save("0")
         await message.reply("success")
-    
-    if text.lower().startswith("car") and not text.lower().startswith("cart"):
-        file = discord.File("car.png", filename="car.png")
-        embed = discord.Embed(title="car!", color=0x6E593C).set_image(url="attachment://car.png")
-        await message.reply(file=file, embed=embed)
-        await achemb(message, "car", "reply")
-    if text.lower().startswith("cart"):
-        file = discord.File("cart.png", filename="cart.png")
-        embed = discord.Embed(title="cart!", color=0x6E593C).set_image(url="attachment://cart.png")
-        await message.reply(file=file, embed=embed)
     
     try:
         if db["cattype"][str(message.channel.id)] == "Sus":
