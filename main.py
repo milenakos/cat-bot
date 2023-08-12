@@ -634,8 +634,11 @@ async def on_guild_join(guild):
         while not verify(ch):
             ch = guild.text_channels[chindex]
             chindex += 1
-        
-    await ch.send("Thanks for adding me!\nTo setup a channel to summon cats in, use /setup!\nHave a nice day :)")
+    
+    # you are free to change/remove this, its just a note for general user letting them know
+    unofficial_note = "**NOTE: This is an unofficial Cat Bot instance.**\n\n"
+    if bot.user.id == 966695034340663367: unofficial_note = ""
+    await ch.send(unofficial_note + "Thanks for adding me!\nTo setup a channel to summon cats in, use /setup!\nJoin the support server here: https://discord.gg/WCTzD3YQEk\nHave a nice day :)")
 
 @bot.slash_command(description="View information about the bot")
 async def info(message: discord.Interaction):
