@@ -73,7 +73,7 @@ if os.path.isfile("db.json"):
         os.mkdir("data")
     
     for k, v in temp_db.items():
-        with open(f"data/{k}.json", w) as f:
+        with open(f"data/{k}.json", "w") as f:
             json.dump(v, f)
     
     os.rename("db.json", "old_db.json")
