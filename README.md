@@ -18,13 +18,7 @@ Discord [Cat Bot](https://discord.com/api/oauth2/authorize?client_id=96669503434
 
    `pip install -r requirements.txt`
 
-3. Create a `db.json` file. Here is a template of an empty db:
-
-   `{"cat": {}, "summon_ids": [], "0": {}, "cattype": {}}`
-   
-   Put that there if you are just starting out.
-   
-   More detailed explanation on how Cat Bot stores stuff can be found [here](https://calion.repl.co/info), made by Calion.
+3. Create a `data` folder, which will house all your information.
 
 4. Go inside of the `main.py` file, on first few lines you can change some config values, such as guild ID, backup channel ID, and Discord token.
 > **Note**
