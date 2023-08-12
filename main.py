@@ -123,7 +123,7 @@ OWNER_ID = 0
 
 fire = {}
 for i in summon_id:
-    fire[i] = False
+    fire[i] = True
 
 def save(id):
     id = str(id)
