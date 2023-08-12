@@ -6,6 +6,7 @@ from nextcord.ui import Button, View
 from typing import Optional
 from random import randint, choice
 from PIL import Image
+from collections import UserDict
 
 ### Setup values start
 
@@ -61,15 +62,39 @@ CAT_TYPES = []
 for k, v in type_dict.items():
     CAT_TYPES.extend([k] * v)
 
-with open("db.json", "r") as f:
-    try:
-        db = json.load(f)
-    except Exception:
-        f.close()
-        import reverse
-        reverse.reverse()
-        with open("db.json", "r") as f:
-            db = json.load(f)
+# migrate from db.json if found
+if os.path.isfile("db.json"):
+    print("db.json file found, migrating...")
+    
+    with open("db.json", "r") as f:
+        temp_db = json.load(f)
+    
+    if not os.path.exists('data'):
+        os.mkdir("data")
+    
+    for k, v in temp_db.items():
+        with open(f"data/{k}.json", w) as f:
+            json.dump(v, f)
+    
+    os.rename("db.json", "old_db.json")
+    print(f"migrated {len(temp_db)} files, db.json was renamed to prevent this triggering again.")
+    print("it is recommended check if everything is okay.")
+
+class PopulatedDict(UserDict):
+    # this will fetch the server info from file if it wasn't fetched yet
+    def __getitem__(self, key):
+        try:
+            return super().__getitem__(key)
+        except KeyError:
+            try:
+                with open(f"data/{key}.json", "r") as f:
+                    item = json.load(f)
+                super().__setitem__(key, item)
+                return item
+            except Exception:
+                raise KeyError
+
+db = PopulatedDict()
 
 with open("aches.json", "r") as f:
     ach_list = json.load(f)
@@ -100,18 +125,17 @@ fire = {}
 for i in summon_id:
     fire[i] = False
 
-def save():
-    with open("db.json", "w") as f:
-        json.dump(db, f)
-    with open("backup.txt", "w") as f:
-        f.write(str(db))
+def save(id):
+    id = str(id)
+    with open(f"data/{id}.json", "w") as f:
+        json.dump(db[id], f)
 
 try:
     if not db["total_members"]:
         raise KeyError
 except KeyError:
     db["total_members"] = 0
-    save()
+    save("total_members")
 
 
 def add_cat(server_id, person_id, cattype, val=1, overwrite=False):
@@ -122,9 +146,8 @@ def add_cat(server_id, person_id, cattype, val=1, overwrite=False):
         else:
             db[str(server_id)][str(person_id)][cattype] = db[str(server_id)][str(person_id)][cattype] + val
     except Exception as e:
-        print("add_cat", e)
         db[str(server_id)][str(person_id)][cattype] = val
-    save()
+    save(server_id)
     return db[str(server_id)][str(person_id)][cattype]
 
 def remove_cat(server_id, person_id, cattype, val=1):
@@ -135,7 +158,7 @@ def remove_cat(server_id, person_id, cattype, val=1):
     except Exception:
         db[str(server_id)][str(person_id)][cattype] = 0
         result = False
-    save()
+    save(server_id)
     return result
 
 def register_guild(server_id):
@@ -144,7 +167,6 @@ def register_guild(server_id):
             pass
     except KeyError:
         db[str(server_id)] = {}
-        save()
 
 def register_member(server_id, person_id):
     register_guild(server_id)
@@ -154,7 +176,6 @@ def register_member(server_id, person_id):
             pass
     except KeyError:
         db[str(server_id)][str(person_id)] = {"Fine": 0}
-        save()
 
 def get_cat(server_id, person_id, cattype):
     try:
@@ -163,7 +184,7 @@ def get_cat(server_id, person_id, cattype):
         register_member(server_id, person_id)
         add_cat(server_id, person_id, cattype, 0)
         result = 0
-        save()
+        save(server_id)
     return result
 
 def get_time(server_id, person_id, type=None):
@@ -172,7 +193,6 @@ def get_time(server_id, person_id, type=None):
         result = db[str(server_id)][str(person_id)]["time" + type]
         if isinstance(result, str):
             db[str(server_id)][str(person_id)]["time" + type] = float(result)
-            save()
     except Exception:
         if type == "":
             result = 99999999999999
@@ -184,7 +204,7 @@ def set_time(server_id, person_id, time, type=None):
     if type == None: type = ""
     register_member(server_id, person_id)
     db[str(server_id)][str(person_id)]["time" + type] = time
-    save()
+    save(server_id)
     return db[str(server_id)][str(person_id)]["time" + type]
 
 def has_ach(server_id, person_id, ach_id, do_register=True, db_var=None):
@@ -200,7 +220,6 @@ def has_ach(server_id, person_id, ach_id, do_register=True, db_var=None):
     except:
         db[str(server_id)][str(person_id)]["ach"] = {}
         db[str(server_id)][str(person_id)]["ach"][ach_id] = False
-        save()
         return False
 
 def give_ach(server_id, person_id, ach_id, reverse=False):
@@ -211,7 +230,7 @@ def give_ach(server_id, person_id, ach_id, reverse=False):
     else:
         if has_ach(server_id, person_id, ach_id):
             db[str(server_id)][str(person_id)]["ach"][ach_id] = False
-    save()
+    save(server_id)
     return ach_list[ach_id]
 
 async def achemb(message, ach_id, send_type, author_string=None):
@@ -260,7 +279,8 @@ async def myLoop():
             pass
     db["summon_ids"] = list(dict.fromkeys(summon_id)) # remove all duplicates
     print("Finished cat loop")
-    save()
+    save("cattype")
+    save("cat")
     backupchannel = await bot.fetch_channel(BACKUP_ID)
     thing = discord.File("db.json", filename="db.json")
     await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
@@ -279,7 +299,7 @@ async def update_presence():
         g = await bot.fetch_guild(i.id)
         total += g.approximate_member_count
     db["total_members"] = total
-    save()
+    save("total_members")
         
 @bot.event
 async def on_ready():
@@ -332,7 +352,6 @@ async def on_message(message):
     
     if GITHUB_CHANNEL_ID and message.channel.id == GITHUB_CHANNEL_ID:
         os.system("git pull")
-        save()
         os.execv(sys.executable, ['python'] + sys.argv)
     
     if not (" " in text) and len(text) > 7 and text.isalnum():
@@ -426,7 +445,6 @@ async def on_message(message):
         except Exception:
             db[str(message.guild.id)][str(message.author.id)]["timeout"] = 0
             timestamp = 0
-            save()
         try:
             is_cat = db["cat"][str(message.channel.id)]
         except Exception:
@@ -439,7 +457,7 @@ async def on_message(message):
             current_time = time.mktime(current_time.timetuple()) + current_time.microsecond / 1e6
             cat_temp = db["cat"][str(message.channel.id)]
             db["cat"][str(message.channel.id)] = False
-            save()
+            save("cat")
             try:
                 await message.delete()
             except discord.errors.Forbidden:
@@ -512,7 +530,6 @@ async def on_message(message):
 
             async def do_reward(message, level):
                 db[str(message.guild.id)][str(message.author.id)]["progress"] = 0
-                save()
                 reward = level["reward"]
                 reward_amount = level["reward_amount"]
                 add_cat(message.guild.id, message.author.id, reward, reward_amount)
@@ -523,10 +540,8 @@ async def on_message(message):
 
             if not get_cat(message.guild.id, message.author.id, "battlepass"):
                 db[str(message.guild.id)][str(message.author.id)]["battlepass"] = 0
-                save()
             if not get_cat(message.guild.id, message.author.id, "progress"):
                 db[str(message.guild.id)][str(message.author.id)]["progress"] = 0
-                save()
 
             battlelevel = battle["levels"][get_cat(message.guild.id, message.author.id, "battlepass")]
             if battlelevel["req"] == "catch_fast" and do_time and time_caught < battlelevel["req_data"]:
@@ -543,7 +558,7 @@ async def on_message(message):
         await message.reply("success")
     if text.lower().startswith("cat!sweep") and message.author.id == OWNER_ID:
         db["cat"][str(message.channel.id)] = False
-        save()
+        save("cat")
         await message.reply("success")
     if text.lower().startswith("cat!setup") and message.author.id == OWNER_ID:
         abc = db["summon_ids"]
@@ -552,7 +567,9 @@ async def on_message(message):
         db["cat"][str(message.channel.id)] = False
         db["cattype"][str(message.channel.id)] = ""
         fire[str(message.channel.id)] = True
-        save()
+        save("summon_ids")
+        save("cat")
+        save("cattype")
         await message.reply(f"ok, now i will also send cats in <#{message.channel.id}>")
     if text.lower().startswith("cat!print") and message.author.id == OWNER_ID:
         await message.reply(eval(text[9:]))
@@ -574,7 +591,7 @@ async def on_message(message):
             except Exception:
                 db["0"][str(stuff[1])] = {}
                 db["0"][str(stuff[1])]["custom"] = stuff[2]
-        save()
+        save("0")
         await message.reply("success")
     
     if text.lower().startswith("car") and not text.lower().startswith("cart"):
@@ -686,7 +703,7 @@ async def preventcatch(message: discord.Interaction, person: discord.Member = di
     register_member(message.guild.id, person.id)
     timestamp = round(time.time()) + timeout
     db[str(message.guild.id)][str(person.id)]["timeout"] = timestamp
-    save()
+    save(message.guild.id)
     if timeout > 0:
         await message.response.send_message(f"{person.name} can't catch cats until <t:{timestamp}:R>")
     else:
@@ -695,7 +712,7 @@ async def preventcatch(message: discord.Interaction, person: discord.Member = di
 @bot.slash_command(description="(ADMIN) Use if cat spawning is broken", default_member_permissions=32)
 async def repair(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
-    save()
+    save("cat")
     await message.response.send_message("success")
 
 @bot.slash_command(description="Get Daily cats")
@@ -801,7 +818,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Me
     if is_empty:
         embedVar.add_field(name="None", value="u hav no cats :cat_sad:", inline=True)
     if do_save:
-        save()
+        save(message.guild.id)
     embedVar.set_footer(text=f"Total cats: {total}")
     await message.followup.send(embed=embedVar)
     if me:
@@ -815,10 +832,8 @@ async def battlepass(message: discord.Interaction):
     register_member(message.user.id, message.guild.id)
     if not get_cat(message.guild.id, message.user.id, "battlepass"):
         db[str(message.guild.id)][str(message.user.id)]["battlepass"] = 0
-        save()
     if not get_cat(message.guild.id, message.user.id, "progress"):
         db[str(message.guild.id)][str(message.user.id)]["progress"] = 0
-        save()
 
     current_level = get_cat(message.guild.id, message.user.id, "battlepass")
     embedVar = discord.Embed(title="Cattlepass™", description="who thought this was a good idea", color=0x6E593C)
@@ -1468,7 +1483,7 @@ async def forget(message: discord.Interaction):
         abc = db["summon_ids"]
         abc.remove(int(message.channel.id))
         db["summon_ids"] = abc
-        save()
+        save("summon_ids")
         await message.response.send_message(f"ok, now i wont send cats in <#{message.channel.id}>")
     else:
         await message.response.send_message("your an idiot there is literally no cat setupped in this channel you stupid")
@@ -1492,7 +1507,8 @@ async def soft_force(channeley, cat_type=None):
     icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower() + "cat")
     message_lmao = await channeley.send(str(icon) + " " + db["cattype"][str(channeley.id)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
     db["cat"][str(channeley.id)] = message_lmao.id
-    save()
+    save("cattype")
+    save("cat")
 
 @bot.slash_command(description="(ADMIN) Force cats to appear", default_member_permissions=32)
 async def forcespawn(message: discord.Interaction, cat_type: Optional[str] = discord.SlashOption(required=False, choices=cattypes, name="type", description="select a cat type ok")):
@@ -1534,7 +1550,7 @@ async def giveachievement(message: discord.Interaction, person_id: discord.Membe
 async def reset(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who")):
     try:
         del db[str(message.guild.id)][str(person_id.id)]
-        save()
+        save(message.guild.id)
         await message.response.send_message(embed=discord.Embed(color=0x6E593C, description=f'Done! rip <@{person_id.id}>. f\'s in chat.'))
     except KeyError:
         await message.response.send_message("ummm? this person isnt even registered in cat bot wtf are you wiping?????", ephemeral=True)
@@ -1579,5 +1595,5 @@ async def on_command_error(ctx, error):
                 + serv
         )
 
-bot.on_command_error = on_command_error
+bot.on_application_command_error = on_command_error
 bot.run(TOKEN)
