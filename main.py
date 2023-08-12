@@ -1,5 +1,5 @@
 import nextcord as discord
-import msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio
+import msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile
 from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
 from nextcord.ui import Button, View
@@ -281,8 +281,12 @@ async def myLoop():
     print("Finished cat loop")
     save("cattype")
     save("cat")
+    
+    with tarfile.open("backup.tar.gz", "w:gz") as tar:
+        tar.add("data", arcname=os.path.sep)
+    
     backupchannel = await bot.fetch_channel(BACKUP_ID)
-    thing = discord.File("db.json", filename="db.json")
+    thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
     await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
     if not TOP_GG_TOKEN:
         return
