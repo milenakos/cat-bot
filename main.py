@@ -1415,7 +1415,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             current += 1
         embedVar = discord.Embed(
                 title=f"{title} Leaderboards:", description=string, color=0x6E593C
-        ).set_footer(text="if two people have same pb, random dad joke determines who places above")
+        )
 
         if not main:
             button1 = Button(label="Cats", style=ButtonStyle.blurple)
