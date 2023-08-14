@@ -1465,11 +1465,6 @@ async def givecat(message: discord.Interaction, person_id: discord.Member = disc
     embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount} {cat_type} cats", color=0x6E593C)
     await message.response.send_message(embed=embed)
 
-@bot.slash_command(description="(ADMIN) Say stuff as cat", default_member_permissions=32)
-async def say(message: discord.Interaction, text: str = discord.SlashOption(description="you will figure")):
-    await message.response.send_message("success", ephemeral=True)
-    await message.channel.send(text[:2000])
-
 @bot.slash_command(description="(ADMIN) Setup cat in current channel", default_member_permissions=32)
 async def setup(message: discord.Interaction):
     if int(message.channel.id) in db["summon_ids"]:
