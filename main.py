@@ -1557,10 +1557,11 @@ async def reset(message: discord.Interaction, person_id: discord.Member = discor
     except KeyError:
         await message.response.send_message("ummm? this person isnt even registered in cat bot wtf are you wiping?????", ephemeral=True)
 
+@bot.event
 async def on_command_error(ctx, error):
     # ctx here is interaction
     if "KeyboardInterrupt" in str(type(error)):
-        return
+        exit()
     elif "errors.Forbidden" in str(type(error)):
         await ctx.channel.send("i don't have permissions to do that. (try reinviting the bot)")
     elif "errors.NotFound" in str(type(error)):
@@ -1578,24 +1579,13 @@ async def on_command_error(ctx, error):
         except Exception as e:
             cont = "Error getting"
 
-        try:
-            serv = ctx.guild.name
-            print("debug", cont)
-        except Exception as e:
-            cont = "Error getting"
-
         _, _, error2 = sys.exc_info()
 
         await milenakoos.send(
                 "There is an error happend:\n"
                 + str("".join(traceback.format_tb(error2))) + str(type(error)) + str(error)
-                + "\n\nMore info on error:\n\nMessage link: "
-                + link
-                + "\nMessage text: "
+                + "\n\nMessage text: "
                 + cont
-                + "\n\nServer name: "
-                + serv
         )
 
-bot.on_application_command_error = on_command_error
 bot.run(TOKEN)
