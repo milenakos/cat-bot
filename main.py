@@ -1563,10 +1563,24 @@ async def on_command_error(ctx, error):
     if "KeyboardInterrupt" in str(type(error)):
         exit()
     elif "errors.Forbidden" in str(type(error)):
-        await ctx.channel.send("i don't have permissions to do that. (try reinviting the bot)")
+        print("logged a Forbidden error.")
+        # except-ception lessgo
+        forbidden_error = "i don't have permissions to do that.\ntry reinviting the bot or give it roles needed to access this chat (for example, verified role)"
+        try:
+            await ctx.channel.send(forbidden_error) # try as normal message (most likely will fail)
+        except Exception:
+            try:
+                await ctx.response.send_message(forbidden_error) # try to respond to /command literally
+            except Exception:
+                try:
+                    await ctx.followup.send(forbidden_error) # or as a followup if it already got responded to
+                except Exception:
+                    await ctx.user.send(forbidden_error) # as last resort, dm the runner
     elif "errors.NotFound" in str(type(error)):
+        print("logged a NotFound error.")
         await ctx.channel.send("took too long, try running the command again")
     else:
+        print("not a common error, crash reporting.")
         await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
         try:
             await achemb(ctx, "crasher", "send")
