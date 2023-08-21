@@ -277,7 +277,6 @@ async def myLoop():
                         else:
                             appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
                     except Exception as e:
-                        print(e) # frfr # send help what am i doing # this is literally third comment inside of a comment # wtfffff
                         db[str(message.guild.id)]["appear"] = ""
                         appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
                     
@@ -1639,7 +1638,16 @@ async def soft_force(channeley, cat_type=None):
         localcat = cat_type
     db["cattype"][str(channeley.id)] = localcat
     icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower() + "cat")
-    message_lmao = await channeley.send(str(icon) + " " + db["cattype"][str(channeley.id)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
+    try:
+        if db[str(message.guild.id)]["appear"]:
+            appearstring = db[str(message.guild.id)]["appear"]
+        else:
+            appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
+    except Exception as e:
+        db[str(message.guild.id)]["appear"] = ""
+        appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
+    
+    message_is_sus = await channeley.send(appearstring.format(emoji=str(icon), type=localcat), file=file)
     db["cat"][str(channeley.id)] = message_lmao.id
     save("cattype")
     save("cat")
