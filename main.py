@@ -271,7 +271,11 @@ async def myLoop():
                     db["cattype"][str(i)] = localcat
                     icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower() + "cat")
                     channeley = await bot.fetch_channel(int(i))
-                    message_is_sus = await channeley.send(str(icon) + " " + db["cattype"][str(i)] + " cat has appeared! Type \"cat\" to catch it!", file=file)
+                    if db[str(message.guild.id)]["premium"] and db[str(message.guild.id)]["appear"]:
+                        appearstring = db[str(message.guild.id)]["appear"]
+                    else:
+                        appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
+                    message_is_sus = await channeley.send(appearstring.format(emoji=str(icon), type=localcat), file=file)
                     db["cat"][str(i)] = message_is_sus.id
             if not fire[i]:
                 fire[i] = True
@@ -509,27 +513,29 @@ async def on_message(message):
 
             le_emoji = db["cattype"][str(message.channel.id)]
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=le_emoji.lower() + "cat")
-            if le_emoji == "Corrupt":
-                coughstring = "{name} coought{cattype} c{icon}at!!!!404!\nYou now BEEP {catcount} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!"
+            if db[str(message.guild.id)]["premium"] and db[str(message.guild.id)]["cought"]:
+                coughstring = db[str(message.guild.id)]["cought"]
+            elif le_emoji == "Corrupt":
+                coughstring = "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!"
             elif le_emoji == "eGirl":
-                coughstring = "{name} cowought {icon} {cattype} cat~~ ^^\nYou-u now *blushes* hawe {catcount} cats of dat tywe~!!!\nthis fella was <3 cought in {time}!!!!"
+                coughstring = "{username} cowought {emoji} {type} cat~~ ^^\nYou-u now *blushes* hawe {count} cats of dat tywe~!!!\nthis fella was <3 cought in {time}!!!!"
             elif le_emoji == "Rickroll":
-                coughstring = "{name} cought {icon} {cattype} cat!!!!1!\nYou will never give up {catcount} cats of dat type!!!\nYou wouldn't let them down even after {time}!!!!"
+                coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou will never give up {count} cats of dat type!!!\nYou wouldn't let them down even after {time}!!!!"
             elif le_emoji == "Sus":
-                coughstring = "{name} cought {icon} {cattype} cat!!!!1!\nYou have vented infront of {catcount} cats of dat type!!!\nthis sussy baka was cought in {time}!!!!"
+                coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou have vented infront of {count} cats of dat type!!!\nthis sussy baka was cought in {time}!!!!"
             elif le_emoji == "Professor":
-                coughstring = "{name} caught {icon} {cattype} cat!\nThou now hast {catcount} cats of that type!\nThis fellow was caught 'i {time}!"
+                coughstring = "{username} caught {emoji} {type} cat!\nThou now hast {count} cats of that type!\nThis fellow was caught 'i {time}!"
             elif le_emoji == "8bit":
-                coughstring = "{name} c0ught {icon} {cattype} cat!!!!1!\nY0u n0w h0ve {catcount} cats 0f dat type!!!\nth1s fe11a was c0ught 1n {time}!!!!"
+                coughstring = "{username} c0ught {emoji} {type} cat!!!!1!\nY0u n0w h0ve {count} cats 0f dat type!!!\nth1s fe11a was c0ught 1n {time}!!!!"
             elif le_emoji == "Reverse":
-                coughstring = "!!!!{time} in cought was fella this\n!!!type dat of cats {catcount} have now You\n!1!!!!cat {cattype} {icon} cought {name}"
+                coughstring = "!!!!{time} in cought was fella this\n!!!type dat of cats {count} have now You\n!1!!!!cat {type} {emoji} cought {username}"
             else:
-                coughstring = "{name} cought {icon} {cattype} cat!!!!1!\nYou now have {catcount} cats of dat type!!!\nthis fella was cought in {time}!!!!"
+                coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
             raw_user = await bot.fetch_user(message.author.id)
-            await message.channel.send(coughstring.format(name=raw_user.display_name.replace("@", "`@`"),
-                                                           icon=icon,
-                                                           cattype=le_emoji,
-                                                           catcount=add_cat(message.guild.id, message.author.id, le_emoji),
+            await message.channel.send(coughstring.format(username=raw_user.display_name.replace("@", "`@`"),
+                                                           emoji=icon,
+                                                           type=le_emoji,
+                                                           count=add_cat(message.guild.id, message.author.id, le_emoji),
                                                            time=caught_time[:-1]))
             if do_time and time_caught < get_time(message.guild.id, message.author.id):
                 set_time(message.guild.id, message.author.id, time_caught)
@@ -607,7 +613,11 @@ async def on_message(message):
                 db["0"][str(stuff[1])]["custom"] = stuff[2]
         save("0")
         await message.reply("success")
-    
+    if text.lower() == "cat!premium" and message.author.id == OWNER_ID:
+        db[str(message.guild.id)]["premium"] = True
+        save(message.guild.id)
+        await message.reply("👑 this server now has Cat Bot Premium status! congrats!")
+
     try:
         if db["cattype"][str(message.channel.id)] == "Sus":
             for i in ["sus", "amogus", "among", "vent", "report"]:
@@ -721,6 +731,85 @@ async def repair(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
     save("cat")
     await message.response.send_message("success")
+
+@bot.slash_command(description="(ADMIN, PREMIUM) Change the cat appear and cought messages", default_member_permissions=32)
+async def changemessage(message: discord.Interaction):
+    try:
+        if not db[str(message.guild.id)]["premium"]:
+            raise Exception
+    except Exception:
+        db[str(message.guild.id)]["premium"] = False
+        await message.response.send_message(f"This feature is premium-only. Please see <:/premium:{bot.user.id}>.")
+        return
+
+    class InputModal(discord.ui.Modal):
+        def __init__(self, type):
+            super().__init__(
+                "Change {type} Message",
+                timeout=5 * 60,  # 5 minutes
+            )
+
+            self.type = type
+
+            placeholders = {"Appear": "{emoji} {type} has appeared! Type \"cat\" to catch it!",
+                            "Catch": "{username} cought {emoji} {type} cat!!!!1!\\nYou now have {count} of dat type!!!\\nthis fella was cought in {time}!!!!"}
+            
+            self.input = discord.ui.TextInput(
+                min_length=0,
+                max_length=1000,
+                label="Input",
+                placeholder=placeholders[type]
+            )
+            self.add_item(self.cattype)
+
+        async def callback(self, interaction: discord.Interaction):
+            if self.input != "":
+                if self.type == "Appear":
+                    check = ["{emoji}", "{type}"]
+                else:
+                    check = ["{emoji}", "{type}", "{username}", "{count}", "{time}"]
+                for i in check:
+                    if i not in self.input:
+                        await interaction.response.send_message(f"nuh uh! you are missing `{i}`.")
+                        return
+            await interaction.response.defer()
+            db[str(message.guild.id)][self.type.lower()] = self.input
+            save(message.guild.id)
+
+    async def ask_appear(interaction):
+        modal = InputModal("Appear")
+        await interaction.response.send_modal(modal)
+
+    async def ask_catch(interaction):
+        modal = InputModal("Cought")
+        await interaction.response.send_modal(modal)
+    
+    embed = discord.Embed(title="Change appear and cought messages", description="""below are buttons to change them.
+they are required to have all placeholders somewhere in them.
+that being:
+
+for appear:
+`{emoji}`, `{type}`
+
+for cought:
+`{emoji}`, `{type}`, `{username}`, `{count}`, `{time}`
+
+missing any of these will result in a failure.
+you can use `\\n` to represent newlines.
+
+if you want to reset back to normal, leave the input blank.""", color=0x6E593C)
+
+    button1 = Button(label="Appear Message", style=ButtonStyle.blue)
+    button1.callback = ask_appear
+
+    button2 = Button(label="Catch Message", style=ButtonStyle.blue)
+    button2.callback = ask_catch
+
+    view = View(timeout=600)
+    view.add_button(button1)
+    view.add_button(button2)
+
+    await message.response.send_message(embed=embed, view=view)
 
 @bot.slash_command(description="Get Daily cats")
 async def daily(message: discord.Interaction):
