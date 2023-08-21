@@ -753,6 +753,8 @@ async def changemessage(message: discord.Interaction):
         await message.response.send_message(f"This feature is premium-only. Please see <:/premium:{bot.user.id}>.")
         return
 
+    called = message.user
+
     class InputModal(discord.ui.Modal):
         def __init__(self, type):
             super().__init__(
@@ -763,7 +765,7 @@ async def changemessage(message: discord.Interaction):
             self.type = type
 
             placeholders = {"Appear": "{emoji} {type} has appeared! Type \"cat\" to catch it!",
-                            "Catch": "{username} cought {emoji} {type} cat!!!!1!\\nYou now have {count} of dat type!!!\\nthis fella was cought in {time}!!!!"}
+                            "Cought": "{username} cought {emoji} {type} cat!!!!1!\\nYou now have {count} of dat type!!!\\nthis fella was cought in {time}!!!!"}
             
             self.input = discord.ui.TextInput(
                 min_length=0,
@@ -771,7 +773,7 @@ async def changemessage(message: discord.Interaction):
                 label="Input",
                 placeholder=placeholders[type]
             )
-            self.add_item(self.cattype)
+            self.add_item(self.input)
 
         async def callback(self, interaction: discord.Interaction):
             if self.input != "":
@@ -788,10 +790,18 @@ async def changemessage(message: discord.Interaction):
             save(message.guild.id)
 
     async def ask_appear(interaction):
+        nonlocal caller
+        if interaction.user != caller:
+            await interaction.response.send_message(choice(funny), ephemeral=True)
+            return
         modal = InputModal("Appear")
         await interaction.response.send_modal(modal)
 
     async def ask_catch(interaction):
+        nonlocal caller
+        if interaction.user != caller:
+            await interaction.response.send_message(choice(funny), ephemeral=True)
+            return
         modal = InputModal("Cought")
         await interaction.response.send_modal(modal)
     
