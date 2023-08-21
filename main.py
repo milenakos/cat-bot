@@ -810,10 +810,10 @@ you can use `\\n` to represent newlines.
 
 if you want to reset back to normal, leave the input blank.""", color=0x6E593C)
 
-    button1 = Button(label="Appear Message", style=ButtonStyle.blue)
+    button1 = Button(label="Appear Message", style=ButtonStyle.blurple)
     button1.callback = ask_appear
 
-    button2 = Button(label="Catch Message", style=ButtonStyle.blue)
+    button2 = Button(label="Catch Message", style=ButtonStyle.blurple)
     button2.callback = ask_catch
 
     view = View(timeout=600)
