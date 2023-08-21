@@ -753,7 +753,7 @@ async def changemessage(message: discord.Interaction):
         await message.response.send_message(f"This feature is premium-only. Please see <:/premium:{bot.user.id}>.")
         return
 
-    called = message.user
+    caller = message.user
 
     class InputModal(discord.ui.Modal):
         def __init__(self, type):
@@ -790,6 +790,7 @@ async def changemessage(message: discord.Interaction):
             save(message.guild.id)
 
     async def ask_appear(interaction):
+        nonlocal caller
         if interaction.user != caller:
             await interaction.response.send_message(choice(funny), ephemeral=True)
             return
@@ -797,6 +798,7 @@ async def changemessage(message: discord.Interaction):
         await interaction.response.send_modal(modal)
 
     async def ask_catch(interaction):
+        nonlocal caller
         if interaction.user != caller:
             await interaction.response.send_message(choice(funny), ephemeral=True)
             return
