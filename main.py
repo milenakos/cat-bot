@@ -276,7 +276,8 @@ async def myLoop():
                             appearstring = db[str(message.guild.id)]["appear"]
                         else:
                             appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
-                    except Exception:
+                    except Exception as e:
+                        print(e) # frfr # send help what am i doing # this is literally third comment inside of a comment # wtfffff
                         db[str(message.guild.id)]["appear"] = ""
                         appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
                     
@@ -773,20 +774,21 @@ async def changemessage(message: discord.Interaction):
             self.add_item(self.input)
 
         async def callback(self, interaction: discord.Interaction):
-            if self.input.value != "":
+            input_value = self.input.value.replace("\\n", "\n")
+            if input_value != "":
                 if self.type == "Appear":
                     check = ["{emoji}", "{type}"]
                 else:
                     check = ["{emoji}", "{type}", "{username}", "{count}", "{time}"]
                 for i in check:
-                    if i not in self.input.value:
+                    if i not in input_value:
                         await interaction.response.send_message(f"nuh uh! you are missing `{i}`.", ephemeral=True)
                         return
-            db[str(message.guild.id)][self.type.lower()] = self.input.value
+            db[str(message.guild.id)][self.type.lower()] = input_value
             save(message.guild.id)
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")
             await interaction.response.send_message("Success! Here is a preview:\n" + \
-                                                    self.input.value.format(emoji=icon, type="Example", username="Cat Bot", count="1", time="69 years 420 days"))
+                                                    input_value.format(emoji=icon, type="Example", username="Cat Bot", count="1", time="69 years 420 days"))
 
     async def ask_appear(interaction):
         nonlocal caller
