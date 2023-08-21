@@ -817,8 +817,8 @@ if you want to reset back to normal, leave the input blank.""", color=0x6E593C)
     button2.callback = ask_catch
 
     view = View(timeout=600)
-    view.add_button(button1)
-    view.add_button(button2)
+    view.add_item(button1)
+    view.add_item(button2)
 
     await message.response.send_message(embed=embed, view=view)
 
