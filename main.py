@@ -271,10 +271,15 @@ async def myLoop():
                     db["cattype"][str(i)] = localcat
                     icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower() + "cat")
                     channeley = await bot.fetch_channel(int(i))
-                    if db[str(message.guild.id)]["premium"] and db[str(message.guild.id)]["appear"]:
-                        appearstring = db[str(message.guild.id)]["appear"]
-                    else:
+                    try:
+                        if db[str(message.guild.id)]["appear"]:
+                            appearstring = db[str(message.guild.id)]["appear"]
+                        else:
+                            appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
+                    except Exception:
+                        db[str(message.guild.id)]["appear"] = ""
                         appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
+                    
                     message_is_sus = await channeley.send(appearstring.format(emoji=str(icon), type=localcat), file=file)
                     db["cat"][str(i)] = message_is_sus.id
             if not fire[i]:
@@ -513,7 +518,13 @@ async def on_message(message):
 
             le_emoji = db["cattype"][str(message.channel.id)]
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=le_emoji.lower() + "cat")
-            if db[str(message.guild.id)]["premium"] and db[str(message.guild.id)]["cought"]:
+            try:
+                if db[str(message.guild.id)]["cought"]:
+                    pass
+            except Exception:
+                db[str(message.guild.id)]["cought"] = ""
+
+            if db[str(message.guild.id)]["cought"]:
                 coughstring = db[str(message.guild.id)]["cought"]
             elif le_emoji == "Corrupt":
                 coughstring = "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!"
