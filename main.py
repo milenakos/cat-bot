@@ -1639,12 +1639,12 @@ async def soft_force(channeley, cat_type=None):
     db["cattype"][str(channeley.id)] = localcat
     icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower() + "cat")
     try:
-        if db[str(message.guild.id)]["appear"]:
-            appearstring = db[str(message.guild.id)]["appear"]
+        if db[str(channeley.guild.id)]["appear"]:
+            appearstring = db[str(channeley.guild.id)]["appear"]
         else:
             appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
     except Exception as e:
-        db[str(message.guild.id)]["appear"] = ""
+        db[str(channeley.guild.id)]["appear"] = ""
         appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
     
     message_is_sus = await channeley.send(appearstring.format(emoji=str(icon), type=localcat), file=file)
