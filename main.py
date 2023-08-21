@@ -1501,6 +1501,10 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             unit = "cats"
             devider = 1
         for i in db[str(message.guild.id)].keys():
+            try:
+                int(i)
+            except Exception:
+                continue
             if not main:
                 value = get_time(message.guild.id, i, time_type)
                 if int(value) < 0:
