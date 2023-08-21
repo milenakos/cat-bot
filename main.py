@@ -951,7 +951,7 @@ async def gift(message: discord.Interaction, \
             button2 = Button(label="Evade the tax", style=ButtonStyle.red)
             button2.callback = evade
 
-            myview = View(timeout=None)
+            myview = View(timeout=600)
 
             myview.add_item(button)
             myview.add_item(button2)
@@ -1056,7 +1056,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
             await achemb(message, "blackhole", "send")
             await achemb(message, "blackhole", "send", person2)
             return discord.Embed(color=0x6E593C, title=f"Blackhole", description="How Did We Get Here?"), None
-        view = View(timeout=None)
+        view = View(timeout=600)
     
         accept = Button(label="Accept", style=ButtonStyle.green)
         accept.callback = acceptb
@@ -1284,7 +1284,7 @@ async def achievements(message: discord.Interaction):
             await achemb(interaction, "curious", "send")
 
     def insane_view_generator(category):
-        myview = View(timeout=None)
+        myview = View(timeout=600)
         buttons_list = []
         lambdas_list = []
 
@@ -1332,7 +1332,7 @@ async def achievements(message: discord.Interaction):
     button = Button(label="View all achievements", style=ButtonStyle.blurple)
     button.callback = send_full
 
-    myview = View(timeout=None)
+    myview = View(timeout=600)
     myview.add_item(button)
 
     await message.response.send_message(embed=embedVar, view=myview)
@@ -1457,7 +1457,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         button2.callback = fastlb
         button3.callback = slowlb
 
-        myview = View(timeout=None)
+        myview = View(timeout=600)
         myview.add_item(button1)
         myview.add_item(button2)
         myview.add_item(button3)
