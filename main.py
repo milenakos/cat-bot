@@ -758,20 +758,17 @@ async def changemessage(message: discord.Interaction):
     class InputModal(discord.ui.Modal):
         def __init__(self, type):
             super().__init__(
-                "Change {type} Message",
+                f"Change {type} Message",
                 timeout=5 * 60,  # 5 minutes
             )
 
             self.type = type
-
-            placeholders = {"Appear": "{emoji} {type} has appeared! Type \"cat\" to catch it!",
-                            "Cought": "{username} cought {emoji} {type} cat!!!!1!\\nYou now have {count} of dat type!!!\\nthis fella was cought in {time}!!!!"}
             
             self.input = discord.ui.TextInput(
                 min_length=0,
                 max_length=1000,
                 label="Input",
-                placeholder=placeholders[type]
+                placeholder="{emoji} {type} has appeared! Type \"cat\" to catch it!"
             )
             self.add_item(self.input)
 
@@ -783,11 +780,13 @@ async def changemessage(message: discord.Interaction):
                     check = ["{emoji}", "{type}", "{username}", "{count}", "{time}"]
                 for i in check:
                     if i not in self.input:
-                        await interaction.response.send_message(f"nuh uh! you are missing `{i}`.")
+                        await interaction.response.send_message(f"nuh uh! you are missing `{i}`.", ephemeral=True)
                         return
-            await interaction.response.defer()
             db[str(message.guild.id)][self.type.lower()] = self.input
             save(message.guild.id)
+            icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")
+            await interaction.response.send_message("Success! Here is a preview:\n" + \
+                                                    self.input.formatstring(emoji=icon, type="Example", username="Cat Bot", count="1", time="69 years 420 days"))
 
     async def ask_appear(interaction):
         nonlocal caller
