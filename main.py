@@ -786,13 +786,13 @@ async def changemessage(message: discord.Interaction):
                     if i not in input_value:
                         await interaction.response.send_message(f"nuh uh! you are missing `{i}`.", ephemeral=True)
                         return
+                icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")
                 await interaction.response.send_message("Success! Here is a preview:\n" + \
                                                     input_value.format(emoji=icon, type="Example", username="Cat Bot", count="1", time="69 years 420 days"))
             else:
                 await interaction.response.send_message("Reset to defaults.")
             db[str(message.guild.id)][self.type.lower()] = input_value
             save(message.guild.id)
-            icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")
 
     async def ask_appear(interaction):
         nonlocal caller
