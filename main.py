@@ -750,7 +750,7 @@ async def changemessage(message: discord.Interaction):
             raise Exception
     except Exception:
         db[str(message.guild.id)]["premium"] = False
-        await message.response.send_message(f"This feature is premium-only. Please see <:/premium:{bot.user.id}>.")
+        await message.response.send_message(f"This feature is premium-only. Please see <:/premium:{premium.command_ids[None]}>.")
         return
 
     caller = message.user
@@ -763,17 +763,21 @@ async def changemessage(message: discord.Interaction):
             )
 
             self.type = type
+
+            placeholders = {"Appear": "{emoji} {type} has appeared! Type \"cat\" to catch it!",
+                            "Catch": "{username} cought {emoji} {type} cat!!!!1!\\nYou now have {count} of dat type!!!\\nthis fella was cought in {time}!!!!"}
             
             self.input = discord.ui.TextInput(
                 min_length=0,
                 max_length=1000,
                 label="Input",
-                placeholder="{emoji} {type} has appeared! Type \"cat\" to catch it!"
+                placeholder="{emoji} {type} has appeared! Type \"cat\" to catch it!",
+                default_value=placeholders[type]
             )
             self.add_item(self.input)
 
         async def callback(self, interaction: discord.Interaction):
-            input_value = self.input.value.replace("\\n", "\n")
+            input_value = self.input.value
             if input_value != "":
                 if self.type == "Appear":
                     check = ["{emoji}", "{type}"]
@@ -815,10 +819,7 @@ for appear:
 for cought:
 `{emoji}`, `{type}`, `{username}`, `{count}`, `{time}`
 
-missing any of these will result in a failure.
-you can use `\\n` to represent newlines.
-
-if you want to reset back to normal, leave the input blank.""", color=0x6E593C)
+missing any of these will result in a failure.""", color=0x6E593C)
 
     button1 = Button(label="Appear Message", style=ButtonStyle.blurple)
     button1.callback = ask_appear
