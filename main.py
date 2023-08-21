@@ -790,7 +790,6 @@ async def changemessage(message: discord.Interaction):
             save(message.guild.id)
 
     async def ask_appear(interaction):
-        nonlocal caller
         if interaction.user != caller:
             await interaction.response.send_message(choice(funny), ephemeral=True)
             return
@@ -798,7 +797,6 @@ async def changemessage(message: discord.Interaction):
         await interaction.response.send_modal(modal)
 
     async def ask_catch(interaction):
-        nonlocal caller
         if interaction.user != caller:
             await interaction.response.send_message(choice(funny), ephemeral=True)
             return
