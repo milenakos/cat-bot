@@ -729,6 +729,27 @@ async def daily(message: discord.Interaction):
     await message.response.send_message("there is no daily cats why did you even try this" + suffix)
     await achemb(message, "daily", "send")
 
+@bot.slash_command(description="Preview early Cat Bot Premium information")
+async def premium(message: discord.Interaction):
+    embed = discord.Embed(title="Cat Bot Premium 👑 (5$ USD)", description="""*Please note this isn't available to purchase yet.*
+
+Perks:
+- Change spawn and catch messages
+Server admins will be able to change the messages sent when cats appear, and get caught.
+- Change the frequency of cat spawns
+Server admins will be able to change the time intervals between cat spawns.
+- Add your own cat types
+Server admins will be able to add their own cat types using existing server emojis, and specify their spawn chance.
+
+While perks only affect server admins, anyone on the server is free to buy this and will fully unlock the perks for this server.""", color=0x6E593C)
+
+    button = Button(label="Buy (5$)", style=ButtonStyle.gray, disabled=True)
+
+    myview = View(timeout=1)
+    myview.add_item(button)
+
+    await message.response.send_message(embed=embed, view=myview)
+
 @bot.slash_command(description="View your inventory")
 async def inventory(message: discord.Interaction, person_id: Optional[discord.Member] = discord.SlashOption(required=False, name="user", description="Person to view the inventory of!")):
     if person_id is None:
