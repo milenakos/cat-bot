@@ -284,8 +284,8 @@ async def myLoop():
                     db["cat"][str(i)] = message_is_sus.id
             if not fire[i]:
                 fire[i] = True
-        except Exception as e:
-            print(e)
+        except Exception:
+            pass
     db["summon_ids"] = list(dict.fromkeys(summon_id)) # remove all duplicates
     print("Finished cat loop")
     save("cattype")
