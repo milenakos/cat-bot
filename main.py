@@ -786,7 +786,7 @@ async def changemessage(message: discord.Interaction):
             save(message.guild.id)
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")
             await interaction.response.send_message("Success! Here is a preview:\n" + \
-                                                    self.input.value.formatstring(emoji=icon, type="Example", username="Cat Bot", count="1", time="69 years 420 days"))
+                                                    self.input.value.format(emoji=icon, type="Example", username="Cat Bot", count="1", time="69 years 420 days"))
 
     async def ask_appear(interaction):
         nonlocal caller
