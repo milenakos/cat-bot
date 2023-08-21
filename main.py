@@ -1648,7 +1648,7 @@ async def soft_force(channeley, cat_type=None):
         appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
     
     message_is_sus = await channeley.send(appearstring.format(emoji=str(icon), type=localcat), file=file)
-    db["cat"][str(channeley.id)] = message_lmao.id
+    db["cat"][str(channeley.id)] = message_is_sus.id
     save("cattype")
     save("cat")
 
