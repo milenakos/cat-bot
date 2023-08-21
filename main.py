@@ -2,7 +2,7 @@ import nextcord as discord
 import msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile
 from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
-from nextcord.ui import Button, View
+from nextcord.ui import Button, View, TextInputStyle
 from typing import Optional
 from random import randint, choice
 from PIL import Image
@@ -768,6 +768,7 @@ async def changemessage(message: discord.Interaction):
                 min_length=0,
                 max_length=1000,
                 label="Input",
+                style=TextInputStyle.paragraph,
                 required=False,
                 placeholder="{emoji} {type} has appeared! Type \"cat\" to catch it!",
                 default_value=db[str(message.guild.id)][self.type.lower()]
@@ -785,11 +786,13 @@ async def changemessage(message: discord.Interaction):
                     if i not in input_value:
                         await interaction.response.send_message(f"nuh uh! you are missing `{i}`.", ephemeral=True)
                         return
+                await interaction.response.send_message("Success! Here is a preview:\n" + \
+                                                    input_value.format(emoji=icon, type="Example", username="Cat Bot", count="1", time="69 years 420 days"))
+            else:
+                await interaction.response.send_message("Reset to defaults.")
             db[str(message.guild.id)][self.type.lower()] = input_value
             save(message.guild.id)
             icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")
-            await interaction.response.send_message("Success! Here is a preview:\n" + \
-                                                    input_value.format(emoji=icon, type="Example", username="Cat Bot", count="1", time="69 years 420 days"))
 
     async def ask_appear(interaction):
         nonlocal caller
