@@ -1605,6 +1605,7 @@ async def givecat(message: discord.Interaction, person_id: discord.Member = disc
 
 @bot.slash_command(description="(ADMIN) Setup cat in current channel", default_member_permissions=32)
 async def setup(message: discord.Interaction):
+    register_guild(message.guild.id)
     if int(message.channel.id) in db["summon_ids"]:
         await message.response.send_message("bruh you already setup cat here are you dumb\n\nthere might already be a cat sitting in chat. type `cat` to catch it.\nalternatively, you can try `/repair` if it still doesnt work")
         return
