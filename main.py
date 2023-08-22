@@ -1706,7 +1706,7 @@ async def reset(message: discord.Interaction, person_id: discord.Member = discor
         await message.response.send_message("ummm? this person isnt even registered in cat bot wtf are you wiping?????", ephemeral=True)
 
 @bot.event
-async def on_command_error(ctx, error):
+async def on_application_command_error(ctx, error):
     # ctx here is interaction
     if "KeyboardInterrupt" in str(type(error)):
         exit()
