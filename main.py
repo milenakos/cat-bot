@@ -1724,7 +1724,7 @@ async def on_application_command_error(ctx, error):
                     await ctx.followup.send(forbidden_error) # or as a followup if it already got responded to
                 except Exception:
                     await ctx.user.send(forbidden_error) # as last resort, dm the runner
-    elif "errors.NotFound" in str(type(error)):
+    elif "errors.NotFound" in str(type(error)) or "errors.ApplicationInvokeError" in str(type(error)):
         print("logged a NotFound error.")
         await ctx.channel.send("took too long, try running the command again")
     else:
