@@ -844,7 +844,7 @@ async def daily(message: discord.Interaction):
 
 @bot.slash_command(description="Preview early Cat Bot Premium information")
 async def premium(message: discord.Interaction):
-    embed = discord.Embed(title="Cat Bot Premium 👑 (5$ USD)", description="""*Please note this isn't available to purchase yet.*
+    embed = discord.Embed(title="Cat Bot Premium 👑 ($5 USD)", description="""*Please note this isn't available to purchase yet.*
 
 Perks:
 - Change spawn and catch messages
@@ -856,7 +856,7 @@ Server admins will be able to add their own cat types using existing server emoj
 
 While perks only affect server admins, anyone on the server is free to buy this and will fully unlock the perks for this server.""", color=0x6E593C)
 
-    button = Button(label="Buy (5$)", style=ButtonStyle.gray, disabled=True)
+    button = Button(label="Buy ($5)", style=ButtonStyle.gray, disabled=True)
 
     myview = View(timeout=1)
     myview.add_item(button)
