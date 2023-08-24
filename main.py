@@ -121,6 +121,9 @@ summon_id = db["summon_ids"]
 milenakoos = 0
 OWNER_ID = 0
 
+terminate_queue = []
+update_queue = []
+
 fire = {}
 for i in summon_id:
     fire[i] = True
@@ -254,18 +257,24 @@ async def achemb(message, ach_id, send_type, author_string=None):
         elif send_type == "followup": await message.followup.send(embed=embed, ephemeral=True)
         elif send_type == "response": await message.response.send_message(embed=embed)
 
-async def myLoop():
-    global bot, fire, summon_id
-    total_members = db["total_members"]
-    await bot.change_presence(
-            activity=discord.Activity(type=discord.ActivityType.competing, name=f"{len(bot.guilds)} servers with {total_members} people")
-    )
-    summon_id = db["summon_ids"]
-    print("Started cat loop (don't shutdown)")
+async def run_spawn(ch_id=None):
+    global bot, fire
+    
+    if ch_id:
+        summon_id = [ch_id]
+    else:
+        total_members = db["total_members"]
+        await bot.change_presence(
+                activity=discord.Activity(type=discord.ActivityType.competing, name=f"{len(bot.guilds)} servers with {total_members} people")
+        )
+        
+        summon_id = db["summon_ids"]
+        print("General cat loop is executing...")
+    
     for i in summon_id:
         try:
             if fire[i]:
-                if not db["cat"][str(i)]:
+                if not db["cat"][str(i)] and (not ch_id and i in db["spawn_times"].keys()):
                     file = discord.File("cat.png")
                     localcat = choice(CAT_TYPES)
                     db["cattype"][str(i)] = localcat
@@ -282,27 +291,30 @@ async def myLoop():
                     
                     message_is_sus = await channeley.send(appearstring.format(emoji=str(icon), type=localcat), file=file)
                     db["cat"][str(i)] = message_is_sus.id
-            if not fire[i]:
+            else fire[i]:
                 fire[i] = True
         except Exception:
             pass
-    db["summon_ids"] = list(dict.fromkeys(summon_id)) # remove all duplicates
-    print("Finished cat loop")
+    
     save("cattype")
     save("cat")
     
-    with tarfile.open("backup.tar.gz", "w:gz") as tar:
-        tar.add("data", arcname=os.path.sep)
+    if ch_id:
+        db["summon_ids"] = list(dict.fromkeys(summon_id)) # remove all duplicates
+        print("Finished cat loop")
     
-    backupchannel = await bot.fetch_channel(BACKUP_ID)
-    thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
-    await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
-    if not TOP_GG_TOKEN:
-        return
-    async with aiohttp.ClientSession() as session:
-        await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
-                                headers={"Authorization": TOP_GG_TOKEN},
-                                json={"server_count": len(bot.guilds)})
+        with tarfile.open("backup.tar.gz", "w:gz") as tar:
+            tar.add("data", arcname=os.path.sep)
+        
+        backupchannel = await bot.fetch_channel(BACKUP_ID)
+        thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
+        await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
+        if not TOP_GG_TOKEN:
+            return
+        async with aiohttp.ClientSession() as session:
+            await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
+                                    headers={"Authorization": TOP_GG_TOKEN},
+                                    json={"server_count": len(bot.guilds)})
 
 @tasks.loop(seconds=3600)
 async def update_presence():
@@ -313,7 +325,22 @@ async def update_presence():
         total += g.approximate_member_count
     db["total_members"] = total
     save("total_members")
-        
+
+async def spawning_loop(times, ch_id):
+    global terminate_queue, update_queue
+    while True:
+        await asyncio.sleep(randint(times[0], times[1]))
+        if ch_id in terminate_queue:
+            terminate_queue.remove(ch_id)
+            return
+        if ch_id in update_queue:
+            update_queue.remove(ch_id)
+            times = db["spawn_times"][ch_id]
+        try:
+            await run_spawn(ch_id)
+        except Exception as e:
+            print(e)
+
 @bot.event
 async def on_ready():
     global milenakoos, OWNER_ID
@@ -326,17 +353,18 @@ async def on_ready():
     milenakoos = appinfo.owner
     OWNER_ID = milenakoos.id
     update_presence.start()
-    while True:
-        try:
-            await asyncio.sleep(randint(120, 1200))
-            await myLoop()
-        except Exception:
-            pass
+
+    register_guild("spawn_times")
+    
+    for k, v in db["spawn_times"].items():
+        bot.loop.create_task(spawning_loop(v, k))
+    
+    bot.loop.create_task(spawning_loop([120, 1200], None))
 
 @bot.event
 async def on_message(message):
-    global fire, summon_id
-    text = message.content
+    global fire
+    text = message.contentclient.loop.create_task
     if message.author.id == bot.user.id:
         return
     
@@ -605,7 +633,7 @@ async def on_message(message):
     if text.lower().startswith("cat!print") and message.author.id == OWNER_ID:
         await message.reply(eval(text[9:]))
     if text.lower().startswith("cat!news") and message.author.id == OWNER_ID:
-        for i in summon_id:
+        for i in db["summon_ids"]:
             try:
                 channeley = await bot.fetch_channel(int(i))
                 await channeley.send(text[8:])
@@ -742,6 +770,38 @@ async def repair(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
     save("cat")
     await message.response.send_message("success")
+
+@bot.slash_command(description="(ADMIN, PREMIUM) Change the cat appear timings", default_member_permissions=32)
+async def changetimings(message: discord.Interaction,
+                        minimum_time: Optional[int] = discord.SlashOption(description="In seconds, minimum possible time between spawns (leave both empty to reset)")
+                        maximum_time: Optional[int] = discord.SlashOption(description="In seconds, maximum possible time between spawns (leave both empty to reset)")):
+    global terminate_queue, update_queue
+    try:
+        if not db[str(message.guild.id)]["premium"]:
+            raise Exception
+    except Exception:
+        db[str(message.guild.id)]["premium"] = False
+        await message.response.send_message(f"This feature is premium-only. Please see {premium.get_mention()}.")
+        return
+    
+    if int(message.channel.id) not in db["summon_ids"]:
+        await message.response.send_message("This channel isnt setupped. Please select a valid channel.", ephemeral=True)
+        return
+
+    if minimum_time == None and maximum_time == None:
+        # reset
+        terminate_queue.append(message.channel.id)
+        del db["spawn_times"][message.channel.id]
+        save("spawn_times")
+        await message.response.send_message("Success! This channel is now reset back to usual spawning intervals.")
+    else minimum_time and maximum_time:
+        if minimum_time < 20:
+            await message.response.send_message("Sorry, but minimum time must be above 20 seconds.", ephemeral=True)
+            return
+        update_queue.append(message.channel.id)
+        db["spawn_times"][message.channel.id] = [minimum_time, maximum_time]
+        save("spawn_times")
+        await message.response.send_message(f"Success! The next spawn will be {minimum_time} to {maximum_time} seconds from now.")
 
 @bot.slash_command(description="(ADMIN, PREMIUM) Change the cat appear and cought messages", default_member_permissions=32)
 async def changemessage(message: discord.Interaction):
