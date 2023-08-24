@@ -1782,6 +1782,7 @@ async def reset(message: discord.Interaction, person_id: discord.Member = discor
 @bot.event
 async def on_application_command_error(ctx, error):
     # ctx here is interaction
+    normal_crash = False
     if "KeyboardInterrupt" in str(type(error)):
         exit()
     elif "errors.Forbidden" in str(type(error)):
@@ -1803,25 +1804,29 @@ async def on_application_command_error(ctx, error):
         await ctx.channel.send("took too long, try running the command again")
     else:
         print("not a common error, crash reporting.")
+        normal_crash = True
         await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
         try:
             await achemb(ctx, "crasher", "send")
         except Exception:
             pass
 
-        try:
-            cont = ctx.content
-            print("debug", cont)
-        except Exception as e:
-            cont = "Error getting"
+    try:
+        cont = ctx.content
+        print("debug", cont)
+    except Exception as e:
+        cont = "Error getting"
 
-        _, _, error2 = sys.exc_info()
+    _, _, error2 = sys.exc_info()
 
+    if normal_crash:
         await milenakoos.send(
                 "There is an error happend:\n"
                 + str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error)
                 + "\n\nMessage text: "
                 + cont
         )
+    else:
+        print(str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error))
 
 bot.run(TOKEN)
