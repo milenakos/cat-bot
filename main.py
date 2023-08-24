@@ -787,7 +787,7 @@ async def changetimings(message: discord.Interaction,
         await message.response.send_message("This channel isnt setupped. Please select a valid channel.", ephemeral=True)
         return
 
-    if minimum_time == None and maximum_time == None:
+    if not minimum_time and not maximum_time:
         # reset
         terminate_queue.append(message.channel.id)
         del db["spawn_times"][message.channel.id]
@@ -814,6 +814,8 @@ async def changetimings(message: discord.Interaction,
             bot.loop.create_task(spawning_loop([minimum_time, maximum_time], message.channel.id))
         
         await message.response.send_message(f"Success! The next spawn will be {minimum_time} to {maximum_time} seconds from now.")
+    else:
+        await message.response.send_message("Please input all times.", ephemeral=True)
 
 @bot.slash_command(description="(ADMIN, PREMIUM) Change the cat appear and cought messages", default_member_permissions=32)
 async def changemessage(message: discord.Interaction):
