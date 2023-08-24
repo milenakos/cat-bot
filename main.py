@@ -293,8 +293,8 @@ async def run_spawn(ch_id=None):
                     db["cat"][str(i)] = message_is_sus.id
             else:
                 fire[i] = True
-        except Exception:
-            pass
+        except Exception as e:
+            print(e)
     
     save("cattype")
     save("cat")
