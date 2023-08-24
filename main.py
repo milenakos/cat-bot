@@ -329,11 +329,13 @@ async def spawning_loop(times, ch_id):
     print("opened a loop for", ch_id)
     while True:
         await asyncio.sleep(randint(times[0], times[1]))
-        if ch_id in terminate_queue:
-            terminate_queue.remove(ch_id)
+        if str(ch_id) in terminate_queue:
+            print("terminating", ch_id)
+            terminate_queue.remove(str(ch_id))
             return
-        if ch_id in update_queue:
-            update_queue.remove(ch_id)
+        if str(ch_id) in update_queue:
+            print("updating", ch_id)
+            update_queue.remove(str(ch_id))
             times = db["spawn_times"][ch_id]
         try:
             await run_spawn(ch_id)
@@ -789,7 +791,7 @@ async def changetimings(message: discord.Interaction,
 
     if not minimum_time and not maximum_time:
         # reset
-        terminate_queue.append(message.channel.id)
+        terminate_queue.append(str(message.channel.id))
         try:
             del db["spawn_times"][message.channel.id]
         except:
@@ -808,7 +810,7 @@ async def changetimings(message: discord.Interaction,
             do_spawn = True
         else:
             do_spawn = False
-            update_queue.append(message.channel.id)
+            update_queue.append(str(message.channel.id))
         
         db["spawn_times"][message.channel.id] = [minimum_time, maximum_time]
         save("spawn_times")
