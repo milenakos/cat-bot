@@ -273,28 +273,26 @@ async def run_spawn(ch_id=None):
     
     for i in summon_id:
         try:
-            if fire[i]:
-                if not db["cat"][str(i)] and (ch_id or i not in db["spawn_times"].keys()):
-                    file = discord.File("cat.png")
-                    localcat = choice(CAT_TYPES)
-                    db["cattype"][str(i)] = localcat
-                    icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower() + "cat")
-                    channeley = await bot.fetch_channel(int(i))
-                    try:
-                        if db[str(channeley.guild.id)]["appear"]:
-                            appearstring = db[str(channeley.guild.id)]["appear"]
-                        else:
-                            appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
-                    except Exception as e:
-                        db[str(channeley.guild.id)]["appear"] = ""
+            if fire[i] and not db["cat"][str(i)] and (ch_id or i not in db["spawn_times"].keys()):
+                file = discord.File("cat.png")
+                localcat = choice(CAT_TYPES)
+                db["cattype"][str(i)] = localcat
+                icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower() + "cat")
+                channeley = await bot.fetch_channel(int(i))
+                try:
+                    if db[str(channeley.guild.id)]["appear"]:
+                        appearstring = db[str(channeley.guild.id)]["appear"]
+                    else:
                         appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
-                    
-                    message_is_sus = await channeley.send(appearstring.format(emoji=str(icon), type=localcat), file=file)
-                    db["cat"][str(i)] = message_is_sus.id
-            else:
-                fire[i] = True
+                except Exception as e:
+                    db[str(channeley.guild.id)]["appear"] = ""
+                    appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
+                
+                message_is_sus = await channeley.send(appearstring.format(emoji=str(icon), type=localcat), file=file)
+                db["cat"][str(i)] = message_is_sus.id
         except Exception as e:
             print(e)
+        fire[i] = True
     
     save("cattype")
     save("cat")
