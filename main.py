@@ -364,7 +364,7 @@ async def on_ready():
 @bot.event
 async def on_message(message):
     global fire
-    text = message.contentclient.loop.create_task
+    text = message.content
     if message.author.id == bot.user.id:
         return
     
