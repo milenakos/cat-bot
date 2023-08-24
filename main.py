@@ -328,6 +328,7 @@ async def update_presence():
 
 async def spawning_loop(times, ch_id):
     global terminate_queue, update_queue
+    print("opened a loop for", ch_id)
     while True:
         await asyncio.sleep(randint(times[0], times[1]))
         if ch_id in terminate_queue:
@@ -798,9 +799,22 @@ async def changetimings(message: discord.Interaction,
         if minimum_time < 20:
             await message.response.send_message("Sorry, but minimum time must be above 20 seconds.", ephemeral=True)
             return
-        update_queue.append(message.channel.id)
+        if maximum_time <= minimum_time:
+            await message.response.send_message("Sorry, but minimum time must be less than maximum time.", ephemeral=True)
+            return
+        
+        if message.channel.id not in db["spawn_times"].keys():
+            do_spawn = True
+        else:
+            do_spawn = False
+            update_queue.append(message.channel.id)
+        
         db["spawn_times"][message.channel.id] = [minimum_time, maximum_time]
         save("spawn_times")
+        
+        if do_spawn:
+            bot.loop.create_task(spawning_loop([minimum_time, maximum_time], message.channel.id))
+        
         await message.response.send_message(f"Success! The next spawn will be {minimum_time} to {maximum_time} seconds from now.")
 
 @bot.slash_command(description="(ADMIN, PREMIUM) Change the cat appear and cought messages", default_member_permissions=32)
