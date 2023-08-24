@@ -269,12 +269,12 @@ async def run_spawn(ch_id=None):
         )
         
         summon_id = db["summon_ids"]
-        print("General cat loop is executing...")
+    print("Cat loop for", ch_id, "is running")
     
     for i in summon_id:
         try:
             if fire[i]:
-                if not db["cat"][str(i)] and (not ch_id and i in db["spawn_times"].keys()):
+                if not db["cat"][str(i)] and (ch_id or i not in db["spawn_times"].keys()):
                     file = discord.File("cat.png")
                     localcat = choice(CAT_TYPES)
                     db["cattype"][str(i)] = localcat
@@ -299,7 +299,7 @@ async def run_spawn(ch_id=None):
     save("cattype")
     save("cat")
     
-    if ch_id:
+    if not ch_id:
         db["summon_ids"] = list(dict.fromkeys(summon_id)) # remove all duplicates
         print("Finished cat loop")
     
