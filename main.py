@@ -790,7 +790,10 @@ async def changetimings(message: discord.Interaction,
     if not minimum_time and not maximum_time:
         # reset
         terminate_queue.append(message.channel.id)
-        del db["spawn_times"][message.channel.id]
+        try:
+            del db["spawn_times"][message.channel.id]
+        except:
+            del db["spawn_times"][str(message.channel.id)] # IDK WHY BLAME JSON
         save("spawn_times")
         await message.response.send_message("Success! This channel is now reset back to usual spawning intervals.")
     elif minimum_time and maximum_time:
@@ -1689,6 +1692,9 @@ async def setup(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
     db["cattype"][str(message.channel.id)] = ""
     fire[str(message.channel.id)] = True
+    save("summon_ids")
+    save("cat")
+    save("cattype")
     await soft_force(message.channel)
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
 
