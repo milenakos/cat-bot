@@ -794,7 +794,7 @@ async def changetimings(message: discord.Interaction,
         del db["spawn_times"][message.channel.id]
         save("spawn_times")
         await message.response.send_message("Success! This channel is now reset back to usual spawning intervals.")
-    else minimum_time and maximum_time:
+    elif minimum_time and maximum_time:
         if minimum_time < 20:
             await message.response.send_message("Sorry, but minimum time must be above 20 seconds.", ephemeral=True)
             return
