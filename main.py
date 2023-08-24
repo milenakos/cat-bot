@@ -773,8 +773,8 @@ async def repair(message: discord.Interaction):
 
 @bot.slash_command(description="(ADMIN, PREMIUM) Change the cat appear timings", default_member_permissions=32)
 async def changetimings(message: discord.Interaction,
-                        minimum_time: Optional[int] = discord.SlashOption(description="In seconds, minimum possible time between spawns (leave both empty to reset)")
-                        maximum_time: Optional[int] = discord.SlashOption(description="In seconds, maximum possible time between spawns (leave both empty to reset)")):
+                        minimum_time: Optional[int] = discord.SlashOption(optional=True, description="In seconds, minimum possible time between spawns (leave both empty to reset)"),
+                        maximum_time: Optional[int] = discord.SlashOption(optional=True, description="In seconds, maximum possible time between spawns (leave both empty to reset)")):
     global terminate_queue, update_queue
     try:
         if not db[str(message.guild.id)]["premium"]:
