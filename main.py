@@ -291,7 +291,7 @@ async def run_spawn(ch_id=None):
                     
                     message_is_sus = await channeley.send(appearstring.format(emoji=str(icon), type=localcat), file=file)
                     db["cat"][str(i)] = message_is_sus.id
-            else fire[i]:
+            else:
                 fire[i] = True
         except Exception:
             pass
