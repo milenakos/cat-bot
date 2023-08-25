@@ -273,7 +273,7 @@ async def run_spawn(ch_id=None):
     
     for i in summon_id:
         try:
-            if fire[i] and not db["cat"][str(i)] and (ch_id or i not in db["spawn_times"].keys()):
+            if fire[i] and not db["cat"][str(i)] and (ch_id or str(i) not in db["spawn_times"].keys()):
                 file = discord.File("cat.png")
                 localcat = choice(CAT_TYPES)
                 db["cattype"][str(i)] = localcat
