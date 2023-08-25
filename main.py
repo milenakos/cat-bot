@@ -20,6 +20,11 @@ TOKEN = os.environ['token']
 # set to False to disable /vote
 TOP_GG_TOKEN = os.environ['topggtoken']
 
+# whether payment.py file exists (it is closed source due to being boring)
+# if set to True, will import it and run .start()
+# set to False to disable
+PAYMENT_SERVER_EXISTS = True
+
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 # set to False to disable
 GITHUB_CHANNEL_ID = 1060965767044149249
@@ -95,6 +100,10 @@ class PopulatedDict(UserDict):
                 raise KeyError
 
 db = PopulatedDict()
+
+if PAYMENT_SERVER_EXISTS:
+    from payment import start
+    start()
 
 with open("aches.json", "r") as f:
     ach_list = json.load(f)
