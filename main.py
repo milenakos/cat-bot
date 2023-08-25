@@ -261,7 +261,7 @@ async def run_spawn(ch_id=None):
     global bot, fire
     
     if ch_id:
-        summon_id = [ch_id]
+        summon_id = [int(ch_id)]
     else:
         total_members = db["total_members"]
         await bot.change_presence(
@@ -290,8 +290,8 @@ async def run_spawn(ch_id=None):
                 
                 message_is_sus = await channeley.send(appearstring.format(emoji=str(icon), type=localcat), file=file)
                 db["cat"][str(i)] = message_is_sus.id
-        except Exception as e:
-            print(e)
+        except Exception:
+            pass
         fire[i] = True
     
     save("cattype")
@@ -806,7 +806,7 @@ async def changetimings(message: discord.Interaction,
             await message.response.send_message("Sorry, but minimum time must be less than maximum time.", ephemeral=True)
             return
         
-        if message.channel.id not in db["spawn_times"].keys():
+        if str(message.channel.id) not in db["spawn_times"].keys():
             do_spawn = True
         else:
             do_spawn = False
