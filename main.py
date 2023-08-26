@@ -702,7 +702,7 @@ if PATREON_LINK:
         button = Button(label="Support Cat On Patreon!", style=ButtonStyle.blurple, url=PATREON_LINK)
         view = View()
         view.add_item(button)
-        await message.channel.send("Thanks for interest in my Patreon! Link is below.", view=view)
+        await message.response.send_message("Thanks for interest in my Patreon! Link is below.", view=view)
 
 @bot.slash_command(description="View information about the bot")
 async def info(message: discord.Interaction):
