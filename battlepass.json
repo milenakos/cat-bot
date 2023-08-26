@@ -37,6 +37,6 @@
     {"req": "catch_fast", "req_data": 1, "reward": "Real", "reward_amount": 1},
     
     {"req": "nothing", "req_data": "0", "reward": "Fine", "reward_amount": 0},
-    {"req": "nothing2", "req_data": "0", "reward": "Fine", "reward_amount": 0},
+    {"req": "nothing2", "req_data": "0", "reward": "Fine", "reward_amount": 0}
  ]
 }
