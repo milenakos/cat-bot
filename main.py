@@ -273,7 +273,7 @@ async def run_spawn(ch_id=None):
         )
         
         summon_id = db["summon_ids"]
-    print("Cat loop for", ch_id, "is running")
+        print("Main cat loop is running")
     
     for i in summon_id:
         try:
