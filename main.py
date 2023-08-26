@@ -20,6 +20,10 @@ TOKEN = os.environ['token']
 # set to False to disable /vote
 TOP_GG_TOKEN = os.environ['topggtoken']
 
+# will be occasionally pushed in catch messages
+# leave empty to disable
+PATREON_LINK = "https://patreon.com/TheStaringCat"
+
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 # set to False to disable
 GITHUB_CHANNEL_ID = 1060965767044149249
@@ -572,11 +576,17 @@ async def on_message(message):
             else:
                 coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
             raw_user = await bot.fetch_user(message.author.id)
+            view = None
+            if randint(0, 50) == 0 and PATREON_LINK:
+                # 2% chance of advertising Patreon
+                button = Button(label="Support Cat On Patreon!", style=ButtonStyle.blurple, url=PATREON_LINK)
+                view = View()
+                view.add_item(button)
             await message.channel.send(coughstring.format(username=raw_user.display_name.replace("@", "`@`"),
                                                            emoji=icon,
                                                            type=le_emoji,
                                                            count=add_cat(message.guild.id, message.author.id, le_emoji),
-                                                           time=caught_time[:-1]))
+                                                           time=caught_time[:-1]), view=view)
             if do_time and time_caught < get_time(message.guild.id, message.author.id):
                 set_time(message.guild.id, message.author.id, time_caught)
             if do_time and time_caught > get_time(message.guild.id, message.author.id, "slow"):
