@@ -696,6 +696,14 @@ async def on_guild_join(guild):
     if bot.user.id == 966695034340663367: unofficial_note = ""
     await ch.send(unofficial_note + "Thanks for adding me!\nTo setup a channel to summon cats in, use /setup!\nJoin the support server here: https://discord.gg/WCTzD3YQEk\nHave a nice day :)")
 
+if PATREON_LINK:
+    @bot.slash_command(description="View Cat's Patreon")
+    async def patreon(message):
+        button = Button(label="Support Cat On Patreon!", style=ButtonStyle.blurple, url=PATREON_LINK)
+        view = View()
+        view.add_item(button)
+        await message.channel.send("Thanks for interest in my Patreon! Link is below.", view=view)
+
 @bot.slash_command(description="View information about the bot")
 async def info(message: discord.Interaction):
     await message.response.defer()
