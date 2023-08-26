@@ -20,11 +20,6 @@ TOKEN = os.environ['token']
 # set to False to disable /vote
 TOP_GG_TOKEN = os.environ['topggtoken']
 
-# whether payment.py file exists (it is closed source due to being boring)
-# if set to True, will import it and run .start()
-# set to False to disable
-PAYMENT_SERVER_EXISTS = True
-
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 # set to False to disable
 GITHUB_CHANNEL_ID = 1060965767044149249
@@ -100,10 +95,6 @@ class PopulatedDict(UserDict):
                 raise KeyError
 
 db = PopulatedDict()
-
-if PAYMENT_SERVER_EXISTS:
-    from payment import start
-    start()
 
 with open("aches.json", "r") as f:
     ach_list = json.load(f)
@@ -662,10 +653,6 @@ async def on_message(message):
                 db["0"][str(stuff[1])]["custom"] = stuff[2]
         save("0")
         await message.reply("success")
-    if text.lower() == "cat!premium" and message.author.id == OWNER_ID:
-        db[str(message.guild.id)]["premium"] = True
-        save(message.guild.id)
-        await message.reply("👑 this server now has Cat Bot Premium status! congrats!")
 
     try:
         if db["cattype"][str(message.channel.id)] == "Sus":
@@ -781,22 +768,11 @@ async def repair(message: discord.Interaction):
     save("cat")
     await message.response.send_message("success")
 
-@bot.slash_command(description="(ADMIN, PREMIUM) Change the cat appear timings", default_member_permissions=32)
+@bot.slash_command(description="(ADMIN) Change the cat appear timings", default_member_permissions=32)
 async def changetimings(message: discord.Interaction,
                         minimum_time: Optional[int] = discord.SlashOption(required=False, description="In seconds, minimum possible time between spawns (leave both empty to reset)"),
                         maximum_time: Optional[int] = discord.SlashOption(required=False, description="In seconds, maximum possible time between spawns (leave both empty to reset)")):
     global terminate_queue, update_queue
-    try:
-        if not db[str(message.guild.id)]["premium"]:
-            raise Exception
-    except Exception:
-        db[str(message.guild.id)]["premium"] = False
-        await message.response.send_message(f"This feature is premium-only. Please see {premium.get_mention()}.")
-        return
-    
-    if int(message.channel.id) not in db["summon_ids"]:
-        await message.response.send_message("This channel isnt setupped. Please select a valid channel.", ephemeral=True)
-        return
 
     if not minimum_time and not maximum_time:
         # reset
@@ -831,16 +807,8 @@ async def changetimings(message: discord.Interaction,
     else:
         await message.response.send_message("Please input all times.", ephemeral=True)
 
-@bot.slash_command(description="(ADMIN, PREMIUM) Change the cat appear and cought messages", default_member_permissions=32)
+@bot.slash_command(description="(ADMIN) Change the cat appear and cought messages", default_member_permissions=32)
 async def changemessage(message: discord.Interaction):
-    try:
-        if not db[str(message.guild.id)]["premium"]:
-            raise Exception
-    except Exception:
-        db[str(message.guild.id)]["premium"] = False
-        await message.response.send_message(f"This feature is premium-only. Please see {premium.get_mention()}.")
-        return
-
     caller = message.user
 
     class InputModal(discord.ui.Modal):
@@ -929,27 +897,6 @@ async def daily(message: discord.Interaction):
     if TOP_GG_TOKEN: suffix = "\nthere ARE cats for voting tho, check out `/vote`"
     await message.response.send_message("there is no daily cats why did you even try this" + suffix)
     await achemb(message, "daily", "send")
-
-@bot.slash_command(description="Preview early Cat Bot Premium information")
-async def premium(message: discord.Interaction):
-    embed = discord.Embed(title="Cat Bot Premium 👑 ($5 USD)", description="""*Please note this isn't available to purchase yet.*
-
-Perks:
-- Change spawn and catch messages
-Server admins will be able to change the messages sent when cats appear, and get caught.
-- Change the frequency of cat spawns
-Server admins will be able to change the time intervals between cat spawns.
-- Add your own cat types
-Server admins will be able to add their own cat types using existing server emojis, and specify their spawn chance.
-
-While perks only affect server admins, anyone on the server is free to buy this and will fully unlock the perks for this server.""", color=0x6E593C)
-
-    button = Button(label="Buy ($5)", style=ButtonStyle.gray, disabled=True)
-
-    myview = View(timeout=1)
-    myview.add_item(button)
-
-    await message.response.send_message(embed=embed, view=myview)
 
 @bot.slash_command(description="View your inventory")
 async def inventory(message: discord.Interaction, person_id: Optional[discord.Member] = discord.SlashOption(required=False, name="user", description="Person to view the inventory of!")):
