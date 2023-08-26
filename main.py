@@ -774,6 +774,10 @@ async def changetimings(message: discord.Interaction,
                         maximum_time: Optional[int] = discord.SlashOption(required=False, description="In seconds, maximum possible time between spawns (leave both empty to reset)")):
     global terminate_queue, update_queue
 
+    if int(message.channel.id) not in db["summon_ids"]:
+        await message.response.send_message("This channel isnt setupped. Please select a valid channel.", ephemeral=True)
+        return
+
     if not minimum_time and not maximum_time:
         # reset
         terminate_queue.append(str(message.channel.id))
