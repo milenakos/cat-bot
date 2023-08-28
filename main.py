@@ -1684,6 +1684,11 @@ async def forget(message: discord.Interaction):
         abc = db["summon_ids"]
         abc.remove(int(message.channel.id))
         db["summon_ids"] = abc
+        try:
+            del db["spawn_times"][str(message.channel.id)]
+            save("spawn_times")
+        except Exception:
+             pass
         save("summon_ids")
         await message.response.send_message(f"ok, now i wont send cats in <#{message.channel.id}>")
     else:
