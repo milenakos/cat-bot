@@ -606,6 +606,7 @@ async def on_message(message):
                 coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
             raw_user = await bot.fetch_user(message.author.id)
             view = None
+            button = None
             
             if randint(0, 50) == 0:
                 button = Button(label="Support Cat On Patreon!", style=ButtonStyle.gray, url="https://patreon.com/TheStaringCat")
