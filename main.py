@@ -20,10 +20,6 @@ TOKEN = os.environ['token']
 # set to False to disable /vote
 TOP_GG_TOKEN = os.environ['topggtoken']
 
-# will be occasionally pushed in catch messages
-# leave empty to disable
-PATREON_LINK = "https://patreon.com/TheStaringCat"
-
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 # set to False to disable
 GITHUB_CHANNEL_ID = 1060965767044149249
@@ -610,12 +606,19 @@ async def on_message(message):
                 coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
             raw_user = await bot.fetch_user(message.author.id)
             view = None
-            if randint(0, 50) == 0 and PATREON_LINK:
-                # 2% chance of advertising Patreon
-                button = Button(label="Support Cat On Patreon!", style=ButtonStyle.blurple, url=PATREON_LINK)
+            
+            if randint(0, 50) == 0:
+                button = Button(label="Support Cat On Patreon!", style=ButtonStyle.gray, url="https://patreon.com/TheStaringCat")
+            elif randint(0, 50) == 0 and TOP_GG_TOKEN:
+                button = Button(label="Use /vote for extra cats!", style=ButtonStyle.gray, disabled=True)
+            elif randint(0, 50) == 0:
+                button = Button(label="Join our Discord!", style=ButtonStyle.gray, url="https://discord.gg/WCTzD3YQEk")
+            
+            if button:
                 view = View()
                 view.add_item(button)
-            await message.channel.send(coughstring.format(username=raw_user.display_name.replace("@", "`@`"),
+            
+            await message.channel.send(coughstring.format(username=raw_user.display_name.replace("_", "\_"),
                                                            emoji=icon,
                                                            type=le_emoji,
                                                            count=add_cat(message.guild.id, message.author.id, le_emoji),
@@ -735,13 +738,12 @@ async def on_guild_join(guild):
     if bot.user.id == 966695034340663367: unofficial_note = ""
     await ch.send(unofficial_note + "Thanks for adding me!\nTo setup a channel to summon cats in, use /setup!\nJoin the support server here: https://discord.gg/WCTzD3YQEk\nHave a nice day :)")
 
-if PATREON_LINK:
-    @bot.slash_command(description="View Cat's Patreon")
-    async def patreon(message):
-        button = Button(label="Support Cat On Patreon!", style=ButtonStyle.blurple, url=PATREON_LINK)
-        view = View()
-        view.add_item(button)
-        await message.response.send_message("Thanks for interest in my Patreon! Link is below.", view=view)
+@bot.slash_command(description="View Cat's Patreon")
+async def patreon(message):
+    button = Button(label="Support Cat On Patreon!", style=ButtonStyle.blurple, url="https://patreon.com/TheStaringCat")
+    view = View()
+    view.add_item(button)
+    await message.response.send_message("Thanks for interest in my Patreon! Link is below.", view=view)
 
 @bot.slash_command(description="View information about the bot")
 async def info(message: discord.Interaction):
