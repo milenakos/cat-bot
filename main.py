@@ -350,8 +350,23 @@ async def update_presence():
 async def spawning_loop(times, ch_id):
     global terminate_queue, update_queue
     print("opened a loop for", ch_id)
+    can_recover = True # we only recover the first time the loop is ran
     while True:
-        await asyncio.sleep(randint(times[0], times[1]))
+        try:
+            if can_recover and db["recovery_times"][str(ch_id)] > time.time():
+                # recover
+                wait_time = db["recovery_times"][str(ch_id)] - time.time()
+                print("recovered", ch_id, "looping in", wait_time)
+            else:
+                raise Exception
+        except Exception:
+            wait_time = randint(times[0], times[1])
+            db["recovery_times"][str(ch_id)] = time.time() + wait_time
+
+        can_recover = False
+        
+        await asyncio.sleep(wait_time)
+        
         if str(ch_id) in terminate_queue:
             print("terminating", ch_id)
             terminate_queue.remove(str(ch_id))
@@ -360,6 +375,7 @@ async def spawning_loop(times, ch_id):
             print("updating", ch_id)
             update_queue.remove(str(ch_id))
             times = db["spawn_times"][ch_id]
+        
         try:
             await run_spawn(ch_id)
         except Exception as e:
@@ -380,6 +396,7 @@ async def on_ready():
     update_presence.start()
 
     register_guild("spawn_times")
+    register_guild("recovery_times")
 
     # we create all spawning loops
     for k, v in db["spawn_times"].items():
@@ -1984,4 +2001,3 @@ async def on_application_command_error(ctx, error):
 
 # run the bot!
 bot.run(TOKEN)
-# LITERALLY 1984
