@@ -362,6 +362,7 @@ async def spawning_loop(times, ch_id):
         except Exception:
             wait_time = randint(times[0], times[1])
             db["recovery_times"][str(ch_id)] = time.time() + wait_time
+            save("recovery_times")
 
         can_recover = False
         
