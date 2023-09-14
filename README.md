@@ -1,5 +1,5 @@
-# Cat Bot ![Discord Server](https://img.shields.io/discord/966586000417619998?label=discord&logo=discord)
-Discord [Cat Bot](https://discord.com/api/oauth2/authorize?client_id=966695034340663367&permissions=277025778752&scope=bot%20applications.commands) Source Code
+# Cat Bot [![Discord Server](https://img.shields.io/discord/966586000417619998?label=discord&logo=discord)](https://discord.gg/cat-stand-966586000417619998) [![Server Count](https://top.gg/api/widget/servers/966695034340663367.svg)](https://discord.com/api/oauth2/authorize?client_id=966695034340663367&permissions=277025778752&scope=bot%20applications.commands)
+Discord Cat Bot Source Code
 
 # Setup
 
@@ -18,9 +18,13 @@ Discord [Cat Bot](https://discord.com/api/oauth2/authorize?client_id=96669503434
 
    `pip install -r requirements.txt`
 
-3. Create a `data` folder, which will house all your information.
+3. Create a `db.json` file. Here is a template of an empty db:
 
-4. Go inside of the `main.py` file, on first few lines you can change some config values, such as guild ID, backup channel ID, and Discord token.
+   `{"cat": {}, "summon_ids": [], "0": {}, "cattype": {}}`
+
+   Note Cat Bot doesn't use that file and instead migrates it to `data` folder.
+
+5. Go inside of the `main.py` file, on first few lines you can change some config values, such as guild ID, backup channel ID, and Discord token.
 > **Note**
 >
 > You will need to create a guild and upload all emojis to that guild, making sure your bot can view the guild. You can download all the emojis [here](https://calion.repl.co/static/catbot/emojis.zip)
