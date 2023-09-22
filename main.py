@@ -612,12 +612,20 @@ async def on_message(message):
             allowedemojis = []
             for i in type_dict.keys():
                 allowedemojis.append(i.lower() + "cat")
-            
+
+            icon = None
             for k, v in emojis.items():
                 if v in catchcontents and k in allowedemojis:
-                    le_emoji = k
+                    icon = k
                     break
-            icon = le_emoji
+
+            if not icon: return
+                
+            for i in type_dict.keys():
+                if i.lower() in icon:
+                    le_emoji = i
+                    break
+
             try:
                 if db[str(message.guild.id)]["cought"]:
                     pass
