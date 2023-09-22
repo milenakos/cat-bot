@@ -577,10 +577,13 @@ async def on_message(message):
                 await message.channel.send("I don't have permission to delete messages. Please re-invite the bot or manually add that permission.")
             try:
                 var = await message.channel.fetch_message(cat_temp)
-                catchtime = var.created_at
-                catchcontents = var.content
-                await var.delete()
-
+            except Exception:
+                await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
+                return
+            catchtime = var.created_at
+            catchcontents = var.content
+            await var.delete()
+            try:
                 # some math to make time look cool
                 then = time.mktime(catchtime.timetuple()) + catchtime.microsecond / 1e6
                 time_caught = abs(round(((current_time - then) * 100)) / 100) # cry about it
