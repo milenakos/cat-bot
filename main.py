@@ -616,7 +616,7 @@ async def on_message(message):
             icon = None
             for k, v in emojis.items():
                 if v in catchcontents and k in allowedemojis:
-                    icon = k
+                    icon = v
                     break
 
             if not icon: return
