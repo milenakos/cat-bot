@@ -258,7 +258,7 @@ def get_emoji(name):
         return emojis[name]
     else:
         result = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=name)
-        emojis[name] = result
+        emojis[name] = str(result)
         return result
 
 # this is some common code which is run whether someone gets an achievement
