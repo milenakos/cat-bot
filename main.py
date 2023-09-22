@@ -609,8 +609,12 @@ async def on_message(message):
                 do_time = False
                 caught_time = "undefined amounts of time "
 
+            allowedemojis = []
+            for i in type_dict.keys():
+                allowedemojis.append(i.lower() + "cat")
+            
             for k, v in emojis.items():
-                if v in catchcontents:
+                if v in catchcontents and k in allowedemojis:
                     le_emoji = k
                     break
             icon = le_emoji
