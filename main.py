@@ -128,7 +128,12 @@ OWNER_ID = 0
 terminate_queue = []
 update_queue = []
 
-# fire list controls whether to spawn the cat or skip to the next cycle (this is done on /forcespawn to prevent too many spawns)
+# we store all discord text emojis to not refetch them a bajillion times
+# (this does mean you will need to restart the bot if you reupload an emoji)
+emojis = {}
+
+# fire list controls whether to spawn the cat or skip to the next cycle
+# (this is done on /forcespawn to prevent too many spawns)
 fire = {}
 for i in summon_id:
     fire[i] = True
@@ -247,6 +252,15 @@ def give_ach(server_id, person_id, ach_id, reverse=False):
     save(server_id)
     return ach_list[ach_id]
 
+def get_emoji(name):
+    global emojis
+    if name in emojis.keys():
+        return emojis[name]
+    else:
+        result = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=name)
+        emojis[name] = result
+        return result
+
 # this is some common code which is run whether someone gets an achievement
 async def achemb(message, ach_id, send_type, author_string=None):
     if not author_string:
@@ -293,8 +307,7 @@ async def run_spawn(ch_id=None):
             if fire[i] and not db["cat"][str(i)] and (ch_id or str(i) not in db["spawn_times"].keys()):
                 file = discord.File("cat.png")
                 localcat = choice(CAT_TYPES)
-                db["cattype"][str(i)] = localcat
-                icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower() + "cat")
+                icon = get_emoji(localcat.lower() + "cat")
                 channeley = await bot.fetch_channel(int(i))
                 try:
                     if db[str(channeley.guild.id)]["appear"]:
@@ -311,7 +324,6 @@ async def run_spawn(ch_id=None):
             pass
         fire[i] = True
     
-    save("cattype")
     save("cat")
     
     if not ch_id:
@@ -472,14 +484,14 @@ async def on_message(message):
         if total_vow != len(text):
             const_perc = len(text) / (len(text) - total_vow)
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
-            await message.add_reaction(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat"))
+            await message.add_reaction(get_emoji("staring_cat"))
     
     if "robotop" in message.author.name.lower() and "i rate **cat" in message.content.lower():
-        icon = str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="no_cat_throphy")) + " "
+        icon = str(get_emoji("no_cat_throphy")) + " "
         await message.reply("**RoboTop**, I rate **you** 0 cats " + icon * 5)
 
     if "leafbot" in message.author.name.lower() and "hmm... i would rate cat" in message.content.lower():
-        icon = str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="no_cat_throphy")) + " "
+        icon = str(get_emoji("no_cat_throphy")) + " "
         await message.reply("Hmm... I would rate you **0 cats**! " + icon * 5)
         
     if text == "lol_i_have_dmed_the_cat_bot_and_got_an_ach" and not message.guild:
@@ -503,7 +515,7 @@ async def on_message(message):
             
     for r in reactions:
         if r[0] in text.lower():
-            if r[1] == "custom": await message.add_reaction(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=r[2]))
+            if r[1] == "custom": await message.add_reaction(get_emoji(r[2]))
             elif r[1] == "vanilla": await message.add_reaction(r[2])
             
     for resp in responses:
@@ -513,7 +525,7 @@ async def on_message(message):
         (resp[1] == "in" and resp[0] in text.lower()):
             await message.reply(resp[2])
         
-    if message.author in message.mentions: await message.add_reaction(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat"))
+    if message.author in message.mentions: await message.add_reaction(get_emoji("staring_cat"))
 
     if (":place_of_worship:" in text or "🛐" in text) and (":cat:" in text or ":staring_cat:" in text or "🐱" in text): await achemb(message, "worship", "reply")
     if text.lower() in ["ach", "cat!ach"]: await achemb(message, "test_ach", "reply")
@@ -551,7 +563,7 @@ async def on_message(message):
             is_cat = False
         if not is_cat or timestamp > time.time() or (message.author.bot and message.author.id not in WHITELISTED_BOTS):
             # if there is no cat, you are /preventcatch-ed, or you aren't a whitelisted bot
-            icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
+            icon = get_emoji("pointlaugh")
             await message.add_reaction(icon)
         elif is_cat:
             current_time = message.created_at
@@ -566,6 +578,7 @@ async def on_message(message):
             try:
                 var = await message.channel.fetch_message(cat_temp)
                 catchtime = var.created_at
+                catchcontents = var.content
                 await var.delete()
 
                 # some math to make time look cool
@@ -596,8 +609,11 @@ async def on_message(message):
                 do_time = False
                 caught_time = "undefined amounts of time "
 
-            le_emoji = db["cattype"][str(message.channel.id)]
-            icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=le_emoji.lower() + "cat")
+            for k, v in emojis.items():
+                if v in catchcontents:
+                    le_emoji = k
+                    break
+            icon = le_emoji
             try:
                 if db[str(message.guild.id)]["cought"]:
                     pass
@@ -660,7 +676,7 @@ async def on_message(message):
                 reward = level["reward"]
                 reward_amount = level["reward_amount"]
                 add_cat(message.guild.id, message.author.id, reward, reward_amount)
-                icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=reward.lower() + "cat")
+                icon = get_emoji(reward.lower() + "cat")
                 new = add_cat(message.guild.id, message.author.id, "battlepass")
                 embed = discord.Embed(title=f"Level {new} complete!", description=f"You have recieved {icon} {reward_amount} {reward} cats!", color=0x007F0E).set_author(name="Cattlepass level!", icon_url="https://pomf2.lain.la/f/zncxu6ej.png")
                 await message.channel.send(embed=embed)
@@ -693,11 +709,9 @@ async def on_message(message):
         abc.append(int(message.channel.id))
         db["summon_ids"] = abc
         db["cat"][str(message.channel.id)] = False
-        db["cattype"][str(message.channel.id)] = ""
         fire[str(message.channel.id)] = True
         save("summon_ids")
         save("cat")
-        save("cattype")
         await message.reply(f"ok, now i will also send cats in <#{message.channel.id}>")
     if text.lower().startswith("cat!print") and message.author.id == OWNER_ID:
         await message.reply(eval(text[9:]))
@@ -723,7 +737,8 @@ async def on_message(message):
         await message.reply("success")
 
     try:
-        if db["cattype"][str(message.channel.id)] == "Sus":
+        catchmsg = await message.channel.fetch_message(db["cat"][str(message.channel.id)])
+        if get_emoji("suscat") in catchmsg.content:
             for i in ["sus", "amogus", "among", "vent", "report"]:
                 if i in text.lower():
                     await achemb(message, "sussy", "send")
@@ -936,7 +951,7 @@ async def changemessage(message: discord.Interaction):
                     if i not in input_value:
                         await interaction.response.send_message(f"nuh uh! you are missing `{i}`.", ephemeral=True)
                         return
-                icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")
+                icon = get_emoji("staring_cat")
                 await interaction.response.send_message("Success! Here is a preview:\n" + \
                                                     input_value.format(emoji=icon, type="Example", username="Cat Bot", count="1", time="69 years 420 days"))
             else:
@@ -1082,7 +1097,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Me
 
     # for every cat
     for i in cattypes:
-        icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=i.lower() + "cat")
+        icon = get_emoji(i.lower() + "cat")
         try:
             cat_num = db_var_two_electric_boogaloo[i]
         except KeyError:
@@ -1102,7 +1117,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Me
             give_collector = False
     
     if custom:
-        icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=custom.lower() + "cat")
+        icon = get_emoji(custom.lower() + "cat")
         embedVar.add_field(name=f"{icon} {custom}", value=1, inline=True)
     
     if is_empty:
@@ -1176,7 +1191,7 @@ async def battlepass(message: discord.Interaction):
 async def ping(message: discord.Interaction):
     await message.response.defer()
     latency = round(bot.latency * 1000)
-    await message.followup.send(f"cat has brain delay of {latency} ms " + str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="staring_cat")))
+    await message.followup.send(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
 
 @bot.slash_command(description="give cats now")
 async def gift(message: discord.Interaction, \
@@ -1373,7 +1388,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
             valuenum = 0
             for k, v in persongives.items():
                 valuenum += (len(CAT_TYPES) / type_dict[k]) * v
-                aicon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=k.lower() + "cat")
+                aicon = get_emoji(k.lower() + "cat")
                 valuestr += str(aicon) + " " + k + " " + str(v) + "\n"
             if not valuestr:
                 valuestr = "No cats offered!"
@@ -1490,7 +1505,7 @@ async def brew(message: discord.Interaction):
 if TOP_GG_TOKEN:
     @bot.slash_command(description="Vote on topgg for free cats")
     async def vote(message: discord.Interaction):
-        icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="goodcat")
+        icon = get_emoji("goodcat")
         current_day = datetime.datetime.utcnow().isoweekday()
         
         if current_day == 6 or current_day == 7:
@@ -1582,9 +1597,9 @@ async def achievements(message: discord.Interaction):
         )
         for k, v in ach_list.items():
             if v["category"] == category:
-                icon = str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="no_cat_throphy")) + " "
+                icon = str(get_emoji("no_cat_throphy")) + " "
                 if has_ach(message.guild.id, message.user.id, k, False, db_var):
-                    newembed.add_field(name=str(discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="cat_throphy")) + " " + v["title"], value=v["description"], inline=True)
+                    newembed.add_field(name=str(get_emoji("cat_throphy")) + " " + v["title"], value=v["description"], inline=True)
                 elif category != "Hidden":
                     if v["is_hidden"]:
                         newembed.add_field(name=icon + v["title"], value="???", inline=True)
@@ -1667,7 +1682,7 @@ async def catch(message: discord.Interaction, msg):
 
 @bot.message_command()
 async def pointLaugh(message: discord.Interaction, msg):
-    icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="pointlaugh")
+    icon = get_emoji("pointlaugh")
     await msg.add_reaction(icon)
     await message.response.send_message(icon, ephemeral=True)
 
@@ -1756,7 +1771,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 
         # rarest cat display
         if main:
-            catmoji = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=rarities[rarest].lower() + "cat")
+            catmoji = get_emoji(rarities[rarest].lower() + "cat")
             if rarest != -1:
                 rarest_holder = list(dict(sorted(rarest_holder.items(), key=lambda item: item[1], reverse=True)).keys())
                 joined = ", ".join(rarest_holder)
@@ -1835,11 +1850,9 @@ async def setup(message: discord.Interaction):
     abc.append(int(message.channel.id))
     db["summon_ids"] = abc
     db["cat"][str(message.channel.id)] = False
-    db["cattype"][str(message.channel.id)] = ""
     fire[str(message.channel.id)] = True
     save("summon_ids")
     save("cat")
-    save("cattype")
     await soft_force(message.channel) # force the first cat spawn incase something isnt working
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
 
@@ -1862,7 +1875,7 @@ async def forget(message: discord.Interaction):
 @bot.slash_command(description="LMAO TROLLED SO HARD :JOY:")
 async def fake(message: discord.Interaction):
     file = discord.File("australian cat.png", filename="australian cat.png")
-    icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name="egirlcat")
+    icon = get_emoji("egirlcat")
     await message.channel.send(str(icon) + " eGirl cat hasn't appeared! Type \"cat\" to catch ratio!", file=file)
     await message.response.send_message("OMG TROLLED SO HARD LMAOOOO :joy:", ephemeral=True)
     await achemb(message, "trolled", "followup")
@@ -1875,8 +1888,7 @@ async def soft_force(channeley, cat_type=None):
         localcat = choice(CAT_TYPES)
     else:
         localcat = cat_type
-    db["cattype"][str(channeley.id)] = localcat
-    icon = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=localcat.lower() + "cat")
+    icon = get_emoji(localcat.lower() + "cat")
     try:
         if db[str(channeley.guild.id)]["appear"]:
             appearstring = db[str(channeley.guild.id)]["appear"]
@@ -1888,7 +1900,6 @@ async def soft_force(channeley, cat_type=None):
     
     message_is_sus = await channeley.send(appearstring.format(emoji=str(icon), type=localcat), file=file)
     db["cat"][str(channeley.id)] = message_is_sus.id
-    save("cattype")
     save("cat")
 
 @bot.slash_command(description="(ADMIN) Force cats to appear", default_member_permissions=32)
