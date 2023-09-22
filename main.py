@@ -752,14 +752,14 @@ async def on_message(message):
         await message.reply("success")
 
     try:
-        if not db["cat"][str(message.channel.id)]: return
         catchmsg = await message.channel.fetch_message(db["cat"][str(message.channel.id)])
         if get_emoji("suscat") in catchmsg.content:
             for i in ["sus", "amogus", "among", "vent", "report"]:
                 if i in text.lower():
                     await achemb(message, "sussy", "send")
                     break
-    except KeyError: pass
+    except Exception:
+        pass
 
 
 # the message when cat gets added to a new server
