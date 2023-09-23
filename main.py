@@ -131,6 +131,7 @@ update_queue = []
 # we store all discord text emojis to not refetch them a bajillion times
 # (this does mean you will need to restart the bot if you reupload an emoji)
 emojis = {}
+do_save_emojis = False
 
 # fire list controls whether to spawn the cat or skip to the next cycle
 # (this is done on /forcespawn to prevent too many spawns)
@@ -258,7 +259,7 @@ def get_emoji(name):
         return emojis[name]
     else:
         result = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=name)
-        emojis[name] = str(result)
+        if do_save_emojis: emojis[name] = str(result)
         return result
 
 # this is some common code which is run whether someone gets an achievement
@@ -397,8 +398,9 @@ async def spawning_loop(times, ch_id):
 # some code which is run when bot is started
 @bot.event
 async def on_ready():
-    global milenakoos, OWNER_ID
+    global milenakoos, OWNER_ID, do_save_emojis
     print("cat is now online")
+    do_save_emojis = True
     total_members = db["total_members"]
     await bot.change_presence(
             activity=discord.Activity(type=discord.ActivityType.competing, name=f"{len(bot.guilds)} servers with {total_members} people")
