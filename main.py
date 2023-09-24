@@ -26,7 +26,7 @@ GITHUB_CHANNEL_ID = 1060965767044149249
 
 BANNED_ID = [1029044762340241509] # banned from using /tiktok
 
-WHITELISTED_BOTS = [1087001524774912050, 823896940847824936] # bots which are allowed to catch cats
+WHITELISTED_BOTS = [] # bots which are allowed to catch cats
 
 ### Setup values end
 
