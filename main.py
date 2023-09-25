@@ -980,6 +980,13 @@ async def changemessage(message: discord.Interaction):
     # helper to make the above popup appear
     async def ask_appear(interaction):
         nonlocal caller
+
+        try:
+            if db[str(message.guild.id)]["appear"]:
+                pass
+        except Exception:
+            db[str(message.guild.id)]["appear"] = ""
+        
         if interaction.user != caller:
             await interaction.response.send_message(choice(funny), ephemeral=True)
             return
@@ -988,6 +995,13 @@ async def changemessage(message: discord.Interaction):
 
     async def ask_catch(interaction):
         nonlocal caller
+        
+        try:
+            if db[str(message.guild.id)]["cought"]:
+                pass
+        except Exception:
+            db[str(message.guild.id)]["cought"] = ""
+        
         if interaction.user != caller:
             await interaction.response.send_message(choice(funny), ephemeral=True)
             return
