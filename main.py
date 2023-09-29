@@ -278,11 +278,23 @@ async def achemb(message, ach_id, send_type, author_string=None):
         desc = ach_data["description"]
         if ach_id == "dataminer":
             desc = "Your head hurts -- you seem to have forgotten what you just did to get this."
-        embed = discord.Embed(title=ach_data["title"], description=desc, color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=f"Unlocked by {author_string.name}")
-        if send_type == "reply": await message.reply(embed=embed)
-        elif send_type == "send": await message.channel.send(embed=embed)
-        elif send_type == "followup": await message.followup.send(embed=embed, ephemeral=True)
-        elif send_type == "response": await message.response.send_message(embed=embed)
+        
+        if ach_id != "thanksforplaying":
+            embed = discord.Embed(title=ach_data["title"], description=desc, color=0x007F0E).set_author(name="Achievement get!", icon_url="https://pomf2.lain.la/f/hbxyiv9l.png").set_footer(text=f"Unlocked by {author_string.name}")
+        else:
+            embed = discord.Embed(title="Cataine Addict", description="Defeat the dog mafia\nThanks for playing! ✨", color=0xC12929).set_author(name="Demonic achievement unlocked! 🌟", icon_url="https://pomf2.lain.la/f/ez0enx2d.png").set_footer(text=f"Congrats to {author_string.name}!!")
+
+        if send_type == "reply": result = await message.reply(embed=embed)
+        elif send_type == "send": result = await message.channel.send(embed=embed)
+        elif send_type == "followup": result = await message.followup.send(embed=embed, ephemeral=True)
+        elif send_type == "response": result = await message.response.send_message(embed=embed)
+
+        if ach_id == "thanksforplaying":
+            await asyncio.sleep(2)
+            embed2 = discord.Embed(title="Cataine Addict", description="Defeat the dog mafia\nThanks for playing! ✨", color=0xFFFF00).set_author(name="Demonic achievement unlocked! 🌟", icon_url="https://pomf2.lain.la/f/ez0enx2d.png").set_footer(text=f"Congrats to {author_string.name}!!")
+            await result.edit(embed=embed2)
+            await asyncio.sleep(2)
+            await result.edit(embed=embed)
 
 # this is the main cat spawning function
 # if ch_id is None it runs the default loop for all servers
