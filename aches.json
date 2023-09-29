@@ -37,5 +37,7 @@
   "sussy": {"title": "Sussy", "description": "call out sus cat for being AMOGUS", "is_hidden": false, "category": "Random"},
   "egril": {"title": "Electronic Grill", "description": "what can this possibly mean", "is_hidden": false, "category": "Random"},
   "bwomp": {"title": "Bwomp", "description": "is that a geometry dash reference???", "is_hidden": false, "category": "Random"},
-  "blackhole": {"title": "Blackhole", "description": "WHERE THE FU ARE WE", "is_hidden": true, "category": "Hidden"}
+  "blackhole": {"title": "Blackhole", "description": "WHERE THE FU ARE WE", "is_hidden": true, "category": "Hidden"},
+  
+  "thanksforplaying": {"title": "Thanks For Playing", "description": "Complete the story", "is_hidden": false, "category": "Cat Hunt"}
 }
