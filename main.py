@@ -1629,6 +1629,13 @@ async def achievements(message: discord.Interaction):
         )
         for k, v in ach_list.items():
             if v["category"] == category:
+                if k == "thanksforplaying":
+                    if has_ach(message.guild.id, message.user.id, k, False, db_var):
+                        newembed.add_field(name=str(get_emoji("demonic")) + " Cataine Addict", value="Defeat the dog mafia", inline=True)
+                    else:
+                        newembed.add_field(name=str(get_emoji("no_demonic")) + " Thanks For Playing", value="Complete the story", inline=True)
+                    continue
+                
                 icon = str(get_emoji("no_cat_throphy")) + " "
                 if has_ach(message.guild.id, message.user.id, k, False, db_var):
                     newembed.add_field(name=str(get_emoji("cat_throphy")) + " " + v["title"], value=v["description"], inline=True)
