@@ -1716,10 +1716,6 @@ async def achievements(message: discord.Interaction):
                     else:
                         newembed.add_field(name=icon + v["title"], value=v["description"], inline=True)
 
-        if hidden_counter == 3 and has_cat(message.guild.id, message.user.id, "dark_market"):
-            # open the totally not suspicious dark market
-            await dark_market(message)
-
         return newembed
 
     # handle button presses (either send hidden embed or laugh at user)
@@ -1746,34 +1742,41 @@ async def achievements(message: discord.Interaction):
         #   lambdas_list.append(lambda interaction : (await interaction.edit(embed=gen_new(i), view=insane_view_generator(i)) for _ in '_').__anext__())
         #   buttons_list[-1].callback = lambdas_list[-1]
 
+        async def callback_hell(interaction, thing):
+            await interaction.edit(embed=gen_new(thing), view=insane_view_generator(thing))
+            
+            if hidden_counter == 3 and has_cat(message.guild.id, message.user.id, "dark_market"):
+                # open the totally not suspicious dark market
+                await dark_market(message)
+        
         if category == "Cat Hunt":
             buttons_list.append(Button(label="Cat Hunt", style=ButtonStyle.green))
         else:
             buttons_list.append(Button(label="Cat Hunt", style=ButtonStyle.blurple))
-        lambdas_list.append(lambda interaction : (await interaction.edit(embed=gen_new("Cat Hunt"), view=insane_view_generator("Cat Hunt")) for _ in '_').__anext__())
+        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Cat Hunt") for _ in '_').__anext__())
         buttons_list[-1].callback = lambdas_list[-1]
 
         if category == "Random":
             buttons_list.append(Button(label="Random", style=ButtonStyle.green))
         else:
             buttons_list.append(Button(label="Random", style=ButtonStyle.blurple))
-        lambdas_list.append(lambda interaction : (await interaction.edit(embed=gen_new("Random"), view=insane_view_generator("Random")) for _ in '_').__anext__())
+        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Random") for _ in '_').__anext__())
         buttons_list[-1].callback = lambdas_list[-1]
 
         if category == "Unfair":
             buttons_list.append(Button(label="Unfair", style=ButtonStyle.green))
         else:
             buttons_list.append(Button(label="Unfair", style=ButtonStyle.blurple))
-        lambdas_list.append(lambda interaction : (await interaction.edit(embed=gen_new("Unfair"), view=insane_view_generator("Unfair")) for _ in '_').__anext__())
+        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Unfair") for _ in '_').__anext__())
         buttons_list[-1].callback = lambdas_list[-1]
 
         if category == "Hidden":
             buttons_list.append(Button(label="Hidden", style=ButtonStyle.green))
         else:
             buttons_list.append(Button(label="Hidden", style=ButtonStyle.blurple))
-        lambdas_list.append(lambda interaction : (await interaction.edit(embed=gen_new("Hidden"), view=insane_view_generator("Hidden")) for _ in '_').__anext__())
+        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Hidden") for _ in '_').__anext__())
         buttons_list[-1].callback = lambdas_list[-1]
-
+        
         for j in buttons_list:
             myview.add_item(j)
         return myview
