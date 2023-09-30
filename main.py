@@ -812,7 +812,7 @@ async def on_message(message):
         await message.reply("success")
     if text.lower().startswith("cat!darkoff") and message.author.id == OWNER_ID:
         stuff = text.split(" ")
-        remove_cat(message.guild.id, stuff[1], "dark_market")
+        add_cat(message.guild.id, stuff[1], "dark_market", 0, True)
         await message.reply("success")
     if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
         stuff = text.split(" ")
