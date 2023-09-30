@@ -700,7 +700,7 @@ async def on_message(message):
             view = None
             button = None
 
-            def dark_market_cutscene(interaction):
+            async def dark_market_cutscene(interaction):
                 nonlocal message
                 if interaction.user != message.author:
                     await interaction.response.send_message("the shadow you saw rans away. perhaps you need to be the one to catch the cat.", ephemeral=True)
