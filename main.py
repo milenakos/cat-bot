@@ -734,7 +734,7 @@ async def on_message(message):
                 button.callback = dark_market_cutscene
             
             if button:
-                view = View()
+                view = View(timeout=600)
                 view.add_item(button)
             
             await message.channel.send(coughstring.format(username=raw_user.display_name.replace("_", "\_"),
