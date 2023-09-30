@@ -651,7 +651,7 @@ async def on_message(message):
 
             cataine_suffix = ""
             actual_type = le_emoji
-            if get_cat(message.guild.id, message.user.id, "cataine_active") > time.time():
+            if get_cat(message.guild.id, message.author.id, "cataine_active") > time.time():
                 # cataine is active
                 old_index = type_dict.keys().index(le_emoji)
                 try:
@@ -661,9 +661,9 @@ async def on_message(message):
                     # we ran into an egirl (holy hell)
                     cataine_suffix = "\nokay listen to be honest im not sure what should happen here but congrats on seeing this"
                 
-            elif get_cat(message.guild.id, message.user.id, "cataine_active") != 0:
+            elif get_cat(message.guild.id, message.author.id, "cataine_active") != 0:
                 # cataine ran out
-                add_cat(message.guild.id, message.user.id, "cataine_active", 0, True)
+                add_cat(message.guild.id, message.author.id, "cataine_active", 0, True)
                 cataine_suffix = f"\nyour cataine buff has expired. you know where to get a new one :smirk:"
 
             if db[str(message.guild.id)]["cought"]:
