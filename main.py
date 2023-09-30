@@ -1745,7 +1745,7 @@ async def achievements(message: discord.Interaction):
         async def callback_hell(interaction, thing):
             await interaction.edit(embed=gen_new(thing), view=insane_view_generator(thing))
             
-            if hidden_counter == 3 and has_cat(message.guild.id, message.user.id, "dark_market"):
+            if hidden_counter == 3 and get_cat(message.guild.id, message.user.id, "dark_market"):
                 # open the totally not suspicious dark market
                 await dark_market(message)
         
