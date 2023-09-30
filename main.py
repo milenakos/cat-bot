@@ -28,6 +28,11 @@ BANNED_ID = [1029044762340241509] # banned from using /tiktok
 
 WHITELISTED_BOTS = [] # bots which are allowed to catch cats
 
+# use if bot is in a team
+# if you dont know what that is or dont use it,
+# you can remove this line
+OWNER_ID = 553093932012011520 
+
 ### Setup values end
 
 # trigger warning, base64 encoded for your convinience
@@ -123,7 +128,11 @@ funny = ["why did you click this this arent yours", "absolutely not", "cat bot n
 summon_id = db["summon_ids"]
 
 milenakoos = 0
-OWNER_ID = 0
+try:
+    if not OWNER_ID:
+        OWNER_ID = 0
+except Exception:
+    OWNER_ID = 0
 
 terminate_queue = []
 update_queue = []
@@ -418,8 +427,11 @@ async def on_ready():
             activity=discord.Activity(type=discord.ActivityType.competing, name=f"{len(bot.guilds)} servers with {total_members} people")
     )
     appinfo = await bot.application_info()
-    milenakoos = appinfo.owner
-    OWNER_ID = milenakoos.id
+    if not OWNER_ID:
+        milenakoos = appinfo.owner
+        OWNER_ID = milenakoos.id
+    else:
+        milenakoos = await bot.fetch_user(OWNER_ID)
     update_presence.start()
 
     register_guild("spawn_times")
