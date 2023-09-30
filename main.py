@@ -1634,14 +1634,14 @@ async def dark_market(message):
         deal = cataine_prices[level]
         type = deal[1]
         amount = deal[0]
-        embed.add_field(name=":salt: 12h of Cataine", value=f"Price: {getemoji(type.lower() + "cat")} {amount} {type}")
+        embed.add_field(name=":salt: 12h of Cataine", value=f"Price: {getemoji(type.lower() + 'cat')} {amount} {type}")
 
         def buy_cataine(interaction):
             nonlocal message, type, amount
             if get_cat(message.guild.id, message.user.id, type) < amount:
                 return
             remove_cat(message.guild.id, message.user.id, type, amount)
-            add_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()))
+            add_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
             add_cat(message.guild.id, message.user.id, "dark_market_level")
             await interaction.response.send_message("Thanks for buying! Your cat catches will be bumped by 1 for the next 12 hours.", ephemeral=True)
         
