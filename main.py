@@ -649,6 +649,23 @@ async def on_message(message):
             except Exception:
                 db[str(message.guild.id)]["cought"] = ""
 
+            cataine_suffix = ""
+            actual_type = le_emoji
+            if get_cat(message.guild.id, message.user.id, "cataine_active") > time.time():
+                # cataine is active
+                old_index = type_dict.keys().index(le_emoji)
+                try:
+                    actual_type = type_dict.keys()[old_index + 1]
+                    cataine_suffix = f"\ncataine worked! your type was bumped up by 1 to {get_emoji(actual_type)} {actual_type}"
+                except KeyError:
+                    # we ran into an egirl (holy hell)
+                    cataine_suffix = "\nokay listen to be honest im not sure what should happen here but congrats on seeing this"
+                
+            elif get_cat(message.guild.id, message.user.id, "cataine_active") != 0:
+                # cataine ran out
+                add_cat(message.guild.id, message.user.id, "cataine_active", 0, True)
+                cataine_suffix = f"\nyour cataine buff has expired. you know where to get a new one :smirk:"
+
             if db[str(message.guild.id)]["cought"]:
                 coughstring = db[str(message.guild.id)]["cought"]
             elif le_emoji == "Corrupt":
@@ -685,8 +702,8 @@ async def on_message(message):
             await message.channel.send(coughstring.format(username=raw_user.display_name.replace("_", "\_"),
                                                            emoji=icon,
                                                            type=le_emoji,
-                                                           count=add_cat(message.guild.id, message.author.id, le_emoji),
-                                                           time=caught_time[:-1]), view=view)
+                                                           count=add_cat(message.guild.id, message.author.id, actual_type),
+                                                           time=caught_time[:-1]) + cataine_suffix, view=view)
             # handle fastest and slowest catches
             if do_time and time_caught < get_time(message.guild.id, message.author.id):
                 set_time(message.guild.id, message.author.id, time_caught)
@@ -751,6 +768,10 @@ async def on_message(message):
                 await channeley.send(text[8:])
             except Exception:
                 pass
+    if text.lower().startswith("cat!dark") and message.author.id == OWNER_ID:
+        stuff = text.split(" ")
+        add_cat(message.guild.id, stuff[1], "dark_market")
+        await message.reply("success")
     if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
         stuff = text.split(" ")
         register_member(str(stuff[1]), str(message.guild.id))
@@ -1602,10 +1623,44 @@ async def random(message: discord.Interaction):
                 pass
             counter += 1
 
+async def dark_market(message):
+    cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
+                      [7, "Superior"], [5, "Legendary"], [3, "8bit"], [4, "Professor"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"], [100, "eGirl"]]
+
+    # as of right now, the finale isnt coded in to prevent spoilers
+    if get_cat(message.guild.id, message.user.id, "cataine_active") == 0:
+        level = get_cat(message.guild.id, message.user.id, "dark_market_level")
+        embed = discord.Embed(title="The Dark Market", description="after entering the secret code, they let you in. today's deal is:")
+        deal = cataine_prices[level]
+        type = deal[1]
+        amount = deal[0]
+        embed.add_field(name=":salt: 12h of Cataine", value=f"Price: {getemoji(type.lower() + "cat")} {amount} {type}")
+
+        def buy_cataine(interaction):
+            nonlocal message, type, amount
+            if get_cat(message.guild.id, message.user.id, type) < amount:
+                return
+            remove_cat(message.guild.id, message.user.id, type, amount)
+            add_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()))
+            add_cat(message.guild.id, message.user.id, "dark_market_level")
+            await interaction.response.send_message("Thanks for buying! Your cat catches will be bumped by 1 for the next 12 hours.", ephemeral=True)
+        
+        myview = View(timeout=600)
+        if get_cat(message.guild.id, message.user.id, type) >= amount:
+            button = Button(label="Buy", style=ButtonStyle.blurple)
+        else:
+            button = Button(label="You don't have enough cats!", style=ButtonStyle.gray, disabled=True)
+        button.callback = buy_cataine
+        myview.add_item(button)
+
+        await message.followup.send(embed=embed, view=myview, ephemeral=True)
+    else:
+        embed = discord.Embed(title="The Dark Market", description="you already bought from us recenlty. please wait until the next purchase.")
+        await message.followup.send(embed=embed, ephemeral=True)
+
 @bot.slash_command(description="View your achievements")
 async def achievements(message: discord.Interaction):
     # this is very close to /inv's ach counter
-    
     register_member(message.guild.id, message.user.id)
     has_ach(message.guild.id, message.user.id, "test_ach") # and there is this cursed line again wtf
     db_var = db[str(message.guild.id)][str(message.user.id)]["ach"]
@@ -1630,12 +1685,16 @@ async def achievements(message: discord.Interaction):
             title="Your achievements:", description=f"{unlocked}/{total_achs}{minus_achs}", color=0x6E593C
     )
 
+    hidden_counter = 0
     # this is a single page of the achievement list
     def gen_new(category):
-        nonlocal db_var, message, unlocked, total_achs
+        nonlocal db_var, message, unlocked, total_achs, hidden_counter
         hidden_suffix = ""
         if category == "Hidden":
             hidden_suffix = "\n\nThis is a \"Hidden\" category. Achievements here only show up after you complete them."
+            hidden_counter += 1
+        else:
+            hidden_counter = 0
         newembed = discord.Embed(
                 title=category, description=f"Achievements unlocked (total): {unlocked}/{total_achs}{minus_achs}{hidden_suffix}", color=0x6E593C
         )
@@ -1656,6 +1715,10 @@ async def achievements(message: discord.Interaction):
                         newembed.add_field(name=icon + v["title"], value="???", inline=True)
                     else:
                         newembed.add_field(name=icon + v["title"], value=v["description"], inline=True)
+
+        if hidden_counter == 3 and has_cat(message.guild.id, message.user.id, "dark_market"):
+            # open the totally not suspicious dark market
+            await dark_market(message)
 
         return newembed
 
