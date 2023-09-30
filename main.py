@@ -1636,7 +1636,7 @@ async def dark_market(message):
         amount = deal[0]
         embed.add_field(name=":salt: 12h of Cataine", value=f"Price: {getemoji(type.lower() + 'cat')} {amount} {type}")
 
-        def buy_cataine(interaction):
+        async def buy_cataine(interaction):
             nonlocal message, type, amount
             if get_cat(message.guild.id, message.user.id, type) < amount:
                 return
