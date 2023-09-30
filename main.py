@@ -1646,7 +1646,7 @@ async def dark_market(message):
         deal = cataine_prices[level]
         type = deal[1]
         amount = deal[0]
-        embed.add_field(name=":salt: 12h of Cataine", value=f"Price: {getemoji(type.lower() + 'cat')} {amount} {type}")
+        embed.add_field(name=":salt: 12h of Cataine", value=f"Price: {get_emoji(type.lower() + 'cat')} {amount} {type}")
 
         async def buy_cataine(interaction):
             nonlocal message, type, amount
