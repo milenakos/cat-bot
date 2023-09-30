@@ -668,7 +668,7 @@ async def on_message(message):
                 old_index = list(type_dict.keys()).index(le_emoji)
                 try:
                     actual_type = list(type_dict.keys())[old_index + 1]
-                    cataine_suffix = f"\ncataine worked! your type was bumped up by 1 to {get_emoji(actual_type.lower() + 'cat')} {actual_type}"
+                    cataine_suffix = f"\ncataine worked! your type was bumped up to {get_emoji(actual_type.lower() + 'cat')} {actual_type}, you got that instead"
                 except KeyError:
                     # we ran into an egirl (holy hell)
                     cataine_suffix = "\nokay listen to be honest im not sure what should happen here but congrats on seeing this"
@@ -699,6 +699,29 @@ async def on_message(message):
             raw_user = await bot.fetch_user(message.author.id)
             view = None
             button = None
+
+            def dark_market_cutscene(interaction):
+                nonlocal message
+                if interaction.user != message.author:
+                    await interaction.response.send_message("the shadow you saw rans away. perhaps you need to be the one to catch the cat.", ephemeral=True)
+                    return
+                if get_cat(message.guild.id, message.author.id, "dark_market") != 0:
+                    await interaction.response.send_message("the shadowy figure is nowhere to be found.", ephemeral=True)
+                    return
+                await interaction.response.send_message("is someone watching after you?", ephemeral=True)
+                await asyncio.sleep(5)
+                await interaction.followup.send("you walk up to them. the dark voice says:", ephemeral=True)
+                await asyncio.sleep(5)
+                await interaction.followup.send("**???**: Hello. We have a unique deal for you.", ephemeral=True)
+                await asyncio.sleep(5)
+                await interaction.followup.send("**???**: To access our services, press `Hidden` achievement tab 3 times in a row.", ephemeral=True)
+                await asyncio.sleep(5)
+                await interaction.followup.send("**???**: You won't be disappointed.", ephemeral=True)
+                await asyncio.sleep(5)
+                await interaction.followup.send("before you manage to process that, the figure disappears. will you figure out whats going on?", ephemeral=True)
+                await asyncio.sleep(5)
+                await interaction.followup.send("the only choice is to go to that place.", ephemeral=True)
+                add_cat(message.guild.id, message.author.id, "dark_market", 1, True)
             
             if randint(0, 50) == 0:
                 button = Button(label="Support Cat On Patreon!", style=ButtonStyle.gray, url="https://patreon.com/TheStaringCat")
@@ -706,6 +729,9 @@ async def on_message(message):
                 button = Button(label="Use /vote for extra cats!", style=ButtonStyle.gray, disabled=True)
             elif randint(0, 50) == 0:
                 button = Button(label="Join our Discord!", style=ButtonStyle.gray, url="https://discord.gg/WCTzD3YQEk")
+            elif randint(0, 10) == 0: # boosted chances for now, the normal is 1/100
+                button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
+                button.callback = dark_market_cutscene
             
             if button:
                 view = View()
@@ -783,6 +809,10 @@ async def on_message(message):
     if text.lower().startswith("cat!dark") and message.author.id == OWNER_ID:
         stuff = text.split(" ")
         add_cat(message.guild.id, stuff[1], "dark_market")
+        await message.reply("success")
+    if text.lower().startswith("cat!darkoff") and message.author.id == OWNER_ID:
+        stuff = text.split(" ")
+        remove_cat(message.guild.id, stuff[1], "dark_market")
         await message.reply("success")
     if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
         stuff = text.split(" ")
