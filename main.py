@@ -729,7 +729,7 @@ async def on_message(message):
                 button = Button(label="Use /vote for extra cats!", style=ButtonStyle.gray, disabled=True)
             elif randint(0, 50) == 0:
                 button = Button(label="Join our Discord!", style=ButtonStyle.gray, url="https://discord.gg/WCTzD3YQEk")
-            elif randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20: # boosted chances for now, the normal is 1/100
+            elif randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
                 button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
                 button.callback = dark_market_cutscene
             
