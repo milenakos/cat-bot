@@ -665,9 +665,9 @@ async def on_message(message):
             actual_type = le_emoji
             if get_cat(message.guild.id, message.author.id, "cataine_active") > time.time():
                 # cataine is active
-                old_index = type_dict.keys().index(le_emoji)
+                old_index = list(type_dict.keys()).index(le_emoji)
                 try:
-                    actual_type = type_dict.keys()[old_index + 1]
+                    actual_type = list(type_dict.keys())[old_index + 1]
                     cataine_suffix = f"\ncataine worked! your type was bumped up by 1 to {get_emoji(actual_type)} {actual_type}"
                 except KeyError:
                     # we ran into an egirl (holy hell)
@@ -1650,7 +1650,7 @@ async def dark_market(message):
 
         async def buy_cataine(interaction):
             nonlocal message, type, amount
-            if get_cat(message.guild.id, message.user.id, type) < amount:
+            if get_cat(message.guild.id, message.user.id, type) < amount or get_cat(message.guild.id, message.user.id, "cataine_active") != 0:
                 return
             remove_cat(message.guild.id, message.user.id, type, amount)
             add_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
