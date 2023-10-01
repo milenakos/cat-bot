@@ -11,6 +11,7 @@ from collections import UserDict
 ### Setup values start
 
 GUILD_ID = 966586000417619998 # for emojis
+CATS_GUILD_ID = 834831552739016714 # alternative guild purely for cattype emojis (use for chrismas/halloween etc), False to disable
 BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely recommended
 
 # discord bot token, use os.environ for more security
@@ -67,6 +68,10 @@ type_dict = {
 CAT_TYPES = []
 for k, v in type_dict.items():
     CAT_TYPES.extend([k] * v)
+
+allowedemojis = []
+for i in type_dict.keys():
+    allowedemojis.append(i.lower() + "cat")
 
 # migrate from db.json if found
 if os.path.isfile("db.json"):
@@ -267,7 +272,10 @@ def get_emoji(name):
     if name in emojis.keys():
         return emojis[name]
     else:
-        result = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=name)
+        if name in allowedemojis and CATS_GUILD_ID:
+            result = discord.utils.get(bot.get_guild(CATS_GUILD_ID).emojis, name=name)
+        else:
+            result = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=name)
         if do_save_emojis: emojis[name] = str(result)
         return result
 
@@ -637,10 +645,6 @@ async def on_message(message):
                 print(e)
                 do_time = False
                 caught_time = "undefined amounts of time "
-
-            allowedemojis = []
-            for i in type_dict.keys():
-                allowedemojis.append(i.lower() + "cat")
 
             icon = None
             for k, v in emojis.items():
