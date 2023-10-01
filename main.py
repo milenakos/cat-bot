@@ -652,7 +652,7 @@ async def on_message(message):
                     partial_type = v
                     break
 
-            for i in cat_types.keys():
+            for i in type_dict.keys():
                 if i.lower() in partial_type:
                     le_emoji = i
                     break
