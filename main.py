@@ -647,17 +647,14 @@ async def on_message(message):
                 caught_time = "undefined amounts of time "
 
             icon = None
-            for k, v in emojis.items():
-                if v in catchcontents and k in allowedemojis:
-                    icon = v
+            for v in allowedemojis.items():
+                if v in catchcontents:
+                    le_emoji = v
                     break
 
-            if not icon: return
+            if not le_emoji: return
                 
-            for i in type_dict.keys():
-                if i.lower() in icon:
-                    le_emoji = i
-                    break
+            icon = get_emoji(le_emoji)
 
             try:
                 if db[str(message.guild.id)]["cought"]:
