@@ -675,7 +675,7 @@ async def on_message(message):
                 try:
                     actual_type = list(type_dict.keys())[old_index + 1]
                     cataine_suffix = f"\ncataine worked! your type was bumped up to {get_emoji(actual_type.lower() + 'cat')} {actual_type}, you got that instead"
-                except KeyError:
+                except IndexError:
                     # we ran into an egirl (holy hell)
                     cataine_suffix = "\nokay listen to be honest im not sure what should happen here but congrats on seeing this"
                 
