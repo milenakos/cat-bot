@@ -649,7 +649,12 @@ async def on_message(message):
             icon = None
             for v in allowedemojis:
                 if v in catchcontents:
-                    le_emoji = v
+                    partial_type = v
+                    break
+
+            for i in cat_types.keys():
+                if i.lower() in partial_type:
+                    le_emoji = i
                     break
 
             if not le_emoji: return
