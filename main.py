@@ -647,7 +647,7 @@ async def on_message(message):
                 caught_time = "undefined amounts of time "
 
             icon = None
-            for v in allowedemojis.items():
+            for v in allowedemojis:
                 if v in catchcontents:
                     le_emoji = v
                     break
