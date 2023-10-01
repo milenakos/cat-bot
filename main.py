@@ -659,7 +659,7 @@ async def on_message(message):
 
             if not le_emoji: return
                 
-            icon = get_emoji(le_emoji)
+            icon = get_emoji(partial_type)
 
             try:
                 if db[str(message.guild.id)]["cought"]:
