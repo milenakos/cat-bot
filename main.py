@@ -2089,7 +2089,11 @@ async def giveachievement(message: discord.Interaction, person_id: discord.Membe
     if not valid and ach_id.lower() in ach_titles.keys():
         ach_id = ach_titles[ach_id.lower()]
         valid = True
-    
+
+    if valid and ach_id == "thanksforplaying":
+        await message.response.send_message("HAHAHHAHAH\nno", ephemeral=True)
+        return
+                      
     if valid:
         # if it is, do the thing
         reverse = has_ach(message.guild.id, person_id.id, ach_id)
