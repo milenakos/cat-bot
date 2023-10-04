@@ -668,16 +668,11 @@ async def on_message(message):
                 db[str(message.guild.id)]["cought"] = ""
 
             cataine_suffix = ""
-            actual_type = le_emoji
+            silly_amount = 1
             if get_cat(message.guild.id, message.author.id, "cataine_active") > time.time():
                 # cataine is active
-                old_index = list(type_dict.keys()).index(le_emoji)
-                try:
-                    actual_type = list(type_dict.keys())[old_index + 1]
-                    cataine_suffix = f"\ncataine worked! your type was bumped up to {get_emoji(actual_type.lower() + 'cat')} {actual_type}, you got that instead"
-                except IndexError:
-                    # we ran into an egirl (holy hell)
-                    cataine_suffix = "\nokay listen to be honest im not sure what should happen here but congrats on seeing this"
+                silly_amount = 2
+                cataine_suffix = f"\ncataine worked! your got 2 cats instead!"
                 
             elif get_cat(message.guild.id, message.author.id, "cataine_active") != 0:
                 # cataine ran out
@@ -746,7 +741,7 @@ async def on_message(message):
             await message.channel.send(coughstring.format(username=raw_user.display_name.replace("_", "\_"),
                                                            emoji=icon,
                                                            type=le_emoji,
-                                                           count=add_cat(message.guild.id, message.author.id, actual_type),
+                                                           count=add_cat(message.guild.id, message.author.id, le_emoji, silly_amount),
                                                            time=caught_time[:-1]) + cataine_suffix, view=view)
             # handle fastest and slowest catches
             if do_time and time_caught < get_time(message.guild.id, message.author.id):
@@ -1691,7 +1686,7 @@ async def dark_market(message):
             remove_cat(message.guild.id, message.user.id, type, amount)
             add_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
             add_cat(message.guild.id, message.user.id, "dark_market_level")
-            await interaction.response.send_message("Thanks for buying! Your cat catches will be bumped by 1 for the next 12 hours.", ephemeral=True)
+            await interaction.response.send_message("Thanks for buying! Your cat catches will be doubled for the next 12 hours.", ephemeral=True)
         
         myview = View(timeout=600)
         if get_cat(message.guild.id, message.user.id, type) >= amount:
