@@ -2119,11 +2119,14 @@ async def reset(message: discord.Interaction, person_id: discord.Member = discor
 # this is the crash handler
 @bot.event
 async def on_application_command_error(ctx, error):
+    def in_error(x):
+        return bool(x in str(type(error)) or x in str(error))
+    
     # ctx here is interaction
     normal_crash = False
-    if "KeyboardInterrupt" in str(type(error)): # keyboard interrupt
+    if in_error("KeyboardInterrupt"): # keyboard interrupt
         exit()
-    elif "errors.Forbidden" in str(type(error)):
+    elif in_error("Forbidden"):
         # forbidden error usually means we dont have permission to send messages in the channel
         print("logged a Forbidden error.")
         # except-ception lessgo
@@ -2141,7 +2144,7 @@ async def on_application_command_error(ctx, error):
                         await ctx.user.send(forbidden_error) # as last resort, dm the runner
                     except Exception:
                         pass # give up
-    elif "errors.NotFound" in str(type(error)):
+    elif in_error("NotFound"):
         # discord just pretends if interaction took more than 3 seconds it never happened and its annoying af
         print("logged a NotFound error.")
         await ctx.channel.send("took too long, try running the command again")
@@ -2155,7 +2158,7 @@ async def on_application_command_error(ctx, error):
         except Exception:
             pass
 
-    # to to get some context maybe if we get lucky
+    # try to get some context maybe if we get lucky
     try:
         cont = ctx.content
         print("debug", cont)
