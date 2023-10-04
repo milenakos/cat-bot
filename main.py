@@ -709,6 +709,7 @@ async def on_message(message):
                 if get_cat(message.guild.id, message.author.id, "dark_market") != 0:
                     await interaction.response.send_message("the shadowy figure is nowhere to be found.", ephemeral=True)
                     return
+                add_cat(message.guild.id, message.author.id, "dark_market", 1, True)
                 await interaction.response.send_message("is someone watching after you?", ephemeral=True)
                 await asyncio.sleep(5)
                 await interaction.followup.send("you walk up to them. the dark voice says:", ephemeral=True)
@@ -722,7 +723,6 @@ async def on_message(message):
                 await interaction.followup.send("before you manage to process that, the figure disappears. will you figure out whats going on?", ephemeral=True)
                 await asyncio.sleep(5)
                 await interaction.followup.send("the only choice is to go to that place.", ephemeral=True)
-                add_cat(message.guild.id, message.author.id, "dark_market", 1, True)
             
             if randint(0, 50) == 0:
                 button = Button(label="Support Cat On Patreon!", style=ButtonStyle.gray, url="https://patreon.com/TheStaringCat")
