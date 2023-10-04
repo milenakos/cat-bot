@@ -672,7 +672,7 @@ async def on_message(message):
             if get_cat(message.guild.id, message.author.id, "cataine_active") > time.time():
                 # cataine is active
                 silly_amount = 2
-                cataine_suffix = f"\ncataine worked! your got 2 cats instead!"
+                cataine_suffix = f"\n:salt: cataine worked! you got 2 cats instead!"
                 
             elif get_cat(message.guild.id, message.author.id, "cataine_active") != 0:
                 # cataine ran out
