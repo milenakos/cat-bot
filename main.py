@@ -2146,7 +2146,7 @@ async def on_application_command_error(ctx, error):
                         await ctx.user.send(forbidden_error) # as last resort, dm the runner
                     except Exception:
                         pass # give up
-    elif "errors.NotFound" in str(type(error)) or "errors.ApplicationInvokeError" in str(type(error)):
+    elif "errors.NotFound" in str(type(error)):
         # discord just pretends if interaction took more than 3 seconds it never happened and its annoying af
         print("logged a NotFound error.")
         await ctx.channel.send("took too long, try running the command again")
