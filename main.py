@@ -2121,6 +2121,10 @@ async def reset(message: discord.Interaction, person_id: discord.Member = discor
 async def on_application_command_error(ctx, error):
     def in_error(x):
         return bool(x in str(type(error)) or x in str(error))
+
+    if ctx.guild == None:
+        await ctx.channel.say("hello good sir i would politely let you know cat bot is no workey in dms please consider gettng the hell out of here")
+        return
     
     # ctx here is interaction
     normal_crash = False
