@@ -128,7 +128,7 @@ for e in CAT_TYPES:
     if e not in cattypes:
         cattypes.append(e)
 
-funny = ["why did you click this this arent yours", "absolutely not", "cat bot not responding, try again later", "you cant", "can you please stop", "try again", "403 not allowed", "stop", "get a life"]
+funny = ["why did you click this this arent yours", "absolutely not", "cat bot not responding, try again later", "you cant", "can you please stop", "try again", "403 not allowed", "stop", "get a life", "not for you", "no", "nuh uh"]
 
 summon_id = db["summon_ids"]
 
