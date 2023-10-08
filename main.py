@@ -602,6 +602,7 @@ async def on_message(message):
         elif is_cat:
             current_time = message.created_at
             current_time = time.mktime(current_time.timetuple()) + current_time.microsecond / 1e6
+            db[str(message.channel.id)]["lastcatchtime"] = current_time
             cat_temp = db["cat"][str(message.channel.id)]
             db["cat"][str(message.channel.id)] = False
             save("cat")
@@ -1117,6 +1118,16 @@ async def daily(message: discord.Interaction):
     if TOP_GG_TOKEN: suffix = "\nthere ARE cats for voting tho, check out `/vote`"
     await message.response.send_message("there is no daily cats why did you even try this" + suffix)
     await achemb(message, "daily", "send")
+
+@bot.slash_command(description="View when the last cat was caught")
+async def last(message: discord.Interaction):
+    # im gonna be honest i dont know what im doing
+    try:
+        lasttime = db[str(message.channel.id)]["lastcatchtime"]
+        displayedtime = "<t:"+lasttime+":r>"
+    except KeyError:
+        displayedtime = "forever ago"
+    await message.response.send_message("the last cat was caught "+displayedtime+".")
 
 @bot.slash_command(description="View your inventory")
 async def inventory(message: discord.Interaction, person_id: Optional[discord.Member] = discord.SlashOption(required=False, name="user", description="Person to view the inventory of!")):
