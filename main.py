@@ -1229,7 +1229,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Me
         embedVar.add_field(name=f"{icon} {custom}", value=1, inline=True)
     
     if is_empty:
-        embedVar.add_field(name="None", value="u hav no cats :cat_sad:", inline=True)
+        embedVar.add_field(name="None", value="u hav no cats "+str(get_emoji("cat_cry")), inline=True)
     
     if do_save:
         save(message.guild.id)
