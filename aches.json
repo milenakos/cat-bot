@@ -38,7 +38,7 @@
   "egril": {"title": "Electronic Grill", "description": "what can this possibly mean", "is_hidden": false, "category": "Random"},
   "bwomp": {"title": "Bwomp", "description": "is that a geometry dash reference???", "is_hidden": false, "category": "Random"},
   "blackhole": {"title": "Blackhole", "description": "WHERE THE FU ARE WE", "is_hidden": true, "category": "Hidden"},
-  "pie": {"title": "Pie catcher", "description": "catch a cat in exactly 3.14 seconds", "is_hidden": false, "category": "Unfair"},
+  "pie": {"title": "Pie Catcher", "description": "catch a cat in exactly 3.14 seconds", "is_hidden": false, "category": "Unfair"},
   
   "thanksforplaying": {"title": "Thanks For Playing", "description": "Complete the story", "is_hidden": false, "category": "Cat Hunt"}
 }
