@@ -477,7 +477,8 @@ async def on_message(message):
         ["proglet", "custom", "professor_cat"],
         ["xnopyt", "custom", "vanish"],
         ["silly", "custom", "sillycat"],
-        ["indev", "vanilla", "🐸"]]
+        ["indev", "vanilla", "🐸"],
+        ["ble[hp]", "custom", "blepcat"]]
 
     responses = [["testing testing 1 2 3", "exact", "test success"],
         ["cat!sex", "exact", "..."],
