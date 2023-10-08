@@ -704,7 +704,7 @@ async def on_message(message):
             async def dark_market_cutscene(interaction):
                 nonlocal message
                 if interaction.user != message.author:
-                    await interaction.response.send_message("the shadow you saw rans away. perhaps you need to be the one to catch the cat.", ephemeral=True)
+                    await interaction.response.send_message("the shadow you saw runs away. perhaps you need to be the one to catch the cat.", ephemeral=True)
                     return
                 if get_cat(message.guild.id, message.author.id, "dark_market") != 0:
                     await interaction.response.send_message("the shadowy figure is nowhere to be found.", ephemeral=True)
