@@ -755,6 +755,8 @@ async def on_message(message):
 
             if do_time and get_time(message.guild.id, message.author.id, "slow") >= 3600: await achemb(message, "slow_catcher", "send")
 
+            if do_time and time_caught == 3.14: await achemb(message, "pie","send")
+
             # handle battlepass
             async def do_reward(message, level):
                 db[str(message.guild.id)][str(message.author.id)]["progress"] = 0
