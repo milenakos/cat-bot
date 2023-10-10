@@ -478,7 +478,8 @@ async def on_message(message):
         ["xnopyt", "custom", "vanish"],
         ["silly", "custom", "sillycat"],
         ["indev", "vanilla", "🐸"],
-        ["ble[hp]", "custom", "blepcat"]]
+        ["bleh", "custom", "blepcat"],
+        ["blep", "custon", "blepcat"]]
 
     responses = [["testing testing 1 2 3", "exact", "test success"],
         ["cat!sex", "exact", "..."],
