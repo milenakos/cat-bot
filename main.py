@@ -757,7 +757,7 @@ async def on_message(message):
 
             if do_time and get_time(message.guild.id, message.author.id, "slow") >= 3600: await achemb(message, "slow_catcher", "send")
 
-            if do_time and time_caught == 3.14: await achemb(message, "pie","send")
+            if do_time and time_caught == 3.14: await achemb(message, "pie", "send")
 
             # handle battlepass
             async def do_reward(message, level):
@@ -1128,7 +1128,7 @@ async def last(message: discord.Interaction):
         displayedtime = "<t:"+lasttime+":r>"
     except KeyError:
         displayedtime = "forever ago"
-    await message.response.send_message("the last cat was caught "+displayedtime+".")
+    await message.response.send_message(f"the last cat was caught {displayedtime}.")
 
 @bot.slash_command(description="View your inventory")
 async def inventory(message: discord.Interaction, person_id: Optional[discord.Member] = discord.SlashOption(required=False, name="user", description="Person to view the inventory of!")):
@@ -1243,7 +1243,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Me
         embedVar.add_field(name=f"{icon} {custom}", value=1, inline=True)
     
     if is_empty:
-        embedVar.add_field(name="None", value="u hav no cats "+str(get_emoji("cat_cry")), inline=True)
+        embedVar.add_field(name="None", value=f"u hav no cats {get_emoji("cat_cry")}", inline=True)
     
     if do_save:
         save(message.guild.id)
