@@ -483,7 +483,8 @@ async def on_message(message):
 
     responses = [["testing testing 1 2 3", "exact", "test success"],
         ["cat!sex", "exact", "..."],
-        ["cellua good", "in", ".".join([str(randint(2, 254)) for _ in range(4)])]]
+        ["cellua good", "in", ".".join([str(randint(2, 254)) for _ in range(4)])],
+        ["https://tenor.com/view/this-cat-i-have-hired-this-cat-to-stare-at-you-hired-cat-cat-stare-gif-26392360", "exact", "https://tenor.com/view/cat-staring-cat-gif-16983064494644320763"]]
 
     # this is auto-update thing
     if GITHUB_CHANNEL_ID and message.channel.id == GITHUB_CHANNEL_ID:
