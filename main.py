@@ -128,7 +128,7 @@ for e in CAT_TYPES:
     if e not in cattypes:
         cattypes.append(e)
 
-funny = ["why did you click this this arent yours", "absolutely not", "cat bot not responding, try again later", "you cant", "can you please stop", "try again", "403 not allowed", "stop", "get a life"]
+funny = ["why did you click this this arent yours", "absolutely not", "cat bot not responding, try again later", "you cant", "can you please stop", "try again", "403 not allowed", "stop", "get a life", "not for you", "no", "nuh uh"]
 
 summon_id = db["summon_ids"]
 
@@ -477,11 +477,14 @@ async def on_message(message):
         ["proglet", "custom", "professor_cat"],
         ["xnopyt", "custom", "vanish"],
         ["silly", "custom", "sillycat"],
-        ["indev", "vanilla", "🐸"]]
+        ["indev", "vanilla", "🐸"],
+        ["bleh", "custom", "blepcat"],
+        ["blep", "custon", "blepcat"]]
 
     responses = [["testing testing 1 2 3", "exact", "test success"],
         ["cat!sex", "exact", "..."],
-        ["cellua good", "in", ".".join([str(randint(2, 254)) for _ in range(4)])]]
+        ["cellua good", "in", ".".join([str(randint(2, 254)) for _ in range(4)])],
+        ["https://tenor.com/view/this-cat-i-have-hired-this-cat-to-stare-at-you-hired-cat-cat-stare-gif-26392360", "exact", "https://tenor.com/view/cat-staring-cat-gif-16983064494644320763"]]
 
     # this is auto-update thing
     if GITHUB_CHANNEL_ID and message.channel.id == GITHUB_CHANNEL_ID:
@@ -602,6 +605,7 @@ async def on_message(message):
         elif is_cat:
             current_time = message.created_at
             current_time = time.mktime(current_time.timetuple()) + current_time.microsecond / 1e6
+            db["lastcatches"][str(message.channel.id)] = current_time
             cat_temp = db["cat"][str(message.channel.id)]
             db["cat"][str(message.channel.id)] = False
             save("cat")
@@ -704,7 +708,7 @@ async def on_message(message):
             async def dark_market_cutscene(interaction):
                 nonlocal message
                 if interaction.user != message.author:
-                    await interaction.response.send_message("the shadow you saw rans away. perhaps you need to be the one to catch the cat.", ephemeral=True)
+                    await interaction.response.send_message("the shadow you saw runs away. perhaps you need to be the one to catch the cat.", ephemeral=True)
                     return
                 if get_cat(message.guild.id, message.author.id, "dark_market") != 0:
                     await interaction.response.send_message("the shadowy figure is nowhere to be found.", ephemeral=True)
@@ -754,6 +758,8 @@ async def on_message(message):
             if do_time and get_time(message.guild.id, message.author.id) <= 5: await achemb(message, "fast_catcher", "send")
 
             if do_time and get_time(message.guild.id, message.author.id, "slow") >= 3600: await achemb(message, "slow_catcher", "send")
+
+            if do_time and time_caught == 3.14: await achemb(message, "pie", "send")
 
             # handle battlepass
             async def do_reward(message, level):
@@ -1116,6 +1122,16 @@ async def daily(message: discord.Interaction):
     await message.response.send_message("there is no daily cats why did you even try this" + suffix)
     await achemb(message, "daily", "send")
 
+@bot.slash_command(description="View when the last cat was caught in this channel")
+async def last(message: discord.Interaction):
+    # im gonna be honest i dont know what im doing
+    try:
+        lasttime = db["lastcatches"][str(message.channel.id)]
+        displayedtime = "<t:"+lasttime+":r>"
+    except KeyError:
+        displayedtime = "forever ago"
+    await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.")
+
 @bot.slash_command(description="View your inventory")
 async def inventory(message: discord.Interaction, person_id: Optional[discord.Member] = discord.SlashOption(required=False, name="user", description="Person to view the inventory of!")):
     # UGGHHH GOOD LUCK
@@ -1229,7 +1245,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Me
         embedVar.add_field(name=f"{icon} {custom}", value=1, inline=True)
     
     if is_empty:
-        embedVar.add_field(name="None", value="u hav no cats :cat_sad:", inline=True)
+        embedVar.add_field(name="None", value=f"u hav no cats {get_emoji('cat_cry')}", inline=True)
     
     if do_save:
         save(message.guild.id)
