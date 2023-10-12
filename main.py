@@ -1127,7 +1127,7 @@ async def last(message: discord.Interaction):
     # im gonna be honest i dont know what im doing
     try:
         lasttime = db["lastcatches"][str(message.channel.id)]
-        displayedtime = "<t:"+lasttime+":r>"
+        displayedtime = f"<t:{int(lasttime)}:r>"
     except KeyError:
         displayedtime = "forever ago"
     await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.")
