@@ -806,7 +806,7 @@ async def on_message(message):
         await message.reply(f"ok, now i will also send cats in <#{message.channel.id}>")
     if text.lower().startswith("cat!print") and message.author.id == OWNER_ID:
         # just a simple one-line with no async (e.g. 2+3)
-        await message.reply(eval(text[9:]), globals(), locals())
+        await message.reply(eval(text[9:]))
     if text.lower().startswith("cat!eval") and message.author.id == OWNER_ID:
         # complex eval, multi-line + async support
         # requires the full `await message.channel.send(2+3)` to get the result
@@ -822,12 +822,12 @@ async def on_message(message):
         for i in silly_billy.split("\n"):
             spaced += " " + i + "\n"
         
-        intro = "async def go():\n"
-        ending = "\nbot.loop.create_task(go())"
+        intro = "async def go(message, bot):\n"
+        ending = "\nbot.loop.create_task(go(message, bot))"
 
         complete = intro + spaced + ending
         print(complete)
-        exec(complete, globals(), locals())
+        exec(complete)
     if text.lower().startswith("cat!news") and message.author.id == OWNER_ID:
         for i in db["summon_ids"]:
             try:
