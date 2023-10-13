@@ -820,7 +820,7 @@ async def on_message(message):
         
         spaced = ""
         for i in silly_billy.split("\n"):
-            spaced = " " + i + "\n"
+            spaced += " " + i + "\n"
         
         intro = "async def go(message, bot):\n"
         ending = "bot.loop.create_task(go(message, bot))"
