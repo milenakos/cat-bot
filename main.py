@@ -816,7 +816,7 @@ async def on_message(message):
         #
         # bot.loop.create_task(go())
 
-        silly_billy = text[8:]
+        silly_billy = text[9:]
         
         spaced = ""
         for i in silly_billy.split("\n"):
