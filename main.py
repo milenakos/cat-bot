@@ -822,8 +822,8 @@ async def on_message(message):
         for i in silly_billy.split("\n"):
             spaced = " " + i + "\n"
         
-        intro = "async def go():\n"
-        ending = "bot.loop.create_task(go())"
+        intro = "async def go(message, bot):\n"
+        ending = "bot.loop.create_task(go(message, bot))"
         
         exec(intro + spaced + ending)
     if text.lower().startswith("cat!news") and message.author.id == OWNER_ID:
