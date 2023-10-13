@@ -823,9 +823,11 @@ async def on_message(message):
             spaced += " " + i + "\n"
         
         intro = "async def go(message, bot):\n"
-        ending = "bot.loop.create_task(go(message, bot))"
-        
-        exec(intro + spaced + ending)
+        ending = "\nbot.loop.create_task(go(message, bot))"
+
+        complete = intro + spaced + ending
+        print(complete)
+        exec(complete)
     if text.lower().startswith("cat!news") and message.author.id == OWNER_ID:
         for i in db["summon_ids"]:
             try:
