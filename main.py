@@ -1335,6 +1335,7 @@ async def gift(message: discord.Interaction, \
         # handle aches
         await achemb(message, "donator", "send")
         await achemb(message, "anti_donator", "send", person)
+        if cat_type == "Rickroll": await achemb(message, "givenup", "send")
         if person_id == bot.user.id and cat_type == "Ultimate" and int(amount) >= 5: await achemb(message, "rich", "send")
 
         # handle tax
