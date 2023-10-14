@@ -603,10 +603,21 @@ async def on_message(message):
             # if there is no cat, you are /preventcatch-ed, or you aren't a whitelisted bot
             icon = get_emoji("pointlaugh")
             await message.add_reaction(icon)
+            if timestamp < time.time():
+                current_time = message.created_at # code theft
+                current_time = time.mktime(current_time.timetuple()) + current_time.microsecond / 1e6
+                try:
+                    difference = current_time - db["lastcatches"][str(message.channel.id)] # this is probably wrong but i dont cARE
+                    if difference <= 1:
+                        message.reply(f"{get_emoji('pointlaugh')} you only missed the cat by {difference} seconds! still, sucks to be you")
+                        await achemb(message, "close_call", "send", db["lastcatchids"][str(message.channel.id)])
+                except:
+                    pass # welp
         elif is_cat:
             current_time = message.created_at
             current_time = time.mktime(current_time.timetuple()) + current_time.microsecond / 1e6
             db["lastcatches"][str(message.channel.id)] = current_time
+            db["lastcatchids"][str(message.channel.id)] = message.author.id
             cat_temp = db["cat"][str(message.channel.id)]
             db["cat"][str(message.channel.id)] = False
             save("cat")

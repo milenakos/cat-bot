@@ -40,6 +40,7 @@
   "blackhole": {"title": "Blackhole", "description": "WHERE THE FU ARE WE", "is_hidden": true, "category": "Hidden"},
   "pie": {"title": "Pie Catcher", "description": "catch a cat in exactly 3.14 seconds", "is_hidden": false, "category": "Unfair"},
   "givenup": {"title": "Given Up", "description": "\"never gonna give you up\" he said", "is_hidden": false, "category": "Random"},
+  "close_call": {"title":"Close Call", "description": "have someone try to catch a cat less than 1 second after you did", "is_hidden":false, "category":"Cat Hunt"},
   
   "thanksforplaying": {"title": "Thanks For Playing", "description": "Complete the story", "is_hidden": false, "category": "Cat Hunt"}
 }
