@@ -1789,6 +1789,7 @@ async def dark_market(message):
             # there is actually no time pressure anywhere but try to imagine there is
             counter = 0
             async def step(interaction2):
+                nonlocal counter
                 counter += 1
                 await interaction2.response.defer()
                 if counter == 30:
