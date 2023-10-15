@@ -893,7 +893,42 @@ async def on_guild_join(guild):
     # you are free to change/remove this, its just a note for general user letting them know
     unofficial_note = "**NOTE: This is an unofficial Cat Bot instance.**\n\n"
     if bot.user.id == 966695034340663367: unofficial_note = ""
-    await ch.send(unofficial_note + "Thanks for adding me!\nTo setup a channel to summon cats in, use /setup!\nJoin the support server here: https://discord.gg/cat-stand-966586000417619998\nHave a nice day :)")
+    await ch.send(unofficial_note + "Thanks for adding me!\nTo start, use `/help`!\nJoin the support server here: https://discord.gg/cat-stand-966586000417619998\nHave a nice day :)")
+
+@bot.slash_command(description="Learn to use the bot")
+async def help(message):
+    embed1 = discord.Embed(
+        title = "How to Setup",
+        description = "Server moderator (anyone with *Manage Server* permission) needs to run `/setup` in any channel. After that, cats will start to spawn in 2-20 minute intervals inside of that channel.\nYou can customize those intervals with `/changetimings` and change the spawn message with `/changemessage`.\nCat spawns can also be forced by moderators using `/forcespawn` command.\nYou can have unlimited amounts of setupped channels at once.\nYou can stop the spawning in a channel by running `/forget`.",
+        color = 0x6E539C
+    ).set_thumbnail(
+        "https://pomf2.lain.la/f/zncxu6ej.png"
+    )
+    
+    embed2 = discord.Embed(
+        title="How to Play"
+    ).add_field(
+        name="Catch Cats",
+        value="Whenever a cat spawns you will see a message along the lines of \"a cat has appeared\", which will also display it's type.\nCat types can have varying rarities from 25% for Fine to hundredths of percent for rarest types.\nSo, after saying \"cat\" the cat will be added to your inventory.",
+        inline=False
+    ).add_field(
+        name="Viewing Your Inventory",
+        value="You can view your (or anyone elses!) inventory using `/inventory` command. It will display all the cats, along with other stats.\nIt is important to note that you have a separate inventory in each server and nothing carries over, to make the experience more fair and fun.\nCheck out the leaderboards for your server by using `/leaderboards` command.\nIf you want to transfer cats, you can use the simple `/gift` or more complex `/trade` commands.",
+        inline=False
+    ).add_field(
+        name="Let's get funky!",
+        value="Cat Bot has various other mechanics to make fun funnier. You can collect various `/achievements`, progress in the `/battlepass`, or have beef with the mafia over cataine addiction. The amount you worship is the limit!",
+        inline=False
+    ).add_field(
+        name="Other features",
+        value="Cat Bot has extra fun commands which you will discover along the way.\nAnything unclear? Drop us a line at our [Discord server](https://discord.gg/cat-stand-966586000417619998).",
+        inline=False
+    ).set_footer(
+        text=f"Cat Bot by Milenakos, {datetime.now().year}",
+        icon_url="https://pomf2.lain.la/f/zncxu6ej.png"
+    )
+
+    await message.response.send_message(embeds=[embed1, embed2])
 
 @bot.slash_command(description="View Cat's Patreon")
 async def patreon(message):
