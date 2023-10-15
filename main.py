@@ -1766,6 +1766,7 @@ async def dark_market(message):
             await interaction.response.send_message("Thanks for buying! Your cat catches will be doubled for the next 12 hours.", ephemeral=True)
 
         async def complain(interaction):
+            await interaction.edit_original_message(view=None)
             person = interaction.user
             phrases = ["*Because of my addiction I'm paying them a fortune.*",
                        f"**{person}**: Hey, I'm not fine with those prices.",
@@ -1809,6 +1810,7 @@ async def dark_market(message):
             run_view = View(timeout=600)
             button = Button(label="RUN", style=ButtonStyle.green)
             button.callback = step
+            run_view.add_item(button)
             
             await interaction.followup.send("RUN!\nClick the button as fast as possible to run away!", view=run_view, ephemeral=True)
             
