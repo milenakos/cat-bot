@@ -316,6 +316,10 @@ async def achemb(message, ach_id, send_type, author_string=None):
             await result.edit(embed=embed2)
             await asyncio.sleep(2)
             await result.edit(embed=embed)
+            await asyncio.sleep(2)
+            await result.edit(embed=embed2)
+            await asyncio.sleep(2)
+            await result.edit(embed=embed)
 
 # this is the main cat spawning function
 # if ch_id is None it runs the default loop for all servers
@@ -1793,18 +1797,20 @@ async def dark_market(message):
                 counter += 1
                 await interaction2.response.defer()
                 if counter == 30:
-                    await interaction2.edit_original_message(view=None)
+                    await interaction2.edit_original_message(view=None, ephemeral=True)
                     await asyncio.sleep(5)
-                    await interaction2.followup.send("You barely manage to turn around a corner and hide to run away.")
+                    await interaction2.followup.send("You barely manage to turn around a corner and hide to run away.", ephemeral=True)
                     await asyncio.sleep(5)
-                    await interaction2.followup.send("You quietly get to the police station and tell them everything.")
+                    await interaction2.followup.send("You quietly get to the police station and tell them everything.", ephemeral=True)
                     await asyncio.sleep(5)
-                    await interaction2.followup.send("### The next day.")
+                    await interaction2.followup.send("## The next day.", ephemeral=True)
                     await asyncio.sleep(5)
-                    await interaction2.followup.send("A nice day outside. You open the news:")
+                    await interaction2.followup.send("A nice day outside. You open the news:", ephemeral=True)
                     await asyncio.sleep(5)
-                    await interaction2.followup.send("*Dog Mafia, the biggest cataine distributor, was finally caught after anonymous report.*")
-                    await asyncio.sleep(7)
+                    await interaction2.followup.send("*Dog Mafia, the biggest cataine distributor, was finally caught after anonymous report.*", ephemeral=True)
+                    await asyncio.sleep(5)
+                    await interaction2.followup.send("HUH? It was dogs all along...", ephemeral=True)
+                    await asyncio.sleep(5)
                     await achemb(interaction, "thanksforplaying", "send")
                     
             run_view = View(timeout=600)
