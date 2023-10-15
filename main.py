@@ -900,13 +900,14 @@ async def help(message):
     embed1 = discord.Embed(
         title = "How to Setup",
         description = "Server moderator (anyone with *Manage Server* permission) needs to run `/setup` in any channel. After that, cats will start to spawn in 2-20 minute intervals inside of that channel.\nYou can customize those intervals with `/changetimings` and change the spawn message with `/changemessage`.\nCat spawns can also be forced by moderators using `/forcespawn` command.\nYou can have unlimited amounts of setupped channels at once.\nYou can stop the spawning in a channel by running `/forget`.",
-        color = 0x6E539C
+        color = 0x6E593C
     ).set_thumbnail(
         "https://pomf2.lain.la/f/zncxu6ej.png"
     )
     
     embed2 = discord.Embed(
-        title="How to Play"
+        title="How to Play",
+        color=0x6E593C
     ).add_field(
         name="Catch Cats",
         value="Whenever a cat spawns you will see a message along the lines of \"a cat has appeared\", which will also display it's type.\nCat types can have varying rarities from 25% for Fine to hundredths of percent for rarest types.\nSo, after saying \"cat\" the cat will be added to your inventory.",
