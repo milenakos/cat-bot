@@ -924,7 +924,7 @@ async def help(message):
         value="Cat Bot has extra fun commands which you will discover along the way.\nAnything unclear? Drop us a line at our [Discord server](https://discord.gg/cat-stand-966586000417619998).",
         inline=False
     ).set_footer(
-        text=f"Cat Bot by Milenakos, {datetime.now().year}",
+        text=f"Cat Bot by Milenakos, {datetime.datetime.now().year}",
         icon_url="https://pomf2.lain.la/f/zncxu6ej.png"
     )
 
