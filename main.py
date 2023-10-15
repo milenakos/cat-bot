@@ -1769,7 +1769,13 @@ async def dark_market(message):
             add_cat(message.guild.id, message.user.id, "dark_market_level")
             await interaction.response.send_message("Thanks for buying! Your cat catches will be doubled for the next 12 hours.", ephemeral=True)
 
+        debounce = False
+
         async def complain(interaction):
+            nonlocal debounce
+            if debounce: return
+            debounce = True
+            
             person = interaction.user
             phrases = ["*Because of my addiction I'm paying them a fortune.*",
                        f"**{person}**: Hey, I'm not fine with those prices.",
@@ -1784,7 +1790,7 @@ async def dark_market(message):
                        "**???**: Better start running :)",
                        f"*Uh oh.*"]
             
-            await interaction.response.send_message("*That's not funny anymore. Those prices are insane.*", ephemeral=True)
+            await interaction.response.send_message("*That's not funny anymore. Those prices are insane.*", ephemeral=True
             await asyncio.sleep(5)
             for i in phrases:
                 await interaction.followup.send(i, ephemeral=True)
@@ -1797,7 +1803,7 @@ async def dark_market(message):
                 counter += 1
                 await interaction2.response.defer()
                 if counter == 30:
-                    await interaction2.edit_original_message(view=None, ephemeral=True)
+                    await interaction2.edit_original_message(view=None)
                     await asyncio.sleep(5)
                     await interaction2.followup.send("You barely manage to turn around a corner and hide to run away.", ephemeral=True)
                     await asyncio.sleep(5)
@@ -1812,6 +1818,7 @@ async def dark_market(message):
                     await interaction2.followup.send("HUH? It was dogs all along...", ephemeral=True)
                     await asyncio.sleep(5)
                     await achemb(interaction, "thanksforplaying", "send")
+                    add_cat(interaction.guild.id, interaction.user.id, "story_complete")
                     
             run_view = View(timeout=600)
             button = Button(label="RUN", style=ButtonStyle.green)
@@ -1926,7 +1933,7 @@ async def achievements(message: discord.Interaction):
         async def callback_hell(interaction, thing):
             await interaction.edit(embed=gen_new(thing), view=insane_view_generator(thing))
             
-            if hidden_counter == 3 and get_cat(message.guild.id, message.user.id, "dark_market"):
+            if hidden_counter == 3 and get_cat(message.guild.id, message.user.id, "dark_market") and get_cat(message.guild.id, message.user.id, "story_complete") != 1:
                 # open the totally not suspicious dark market
                 await dark_market(message)
         
