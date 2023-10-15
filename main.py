@@ -1748,7 +1748,6 @@ async def dark_market(message):
     cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
                       [7, "Superior"], [5, "Legendary"], [3, "8bit"], [4, "Professor"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"], [100, "eGirl"]]
 
-    # as of right now, the finale isnt coded in to prevent spoilers
     if get_cat(message.guild.id, message.user.id, "cataine_active") == 0:
         level = get_cat(message.guild.id, message.user.id, "dark_market_level")
         embed = discord.Embed(title="The Dark Market", description="after entering the secret code, they let you in. today's deal is:")
@@ -1765,13 +1764,66 @@ async def dark_market(message):
             add_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
             add_cat(message.guild.id, message.user.id, "dark_market_level")
             await interaction.response.send_message("Thanks for buying! Your cat catches will be doubled for the next 12 hours.", ephemeral=True)
+
+        async def complain(interaction):
+            person = interaction.user
+            phrases = ["*Because of my addiction I'm paying them a fortune.*",
+                       f"**{person}**: Hey, I'm not fine with those prices.",
+                       "**???**: Hmm?",
+                       "**???**: Oh.",
+                       "**???**: It seems you don't understand.",
+                       "**???**: We are the ones setting prices, not you.",
+                       f"**{person}**: Give me a more fair price or I will report you to the police.",
+                       "**???**: Huh?",
+                       "**???**: Well, it seems like you chose...",
+                       "# DEATH",
+                       "**???**: Better start running :)",
+                       f"*Uh oh.*"]
+            
+            await interaction.response.send_message("*That's not funny anymore. Those prices are insane.*", ephemeral=True)
+            await asyncio.sleep(5)
+            for i in phrases:
+                await interaction.followup.send(i, ephemeral=True)
+                await asyncio.sleep(5)
+
+            # there is actually no time pressure anywhere but try to imagine there is
+            counter = 0
+            async def step(interaction2):
+                counter += 1
+                await interaction2.response.defer()
+                if counter == 30:
+                    await interaction2.edit_original_message(view=None)
+                    await asyncio.sleep(5)
+                    await interaction2.followup.send("You barely manage to turn around a corner and hide to run away.")
+                    await asyncio.sleep(5)
+                    await interaction2.followup.send("You quietly get to the police station and tell them everything.")
+                    await asyncio.sleep(5)
+                    await interaction2.followup.send("### The next day.")
+                    await asyncio.sleep(5)
+                    await interaction2.followup.send("A nice day outside. You open the news:")
+                    await asyncio.sleep(5)
+                    await interaction2.followup.send("*Dog Mafia, the biggest cataine distributor, was finally caught after anonymous report.*")
+                    await asyncio.sleep(7)
+                    await achemb(interaction, "thanksforplaying", "send")
+                    
+            run_view = View(timeout=600)
+            button = Button(label="RUN", style=ButtonStyle.green)
+            button.callback = step
+            
+            await interaction.followup.send("RUN!\nClick the button as fast as possible to run away!", view=run_view, ephemeral=True)
+            
         
         myview = View(timeout=600)
-        if get_cat(message.guild.id, message.user.id, type) >= amount:
-            button = Button(label="Buy", style=ButtonStyle.blurple)
+        
+        if level == len(cataine_prices) - 1:
+            button = Button(label="What???", style=ButtonStyle.red)
+            button.callback = complain
         else:
-            button = Button(label="You don't have enough cats!", style=ButtonStyle.gray, disabled=True)
-        button.callback = buy_cataine
+            if get_cat(message.guild.id, message.user.id, type) >= amount:
+                button = Button(label="Buy", style=ButtonStyle.blurple)
+            else:
+                button = Button(label="You don't have enough cats!", style=ButtonStyle.gray, disabled=True)
+            button.callback = buy_cataine
         myview.add_item(button)
 
         await message.followup.send(embed=embed, view=myview, ephemeral=True)
