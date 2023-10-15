@@ -1790,7 +1790,7 @@ async def dark_market(message):
                        "**???**: Better start running :)",
                        f"*Uh oh.*"]
             
-            await interaction.response.send_message("*That's not funny anymore. Those prices are insane.*", ephemeral=True
+            await interaction.response.send_message("*That's not funny anymore. Those prices are insane.*", ephemeral=True)
             await asyncio.sleep(5)
             for i in phrases:
                 await interaction.followup.send(i, ephemeral=True)
