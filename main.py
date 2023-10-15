@@ -103,7 +103,8 @@ class PopulatedDict(UserDict):
                 super().__setitem__(key, item)
                 return item
             except Exception:
-                raise KeyError
+                super().__setitem__(key, {})
+                return {}
 
 db = PopulatedDict()
 
