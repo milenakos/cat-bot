@@ -273,12 +273,15 @@ def get_emoji(name):
     if name in emojis.keys():
         return emojis[name]
     else:
-        if name in allowedemojis and CATS_GUILD_ID:
-            result = discord.utils.get(bot.get_guild(CATS_GUILD_ID).emojis, name=name)
-        else:
-            result = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=name)
-        if do_save_emojis: emojis[name] = str(result)
-        return result
+        try:
+            if name in allowedemojis and CATS_GUILD_ID:
+                result = discord.utils.get(bot.get_guild(CATS_GUILD_ID).emojis, name=name)
+            else:
+                result = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=name)
+            if do_save_emojis: emojis[name] = str(result)
+            return result
+        except Exception:
+            return "🔳"
 
 # this is some common code which is run whether someone gets an achievement
 async def achemb(message, ach_id, send_type, author_string=None):
