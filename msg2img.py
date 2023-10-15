@@ -19,7 +19,7 @@ def msg2img(message, bot, sansgg=False):
     try:
         nick = message.author.nick
     except:
-        nick = message.author.name
+        nick = message.author.global_name
     color = (message.author.color.r, message.author.color.g, message.author.color.b)
     if color == (0, 0, 0):
         color = (255, 255, 255)
