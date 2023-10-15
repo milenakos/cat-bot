@@ -1766,7 +1766,6 @@ async def dark_market(message):
             await interaction.response.send_message("Thanks for buying! Your cat catches will be doubled for the next 12 hours.", ephemeral=True)
 
         async def complain(interaction):
-            await interaction.edit_original_message(view=None)
             person = interaction.user
             phrases = ["*Because of my addiction I'm paying them a fortune.*",
                        f"**{person}**: Hey, I'm not fine with those prices.",
