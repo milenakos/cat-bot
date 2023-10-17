@@ -11,7 +11,7 @@ from collections import UserDict
 ### Setup values start
 
 GUILD_ID = 966586000417619998 # for emojis
-CATS_GUILD_ID = 834831552739016714 # alternative guild purely for cattype emojis (use for chrismas/halloween etc), False to disable
+CATS_GUILD_ID = 834831552739016714 # alternative guild purely for cattype emojis (use for christmas/halloween etc), False to disable
 BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely recommended
 
 # discord bot token, use os.environ for more security
@@ -749,12 +749,36 @@ async def on_message(message):
             if button:
                 view = View(timeout=600)
                 view.add_item(button)
+
+            def clear_md(thing):
+                sanitize = False
+                
+                # general markdown
+                for i in ["_", "*", "~", "]("]:
+                    if i in thing:
+                        sanitze = True
+
+                # starting markdown
+                for i in ["# ", "- ", "> ", ">>> "]:
+                    if i.startswith(thing):
+                        sanitize = True
+
+                # sanitize existing codeblocks
+                thing = thing.replace("`", "\`")
+                
+                if sanitize:
+                    thing = "`" + thing + "`"    
+                
+                return thing
             
-            await message.channel.send(coughstring.format(username=raw_user.display_name.replace("_", "\_"),
+            await message.channel.send(coughstring.format(username=clear_md(raw_user.global_name),
                                                            emoji=icon,
                                                            type=le_emoji,
                                                            count=add_cat(message.guild.id, message.author.id, le_emoji, silly_amount),
-                                                           time=caught_time[:-1]) + cataine_suffix, view=view)
+                                                           time=caught_time[:-1]) + cataine_suffix,
+                                       view=view,
+                                       allowed_mentions=None)
+            
             # handle fastest and slowest catches
             if do_time and time_caught < get_time(message.guild.id, message.author.id):
                 set_time(message.guild.id, message.author.id, time_caught)
