@@ -709,7 +709,6 @@ async def on_message(message):
                 coughstring = "!!!!{time} in cought was fella this\n!!!type dat of cats {count} have now You\n!1!!!!cat {type} {emoji} cought {username}"
             else:
                 coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
-            raw_user = await bot.fetch_user(message.author.id)
             view = None
             button = None
 
@@ -749,29 +748,8 @@ async def on_message(message):
             if button:
                 view = View(timeout=600)
                 view.add_item(button)
-
-            def clear_md(thing):
-                sanitize = False
-                
-                # general markdown
-                for i in ["_", "*", "~", "]("]:
-                    if i in thing:
-                        sanitze = True
-
-                # starting markdown
-                for i in ["# ", "- ", "> ", ">>> "]:
-                    if i.startswith(thing):
-                        sanitize = True
-
-                # sanitize existing codeblocks
-                thing = thing.replace("`", "\`")
-                
-                if sanitize:
-                    thing = "`" + thing + "`"    
-                
-                return thing
             
-            await message.channel.send(coughstring.format(username=clear_md(raw_user.global_name),
+            await message.channel.send(coughstring.format(username=message.author.name.replace("_", "\_"),
                                                            emoji=icon,
                                                            type=le_emoji,
                                                            count=add_cat(message.guild.id, message.author.id, le_emoji, silly_amount),
