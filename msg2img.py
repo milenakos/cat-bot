@@ -99,8 +99,14 @@ def msg2img(message, bot, sansgg=False):
         bg_color = (73, 68, 60)
     new_img = Image.new("RGBA", (1067, 75 + the_size_and_stuff), bg_color)
     pencil = ImageDraw.Draw(new_img)
-    pfp = requests.get(message.author.display_avatar.url, stream=True).raw
-    im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
+    try:
+        pfp = requests.get(message.author.display_avatar.url, stream=True).raw
+        im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
+    except Exception: # if the pfp is bit too silly
+        new_url = "https://cdn.discordapp.com/avatars/966695034340663367/d9b60a653cb3c6f95baedf790723ce41.png?size=1024"
+        pfp = requests.get(message.author.display_avatar.url, stream=True).raw
+        im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
+    
     mask_im = Image.new("L", (800, 800), 0)  # make a mask image for making pfp circle
     draw = ImageDraw.Draw(mask_im)  # enable drawing mode on mask
     draw.ellipse((0, 0, 800, 800), fill=255)  # draw circle on mask
