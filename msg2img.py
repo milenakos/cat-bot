@@ -13,6 +13,8 @@ def msg2img(message, bot, sansgg=False):
     is_bot = message.author.bot
     is_pinged = bot.user in message.mentions
     text = message.clean_content
+    if not text:
+        text = message.system_content
     if message.mention_everyone:
         is_pinged = True
     save_to = "generated.png"
