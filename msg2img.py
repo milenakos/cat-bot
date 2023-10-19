@@ -12,7 +12,7 @@ def msg2img(message, bot, sansgg=False):
     move = 0
     is_bot = message.author.bot
     is_pinged = bot.user in message.mentions
-    text = message.content
+    text = message.clean_content
     if message.mention_everyone:
         is_pinged = True
     save_to = "generated.png"
@@ -68,7 +68,7 @@ def msg2img(message, bot, sansgg=False):
                     width_of_line = token_width
                     start_x = 0
                     start_y = (len(lines) * 37) - 37
-                if token[0] == "@" or token[0] == "#":
+                if token[0] == "@":
                     pings.append([start_x, start_y, width_of_line, start_y + 37])
 
             lines.append(line)
