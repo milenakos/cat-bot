@@ -617,6 +617,7 @@ async def on_message(message):
             cat_temp = db["cat"][str(message.channel.id)]
             db["cat"][str(message.channel.id)] = False
             save("cat")
+            save("lastcatches")
             try:
                 await message.delete()
             except discord.errors.Forbidden:
