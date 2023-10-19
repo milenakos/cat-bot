@@ -115,7 +115,7 @@ def msg2img(message, bot, sansgg=False):
         the_size_and_stuff += 36
     if custom_image:
         if text:
-            previous_size = the_size_and_stuff
+            previous_size = the_size_and_stuff + 55
             the_size_and_stuff += 36
         else:
             previous_size = 55
