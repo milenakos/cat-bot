@@ -684,12 +684,12 @@ async def on_message(message):
             if get_cat(message.guild.id, message.author.id, "cataine_active") > time.time():
                 # cataine is active
                 silly_amount = 2
-                cataine_suffix = f"\n:salt: cataine worked! you got 2 cats instead!"
+                cataine_suffix = f"\n🧂 cataine worked! you got 2 cats instead!"
                 
             elif get_cat(message.guild.id, message.author.id, "cataine_active") != 0:
                 # cataine ran out
                 add_cat(message.guild.id, message.author.id, "cataine_active", 0, True)
-                cataine_suffix = f"\nyour cataine buff has expired. you know where to get a new one :smirk:"
+                cataine_suffix = f"\nyour cataine buff has expired. you know where to get a new one 😏"
 
             if db[str(message.guild.id)]["cought"]:
                 coughstring = db[str(message.guild.id)]["cought"]
@@ -1371,7 +1371,7 @@ async def battlepass(message: discord.Interaction):
 
     current = "🟨"
     if battle["levels"][current_level]["req"] == "nothing":
-        current = ":black_large_square:"
+        current = "⬛"
     if current_level != 0:
         embedVar.add_field(name=f"✅ Level {current_level} (complete)", value=battlelevel(battle, current_level - 1), inline=False)
     embedVar.add_field(name=f"{current} Level {current_level + 1}", value=battlelevel(battle, current_level, True), inline=False)
@@ -1760,7 +1760,7 @@ async def dark_market(message):
         deal = cataine_prices[level]
         type = deal[1]
         amount = deal[0]
-        embed.add_field(name=":salt: 12h of Cataine", value=f"Price: {get_emoji(type.lower() + 'cat')} {amount} {type}")
+        embed.add_field(name="🧂 12h of Cataine", value=f"Price: {get_emoji(type.lower() + 'cat')} {amount} {type}")
 
         async def buy_cataine(interaction):
             nonlocal message, type, amount
@@ -2185,7 +2185,7 @@ async def fake(message: discord.Interaction):
     file = discord.File("australian cat.png", filename="australian cat.png")
     icon = get_emoji("egirlcat")
     await message.channel.send(str(icon) + " eGirl cat hasn't appeared! Type \"cat\" to catch ratio!", file=file)
-    await message.response.send_message("OMG TROLLED SO HARD LMAOOOO :joy:", ephemeral=True)
+    await message.response.send_message("OMG TROLLED SO HARD LMAOOOO 😂", ephemeral=True)
     await achemb(message, "trolled", "followup")
 
 async def soft_force(channeley, cat_type=None):
