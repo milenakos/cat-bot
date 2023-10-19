@@ -26,6 +26,8 @@ def msg2img(message, bot, sansgg=False):
     if not nick:
         nick = message.author.name
 
+    pilmoji_inst = Pilmoji(emoji_scale_factor=45/33)
+
     def break_text(text, font, max_width):
         lines = []
         pings = []
@@ -37,7 +39,7 @@ def msg2img(message, bot, sansgg=False):
                 start_x = width_of_line
                 start_y = len(lines) * 37
                 token = token + " "
-                token_width = Pilmoji.getsize(font, token, emoji_scalee_factor=1)[0]
+                token_width = pilmoji_inst.getsize(font, token)[0]
                 if width_of_line + token_width < max_width:
                     line += token
                     width_of_line += token_width
@@ -46,14 +48,14 @@ def msg2img(message, bot, sansgg=False):
                     part_moved = ""
                     saved_width_of_line = 0
                     for i in token:
-                        in_word_width += Pilmoji.getsize(font, i, emoji_scalee_factor=1)[0]
+                        in_word_width += pilmoji_inst.getsize(font, i)[0]
                         if in_word_width < max_width:
                             part_moved += i
                         else:
                             lines.append(part_moved)
                             if not saved_width_of_line:
                                 saved_width_of_line = (
-                                    in_word_width - Pilmoji.getsize(font, i, emoji_scalee_factor=1)[0] + 7
+                                    in_word_width - pilmoji_inst.getsize(font, i)[0] + 7
                                 )
                             in_word_width = 0
                             width_of_line = 0
@@ -149,8 +151,9 @@ def msg2img(message, bot, sansgg=False):
             fill=(255, 255, 255),
         )
         move = getsize(botfont, "BOT")[0] + 20
-    with Pilmoji(new_img) as pilmoji:
-        pilmoji.text((122, 55), text.strip(), (255, 255, 255), font2, emoji_scale_factor=45/33)
+    
+    with Pilmoji(new_img) as pilmoji2:
+        pilmoji2.text((122, 55), text.strip(), (255, 255, 255), font2, emoji_scale_factor=45/33)
 
     now = message.created_at
     # there is probably easier way than this but ehhh
