@@ -114,12 +114,12 @@ def msg2img(message, bot, sansgg=False):
     for i in text.split("\n"):
         the_size_and_stuff += 36
     if custom_image:
-        the_size_and_stuff += calculated_height
         if text:
             previous_size = the_size_and_stuff
             the_size_and_stuff += 36
         else:
             previous_size = 55
+        the_size_and_stuff += calculated_height
 
     if isinstance(color, str):
         color = ImageColor.getrgb(color)
