@@ -43,7 +43,7 @@ def msg2img(message, bot, sansgg=False):
 
         # calculate the height
         decrease_amount = width / max_width
-        calculated_height = height // decrease_amount
+        calculated_height = int(height / decrease_amount)
 
         custom_image = custom_image.resize((max_width, calculated_height))
         
@@ -114,8 +114,12 @@ def msg2img(message, bot, sansgg=False):
     for i in text.split("\n"):
         the_size_and_stuff += 36
     if custom_image:
-        previous_size = the_size_and_stuff
-        the_size_and_stuff += calculated_height + 36
+        the_size_and_stuff += calculated_height
+        if text:
+            previous_size = the_size_and_stuff
+            the_size_and_stuff += 36
+        else:
+            previous_size = 55
 
     if isinstance(color, str):
         color = ImageColor.getrgb(color)
