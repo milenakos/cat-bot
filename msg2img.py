@@ -26,6 +26,27 @@ def msg2img(message, bot, sansgg=False):
     if not nick:
         nick = message.author.name
 
+    custom_image = None
+    for i in message.attachments:
+        if "image" not in i.content_type:
+            continue
+
+        custom_image = Image.open(requests.get(i.url, stream=True).raw).convert("RGBA")
+        
+        max_width = 930
+        width, height = im.size
+        
+        if max_width >= width:
+            break # no rescaling needed
+
+        # calculate the height
+        decrease_amount = width / max_width
+        calculated_height = height // decrease_amount
+
+        custom_image = custom_image.resize((max_width, calculated_height))
+        
+        break
+
     def break_text(text, font, max_width):
         lines = []
         pings = []
@@ -90,6 +111,9 @@ def msg2img(message, bot, sansgg=False):
     the_size_and_stuff = 0
     for i in text.split("\n"):
         the_size_and_stuff += 36
+    if custom_image:
+        previous_size = the_size_and_stuff
+        the_size_and_stuff += calculated_height + 36
 
     if isinstance(color, str):
         color = ImageColor.getrgb(color)
@@ -116,6 +140,9 @@ def msg2img(message, bot, sansgg=False):
     newer_img.paste(im2, (0, 0), mask_im)  # apply mask to avatar
     newer_img = newer_img.resize((80, 80), Image.LANCZOS)
     new_img.paste(newer_img, (10, 10), newer_img)
+
+    if custom_image:
+        new_img.paste(custom_image, (122, previous_size), custom_image)
 
     for ping in pings:
         pencil.rounded_rectangle(
