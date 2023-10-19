@@ -37,7 +37,7 @@ def msg2img(message, bot, sansgg=False):
                 start_x = width_of_line
                 start_y = len(lines) * 37
                 token = token + " "
-                token_width = Pilmoji.getsize(font, token)[0]
+                token_width = Pilmoji.getsize(font, token, emoji_scalee_factor=1)[0]
                 if width_of_line + token_width < max_width:
                     line += token
                     width_of_line += token_width
@@ -46,14 +46,14 @@ def msg2img(message, bot, sansgg=False):
                     part_moved = ""
                     saved_width_of_line = 0
                     for i in token:
-                        in_word_width += Pilmoji.getsize(font, i)[0]
+                        in_word_width += Pilmoji.getsize(font, i, emoji_scalee_factor=1)[0]
                         if in_word_width < max_width:
                             part_moved += i
                         else:
                             lines.append(part_moved)
                             if not saved_width_of_line:
                                 saved_width_of_line = (
-                                    in_word_width - Pilmoji.getsize(font, i)[0] + 7
+                                    in_word_width - Pilmoji.getsize(font, i, emoji_scalee_factor=1)[0] + 7
                                 )
                             in_word_width = 0
                             width_of_line = 0
