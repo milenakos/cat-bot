@@ -34,10 +34,12 @@ def msg2img(message, bot, sansgg=False):
         custom_image = Image.open(requests.get(i.url, stream=True).raw).convert("RGBA")
         
         max_width = 930
-        width, height = im.size
+        width, height = custom_image.size
         
         if max_width >= width:
-            break # no rescaling needed
+            # no rescaling needed
+            calculated_height = height
+            break
 
         # calculate the height
         decrease_amount = width / max_width
