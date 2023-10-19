@@ -37,7 +37,7 @@ def msg2img(message, bot, sansgg=False):
                 start_x = width_of_line
                 start_y = len(lines) * 37
                 token = token + " "
-                token_width = getsize(font, token)[0]
+                token_width = Pilmoji.getsize(font, token)[0]
                 if width_of_line + token_width < max_width:
                     line += token
                     width_of_line += token_width
@@ -46,14 +46,14 @@ def msg2img(message, bot, sansgg=False):
                     part_moved = ""
                     saved_width_of_line = 0
                     for i in token:
-                        in_word_width += getsize(font, i)[0]
+                        in_word_width += Pilmoji.getsize(font, i)[0]
                         if in_word_width < max_width:
                             part_moved += i
                         else:
                             lines.append(part_moved)
                             if not saved_width_of_line:
                                 saved_width_of_line = (
-                                    in_word_width - getsize(font, i)[0] + 7
+                                    in_word_width - Pilmoji.getsize(font, i)[0] + 7
                                 )
                             in_word_width = 0
                             width_of_line = 0
@@ -104,7 +104,7 @@ def msg2img(message, bot, sansgg=False):
         im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
     except Exception: # if the pfp is bit too silly
         new_url = "https://cdn.discordapp.com/avatars/966695034340663367/d9b60a653cb3c6f95baedf790723ce41.png?size=1024"
-        pfp = requests.get(message.author.display_avatar.url, stream=True).raw
+        pfp = requests.get(new_url, stream=True).raw
         im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
     
     mask_im = Image.new("L", (800, 800), 0)  # make a mask image for making pfp circle
