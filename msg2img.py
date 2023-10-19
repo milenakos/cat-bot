@@ -26,11 +26,11 @@ def msg2img(message, bot, sansgg=False):
     if not nick:
         nick = message.author.name
 
-    pilmoji_inst = Pilmoji(emoji_scale_factor=45/33)
-
     def break_text(text, font, max_width):
         lines = []
         pings = []
+
+        pilmoji_inst = Pilmoji(Image.new("RGBA", (1, 1)), emoji_scale_factor=45/33)
 
         for txt in text.split("\n"):
             width_of_line = 0
