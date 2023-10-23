@@ -57,6 +57,8 @@ def msg2img(message, bot, sansgg=False):
 
         pilmoji_inst = Pilmoji(Image.new("RGBA", (1, 1)), emoji_scale_factor=45/33)
 
+        if not text:
+            return lines, pings
         for txt in text.split("\n"):
             width_of_line = 0
             line = ""
