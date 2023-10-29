@@ -2,3 +2,4 @@ aiohttp[speedups]
 nextcord[speed]
 Pillow==9.5.0
 Pilmoji
+requests
