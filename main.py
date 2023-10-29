@@ -728,7 +728,7 @@ async def on_message(message):
                 await asyncio.sleep(5)
                 await interaction.followup.send("**???**: Hello. We have a unique deal for you.", ephemeral=True)
                 await asyncio.sleep(5)
-                await interaction.followup.send("**???**: To access our services, press `Hidden` achievement tab 3 times in a row.", ephemeral=True)
+                await interaction.followup.send("**???**: To access our services, press \"Hidden\" `/achievements` tab 3 times in a row.", ephemeral=True)
                 await asyncio.sleep(5)
                 await interaction.followup.send("**???**: You won't be disappointed.", ephemeral=True)
                 await asyncio.sleep(5)
