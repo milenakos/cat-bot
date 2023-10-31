@@ -468,9 +468,13 @@ async def on_ready():
     while True:
         i = await bot.loop.run_in_executor(None, input, "$ ")
         if i == "quit":
+            print("bye bye")
             for id in set(save_queue):
                 with open(f"data/{id}.json", "w") as f:
                     json.dump(db[id], f)
+            sys.exit()
+        else:
+            print(f"wtf is {i}")
 
 # this is all the code which is ran on every message sent
 # its mostly for easter eggs or achievements
@@ -2293,7 +2297,7 @@ async def on_application_command_error(ctx, error):
     # ctx here is interaction
     normal_crash = False
     if in_error("KeyboardInterrupt"): # keyboard interrupt
-        exit()
+        sys.exit()
     elif in_error("Forbidden"):
         # forbidden error usually means we dont have permission to send messages in the channel
         print("logged a Forbidden error.")
