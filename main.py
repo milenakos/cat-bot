@@ -326,7 +326,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
 # otherwise only for ch_id
 # this is used for custom cat spawn timings
 async def run_spawn(ch_id=None):
-    global bot, fire
+    global bot, fire, save_queue
     
     if ch_id:
         summon_id = [int(ch_id)]
@@ -441,7 +441,7 @@ async def spawning_loop(times, ch_id):
 # some code which is run when bot is started
 @bot.event
 async def on_ready():
-    global milenakoos, OWNER_ID, do_save_emojis
+    global milenakoos, OWNER_ID, do_save_emojis, save_queue
     print("cat is now online")
     do_save_emojis = True
     total_members = db["total_members"]
@@ -480,7 +480,7 @@ async def on_ready():
 # its mostly for easter eggs or achievements
 @bot.event
 async def on_message(message):
-    global fire
+    global fire, save_queue
     text = message.content
     if message.author.id == bot.user.id:
         return
