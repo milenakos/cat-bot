@@ -466,7 +466,7 @@ async def on_ready():
     bot.loop.create_task(spawning_loop([120, 1200], None))
 
     while True:
-        i = await client.loop.run_in_executor(None, input, "$ ")
+        i = await bot.loop.run_in_executor(None, input, "$ ")
         if i == "quit":
             for id in set(save_queue):
                 with open(f"data/{id}.json", "w") as f:
