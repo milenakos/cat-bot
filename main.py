@@ -142,6 +142,7 @@ except Exception:
 
 terminate_queue = []
 update_queue = []
+save_queue = []
 
 # we store all discord text emojis to not refetch them a bajillion times
 # (this does mean you will need to restart the bot if you reupload an emoji)
@@ -157,8 +158,7 @@ for i in summon_id:
 # this is a helper which saves id to its .json file
 def save(id):
     id = str(id)
-    with open(f"data/{id}.json", "w") as f:
-        json.dump(db[id], f)
+    save_queue.append(id)
 
 # this is probably a good time to explain the database structure
 # each server is a json file
@@ -368,6 +368,12 @@ async def run_spawn(ch_id=None):
         db["summon_ids"] = list(dict.fromkeys(summon_id)) # remove all duplicates
         print("Finished cat loop")
 
+        for id in set(save_queue):
+            with open(f"data/{id}.json", "w") as f:
+                json.dump(db[id], f)
+
+        save_queue = []
+
         # backup
         with tarfile.open("backup.tar.gz", "w:gz") as tar:
             tar.add("data", arcname=os.path.sep)
@@ -459,6 +465,13 @@ async def on_ready():
     
     bot.loop.create_task(spawning_loop([120, 1200], None))
 
+    while True:
+        i = await client.loop.run_in_executor(None, input, "$ ")
+        if i == "quit":
+            for id in set(save_queue):
+                with open(f"data/{id}.json", "w") as f:
+                    json.dump(db[id], f)
+
 # this is all the code which is ran on every message sent
 # its mostly for easter eggs or achievements
 @bot.event
@@ -496,6 +509,9 @@ async def on_message(message):
 
     # this is auto-update thing
     if GITHUB_CHANNEL_ID and message.channel.id == GITHUB_CHANNEL_ID:
+        for id in set(save_queue):
+            with open(f"data/{id}.json", "w") as f:
+                json.dump(db[id], f)
         os.system("git pull")
         os.execv(sys.executable, ['python'] + sys.argv)
 
