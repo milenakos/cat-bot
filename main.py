@@ -11,7 +11,7 @@ from collections import UserDict
 ### Setup values start
 
 GUILD_ID = 966586000417619998 # for emojis
-CATS_GUILD_ID = 834831552739016714 # alternative guild purely for cattype emojis (use for christmas/halloween etc), False to disable
+CATS_GUILD_ID = False # alternative guild purely for cattype emojis (use for christmas/halloween etc), False to disable
 BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely recommended
 
 # discord bot token, use os.environ for more security
