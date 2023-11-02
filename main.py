@@ -326,7 +326,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
 # otherwise only for ch_id
 # this is used for custom cat spawn timings
 async def run_spawn(ch_id=None):
-    global bot, fire, save_queue
+    global bot, fire, save_queue, db
     
     if ch_id:
         summon_id = [int(ch_id)]
