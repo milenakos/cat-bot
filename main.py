@@ -374,6 +374,10 @@ async def run_spawn(ch_id=None):
 
         save_queue = []
 
+        # delete db to free up ram
+        del db
+        db = PopulatedDict()
+
         # backup
         with tarfile.open("backup.tar.gz", "w:gz") as tar:
             tar.add("data", arcname=os.path.sep)
