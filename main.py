@@ -1,5 +1,5 @@
 import nextcord as discord
-import msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile
+import msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile, gc
 from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
 from nextcord.ui import Button, View
@@ -376,6 +376,7 @@ async def run_spawn(ch_id=None):
 
         # delete db to free up ram
         del db
+        gc.collect()
         db = PopulatedDict()
 
         # backup
