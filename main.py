@@ -568,8 +568,7 @@ async def on_message(message):
             icon = get_emoji("pointlaugh")
             await message.add_reaction(icon)
         elif is_cat:
-            current_time = message.created_at
-            current_time = time.mktime(current_time.timetuple()) + current_time.microsecond / 1e6
+            current_time = message.created_at.timestamp()
             db["lastcatches"][str(message.channel.id)] = current_time
             cat_temp = db["cat"][str(message.channel.id)]
             db["cat"][str(message.channel.id)] = False
