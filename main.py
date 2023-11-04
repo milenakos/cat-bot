@@ -588,7 +588,7 @@ async def on_message(message):
             await var.delete()
             try:
                 # some math to make time look cool
-                then = time.mktime(catchtime.timetuple()) + catchtime.microsecond / 1e6
+                then = catchtime.timestamp()
                 time_caught = abs(round(((current_time - then) * 100)) / 100) # cry about it
                 days = time_caught // 86400
                 time_left = time_caught - (days * 86400)
