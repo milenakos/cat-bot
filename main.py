@@ -930,7 +930,7 @@ async def info(message: discord.Interaction):
     
     embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/cat-stand-966586000417619998)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\n" + \
                              f"Bot made by {gen_credits['author']}\nWith contributions by {gen_credits['contrib']}.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n" + \
-                             f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits['emoji']}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**nekos.life** for catgirls API\n**weilbyte** for TikTok TTS API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**")
+                             f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits['emoji']}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**waifu.pics** for catgirls API\n**weilbyte** for TikTok TTS API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**")
     
     # add "last update" to footer if we are using git
     if GITHUB_CHANNEL_ID:
@@ -1648,7 +1648,7 @@ if TOP_GG_TOKEN:
 async def catgirl(message: discord.Interaction):
     await message.response.defer()
     async with aiohttp.ClientSession() as session:
-        async with session.get('https://nekos.life/api/v2/img/neko') as response:
+        async with session.get('https://api.waifu.pics/sfw/neko') as response:
             data = await response.json()
             await message.followup.send(data["url"])
             return
