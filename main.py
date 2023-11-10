@@ -119,9 +119,8 @@ with open("battlepass.json", "r") as f:
 ach_names = ach_list.keys()
 ach_titles = {value["title"].lower(): key for (key, value) in ach_list.items()}
 
-intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ", intents=intents, help_command=None)
+intents = discord.Intents(message_content=True, messages=True, reactions=True, guilds=True)
+bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ", intents=intents, help_command=None, max_messages=None)
 
 # this list stores unique non-duplicate cattypes
 cattypes = []
@@ -703,7 +702,7 @@ async def on_message(message):
                 button.callback = dark_market_cutscene
             
             if button:
-                view = View(timeout=600)
+                view = View(timeout=300)
                 view.add_item(button)
             
             await message.channel.send(coughstring.format(username=message.author.name.replace("_", "\_"),
@@ -900,7 +899,7 @@ async def help(message):
 @bot.slash_command(description="View Cat's Patreon")
 async def patreon(message):
     button = Button(label="Support Cat On Patreon!", style=ButtonStyle.blurple, url="https://patreon.com/TheStaringCat")
-    view = View()
+    view = View(timeout=1)
     view.add_item(button)
     await message.response.send_message("Thanks for interest in my Patreon! Link is below.", view=view)
 
@@ -1089,7 +1088,7 @@ leave blank to reset.""", color=0x6E593C)
     button2 = Button(label="Catch Message", style=ButtonStyle.blurple)
     button2.callback = ask_catch
 
-    view = View(timeout=600)
+    view = View(timeout=120)
     view.add_item(button1)
     view.add_item(button2)
 
@@ -1345,7 +1344,7 @@ async def gift(message: discord.Interaction, \
             button2 = Button(label="Evade the tax", style=ButtonStyle.red)
             button2.callback = evade
 
-            myview = View(timeout=600)
+            myview = View(timeout=120)
 
             myview.add_item(button)
             myview.add_item(button2)
@@ -1465,7 +1464,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
             await achemb(message, "blackhole", "send", person2)
             return discord.Embed(color=0x6E593C, title=f"Blackhole", description="How Did We Get Here?"), None
         
-        view = View(timeout=600)
+        view = View(timeout=120)
     
         accept = Button(label="Accept", style=ButtonStyle.green)
         accept.callback = acceptb
@@ -1744,7 +1743,7 @@ async def dark_market(message):
                     await achemb(interaction, "thanksforplaying", "send")
                     add_cat(interaction.guild.id, interaction.user.id, "story_complete")
                     
-            run_view = View(timeout=600)
+            run_view = View(timeout=120)
             button = Button(label="RUN", style=ButtonStyle.green)
             button.callback = step
             run_view.add_item(button)
@@ -1752,7 +1751,7 @@ async def dark_market(message):
             await interaction.followup.send("RUN!\nClick the button as fast as possible to run away!", view=run_view, ephemeral=True)
             
         
-        myview = View(timeout=600)
+        myview = View(timeout=120)
         
         if level == len(cataine_prices) - 1:
             button = Button(label="What???", style=ButtonStyle.red)
@@ -1896,7 +1895,7 @@ async def achievements(message: discord.Interaction):
     button = Button(label="View all achievements", style=ButtonStyle.blurple)
     button.callback = send_full
 
-    myview = View(timeout=600)
+    myview = View(timeout=120)
     myview.add_item(button)
 
     await message.response.send_message(embed=embedVar, view=myview)
@@ -2037,7 +2036,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         button2.callback = fastlb
         button3.callback = slowlb
 
-        myview = View(timeout=600)
+        myview = View(timeout=180)
         myview.add_item(button1)
         myview.add_item(button2)
         myview.add_item(button3)
