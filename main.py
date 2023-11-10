@@ -691,9 +691,7 @@ async def on_message(message):
                 await asyncio.sleep(5)
                 await interaction.followup.send("the only choice is to go to that place.", ephemeral=True)
             
-            if randint(0, 50) == 0:
-                button = Button(label="Support Cat On Patreon!", style=ButtonStyle.gray, url="https://patreon.com/TheStaringCat")
-            elif randint(0, 50) == 0 and TOP_GG_TOKEN:
+            if randint(0, 50) == 0 and TOP_GG_TOKEN:
                 button = Button(label="Use /vote for extra cats!", style=ButtonStyle.gray, disabled=True)
             elif randint(0, 50) == 0:
                 button = Button(label="Join our Discord!", style=ButtonStyle.gray, url="https://discord.gg/cat-stand-966586000417619998")
@@ -895,13 +893,6 @@ async def help(message):
     )
 
     await message.response.send_message(embeds=[embed1, embed2])
-
-@bot.slash_command(description="View Cat's Patreon")
-async def patreon(message):
-    button = Button(label="Support Cat On Patreon!", style=ButtonStyle.blurple, url="https://patreon.com/TheStaringCat")
-    view = View(timeout=1)
-    view.add_item(button)
-    await message.response.send_message("Thanks for interest in my Patreon! Link is below.", view=view)
 
 @bot.slash_command(description="View information about the bot")
 async def info(message: discord.Interaction):
