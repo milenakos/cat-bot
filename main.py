@@ -647,7 +647,7 @@ async def on_message(message):
                 add_cat(message.guild.id, message.author.id, "cataine_active", 0, True)
                 suffix_string = f"\nyour cataine buff has expired. you know where to get a new one 😏"
 
-            elif randint(0, 10) == 0 and TOP_GG_TOKEN and get_cat(0, message.author.id, "vote_time") + 43200 > time.time():
+            elif randint(0, 10) == 0 and TOP_GG_TOKEN and get_cat(0, message.author.id, "vote_time") + 43200 < time.time():
                 suffix_string = f"\n💡 you haven't voted today! do {vote.get_mention()} to get some free cats."
 
             elif randint(0, 20) == 0:
