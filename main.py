@@ -635,17 +635,23 @@ async def on_message(message):
             except Exception:
                 db[str(message.guild.id)]["cought"] = ""
 
-            cataine_suffix = ""
+            suffix_string = ""
             silly_amount = 1
             if get_cat(message.guild.id, message.author.id, "cataine_active") > time.time():
                 # cataine is active
                 silly_amount = 2
-                cataine_suffix = f"\n🧂 cataine worked! you got 2 cats instead!"
+                suffix_string = f"\n🧂 cataine worked! you got 2 cats instead!"
                 
             elif get_cat(message.guild.id, message.author.id, "cataine_active") != 0:
                 # cataine ran out
                 add_cat(message.guild.id, message.author.id, "cataine_active", 0, True)
-                cataine_suffix = f"\nyour cataine buff has expired. you know where to get a new one 😏"
+                suffix_string = f"\nyour cataine buff has expired. you know where to get a new one 😏"
+
+            elif randint(0, 10) == 0 and TOP_GG_TOKEN and get_cat(0, message.author.id, "vote_time") + 43200 > time.time():
+                suffix_string = f"\n💡 you haven't voted today! do {vote.get_mention()} to get some free cats."
+
+            elif randint(0, 20) == 0:
+                suffix_string = "\n❤️ donors help to keep cat bot operating. [donate to cat bot](https://boosty.to/TheStaringCat): you can't pat offline cats."
 
             if db[str(message.guild.id)]["cought"]:
                 coughstring = db[str(message.guild.id)]["cought"]
@@ -691,23 +697,21 @@ async def on_message(message):
                 await asyncio.sleep(5)
                 await interaction.followup.send("the only choice is to go to that place.", ephemeral=True)
             
-            if randint(0, 50) == 0 and TOP_GG_TOKEN:
-                button = Button(label="Use /vote for extra cats!", style=ButtonStyle.gray, disabled=True)
-            elif randint(0, 50) == 0:
+            if randint(0, 50) == 0:
                 button = Button(label="Join our Discord!", style=ButtonStyle.gray, url="https://discord.gg/cat-stand-966586000417619998")
             elif randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
                 button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
                 button.callback = dark_market_cutscene
             
             if button:
-                view = View(timeout=300)
+                view = View(timeout=600)
                 view.add_item(button)
             
             await message.channel.send(coughstring.format(username=message.author.name.replace("_", "\_"),
                                                            emoji=icon,
                                                            type=le_emoji,
                                                            count=add_cat(message.guild.id, message.author.id, le_emoji, silly_amount),
-                                                           time=caught_time[:-1]) + cataine_suffix,
+                                                           time=caught_time[:-1]) + suffix_string,
                                        view=view,
                                        allowed_mentions=None)
             
