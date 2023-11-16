@@ -650,9 +650,6 @@ async def on_message(message):
             elif randint(0, 10) == 0 and TOP_GG_TOKEN and get_cat(0, message.author.id, "vote_time") + 43200 < time.time():
                 suffix_string = f"\n💡 you haven't voted today! do {vote.get_mention()} to get some free cats."
 
-            elif randint(0, 20) == 0:
-                suffix_string = "\n❤️ donors help to keep cat bot operating. [donate to cat bot](<https://boosty.to/TheStaringCat>): you can't pat offline cats."
-
             if db[str(message.guild.id)]["cought"]:
                 coughstring = db[str(message.guild.id)]["cought"]
             elif le_emoji == "Corrupt":
