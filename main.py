@@ -2125,6 +2125,8 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str] = dis
         if db["cat"][str(message.channel.id)]:
             await message.response.send_message("there is already a cat", ephemeral=True)
             return
+        else:
+            raise Exception
     except Exception:
         await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
         return
