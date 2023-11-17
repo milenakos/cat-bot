@@ -140,6 +140,8 @@ except Exception:
     OWNER_ID = 0
 
 save_queue = []
+terminate_queue = []
+update_queue = []
 
 # we store all discord text emojis to not refetch them a bajillion times
 # (this does mean you will need to restart the bot if you reupload an emoji)
@@ -318,22 +320,28 @@ async def achemb(message, ach_id, send_type, author_string=None):
             await asyncio.sleep(2)
             await result.edit(embed=embed)
 
-# this is the main cat spawning function
-async def run_spawn():
+
+# if ch_id is None it runs the default loop for all servers
+# otherwise only for ch_id
+# this is used for custom cat spawn timings
+async def run_spawn(ch_id=None):
     global bot, fire, save_queue, db
     
-    # update status
-    total_members = db["total_members"]
-    await bot.change_presence(
-            activity=discord.Activity(type=discord.ActivityType.competing, name=f"{len(bot.guilds)} servers with {total_members} people")
-    )
-    
-    summon_id = db["summon_ids"]
-    print("Main cat loop is running")
+    if ch_id:
+        summon_id = [int(ch_id)]
+    else:
+        # update status
+        total_members = db["total_members"]
+        await bot.change_presence(
+                activity=discord.Activity(type=discord.ActivityType.competing, name=f"{len(bot.guilds)} servers with {total_members} people")
+        )
+
+        summon_id = db["summon_ids"]
+        print("Main cat loop is running")
     
     for i in summon_id:
         try:
-            if fire[i] and not db["cat"][str(i)]:
+            if fire[i] and not db["cat"][str(i)] and (ch_id or str(i) not in db["spawn_times"].keys()):
                 file = discord.File("cat.png")
                 localcat = choice(CAT_TYPES)
                 icon = get_emoji(localcat.lower() + "cat")
@@ -355,29 +363,31 @@ async def run_spawn():
     
     save("cat")
     
-    db["summon_ids"] = list(dict.fromkeys(summon_id)) # remove all duplicates
-    print("Finished cat loop")
+    if not ch_id:
+        db["summon_ids"] = list(dict.fromkeys(summon_id)) # remove all duplicates
+        print("Finished cat loop")
 
-    for id in set(save_queue):
-        with open(f"data/{id}.json", "w") as f:
-            json.dump(db[id], f)
-
-    save_queue = []
-
-    # backup
-    with tarfile.open("backup.tar.gz", "w:gz") as tar:
-        tar.add("data", arcname=os.path.sep)
+        for id in set(save_queue):
+            with open(f"data/{id}.json", "w") as f:
+                json.dump(db[id], f)
     
-    backupchannel = await bot.fetch_channel(BACKUP_ID)
-    thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
-    await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
-    if not TOP_GG_TOKEN:
-        return
-    async with aiohttp.ClientSession() as session:
-        # send server count to top.gg
-        await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
-                                headers={"Authorization": TOP_GG_TOKEN},
-                                json={"server_count": len(bot.guilds)})
+        save_queue = []
+    
+        # backup
+        with tarfile.open("backup.tar.gz", "w:gz") as tar:
+            tar.add("data", arcname=os.path.sep)
+        
+        backupchannel = await bot.fetch_channel(BACKUP_ID)
+        thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
+        await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
+        if not TOP_GG_TOKEN:
+            return
+        async with aiohttp.ClientSession() as session:
+            # send server count to top.gg
+            await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
+                                    headers={"Authorization": TOP_GG_TOKEN},
+                                    json={"server_count": len(bot.guilds)})
+
 
 # update the server counter in bot's status
 @tasks.loop(seconds=3600)
@@ -389,6 +399,45 @@ async def update_presence():
         total += g.approximate_member_count
     db["total_members"] = total
     save("total_members")
+
+
+# main spawn waiting loop
+# again, if ch_id is None its for basic spawns
+# otherwise for custom timings
+async def spawning_loop(times, ch_id):
+    global terminate_queue, update_queue
+    print("opened a loop for", ch_id)
+    can_recover = True # we only recover the first time the loop is ran
+    while True:
+        try:
+            if can_recover and db["recovery_times"][str(ch_id)] > time.time():
+                # recover
+                wait_time = db["recovery_times"][str(ch_id)] - time.time()
+                print("recovered", ch_id, "looping in", wait_time)
+            else:
+                raise Exception
+        except Exception:
+            wait_time = randint(times[0], times[1])
+            db["recovery_times"][str(ch_id)] = time.time() + wait_time
+            save("recovery_times")
+
+        can_recover = False
+
+        await asyncio.sleep(wait_time)
+
+        if str(ch_id) in terminate_queue:
+            print("terminating", ch_id)
+            terminate_queue.remove(str(ch_id))
+            return
+        if str(ch_id) in update_queue:
+            print("updating", ch_id)
+            update_queue.remove(str(ch_id))
+            times = db["spawn_times"][ch_id]
+
+        try:
+            await run_spawn(ch_id)
+        except Exception as e:
+            print(e)
 
 # some code which is run when bot is started
 @bot.event
@@ -408,9 +457,15 @@ async def on_ready():
         milenakoos = await bot.fetch_user(OWNER_ID)
     update_presence.start()
 
-    while True:
-        await asyncio.sleep(randint(120, 1200))
-        await run_spawn()
+    register_guild("spawn_times")
+    register_guild("recovery_times")
+
+    # we create all spawning loops
+    for k, v in db["spawn_times"].items():
+        bot.loop.create_task(spawning_loop(v, k))
+
+    bot.loop.create_task(spawning_loop([120, 1200], None))
+
 
 # this is all the code which is ran on every message sent
 # its mostly for easter eggs or achievements
@@ -863,7 +918,7 @@ async def on_guild_join(guild):
 async def help(message):
     embed1 = discord.Embed(
         title = "How to Setup",
-        description = "Server moderator (anyone with *Manage Server* permission) needs to run `/setup` in any channel. After that, cats will start to spawn in 2-20 minute intervals inside of that channel.\nYou can change the spawn message with `/changemessage`.\nCat spawns can also be forced by moderators using `/forcespawn` command.\nYou can have unlimited amounts of setupped channels at once.\nYou can stop the spawning in a channel by running `/forget`.",
+        description = "Server moderator (anyone with *Manage Server* permission) needs to run `/setup` in any channel. After that, cats will start to spawn in 2-20 minute intervals inside of that channel.\nYou can customize those intervals with `/changetimings` and change the spawn message with `/changemessage`.\nCat spawns can also be forced by moderators using `/forcespawn` command.\nYou can have unlimited amounts of setupped channels at once.\nYou can stop the spawning in a channel by running `/forget`.",
         color = 0x6E593C
     ).set_thumbnail(
         "https://pomf2.lain.la/f/zncxu6ej.png"
@@ -984,6 +1039,52 @@ async def repair(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
     save("cat")
     await message.response.send_message("success")
+
+@bot.slash_command(description="(ADMIN) Change the cat appear timings", default_member_permissions=32)
+async def changetimings(message: discord.Interaction,
+                        minimum_time: Optional[int] = discord.SlashOption(required=False, description="In seconds, minimum possible time between spawns (leave both empty to reset)"),
+                        maximum_time: Optional[int] = discord.SlashOption(required=False, description="In seconds, maximum possible time between spawns (leave both empty to reset)")):
+    global terminate_queue, update_queue
+    # terminate and update queues indicate the loops to do stuff when they are done with waiting
+
+    if int(message.channel.id) not in db["summon_ids"]:
+        await message.response.send_message("This channel isnt setupped. Please select a valid channel.", ephemeral=True)
+        return
+
+    if not minimum_time and not maximum_time:
+        # reset
+        terminate_queue.append(str(message.channel.id))
+        try:
+            del db["spawn_times"][message.channel.id]
+        except:
+            del db["spawn_times"][str(message.channel.id)] # IDK WHY BLAME JSON
+        save("spawn_times")
+        await message.response.send_message("Success! This channel is now reset back to usual spawning intervals.")
+    elif minimum_time and maximum_time:
+        if minimum_time < 20:
+            await message.response.send_message("Sorry, but minimum time must be above 20 seconds.", ephemeral=True)
+            return
+        if maximum_time <= minimum_time:
+            await message.response.send_message("Sorry, but minimum time must be less than maximum time.", ephemeral=True)
+            return
+
+        # create a custom loop if it wasnt already created
+        if str(message.channel.id) not in db["spawn_times"].keys():
+            do_spawn = True
+        else:
+            do_spawn = False
+            update_queue.append(str(message.channel.id))
+
+        db["spawn_times"][message.channel.id] = [minimum_time, maximum_time]
+        save("spawn_times")
+
+        if do_spawn:
+            bot.loop.create_task(spawning_loop([minimum_time, maximum_time], message.channel.id))
+
+        await message.response.send_message(f"Success! The next spawn will be {minimum_time} to {maximum_time} seconds from now.")
+    else:
+        await message.response.send_message("Please input all times.", ephemeral=True)
+
 
 @bot.slash_command(description="(ADMIN) Change the cat appear and cought messages", default_member_permissions=32)
 async def changemessage(message: discord.Interaction):
@@ -2069,6 +2170,12 @@ async def setup(message: discord.Interaction):
     abc = db["summon_ids"]
     abc.append(int(message.channel.id))
     db["summon_ids"] = abc
+    terminate_queue.append(str(message.channel.id))
+    try:
+        del db["spawn_times"][str(message.channel.id)]
+        save("spawn_times")
+    except Exception:
+         pass
     db["cat"][str(message.channel.id)] = False
     fire[str(message.channel.id)] = True
     save("summon_ids")
