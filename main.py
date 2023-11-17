@@ -2082,7 +2082,9 @@ async def forget(message: discord.Interaction):
         abc = db["summon_ids"]
         abc.remove(int(message.channel.id))
         db["summon_ids"] = abc
+        db["cat"][str(message.channel.id)] = False
         save("summon_ids")
+        save("cat")
         await message.response.send_message(f"ok, now i wont send cats in <#{message.channel.id}>")
     else:
         await message.response.send_message("your an idiot there is literally no cat setupped in this channel you stupid")
