@@ -2189,7 +2189,7 @@ async def forget(message: discord.Interaction):
         abc = db["summon_ids"]
         abc.remove(int(message.channel.id))
         db["summon_ids"] = abc
-        db["cat"][str(message.channel.id)] = False
+        del db["cat"][str(message.channel.id)]
         save("summon_ids")
         save("cat")
         await message.response.send_message(f"ok, now i wont send cats in <#{message.channel.id}>")
@@ -2232,8 +2232,6 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str] = dis
         if db["cat"][str(message.channel.id)]:
             await message.response.send_message("there is already a cat", ephemeral=True)
             return
-        else:
-            raise Exception
     except Exception:
         await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
         return
