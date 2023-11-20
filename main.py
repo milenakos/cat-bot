@@ -40,9 +40,9 @@ OWNER_ID = 553093932012011520
 NONOWORDS = [base64.b64decode(i).decode('utf-8') for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
 
 type_dict = {
-    "Fine": 1, # 1000
-    "Nice": 1, # 750
-    "Good": 1, # 500
+    "Fine": 1000,
+    "Nice": 750,
+    "Good": 500,
     "Rare": 350,
     "Wild": 275,
     "Baby": 230,
