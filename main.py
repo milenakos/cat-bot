@@ -1057,7 +1057,11 @@ async def changetimings(message: discord.Interaction,
         try:
             del db["spawn_times"][message.channel.id]
         except:
-            del db["spawn_times"][str(message.channel.id)] # IDK WHY BLAME JSON
+            try:
+                del db["spawn_times"][str(message.channel.id)] # IDK WHY BLAME JSON
+            except:
+                await message.response.send_message("This channel already has default spawning intervals.")
+                return
         save("spawn_times")
         await message.response.send_message("Success! This channel is now reset back to usual spawning intervals.")
     elif minimum_time and maximum_time:
