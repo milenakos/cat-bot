@@ -357,6 +357,10 @@ async def run_spawn(ch_id=None):
                 
                 message_is_sus = await channeley.send(appearstring.format(emoji=str(icon), type=localcat), file=file)
                 db["cat"][str(i)] = message_is_sus.id
+        except discord.NotFound:
+            summon_id.remove(i)
+        except discord.Forbidden:
+            summon_id.remove(i)
         except Exception:
             pass
         fire[i] = True
