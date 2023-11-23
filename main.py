@@ -2341,7 +2341,7 @@ async def on_application_command_error(ctx, error):
     except Exception as e:
         cont = "Error getting"
 
-    _, _, error2 = sys.exc_info()
+   error2 = error.__traceback__
 
     # if actually interesting crash, dm to bot owner
     if normal_crash:
