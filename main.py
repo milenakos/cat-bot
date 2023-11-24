@@ -761,7 +761,7 @@ async def on_message(message):
                 button.callback = dark_market_cutscene
             
             if button:
-                view = View(timeout=600)
+                view = View(timeout=1200)
                 view.add_item(button)
             
             await message.channel.send(coughstring.format(username=message.author.name.replace("_", "\_"),
@@ -1104,7 +1104,7 @@ async def changemessage(message: discord.Interaction):
         def __init__(self, type):
             super().__init__(
                 f"Change {type} Message",
-                timeout=5 * 60,  # 5 minutes
+                timeout=600,
             )
 
             self.type = type
@@ -1190,7 +1190,7 @@ leave blank to reset.""", color=0x6E593C)
     button2 = Button(label="Catch Message", style=ButtonStyle.blurple)
     button2.callback = ask_catch
 
-    view = View(timeout=120)
+    view = View(timeout=600)
     view.add_item(button1)
     view.add_item(button2)
 
@@ -1446,7 +1446,7 @@ async def gift(message: discord.Interaction, \
             button2 = Button(label="Evade the tax", style=ButtonStyle.red)
             button2.callback = evade
 
-            myview = View(timeout=120)
+            myview = View(timeout=600)
 
             myview.add_item(button)
             myview.add_item(button2)
@@ -1566,7 +1566,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
             await achemb(message, "blackhole", "send", person2)
             return discord.Embed(color=0x6E593C, title=f"Blackhole", description="How Did We Get Here?"), None
         
-        view = View(timeout=120)
+        view = View(timeout=600)
     
         accept = Button(label="Accept", style=ButtonStyle.green)
         accept.callback = acceptb
@@ -1619,7 +1619,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
         def __init__(self, currentuser):
             super().__init__(
                 "Add cats to the trade",
-                timeout=5 * 60,  # 5 minutes
+                timeout=600,  # 5 minutes
             )
             self.currentuser = currentuser
             
@@ -1845,7 +1845,7 @@ async def dark_market(message):
                     await achemb(interaction, "thanksforplaying", "send")
                     add_cat(interaction.guild.id, interaction.user.id, "story_complete")
                     
-            run_view = View(timeout=120)
+            run_view = View(timeout=600)
             button = Button(label="RUN", style=ButtonStyle.green)
             button.callback = step
             run_view.add_item(button)
@@ -1853,7 +1853,7 @@ async def dark_market(message):
             await interaction.followup.send("RUN!\nClick the button as fast as possible to run away!", view=run_view, ephemeral=True)
             
         
-        myview = View(timeout=120)
+        myview = View(timeout=600)
         
         if level == len(cataine_prices) - 1:
             button = Button(label="What???", style=ButtonStyle.red)
@@ -1997,7 +1997,7 @@ async def achievements(message: discord.Interaction):
     button = Button(label="View all achievements", style=ButtonStyle.blurple)
     button.callback = send_full
 
-    myview = View(timeout=120)
+    myview = View(timeout=600)
     myview.add_item(button)
 
     await message.response.send_message(embed=embedVar, view=myview)
@@ -2138,7 +2138,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         button2.callback = fastlb
         button3.callback = slowlb
 
-        myview = View(timeout=180)
+        myview = View(timeout=600)
         myview.add_item(button1)
         myview.add_item(button2)
         myview.add_item(button3)
