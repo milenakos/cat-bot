@@ -1765,7 +1765,7 @@ async def catgirl(message: discord.Interaction):
                 data = await response.json()
                 await message.followup.send(data["url"])
     except Exception:
-        await message.followup.send(f"Found no cagirls {get_emoji('cat_sad')}")
+        await message.followup.send(f"Found no cagirls {get_emoji('cat_cry')}")
                         
 @bot.slash_command(description="Get a random cat")
 async def random(message: discord.Interaction):
