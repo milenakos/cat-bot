@@ -1774,10 +1774,10 @@ async def random(message: discord.Interaction):
         try:
             async with session.get('https://api.thecatapi.com/v1/images/search', timeout=15) as response:
                 data = await response.json()
-                await message.response.send_message(data[0]['url'])
+                await message.followup.send(data[0]['url'])
                 await achemb(message, "randomizer", "send")
         except Exception:
-            await message.response.send_message("no cats :(")
+            await message.followup.send("no cats :(")
 
 async def dark_market(message):
     cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
