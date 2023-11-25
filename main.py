@@ -389,9 +389,13 @@ async def run_spawn(ch_id=None):
             return
         async with aiohttp.ClientSession() as session:
             # send server count to top.gg
-            await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
+            try:
+                await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
                                     headers={"Authorization": TOP_GG_TOKEN},
-                                    json={"server_count": len(bot.guilds)})
+                                    json={"server_count": len(bot.guilds)},
+                                    timeout=15)
+            except Exception:
+                print("Posting failed.")
 
 
 # update the server counter in bot's status
@@ -1009,20 +1013,20 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
         await achemb(message, "bwomp", "send")
         return
     async with aiohttp.ClientSession() as session:
-        async with session.post("https://tiktok-tts.weilnet.workers.dev/api/generation",
+        try:
+            async with session.post("https://tiktok-tts.weilnet.workers.dev/api/generation",
                                 headers={"Content-Type": "application/json"},
-                                json={"text": text, "voice": "en_us_002"}) as response:
-            try:
+                                json={"text": text, "voice": "en_us_002"},
+                                timeout=15) as response:
                 stuff = await response.json()
                 data = "" + stuff["data"]
-            except:
-                await message.followup.send("i dont speak your language (remove non-english characters, or make message shorter)")
-                return
-            with io.BytesIO() as f:
-                ba = "data:audio/mpeg;base64," + data
-                f.write(base64.b64decode(ba))
-                f.seek(0)
-                await message.followup.send(file=discord.File(fp=f, filename='output.mp3'))
+                with io.BytesIO() as f:
+                    ba = "data:audio/mpeg;base64," + data
+                    f.write(base64.b64decode(ba))
+                    f.seek(0)
+                    await message.followup.send(file=discord.File(fp=f, filename='output.mp3'))
+        except Exception:
+            await message.followup.send("i dont speak your language (remove non-english characters, or make message shorter)")
 
 @bot.slash_command(description="(ADMIN) Prevent someone from catching cats for a certain time period", default_member_permissions=32)
 async def preventcatch(message: discord.Interaction, person: discord.Member = discord.SlashOption(description="A person to timeout!"), timeout: int = discord.SlashOption(description="How many seconds? (0 to reset)")):
@@ -1728,12 +1732,19 @@ if TOP_GG_TOKEN:
             embedVar = discord.Embed(title="Already voted!", description=f"{weekend_message}You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve {icon} {cat_amount_written} more Good cats.", color=0x6E593C)
             await message.response.send_message(embed=embedVar)
             return
+        
         # otherwise check vote status
         async with aiohttp.ClientSession() as session:
-            async with session.get(f"https://top.gg/api/bots/{bot.user.id}/check",
+            try:
+                async with session.get(f"https://top.gg/api/bots/{bot.user.id}/check",
                                    params={"userId": message.user.id},
-                                   headers={"Authorization": TOP_GG_TOKEN}) as response:
-                resp = await response.json()
+                                   headers={"Authorization": TOP_GG_TOKEN},
+                                   timeout=3) as response:
+                    resp = await response.json()
+            except Exception:
+                embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve {icon} {cat_amount_written} Good cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
+                await message.response.send_message("i have trouble accessing top.gg. try again at a later time.", embed=embedVar)
+                return
         if resp["voted"] == 1:
             # valid vote
             add_cat(message.guild.id, message.user.id, "Good", cat_amount)
@@ -1748,30 +1759,25 @@ if TOP_GG_TOKEN:
 @bot.slash_command(description="Get a random cat girl")
 async def catgirl(message: discord.Interaction):
     await message.response.defer()
-    async with aiohttp.ClientSession() as session:
-        async with session.get('https://api.waifu.pics/sfw/neko') as response:
-            data = await response.json()
-            await message.followup.send(data["url"])
-            return
-    await message.followup.send(f"Found no cagirls {get_emoji('cat_sad')}")
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://api.waifu.pics/sfw/neko', timeout=5) as response:
+                data = await response.json()
+                await message.followup.send(data["url"])
+    except Exception:
+        await message.followup.send(f"Found no cagirls {get_emoji('cat_sad')}")
                         
 @bot.slash_command(description="Get a random cat")
 async def random(message: discord.Interaction):
-    counter = 0
+    await message.response.defer()
     async with aiohttp.ClientSession() as session:
-        while True:
-            if counter == 11:
-                return # we just retry 10 times incase api is hesitant
-            try:
-                async with session.get('https://api.thecatapi.com/v1/images/search') as response:
-                    data = await response.json()
-                    await message.response.send_message(data[0]['url'])
-                    counter += 1
-                    await achemb(message, "randomizer", "send")
-                    return
-            except Exception:
-                pass
-            counter += 1
+        try:
+            async with session.get('https://api.thecatapi.com/v1/images/search', timeout=15) as response:
+                data = await response.json()
+                await message.response.send_message(data[0]['url'])
+                await achemb(message, "randomizer", "send")
+        except Exception:
+            await message.response.send_message("no cats :(")
 
 async def dark_market(message):
     cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
