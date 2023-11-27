@@ -369,7 +369,8 @@ async def run_spawn(ch_id=None):
     save("cat")
     
     if not ch_id:
-        db["summon_ids"] = list(dict.fromkeys(summon_id)) # remove all duplicates
+        db["summon_ids"] = list(set(summon_id)) # remove all duplicates
+        save("summon_ids")
         print("Finished cat loop")
 
         for id in set(save_queue):
