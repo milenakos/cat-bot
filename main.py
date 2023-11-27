@@ -1400,7 +1400,10 @@ async def battlepass(message: discord.Interaction):
 @bot.slash_command(description="Pong")
 async def ping(message: discord.Interaction):
     await message.response.defer()
-    latency = round(bot.latency * 1000)
+    try:
+        latency = round(bot.latency * 1000)
+    except OverflowError:
+        latency = "infinite"
     await message.followup.send(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
 
 @bot.slash_command(description="give cats now")
