@@ -143,6 +143,9 @@ save_queue = []
 terminate_queue = []
 update_queue = []
 
+# docs suggest on_ready can be called multiple times
+on_ready_debounce = False
+
 # we store all discord text emojis to not refetch them a bajillion times
 # (this does mean you will need to restart the bot if you reupload an emoji)
 emojis = {}
@@ -452,7 +455,10 @@ async def spawning_loop(times, ch_id):
 # some code which is run when bot is started
 @bot.event
 async def on_ready():
-    global milenakoos, OWNER_ID, do_save_emojis, save_queue
+    global milenakoos, OWNER_ID, do_save_emojis, save_queue, on_ready_debounce
+    if on_ready_debounce:
+        return
+    on_ready_debounce = True
     print("cat is now online")
     do_save_emojis = True
     total_members = db["total_members"]
