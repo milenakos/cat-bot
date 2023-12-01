@@ -1071,14 +1071,13 @@ async def changetimings(message: discord.Interaction,
         # reset
         terminate_queue.append(str(message.channel.id))
         try:
-            del db["spawn_times"][message.channel.id]
+            del db["spawn_times"][str(message.channel.id)]
+            del db["recovery_times"][str(message.channel.id)]
         except:
-            try:
-                del db["spawn_times"][str(message.channel.id)] # IDK WHY BLAME JSON
-            except:
-                await message.response.send_message("This channel already has default spawning intervals.")
-                return
+            await message.response.send_message("This channel already has default spawning intervals.")
+            return
         save("spawn_times")
+        save("recovery_times")
         await message.response.send_message("Success! This channel is now reset back to usual spawning intervals.")
     elif minimum_time and maximum_time:
         if minimum_time < 20:
