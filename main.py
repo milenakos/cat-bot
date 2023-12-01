@@ -1051,9 +1051,14 @@ async def preventcatch(message: discord.Interaction, person: discord.Member = di
 
 @bot.slash_command(description="(ADMIN) Use if cat spawning is broken", default_member_permissions=32)
 async def repair(message: discord.Interaction):
-    # yeah it really just sets this to false and thats it
     db["cat"][str(message.channel.id)] = False
     save("cat")
+    if int(message.channel.id) in db["summon_ids"]:
+        try: del db["recovery_times"][str(message.channel.id)]
+        except: pass
+        terminate_queue.append(str(message.channel.id))
+        bot.loop.create_task(spawning_loop([minimum_time, maximum_time], message.channel.id))
+        save("recovery_times")
     await message.response.send_message("success")
 
 @bot.slash_command(description="(ADMIN) Change the cat appear timings", default_member_permissions=32)
