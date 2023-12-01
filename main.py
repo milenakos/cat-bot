@@ -1053,11 +1053,11 @@ async def preventcatch(message: discord.Interaction, person: discord.Member = di
 async def repair(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
     save("cat")
-    if int(message.channel.id) in db["summon_ids"]:
+    if int(message.channel.id) in db["spawn_times"]:
         try: del db["recovery_times"][str(message.channel.id)]
         except: pass
         terminate_queue.append(str(message.channel.id))
-        bot.loop.create_task(spawning_loop([minimum_time, maximum_time], message.channel.id))
+        bot.loop.create_task(spawning_loop(db["spawn_times"][str(message.channel.id)], message.channel.id))
         save("recovery_times")
     await message.response.send_message("success")
 
@@ -1099,7 +1099,7 @@ async def changetimings(message: discord.Interaction,
             do_spawn = False
             update_queue.append(str(message.channel.id))
 
-        db["spawn_times"][message.channel.id] = [minimum_time, maximum_time]
+        db["spawn_times"][str(message.channel.id)] = [minimum_time, maximum_time]
         save("spawn_times")
 
         if do_spawn:
