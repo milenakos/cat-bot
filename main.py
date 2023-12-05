@@ -280,6 +280,7 @@ def get_emoji(name):
                 result = discord.utils.get(bot.get_guild(CATS_GUILD_ID).emojis, name=name)
             else:
                 result = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=name)
+            if not result: raise Exception
             if do_save_emojis: emojis[name] = str(result)
             return result
         except Exception:
@@ -343,7 +344,6 @@ async def run_spawn(ch_id=None):
         print("Main cat loop is running")
     
     for i in summon_id:
-        if not ch_id: await asyncio.sleep(0.1) # to avoid meltdowns
         try:
             if fire[i] and not db["cat"][str(i)] and (ch_id or str(i) not in db["spawn_times"].keys()):
                 file = discord.File("cat.png")
