@@ -992,7 +992,7 @@ async def info(message: discord.Interaction):
     
     embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/cat-stand-966586000417619998)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\n" + \
                              f"Bot made by {gen_credits['author']}\nWith contributions by {gen_credits['contrib']}.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n" + \
-                             f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits['emoji']}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**waifu.pics** for catgirls API\n**weilbyte** for TikTok TTS API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**")
+                             f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits['emoji']}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**weilbyte** for TikTok TTS API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**")
     
     # add "last update" to footer if we are using git
     if GITHUB_CHANNEL_ID:
@@ -1728,6 +1728,7 @@ async def brew(message: discord.Interaction):
 if TOP_GG_TOKEN:
     @bot.slash_command(description="Vote on topgg for free cats")
     async def vote(message: discord.Interaction):
+        await message.response.defer()
         icon = get_emoji("goodcat")
         current_day = datetime.datetime.utcnow().isoweekday()
         
@@ -1744,7 +1745,7 @@ if TOP_GG_TOKEN:
             # already voted
             countdown = round(get_cat(0, message.user.id, "vote_time") + 43200)
             embedVar = discord.Embed(title="Already voted!", description=f"{weekend_message}You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve {icon} {cat_amount_written} more Good cats.", color=0x6E593C)
-            await message.response.send_message(embed=embedVar)
+            await message.followup.send(embed=embedVar)
             return
         
         # otherwise check vote status
@@ -1757,29 +1758,18 @@ if TOP_GG_TOKEN:
                     resp = await response.json()
             except Exception:
                 embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve {icon} {cat_amount_written} Good cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
-                await message.response.send_message("i have trouble accessing top.gg. try again at a later time.", embed=embedVar)
+                await message.followup.send("i have trouble accessing top.gg. try again at a later time.", embed=embedVar)
                 return
         if resp["voted"] == 1:
             # valid vote
             add_cat(message.guild.id, message.user.id, "Good", cat_amount)
             add_cat(0, message.user.id, "vote_time", time.time(), True)
             embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {cat_amount_written} Good cats.\nVote again in 12 hours.", color=0x007F0E)
-            await message.response.send_message(embed=embedVar)
+            await message.followup.send(embed=embedVar)
         else:
             # no vote :(
             embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve {icon} {cat_amount_written} Good cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
-            await message.response.send_message(embed=embedVar)
-
-@bot.slash_command(description="Get a random cat girl")
-async def catgirl(message: discord.Interaction):
-    await message.response.defer()
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get('https://api.waifu.pics/sfw/neko', timeout=5) as response:
-                data = await response.json()
-                await message.followup.send(data["url"])
-    except Exception:
-        await message.followup.send(f"Found no cagirls {get_emoji('cat_cry')}")
+            await message.followup.send(embed=embedVar)
                         
 @bot.slash_command(description="Get a random cat")
 async def random(message: discord.Interaction):
