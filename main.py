@@ -337,7 +337,7 @@ async def run_spawn(ch_id=None):
         # update status
         total_members = db["total_members"]
         await bot.change_presence(
-                activity=discord.Activity(type=discord.ActivityType.competing, name=f"{len(bot.guilds)} servers with {total_members} people")
+                activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers with {total_members} people", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
         )
 
         summon_id = db["summon_ids"]
@@ -463,7 +463,7 @@ async def on_ready():
     do_save_emojis = True
     total_members = db["total_members"]
     await bot.change_presence(
-            activity=discord.Activity(type=discord.ActivityType.competing, name=f"{len(bot.guilds)} servers with {total_members} people")
+            activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers with {total_members} people")
     )
     appinfo = await bot.application_info()
     if not OWNER_ID:
@@ -2014,9 +2014,10 @@ async def achievements(message: discord.Interaction):
             
 @bot.message_command(name="catch")
 async def catch(message: discord.Interaction, msg):
+    await message.response.defer()
     msg2img.msg2img(msg, bot, True)
     file = discord.File("generated.png", filename="generated.png")
-    await message.response.send_message("cought in 4k", file=file)
+    await message.folloup.send("cought in 4k", file=file)
     register_member(message.guild.id, msg.author.id)
     if msg.author.id != bot.user.id: await achemb(message, "4k", "send")
 
