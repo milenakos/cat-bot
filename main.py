@@ -463,7 +463,7 @@ async def on_ready():
     do_save_emojis = True
     total_members = db["total_members"]
     await bot.change_presence(
-        activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers with {total_members:,} people", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
+        activity=discord.CustomActivity(name=f"Just restarted! In {len(bot.guilds):,} servers with {total_members:,} people")
     )
     appinfo = await bot.application_info()
     if not OWNER_ID:
