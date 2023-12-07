@@ -2017,7 +2017,7 @@ async def catch(message: discord.Interaction, msg):
     await message.response.defer()
     msg2img.msg2img(msg, bot, True)
     file = discord.File("generated.png", filename="generated.png")
-    await message.folloup.send("cought in 4k", file=file)
+    await message.followup.send("cought in 4k", file=file)
     register_member(message.guild.id, msg.author.id)
     if msg.author.id != bot.user.id: await achemb(message, "4k", "send")
 
