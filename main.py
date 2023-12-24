@@ -1787,7 +1787,7 @@ async def dark_market(message):
     cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
                       [7, "Superior"], [5, "Legendary"], [3, "8bit"], [4, "Professor"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"], [100, "eGirl"]]
 
-    if get_cat(message.guild.id, message.user.id, "cataine_active") == 0:
+    if get_cat(message.guild.id, message.user.id, "cataine_active") < int(time.time()):
         level = get_cat(message.guild.id, message.user.id, "dark_market_level")
         embed = discord.Embed(title="The Dark Market", description="after entering the secret code, they let you in. today's deal is:")
         deal = cataine_prices[level]
@@ -1878,7 +1878,7 @@ async def dark_market(message):
 
         await message.followup.send(embed=embed, view=myview, ephemeral=True)
     else:
-        embed = discord.Embed(title="The Dark Market", description="you already bought from us recenlty. please wait until the next purchase.")
+        embed = discord.Embed(title="The Dark Market", description=f"you already bought from us recently. you can do next purchase <t:{get_cat(message.guild.id, message.user.id, 'cataine_active')}:R>.")
         await message.followup.send(embed=embed, ephemeral=True)
 
 @bot.slash_command(description="View your achievements")
