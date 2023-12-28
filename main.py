@@ -1023,7 +1023,7 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
         try:
             async with session.post("https://tiktok-tts.weilnet.workers.dev/api/generation",
                                 headers={"Content-Type": "application/json"},
-                                json={"text": text, "voice": "en_us_002"},
+                                json={"text": text, "voice": "en_us_001"},
                                 timeout=15) as response:
                 stuff = await response.json()
                 data = "" + stuff["data"]
