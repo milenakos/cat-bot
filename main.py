@@ -1005,7 +1005,7 @@ async def info(message: discord.Interaction):
 
 if TIKTOK_SESSION:
     @bot.slash_command(description="Read text as TikTok's TTS woman")
-    async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(description="The text to be read!")):
+    async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(description="The text to be read! (300 characters max)")):
         if message.user.id in BANNED_ID:
             await message.response.send_message("You do not have access to that command.", ephemeral=True)
             return
@@ -1040,7 +1040,7 @@ if TIKTOK_SESSION:
                         f.seek(0)
                         await message.followup.send(file=discord.File(fp=f, filename='output.mp3'))
             except Exception:
-                await message.followup.send("i dont speak your language (remove non-english characters, or make message shorter)")
+                await message.followup.send("i dont speak your language (remove non-english characters, make sure the message is below 300 chars)")
 
 @bot.slash_command(description="(ADMIN) Prevent someone from catching cats for a certain time period", default_member_permissions=32)
 async def preventcatch(message: discord.Interaction, person: discord.Member = discord.SlashOption(description="A person to timeout!"), timeout: int = discord.SlashOption(description="How many seconds? (0 to reset)")):
