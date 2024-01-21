@@ -1867,7 +1867,7 @@ async def dark_market(message):
             button.callback = step
             run_view.add_item(button)
             
-            await interaction.followup.send("RUN!\nClick the button as fast as possible to run away!", view=run_view, ephemeral=True)
+            await interaction.followup.send("RUN!\nSpam the button a lot of times as fast as possible to run away!", view=run_view, ephemeral=True)
             
         
         myview = View(timeout=600)
