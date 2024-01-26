@@ -280,9 +280,12 @@ def get_emoji(name):
     else:
         try:
             if name in allowedemojis and CATS_GUILD_ID:
-                result = discord.utils.get(bot.get_guild(CATS_GUILD_ID).emojis, name=name)
+                g = bot.get_guild(CATS_GUILD_ID)
             else:
-                result = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=name)
+                g = bot.get_guild(GUILD_ID)
+
+            # fetch_emoji does an api call, but because of emojis cache implemented here it shouldnt matter
+            result = await g.fetch_emoji(name)
             if not result: raise Exception
             if do_save_emojis: emojis[name] = str(result)
             return result
