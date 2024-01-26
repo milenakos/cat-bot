@@ -284,8 +284,7 @@ def get_emoji(name):
             else:
                 g = bot.get_guild(GUILD_ID)
 
-            # fetch_emoji does an api call, but because of emojis cache implemented here it shouldnt matter
-            result = await g.fetch_emoji(name)
+            result = g.get_emoji(name)
             if not result: raise Exception
             if do_save_emojis: emojis[name] = str(result)
             return result
