@@ -273,6 +273,7 @@ def give_ach(server_id, person_id, ach_id, reverse=False):
     save(server_id)
     return ach_list[ach_id]
 
+
 def get_emoji(name):
     global emojis
     if name in emojis.keys():
@@ -280,11 +281,9 @@ def get_emoji(name):
     else:
         try:
             if name in allowedemojis and CATS_GUILD_ID:
-                g = bot.get_guild(CATS_GUILD_ID)
+                result = discord.utils.get(bot.get_guild(CATS_GUILD_ID).emojis, name=name)
             else:
-                g = bot.get_guild(GUILD_ID)
-
-            result = g.get_emoji(name)
+                result = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=name)
             if not result: raise Exception
             if do_save_emojis: emojis[name] = str(result)
             return result
