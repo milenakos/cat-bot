@@ -2370,7 +2370,7 @@ async def on_application_command_error(ctx, error):
 
     # try to get some context maybe if we get lucky
     try:
-        cont = ctx.content
+        cont = ctx.guild.id
         print("debug", cont)
     except Exception as e:
         cont = "Error getting"
@@ -2382,7 +2382,7 @@ async def on_application_command_error(ctx, error):
         await milenakoos.send(
                 "There is an error happend:\n"
                 + str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error)
-                + "\n\nMessage text: "
+                + "\n\nMessage guild: "
                 + cont
         )
     else:
