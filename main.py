@@ -1737,22 +1737,17 @@ if TOP_GG_TOKEN:
     @bot.slash_command(description="Vote on topgg for free cats")
     async def vote(message: discord.Interaction):
         await message.response.defer()
-        icon = get_emoji("goodcat")
         current_day = datetime.datetime.utcnow().isoweekday()
         
         if current_day == 6 or current_day == 7:
-            cat_amount = 10
-            cat_amount_written = "~~5~~ **10**"
             weekend_message = "🌟 **It's weekend! All vote rewards are DOUBLED!**\n\n"
         else:
-            cat_amount = 5
-            cat_amount_written = "5"
             weekend_message = ""
         
         if get_cat(0, message.user.id, "vote_time") + 43200 > time.time():
             # already voted
             countdown = round(get_cat(0, message.user.id, "vote_time") + 43200)
-            embedVar = discord.Embed(title="Already voted!", description=f"{weekend_message}You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve {icon} {cat_amount_written} more Good cats.", color=0x6E593C)
+            embedVar = discord.Embed(title="Already voted!", description=f"{weekend_message}You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve more cats.", color=0x6E593C)
             await message.followup.send(embed=embedVar)
             return
         
@@ -1765,18 +1760,38 @@ if TOP_GG_TOKEN:
                                    timeout=3) as response:
                     resp = await response.json()
             except Exception:
-                embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve {icon} {cat_amount_written} Good cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
+                embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve mystery cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
                 await message.followup.send("i have trouble accessing top.gg. try again at a later time.", embed=embedVar)
                 return
         if resp["voted"] == 1:
             # valid vote
-            add_cat(message.guild.id, message.user.id, "Good", cat_amount)
+
+            # who at python hq though this was reasonable syntax
+            vote_choices = [
+                *([["Fine", 10]] * 1000),
+                *([["Good", 5]] * 500),
+                *([["Epic", 3]] * 400),
+                *([["Brave", 2]] * 300),
+                *([["TheTrashCell", 2]] * 200),
+                *([["8bit", 1]] * 100),
+                *([["Divine", 1]] * 50),
+                *([["Real", 1]] * 20),
+                ["eGirl", 1]
+            ]
+
+            cattype, amount = choice(vote_choices)
+            icon = get_emoji(cattype.lower() + "cat")
+            num_amount = amount
+            if current_day == 6 or current_day == 7:
+                amount = f"~~{amount}~~ **{amount*2}**"
+                num_amount = amount * 2
+            add_cat(message.guild.id, message.user.id, cattype, num_amount)
             add_cat(0, message.user.id, "vote_time", time.time(), True)
-            embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {cat_amount_written} Good cats.\nVote again in 12 hours.", color=0x007F0E)
+            embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats.\nVote again in 12 hours.", color=0x007F0E)
             await message.followup.send(embed=embedVar)
         else:
             # no vote :(
-            embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve {icon} {cat_amount_written} Good cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
+            embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve mystery cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
             await message.followup.send(embed=embedVar)
                         
 @bot.slash_command(description="Get a random cat")
