@@ -1783,8 +1783,8 @@ if TOP_GG_TOKEN:
             icon = get_emoji(cattype.lower() + "cat")
             num_amount = amount
             if current_day == 6 or current_day == 7:
-                amount = f"~~{amount}~~ **{amount*2}**"
                 num_amount = amount * 2
+                amount = f"~~{amount}~~ **{amount*2}**"
             add_cat(message.guild.id, message.user.id, cattype, num_amount)
             add_cat(0, message.user.id, "vote_time", time.time(), True)
             embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats.\nVote again in 12 hours.", color=0x007F0E)
