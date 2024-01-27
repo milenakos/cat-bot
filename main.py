@@ -1067,7 +1067,7 @@ async def repair(message: discord.Interaction):
         terminate_queue.append(str(message.channel.id))
         bot.loop.create_task(spawning_loop(db["spawn_times"][str(message.channel.id)], message.channel.id))
         save("recovery_times")
-    await message.response.send_message("success")
+    await message.response.send_message("success. if you still have issues, join our server: https://discord.gg/WCTzD3YQEk")
 
 @bot.slash_command(description="(ADMIN) Change the cat appear timings", default_member_permissions=32)
 async def changetimings(message: discord.Interaction,
@@ -1348,7 +1348,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Me
         icon = get_emoji(custom.lower() + "cat")
         embedVar.add_field(name=f"{icon} {custom}", value=1, inline=True)
     
-    if is_empty:
+    if is_empty and not custom:
         embedVar.add_field(name="None", value=f"u hav no cats {get_emoji('cat_cry')}", inline=True)
     
     if do_save:
