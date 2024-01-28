@@ -1064,8 +1064,6 @@ async def repair(message: discord.Interaction):
     if int(message.channel.id) in db["spawn_times"]:
         try: del db["recovery_times"][str(message.channel.id)]
         except: pass
-        terminate_queue.append(str(message.channel.id))
-        bot.loop.create_task(spawning_loop(db["spawn_times"][str(message.channel.id)], message.channel.id))
         save("recovery_times")
     await message.response.send_message("success. if you still have issues, join our server: https://discord.gg/WCTzD3YQEk")
 
@@ -1082,6 +1080,9 @@ async def changetimings(message: discord.Interaction,
 
     if not minimum_time and not maximum_time:
         # reset
+        if str(message.channel.id) in terminate_queue:
+            await message.response.send_message("You already reset the timings here recently. To prevent weird behaviour, please wait before doing this again.")
+            return
         terminate_queue.append(str(message.channel.id))
         try:
             del db["spawn_times"][str(message.channel.id)]
