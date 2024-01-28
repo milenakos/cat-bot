@@ -2213,7 +2213,6 @@ async def setup(message: discord.Interaction):
     abc = db["summon_ids"]
     abc.append(int(message.channel.id))
     db["summon_ids"] = abc
-    terminate_queue.append(str(message.channel.id))
     try:
         del db["spawn_times"][str(message.channel.id)]
         save("spawn_times")
