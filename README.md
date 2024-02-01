@@ -1,4 +1,4 @@
-# Cat Bot [![Discord Server](https://img.shields.io/discord/966586000417619998?label=discord&logo=discord)](https://discord.gg/cat-stand-966586000417619998) [![Server Count](https://top.gg/api/widget/servers/966695034340663367.svg)](https://discord.com/api/oauth2/authorize?client_id=966695034340663367&permissions=277025778752&scope=bot%20applications.commands)
+# Cat Bot [![Discord Server](https://img.shields.io/discord/966586000417619998?label=discord&logo=discord)](https://discord.gg/cat-stand-966586000417619998)
 Discord Cat Bot Source Code
 
 # Setup
