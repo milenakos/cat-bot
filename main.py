@@ -21,9 +21,6 @@ TOKEN = os.environ['token']
 # tiktok session id, set to False to disable
 TIKTOK_SESSION = os.environ["tiktok_session"]
 
-# set to False to disable /vote
-TOP_GG_TOKEN = os.environ['topggtoken']
-
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 # set to False to disable
 GITHUB_CHANNEL_ID = 1060965767044149249
@@ -393,17 +390,6 @@ async def run_spawn(ch_id=None):
         backupchannel = await bot.fetch_channel(BACKUP_ID)
         thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
         await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
-        if not TOP_GG_TOKEN:
-            return
-        async with aiohttp.ClientSession() as session:
-            # send server count to top.gg
-            try:
-                await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
-                                    headers={"Authorization": TOP_GG_TOKEN},
-                                    json={"server_count": len(bot.guilds)},
-                                    timeout=15)
-            except Exception:
-                print("Posting failed.")
 
 
 # update the server counter in bot's status
@@ -721,9 +707,6 @@ async def on_message(message):
                 # cataine ran out
                 add_cat(message.guild.id, message.author.id, "cataine_active", 0, True)
                 suffix_string = f"\nyour cataine buff has expired. you know where to get a new one 😏"
-
-            elif randint(0, 7) == 0 and TOP_GG_TOKEN and get_cat(0, message.author.id, "vote_time") + 43200 < time.time():
-                suffix_string = f"\n💡 you haven't voted today! do {vote.get_mention()} to get some free cats."
 
             if db[str(message.guild.id)]["cought"]:
                 coughstring = db[str(message.guild.id)]["cought"]
@@ -1222,9 +1205,7 @@ leave blank to reset.""", color=0x6E593C)
 
 @bot.slash_command(description="Get Daily cats")
 async def daily(message: discord.Interaction):
-    suffix = ""
-    if TOP_GG_TOKEN: suffix = "\nthere ARE cats for voting tho, check out `/vote`"
-    await message.response.send_message("there is no daily cats why did you even try this" + suffix)
+    await message.response.send_message("there is no daily cats why did you even try this")
     await achemb(message, "daily", "send")
 
 @bot.slash_command(description="View when the last cat was caught in this channel")
@@ -1733,67 +1714,6 @@ async def bal(message: discord.Interaction):
 async def brew(message: discord.Interaction):
    await message.response.send_message("HTTP 418: I'm a teapot. <https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418>")
    await achemb(message, "coffee", "send")
-
-if TOP_GG_TOKEN:
-    @bot.slash_command(description="Vote on topgg for free cats")
-    async def vote(message: discord.Interaction):
-        await message.response.defer()
-        current_day = datetime.datetime.utcnow().isoweekday()
-        
-        if current_day == 6 or current_day == 7:
-            weekend_message = "🌟 **It's weekend! All vote rewards are DOUBLED!**\n\n"
-        else:
-            weekend_message = ""
-        
-        if get_cat(0, message.user.id, "vote_time") + 43200 > time.time():
-            # already voted
-            countdown = round(get_cat(0, message.user.id, "vote_time") + 43200)
-            embedVar = discord.Embed(title="Already voted!", description=f"{weekend_message}You have already [voted for Cat Bot on top.gg](https://top.gg/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve more cats.", color=0x6E593C)
-            await message.followup.send(embed=embedVar)
-            return
-        
-        # otherwise check vote status
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(f"https://top.gg/api/bots/{bot.user.id}/check",
-                                   params={"userId": message.user.id},
-                                   headers={"Authorization": TOP_GG_TOKEN},
-                                   timeout=3) as response:
-                    resp = await response.json()
-            except Exception:
-                embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve mystery cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
-                await message.followup.send("i have trouble accessing top.gg. try again at a later time.", embed=embedVar)
-                return
-        if resp["voted"] == 1:
-            # valid vote
-
-            # who at python hq though this was reasonable syntax
-            vote_choices = [
-                *([["Fine", 10]] * 1000),
-                *([["Good", 5]] * 500),
-                *([["Epic", 3]] * 400),
-                *([["Brave", 2]] * 300),
-                *([["TheTrashCell", 2]] * 200),
-                *([["8bit", 1]] * 100),
-                *([["Divine", 1]] * 50),
-                *([["Real", 1]] * 20),
-                ["eGirl", 1]
-            ]
-
-            cattype, amount = choice(vote_choices)
-            icon = get_emoji(cattype.lower() + "cat")
-            num_amount = amount
-            if current_day == 6 or current_day == 7:
-                num_amount = amount * 2
-                amount = f"~~{amount}~~ **{amount*2}**"
-            add_cat(message.guild.id, message.user.id, cattype, num_amount)
-            add_cat(0, message.user.id, "vote_time", time.time(), True)
-            embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats.\nVote again in 12 hours.", color=0x007F0E)
-            await message.followup.send(embed=embedVar)
-        else:
-            # no vote :(
-            embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}[Vote for Cat Bot on top.gg](https://top.gg/bot/966695034340663367) every 12 hours to recieve mystery cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
-            await message.followup.send(embed=embedVar)
                         
 @bot.slash_command(description="Get a random cat")
 async def random(message: discord.Interaction):
