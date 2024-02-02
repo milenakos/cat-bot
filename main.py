@@ -8,7 +8,6 @@ from random import randint, choice
 from PIL import Image
 from collections import UserDict
 from flask import Flask, request
-from threading import Thread
 
 ### Setup values start
 
@@ -520,7 +519,7 @@ async def on_message(message):
             with open(f"data/{id}.json", "w") as f:
                 json.dump(db[id], f)
         os.system("git pull")
-        if WEBHOOK_VERIFY: flask_app.stop()
+        if flask_app_loop: flask_app_loop.cancel()
         os.execv(sys.executable, ['python'] + sys.argv)
 
     # :staring_cat: reaction on "bullshit"
@@ -2344,6 +2343,7 @@ async def on_application_command_error(ctx, error):
         # otherwise log to console
         print(str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error))
 
+flask_app_loop = None
 
 if WEBHOOK_VERIFY:
     flask_app = Flask('')
@@ -2391,9 +2391,9 @@ if WEBHOOK_VERIFY:
     
     def run():
         flask_app.run(host="0.0.0.0", port=8000)
+
+    flask_app_loop = bot.loop.create_task(run())
     
-    server = Thread(target=run)
-    server.start()
 
 # run the bot!
 bot.run(TOKEN)
