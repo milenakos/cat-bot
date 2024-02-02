@@ -1,5 +1,5 @@
 import nextcord as discord
-import msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile
+import msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile, server
 from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
 from nextcord.ui import Button, View
@@ -7,8 +7,6 @@ from typing import Optional
 from random import randint, choice
 from PIL import Image
 from collections import UserDict
-from flask import Flask, request
-from threading import Thread
 
 ### Setup values start
 
@@ -148,7 +146,6 @@ except Exception:
 save_queue = []
 terminate_queue = []
 update_queue = []
-voted_list = []
 
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
@@ -472,6 +469,14 @@ async def on_ready():
 
     register_guild("spawn_times")
     register_guild("recovery_times")
+
+    if WEBHOOK_VERIFY:
+        bot.server = server.HTTPServer(
+            bot=bot,
+            host="0.0.0.0",
+            port="8000",
+        )
+        await bot.server.start()
 
     # we create all spawning loops
     for k, v in db["spawn_times"].items():
@@ -1746,40 +1751,9 @@ if WEBHOOK_VERIFY:
             embedVar = discord.Embed(title="Already voted!", description=f"{weekend_message}You have already [voted for Cat Bot on wumpus.store](https://wumpus.store/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve more cats.", color=0x6E593C)
             await message.followup.send(embed=embedVar)
         else:
-            if message.user.id in voted_list:
-                voted_list.remove(mesasge.user.id)
-                
-                # who at python hq though this was reasonable syntax
-                vote_choices = [
-                    *([["Fine", 10]] * 1000),
-                    *([["Good", 5]] * 500),
-                    *([["Epic", 3]] * 400),
-                    *([["Brave", 2]] * 300),
-                    *([["TheTrashCell", 2]] * 200),
-                    *([["8bit", 1]] * 100),
-                    *([["Divine", 1]] * 50),
-                    *([["Real", 1]] * 20),
-                    ["eGirl", 1]
-                ]
-        
-                cattype, amount = choice(vote_choices)
-                icon = get_emoji(cattype.lower() + "cat")
-                num_amount = amount
-        
-                current_day = datetime.datetime.utcnow().isoweekday()
-                
-                if current_day == 6 or current_day == 7:
-                    num_amount = amount * 2
-                    amount = f"~~{amount}~~ **{amount*2}**"
-                
-                add_cat(message.guild.id, message.user.id, cattype, num_amount)
-                add_cat(0, message.user.id, "vote_time", time.time(), True)
-                embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats.\nVote again in 12 hours.", color=0x007F0E)
-                await message.channel.send(embed=embedVar)
-            else:
-                # no vote :(
-                embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}[Vote for Cat Bot on wumpus.store](https://wumpus.store/bot/966695034340663367) every 12 hours to recieve mystery cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
-                await message.followup.send(embed=embedVar)
+            # no vote :(
+            embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}[Vote for Cat Bot on wumpus.store](https://wumpus.store/bot/966695034340663367) every 12 hours to recieve mystery cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
+            await message.followup.send(embed=embedVar)
 
 @bot.slash_command(description="Get a random cat")
 async def random(message: discord.Interaction):
@@ -2376,22 +2350,46 @@ async def on_application_command_error(ctx, error):
         print(str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error))
 
 
-if WEBHOOK_VERIFY:
-    flask_app = Flask('')
-    
-    @flask_app.route('/vote')
-    def recieve_vote():
-        if request.headers.get('authorization', '') != WEBHOOK_VERIFY:
-            return "bad", 403
-        
-        voted_list.append(request.json["userId"])
+@server.add_route(path="/vote", method="POST")
+async def recieve_vote():
+    if request.headers.get('authorization', '') != WEBHOOK_VERIFY:
+        return "bad", 403
+    user = request.json["userId"]
+    try:
+        channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
+    except Exception:
+        # user doesnt want to claim /shrug
+        # ideally we store it until they want to claim it later but ehhhh
         return "ok", 200
     
-    def run():
-        flask_app.run(host="0.0.0.0", port=8000)
+    # who at python hq though this was reasonable syntax
+    vote_choices = [
+        *([["Fine", 10]] * 1000),
+        *([["Good", 5]] * 500),
+        *([["Epic", 3]] * 400),
+        *([["Brave", 2]] * 300),
+        *([["TheTrashCell", 2]] * 200),
+        *([["8bit", 1]] * 100),
+        *([["Divine", 1]] * 50),
+        *([["Real", 1]] * 20),
+        ["eGirl", 1]
+    ]
+
+    cattype, amount = choice(vote_choices)
+    icon = get_emoji(cattype.lower() + "cat")
+    num_amount = amount
+
+    current_day = datetime.datetime.utcnow().isoweekday()
     
-    server = Thread(target=run)
-    server.start()
+    if current_day == 6 or current_day == 7:
+        num_amount = amount * 2
+        amount = f"~~{amount}~~ **{amount*2}**"
+    
+    add_cat(channeley.guild.id, user, cattype, num_amount)
+    add_cat(0, user, "vote_time", time.time(), True)
+    embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats.\nVote again in 12 hours.", color=0x007F0E)
+    await channeley.send(embed=embedVar)
+    return "ok", 200
 
 
 bot.run(TOKEN)
