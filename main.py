@@ -1,5 +1,5 @@
 import nextcord as discord
-import msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile
+import msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile, server
 from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
 from nextcord.ui import Button, View
@@ -7,7 +7,6 @@ from typing import Optional
 from random import randint, choice
 from PIL import Image
 from collections import UserDict
-from flask import Flask, request
 
 ### Setup values start
 
@@ -470,6 +469,14 @@ async def on_ready():
 
     register_guild("spawn_times")
     register_guild("recovery_times")
+
+    if WEBHOOK_VERIFY:
+        bot.server = server.HTTPServer(
+            bot=bot,
+            host="0.0.0.0",
+            port="8000",
+        )
+        await bot.server.start()
 
     # we create all spawning loops
     for k, v in db["spawn_times"].items():
@@ -2343,57 +2350,47 @@ async def on_application_command_error(ctx, error):
         # otherwise log to console
         print(str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error))
 
-flask_app_loop = None
 
-if WEBHOOK_VERIFY:
-    flask_app = Flask('')
-    
-    @flask_app.route('/vote')
-    async def recieve_vote():
-        if request.headers.get('authorization', '') != WEBHOOK_VERIFY:
-            return "bad", 403
-        user = request.json["userId"]
-        try:
-            channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
-        except Exception:
-            # user doesnt want to claim /shrug
-            # ideally we store it until they want to claim it later but ehhhh
-            return "ok", 200
-        
-        # who at python hq though this was reasonable syntax
-        vote_choices = [
-            *([["Fine", 10]] * 1000),
-            *([["Good", 5]] * 500),
-            *([["Epic", 3]] * 400),
-            *([["Brave", 2]] * 300),
-            *([["TheTrashCell", 2]] * 200),
-            *([["8bit", 1]] * 100),
-            *([["Divine", 1]] * 50),
-            *([["Real", 1]] * 20),
-            ["eGirl", 1]
-        ]
-
-        cattype, amount = choice(vote_choices)
-        icon = get_emoji(cattype.lower() + "cat")
-        num_amount = amount
-
-        current_day = datetime.datetime.utcnow().isoweekday()
-        
-        if current_day == 6 or current_day == 7:
-            num_amount = amount * 2
-            amount = f"~~{amount}~~ **{amount*2}**"
-        
-        add_cat(channeley.guild.id, user, cattype, num_amount)
-        add_cat(0, user, "vote_time", time.time(), True)
-        embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats.\nVote again in 12 hours.", color=0x007F0E)
-        await channeley.send(embed=embedVar)
+@server.add_route(path="/vote")
+async def recieve_vote():
+    if request.headers.get('authorization', '') != WEBHOOK_VERIFY:
+        return "bad", 403
+    user = request.json["userId"]
+    try:
+        channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
+    except Exception:
+        # user doesnt want to claim /shrug
+        # ideally we store it until they want to claim it later but ehhhh
         return "ok", 200
     
-    def run():
-        flask_app.run(host="0.0.0.0", port=8000)
+    # who at python hq though this was reasonable syntax
+    vote_choices = [
+        *([["Fine", 10]] * 1000),
+        *([["Good", 5]] * 500),
+        *([["Epic", 3]] * 400),
+        *([["Brave", 2]] * 300),
+        *([["TheTrashCell", 2]] * 200),
+        *([["8bit", 1]] * 100),
+        *([["Divine", 1]] * 50),
+        *([["Real", 1]] * 20),
+        ["eGirl", 1]
+    ]
 
-    flask_app_loop = bot.loop.create_task(run())
+    cattype, amount = choice(vote_choices)
+    icon = get_emoji(cattype.lower() + "cat")
+    num_amount = amount
+
+    current_day = datetime.datetime.utcnow().isoweekday()
     
+    if current_day == 6 or current_day == 7:
+        num_amount = amount * 2
+        amount = f"~~{amount}~~ **{amount*2}**"
+    
+    add_cat(channeley.guild.id, user, cattype, num_amount)
+    add_cat(0, user, "vote_time", time.time(), True)
+    embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats.\nVote again in 12 hours.", color=0x007F0E)
+    await channeley.send(embed=embedVar)
+    return "ok", 200
 
-# run the bot!
+
 bot.run(TOKEN)
