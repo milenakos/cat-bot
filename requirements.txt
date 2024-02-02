@@ -3,5 +3,3 @@ nextcord[speed]
 Pillow==9.5.0
 Pilmoji
 requests
-discord
-dpy-http-server
