@@ -1741,7 +1741,7 @@ if WEBHOOK_VERIFY:
 
         if get_cat(0, message.author.id, "vote_time") + 43200 > time.time():
             # already voted
-            countdown = round(get_cat(0, message.author.id, "vote_time")+ 43200)
+            countdown = round(get_cat(0, message.author.id, "vote_time") + 43200)
             embedVar = discord.Embed(title="Already voted!", description=f"{weekend_message}You have already [voted for Cat Bot on wumpus.store](https://wumpus.store/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve more cats.", color=0x6E593C)
             await message.followup.send(embed=embedVar)
         else:
@@ -2337,7 +2337,7 @@ async def on_application_command_error(ctx, error):
                 "There is an error happend:\n"
                 + str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error)
                 + "\n\nMessage guild: "
-                + cont
+                + str(cont)
         )
     else:
         # otherwise log to console
