@@ -2351,10 +2351,10 @@ async def on_application_command_error(ctx, error):
 
 
 @server.add_route(path="/vote", method="POST")
-async def recieve_vote():
+async def recieve_vote(request):
     if request.headers.get('authorization', '') != WEBHOOK_VERIFY:
         return "bad", 403
-    user = request.json["userId"]
+    user = int(request.json["userId"])
     try:
         channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
     except Exception:
