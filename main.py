@@ -2381,10 +2381,12 @@ async def recieve_vote(request):
     num_amount = amount
 
     current_day = datetime.datetime.utcnow().isoweekday()
-    
+
+    weekend_message = ""
     if current_day == 6 or current_day == 7:
         num_amount = amount * 2
         amount = f"~~{amount}~~ **{amount*2}**"
+        weekend_message = "🌟 **It's weekend! All vote rewards are DOUBLED!**\n\n" 
     
     add_cat(channeley.guild.id, user, cattype, num_amount)
     add_cat(0, user, "vote_time", time.time(), True)
