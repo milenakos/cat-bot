@@ -7,6 +7,8 @@ from typing import Optional
 from random import randint, choice
 from PIL import Image
 from collections import UserDict
+from flask import Flask, request
+from threading import Thread
 
 ### Setup values start
 
@@ -20,6 +22,10 @@ TOKEN = os.environ['token']
 
 # tiktok session id, set to False to disable
 TIKTOK_SESSION = os.environ["tiktok_session"]
+
+# wumpus.store voting key
+# theoratically this is also compatible with top.gg vote webhooks but just set it to False ok
+WEBHOOK_VERIFY = os.environ["wumpus_store"]
 
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 # set to False to disable
@@ -708,6 +714,9 @@ async def on_message(message):
                 add_cat(message.guild.id, message.author.id, "cataine_active", 0, True)
                 suffix_string = f"\nyour cataine buff has expired. you know where to get a new one 😏"
 
+            elif randint(0, 7) == 0 and WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time") + 43200 < time.time():
+                suffix_string = f"\n💡 you haven't voted today! do {vote.get_mention()} to get some free cats."
+            
             if db[str(message.guild.id)]["cought"]:
                 coughstring = db[str(message.guild.id)]["cought"]
             elif le_emoji == "Corrupt":
@@ -1205,7 +1214,9 @@ leave blank to reset.""", color=0x6E593C)
 
 @bot.slash_command(description="Get Daily cats")
 async def daily(message: discord.Interaction):
-    await message.response.send_message("there is no daily cats why did you even try this")
+    suffix = ""
+    if WEBHOOK_VERIFY: suffix = "\nthere ARE cats for voting tho, check out `/vote`"
+    await message.response.send_message("there is no daily cats why did you even try this" + suffix)
     await achemb(message, "daily", "send")
 
 @bot.slash_command(description="View when the last cat was caught in this channel")
@@ -1714,7 +1725,30 @@ async def bal(message: discord.Interaction):
 async def brew(message: discord.Interaction):
    await message.response.send_message("HTTP 418: I'm a teapot. <https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418>")
    await achemb(message, "coffee", "send")
-                        
+
+if WEBHOOK_VERIFY:
+    @bot.slash_command(description="Vote for Cat Bot for free cats")
+    async def vote(message: discord.Interaction):
+        await message.response.defer()
+        current_day = datetime.datetime.utcnow().isoweekday()
+
+        add_cat(0, message.user.id, "vote_channel", message.channel.id, True)
+
+        if current_day == 6 or current_day == 7:
+            weekend_message = "🌟 **It's weekend! All vote rewards are DOUBLED!**\n\n"
+        else:
+            weekend_message = ""
+
+        if get_cat(0, message.author.id, "vote_time") + 43200 > time.time():
+            # already voted
+            countdown = round(get_cat(0, message.author.id, "vote_time")+ 43200)
+            embedVar = discord.Embed(title="Already voted!", description=f"{weekend_message}You have already [voted for Cat Bot on wumpus.store](https://wumpus.store/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve more cats.", color=0x6E593C)
+            await message.followup.send(embed=embedVar)
+        else:
+            # no vote :(
+            embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}[Vote for Cat Bot on wumpus.store](https://wumpus.store/bot/966695034340663367) every 12 hours to recieve mystery cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
+            await message.followup.send(embed=embedVar)
+
 @bot.slash_command(description="Get a random cat")
 async def random(message: discord.Interaction):
     await message.response.defer()
@@ -2308,6 +2342,57 @@ async def on_application_command_error(ctx, error):
     else:
         # otherwise log to console
         print(str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error))
+
+
+if WEBHOOK_VERIFY:
+    flask_app = Flask('')
+    
+    @flask_app.route('/vote')
+    async def recieve_vote():
+        if request.headers.get('authorization', '') != WEBHOOK_VERIFY:
+            return "bad", 403
+        user = request.json["userId"]
+        try:
+            channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
+        except Exception:
+            # user doesnt want to claim /shrug
+            # ideally we store it until they want to claim it later but ehhhh
+            return "ok", 200
+        
+        # who at python hq though this was reasonable syntax
+        vote_choices = [
+            *([["Fine", 10]] * 1000),
+            *([["Good", 5]] * 500),
+            *([["Epic", 3]] * 400),
+            *([["Brave", 2]] * 300),
+            *([["TheTrashCell", 2]] * 200),
+            *([["8bit", 1]] * 100),
+            *([["Divine", 1]] * 50),
+            *([["Real", 1]] * 20),
+            ["eGirl", 1]
+        ]
+
+        cattype, amount = choice(vote_choices)
+        icon = get_emoji(cattype.lower() + "cat")
+        num_amount = amount
+
+        current_day = datetime.datetime.utcnow().isoweekday()
+        
+        if current_day == 6 or current_day == 7:
+            num_amount = amount * 2
+            amount = f"~~{amount}~~ **{amount*2}**"
+        
+        add_cat(channeley.guild.id, user, cattype, num_amount)
+        add_cat(0, user, "vote_time", time.time(), True)
+        embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats.\nVote again in 12 hours.", color=0x007F0E)
+        await channeley.send(embed=embedVar)
+        return "ok", 200
+    
+    def run():
+        flask_app.run(host="0.0.0.0", port=8000)
+    
+    server = Thread(target=run)
+    server.start()
 
 # run the bot!
 bot.run(TOKEN)
