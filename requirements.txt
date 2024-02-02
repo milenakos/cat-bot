@@ -1,5 +1,6 @@
 aiohttp[speedups]
 nextcord[speed]
+flask[async]
 Pillow==9.5.0
 Pilmoji
 requests
