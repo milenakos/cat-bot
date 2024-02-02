@@ -2354,7 +2354,8 @@ async def on_application_command_error(ctx, error):
 async def recieve_vote(request):
     if request.headers.get('authorization', '') != WEBHOOK_VERIFY:
         return "bad", 403
-    user = int(request.json["userId"])
+    request_json = await request.json()
+    user = int(request_json["userId"])
     try:
         channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
     except Exception:
