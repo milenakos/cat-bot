@@ -520,6 +520,7 @@ async def on_message(message):
             with open(f"data/{id}.json", "w") as f:
                 json.dump(db[id], f)
         os.system("git pull")
+        if WEBHOOK_VERIFY: flask_app.stop()
         os.execv(sys.executable, ['python'] + sys.argv)
 
     # :staring_cat: reaction on "bullshit"
