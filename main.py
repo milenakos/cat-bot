@@ -2351,7 +2351,7 @@ async def on_application_command_error(ctx, error):
         print(str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error))
 
 
-@server.add_route(path="/vote")
+@server.add_route(path="/vote", method="POST")
 async def recieve_vote():
     if request.headers.get('authorization', '') != WEBHOOK_VERIFY:
         return "bad", 403
