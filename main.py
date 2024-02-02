@@ -474,7 +474,7 @@ async def on_ready():
         bot.server = server.HTTPServer(
             bot=bot,
             host="0.0.0.0",
-            port="8000",
+            port="80",
         )
         await bot.server.start()
 
