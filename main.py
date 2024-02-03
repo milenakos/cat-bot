@@ -6,6 +6,7 @@ from nextcord.ui import Button, View
 from typing import Optional
 from random import randint, choice
 from PIL import Image
+from aiohttp import web
 from collections import UserDict
 
 ### Setup values start
@@ -2354,15 +2355,14 @@ async def on_application_command_error(ctx, error):
 async def recieve_vote(request):
     print(request)
     if request.headers.get('authorization', '') != WEBHOOK_VERIFY:
-        return "bad", 403
+        return web.Response(text="bad", status=403)
     request_json = await request.json()
     user = int(request_json["userId"])
     try:
         channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
     except Exception:
         # user doesnt want to claim /shrug
-        # ideally we store it until they want to claim it later but ehhhh
-        return "ok", 200
+        return web.Response(text="ok", status=200)
     
     # who at python hq though this was reasonable syntax
     vote_choices = [
@@ -2393,7 +2393,7 @@ async def recieve_vote(request):
     add_cat(0, user, "vote_time", time.time(), True)
     embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats.\nVote again in 12 hours.", color=0x007F0E)
     await channeley.send(embed=embedVar)
-    return "ok", 200
+    return web.Response(text="ok", status=200)
 
 
 bot.run(TOKEN)
