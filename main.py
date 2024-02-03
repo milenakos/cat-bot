@@ -1753,7 +1753,7 @@ if WEBHOOK_VERIFY:
             await message.followup.send(embed=embedVar)
         else:
             # no vote :(
-            embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}[Vote for Cat Bot on wumpus.store](https://wumpus.store/bot/966695034340663367) every 12 hours to recieve mystery cats.\n\nRun this command again after you voted to recieve your cats.", color=0x6E593C)
+            embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}[Vote for Cat Bot on wumpus.store](https://wumpus.store/bot/966695034340663367) every 12 hours to recieve mystery cats.", color=0x6E593C)
             await message.followup.send(embed=embedVar)
 
 @bot.slash_command(description="Get a random cat")
