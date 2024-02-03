@@ -148,6 +148,10 @@ save_queue = []
 terminate_queue = []
 update_queue = []
 
+# cat bot auto-claims in the channel user last ran /vote in
+# this is a failsafe to store the fact they voted until they ran that atleast once
+pending_votes = []
+
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
 
@@ -1746,6 +1750,10 @@ if WEBHOOK_VERIFY:
         else:
             weekend_message = ""
 
+        if message.user.id in claim_reward:
+            claim_reward.remove(message.user.id)
+            await claim_reward(message.user.id, message.channel)
+
         if get_cat(0, message.user.id, "vote_time") + 43200 > time.time():
             # already voted
             countdown = round(get_cat(0, message.user.id, "vote_time") + 43200)
@@ -2350,20 +2358,7 @@ async def on_application_command_error(ctx, error):
         # otherwise log to console
         print(str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error))
 
-
-@server.add_route(path="/", method="POST")
-async def recieve_vote(request):
-    print(request)
-    if request.headers.get('authorization', '') != WEBHOOK_VERIFY:
-        return web.Response(text="bad", status=403)
-    request_json = await request.json()
-    user = int(request_json["userId"])
-    try:
-        channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
-    except Exception:
-        # user doesnt want to claim /shrug
-        return web.Response(text="ok", status=200)
-    
+async def claim_reward(user, channeley)
     # who at python hq though this was reasonable syntax
     vote_choices = [
         *([["Fine", 10]] * 1000),
@@ -2393,6 +2388,22 @@ async def recieve_vote(request):
     add_cat(0, user, "vote_time", time.time(), True)
     embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats.\nVote again in 12 hours.", color=0x007F0E)
     await channeley.send(embed=embedVar)
+
+
+@server.add_route(path="/", method="POST")
+async def recieve_vote(request):
+    print(request)
+    if request.headers.get('authorization', '') != WEBHOOK_VERIFY:
+        return web.Response(text="bad", status=403)
+    request_json = await request.json()
+    user = int(request_json["userId"])
+    try:
+        channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
+    except Exception:
+        pending_votes.append(user)
+        return web.Response(text="ok", status=200)
+    
+    await claim_reward(user, channeley)
     return web.Response(text="ok", status=200)
 
 
