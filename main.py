@@ -1750,8 +1750,8 @@ if WEBHOOK_VERIFY:
         else:
             weekend_message = ""
 
-        if message.user.id in claim_reward:
-            claim_reward.remove(message.user.id)
+        if message.user.id in pending_votes:
+            pending_votes.remove(message.user.id)
             await claim_reward(message.user.id, message.channel)
 
         if get_cat(0, message.user.id, "vote_time") + 43200 > time.time():
@@ -2358,7 +2358,7 @@ async def on_application_command_error(ctx, error):
         # otherwise log to console
         print(str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error))
 
-async def claim_reward(user, channeley)
+async def claim_reward(user, channeley):
     # who at python hq though this was reasonable syntax
     vote_choices = [
         *([["Fine", 10]] * 1000),
