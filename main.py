@@ -2387,7 +2387,7 @@ async def claim_reward(user, channeley):
     add_cat(channeley.guild.id, user, cattype, num_amount)
     add_cat(0, user, "vote_time", time.time(), True)
     embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats.\nVote again in 12 hours.", color=0x007F0E)
-    await channeley.send(embed=embedVar)
+    await channeley.send(f"<@{user}>", embed=embedVar)
 
 
 @server.add_route(path="/", method="POST")
