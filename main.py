@@ -19,8 +19,6 @@ BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely r
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
 
-# tiktok session id, set to False to disable
-TIKTOK_SESSION = os.environ["tiktok_session"]
 
 # wumpus.store voting key
 # theoratically this is also compatible with top.gg vote webhooks but just set it to False ok
@@ -999,52 +997,49 @@ async def info(message: discord.Interaction):
     
     embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/WCTzD3YQEk)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\n" + \
                              f"Bot made by {gen_credits['author']}\nWith contributions by {gen_credits['contrib']}.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n" + \
-                             f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits['emoji']}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**")
+                             f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits['emoji']}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**weilbyte** for TikTok TTS API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**")
     
     # add "last update" to footer if we are using git
     if GITHUB_CHANNEL_ID:
         embedVar.timestamp = datetime.datetime.fromtimestamp(int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8")))
-        embedVar.set_footer(text="Last updated:")
+        embedVar.set_footer(text="Last code update:")
     await message.followup.send(embed=embedVar)
 
-if TIKTOK_SESSION:
-    @bot.slash_command(description="Read text as TikTok's TTS woman")
-    async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(description="The text to be read! (300 characters max)")):
-        if message.user.id in BANNED_ID:
-            await message.response.send_message("You do not have access to that command.", ephemeral=True)
-            return
-        
-        # detect n-words
-        for i in NONOWORDS:
-            if i in text.lower():
-                await message.response.send_message("Do not.", ephemeral=True)
-                return
+@bot.slash_command(description="Read text as TikTok's TTS woman")
+async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(description="The text to be read! (300 characters max)")):
+    if message.user.id in BANNED_ID:
+        await message.response.send_message("You do not have access to that command.", ephemeral=True)
+        return
     
-        text = text.replace("+", "plus").replace(" ", "+").replace("&", "and")
-        
-        await message.response.defer()
-        
-        if text == "bwomp":
-            file = discord.File("bwomp.mp3", filename="bwomp.mp3")
-            await message.followup.send(file=file)
-            await achemb(message, "bwomp", "send")
+    # detect n-words
+    for i in NONOWORDS:
+        if i in text.lower():
+            await message.response.send_message("Do not.", ephemeral=True)
             return
 
-        # https://github.com/oscie57/tiktok-voice/blob/main/main.py
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.post(f"https://api16-normal-useast5.us.tiktokv.com/media/api/text/speech/invoke/?text_speaker=en_us_002&req_text={text}&speaker_map_type=0&aid=1233",
-                                    headers={'User-Agent': 'com.zhiliaoapp.musically/2022600030 (Linux; U; Android 7.1.2; es_ES; SM-G988N; Build/NRD90M;tt-ok/3.12.13.1)',
-                                             'Cookie': f'sessionid={TIKTOK_SESSION}'}) as response:
-                    stuff = await response.json()
-                    data = "" + stuff["data"]["v_str"]
-                    with io.BytesIO() as f:
-                        ba = "data:audio/mpeg;base64," + data
-                        f.write(base64.b64decode(ba))
-                        f.seek(0)
-                        await message.followup.send(file=discord.File(fp=f, filename='output.mp3'))
-            except Exception:
-                await message.followup.send("i dont speak your language (remove non-english characters, make sure the message is below 300 chars)")
+    text = text.replace("+", "plus").replace(" ", "+").replace("&", "and")
+    
+    await message.response.defer()
+    
+    if text == "bwomp":
+        file = discord.File("bwomp.mp3", filename="bwomp.mp3")
+        await message.followup.send(file=file)
+        await achemb(message, "bwomp", "send")
+        return
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.post("https://tiktok-tts.weilnet.workers.dev/api/generation",
+                                headers={"text":text, "voice":"en_us_002"}) as response:
+                stuff = await response.json()
+                data = "" + stuff["data"]
+                with io.BytesIO() as f:
+                    ba = "data:audio/mpeg;base64," + data
+                    f.write(base64.b64decode(ba))
+                    f.seek(0)
+                    await message.followup.send(file=discord.File(fp=f, filename='output.mp3'))
+        except Exception:
+            await message.followup.send("i dont speak your language (remove non-english characters, make sure the message is below 300 chars)")
 
 @bot.slash_command(description="(ADMIN) Prevent someone from catching cats for a certain time period", default_member_permissions=32)
 async def preventcatch(message: discord.Interaction, person: discord.Member = discord.SlashOption(description="A person to timeout!"), timeout: int = discord.SlashOption(description="How many seconds? (0 to reset)")):
