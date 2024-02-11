@@ -1033,7 +1033,7 @@ if TIKTOK_SESSION:
         # https://github.com/oscie57/tiktok-voice/blob/main/main.py
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.post(f"https://api16-normal-v6.tiktokv.com/media/api/text/speech/invoke/?text_speaker=en_us_002&req_text={text}&speaker_map_type=0&aid=1233",
+                async with session.post(f"https://api16-normal-useast5.us.tiktokv.com/media/api/text/speech/invoke/?text_speaker=en_us_002&req_text={text}&speaker_map_type=0&aid=1233",
                                     headers={'User-Agent': 'com.zhiliaoapp.musically/2022600030 (Linux; U; Android 7.1.2; es_ES; SM-G988N; Build/NRD90M;tt-ok/3.12.13.1)',
                                              'Cookie': f'sessionid={TIKTOK_SESSION}'}) as response:
                     stuff = await response.json()
