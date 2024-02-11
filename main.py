@@ -1030,7 +1030,7 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
     async with aiohttp.ClientSession() as session:
         try:
             async with session.post("https://tiktok-tts.weilnet.workers.dev/api/generation",
-                                headers={"text":text, "voice":"en_us_002"}) as response:
+                                json={"text":text, "voice":"en_us_002"}) as response:
                 stuff = await response.json()
                 data = "" + stuff["data"]
                 with io.BytesIO() as f:
