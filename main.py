@@ -64,7 +64,7 @@ type_dict = {
     "Divine": 8,
     "Real": 5,
     "Ultimate": 3,
-    "eGirl": 2
+    "eGirl": 20
 }
 
 # create a huge list where each cat type is multipled the needed amount of times
