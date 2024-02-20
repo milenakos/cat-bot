@@ -771,7 +771,7 @@ async def on_message(message):
                 await interaction.followup.send("the only choice is to go to that place.", ephemeral=True)
             
             if randint(0, 50) == 0:
-                button = Button(label="Join our Discord!", style=ButtonStyle.gray, url="https://discord.gg/WCTzD3YQEk")
+                button = Button(label="Join our Discord!", style=ButtonStyle.gray, url="https://discord.gg/staring")
             elif randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
                 button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
                 button.callback = dark_market_cutscene
@@ -933,7 +933,7 @@ async def on_guild_join(guild):
     # you are free to change/remove this, its just a note for general user letting them know
     unofficial_note = "**NOTE: This is an unofficial Cat Bot instance.**\n\n"
     if bot.user.id == 966695034340663367: unofficial_note = ""
-    await ch.send(unofficial_note + "Thanks for adding me!\nTo start, use `/help`!\nJoin the support server here: https://discord.gg/WCTzD3YQEk\nHave a nice day :)")
+    await ch.send(unofficial_note + "Thanks for adding me!\nTo start, use `/help`!\nJoin the support server here: https://discord.gg/staring\nHave a nice day :)")
 
 @bot.slash_command(description="Learn to use the bot")
 async def help(message):
@@ -962,7 +962,7 @@ async def help(message):
         inline=False
     ).add_field(
         name="Other features",
-        value="Cat Bot has extra fun commands which you will discover along the way.\nAnything unclear? Drop us a line at our [Discord server](https://discord.gg/WCTzD3YQEk).",
+        value="Cat Bot has extra fun commands which you will discover along the way.\nAnything unclear? Drop us a line at our [Discord server](https://discord.gg/staring).",
         inline=False
     ).set_footer(
         text=f"Cat Bot by Milenakos, {datetime.datetime.now().year}",
@@ -995,7 +995,7 @@ async def info(message: discord.Interaction):
             pass # death
         gen_credits[key] = ", ".join(peoples)
     
-    embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/WCTzD3YQEk)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\n" + \
+    embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/staring)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\n" + \
                              f"Bot made by {gen_credits['author']}\nWith contributions by {gen_credits['contrib']}.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n" + \
                              f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits['emoji']}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**weilbyte** for TikTok TTS API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**")
     
@@ -1063,7 +1063,7 @@ async def repair(message: discord.Interaction):
         try: del db["recovery_times"][str(message.channel.id)]
         except: pass
         save("recovery_times")
-    await message.response.send_message("success. if you still have issues, join our server: https://discord.gg/WCTzD3YQEk")
+    await message.response.send_message("success. if you still have issues, join our server: https://discord.gg/staring")
 
 @bot.slash_command(description="(ADMIN) Change the cat appear timings", default_member_permissions=32)
 async def changetimings(message: discord.Interaction,
