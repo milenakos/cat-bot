@@ -1748,7 +1748,7 @@ async def casino(message: discord.Interaction):
             await interaction.response.send_message("BROKE ALERT ‼️", ephemeral=True)
             return
 
-        await interaction.defer()
+        await interaction.response.defer()
         remove_cat(message.guild.id, message.user.id, "Epic", 5)
 
         variants = [
