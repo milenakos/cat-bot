@@ -4,7 +4,7 @@ from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
 from nextcord.ui import Button, View
 from typing import Optional
-from random import randint, choice
+from random import randint, choice, shuffle
 from PIL import Image
 from aiohttp import web
 from collections import UserDict
@@ -193,6 +193,9 @@ def add_cat(server_id, person_id, cattype, val=1, overwrite=False):
         db[str(server_id)][str(person_id)][cattype] = val
     save(server_id)
     return db[str(server_id)][str(person_id)][cattype]
+
+def set_cat(server_id, person_id, cattype, val=1):
+    return add_cat(server_id, person_id, cattype, val, True)
 
 def remove_cat(server_id, person_id, cattype, val=1):
     register_member(server_id, person_id)
@@ -1731,6 +1734,61 @@ async def bal(message: discord.Interaction):
 async def brew(message: discord.Interaction):
    await message.response.send_message("HTTP 418: I'm a teapot. <https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418>")
    await achemb(message, "coffee", "send")
+
+@bot.slash_command(description="Gamble your life savings away in our totally-not-rigged casino!")
+async def casino(message: discord.Interaction):
+    embed = discord.Embed(title="The Casino", description=f"One spin costs 5 {get_emoji('epiccat')} Epic cats", color=0x750F0E)
+    
+    async def spin(interaction):
+        nonlocal message
+        if interaction.user.id != message.user.id:
+            await interaction.response.send_message(choice(funny), ephemeral=True)
+            return
+        if get_cat(message.guild.id, message.user.id, "Epic") < 5:
+            await interaction.response.send_message("BROKE ALERT ‼️", ephemeral=True)
+            return
+
+        remove_cat(message.guild.id, message.user.id, "Epic", 5)
+
+        variants = [
+            f"{get_emoji('egirlcat')} 1 eGirl cats",
+            f"{get_emoji('egirlcat')} 3 eGirl cats",
+            f"{get_emoji('ultimatecat')} 2 Ultimate cats",
+            f"{get_emoji('corruptcat')} 7 Corrupt cats",
+            f"{get_emoji('divinecat')} 4 Divine cats",
+            f"{get_emoji('epiccat')} 10 Epic cats",
+            f"{get_emoji('professorcat')} 5 Professor cats",
+            f"{get_emoji('realcat')} 2 Real cats",
+            f"{get_emoji('legendarycat')} 5 Legendary cats",
+            f"{get_emoji('mythiccat')} 2 Mythic cats",
+            f"{get_emoji('8bitcat')} 7 8bit cats"
+        ]
+
+        shuffle(variants)
+        
+        for i in variants:
+            embed = discord.Embed(title="The Casino", description=f"**{i}**", color=0x750F0E)
+            await interaction.edit_original_message(embed=embed, view=None)
+            await asyncio.sleep(1)
+
+        embed = discord.Embed(title="The Casino", description=f"You won:\n**{get_emoji('finecat')} 1 Fine cats**", color=0x750F0E)
+        add_cat(message.guild.id, message.user.id, "Fine", 1)
+
+        button = Button(label="Spin", style=ButtonStyle.blurple)
+        button.callback = spin
+    
+        myview = View(timeout=600)
+        myview.add_item(button)
+
+        await interaction.edit_original_message(embed=embed, view=myview)
+
+    button = Button(label="Spin", style=ButtonStyle.blurple)
+    button.callback = spin
+
+    myview = View(timeout=600)
+    myview.add_item(button)
+
+    await message.response.send_message(embed=embed, view=myview)
 
 if WEBHOOK_VERIFY:
     @bot.slash_command(description="Vote for Cat Bot for free cats")
