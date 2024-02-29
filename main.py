@@ -1772,8 +1772,10 @@ async def casino(message: discord.Interaction):
             await interaction.edit_original_message(embed=embed, view=None)
             await asyncio.sleep(1)
 
-        embed = discord.Embed(title="The Casino", description=f"You won:\n**{get_emoji('finecat')} 1 Fine cats**", color=0x750F0E)
-        add_cat(message.guild.id, message.user.id, "Fine", 1)
+        amount = randint(1, 5)
+
+        embed = discord.Embed(title="The Casino", description=f"You won:\n**{get_emoji('finecat')} {amount} Fine cats**", color=0x750F0E)
+        add_cat(message.guild.id, message.user.id, "Fine", amount)
 
         button = Button(label="Spin", style=ButtonStyle.blurple)
         button.callback = spin
