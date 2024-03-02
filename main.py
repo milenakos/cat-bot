@@ -1755,7 +1755,7 @@ async def casino(message: discord.Interaction):
             await interaction.response.send_message(choice(funny), ephemeral=True)
             return
         if message.user.id in casino_lock:
-            await message.response.send_message("you get kicked out of the casino because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
+            await interaction.response.send_message("you get kicked out of the casino because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
             return
         if get_cat(message.guild.id, message.user.id, "Epic") < 5:
             await interaction.response.send_message("BROKE ALERT ‼️", ephemeral=True)
