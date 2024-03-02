@@ -150,6 +150,9 @@ update_queue = []
 # this is a failsafe to store the fact they voted until they ran that atleast once
 pending_votes = []
 
+# prevent ratelimits
+casino_lock = []
+
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
 
@@ -1737,6 +1740,10 @@ async def brew(message: discord.Interaction):
 
 @bot.slash_command(description="Gamble your life savings away in our totally-not-rigged casino!")
 async def casino(message: discord.Interaction):
+    if message.user.id in casino_lock:
+        await message.response.send_message("you get kicked out of the casino because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
+        return
+    
     embed = discord.Embed(title="The Casino", description=f"One spin costs 5 {get_emoji('epiccat')} Epic cats", color=0x750F0E)
     
     async def spin(interaction):
@@ -1744,11 +1751,15 @@ async def casino(message: discord.Interaction):
         if interaction.user.id != message.user.id:
             await interaction.response.send_message(choice(funny), ephemeral=True)
             return
+        if message.user.id in casino_lock:
+            await message.response.send_message("you get kicked out of the casino because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
+            return
         if get_cat(message.guild.id, message.user.id, "Epic") < 5:
             await interaction.response.send_message("BROKE ALERT ‼️", ephemeral=True)
             return
 
         await interaction.response.defer()
+        casino_lock.append(message.user.id)
         remove_cat(message.guild.id, message.user.id, "Epic", 5)
 
         variants = [
@@ -1782,6 +1793,8 @@ async def casino(message: discord.Interaction):
     
         myview = View(timeout=600)
         myview.add_item(button)
+
+        casino_lock.remove(message.user.id)
 
         await interaction.edit_original_message(embed=embed, view=myview)
 
