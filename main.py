@@ -8,6 +8,9 @@ from random import randint, choice, shuffle
 from PIL import Image
 from aiohttp import web
 from collections import UserDict
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 ### Setup values start
 
