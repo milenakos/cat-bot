@@ -2355,7 +2355,7 @@ async def giveachievement(message: discord.Interaction, person_id: discord.Membe
         await message.response.send_message("i cant find that achievement! try harder next time.", ephemeral=True)
 
 @bot.slash_command(description="(ADMIN) Reset people", default_member_permissions=32)
-async def reset(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who")):
+async def reset(message: discord.Interaction, person_id: discord.User = discord.SlashOption(name="user", description="who")):
     try:
         del db[str(message.guild.id)][str(person_id.id)]
         save(message.guild.id)
