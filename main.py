@@ -601,7 +601,9 @@ async def on_message(message):
             
     for r in reactions:
         if r[0] in text.lower():
-            if r[1] == "custom": await message.add_reaction(get_emoji(r[2]))
+            if r[1] == "custom":
+                await message.add_reaction(get_emoji(r[2]))
+                print(message.guild.id, message.channel.id)
             elif r[1] == "vanilla": await message.add_reaction(r[2])
             
     for resp in responses:
