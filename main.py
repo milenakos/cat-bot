@@ -355,7 +355,7 @@ async def run_spawn(ch_id=None):
     if ch_id:
         summon_id = [int(ch_id)]
     else:
-        reactions_ratelimit = []
+        reactions_ratelimit = {}
         # update status
         total_members = db["total_members"]
         await bot.change_presence(
