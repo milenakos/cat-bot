@@ -149,6 +149,10 @@ save_queue = []
 terminate_queue = []
 update_queue = []
 
+# due to some stupid individuals spamming the hell out of reactions, we ratelimit them
+# you can do 50 reactions before they stop, limit resets on global cat loop
+reactions_ratelimit = []
+
 # cat bot auto-claims in the channel user last ran /vote in
 # this is a failsafe to store the fact they voted until they ran that atleast once
 pending_votes = []
@@ -346,11 +350,12 @@ async def achemb(message, ach_id, send_type, author_string=None):
 # otherwise only for ch_id
 # this is used for custom cat spawn timings
 async def run_spawn(ch_id=None):
-    global bot, fire, save_queue, db
+    global bot, fire, save_queue, db, reactions_ratelimit
     
     if ch_id:
         summon_id = [int(ch_id)]
     else:
+        reactions_ratelimit = []
         # update status
         total_members = db["total_members"]
         await bot.change_presence(
@@ -600,11 +605,11 @@ async def on_message(message):
             await achemb(message, ach[2], "reply")
             
     for r in reactions:
-        if r[0] in text.lower():
-            if r[1] == "custom":
-                await message.add_reaction(get_emoji(r[2]))
-                print(message.guild.id, message.channel.id)
-            elif r[1] == "vanilla": await message.add_reaction(r[2])
+        if r[0] in text.lower() and reactions_ratelimit[message.author.id] < 50:
+            if r[1] == "custom": em = get_emoji(r[2])
+            elif r[1] == "vanilla": em = r[2]
+            reactions_ratelimit[message.author.id] = reactions_ratelimit.get(message.author.id, 0) + 1
+            await message.add_reaction(em)
             
     for resp in responses:
         if (resp[1] == "startswith" and text.lower().startswith(resp[0])) or \
