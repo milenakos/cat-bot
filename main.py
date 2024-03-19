@@ -151,7 +151,7 @@ update_queue = []
 
 # due to some stupid individuals spamming the hell out of reactions, we ratelimit them
 # you can do 50 reactions before they stop, limit resets on global cat loop
-reactions_ratelimit = []
+reactions_ratelimit = {}
 
 # cat bot auto-claims in the channel user last ran /vote in
 # this is a failsafe to store the fact they voted until they ran that atleast once
