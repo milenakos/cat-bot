@@ -1854,22 +1854,14 @@ if WEBHOOK_VERIFY:
 
         if get_cat(0, message.user.id, "vote_time_topgg") + 43200 > time.time():
             left = int(get_cat(0, message.user.id, "vote_time_topgg") + 43200 - time.time()) // 60
-            
-            left_hours = left//60
-            if left_hours < 10: left_hours = "0" + str(left_hours)
-            
-            button = Button(emoji=get_emoji("topgg"), label=f"{left_hours}:{left%60}", style=ButtonStyle.gray, disabled=True)
+            button = Button(emoji=get_emoji("topgg"), label=f"{str(left//60).zfill(2)}:{str(left%60).zfill(2)}", style=ButtonStyle.gray, disabled=True)
         else:
             button = Button(emoji=get_emoji("topgg"), label="Top.gg", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367")
         view.add_item(button)
         
         if get_cat(0, message.user.id, "vote_time") + 43200 > time.time():
             left = int(get_cat(0, message.user.id, "vote_time") + 43200 - time.time()) // 60
-            
-            left_hours = left//60
-            if left_hours < 10: left_hours = "0" + str(left_hours)
-            
-            button = Button(emoji=get_emoji("store"), label=f"{left_hours}:{left%60}", style=ButtonStyle.gray, disabled=True)
+            button = Button(emoji=get_emoji("store"), label=f"{str(left//60).zfill(2)}:{str(left%60).zfill(2)}", style=ButtonStyle.gray, disabled=True)
         else:
             button = Button(emoji=get_emoji("store"), label="Wumpus.store (No Ads)", style=ButtonStyle.gray, url="https://wumpus.store/bot/966695034340663367")
         view.add_item(button)
