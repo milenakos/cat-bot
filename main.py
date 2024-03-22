@@ -26,6 +26,9 @@ TOKEN = os.environ['token']
 # you can set it to false ig
 WEBHOOK_VERIFY = os.environ["webhook_verify"]
 
+# top.gg api token because they use ancient technology and you need to post server count manually smh
+TOP_GG_TOKEN = os.environ["top_gg_token"]
+
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 # set to False to disable
 GITHUB_CHANNEL_ID = 1060965767044149249
@@ -410,6 +413,18 @@ async def run_spawn(ch_id=None):
         backupchannel = await bot.fetch_channel(BACKUP_ID)
         thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
         await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
+        
+        if not TOP_GG_TOKEN:
+            return
+        async with aiohttp.ClientSession() as session:
+            # send server count to top.gg
+            try:
+                await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
+                                    headers={"Authorization": TOP_GG_TOKEN},
+                                    json={"server_count": len(bot.guilds)},
+                                    timeout=15)
+            except Exception:
+                print("Posting failed.")
 
 
 # update the server counter in bot's status
