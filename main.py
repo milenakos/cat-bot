@@ -22,16 +22,15 @@ BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely r
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
 
-
-# wumpus.store voting key
-# theoratically this is also compatible with top.gg vote webhooks but just set it to False ok
-WEBHOOK_VERIFY = os.environ["wumpus_store"]
+# wumpus.store & top.gg voting key
+# you can set it to false ig
+WEBHOOK_VERIFY = os.environ["webhook_verify"]
 
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 # set to False to disable
 GITHUB_CHANNEL_ID = 1060965767044149249
 
-BANNED_ID = [1029044762340241509] # banned from using /tiktok
+BANNED_ID = [] # banned from using /tiktok
 
 WHITELISTED_BOTS = [] # bots which are allowed to catch cats
 
@@ -1829,19 +1828,39 @@ if WEBHOOK_VERIFY:
         else:
             weekend_message = ""
 
-        if message.user.id in pending_votes:
-            pending_votes.remove(message.user.id)
-            await claim_reward(message.user.id, message.channel)
+        if [message.user.id, "wumpus"] in pending_votes:
+            pending_votes.remove([message.user.id, "wumpus"])
+            await claim_reward(message.user.id, message.channel, "wumpus")
+        if [message.user.id, "topgg"] in pending_votes:
+            pending_votes.remove([message.user.id, "topgg"])
+            await claim_reward(message.user.id, message.channel, "topgg")
 
-        if get_cat(0, message.user.id, "vote_time") + 43200 > time.time():
-            # already voted
-            countdown = round(get_cat(0, message.user.id, "vote_time") + 43200)
-            embedVar = discord.Embed(title="Already voted!", description=f"{weekend_message}You have already [voted for Cat Bot on wumpus.store](https://wumpus.store/bot/966695034340663367)!\nVote again <t:{countdown}:R> to recieve more cats.", color=0x6E593C)
-            await message.followup.send(embed=embedVar)
+        view = View(timeout=1200)
+
+        if get_cat(0, message.user.id, "vote_time_topgg") + 43200 > time.time():
+            left = int(get_cat(0, message.user.id, "vote_time_topgg") + 43200 - time.time()) // 60
+            
+            left_hours = left//60
+            if left_hours < 10: left_hours = "0" + str(left_hours)
+            
+            button = Button(emoji=get_emoji("topgg"), label=f"{left_hours}:{left%60}", style=ButtonStyle.gray, disabled=True)
         else:
-            # no vote :(
-            embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}[Vote for Cat Bot on wumpus.store](https://wumpus.store/bot/966695034340663367) every 12 hours to recieve mystery cats.", color=0x6E593C)
-            await message.followup.send(embed=embedVar)
+            button = Button(emoji=get_emoji("topgg"), label="Top.gg", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367")
+        view.add_item(button)
+        
+        if get_cat(0, message.user.id, "vote_time") + 43200 > time.time():
+            left = int(get_cat(0, message.user.id, "vote_time") + 43200 - time.time()) // 60
+            
+            left_hours = left//60
+            if left_hours < 10: left_hours = "0" + str(left_hours)
+            
+            button = Button(emoji=get_emoji("store"), label=f"{left_hours}:{left%60}", style=ButtonStyle.gray, disabled=True)
+        else:
+            button = Button(emoji=get_emoji("store"), label="Wumpus.store (No Ads)", style=ButtonStyle.gray, url="https://wumpus.store/bot/966695034340663367")
+        view.add_item(button)
+        
+        embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg and wumpus.store every 12 hours to recieve mystery cats.", color=0x6E593C)
+        await message.followup.send(embed=embedVar, view=view)
 
 @bot.slash_command(description="Get a random cat")
 async def random(message: discord.Interaction):
@@ -2437,7 +2456,7 @@ async def on_application_command_error(ctx, error):
         # otherwise log to console
         print(str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error))
 
-async def claim_reward(user, channeley):
+async def claim_reward(user, channeley, type):
     # who at python hq though this was reasonable syntax
     vote_choices = [
         *([["Fine", 10]] * 1000),
@@ -2450,6 +2469,13 @@ async def claim_reward(user, channeley):
         *([["Real", 1]] * 20),
         ["eGirl", 1]
     ]
+
+    if type == "topgg":
+        storekey = "vote_time_topgg"
+        cool_name = "Top.gg"
+    elif type == "wumpus":
+        storekey = "vote_time"
+        cool_name = "Wumpus.store"
 
     cattype, amount = choice(vote_choices)
     icon = get_emoji(cattype.lower() + "cat")
@@ -2464,8 +2490,8 @@ async def claim_reward(user, channeley):
         weekend_message = "🌟 **It's weekend! All vote rewards are DOUBLED!**\n\n" 
     
     add_cat(channeley.guild.id, user, cattype, num_amount)
-    add_cat(0, user, "vote_time", time.time(), True)
-    embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats.\nVote again in 12 hours.", color=0x007F0E)
+    add_cat(0, user, storekey, time.time(), True)
+    embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats for voting on {cool_name}.\nVote again in 12 hours.", color=0x007F0E)
     await channeley.send(f"<@{user}>", embed=embedVar)
 
 
@@ -2475,14 +2501,21 @@ async def recieve_vote(request):
     if request.headers.get('authorization', '') != WEBHOOK_VERIFY:
         return web.Response(text="bad", status=403)
     request_json = await request.json()
-    user = int(request_json["userId"])
+    
+    try:
+        user = int(request_json["userId"])
+        type = "wumpus"
+    except KeyError:
+        user = int(request_json["user"])
+        type = "topgg"
+    
     try:
         channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
     except Exception:
-        pending_votes.append(user)
+        pending_votes.append([user, type])
         return web.Response(text="ok", status=200)
     
-    await claim_reward(user, channeley)
+    await claim_reward(user, channeley, type)
     return web.Response(text="ok", status=200)
 
 
