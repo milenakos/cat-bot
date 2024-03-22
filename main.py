@@ -1866,7 +1866,7 @@ if WEBHOOK_VERIFY:
             button = Button(emoji=get_emoji("store"), label="Wumpus.store (No Ads)", style=ButtonStyle.gray, url="https://wumpus.store/bot/966695034340663367")
         view.add_item(button)
         
-        embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg and wumpus.store every 12 hours to recieve mystery cats.", color=0x6E593C)
+        embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg and wumpus.store every 12 hours to recieve mystery cats.\n*Both* votes will give you a separate reward.", color=0x6E593C)
         await message.followup.send(embed=embedVar, view=view)
 
 @bot.slash_command(description="Get a random cat")
