@@ -2515,6 +2515,9 @@ async def recieve_vote(request):
     except KeyError:
         user = int(request_json["user"])
         type = "topgg"
+        if get_cat(0, message.user.id, "vote_time_topgg") + 43100 > time.time():
+            # top.gg is NOT realiable with their webhooks, but we politely pretend they are
+            return web.Response(text="you fucking dumb idiot", status=200)
     
     try:
         channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
