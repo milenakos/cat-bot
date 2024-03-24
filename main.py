@@ -2497,7 +2497,6 @@ async def claim_reward(user, channeley, type):
         weekend_message = "🌟 **It's weekend! All vote rewards are DOUBLED!**\n\n" 
     
     add_cat(channeley.guild.id, user, cattype, num_amount)
-    add_cat(0, user, storekey, time.time(), True)
     embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats for voting on {cool_name}.\nVote again in 12 hours.", color=0x007F0E)
     await channeley.send(f"<@{user}>", embed=embedVar)
 
@@ -2512,12 +2511,14 @@ async def recieve_vote(request):
     try:
         user = int(request_json["userId"])
         type = "wumpus"
+        add_cat(0, user, "vote_time", time.time(), True)
     except KeyError:
         user = int(request_json["user"])
         type = "topgg"
         if get_cat(0, user, "vote_time_topgg") + 43100 > time.time():
             # top.gg is NOT realiable with their webhooks, but we politely pretend they are
             return web.Response(text="you fucking dumb idiot", status=200)
+        add_cat(0, user, "vote_time_topgg", time.time(), True)
     
     try:
         channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
