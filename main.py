@@ -417,7 +417,7 @@ async def run_spawn(ch_id=None):
         vote_remind = db["vote_remind"]
 
         # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
-        for i in vote_remind:
+        if False:
             if get_cat(0, i, "vote_time_topgg") + 43200 < time.time():
                 try:
                     person = await bot.fetch_user(i)
