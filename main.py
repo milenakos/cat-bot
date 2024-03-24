@@ -414,7 +414,6 @@ async def run_spawn(ch_id=None):
         thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
         await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
 
-        register_guild("vote_remind")
         vote_remind = db["vote_remind"]
 
         # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
@@ -1865,8 +1864,10 @@ if WEBHOOK_VERIFY:
     @bot.slash_command(description="Vote for Cat Bot for free cats")
     async def vote(message: discord.Interaction):
         await message.response.defer()
-        register_guild("vote_remind")
-        vote_remind = db["vote_remind"]
+        try:
+            vote_remind = db["vote_remind"]
+        except:
+            vote_remind = []
         
         current_day = datetime.datetime.utcnow().isoweekday()
 
