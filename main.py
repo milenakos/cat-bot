@@ -413,6 +413,37 @@ async def run_spawn(ch_id=None):
         backupchannel = await bot.fetch_channel(BACKUP_ID)
         thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
         await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
+
+        register_guild("vote_remind")
+        vote_remind = db["vote_remind"]
+
+        # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
+        for i in vote_remind:
+            if get_cat(0, i, "vote_time_topgg") + 43200 < time.time():
+                try:
+                    person = await bot.fetch_user(i)
+                    
+                    view = View(timeout=1200)
+                    button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367")
+                    view.add_item(button)
+                    
+                    await person.send("You can vote on Top.gg now!\n*Hint: You can always disbale these in the `/vote` command.*", view=view)
+                except Exception:
+                    vote_remind.remove(i)
+            if get_cat(0, i, "vote_time") + 43200 < time.time():
+                try:
+                    person = await bot.fetch_user(i)
+                    
+                    view = View(timeout=1200)
+                    button = Button(emoji=get_emoji("store"), label="Vote", style=ButtonStyle.gray, url="https://wumpus.store/bot/966695034340663367")
+                    view.add_item(button)
+                    
+                    await person.send("You can vote on Wumpus.store now!\n*Hint: You can always disbale these in the `/vote` command.*", view=view)
+                except Exception:
+                    vote_remind.remove(i)
+
+        db["vote_remind"] = vote_remind
+        save("vote_remind")
         
         if not TOP_GG_TOKEN:
             return
@@ -1834,6 +1865,9 @@ if WEBHOOK_VERIFY:
     @bot.slash_command(description="Vote for Cat Bot for free cats")
     async def vote(message: discord.Interaction):
         await message.response.defer()
+        register_guild("vote_remind")
+        vote_remind = db["vote_remind"]
+        
         current_day = datetime.datetime.utcnow().isoweekday()
 
         add_cat(0, message.user.id, "vote_channel", message.channel.id, True)
@@ -1850,6 +1884,17 @@ if WEBHOOK_VERIFY:
             pending_votes.remove([message.user.id, "topgg"])
             await claim_reward(message.user.id, message.channel, "topgg")
 
+        async def toggle_reminders(interaction):
+            nonlocal vote_remind
+            if interaction.user.id in vote_remind:
+                vote_remind.remove(interaction.user.id)
+                await interaction.response.send_message("Vote reminders have been turned off.", ephemeral=True)
+            else:
+                vote_remind.append(interaction.user.id)
+                await interaction.response.send_message("Vote reminders have been turned on.", ephemeral=True)
+            db["vote_remind"] = vote_remind
+            save("vote_remind")
+
         view = View(timeout=1200)
 
         if get_cat(0, message.user.id, "vote_time_topgg") + 43200 > time.time():
@@ -1864,6 +1909,13 @@ if WEBHOOK_VERIFY:
             button = Button(emoji=get_emoji("store"), label=f"{str(left//60).zfill(2)}:{str(left%60).zfill(2)}", style=ButtonStyle.gray, disabled=True)
         else:
             button = Button(emoji=get_emoji("store"), label="Wumpus.store (No Ads)", style=ButtonStyle.gray, url="https://wumpus.store/bot/966695034340663367")
+        view.add_item(button)
+
+        if message.user.id in vote_remind:
+            button = Button(label="Vote Reminders (ON)", style=ButtonStyle.green)
+        else:
+            button = Button(label="Vote Reminders (OFF)", style=ButtonStyle.red)
+        button.callback = toggle_reminders
         view.add_item(button)
         
         embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg and wumpus.store every 12 hours to recieve mystery cats.\n*Both* votes will give you a separate reward.", color=0x6E593C)
