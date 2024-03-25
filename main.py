@@ -417,8 +417,8 @@ async def run_spawn(ch_id=None):
         vote_remind = db["vote_remind"]
 
         # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
-        if False:
-            if get_cat(0, i, "vote_time_topgg") + 43200 < time.time():
+        for i in vote_remind:
+            if get_cat(0, i, "vote_time_topgg") + 43200 < time.time() and not get_cat(0, i, "reminder_topgg_exists"):
                 try:
                     person = await bot.fetch_user(i)
                     
@@ -427,9 +427,10 @@ async def run_spawn(ch_id=None):
                     view.add_item(button)
                     
                     await person.send("You can vote on Top.gg now!\n*Hint: You can always disbale these in the `/vote` command.*", view=view)
+                    set_cat(0, i, "reminder_topgg_exists", 1)
                 except Exception:
                     vote_remind.remove(i)
-            if get_cat(0, i, "vote_time") + 43200 < time.time():
+            if get_cat(0, i, "vote_time") + 43200 < time.time() and not get_cat(0, i, "reminder_wumpus_exists"):
                 try:
                     person = await bot.fetch_user(i)
                     
@@ -438,6 +439,7 @@ async def run_spawn(ch_id=None):
                     view.add_item(button)
                     
                     await person.send("You can vote on Wumpus.store now!\n*Hint: You can always disbale these in the `/vote` command.*", view=view)
+                    set_cat(0, i, "reminder_wumpus_exists", 1)
                 except Exception:
                     vote_remind.remove(i)
 
@@ -2565,6 +2567,7 @@ async def recieve_vote(request):
         user = int(request_json["userId"])
         type = "wumpus"
         add_cat(0, user, "vote_time", time.time(), True)
+        set_cat(0, i, "reminder_wumpus_exists", 0)
     except KeyError:
         user = int(request_json["user"])
         type = "topgg"
@@ -2572,6 +2575,7 @@ async def recieve_vote(request):
             # top.gg is NOT realiable with their webhooks, but we politely pretend they are
             return web.Response(text="you fucking dumb idiot", status=200)
         add_cat(0, user, "vote_time_topgg", time.time(), True)
+        set_cat(0, i, "reminder_topgg_exists", 0)
     
     try:
         channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
