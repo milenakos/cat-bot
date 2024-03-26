@@ -2567,7 +2567,7 @@ async def recieve_vote(request):
         user = int(request_json["userId"])
         type = "wumpus"
         add_cat(0, user, "vote_time", time.time(), True)
-        set_cat(0, i, "reminder_wumpus_exists", 0)
+        set_cat(0, user, "reminder_wumpus_exists", 0)
     except KeyError:
         user = int(request_json["user"])
         type = "topgg"
@@ -2575,7 +2575,7 @@ async def recieve_vote(request):
             # top.gg is NOT realiable with their webhooks, but we politely pretend they are
             return web.Response(text="you fucking dumb idiot", status=200)
         add_cat(0, user, "vote_time_topgg", time.time(), True)
-        set_cat(0, i, "reminder_topgg_exists", 0)
+        set_cat(0, user, "reminder_topgg_exists", 0)
     
     try:
         channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
