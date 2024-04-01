@@ -2444,6 +2444,7 @@ async def recieve_captcha(request):
     if not resp["success"]:
         return web.Response(text="NUH UH", status=400)
     else:
+        print(request.query["user"], request.query["channel"])
         await catch_cat(request.query["user"], request.query["channel"])
         return web.Response(text="good job!", status=200)
 
@@ -2453,8 +2454,9 @@ async def catch_cat(user_id, channel_id):
         guild = channel.guild
         author = await bot.fetch_user(user_id)
     except:
+        print("failed")
         return
-   
+        
     register_member(guild.id, author.id)
     
     try:
@@ -2511,6 +2513,7 @@ async def catch_cat(user_id, channel_id):
             do_time = False
             caught_time = "undefined amounts of time "
 
+        print(4)
         icon = None
         for v in allowedemojis:
             if v in catchcontents:
