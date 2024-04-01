@@ -2457,7 +2457,7 @@ async def catch_cat(user_id, channel_id):
         is_cat = False
 
     if is_cat:
-        current_time = datetime.datetime.now()
+        current_time = time.time()
         db["lastcatches"][str(channel.id)] = current_time
         cat_temp = db["cat"][str(channel.id)]
         db["cat"][str(channel.id)] = False
