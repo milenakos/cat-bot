@@ -691,7 +691,7 @@ async def on_message(message):
     # this is run whether someone says "cat" (very complex)
     if text.lower() == "cat":
         try:
-            is_cat = db["cat"][str(channel.id)]
+            is_cat = db["cat"][str(message.channel.id)]
         except Exception:
             is_cat = False
 
@@ -2411,7 +2411,7 @@ async def recieve_vote(request):
 
 @server.add_route(path="/captcha", method="GET")
 async def captcha(request):
-    return """<html>
+    return web.Response(text="""<html>
   <head>
     <title>Cat Bot Captcha</title>
     <script type="text/javascript">
@@ -2426,7 +2426,7 @@ async def captcha(request):
         <div style="position: absolute; left: 50%; top: 50%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%);" class="g-recaptcha" data-sitekey="6LfhzqcpAAAAAIQrddfbQwwjOB9LIM7ny77FpJok" data-callback="completeCallback"></div>
     </form>
   </body>
-</html>"""
+</html>""", status=200)
 
 @server.add_route(path='/captcha', method="POST")
 async def recieve_captcha(request):
@@ -2441,10 +2441,10 @@ async def recieve_captcha(request):
 
     resp = await r.json()
     if not resp["success"]:
-        return "NUH UH"
+        return web.Response(text="NUH UH", status=400)
     else:
         await catch_cat(request.query["user"], request.query["channel"])
-        return "good job!"
+        return web.Response(text="good job!", status=200)
 
 async def catch_cat(user_id, channel_id):
     try:
