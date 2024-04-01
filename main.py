@@ -2428,7 +2428,7 @@ async def captcha(request):
   </body>
 </html>"""
 
-@erver.add_route('/captcha', method="POST")
+@server.add_route('/captcha', method="POST")
 async def recieve_captcha(request):
     response = await request.post()["g-recaptcha-response"]
     async with aiohttp.ClientSession() as session:
