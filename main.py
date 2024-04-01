@@ -700,10 +700,10 @@ async def on_message(message):
             await message.add_reaction(icon)
         else:
             async def send_full(interaction):
-                view = View(timeout=1200)
+                button_view = View(timeout=1200)
                 button = Button(label="Verify", style=ButtonStyle.gray, url=f"https://minkos.online/captcha?user={interaction.user.id}&channel={interaction.channel.id}")
                 button.callback = send_full
-                view.add_item(button)
+                button_view.add_item(button)
                 await interaction.response.send_message("Click below to verify", ephemeral=True, view=button_view)
             
             view = View(timeout=1200)
@@ -2426,7 +2426,7 @@ async def captcha(request):
         <div style="position: absolute; left: 50%; top: 50%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%);" class="g-recaptcha" data-sitekey="6LfhzqcpAAAAAIQrddfbQwwjOB9LIM7ny77FpJok" data-callback="completeCallback"></div>
     </form>
   </body>
-</html>""", status=200)
+</html>""", content_type='text/html', status=200)
 
 @server.add_route(path='/captcha', method="POST")
 async def recieve_captcha(request):
