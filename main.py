@@ -691,19 +691,19 @@ async def on_message(message):
     # this is run whether someone says "cat" (very complex)
     if text.lower() == "cat":
         try:
-            is_cat = db["cat"][str(message.channel.id)]
+            is_cat = db["cat"][str(channel.id)]
         except Exception:
             is_cat = False
 
-        if not is_cat or (message.author.bot and message.author.id not in WHITELISTED_BOTS):
+        if not is_cat or timestamp > time.time() or (message.author.bot and message.author.id not in WHITELISTED_BOTS):
             icon = get_emoji("pointlaugh")
             await message.add_reaction(icon)
         else:
             async def send_full(interaction):
-                button_view = View(timeout=1200)
+                view = View(timeout=1200)
                 button = Button(label="Verify", style=ButtonStyle.gray, url=f"https://minkos.online/captcha?user={interaction.user.id}&channel={interaction.channel.id}")
                 button.callback = send_full
-                button_view.add_item(button)
+                view.add_item(button)
                 await interaction.response.send_message("Click below to verify", ephemeral=True, view=button_view)
             
             view = View(timeout=1200)
@@ -2411,7 +2411,7 @@ async def recieve_vote(request):
 
 @server.add_route(path="/captcha", method="GET")
 async def captcha(request):
-    return web.Response(text="""<html>
+    return """<html>
   <head>
     <title>Cat Bot Captcha</title>
     <script type="text/javascript">
@@ -2426,14 +2426,25 @@ async def captcha(request):
         <div style="position: absolute; left: 50%; top: 50%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%);" class="g-recaptcha" data-sitekey="6LfhzqcpAAAAAIQrddfbQwwjOB9LIM7ny77FpJok" data-callback="completeCallback"></div>
     </form>
   </body>
-</html>""", content_type='text/html', status=200)
+</html>"""
 
-@server.add_route(path='/captcha', method="POST")
+@erver.add_route('/captcha', method="POST")
 async def recieve_captcha(request):
-    # we dont verify cus i couldnt care less
-    print(request.query["user"], request.query["channel"])
-    await catch_cat(request.query["user"], request.query["channel"])
-    return web.Response(text="good job!", status=200)
+    response = await request.post()["g-recaptcha-response"]
+    async with aiohttp.ClientSession() as session:
+        # send server count to top.gg
+        try:
+            r = await session.post('https://www.google.com/recaptcha/api/siteverify',
+                                data={"secret": os.environ["captcha"], "response": response})
+        except Exception:
+            return "Posting failed."
+
+    resp = await r.json()
+    if not resp["success"]:
+        return "NUH UH"
+    else:
+        await catch_cat(request.query["user"], request.query["channel"])
+        return "good job!"
 
 async def catch_cat(user_id, channel_id):
     try:
@@ -2441,9 +2452,8 @@ async def catch_cat(user_id, channel_id):
         guild = channel.guild
         author = await bot.fetch_user(user_id)
     except:
-        print("failed")
         return
-        
+   
     register_member(guild.id, author.id)
     
     try:
@@ -2457,7 +2467,7 @@ async def catch_cat(user_id, channel_id):
         is_cat = False
 
     if is_cat:
-        current_time = time.time()
+        current_time = datetime.datetime.now()
         db["lastcatches"][str(channel.id)] = current_time
         cat_temp = db["cat"][str(channel.id)]
         db["cat"][str(channel.id)] = False
@@ -2500,7 +2510,6 @@ async def catch_cat(user_id, channel_id):
             do_time = False
             caught_time = "undefined amounts of time "
 
-        print(4)
         icon = None
         for v in allowedemojis:
             if v in catchcontents:
