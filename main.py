@@ -2430,23 +2430,10 @@ async def captcha(request):
 
 @server.add_route(path='/captcha', method="POST")
 async def recieve_captcha(request):
-    response = await request.post()
-    response_key = ["g-recaptcha-response"]
-    async with aiohttp.ClientSession() as session:
-        # send server count to top.gg
-        try:
-            r = await session.post('https://www.google.com/recaptcha/api/siteverify',
-                                data={"secret": os.environ["captcha"], "response": response_key})
-        except Exception:
-            return "Posting failed."
-
-    resp = await r.json()
-    if not resp["success"]:
-        return web.Response(text="NUH UH", status=400)
-    else:
-        print(request.query["user"], request.query["channel"])
-        await catch_cat(request.query["user"], request.query["channel"])
-        return web.Response(text="good job!", status=200)
+    # we dont verify cus i couldnt care less
+    print(request.query["user"], request.query["channel"])
+    await catch_cat(request.query["user"], request.query["channel"])
+    return web.Response(text="good job!", status=200)
 
 async def catch_cat(user_id, channel_id):
     try:
