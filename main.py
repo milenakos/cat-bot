@@ -128,7 +128,7 @@ ach_names = ach_list.keys()
 ach_titles = {value["title"].lower(): key for (key, value) in ach_list.items()}
 
 intents = discord.Intents(message_content=True, messages=True, reactions=True, guilds=True)
-bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ", intents=intents, help_command=None, max_messages=None)
+bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ", intents=intents, help_command=None)
 
 # this list stores unique non-duplicate cattypes
 cattypes = []
