@@ -1094,7 +1094,7 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
             async with session.post("https://countik.com/api/text/speech",
                                 json={"text":text, "voice":"en_us_002"}) as response:
                 stuff = await response.json()
-                data = "" + stuff["data"]
+                data = "" + stuff["v_data"]
                 with io.BytesIO() as f:
                     ba = "data:audio/mpeg;base64," + data
                     f.write(base64.b64decode(ba))
