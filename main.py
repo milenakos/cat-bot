@@ -1078,8 +1078,6 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
         if i in text.lower():
             await message.response.send_message("Do not.", ephemeral=True)
             return
-
-    text = text.replace("+", "plus").replace(" ", "+").replace("&", "and")
     
     await message.response.defer()
     
