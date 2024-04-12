@@ -33,6 +33,10 @@ TOP_GG_TOKEN = os.environ["top_gg_token"]
 # set to False to disable
 GITHUB_CHANNEL_ID = 1060965767044149249
 
+# whether you use pm2 for running it or not
+# that will just silently kill it on autoupdate and let pm2 restart it instead of manually restarting it
+USING_PM2 = True
+
 BANNED_ID = [] # banned from using /tiktok
 
 WHITELISTED_BOTS = [] # bots which are allowed to catch cats
@@ -589,7 +593,10 @@ async def on_message(message):
             with open(f"data/{id}.json", "w") as f:
                 json.dump(db[id], f)
         os.system("git pull")
-        os.execv(sys.executable, ['python'] + sys.argv)
+        if USING_PM2:
+            sys.exit()
+        else:
+            os.execv(sys.executable, ['python'] + sys.argv)
 
     # :staring_cat: reaction on "bullshit"
     if not (" " in text) and len(text) > 7 and text.isalnum():
