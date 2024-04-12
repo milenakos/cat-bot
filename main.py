@@ -10,6 +10,8 @@ from aiohttp import web
 from collections import UserDict
 import logging
 
+logging.basicConfig(level=logging.INFO)
+
 ### Setup values start
 
 GUILD_ID = 966586000417619998 # for emojis
@@ -31,10 +33,6 @@ TOP_GG_TOKEN = os.environ["top_gg_token"]
 # set to False to disable
 GITHUB_CHANNEL_ID = 1060965767044149249
 
-# whether you use pm2 for running it or not
-# that will just silently kill it on autoupdate and let pm2 restart it instead of manually restarting it
-USING_PM2 = True
-
 BANNED_ID = [] # banned from using /tiktok
 
 WHITELISTED_BOTS = [] # bots which are allowed to catch cats
@@ -45,16 +43,6 @@ WHITELISTED_BOTS = [] # bots which are allowed to catch cats
 OWNER_ID = 553093932012011520
 
 ### Setup values end
-
-# setup fancy logging stuff
-try:
-    from logtail import LogtailHandler
-    handler = LogtailHandler(source_token=os.environ["logtail"])
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
-    logger.addHandler(handler)
-except Exception:
-    logging.basicConfig(level=logging.INFO)
 
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode('utf-8') for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
@@ -601,10 +589,7 @@ async def on_message(message):
             with open(f"data/{id}.json", "w") as f:
                 json.dump(db[id], f)
         os.system("git pull")
-        if USING_PM2:
-            sys.exit()
-        else:
-            os.execv(sys.executable, ['python'] + sys.argv)
+        os.execv(sys.executable, ['python'] + sys.argv)
 
     # :staring_cat: reaction on "bullshit"
     if not (" " in text) and len(text) > 7 and text.isalnum():
