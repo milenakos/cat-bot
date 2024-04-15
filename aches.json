@@ -1,5 +1,5 @@
 {
-  "The Cat's marrage proposal": {"title": "Married Cat", "description": "Once the cat asks of marrage say I do", "is_hidden": true, "category": "Hidden"},
+  "The Cat's marrage proposal": {"title": "Married Cat", "description": "say Cat I do", "is_hidden": true, "category": "Hidden"},
   "first": {"title": "First cat!", "description": "The journey begins...", "is_hidden": false, "category": "Cat Hunt"},
   "donator": {"title": "Donator", "description": "donate your cats to someone", "is_hidden": false, "category": "Cat Hunt"},
   "anti_donator": {"title": "Anti-Donator", "description": "get donated to", "is_hidden": false, "category": "Cat Hunt"},
