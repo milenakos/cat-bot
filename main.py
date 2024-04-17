@@ -365,7 +365,7 @@ async def run_spawn(ch_id=None):
         # update status
         total_members = db["total_members"]
         await bot.change_presence(
-                activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers with {total_members:,} people", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
+                activity=discord.CustomActivity(name=f"Being an APP in {len(bot.guilds):,} servers with {total_members:,} people", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
         )
 
         summon_id = db["summon_ids"]
