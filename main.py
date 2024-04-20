@@ -140,7 +140,7 @@ for e in CAT_TYPES:
     if e not in cattypes:
         cattypes.append(e)
 
-funny = ["why did you click this this arent yours", "absolutely not", "cat ~~bot~~ app not responding, try again later", "you cant", "can you please stop", "try again", "403 not allowed", "stop", "get a life", "not for you", "no", "nuh uh"]
+funny = ["why did you click this this arent yours", "absolutely not", "cat bot not responding, try again later", "you cant", "can you please stop", "try again", "403 not allowed", "stop", "get a life", "not for you", "no", "nuh uh"]
 
 summon_id = db["summon_ids"]
 
@@ -365,7 +365,7 @@ async def run_spawn(ch_id=None):
         # update status
         total_members = db["total_members"]
         await bot.change_presence(
-                activity=discord.CustomActivity(name=f"Being an APP in {len(bot.guilds):,} servers with {total_members:,} people", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
+                activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers with {total_members:,} people", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
         )
 
         summon_id = db["summon_ids"]
@@ -570,7 +570,7 @@ async def on_message(message):
         ["ce[li]{2}ua bad", "re", "cellua"],
         ["new cells cause cancer", "exact", "cancer"],
         [str(bot.user.id), "in", "who_ping"],
-        ["lol_i_have_dmed_the_cat_app_and_got_an_ach", "exact", "dm"],
+        ["lol_i_have_dmed_the_cat_bot_and_got_an_ach", "exact", "dm"],
         ["dog", "exact", "not_quite"],
         ["egril", "exact", "egril"]]
 
@@ -638,11 +638,11 @@ async def on_message(message):
         icon = str(get_emoji("no_cat_throphy")) + " "
         await message.reply("Hmm... I would rate you **0 cats**! " + icon * 5)
         
-    if text == "lol_i_have_dmed_the_cat_app_and_got_an_ach" and not message.guild:
+    if text == "lol_i_have_dmed_the_cat_bot_and_got_an_ach" and not message.guild:
         await message.channel.send("which part of \"send in server\" was unclear?")
         return
     elif message.guild == None:
-        await message.channel.send("good job! please send \"lol_i_have_dmed_the_cat_app_and_got_an_ach\" in server to get your ach!")
+        await message.channel.send("good job! please send \"lol_i_have_dmed_the_cat_bot_and_got_an_ach\" in server to get your ach!")
         return
     
     if "cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6" in text:
@@ -721,7 +721,7 @@ async def on_message(message):
             try:
                 await message.delete()
             except discord.errors.Forbidden:
-                await message.channel.send("I don't have permission to delete messages. Please re-invite the ~~bot~~ APP or manually add that permission.")
+                await message.channel.send("I don't have permission to delete messages. Please re-invite the bot or manually add that permission.")
             try:
                 var = await message.channel.fetch_message(cat_temp)
             except Exception:
@@ -1000,11 +1000,11 @@ async def on_guild_join(guild):
             chindex += 1
     
     # you are free to change/remove this, its just a note for general user letting them know
-    unofficial_note = "**NOTE: This is an unofficial Cat ~~Bot~~ APP instance.**\n\n"
+    unofficial_note = "**NOTE: This is an unofficial Cat Bot instance.**\n\n"
     if bot.user.id == 966695034340663367: unofficial_note = ""
     await ch.send(unofficial_note + "Thanks for adding me!\nTo start, use `/help`!\nJoin the support server here: https://discord.gg/staring\nHave a nice day :)")
 
-@bot.slash_command(description="Learn to use the APP")
+@bot.slash_command(description="Learn to use the bot")
 async def help(message):
     embed1 = discord.Embed(
         title = "How to Setup",
@@ -1027,20 +1027,20 @@ async def help(message):
         inline=False
     ).add_field(
         name="Let's get funky!",
-        value="Cat ~~Bot~~ APP has various other mechanics to make fun funnier. You can collect various `/achievements`, progress in the `/battlepass`, or have beef with the mafia over cataine addiction. The amount you worship is the limit!",
+        value="Cat Bot has various other mechanics to make fun funnier. You can collect various `/achievements`, progress in the `/battlepass`, or have beef with the mafia over cataine addiction. The amount you worship is the limit!",
         inline=False
     ).add_field(
         name="Other features",
-        value="Cat ~~Bot~~ APP has extra fun commands which you will discover along the way.\nAnything unclear? Drop us a line at our [Discord server](https://discord.gg/staring).",
+        value="Cat Bot has extra fun commands which you will discover along the way.\nAnything unclear? Drop us a line at our [Discord server](https://discord.gg/staring).",
         inline=False
     ).set_footer(
-        text=f"Cat APP by Milenakos, {datetime.datetime.now().year}",
+        text=f"Cat Bot by Milenakos, {datetime.datetime.now().year}",
         icon_url="https://pomf2.lain.la/f/zncxu6ej.png"
     )
 
     await message.response.send_message(embeds=[embed1, embed2])
 
-@bot.slash_command(description="View information about the APP")
+@bot.slash_command(description="View information about the bot")
 async def info(message: discord.Interaction):
     await message.response.defer()
     credits = {
@@ -1064,8 +1064,8 @@ async def info(message: discord.Interaction):
             pass # death
         gen_credits[key] = ", ".join(peoples)
     
-    embedVar = discord.Embed(title="Cat APP", color=0x6E593C, description="[Join support server](https://discord.gg/staring)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\n" + \
-                             f"~~Bot~~ APP made by {gen_credits['author']}\nWith contributions by {gen_credits['contrib']}.\n\nThis ~~bot~~ APP adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n" + \
+    embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/staring)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\n" + \
+                             f"Bot made by {gen_credits['author']}\nWith contributions by {gen_credits['contrib']}.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n" + \
                              f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits['emoji']}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**countik** for TikTok TTS API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**")
     
     # add "last update" to footer if we are using git
@@ -1223,7 +1223,7 @@ async def changemessage(message: discord.Interaction):
                         return
                 icon = get_emoji("staring_cat")
                 await interaction.response.send_message("Success! Here is a preview:\n" + \
-                                                    input_value.format(emoji=icon, type="Example", username="Cat APP", count="1", time="69 years 420 days"))
+                                                    input_value.format(emoji=icon, type="Example", username="Cat Bot", count="1", time="69 years 420 days"))
             else:
                 await interaction.response.send_message("Reset to defaults.")
             db[str(message.guild.id)][self.type.lower()] = input_value
@@ -1868,7 +1868,7 @@ async def casino(message: discord.Interaction):
     await message.response.send_message(embed=embed, view=myview)
 
 if WEBHOOK_VERIFY:
-    @bot.slash_command(description="Vote for Cat APP for free cats")
+    @bot.slash_command(description="Vote for Cat Bot for free cats")
     async def vote(message: discord.Interaction):
         await message.response.defer()
         try:
@@ -1926,7 +1926,7 @@ if WEBHOOK_VERIFY:
         button.callback = toggle_reminders
         view.add_item(button)
         
-        embedVar = discord.Embed(title="Vote for Cat APP", description=f"{weekend_message}Vote for Cat ~~Bot~~ APP on top.gg and wumpus.store every 12 hours to recieve mystery cats.\n*Both* votes will give you a separate reward.", color=0x6E593C)
+        embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg and wumpus.store every 12 hours to recieve mystery cats.\n*Both* votes will give you a separate reward.", color=0x6E593C)
         await message.followup.send(embed=embedVar, view=view)
 
 @bot.slash_command(description="Get a random cat")
@@ -2454,7 +2454,7 @@ async def reset(message: discord.Interaction, person_id: discord.User = discord.
         save(message.guild.id)
         await message.response.send_message(embed=discord.Embed(color=0x6E593C, description=f'Done! rip <@{person_id.id}>. f\'s in chat.'))
     except KeyError:
-        await message.response.send_message("ummm? this person isnt even registered in cat ~~bot~~ APP wtf are you wiping?????", ephemeral=True)
+        await message.response.send_message("ummm? this person isnt even registered in cat bot wtf are you wiping?????", ephemeral=True)
 
 # this is the crash handler
 @bot.event
@@ -2463,7 +2463,7 @@ async def on_application_command_error(ctx, error):
         return bool(x in str(type(error)) or x in str(error))
 
     if ctx.guild == None:
-        await ctx.channel.send("hello good sir i would politely let you know cat ~~bot~~ APP is no workey in dms please consider gettng the hell out of here")
+        await ctx.channel.send("hello good sir i would politely let you know cat bot is no workey in dms please consider gettng the hell out of here")
         return
     
     # ctx here is interaction
@@ -2474,7 +2474,7 @@ async def on_application_command_error(ctx, error):
         # forbidden error usually means we dont have permission to send messages in the channel
         print("logged a Forbidden error.")
         # except-ception lessgo
-        forbidden_error = "i don't have permissions to do that.\ntry reinviting the ~~bot~~ APP or give it roles needed to access this chat (for example, verified role)"
+        forbidden_error = "i don't have permissions to do that.\ntry reinviting the bot or give it roles needed to access this chat (for example, verified role)"
         try:
             await ctx.channel.send(forbidden_error) # try as normal message (most likely will fail)
         except Exception:
