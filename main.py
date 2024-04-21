@@ -131,7 +131,7 @@ with open("battlepass.json", "r") as f:
 ach_names = ach_list.keys()
 ach_titles = {value["title"].lower(): key for (key, value) in ach_list.items()}
 
-intents = discord.Intents(message_content=True, messages=True, reactions=True, guilds=True)
+intents = discord.Intents(message_content=True, messages=True, guilds=True)
 bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ", intents=intents, help_command=None)
 
 # this list stores unique non-duplicate cattypes
@@ -574,11 +574,9 @@ async def on_message(message):
         ["dog", "exact", "not_quite"],
         ["egril", "exact", "egril"]]
 
-    reactions = [["v1;", "custom", "why_v1"],
-        ["proglet", "custom", "professor_cat"],
+    reactions = [["proglet", "custom", "professor_cat"],
         ["xnopyt", "custom", "vanish"],
         ["silly", "custom", "sillycat"],
-        ["indev", "vanilla", "🐸"],
         ["bleh", "custom", "blepcat"],
         ["blep", "custom", "blepcat"]]
 
@@ -707,11 +705,7 @@ async def on_message(message):
             is_cat = db["cat"][str(message.channel.id)]
         except Exception:
             is_cat = False
-        if not is_cat or timestamp > time.time() or (message.author.bot and message.author.id not in WHITELISTED_BOTS):
-            # if there is no cat, you are /preventcatch-ed, or you aren't a whitelisted bot
-            icon = get_emoji("pointlaugh")
-            await message.add_reaction(icon)
-        elif is_cat:
+        if is_cat and timestamp <= time.time() and (not message.author.bot or message.author.id in WHITELISTED_BOTS):
             current_time = message.created_at.timestamp()
             db["lastcatches"][str(message.channel.id)] = current_time
             cat_temp = db["cat"][str(message.channel.id)]
