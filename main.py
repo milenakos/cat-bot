@@ -1942,13 +1942,20 @@ async def light_market(message):
                       [7, "Superior"], [5, "Legendary"], [3, "8bit"], [4, "Professor"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"]]
     if get_cat(message.guild.id, message.user.id, "cataine_active") < int(time.time()):
         count = get_cat(message.guild.id, message.user.id, "cataine_week")
+        lastweek = get_cat(message.guild.id, message.user.id, "recent_week")
         embed = discord.Embed(title="The Mafia Hideout", description="you break down the door. the cataine machine lists what it needs.")
-
+        if lastweek != datetime.datetime.utcnow().isocalendar()[1]:
+            lastweek = datetime.datetime.utcnow().isocalendar()[1]
+            count = 0
+            
         seed(datetime.datetime.utcnow().isocalendar()[1]) # hopefully that works
         deals = []
-        for i in range(randint(2, 4)): # 3-5 prices are possible per week
-            deals.append(cataine_prices[randint(0, 14)])
+        r = range(randint(2, 4))
+        for i in r: # 3-5 prices are possible per week
+            deals.append(randint(0, 14))
         deals.sort()
+        for i in r:
+            deals[i] = cataine_prices[deals[i]]
         seed(time.time()) # because we don’t want the most recent time this was opened to influence cat spawn times and rarities
         if count < len(deals):  
             deal = deals[count]
