@@ -1936,6 +1936,7 @@ async def random(message: discord.Interaction):
                 await achemb(message, "randomizer", "send")
         except Exception:
             await message.followup.send("no cats :(")
+
 async def light_market(message):
     cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
                       [7, "Superior"], [5, "Legendary"], [3, "8bit"], [4, "Professor"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"]]
