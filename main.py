@@ -1943,7 +1943,7 @@ async def light_market(message):
         level = get_cat(message.guild.id, message.user.id, "dark_market_level")
         embed = discord.Embed(title="The Mafia Hideout", description="you break down the door. the cataine machine lists what it needs.")
 
-        random.seed(level)
+        seed(level)
         deal = cataine_prices[randint(0,14)]
         random.seed(time.time()) # because we don’t want the most recent time this was opened to influence cat spawn times and rarities
         type = deal[1]
