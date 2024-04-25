@@ -4,7 +4,7 @@ from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
 from nextcord.ui import Button, View
 from typing import Optional
-from random import randint, choice, shuffle
+from random import randint, choice, shuffle, seed
 from PIL import Image
 from aiohttp import web
 from collections import UserDict
@@ -1936,6 +1936,43 @@ async def random(message: discord.Interaction):
                 await achemb(message, "randomizer", "send")
         except Exception:
             await message.followup.send("no cats :(")
+async def light_market(message):
+    cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
+                      [7, "Superior"], [5, "Legendary"], [3, "8bit"], [4, "Professor"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"]]
+    if get_cat(message.guild.id, message.user.id, "cataine_active") < int(time.time()):
+        level = get_cat(message.guild.id, message.user.id, "dark_market_level")
+        embed = discord.Embed(title="The Mafia Hideout", description="you break down the door. the cataine machine lists what it needs.")
+
+        random.seed(level)
+        deal = cataine_prices[random.randInt(0,14)]
+        random.seed(time.time()) # because we don’t want the most recent time this was opened to influence cat spawn times and rarities
+        type = deal[1]
+        amount = deal[0]
+        embed.add_field(name="🧂 12h of Cataine", value=f"Price: {get_emoji(type.lower() + 'cat')} {amount} {type}")
+
+        async def make_cataine(interaction):
+            nonlocal message, type, amount
+            if get_cat(message.guild.id, message.user.id, type) < amount or get_cat(message.guild.id, message.user.id, "cataine_active") != 0:
+                return
+            remove_cat(message.guild.id, message.user.id, type, amount)
+            add_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
+            add_cat(message.guild.id, message.user.id, "dark_market_level")
+            await interaction.response.send_message("The machine spools down. Your cat catches will be doubled for the next 12 hours.", ephemeral=True)
+
+        myview = View(timeout=600)
+
+        if get_cat(message.guild.id, message.user.id, type) >= amount:
+                button = Button(label="Buy", style=ButtonStyle.blurple)
+            else:
+                button = Button(label="You don't have enough cats!", style=ButtonStyle.gray, disabled=True)
+            button.callback = buy_cataine
+
+        myview.add_item(button)
+
+        await message.followup.send(embed=embed, view=myview, ephemeral=True)
+    else:
+        embed = discord.Embed(title="The Mafia Hideout", description=f"the machine is recovering. you can use machine again <t:{get_cat(message.guild.id, message.user.id, 'cataine_active')}:R>.")
+        await message.followup.send(embed=embed, ephemeral=True)
 
 async def dark_market(message):
     cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
@@ -2122,10 +2159,12 @@ async def achievements(message: discord.Interaction):
         async def callback_hell(interaction, thing):
             await interaction.edit(embed=gen_new(thing), view=insane_view_generator(thing))
             
-            if hidden_counter == 3 and get_cat(message.guild.id, message.user.id, "dark_market") and get_cat(message.guild.id, message.user.id, "story_complete") != 1:
-                # open the totally not suspicious dark market
-                await dark_market(message)
-        
+            if hidden_counter == 3 and get_cat(message.guild.id, message.user.id, "dark_market"):
+                if get_cat(message.guild.id, message.user.id, "story_complete") != 1 
+        # open the totally not suspicious dark market
+                    await dark_market(message)
+                else:
+                    await light_market(message)
         if category == "Cat Hunt":
             buttons_list.append(Button(label="Cat Hunt", style=ButtonStyle.green))
         else:
