@@ -1946,7 +1946,7 @@ async def light_market(message):
 
         seed(datetime.datetime.utcnow().isocalendar()[1]) # hopefully that works
         deals = []
-        for i in range(randint(2,4)) # 3-5 prices are possible per week
+        for i in range(randint(2, 4)): # 3-5 prices are possible per week
             deals.append(cataine_prices[randInt(0,14)])
         deals.sort()
         seed(time.time()) # because we don’t want the most recent time this was opened to influence cat spawn times and rarities
