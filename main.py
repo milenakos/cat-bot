@@ -1946,7 +1946,7 @@ async def light_market(message):
 
         seed(level)
         deal = cataine_prices[randint(0,14)]
-        random.seed(time.time()) # because we don’t want the most recent time this was opened to influence cat spawn times and rarities
+        seed(time.time()) # because we don’t want the most recent time this was opened to influence cat spawn times and rarities
         type = deal[1]
         amount = deal[0]
         embed.add_field(name="🧂 12h of Cataine", value=f"Price: {get_emoji(type.lower() + 'cat')} {amount} {type}")
