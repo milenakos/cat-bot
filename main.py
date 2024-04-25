@@ -1941,12 +1941,20 @@ async def light_market(message):
     cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
                       [7, "Superior"], [5, "Legendary"], [3, "8bit"], [4, "Professor"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"]]
     if get_cat(message.guild.id, message.user.id, "cataine_active") < int(time.time()):
-        level = get_cat(message.guild.id, message.user.id, "dark_market_level")
+        count = get_cat(message.guild.id, message.user.id, "cataine_week")
         embed = discord.Embed(title="The Mafia Hideout", description="you break down the door. the cataine machine lists what it needs.")
 
-        seed(level)
-        deal = cataine_prices[randint(0,14)]
+        seed(datetime.datetime.utcnow().isocalendar()[1]) # hopefully that works
+        deals = []
+        for i in range(randint(2,4)) # 3-5 prices are possible per week
+            deals.append(cataine_prices[randInt(0,14)])
+        deals.sort()
         seed(time.time()) # because we don’t want the most recent time this was opened to influence cat spawn times and rarities
+        if count < len(deals):  
+            deal = deals[count]
+        else:
+            embed = discord.Embed(title="The Mafia Hideout", description=f"you have used up all of your cataine for the week. please come back later.")
+            await message.followup.send(embed=embed, ephemeral=True)
         type = deal[1]
         amount = deal[0]
         embed.add_field(name="🧂 12h of Cataine", value=f"Price: {get_emoji(type.lower() + 'cat')} {amount} {type}")
@@ -1957,16 +1965,16 @@ async def light_market(message):
                 return
             remove_cat(message.guild.id, message.user.id, type, amount)
             add_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
-            add_cat(message.guild.id, message.user.id, "dark_market_level")
+            add_cat(message.guild.id, message.user.id, "cataine_week")
             await interaction.response.send_message("The machine spools down. Your cat catches will be doubled for the next 12 hours.", ephemeral=True)
 
         myview = View(timeout=600)
 
         if get_cat(message.guild.id, message.user.id, type) >= amount:
-                button = Button(label="Buy", style=ButtonStyle.blurple)
-            else:
-                button = Button(label="You don't have enough cats!", style=ButtonStyle.gray, disabled=True)
-            button.callback = buy_cataine
+            button = Button(label="Buy", style=ButtonStyle.blurple)
+        else:
+            button = Button(label="You don't have enough cats!", style=ButtonStyle.gray, disabled=True)
+        button.callback = make_cataine
 
         myview.add_item(button)
 
