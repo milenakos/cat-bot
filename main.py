@@ -1947,7 +1947,8 @@ async def light_market(message):
         if lastweek != datetime.datetime.utcnow().isocalendar()[1]:
             lastweek = datetime.datetime.utcnow().isocalendar()[1]
             count = 0
-            set_cat(message.guild.id, message.user.id, "cataine_week", datetime.datetime.utcnow().isocalendar()[1])
+            set_cat(message.guild.id, message.user.id, "cataine_week", 0)
+            set_cat(message.guild.id, message.user.id, "recent_week", datetime.datetime.utcnow().isocalendar()[1])
         seed(datetime.datetime.utcnow().isocalendar()[1]) # hopefully that works
         deals = []
         r = range(randint(2, 4))
@@ -1973,7 +1974,8 @@ async def light_market(message):
             remove_cat(message.guild.id, message.user.id, type, amount)
             add_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
             await interaction.response.send_message("The machine spools down. Your cat catches will be doubled for the next 12 hours.", ephemeral=True)
-
+            cataine_week++
+        
         myview = View(timeout=600)
 
         if get_cat(message.guild.id, message.user.id, type) >= amount:
