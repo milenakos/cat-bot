@@ -2161,7 +2161,7 @@ async def achievements(message: discord.Interaction):
             
             if hidden_counter == 3 and get_cat(message.guild.id, message.user.id, "dark_market"):
                 if get_cat(message.guild.id, message.user.id, "story_complete") != 1:
-        # open the totally not suspicious dark market
+                    # open the totally not suspicious dark market
                     await dark_market(message)
                 else:
                     await light_market(message)
