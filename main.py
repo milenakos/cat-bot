@@ -1969,7 +1969,7 @@ async def light_market(message):
 
         async def make_cataine(interaction):
             nonlocal message, type, amount
-            if get_cat(message.guild.id, message.user.id, type) < amount or get_cat(message.guild.id, message.user.id, "cataine_active") != 0:
+            if get_cat(message.guild.id, message.user.id, type) < amount or get_cat(message.guild.id, message.user.id, "cataine_active") < time.time():
                 return
             remove_cat(message.guild.id, message.user.id, type, amount)
             add_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
@@ -2005,7 +2005,7 @@ async def dark_market(message):
 
         async def buy_cataine(interaction):
             nonlocal message, type, amount
-            if get_cat(message.guild.id, message.user.id, type) < amount or get_cat(message.guild.id, message.user.id, "cataine_active") != 0:
+            if get_cat(message.guild.id, message.user.id, type) < amount or get_cat(message.guild.id, message.user.id, "cataine_active") < time.time():
                 return
             remove_cat(message.guild.id, message.user.id, type, amount)
             add_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
