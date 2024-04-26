@@ -1951,7 +1951,7 @@ async def light_market(message):
             set_cat(message.guild.id, message.user.id, "recent_week", datetime.datetime.utcnow().isocalendar()[1])
         seed(datetime.datetime.utcnow().isocalendar()[1]) # hopefully that works
         deals = []
-        r = range(randint(2, 4))
+        r = range(randint(3, 5))
         for i in r: # 3-5 prices are possible per week
             deals.append(randint(0, 14))
         deals.sort()
