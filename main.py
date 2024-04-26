@@ -1974,7 +1974,7 @@ async def light_market(message):
             remove_cat(message.guild.id, message.user.id, type, amount)
             add_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
             await interaction.response.send_message("The machine spools down. Your cat catches will be doubled for the next 12 hours.", ephemeral=True)
-            cataine_week++
+            add_cat(message.guild.id, message.user.id, "cataine_week", 1) # cataine_week++
         
         myview = View(timeout=600)
 
