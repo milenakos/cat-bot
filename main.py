@@ -4,7 +4,7 @@ from nextcord.ext import tasks, commands
 from nextcord import ButtonStyle
 from nextcord.ui import Button, View
 from typing import Optional
-from random import randint, choice, shuffle
+from random import randint, choice, shuffle, seed
 from PIL import Image
 from aiohttp import web
 from collections import UserDict
@@ -1937,6 +1937,60 @@ async def random(message: discord.Interaction):
         except Exception:
             await message.followup.send("no cats :(")
 
+async def light_market(message):
+    cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
+                      [7, "Superior"], [5, "Legendary"], [3, "8bit"], [4, "Professor"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"]]
+    if get_cat(message.guild.id, message.user.id, "cataine_active") < int(time.time()):
+        count = get_cat(message.guild.id, message.user.id, "cataine_week")
+        lastweek = get_cat(message.guild.id, message.user.id, "recent_week")
+        embed = discord.Embed(title="The Mafia Hideout", description="you break down the door. the cataine machine lists what it needs.")
+        if lastweek != datetime.datetime.utcnow().isocalendar()[1]:
+            lastweek = datetime.datetime.utcnow().isocalendar()[1]
+            count = 0
+            set_cat(message.guild.id, message.user.id, "cataine_week", 0)
+            set_cat(message.guild.id, message.user.id, "recent_week", datetime.datetime.utcnow().isocalendar()[1])
+        seed(datetime.datetime.utcnow().isocalendar()[1]) # hopefully that works
+        deals = []
+        r = range(randint(2, 4))
+        for i in r: # 3-5 prices are possible per week
+            deals.append(randint(0, 14))
+        deals.sort()
+        for i in r:
+            deals[i] = cataine_prices[deals[i]]
+        seed(time.time()) # because we don’t want the most recent time this was opened to influence cat spawn times and rarities
+        if count < len(deals):  
+            deal = deals[count]
+        else:
+            embed = discord.Embed(title="The Mafia Hideout", description=f"you have used up all of your cataine for the week. please come back later.")
+            await message.followup.send(embed=embed, ephemeral=True)
+        type = deal[1]
+        amount = deal[0]
+        embed.add_field(name="🧂 12h of Cataine", value=f"Price: {get_emoji(type.lower() + 'cat')} {amount} {type}")
+
+        async def make_cataine(interaction):
+            nonlocal message, type, amount
+            if get_cat(message.guild.id, message.user.id, type) < amount or get_cat(message.guild.id, message.user.id, "cataine_active") != 0:
+                return
+            remove_cat(message.guild.id, message.user.id, type, amount)
+            add_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
+            await interaction.response.send_message("The machine spools down. Your cat catches will be doubled for the next 12 hours.", ephemeral=True)
+            add_cat(message.guild.id, message.user.id, "cataine_week", 1) # cataine_week++
+        
+        myview = View(timeout=600)
+
+        if get_cat(message.guild.id, message.user.id, type) >= amount:
+            button = Button(label="Buy", style=ButtonStyle.blurple)
+        else:
+            button = Button(label="You don't have enough cats!", style=ButtonStyle.gray, disabled=True)
+        button.callback = make_cataine
+
+        myview.add_item(button)
+
+        await message.followup.send(embed=embed, view=myview, ephemeral=True)
+    else:
+        embed = discord.Embed(title="The Mafia Hideout", description=f"the machine is recovering. you can use machine again <t:{get_cat(message.guild.id, message.user.id, 'cataine_active')}:R>.")
+        await message.followup.send(embed=embed, ephemeral=True)
+
 async def dark_market(message):
     cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
                       [7, "Superior"], [5, "Legendary"], [3, "8bit"], [4, "Professor"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"], [100, "eGirl"]]
@@ -2122,10 +2176,12 @@ async def achievements(message: discord.Interaction):
         async def callback_hell(interaction, thing):
             await interaction.edit(embed=gen_new(thing), view=insane_view_generator(thing))
             
-            if hidden_counter == 3 and get_cat(message.guild.id, message.user.id, "dark_market") and get_cat(message.guild.id, message.user.id, "story_complete") != 1:
-                # open the totally not suspicious dark market
-                await dark_market(message)
-        
+            if hidden_counter == 3 and get_cat(message.guild.id, message.user.id, "dark_market"):
+                if get_cat(message.guild.id, message.user.id, "story_complete") != 1:
+                    # open the totally not suspicious dark market
+                    await dark_market(message)
+                else:
+                    await light_market(message)
         if category == "Cat Hunt":
             buttons_list.append(Button(label="Cat Hunt", style=ButtonStyle.green))
         else:
