@@ -1972,7 +1972,7 @@ async def light_market(message):
             if get_cat(message.guild.id, message.user.id, type) < amount or get_cat(message.guild.id, message.user.id, "cataine_active") > time.time():
                 return
             remove_cat(message.guild.id, message.user.id, type, amount)
-            add_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
+            set_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
             add_cat(message.guild.id, message.user.id, "cataine_week", 1) # cataine_week++
             await interaction.response.send_message("The machine spools down. Your cat catches will be doubled for the next 12 hours.", ephemeral=True)
         
@@ -2008,7 +2008,7 @@ async def dark_market(message):
             if get_cat(message.guild.id, message.user.id, type) < amount or get_cat(message.guild.id, message.user.id, "cataine_active") > time.time():
                 return
             remove_cat(message.guild.id, message.user.id, type, amount)
-            add_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
+            set_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
             add_cat(message.guild.id, message.user.id, "dark_market_level")
             await interaction.response.send_message("Thanks for buying! Your cat catches will be doubled for the next 12 hours.", ephemeral=True)
 
