@@ -430,7 +430,7 @@ async def run_spawn(ch_id=None):
                     button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367")
                     view.add_item(button)
                     
-                    await person.send("You can vote on Top.gg now!\n*Hint: You can always disbale these in the `/vote` command.*", view=view)
+                    await person.send("You can vote on Top.gg now!\n*Hint: You can always disable these in the `/vote` command.*", view=view)
                     set_cat(0, i, "reminder_topgg_exists", 1)
                 except Exception:
                     vote_remind.remove(i)
@@ -442,7 +442,7 @@ async def run_spawn(ch_id=None):
                     button = Button(emoji=get_emoji("store"), label="Vote", style=ButtonStyle.gray, url="https://wumpus.store/bot/966695034340663367")
                     view.add_item(button)
                     
-                    await person.send("You can vote on Wumpus.store now!\n*Hint: You can always disbale these in the `/vote` command.*", view=view)
+                    await person.send("You can vote on Wumpus.store now!\n*Hint: You can always disable these in the `/vote` command.*", view=view)
                     set_cat(0, i, "reminder_wumpus_exists", 1)
                 except Exception:
                     vote_remind.remove(i)
