@@ -1993,7 +1993,7 @@ async def light_market(message):
                     i.delete()
                 except Exception:
                     i.leave()
-            db = null
+            db = None
         
         myview = View(timeout=600)
 
