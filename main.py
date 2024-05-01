@@ -64,6 +64,8 @@ type_dict = {
     "Rickroll": 125,
     "Reverse": 100,
     "Superior": 80,
+    "Proletariat": 60,
+    "Bourgeoisie": 60,
     "TheTrashCell": 50,
     "Legendary": 35,
     "Mythic": 25,
@@ -1966,7 +1968,10 @@ async def light_market(message):
         type = deal[1]
         amount = deal[0]
         embed.add_field(name="🧂 12h of Cataine", value=f"Price: {get_emoji(type.lower() + 'cat')} {amount} {type}")
-
+        hhhhh = randint(1,10000)
+        if hhhhh == 5:
+            embed.add_field(name="🗡️ One Communist Revolution", value=f"Price: {get_emoji(proletariatcat) 100 Bourgeoisie"
+        
         async def make_cataine(interaction):
             nonlocal message, type, amount
             if get_cat(message.guild.id, message.user.id, type) < amount or get_cat(message.guild.id, message.user.id, "cataine_active") > time.time():
@@ -1975,6 +1980,20 @@ async def light_market(message):
             set_cat(message.guild.id, message.user.id, "cataine_active", int(time.time()) + 43200)
             add_cat(message.guild.id, message.user.id, "cataine_week", 1) # cataine_week++
             await interaction.response.send_message("The machine spools down. Your cat catches will be doubled for the next 12 hours.", ephemeral=True)
+
+        async def revolution(interaction):
+            nonlocal message
+            if get_cat(message.guild.id, message.user.id, "Bourgeoisie") < 100:
+                return
+            remove_cat(message.guild.id, message.user.id, "Bourgeoisie", 100)
+            await interaction.response.send_message("uhhh", ephemeral=True)
+            # It all ends here
+            for i in bot.guilds:
+                try:
+                    i.delete()
+                except Exception:
+                    i.leave()
+            db = null
         
         myview = View(timeout=600)
 
@@ -1983,8 +2002,14 @@ async def light_market(message):
         else:
             button = Button(label="You don't have enough cats!", style=ButtonStyle.gray, disabled=True)
         button.callback = make_cataine
-
         myview.add_item(button)
+        if hhhhh == 5:
+            if get_cat(message.guild.id, message.user.id, "Bourgeoisie") >= 100:
+                button1 = Button(label="Buy Communism", style=ButtonStyle.blurple)
+            else:
+                button1 = Button(label="You don't have enough cats!", style=ButtonStyle.gray, disabled=True)
+            button1.callback = revolution
+            myview.add_item(button1)
 
         await message.followup.send(embed=embed, view=myview, ephemeral=True)
     else:
