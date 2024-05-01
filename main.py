@@ -457,7 +457,7 @@ async def run_spawn(ch_id=None):
             try:
                 await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
                                     headers={"Authorization": TOP_GG_TOKEN},
-                                    json={"server_count": len(bot.guilds)},
+                                    json={"server_count": len(bot.guilds), "shard_count": len(bot.shards)},
                                     timeout=15)
             except Exception:
                 print("Posting failed.")
