@@ -2224,7 +2224,7 @@ async def achievements(message: discord.Interaction):
             
 @bot.message_command(name="catch")
 async def catch(message: discord.Interaction, msg):
-    if get_cat(message.guild.id, message.user.id, "catchcooldown") + 10 > time.time():
+    if get_cat(message.guild.id, message.user.id, "catchcooldown") + 6 > time.time():
         await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
         return
     await message.response.defer()
