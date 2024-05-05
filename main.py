@@ -2224,18 +2224,18 @@ async def achievements(message: discord.Interaction):
             
 @bot.message_command(name="catch")
 async def catch(message: discord.Interaction, msg):
+    if get_cat(message.guild.id, message.user.id, "catchcooldown") > (time.time() + 60):
+        message.response.send_message("your phone is overheating bro chill", ephemeral=True)
+        return
     await message.response.defer()
     msg2img.msg2img(msg, bot, True)
     file = discord.File("generated.png", filename="generated.png")
+    set_cat(message.guild.id, message.user.id, "catchcooldown", int(time.time()) + 20)
     await message.followup.send("cought in 4k", file=file)
     register_member(message.guild.id, msg.author.id)
     if msg.author.id != bot.user.id: await achemb(message, "4k", "send")
 
-@bot.message_command()
-async def pointLaugh(message: discord.Interaction, msg):
-    icon = get_emoji("pointlaugh")
-    await msg.add_reaction(icon)
-    await message.response.send_message(icon, ephemeral=True)
+# pointLaugh lives on in our memories
 
 @bot.slash_command(description="View the leaderboards")
 async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[str] = discord.SlashOption(name="type", description="The leaderboard type to view!", choices=["Cats", "Fastest", "Slowest"], required=False)):
