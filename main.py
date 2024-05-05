@@ -2230,7 +2230,7 @@ async def catch(message: discord.Interaction, msg):
     await message.response.defer()
     msg2img.msg2img(msg, bot, True)
     file = discord.File("generated.png", filename="generated.png")
-    if get_cat(message.guild.id, message.user.id, "catchcooldown") > time.time():
+    if get_cat(message.guild.id, message.user.id, "catchcooldown") > time.time() - 20:
         add_cat(message.guild.id, message.user.id, "catchcooldown", 20)
     else:
         set_cat(message.guild.id, message.user.id, "catchcooldown", time.time())
