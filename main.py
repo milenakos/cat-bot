@@ -2514,7 +2514,7 @@ async def nuke(message: discord.Interaction):
     counter = 5
 
     async def gen(counter):
-        lines = ["", "I'm absolutely sure! (1)", "I understand! (2)", "You can't undo this! (3)", "This is dangerous! (4)"), "Reset everything! (5)"]
+        lines = ["", "I'm absolutely sure! (1)", "I understand! (2)", "You can't undo this! (3)", "This is dangerous! (4)", "Reset everything! (5)"]
         view = View(timeout=1200)
         button = Button(label=lines[counter], style=ButtonStyle.red, callback=count)
         view.add_item(button)
