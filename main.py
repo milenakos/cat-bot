@@ -2508,6 +2508,37 @@ async def reset(message: discord.Interaction, person_id: discord.User = discord.
     except KeyError:
         await message.response.send_message("ummm? this person isnt even registered in cat bot wtf are you wiping?????", ephemeral=True)
 
+@bot.slash_command(description="(ADMIN) [VERY DANGEROUS] Reset the entire server", default_member_permissions=32)
+async def nuke(message: discord.Interaction):
+    warning_text = "⚠️ This will completely reset **all** Cat Bot progress of **everyone** in this server. It will also reset some Cat Bot settings (notably custom spawn messages). Following will not be affected: settuped channels, cats which arent yet cought, custom spawn timings.\nPress the button 5 times to continue."
+    counter = 5
+
+    async def gen(counter):
+        lines = ["", "I'm absolutely sure! (1)", "I understand! (2)", "You can't undo this! (3)", "This is dangerous! (4)"), "Reset everything! (5)"]
+        view = View(timeout=1200)
+        button = Button(label=lines[counter], style=ButtonStyle.red, callback=count)
+        view.add_item(button)
+        return view
+    
+    async def count(interaction):
+        nonlocal message, counter
+        if interaction.user.id == message.user.id:
+            counter -= 1
+            if counter == 0:
+                # Spooky!
+                del db[str(message.guild.id)]
+                save(message.guild.id)
+                await interaction.edit_original_message(text="Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.", view=None)
+            else:
+                view = await gen(counter)
+                await interaction.edit_original_message(text=warning_text, view=view)
+        else:
+            await interaction.response.send_message(choice(funny), ephemeral=True)
+            await achemb(interaction, "curious", "send")
+
+    view = await gen(counter)
+    await message.response.send_message(warning_text, view=view)
+
 # this is the crash handler
 @bot.event
 async def on_application_command_error(ctx, error):
