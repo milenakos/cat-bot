@@ -2224,16 +2224,13 @@ async def achievements(message: discord.Interaction):
             
 @bot.message_command(name="catch")
 async def catch(message: discord.Interaction, msg):
-    if get_cat(message.guild.id, message.user.id, "catchcooldown") > time.time() + 60:
+    if get_cat(message.guild.id, message.user.id, "catchcooldown") + 60 > time.time():
         message.response.send_message("your phone is overheating bro chill", ephemeral=True)
         return
     await message.response.defer()
     msg2img.msg2img(msg, bot, True)
     file = discord.File("generated.png", filename="generated.png")
-    if get_cat(message.guild.id, message.user.id, "catchcooldown") > time.time() - 20:
-        add_cat(message.guild.id, message.user.id, "catchcooldown", 20)
-    else:
-        set_cat(message.guild.id, message.user.id, "catchcooldown", time.time())
+    set_cat(message.guild.id, message.user.id, "catchcooldown", time.time())
     await message.followup.send("cought in 4k", file=file)
     register_member(message.guild.id, msg.author.id)
     if msg.author.id != bot.user.id: await achemb(message, "4k", "send")
