@@ -1311,7 +1311,6 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Me
     await message.response.defer()
 
     register_member(message.guild.id, person_id.id)
-    has_ach(message.guild.id, person_id.id, "test_ach") # why is this here? im not sure and im too scared to remove this
 
     # around here we count aches
     db_var = db[str(message.guild.id)][str(person_id.id)]["ach"]
@@ -2093,7 +2092,6 @@ async def dark_market(message):
 async def achievements(message: discord.Interaction):
     # this is very close to /inv's ach counter
     register_member(message.guild.id, message.user.id)
-    has_ach(message.guild.id, message.user.id, "test_ach") # and there is this cursed line again wtf
     db_var = db[str(message.guild.id)][str(message.user.id)]["ach"]
 
     unlocked = 0
