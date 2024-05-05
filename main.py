@@ -2529,10 +2529,10 @@ async def nuke(message: discord.Interaction):
                 # Spooky!
                 del db[str(message.guild.id)]
                 save(message.guild.id)
-                await interaction.edit_original_message(text="Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.", view=None)
+                await interaction.edit_original_message(content="Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.", view=None)
             else:
                 view = await gen(counter)
-                await interaction.edit_original_message(text=warning_text, view=view)
+                await interaction.edit_original_message(content=warning_text, view=view)
         else:
             await interaction.response.send_message(choice(funny), ephemeral=True)
             await achemb(interaction, "curious", "send")
