@@ -2486,7 +2486,9 @@ async def giveachievement(message: discord.Interaction, person_id: discord.Membe
     if valid and ach_id == "thanksforplaying":
         await message.response.send_message("HAHAHHAHAH\nno", ephemeral=True)
         return
-                      
+    if valid and ach_id == "crasher" and person_id.id = message.author.id
+        raise Exception as e
+        return
     if valid:
         # if it is, do the thing
         reverse = has_ach(message.guild.id, person_id.id, ach_id)
@@ -2499,7 +2501,7 @@ async def giveachievement(message: discord.Interaction, person_id: discord.Membe
     else:
         await message.response.send_message("i cant find that achievement! try harder next time.", ephemeral=True)
 
-@bot.slash_command(description="(ADMIN) Reset people", default_member_permissions=32)
+@bot.slash_command(descriptio="(ADMIN) Reset people", default_member_permissions=32)
 async def reset(message: discord.Interaction, person_id: discord.User = discord.SlashOption(name="user", description="who")):
     try:
         del db[str(message.guild.id)][str(person_id.id)]
