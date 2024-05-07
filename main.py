@@ -707,7 +707,11 @@ async def on_message(message):
             is_cat = db["cat"][str(message.channel.id)]
         except Exception:
             is_cat = False
-        if is_cat and timestamp <= time.time() and (not message.author.bot or message.author.id in WHITELISTED_BOTS):
+        if not is_cat or timestamp > time.time() or (message.author.bot and message.author.id not in WHITELISTED_BOTS):
+            # if there is no cat, you are /preventcatch-ed, or you aren't a whitelisted bot
+            icon = get_emoji("pointlaugh")
+            await message.add_reaction(icon)
+        elif is_cat:
             current_time = message.created_at.timestamp()
             db["lastcatches"][str(message.channel.id)] = current_time
             cat_temp = db["cat"][str(message.channel.id)]
@@ -2235,7 +2239,7 @@ async def catch(message: discord.Interaction, msg):
     register_member(message.guild.id, msg.author.id)
     if msg.author.id != bot.user.id: await achemb(message, "4k", "send")
 
-# pointLaugh lives on in our memories
+# pointLaugh is back :insane:
 
 @bot.slash_command(description="View the leaderboards")
 async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[str] = discord.SlashOption(name="type", description="The leaderboard type to view!", choices=["Cats", "Fastest", "Slowest"], required=False)):
