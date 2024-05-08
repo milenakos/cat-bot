@@ -155,6 +155,9 @@ save_queue = []
 terminate_queue = []
 update_queue = []
 
+guild_reaction_queue = {}
+guild_reaction_ratelimit = {}
+
 # due to some stupid individuals spamming the hell out of reactions, we ratelimit them
 # you can do 50 reactions before they stop, limit resets on global cat loop
 reactions_ratelimit = {}
@@ -463,6 +466,37 @@ async def run_spawn(ch_id=None):
                 print("Posting failed.")
 
 
+# Add a reaction to the queue
+async def add_reaction(message, reaction):
+    guild = str(message.guild.id)
+    try:
+        guild_reaction_queue[guild]
+    except:
+        guild_reaction_queue[guild] = []
+
+    guild_reaction_queue[guild].append([message, reaction])
+
+
+def is_guild_ratelimited(guild):
+    return (time.time() - guild_reaction_ratelimit[guild]) < 0.25
+
+
+# Every 0.25 seconds check if the there is reactions in the queue
+# If there is and server is not ratelimited add it
+@tasks.loop(seconds=0.25)
+async def process_reaction_queue():
+    for guild, queue in guild_reaction_queue.items():
+        try:
+            guild_reaction_ratelimit[guild]
+        except:
+            guild_reaction_ratelimit[guild] = 0
+
+        if len(queue) != 0 and not is_guild_ratelimited(guild):
+            message, reaction = queue.pop(0)
+            await message.add_reaction(reaction)
+            guild_reaction_ratelimit[guild] = time.time()
+
+
 # update the server counter in bot's status
 @tasks.loop(seconds=3600)
 async def update_presence():
@@ -533,6 +567,7 @@ async def on_ready():
     else:
         milenakoos = await bot.fetch_user(OWNER_ID)
     update_presence.start()
+    process_reaction_queue.start()
 
     register_guild("spawn_times")
     register_guild("recovery_times")
@@ -628,7 +663,7 @@ async def on_message(message):
         if total_vow != len(text):
             const_perc = len(text) / (len(text) - total_vow)
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
-            await message.add_reaction(get_emoji("staring_cat"))
+            await add_reaction(message, get_emoji("staring_cat"))
     
     if "robotop" in message.author.name.lower() and "i rate **cat" in message.content.lower():
         icon = str(get_emoji("no_cat_throphy")) + " "
@@ -662,7 +697,7 @@ async def on_message(message):
             if r[1] == "custom": em = get_emoji(r[2])
             elif r[1] == "vanilla": em = r[2]
             reactions_ratelimit[message.author.id] = reactions_ratelimit.get(message.author.id, 0) + 1
-            await message.add_reaction(em)
+            await add_reaction(message, em)
             
     for resp in responses:
         if (resp[1] == "startswith" and text.lower().startswith(resp[0])) or \
@@ -671,7 +706,7 @@ async def on_message(message):
         (resp[1] == "in" and resp[0] in text.lower()):
             await message.reply(resp[2])
         
-    if message.author in message.mentions: await message.add_reaction(get_emoji("staring_cat"))
+    if message.author in message.mentions: await add_reaction(message, get_emoji("staring_cat"))
 
     if (":place_of_worship:" in text or "🛐" in text) and (":cat:" in text or ":staring_cat:" in text or "🐱" in text): await achemb(message, "worship", "reply")
     if text.lower() in ["ach", "cat!ach"]: await achemb(message, "test_ach", "reply")
@@ -710,7 +745,7 @@ async def on_message(message):
         if not is_cat or timestamp > time.time() or (message.author.bot and message.author.id not in WHITELISTED_BOTS):
             # if there is no cat, you are /preventcatch-ed, or you aren't a whitelisted bot
             icon = get_emoji("pointlaugh")
-            await message.add_reaction(icon)
+            await add_reaction(message, icon)
         elif is_cat:
             current_time = message.created_at.timestamp()
             db["lastcatches"][str(message.channel.id)] = current_time
