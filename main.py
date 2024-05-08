@@ -2524,6 +2524,7 @@ async def nuke(message: discord.Interaction):
     async def count(interaction):
         nonlocal message, counter
         if interaction.user.id == message.user.id:
+            await interaction.defer()
             counter -= 1
             if counter == 0:
                 # Spooky!
