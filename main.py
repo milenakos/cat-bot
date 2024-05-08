@@ -155,7 +155,7 @@ save_queue = []
 terminate_queue = []
 update_queue = []
 
-guild_reaction_queue = {}
+guild_reaction_queue = []
 guild_reaction_ratelimit = {}
 
 # due to some stupid individuals spamming the hell out of reactions, we ratelimit them
@@ -468,13 +468,7 @@ async def run_spawn(ch_id=None):
 
 # Add a reaction to the queue
 async def add_reaction(message, reaction):
-    guild = str(message.guild.id)
-    try:
-        guild_reaction_queue[guild]
-    except:
-        guild_reaction_queue[guild] = []
-
-    guild_reaction_queue[guild].append([message, reaction])
+    guild_reaction_queue.append([str(message.guild.id), message, reaction])
 
 
 def is_guild_ratelimited(guild):
@@ -485,16 +479,17 @@ def is_guild_ratelimited(guild):
 # If there is and server is not ratelimited add it
 @tasks.loop(seconds=0.25)
 async def process_reaction_queue():
-    for guild, queue in guild_reaction_queue.items():
+    for item in guild_reaction_queue:
+        guild, message, reaction = item
         try:
             guild_reaction_ratelimit[guild]
         except:
             guild_reaction_ratelimit[guild] = 0
 
-        if len(queue) != 0 and not is_guild_ratelimited(guild):
-            message, reaction = queue.pop(0)
+        if not is_guild_ratelimited(guild):
             await message.add_reaction(reaction)
             guild_reaction_ratelimit[guild] = time.time()
+            guild_reaction_queue.remove(item)
 
 
 # update the server counter in bot's status
