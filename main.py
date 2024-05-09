@@ -2246,6 +2246,8 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         nonlocal message
         if do_edit == None: do_edit = True
         await interaction.response.defer()
+        messager = None
+        interactor = None
         main = False
         fast = False
         slow = False
@@ -2310,6 +2312,8 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                     thingy = int(thingy)
                 
                 the_dict[f" {unit}: <@" + i + ">"] = thingy
+                if i == str(interaction.user.id): interactor = thingy
+                if i == str(message.user.id): messager = thingy
 
         # some weird quick sorting thing (dont you just love when built-in libary you never heard of saves your ass)
         heap = [(-value, key) for key, value in the_dict.items()]
@@ -2319,6 +2323,14 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             largest = heapq.nsmallest(15, heap)
         largest = [(key, -value) for value, key in largest]
         string = ""
+
+        # find the placement of the person who ran the command and optionally the person who pressed the button
+        interactor_placement = 0
+        messager_placement = 0
+        if interactor:
+            for i in the_dict.values(): if interactor < i: interactor_placement += 1
+        if messager and message.user.id != interaction.user.id:
+            for i in the_dict.values(): if messager < i: messager_placement += 1
 
         # rarest cat display
         if main:
@@ -2335,6 +2347,20 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         for i, num in largest:
             string = string + str(current) + ". " + str(num) + i + "\n"
             current += 1
+
+        # add the messager and interactor
+        if messager_placement > 15 or interactor_placement > 15:
+            string = string + "..."
+            # sort them correctly!
+            if messager_placement > interactor_placement:
+                # interactor should go first
+                if interactor_placement > 15: string = string + f"{interactor_placement}\. {interactor} cats: <@{interaction.user.id}>\n"
+                if messager_placement > 15: string = string + f"{messager_placement}\. {messager} cats: <@{message.user.id}>\n"
+            else:
+                # messager should go first
+                if messager_placement > 15: string = string + f"{messager_placement}\. {messager} cats: <@{message.user.id}>\n"
+                if interactor_placement > 15: string = string + f"{interactor_placement}\. {interactor} cats: <@{interaction.user.id}>\n"
+
         embedVar = discord.Embed(
                 title=f"{title} Leaderboards:", description=string, color=0x6E593C
         )
