@@ -2328,9 +2328,13 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         interactor_placement = 0
         messager_placement = 0
         if interactor:
-            for i in the_dict.values(): if interactor < i: interactor_placement += 1
+            for i in the_dict.values():
+                if interactor < i:
+                    interactor_placement += 1
         if messager and message.user.id != interaction.user.id:
-            for i in the_dict.values(): if messager < i: messager_placement += 1
+            for i in the_dict.values():
+                if messager < i:
+                    messager_placement += 1
 
         # rarest cat display
         if main:
