@@ -2354,7 +2354,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 
         # add the messager and interactor
         if messager_placement > 15 or interactor_placement > 15:
-            string = string + "..."
+            string = string + "...\n"
             # sort them correctly!
             if messager_placement > interactor_placement:
                 # interactor should go first
