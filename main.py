@@ -2358,12 +2358,12 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             # sort them correctly!
             if messager_placement > interactor_placement:
                 # interactor should go first
-                if interactor_placement > 15: string = string + f"{interactor_placement}\. {interactor} cats: <@{interaction.user.id}>\n"
-                if messager_placement > 15: string = string + f"{messager_placement}\. {messager} cats: <@{message.user.id}>\n"
+                if interactor_placement > 15: string = string + f"{interactor_placement}\. {interactor} {unit}: <@{interaction.user.id}>\n"
+                if messager_placement > 15: string = string + f"{messager_placement}\. {messager} {unit}: <@{message.user.id}>\n"
             else:
                 # messager should go first
-                if messager_placement > 15: string = string + f"{messager_placement}\. {messager} cats: <@{message.user.id}>\n"
-                if interactor_placement > 15: string = string + f"{interactor_placement}\. {interactor} cats: <@{interaction.user.id}>\n"
+                if messager_placement > 15: string = string + f"{messager_placement}\. {messager} {unit}: <@{message.user.id}>\n"
+                if interactor_placement > 15: string = string + f"{interactor_placement}\. {interactor} {unit}: <@{interaction.user.id}>\n"
 
         embedVar = discord.Embed(
                 title=f"{title} Leaderboards:", description=string, color=0x6E593C
