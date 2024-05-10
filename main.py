@@ -1203,7 +1203,7 @@ async def changemessage(message: discord.Interaction):
                 min_length=0,
                 max_length=1000,
                 label="Input",
-                style=discord.TextInputStyle.paragraph,
+                style=discord.TextStyle.long,
                 required=False,
                 placeholder="{emoji} {type} has appeared! Type \"cat\" to catch it!",
                 default_value=db[str(message.guild.id)][self.type.lower()]
