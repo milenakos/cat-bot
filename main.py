@@ -1741,11 +1741,11 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
                 if int(self.amount.value) <= 0:
                     raise Exception
             except Exception:
-                await interaction.send("plz number?", ephemeral=True)
+                await interaction.response.send_message("plz number?", ephemeral=True)
                 return
             
             if self.cattype.value not in cattypes:
-                await interaction.send("add a valid cat type 💀💀💀", ephemeral=True)
+                await interaction.response.send_message("add a valid cat type 💀💀💀", ephemeral=True)
                 return
             
             try:
@@ -1757,7 +1757,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
                 currset = 0
             
             if get_cat(interaction.guild.id, interaction.user.id, self.cattype.value) < int(self.amount.value) + currset:
-                await interaction.send("hell naww dude you dont even have that many cats 💀💀💀", ephemeral=True)
+                await interaction.response.send_message("hell naww dude you dont even have that many cats 💀💀💀", ephemeral=True)
                 return
 
             # OKE SEEMS GOOD LETS ADD CATS TO THE TRADE
