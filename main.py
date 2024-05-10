@@ -1005,9 +1005,7 @@ async def help(message):
         title = "How to Setup",
         description = "Server moderator (anyone with *Manage Server* permission) needs to run `/setup` in any channel. After that, cats will start to spawn in 2-20 minute intervals inside of that channel.\nYou can customize those intervals with `/changetimings` and change the spawn message with `/changemessage`.\nCat spawns can also be forced by moderators using `/forcespawn` command.\nYou can have unlimited amounts of setupped channels at once.\nYou can stop the spawning in a channel by running `/forget`.",
         color = 0x6E593C
-    ).set_thumbnail(
-        "https://pomf2.lain.la/f/zncxu6ej.png"
-    )
+    ).set_thumbnail(url="https://pomf2.lain.la/f/zncxu6ej.png")
     
     embed2 = discord.Embed(
         title="How to Play",
