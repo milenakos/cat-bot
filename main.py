@@ -2577,8 +2577,8 @@ async def nuke(message: discord.Interaction):
             await interaction.response.defer()
             counter -= 1
             if counter == 0:
-                # Spooky!
-                del db[str(message.guild.id)]
+                # Scary!
+                db[str(message.guild.id)] = {}
                 save(message.guild.id)
                 await interaction.edit_original_response(content="Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.", view=None)
             else:
