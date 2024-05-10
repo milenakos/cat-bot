@@ -788,7 +788,7 @@ async def on_message(message):
                 suffix_string = f"\nyour cataine buff has expired. you know where to get a new one 😏"
 
             elif randint(0, 7) == 0 and WEBHOOK_VERIFY and (get_cat(0, message.author.id, "vote_time") + 43200 < time.time() or get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time()):
-                suffix_string = f"\n💡 you haven't voted today! do {vote.get_mention()} to get some free cats."
+                suffix_string = f"\n💡 you haven't voted today! do `/vote` to get some free cats."
             
             if db[str(message.guild.id)]["cought"]:
                 coughstring = db[str(message.guild.id)]["cought"]
@@ -1193,7 +1193,7 @@ async def changemessage(message: discord.Interaction):
     class InputModal(discord.ui.Modal):
         def __init__(self, type):
             super().__init__(
-                f"Change {type} Message",
+                label=f"Change {type} Message",
                 timeout=600,
             )
 
@@ -1714,7 +1714,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
     class TradeModal(discord.ui.Modal):
         def __init__(self, currentuser):
             super().__init__(
-                "Add cats to the trade",
+                label="Add cats to the trade",
                 timeout=600,  # 5 minutes
             )
             self.currentuser = currentuser
@@ -1845,7 +1845,7 @@ async def casino(message: discord.Interaction):
         
         for i in variants:
             embed = discord.Embed(title="The Casino", description=f"**{i}**", color=0x750F0E)
-            await interaction.edit_original_message(embed=embed, view=None)
+            await interaction.edit_original_response(embed=embed, view=None)
             await asyncio.sleep(1)
 
         amount = randint(1, 5)
@@ -1861,7 +1861,7 @@ async def casino(message: discord.Interaction):
 
         casino_lock.remove(message.user.id)
 
-        await interaction.edit_original_message(embed=embed, view=myview)
+        await interaction.edit_original_response(embed=embed, view=myview)
 
     button = Button(label="Spin", style=ButtonStyle.blurple)
     button.callback = spin
@@ -2178,11 +2178,11 @@ async def achievements(message: discord.Interaction):
         #        buttons_list.append(Button(label=i, style=ButtonStyle.green))
         #   else:
         #        buttons_list.append(Button(label=i, style=ButtonStyle.blurple))
-        #   lambdas_list.append(lambda interaction : (await interaction.edit(embed=gen_new(i), view=insane_view_generator(i)) for _ in '_').__anext__())
+        #   lambdas_list.append(lambda interaction : (await interaction.edit_original_response(embed=gen_new(i), view=insane_view_generator(i)) for _ in '_').__anext__())
         #   buttons_list[-1].callback = lambdas_list[-1]
 
         async def callback_hell(interaction, thing):
-            await interaction.edit(embed=gen_new(thing), view=insane_view_generator(thing))
+            await interaction.edit_original_response(embed=gen_new(thing), view=insane_view_generator(thing))
             
             if hidden_counter == 3 and get_cat(message.guild.id, message.user.id, "dark_market"):
                 if get_cat(message.guild.id, message.user.id, "story_complete") != 1:
@@ -2406,7 +2406,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 
         # just send if first time, otherwise edit existing
         if do_edit:
-            await interaction.edit(embed=embedVar, view=myview)
+            await interaction.edit_original_response(embed=embedVar, view=myview)
         else:
             await interaction.followup.send(embed=embedVar, view=myview)
 
@@ -2582,10 +2582,10 @@ async def nuke(message: discord.Interaction):
                 # Spooky!
                 del db[str(message.guild.id)]
                 save(message.guild.id)
-                await interaction.edit_original_message(content="Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.", view=None)
+                await interaction.edit_original_response(content="Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.", view=None)
             else:
                 view = await gen(counter)
-                await interaction.edit_original_message(content=warning_text, view=view)
+                await interaction.edit_original_response(content=warning_text, view=view)
         else:
             await interaction.response.send_message(choice(funny), ephemeral=True)
             await achemb(interaction, "curious", "send")
