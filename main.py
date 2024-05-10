@@ -1,9 +1,8 @@
-import nextcord as discord
-import msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile, server
-from nextcord.ext import tasks, commands
-from nextcord import ButtonStyle
-from nextcord.ui import Button, View
-from typing import Optional
+import discord, msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile, server
+from discord.ext import tasks, commands
+from discord import ButtonStyle
+from discord.ui import Button, View
+from typing import Optional, Literal
 from random import randint, choice, shuffle, seed
 from PIL import Image
 from aiohttp import web
@@ -1000,7 +999,7 @@ async def on_guild_join(guild):
     if bot.user.id == 966695034340663367: unofficial_note = ""
     await ch.send(unofficial_note + "Thanks for adding me!\nTo start, use `/help`!\nJoin the support server here: https://discord.gg/staring\nHave a nice day :)")
 
-@bot.slash_command(description="Learn to use the bot")
+@bot.tree.command(description="Learn to use the bot")
 async def help(message):
     embed1 = discord.Embed(
         title = "How to Setup",
@@ -1036,7 +1035,7 @@ async def help(message):
 
     await message.response.send_message(embeds=[embed1, embed2])
 
-@bot.slash_command(description="View information about the bot")
+@bot.tree.command(description="View information about the bot")
 async def info(message: discord.Interaction):
     await message.response.defer()
     credits = {
@@ -1070,8 +1069,9 @@ async def info(message: discord.Interaction):
         embedVar.set_footer(text="Last code update:")
     await message.followup.send(embed=embedVar)
 
-@bot.slash_command(description="Read text as TikTok's TTS woman")
-async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(description="The text to be read! (300 characters max)")):
+@bot.tree.command(description="Read text as TikTok's TTS woman")
+@discord.app_commands.describe(text="The text to be read! (300 characters max)")
+async def tiktok(message: discord.Interaction, text: str):
     if message.user.id in BANNED_ID:
         await message.response.send_message("You do not have access to that command.", ephemeral=True)
         return
@@ -1104,8 +1104,10 @@ async def tiktok(message: discord.Interaction, text: str = discord.SlashOption(d
         except Exception:
             await message.followup.send("i dont speak your language (remove non-english characters, make sure the message is below 300 chars)")
 
-@bot.slash_command(description="(ADMIN) Prevent someone from catching cats for a certain time period", default_member_permissions=32)
-async def preventcatch(message: discord.Interaction, person: discord.Member = discord.SlashOption(description="A person to timeout!"), timeout: int = discord.SlashOption(description="How many seconds? (0 to reset)")):
+@bot.tree.command(description="(ADMIN) Prevent someone from catching cats for a certain time period")
+@commands.has_permissions(manage_guild=True)
+@discord.app_commands.describe(person="A person to timeout!", timeout="How many seconds? (0 to reset)")
+async def preventcatch(message: discord.Interaction, person: discord.Member, timeout: int):
     if timeout < 0:
         await message.response.send_message("uhh i think time is supposed to be a number", ephemeral=True)
         return
@@ -1118,7 +1120,8 @@ async def preventcatch(message: discord.Interaction, person: discord.Member = di
     else:
         await message.response.send_message(f"{person.name} can now catch cats again.")
 
-@bot.slash_command(description="(ADMIN) Use if cat spawning is broken", default_member_permissions=32)
+@bot.tree.command(description="(ADMIN) Use if cat spawning is broken")
+@commands.has_permissions(manage_guild=True)
 async def repair(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
     save("cat")
@@ -1128,10 +1131,11 @@ async def repair(message: discord.Interaction):
         save("recovery_times")
     await message.response.send_message("success. if you still have issues, join our server: https://discord.gg/staring")
 
-@bot.slash_command(description="(ADMIN) Change the cat appear timings", default_member_permissions=32)
-async def changetimings(message: discord.Interaction,
-                        minimum_time: Optional[int] = discord.SlashOption(required=False, description="In seconds, minimum possible time between spawns (leave both empty to reset)"),
-                        maximum_time: Optional[int] = discord.SlashOption(required=False, description="In seconds, maximum possible time between spawns (leave both empty to reset)")):
+@bot.tree.command(description="(ADMIN) Change the cat appear timings")
+@commands.has_permissions(manage_guild=True)
+@discord.app_commands.describe(minimum_time="In seconds, minimum possible time between spawns (leave both empty to reset)",
+                               maximum_time="In seconds, maximum possible time between spawns (leave both empty to reset)")
+async def changetimings(message: discord.Interaction, minimum_time: Optional[int], maximum_time: Optional[int]):
     global terminate_queue, update_queue
     # terminate and update queues indicate the loops to do stuff when they are done with waiting
 
@@ -1180,7 +1184,8 @@ async def changetimings(message: discord.Interaction,
         await message.response.send_message("Please input all times.", ephemeral=True)
 
 
-@bot.slash_command(description="(ADMIN) Change the cat appear and cought messages", default_member_permissions=32)
+@bot.tree.command(description="(ADMIN) Change the cat appear and cought messages")
+@commands.has_permissions(manage_guild=True)
 async def changemessage(message: discord.Interaction):
     caller = message.user
 
@@ -1281,14 +1286,14 @@ leave blank to reset.""", color=0x6E593C)
 
     await message.response.send_message(embed=embed, view=view)
 
-@bot.slash_command(description="Get Daily cats")
+@bot.tree.command(description="Get Daily cats")
 async def daily(message: discord.Interaction):
     suffix = ""
     if WEBHOOK_VERIFY: suffix = "\nthere ARE cats for voting tho, check out `/vote`"
     await message.response.send_message("there is no daily cats why did you even try this" + suffix)
     await achemb(message, "daily", "send")
 
-@bot.slash_command(description="View when the last cat was caught in this channel")
+@bot.tree.command(description="View when the last cat was caught in this channel")
 async def last(message: discord.Interaction):
     # im gonna be honest i dont know what im doing
     try:
@@ -1298,8 +1303,10 @@ async def last(message: discord.Interaction):
         displayedtime = "forever ago"
     await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.")
 
-@bot.slash_command(description="View your inventory")
-async def inventory(message: discord.Interaction, person_id: Optional[discord.Member] = discord.SlashOption(required=False, name="user", description="Person to view the inventory of!")):
+@bot.tree.command(description="View your inventory")
+@discord.app_commands.rename(person_id='user')
+@discord.app_commands.describe(person_id="Person to view the inventory of!")
+async def inventory(message: discord.Interaction, person_id: Optional[discord.Member]):
     # UGGHHH GOOD LUCK
 
     # check if we are viewing our own inv or some other person
@@ -1425,7 +1432,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Me
         if get_time(message.guild.id, message.user.id) <= 5: await achemb(message, "fast_catcher", "send")
         if get_time(message.guild.id, message.user.id, "slow") >= 3600: await achemb(message, "slow_catcher", "send")
 
-@bot.slash_command(description="I like fortnite")
+@bot.tree.command(description="I like fortnite")
 async def battlepass(message: discord.Interaction):
     await message.response.defer()
     
@@ -1477,7 +1484,7 @@ async def battlepass(message: discord.Interaction):
 
     await message.followup.send(embed=embedVar)
 
-@bot.slash_command(description="Pong")
+@bot.tree.command(description="Pong")
 async def ping(message: discord.Interaction):
     await message.response.defer()
     try:
@@ -1486,11 +1493,10 @@ async def ping(message: discord.Interaction):
         latency = "infinite"
     await message.followup.send(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
 
-@bot.slash_command(description="give cats now")
-async def gift(message: discord.Interaction, \
-                 person: discord.Member = discord.SlashOption(description="Whom to donate?"), \
-                 cat_type: str = discord.SlashOption(choices=cattypes, name="type", description="Select a donate cat type"), \
-                 amount: Optional[int] = discord.SlashOption(required=False, description="And how much?")):
+@bot.tree.command(description="give cats now")
+@discord.app_commands.rename(cat_type="type")
+@discord.app_commands.describe(person="Whom to donate?", cat_type="Select a donate cat type", amount="And how much?")
+async def gift(message: discord.Interaction, person: discord.Member, cat_type: Literal[tuple(cattypes)], amount: Optional[int]):
     if not amount: amount = 1  # default the amount to 1
     person_id = person.id
 
@@ -1543,8 +1549,10 @@ async def gift(message: discord.Interaction, \
         # haha skill issue
         await message.response.send_message("no", ephemeral=True)
 
-@bot.slash_command(description="Trade cats!")
-async def trade(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="why would you need description")):
+@bot.tree.command(description="Trade cats!")
+@discord.app_commands.rename(person_id="user")
+@discord.app_commands.describe(person_id="why would you need description")
+async def trade(message: discord.Interaction, person_id: discord.Member):
     person1 = message.user
     person2 = person_id
         
@@ -1769,33 +1777,33 @@ async def trade(message: discord.Interaction, person_id: discord.Member = discor
             await interaction.response.defer()
             await update_trade_embed(interaction)
 
-@bot.slash_command(description="Get Cat Image, does not add a cat to your inventory")
+@bot.tree.command(description="Get Cat Image, does not add a cat to your inventory")
 async def cat(message: discord.Interaction):
     file = discord.File("cat.png", filename="cat.png")
     await message.response.send_message(file=file)
 
-@bot.slash_command(description="Get Cursed Cat")
+@bot.tree.command(description="Get Cursed Cat")
 async def cursed(message: discord.Interaction):
     file = discord.File("cursed.jpg", filename="cursed.jpg")
     await message.response.send_message(file=file)
 
-@bot.slash_command(description="Get a warning")
+@bot.tree.command(description="Get a warning")
 async def warning(message: discord.Interaction):
     file = discord.File("warning.png", filename="warning.png")
     await message.response.send_message(file=file)
 
-@bot.slash_command(description="Get Your balance")
+@bot.tree.command(description="Get Your balance")
 async def bal(message: discord.Interaction):
     file = discord.File("money.png", filename="money.png")
     embed = discord.Embed(title="cat coins", color=0x6E593C).set_image(url="attachment://money.png")
     await message.response.send_message(file=file, embed=embed)
 
-@bot.slash_command(description="Brew some coffee to catch cats more efficiently")
+@bot.tree.command(description="Brew some coffee to catch cats more efficiently")
 async def brew(message: discord.Interaction):
    await message.response.send_message("HTTP 418: I'm a teapot. <https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418>")
    await achemb(message, "coffee", "send")
 
-@bot.slash_command(description="Gamble your life savings away in our totally-not-rigged casino!")
+@bot.tree.command(description="Gamble your life savings away in our totally-not-rigged casino!")
 async def casino(message: discord.Interaction):
     if message.user.id in casino_lock:
         await message.response.send_message("you get kicked out of the casino because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
@@ -1864,7 +1872,7 @@ async def casino(message: discord.Interaction):
     await message.response.send_message(embed=embed, view=myview)
 
 if WEBHOOK_VERIFY:
-    @bot.slash_command(description="Vote for Cat Bot for free cats")
+    @bot.tree.command(description="Vote for Cat Bot for free cats")
     async def vote(message: discord.Interaction):
         await message.response.defer()
         try:
@@ -1925,7 +1933,7 @@ if WEBHOOK_VERIFY:
         embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg and wumpus.store every 12 hours to recieve mystery cats.\n*Both* votes will give you a separate reward.", color=0x6E593C)
         await message.followup.send(embed=embedVar, view=view)
 
-@bot.slash_command(description="Get a random cat")
+@bot.tree.command(description="Get a random cat")
 async def random(message: discord.Interaction):
     await message.response.defer()
     async with aiohttp.ClientSession() as session:
@@ -2089,7 +2097,7 @@ async def dark_market(message):
         embed = discord.Embed(title="The Dark Market", description=f"you already bought from us recently. you can do next purchase <t:{get_cat(message.guild.id, message.user.id, 'cataine_active')}:R>.")
         await message.followup.send(embed=embed, ephemeral=True)
 
-@bot.slash_command(description="View your achievements")
+@bot.tree.command(description="View your achievements")
 async def achievements(message: discord.Interaction):
     # this is very close to /inv's ach counter
     register_member(message.guild.id, message.user.id)
@@ -2237,8 +2245,10 @@ async def catch(message: discord.Interaction, msg):
 
 # pointLaugh lives on in our memories
 
-@bot.slash_command(description="View the leaderboards")
-async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[str] = discord.SlashOption(name="type", description="The leaderboard type to view!", choices=["Cats", "Fastest", "Slowest"], required=False)):
+@bot.tree.command(description="View the leaderboards")
+@discord.app_commands.rename(leaderboard_type="type")
+@discord.app_commands.describe(leaderboard_type="The leaderboard type to view!")
+async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[Literal["Cats", "Fastest", "Slowest"]]):
     if not leaderboard_type: leaderboard_type = "Cats"
 
     # this fat function handles a single page
@@ -2412,15 +2422,17 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         
     await lb_handler(message, {"Fastest": "fast", "Slowest": "slow", "Cats": "main"}[leaderboard_type], False)
 
-@bot.slash_command(description="(ADMIN) Give cats to people", default_member_permissions=32)
-async def givecat(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
-                 amount: int = discord.SlashOption(description="how many"), \
-                 cat_type: str = discord.SlashOption(choices=cattypes, description="what")):
+@bot.tree.command(description="(ADMIN) Give cats to people")
+@commands.has_permissions(manage_guild=True)
+@discord.app_commands.rename(person_id="user")
+@discord.app_commands.describe(person_id="who", amount="how many", cat_type="what")
+async def givecat(message: discord.Interaction, person_id: discord.Member, amount: int, cat_type: Literal[tuple(cattypes)]):
     add_cat(message.guild.id, person_id.id, cat_type, amount)
     embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount} {cat_type} cats", color=0x6E593C)
     await message.response.send_message(embed=embed)
 
-@bot.slash_command(description="(ADMIN) Setup cat in current channel", default_member_permissions=32)
+@bot.tree.command(description="(ADMIN) Setup cat in current channel")
+@commands.has_permissions(manage_guild=True)
 async def setup(message: discord.Interaction):
     register_guild(message.guild.id)
     if int(message.channel.id) in db["summon_ids"]:
@@ -2442,7 +2454,8 @@ async def setup(message: discord.Interaction):
     await soft_force(message.channel) # force the first cat spawn incase something isnt working
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
 
-@bot.slash_command(description="(ADMIN) Undo the setup", default_member_permissions=32)
+@bot.tree.command(description="(ADMIN) Undo the setup")
+@commands.has_permissions(manage_guild=True)
 async def forget(message: discord.Interaction):
     if int(message.channel.id) in db["summon_ids"]:
         abc = db["summon_ids"]
@@ -2455,7 +2468,7 @@ async def forget(message: discord.Interaction):
     else:
         await message.response.send_message("your an idiot there is literally no cat setupped in this channel you stupid")
 
-@bot.slash_command(description="LMAO TROLLED SO HARD :JOY:")
+@bot.tree.command(description="LMAO TROLLED SO HARD :JOY:")
 async def fake(message: discord.Interaction):
     file = discord.File("australian cat.png", filename="australian cat.png")
     icon = get_emoji("egirlcat")
@@ -2485,8 +2498,11 @@ async def soft_force(channeley, cat_type=None):
     db["cat"][str(channeley.id)] = message_is_sus.id
     save("cat")
 
-@bot.slash_command(description="(ADMIN) Force cats to appear", default_member_permissions=32)
-async def forcespawn(message: discord.Interaction, cat_type: Optional[str] = discord.SlashOption(required=False, choices=cattypes, name="type", description="select a cat type ok")):
+@bot.tree.command(description="(ADMIN) Force cats to appear")
+@commands.has_permissions(manage_guild=True)
+@discord.app_commands.rename(cat_type="type")
+@discord.app_commands.describe(cat_type="select a cat type ok")
+async def forcespawn(message: discord.Interaction, cat_type: Optional[Literal[tuple(cattypes)]]):
     try:
         if db["cat"][str(message.channel.id)]:
             await message.response.send_message("there is already a cat", ephemeral=True)
@@ -2497,9 +2513,11 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str] = dis
     await soft_force(message.channel, cat_type)
     await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this", ephemeral=True)
 
-@bot.slash_command(description="(ADMIN) Give achievements to people", default_member_permissions=32)
-async def giveachievement(message: discord.Interaction, person_id: discord.Member = discord.SlashOption(name="user", description="who"), \
-                  ach_id: str = discord.SlashOption(name="name", description="name or id of the achievement")):
+@bot.tree.command(description="(ADMIN) Give achievements to people")
+@commands.has_permissions(manage_guild=True)
+@discord.app_commands.rename(person_id="user", ach_id="name")
+@discord.app_commands.describe(person_id="who", ach_id="name or id of the achievement")
+async def giveachievement(message: discord.Interaction, person_id: discord.Member, ach_id: str):
     # check if ach is real
     try:
         if ach_id in ach_names:
@@ -2529,8 +2547,11 @@ async def giveachievement(message: discord.Interaction, person_id: discord.Membe
     else:
         await message.response.send_message("i cant find that achievement! try harder next time.", ephemeral=True)
 
-@bot.slash_command(description="(ADMIN) Reset people", default_member_permissions=32)
-async def reset(message: discord.Interaction, person_id: discord.User = discord.SlashOption(name="user", description="who")):
+@bot.tree.command(description="(ADMIN) Reset people")
+@commands.has_permissions(manage_guild=True)
+@discord.app_commands.rename(person_id="user")
+@discord.app_commands.describe(person_id="who")
+async def reset(message: discord.Interaction, person_id: discord.User):
     try:
         del db[str(message.guild.id)][str(person_id.id)]
         save(message.guild.id)
@@ -2538,7 +2559,8 @@ async def reset(message: discord.Interaction, person_id: discord.User = discord.
     except KeyError:
         await message.response.send_message("ummm? this person isnt even registered in cat bot wtf are you wiping?????", ephemeral=True)
 
-@bot.slash_command(description="(ADMIN) [VERY DANGEROUS] Reset the entire server", default_member_permissions=32)
+@bot.tree.command(description="(ADMIN) [VERY DANGEROUS] Reset the entire server")
+@commands.has_permissions(manage_guild=True)
 async def nuke(message: discord.Interaction):
     warning_text = "⚠️ This will completely reset **all** Cat Bot progress of **everyone** in this server. It will also reset some Cat Bot settings (notably custom spawn messages). Following will not be affected: settuped channels, cats which arent yet cought, custom spawn timings.\nPress the button 5 times to continue."
     counter = 5
