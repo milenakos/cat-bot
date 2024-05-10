@@ -1,5 +1,4 @@
 # by Marwynn Somridhivej at https://gitlab.com/marwynnsomridhivej/dpy-http-server/
-# modified by Milenakos to work with nextcord
 
 import asyncio
 import functools
@@ -7,7 +6,7 @@ import inspect
 from typing import Callable, Iterator, List, Union
 
 from aiohttp import web
-from nextcord.ext.commands import AutoShardedBot
+from discord.ext.commands import AutoShardedBot
 
 _HTTP_METHODS = frozenset([
     "GET",

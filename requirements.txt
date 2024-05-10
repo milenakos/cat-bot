@@ -1,5 +1,5 @@
 aiohttp[speedups]
-nextcord[speed]
+discord
 Pillow==9.5.0
 Pilmoji
 requests
