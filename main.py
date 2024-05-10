@@ -1193,7 +1193,7 @@ async def changemessage(message: discord.Interaction):
     class InputModal(discord.ui.Modal):
         def __init__(self, type):
             super().__init__(
-                label=f"Change {type} Message",
+                title=f"Change {type} Message",
                 timeout=600,
             )
 
@@ -1714,7 +1714,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
     class TradeModal(discord.ui.Modal):
         def __init__(self, currentuser):
             super().__init__(
-                label="Add cats to the trade",
+                title="Add cats to the trade",
                 timeout=600,  # 5 minutes
             )
             self.currentuser = currentuser
