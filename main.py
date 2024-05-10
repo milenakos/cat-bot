@@ -1210,7 +1210,7 @@ async def changemessage(message: discord.Interaction):
             )
             self.add_item(self.input)
 
-        async def callback(self, interaction: discord.Interaction):
+        async def on_submit(self, interaction: discord.Interaction):
             input_value = self.input.value
             # check if all placeholders are there
             if input_value != "":
@@ -1518,7 +1518,7 @@ async def gift(message: discord.Interaction, person: discord.Member, cat_type: L
 
             async def pay(interaction):
                 if interaction.user.id == message.user.id:
-                    await interaction.message.edit(view=None)
+                    await interaction.edit_original_response(view=None)
                     remove_cat(interaction.guild.id, interaction.user.id, "Fine", tax_amount)
                     await interaction.response.send_message(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
                 else:
@@ -1526,7 +1526,7 @@ async def gift(message: discord.Interaction, person: discord.Member, cat_type: L
             
             async def evade(interaction):
                 if interaction.user.id == message.user.id:
-                    await interaction.message.edit(view=None)
+                    await interaction.edit_original_response(view=None)
                     await achemb(message, "secret", "send")
                     await interaction.response.send_message(f"You evaded the tax of {tax_amount} Fine cats.")
                 else:
@@ -1580,7 +1580,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
         blackhole = True
         person1gives = {}
         person2gives = {}
-        await interaction.message.edit(f"<@{interaction.user.id}> has cancelled the trade.", embed=None, view=None)
+        await interaction.edit_original_response(content=f"<@{interaction.user.id}> has cancelled the trade.", embed=None, view=None)
 
     # this is the accept button code
     async def acceptb(interaction):
@@ -1611,7 +1611,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
                     break
                     
             if error:
-                await interaction.message.edit("Not enough cats - some of the cats disappeared while trade was happening", embed=None, view=None)
+                await interaction.edit_original_response(content="Not enough cats - some of the cats disappeared while trade was happening", embed=None, view=None)
                 return
 
             # exchange cats
@@ -1623,7 +1623,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
                 remove_cat(interaction.guild.id, person2.id, k, v)
                 add_cat(interaction.guild.id, person1.id, k, v)
 
-            await interaction.message.edit(f"Trade finished!", view=None)
+            await interaction.edit_original_response(content="Trade finished!", view=None)
             await achemb(message, "extrovert", "send")
             await achemb(message, "extrovert", "send", person2)
 
@@ -1708,7 +1708,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
     # this is wrapper around gen_embed() to edit the mesage automatically
     async def update_trade_embed(interaction):
         embed, view = await gen_embed()
-        await interaction.message.edit(embed=embed, view=view)
+        await interaction.edit_original_response(embed=embed, view=view)
 
     # lets go add cats modal thats fun
     class TradeModal(discord.ui.Modal):
@@ -1736,7 +1736,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
             self.add_item(self.amount)
 
         # this is ran when user submits
-        async def callback(self, interaction: discord.Interaction):
+        async def on_submit(self, interaction: discord.Interaction):
             nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
             # hella ton of checks
             try:
