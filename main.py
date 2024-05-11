@@ -2180,7 +2180,7 @@ async def achievements(message: discord.Interaction):
         #   buttons_list[-1].callback = lambdas_list[-1]
 
         async def callback_hell(interaction, thing):
-            await interacton.response.defer()
+            await interaction.response.defer()
             await interaction.edit_original_response(embed=gen_new(thing), view=insane_view_generator(thing))
             
             if hidden_counter == 3 and get_cat(message.guild.id, message.user.id, "dark_market"):
