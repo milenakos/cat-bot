@@ -8,6 +8,7 @@ from PIL import Image
 from aiohttp import web
 from collections import UserDict
 import logging
+import math
 
 logging.basicConfig(level=logging.INFO)
 
@@ -1846,11 +1847,18 @@ async def casino(message: discord.Interaction):
             await interaction.edit_original_response(embed=embed, view=None)
             await asyncio.sleep(1)
 
-        amount = randint(1, 5)
-
+        # 99% of gamblers stop before they win big
+        # 
+        gamblingcap = floor(get_cat(message.guild.id, message.user.id, "gambling_addiction")/100) + 5 
+        amount = randint(1, gamblingcap)
+        cattype = randint(1, gamblingcap - 4)
+        cattype = math.log(cattype, 10) + 1
+        truecattype = type_dict.keys()[cattype]
+        
         embed = discord.Embed(title="The Casino", description=f"You won:\n**{get_emoji('finecat')} {amount} Fine cats**", color=0x750F0E)
-        add_cat(message.guild.id, message.user.id, "Fine", amount)
-
+        add_cat(message.guild.id, message.user.id, truecattype, amount)
+        add_cat(message.guild.id, message.user.id, "gambling_addiction", amount)
+        
         button = Button(label="Spin", style=ButtonStyle.blurple)
         button.callback = spin
     
