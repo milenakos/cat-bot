@@ -515,7 +515,7 @@ async def spawning_loop(times, ch_id):
 # some code which is run when bot is started
 @bot.event
 async def on_ready():
-    global milenakoos, OWNER_ID, do_save_emojis, save_queue, on_ready_debounce
+    global milenakoos, OWNER_ID, do_save_emojis, save_queue, on_ready_debounce, gen_credits
     if on_ready_debounce:
         return
     on_ready_debounce = True
@@ -543,6 +543,27 @@ async def on_ready():
             port="8069",
         )
         await bot.server.start()
+
+    credits = {
+        "author": [553093932012011520],
+        "contrib": [576065759185338371, 819980535639572500, 432966085025857536, 646401965596868628, 696806601771974707],
+        "tester": [712639066373619754, 902862104971849769, 709374062237057074, 520293520418930690, 689345298686148732, 1004128541853618197, 839458185059500032],
+        "emoji": [709374062237057074],
+        "trash": [520293520418930690]
+    }
+
+    gen_credits = {}
+
+    # fetch discord usernames by user ids
+    for key in credits.keys():
+        peoples = []
+        try:
+            for i in credits[key]:
+                user = await bot.fetch_user(i)
+                peoples.append(user.name.replace("_", r"\_"))
+        except Exception:
+            pass # death
+        gen_credits[key] = ", ".join(peoples)
 
     # we create all spawning loops
     for k, v in db["spawn_times"].items():
@@ -1035,28 +1056,8 @@ async def help(message):
 
 @bot.tree.command(description="View information about the bot")
 async def info(message: discord.Interaction):
+    global gen_credits
     await message.response.defer()
-    credits = {
-        "author": [553093932012011520],
-        "contrib": [576065759185338371, 819980535639572500, 432966085025857536, 646401965596868628, 696806601771974707],
-        "tester": [712639066373619754, 902862104971849769, 709374062237057074, 520293520418930690, 689345298686148732, 1004128541853618197, 839458185059500032],
-        "emoji": [709374062237057074],
-        "trash": [520293520418930690]
-    }
-
-    gen_credits = {}
-
-    # fetch discord usernames by user ids
-    for key in credits.keys():
-        peoples = []
-        try:
-            for i in credits[key]:
-                user = await bot.fetch_user(i)
-                peoples.append(user.name.replace("_", r"\_"))
-        except Exception:
-            pass # death
-        gen_credits[key] = ", ".join(peoples)
-    
     embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/staring)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\n" + \
                              f"Bot made by {gen_credits['author']}\nWith contributions by {gen_credits['contrib']}.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n" + \
                              f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits['emoji']}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**countik** for TikTok TTS API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**")
@@ -1484,7 +1485,6 @@ async def battlepass(message: discord.Interaction):
 
 @bot.tree.command(description="Pong")
 async def ping(message: discord.Interaction):
-    await message.response.defer()
     try:
         latency = round(bot.latency * 1000)
     except OverflowError:
@@ -1844,7 +1844,7 @@ async def casino(message: discord.Interaction):
         for i in variants:
             embed = discord.Embed(title="The Casino", description=f"**{i}**", color=0x750F0E)
             await interaction.edit_original_response(embed=embed, view=None)
-            await asyncio.sleep(1)
+            await asyncio.sleep(1.5)
 
         amount = randint(1, 5)
 
@@ -2594,7 +2594,7 @@ async def nuke(message: discord.Interaction):
 
 # this is the crash handler
 @bot.event
-async def on_application_command_error(ctx, error):
+async def on_command_error(ctx, error):
     def in_error(x):
         return bool(x in str(type(error)) or x in str(error))
 
