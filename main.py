@@ -371,13 +371,13 @@ async def run_spawn(ch_id=None):
         print("Main cat loop is running")
     
     for i in summon_id:
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.025)
         try:
             if fire[i] and not db["cat"][str(i)] and (ch_id or str(i) not in db["spawn_times"].keys()):
                 file = discord.File("cat.png")
                 localcat = choice(CAT_TYPES)
                 icon = get_emoji(localcat.lower() + "cat")
-                channeley = await bot.fetch_channel(int(i))
+                channeley = bot.get_channel(int(i))
                 try:
                     if db[str(channeley.guild.id)]["appear"]:
                         appearstring = db[str(channeley.guild.id)]["appear"]
