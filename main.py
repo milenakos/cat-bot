@@ -1854,6 +1854,9 @@ async def casino(message: discord.Interaction):
         cattype = randint(1, gamblingcap - 4)
         cattype = math.log(cattype, 10) + 1
         truecattype = type_dict.keys()[cattype]
+
+        if amount >= 9:
+            amount = 9 + log(amount, 69420)
         
         embed = discord.Embed(title="The Casino", description=f"You won:\n**{get_emoji('finecat')} {amount} Fine cats**", color=0x750F0E)
         add_cat(message.guild.id, message.user.id, truecattype, amount)
