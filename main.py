@@ -510,7 +510,6 @@ async def on_ready():
         OWNER_ID = milenakoos.id
     else:
         milenakoos = await bot.fetch_user(OWNER_ID)
-    update_presence.start()
 
     register_guild("spawn_times")
     register_guild("recovery_times")
