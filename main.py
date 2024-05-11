@@ -425,7 +425,7 @@ async def run_spawn(ch_id=None):
                 try:
                     person = await bot.fetch_user(i)
                     
-                    view = View(timeout=1200)
+                    view = View(timeout=1)
                     button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367")
                     view.add_item(button)
                     
@@ -437,7 +437,7 @@ async def run_spawn(ch_id=None):
                 try:
                     person = await bot.fetch_user(i)
                     
-                    view = View(timeout=1200)
+                    view = View(timeout=1)
                     button = Button(emoji=get_emoji("store"), label="Vote", style=ButtonStyle.gray, url="https://wumpus.store/bot/966695034340663367")
                     view.add_item(button)
                     
@@ -841,7 +841,7 @@ async def on_message(message):
                 button.callback = dark_market_cutscene
             
             if button:
-                view = View(timeout=1200)
+                view = View(timeout=3600)
                 view.add_item(button)
             
             await message.channel.send(coughstring.format(username=message.author.name.replace("_", "\_"),
@@ -1192,7 +1192,7 @@ async def changemessage(message: discord.Interaction):
         def __init__(self, type):
             super().__init__(
                 title=f"Change {type} Message",
-                timeout=600,
+                timeout=3600,
             )
 
             self.type = type
@@ -1278,7 +1278,7 @@ leave blank to reset.""", color=0x6E593C)
     button2 = Button(label="Catch Message", style=ButtonStyle.blurple)
     button2.callback = ask_catch
 
-    view = View(timeout=600)
+    view = View(timeout=3600)
     view.add_item(button1)
     view.add_item(button2)
 
@@ -1538,7 +1538,7 @@ async def gift(message: discord.Interaction, person: discord.Member, cat_type: L
             button2 = Button(label="Evade the tax", style=ButtonStyle.red)
             button2.callback = evade
 
-            myview = View(timeout=600)
+            myview = View(timeout=3600)
 
             myview.add_item(button)
             myview.add_item(button2)
@@ -1660,7 +1660,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
             await achemb(message, "blackhole", "send", person2)
             return discord.Embed(color=0x6E593C, title=f"Blackhole", description="How Did We Get Here?"), None
         
-        view = View(timeout=600)
+        view = View(timeout=3600)
     
         accept = Button(label="Accept", style=ButtonStyle.green)
         accept.callback = acceptb
@@ -1713,7 +1713,7 @@ async def trade(message: discord.Interaction, person_id: discord.Member):
         def __init__(self, currentuser):
             super().__init__(
                 title="Add cats to the trade",
-                timeout=600,  # 5 minutes
+                timeout=3600,
             )
             self.currentuser = currentuser
             
@@ -1854,7 +1854,7 @@ async def casino(message: discord.Interaction):
         button = Button(label="Spin", style=ButtonStyle.blurple)
         button.callback = spin
     
-        myview = View(timeout=600)
+        myview = View(timeout=3600)
         myview.add_item(button)
 
         casino_lock.remove(message.user.id)
@@ -1864,7 +1864,7 @@ async def casino(message: discord.Interaction):
     button = Button(label="Spin", style=ButtonStyle.blurple)
     button.callback = spin
 
-    myview = View(timeout=600)
+    myview = View(timeout=3600)
     myview.add_item(button)
 
     await message.response.send_message(embed=embed, view=myview)
@@ -1905,7 +1905,7 @@ if WEBHOOK_VERIFY:
             db["vote_remind"] = vote_remind
             save("vote_remind")
 
-        view = View(timeout=1200)
+        view = View(timeout=3600)
 
         if get_cat(0, message.user.id, "vote_time_topgg") + 43200 > time.time():
             left = int(get_cat(0, message.user.id, "vote_time_topgg") + 43200 - time.time()) // 60
@@ -1982,7 +1982,7 @@ async def light_market(message):
             add_cat(message.guild.id, message.user.id, "cataine_week", 1) # cataine_week++
             await interaction.response.send_message("The machine spools down. Your cat catches will be doubled for the next 12 hours.", ephemeral=True)
         
-        myview = View(timeout=600)
+        myview = View(timeout=3600)
 
         if get_cat(message.guild.id, message.user.id, type) >= amount:
             button = Button(label="Buy", style=ButtonStyle.blurple)
@@ -2069,7 +2069,7 @@ async def dark_market(message):
                     await achemb(interaction, "thanksforplaying", "send")
                     add_cat(interaction.guild.id, interaction.user.id, "story_complete")
                     
-            run_view = View(timeout=600)
+            run_view = View(timeout=3600)
             button = Button(label="RUN", style=ButtonStyle.green)
             button.callback = step
             run_view.add_item(button)
@@ -2077,7 +2077,7 @@ async def dark_market(message):
             await interaction.followup.send("RUN!\nSpam the button a lot of times as fast as possible to run away!", view=run_view, ephemeral=True)
             
         
-        myview = View(timeout=600)
+        myview = View(timeout=3600)
         
         if level == len(cataine_prices) - 1:
             button = Button(label="What???", style=ButtonStyle.red)
@@ -2166,7 +2166,7 @@ async def achievements(message: discord.Interaction):
 
     # creates buttons at the bottom of the full view
     def insane_view_generator(category):
-        myview = View(timeout=600)
+        myview = View(timeout=3600)
         buttons_list = []
         lambdas_list = []
 
@@ -2224,7 +2224,7 @@ async def achievements(message: discord.Interaction):
     button = Button(label="View all achievements", style=ButtonStyle.blurple)
     button.callback = send_full
 
-    myview = View(timeout=600)
+    myview = View(timeout=3600)
     myview.add_item(button)
 
     await message.response.send_message(embed=embedVar, view=myview)
@@ -2398,7 +2398,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         button2.callback = fastlb
         button3.callback = slowlb
 
-        myview = View(timeout=600)
+        myview = View(timeout=3600)
         myview.add_item(button1)
         myview.add_item(button2)
         myview.add_item(button3)
@@ -2566,7 +2566,7 @@ async def nuke(message: discord.Interaction):
 
     async def gen(counter):
         lines = ["", "I'm absolutely sure! (1)", "I understand! (2)", "You can't undo this! (3)", "This is dangerous! (4)", "Reset everything! (5)"]
-        view = View(timeout=1200)
+        view = View(timeout=3600)
         button = Button(label=lines[counter], style=ButtonStyle.red)
         button.callback = count
         view.add_item(button)
