@@ -131,7 +131,7 @@ ach_names = ach_list.keys()
 ach_titles = {value["title"].lower(): key for (key, value) in ach_list.items()}
 
 intents = discord.Intents(message_content=True, messages=True, guilds=True)
-bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ", intents=intents, help_command=None)
+bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ", intents=intents, help_command=None, chunk_guilds_at_startup=False)
 
 # this list stores unique non-duplicate cattypes
 cattypes = []
@@ -187,14 +187,6 @@ def save(id):
 # this is probably a good time to explain the database structure
 # each server is a json file
 # however there are multiple jsons which arent for servers yet are stored the same way
-
-# create total_members variable if it isnt real already
-try:
-    if not db["total_members"]:
-        raise KeyError
-except KeyError:
-    db["total_members"] = 0
-    save("total_members")
 
 # those are helper functions to automatically check if value exists, save it if needed etc
 def add_cat(server_id, person_id, cattype, val=1, overwrite=False):
@@ -362,9 +354,8 @@ async def run_spawn(ch_id=None):
     else:
         reactions_ratelimit = {}
         # update status
-        total_members = db["total_members"]
         await bot.change_presence(
-                activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers with {total_members:,} people", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
+                activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
         )
 
         summon_id = db["summon_ids"]
@@ -463,18 +454,6 @@ async def run_spawn(ch_id=None):
                 print("Posting failed.")
 
 
-# update the server counter in bot's status
-@tasks.loop(seconds=3600)
-async def update_presence():
-    # while servers are updated on every loop, members are more resource and api-calls intensive, thus update once a hour
-    total = 0
-    for i in bot.guilds:
-        g = await bot.fetch_guild(i.id)
-        total += g.approximate_member_count
-    db["total_members"] = total
-    save("total_members")
-
-
 # main spawn waiting loop
 # again, if ch_id is None its for basic spawns
 # otherwise for custom timings
@@ -522,9 +501,8 @@ async def on_ready():
     on_ready_debounce = True
     print("cat is now online")
     do_save_emojis = True
-    total_members = db["total_members"]
     await bot.change_presence(
-        activity=discord.CustomActivity(name=f"Just restarted! In {len(bot.guilds):,} servers with {total_members:,} people")
+        activity=discord.CustomActivity(name=f"Just restarted! Catting in {len(bot.guilds):,} servers.")
     )
     appinfo = await bot.application_info()
     if not OWNER_ID:
