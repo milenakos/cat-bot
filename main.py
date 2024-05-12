@@ -1467,7 +1467,7 @@ async def ping(message: discord.Interaction):
         latency = round(bot.latency * 1000)
     except OverflowError:
         latency = "infinite"
-    await message.followup.send(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
+    await message.response.send_message(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
 
 @bot.tree.command(description="give cats now")
 @discord.app_commands.rename(cat_type="type")
