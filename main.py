@@ -599,33 +599,24 @@ async def on_message(message):
     # :staring_cat: reaction on "bullshit"
     if not (" " in text) and len(text) > 7 and text.isalnum():
         s = text.lower()
-        total_vow = 0
-        total_illegal = 0
-        for i in "aeuio":
-            total_vow += s.count(i)
-        illegal = ["bk", "fq", "jc", "jt", "mj", "qh", "qx", "vj",  "wz",  "zh",
-                        "bq", "fv", "jd", "jv", "mq", "qj", "qy", "vk",  "xb",  "zj",
-                        "bx", "fx", "jf", "jw", "mx", "qk", "qz", "vm",  "xg",  "zn",
-                        "cb", "fz", "jg", "jx", "mz", "ql", "sx", "vn",  "xj",  "zq",
-                        "cf", "gq", "jh", "jy", "pq", "qm", "sz", "vp",  "xk",  "zr",
-                        "cg", "gv", "jk", "jz", "pv", "qn", "tq", "vq",  "xv",  "zs",
-                        "cj", "gx", "jl", "kq", "px", "qo", "tx", "vt",  "xz",  "zx",
-                        "cp", "hk", "jm", "kv", "qb", "qp", "vb", "vw",  "yq",
-                        "cv", "hv", "jn", "kx", "qc", "qr", "vc", "vx",  "yv",
-                        "cw", "hx", "jp", "kz", "qd", "qs", "vd", "vz",  "yz",
-                        "cx", "hz", "jq", "lq", "qe", "qt", "vf", "wq",  "zb",
-                        "dx", "iy", "jr", "lx", "qf", "qv", "vg", "wv",  "zc",
-                        "fk", "jb", "js", "mg", "qg", "qw", "vh", "wx",  "zg"]
-        for j in illegal:
-            if j in s:
-                total_illegal += 1
-        vow_perc = 0
-        const_perc = len(text)
-        if total_vow != 0:
-            vow_perc = len(text) / total_vow
-        if total_vow != len(text):
-            const_perc = len(text) / (len(text) - total_vow)
-        if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
+        vowel_count = sum(x in s for x in "aeiou") or len(text)
+        const_count = (len(text) - vowel_count) or 1
+        illegals = sum(j in s for j in ["bk", "fq", "jc", "jt", "mj", "qh", "qx", "vj", "wz", "zh",
+                                        "bq", "fv", "jd", "jv", "mq", "qj", "qy", "vk", "xb", "zj",
+                                        "bx", "fx", "jf", "jw", "mx", "qk", "qz", "vm", "xg", "zn",
+                                        "cb", "fz", "jg", "jx", "mz", "ql", "sx", "vn", "xj", "zq",
+                                        "cf", "gq", "jh", "jy", "pq", "qm", "sz", "vp", "xk", "zr",
+                                        "cg", "gv", "jk", "jz", "pv", "qn", "tq", "vq", "xv", "zs",
+                                        "cj", "gx", "jl", "kq", "px", "qo", "tx", "vt", "xz", "zx",
+                                        "cp", "hk", "jm", "kv", "qb", "qp", "vb", "vw", "yq",
+                                        "cv", "hv", "jn", "kx", "qc", "qr", "vc", "vx", "yv",
+                                        "cw", "hx", "jp", "kz", "qd", "qs", "vd", "vz", "yz",
+                                        "cx", "hz", "jq", "lq", "qe", "qt", "vf", "wq", "zb",
+                                        "dx", "iy", "jr", "lx", "qf", "qv", "vg", "wv", "zc",
+                                        "fk", "jb", "js", "mg", "qg", "qw", "vh", "wx", "zg"])
+        vowel_perc = len(text) / vowel_count
+        const_perc = len(text) / const_count
+        if (vowel_perc <= 3 and const_perc >= 6) or illegals >= 2:
             await message.add_reaction(get_emoji("staring_cat"))
     
     if "robotop" in message.author.name.lower() and "i rate **cat" in message.content.lower():
