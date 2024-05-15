@@ -1086,7 +1086,7 @@ async def tiktok(message: discord.Interaction, text: str):
             await message.followup.send("i dont speak your language (remove non-english characters, make sure the message is below 300 chars)")
 
 @bot.tree.command(description="(ADMIN) Prevent someone from catching cats for a certain time period")
-@commands.has_guild_permissions(manage_guild=True)
+@discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.describe(person="A person to timeout!", timeout="How many seconds? (0 to reset)")
 async def preventcatch(message: discord.Interaction, person: discord.Member, timeout: int):
     if timeout < 0:
@@ -1102,7 +1102,7 @@ async def preventcatch(message: discord.Interaction, person: discord.Member, tim
         await message.response.send_message(f"{person.name} can now catch cats again.")
 
 @bot.tree.command(description="(ADMIN) Use if cat spawning is broken")
-@commands.has_guild_permissions(manage_guild=True)
+@discord.app_commands.default_permissions(manage_guild=True)
 async def repair(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
     save("cat")
@@ -1113,7 +1113,7 @@ async def repair(message: discord.Interaction):
     await message.response.send_message("success. if you still have issues, join our server: https://discord.gg/staring")
 
 @bot.tree.command(description="(ADMIN) Change the cat appear timings")
-@commands.has_guild_permissions(manage_guild=True)
+@discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.describe(minimum_time="In seconds, minimum possible time between spawns (leave both empty to reset)",
                                maximum_time="In seconds, maximum possible time between spawns (leave both empty to reset)")
 async def changetimings(message: discord.Interaction, minimum_time: Optional[int], maximum_time: Optional[int]):
@@ -1166,7 +1166,7 @@ async def changetimings(message: discord.Interaction, minimum_time: Optional[int
 
 
 @bot.tree.command(description="(ADMIN) Change the cat appear and cought messages")
-@commands.has_guild_permissions(manage_guild=True)
+@discord.app_commands.default_permissions(manage_guild=True)
 async def changemessage(message: discord.Interaction):
     caller = message.user
 
@@ -2404,7 +2404,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
     await lb_handler(message, {"Fastest": "fast", "Slowest": "slow", "Cats": "main"}[leaderboard_type], False)
 
 @bot.tree.command(description="(ADMIN) Give cats to people")
-@commands.has_guild_permissions(manage_guild=True)
+@discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="who", amount="how many", cat_type="what")
 async def givecat(message: discord.Interaction, person_id: discord.Member, amount: int, cat_type: Literal[tuple(cattypes)]):
@@ -2413,7 +2413,7 @@ async def givecat(message: discord.Interaction, person_id: discord.Member, amoun
     await message.response.send_message(embed=embed)
 
 @bot.tree.command(description="(ADMIN) Setup cat in current channel")
-@commands.has_guild_permissions(manage_guild=True)
+@discord.app_commands.default_permissions(manage_guild=True)
 async def setup(message: discord.Interaction):
     register_guild(message.guild.id)
     if int(message.channel.id) in db["summon_ids"]:
@@ -2436,7 +2436,7 @@ async def setup(message: discord.Interaction):
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
 
 @bot.tree.command(description="(ADMIN) Undo the setup")
-@commands.has_guild_permissions(manage_guild=True)
+@discord.app_commands.default_permissions(manage_guild=True)
 async def forget(message: discord.Interaction):
     if int(message.channel.id) in db["summon_ids"]:
         abc = db["summon_ids"]
@@ -2480,7 +2480,7 @@ async def soft_force(channeley, cat_type=None):
     save("cat")
 
 @bot.tree.command(description="(ADMIN) Force cats to appear")
-@commands.has_guild_permissions(manage_guild=True)
+@discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(cat_type="select a cat type ok")
 async def forcespawn(message: discord.Interaction, cat_type: Optional[Literal[tuple(cattypes)]]):
@@ -2495,7 +2495,7 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[Literal[tu
     await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this", ephemeral=True)
 
 @bot.tree.command(description="(ADMIN) Give achievements to people")
-@commands.has_guild_permissions(manage_guild=True)
+@discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(person_id="user", ach_id="name")
 @discord.app_commands.describe(person_id="who", ach_id="name or id of the achievement")
 async def giveachievement(message: discord.Interaction, person_id: discord.Member, ach_id: str):
@@ -2529,7 +2529,7 @@ async def giveachievement(message: discord.Interaction, person_id: discord.Membe
         await message.response.send_message("i cant find that achievement! try harder next time.", ephemeral=True)
 
 @bot.tree.command(description="(ADMIN) Reset people")
-@commands.has_guild_permissions(manage_guild=True)
+@discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="who")
 async def reset(message: discord.Interaction, person_id: discord.User):
@@ -2541,7 +2541,7 @@ async def reset(message: discord.Interaction, person_id: discord.User):
         await message.response.send_message("ummm? this person isnt even registered in cat bot wtf are you wiping?????", ephemeral=True)
 
 @bot.tree.command(description="(ADMIN) [VERY DANGEROUS] Reset all Cat Bot data of this server")
-@commands.has_guild_permissions(manage_guild=True)
+@discord.app_commands.default_permissions(manage_guild=True)
 async def nuke(message: discord.Interaction):
     warning_text = "⚠️ This will completely reset **all** Cat Bot progress of **everyone** in this server. It will also reset some Cat Bot settings (notably custom spawn messages). Following will not be affected: settuped channels, cats which arent yet cought, custom spawn timings.\nPress the button 5 times to continue."
     counter = 5
