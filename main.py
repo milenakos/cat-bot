@@ -362,9 +362,9 @@ async def run_spawn(ch_id=None):
         print("Main cat loop is running")
     
     for i in summon_id:
-        await asyncio.sleep(0.025)
         try:
             if fire[i] and not db["cat"][str(i)] and (ch_id or str(i) not in db["spawn_times"].keys()):
+                await asyncio.sleep(0.05)
                 file = discord.File("cat.png")
                 localcat = choice(CAT_TYPES)
                 icon = get_emoji(localcat.lower() + "cat")
