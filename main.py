@@ -21,7 +21,7 @@ BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely r
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
 
-# wumpus.store & top.gg voting key
+# top.gg voting key
 # you can set it to false ig
 WEBHOOK_VERIFY = os.environ["webhook_verify"]
 
@@ -423,18 +423,6 @@ async def run_spawn(ch_id=None):
                     
                     await person.send("You can vote on Top.gg now!\n*Hint: You can always disable these in the `/vote` command.*", view=view)
                     set_cat(0, i, "reminder_topgg_exists", 1)
-                except Exception:
-                    vote_remind.remove(i)
-            if get_cat(0, i, "vote_time") + 43200 < time.time() and not get_cat(0, i, "reminder_wumpus_exists"):
-                try:
-                    person = await bot.fetch_user(i)
-                    
-                    view = View(timeout=1)
-                    button = Button(emoji=get_emoji("store"), label="Vote", style=ButtonStyle.gray, url="https://wumpus.store/bot/966695034340663367")
-                    view.add_item(button)
-                    
-                    await person.send("You can vote on Wumpus.store now!\n*Hint: You can always disable these in the `/vote` command.*", view=view)
-                    set_cat(0, i, "reminder_wumpus_exists", 1)
                 except Exception:
                     vote_remind.remove(i)
 
@@ -1870,9 +1858,6 @@ if WEBHOOK_VERIFY:
         else:
             weekend_message = ""
 
-        if [message.user.id, "wumpus"] in pending_votes:
-            pending_votes.remove([message.user.id, "wumpus"])
-            await claim_reward(message.user.id, message.channel, "wumpus")
         if [message.user.id, "topgg"] in pending_votes:
             pending_votes.remove([message.user.id, "topgg"])
             await claim_reward(message.user.id, message.channel, "topgg")
@@ -1896,13 +1881,6 @@ if WEBHOOK_VERIFY:
         else:
             button = Button(emoji=get_emoji("topgg"), label="Top.gg", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367")
         view.add_item(button)
-        
-        if get_cat(0, message.user.id, "vote_time") + 43200 > time.time():
-            left = int(get_cat(0, message.user.id, "vote_time") + 43200 - time.time()) // 60
-            button = Button(emoji=get_emoji("store"), label=f"{str(left//60).zfill(2)}:{str(left%60).zfill(2)}", style=ButtonStyle.gray, disabled=True)
-        else:
-            button = Button(emoji=get_emoji("store"), label="Wumpus.store (No Ads)", style=ButtonStyle.gray, url="https://wumpus.store/bot/966695034340663367")
-        view.add_item(button)
 
         if message.user.id in vote_remind:
             button = Button(label="Vote Reminders (ON)", style=ButtonStyle.green)
@@ -1911,7 +1889,7 @@ if WEBHOOK_VERIFY:
         button.callback = toggle_reminders
         view.add_item(button)
         
-        embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg and wumpus.store every 12 hours to recieve mystery cats.\n*Both* votes will give you a separate reward.", color=0x6E593C)
+        embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg every 12 hours to recieve mystery cats.", color=0x6E593C)
         await message.followup.send(embed=embedVar, view=view)
 
 @bot.tree.command(description="Get a random cat")
@@ -2656,12 +2634,8 @@ async def claim_reward(user, channeley, type):
         ["eGirl", 1]
     ]
 
-    if type == "topgg":
-        storekey = "vote_time_topgg"
-        cool_name = "Top.gg"
-    elif type == "wumpus":
-        storekey = "vote_time"
-        cool_name = "Wumpus.store"
+    storekey = "vote_time_topgg"
+    cool_name = "Top.gg"
 
     cattype, amount = choice(vote_choices)
     icon = get_emoji(cattype.lower() + "cat")
@@ -2687,19 +2661,13 @@ async def recieve_vote(request):
         return web.Response(text="bad", status=403)
     request_json = await request.json()
     
-    try:
-        user = int(request_json["userId"])
-        type = "wumpus"
-        add_cat(0, user, "vote_time", time.time(), True)
-        set_cat(0, user, "reminder_wumpus_exists", 0)
-    except KeyError:
-        user = int(request_json["user"])
-        type = "topgg"
-        if get_cat(0, user, "vote_time_topgg") + 43100 > time.time():
-            # top.gg is NOT realiable with their webhooks, but we politely pretend they are
-            return web.Response(text="you fucking dumb idiot", status=200)
-        add_cat(0, user, "vote_time_topgg", time.time(), True)
-        set_cat(0, user, "reminder_topgg_exists", 0)
+    user = int(request_json["user"])
+    type = "topgg"
+    if get_cat(0, user, "vote_time_topgg") + 43100 > time.time():
+        # top.gg is NOT realiable with their webhooks, but we politely pretend they are
+        return web.Response(text="you fucking dumb idiot", status=200)
+    add_cat(0, user, "vote_time_topgg", time.time(), True)
+    set_cat(0, user, "reminder_topgg_exists", 0)
     
     try:
         channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
