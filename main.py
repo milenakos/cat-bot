@@ -418,11 +418,11 @@ async def run_spawn(ch_id=None):
                     person = await bot.fetch_user(i)
                     
                     view = View(timeout=1)
-                    button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367")
+                    button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367/vote")
                     view.add_item(button)
                     
-                    await person.send("You can vote on Top.gg now!\n*Hint: You can always disable these in the `/vote` command.*", view=view)
-                    set_cat(0, i, "reminder_topgg_exists", 1)
+                    await person.send("You can vote on Top.gg now!", view=view)
+                    set_cat(0, i, "reminder_topgg_exists", int(time.time()))
                 except Exception:
                     vote_remind.remove(i)
 
@@ -1870,27 +1870,31 @@ if WEBHOOK_VERIFY:
             else:
                 vote_remind.append(interaction.user.id)
                 await interaction.response.send_message("Vote reminders have been turned on.", ephemeral=True)
+            await interaction.edit_original_response(view=gen_view())
             db["vote_remind"] = vote_remind
             save("vote_remind")
 
-        view = View(timeout=3600)
+        def gen_view():
+            view = View(timeout=3600)
 
-        if get_cat(0, message.user.id, "vote_time_topgg") + 43200 > time.time():
-            left = int(get_cat(0, message.user.id, "vote_time_topgg") + 43200 - time.time()) // 60
-            button = Button(emoji=get_emoji("topgg"), label=f"{str(left//60).zfill(2)}:{str(left%60).zfill(2)}", style=ButtonStyle.gray, disabled=True)
-        else:
-            button = Button(emoji=get_emoji("topgg"), label="Top.gg", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367")
-        view.add_item(button)
+            if get_cat(0, message.user.id, "vote_time_topgg") + 43200 > time.time():
+                left = int(get_cat(0, message.user.id, "vote_time_topgg") + 43200 - time.time()) // 60
+                button = Button(emoji=get_emoji("topgg"), label=f"{str(left//60).zfill(2)}:{str(left%60).zfill(2)}", style=ButtonStyle.gray, disabled=True)
+            else:
+                button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367/vote")
+            view.add_item(button)
+    
+            if message.user.id in vote_remind:
+                button = Button(label="Disable vote reminders.", style=ButtonStyle.gray)
+            else:
+                button = Button(label="Enable Vote Reminders!", style=ButtonStyle.green)
+            button.callback = toggle_reminders
+            view.add_item(button)
 
-        if message.user.id in vote_remind:
-            button = Button(label="Vote Reminders (ON)", style=ButtonStyle.green)
-        else:
-            button = Button(label="Vote Reminders (OFF)", style=ButtonStyle.red)
-        button.callback = toggle_reminders
-        view.add_item(button)
+            return view
         
         embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg every 12 hours to recieve mystery cats.", color=0x6E593C)
-        await message.followup.send(embed=embedVar, view=view)
+        await message.followup.send(embed=embedVar, view=gen_view())
 
 @bot.tree.command(description="Get a random cat")
 async def random(message: discord.Interaction):
