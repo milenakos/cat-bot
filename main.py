@@ -500,6 +500,7 @@ async def on_ready():
         return
     on_ready_debounce = True
     print("cat is now online")
+    await bot.tree.sync()
     do_save_emojis = True
     await bot.change_presence(
         activity=discord.CustomActivity(name=f"Just restarted! Catting in {len(bot.guilds):,} servers.")
