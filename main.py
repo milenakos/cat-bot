@@ -1881,7 +1881,7 @@ if WEBHOOK_VERIFY:
         view.add_item(button)
 
         if message.user.id in vote_remind:
-            button = Button(label="Disable vote reminders.", style=ButtonStyle.gray)
+            button = Button(label="Disable vote reminders", style=ButtonStyle.gray)
         else:
             button = Button(label="Enable Vote Reminders!", style=ButtonStyle.green)
         button.callback = toggle_reminders
