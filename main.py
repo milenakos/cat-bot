@@ -2649,7 +2649,7 @@ async def claim_reward(user, channeley, type):
     
     add_cat(channeley.guild.id, user, cattype, num_amount)
     view = None
-    if user not in vote_remind:
+    if user not in db["vote_remind"]:
         view = View(timeout=3600)
         button = Button(label="Enable Vote Reminders!", style=ButtonStyle.green)
         button.callback = toggle_reminders
