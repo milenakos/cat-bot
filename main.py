@@ -414,6 +414,7 @@ async def run_spawn(ch_id=None):
         # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
         for i in vote_remind:
             if get_cat(0, i, "vote_time_topgg") + 43200 < time.time() and not get_cat(0, i, "reminder_topgg_exists"):
+                await asyncio.sleep(0.1)
                 try:
                     person = await bot.fetch_user(i)
                     
