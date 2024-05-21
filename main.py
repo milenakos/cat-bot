@@ -827,7 +827,7 @@ async def on_message(message):
             if randint(0, 50) == 0:
                 button = Button(label="Join our Discord!", url="https://discord.gg/staring")
             elif randint(0, 6) == 0 and WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
-                button = Button(emoji=get_emoji("topgg"), label="Vote for free cats", url=f"https://top.gg/bot/966695034340663367/vote?channel_id={message.channel.id}")
+                button = Button(emoji=get_emoji("topgg"), label="You haven't voted", url=f"https://top.gg/bot/966695034340663367/vote?channel_id={message.channel.id}")
             elif randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
                 button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
                 button.callback = dark_market_cutscene
