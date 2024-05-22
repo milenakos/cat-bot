@@ -827,7 +827,7 @@ async def on_message(message):
             if randint(0, 50) == 0:
                 button = Button(label="Join our Discord!", url="https://discord.gg/staring")
             elif randint(0, 6) == 0 and WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
-                button = Button(emoji=get_emoji("topgg"), label="You haven't voted", url=f"https://top.gg/bot/966695034340663367/vote?channel_id={message.channel.id}")
+                button = Button(emoji=get_emoji("topgg"), label="You haven't voted", url=f"https://top.gg/bot/966695034340663367/vote")
             elif randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
                 button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
                 button.callback = dark_market_cutscene
@@ -1878,7 +1878,7 @@ if WEBHOOK_VERIFY:
             left = int(get_cat(0, message.user.id, "vote_time_topgg") + 43200 - time.time()) // 60
             button = Button(emoji=get_emoji("topgg"), label=f"{str(left//60).zfill(2)}:{str(left%60).zfill(2)}", style=ButtonStyle.gray, disabled=True)
         else:
-            button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url=f"https://top.gg/bot/966695034340663367/vote?channel_id={message.channel.id}")
+            button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url=f"https://top.gg/bot/966695034340663367/vote")
         view.add_item(button)
 
         if message.user.id in vote_remind:
@@ -2675,11 +2675,7 @@ async def recieve_vote(request):
     set_cat(0, user, "reminder_topgg_exists", 0)
     
     try:
-        if "channel_id" in request_json.keys():
-            channel_id = int(request_json["channel_id"])
-        else:
-            channel_id = get_cat("0", user, "vote_channel")
-        channeley = await bot.fetch_channel(channel_id)
+        channeley = await bot.fetch_channel(int(request_json["channel_id"]))
     except Exception:
         pending_votes.append([user, type])
         return web.Response(text="ok", status=200)
