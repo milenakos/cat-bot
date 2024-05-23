@@ -851,7 +851,7 @@ async def on_message(message):
                     "vote if cats are better than dogs",
                     "you should vote for free cats NOW!"
                 ]
-                button = Button(emoji=get_emoji("topgg"), label=random.choice(button_texts), url="https://top.gg/bot/966695034340663367/vote")
+                button = Button(emoji=get_emoji("topgg"), label=choice(button_texts), url="https://top.gg/bot/966695034340663367/vote")
             elif randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
                 button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
                 button.callback = dark_market_cutscene
