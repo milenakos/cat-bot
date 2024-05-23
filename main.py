@@ -827,7 +827,31 @@ async def on_message(message):
             if randint(0, 50) == 0:
                 button = Button(label="Join our Discord!", url="https://discord.gg/staring")
             elif randint(0, 6) == 0 and WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
-                button = Button(emoji=get_emoji("topgg"), label="You haven't voted", url=f"https://top.gg/bot/966695034340663367/vote")
+                button_texts = [
+                    "If you vote cat will be your friend :)",
+                    "Vote cat for president",
+                    "if you vote there is 0.01% you'll escape the basement",
+                    "vote vote vote vote vote",
+                    "mrrp mrrow go and vote now",
+                    "if you vote now you'll be free, maybe",
+                    "Like gambling? Vote now for free cats!",
+                    "you should vote. on an unrelated note, i have a pipebomb",
+                    "No votes? :megamind:",
+                    "Cat says you should vote",
+                    "voting gives you random cats. wanna gamble?",
+                    "cat will be happy if you vote",
+                    "VOTE NOW!!",
+                    "Vote on top.gg for free cats",
+                    "Vote for free cats",
+                    "You havent voted and missed out on free cats :(",
+                    "there is 0.04% chance to get an egirl when you vote",
+                    "I voted for Cat Bot and got 1000000$ and found a gf",
+                    "lebron james reportedly forgot to vote for cat",
+                    "vote if you like cats",
+                    "vote if cats are better than dogs"
+                    "you should vote for free cats NOW!"
+                ]
+                button = Button(emoji=get_emoji("topgg"), label=random.choice(button_texts), url=f"https://top.gg/bot/966695034340663367/vote")
             elif randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
                 button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
                 button.callback = dark_market_cutscene
