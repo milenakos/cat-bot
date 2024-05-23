@@ -2675,7 +2675,7 @@ async def recieve_vote(request):
     set_cat(0, user, "reminder_topgg_exists", 0)
     
     try:
-        channeley = await bot.fetch_channel(int(request_json["channel_id"]))
+        channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
     except Exception:
         pending_votes.append([user, type])
         return web.Response(text="ok", status=200)
