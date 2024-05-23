@@ -848,10 +848,10 @@ async def on_message(message):
                     "I voted for Cat Bot and got 1000000$ and found a gf",
                     "lebron james reportedly forgot to vote for cat",
                     "vote if you like cats",
-                    "vote if cats are better than dogs"
+                    "vote if cats are better than dogs",
                     "you should vote for free cats NOW!"
                 ]
-                button = Button(emoji=get_emoji("topgg"), label=random.choice(button_texts), url=f"https://top.gg/bot/966695034340663367/vote")
+                button = Button(emoji=get_emoji("topgg"), label=random.choice(button_texts), url="https://top.gg/bot/966695034340663367/vote")
             elif randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
                 button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
                 button.callback = dark_market_cutscene
@@ -1902,7 +1902,7 @@ if WEBHOOK_VERIFY:
             left = int(get_cat(0, message.user.id, "vote_time_topgg") + 43200 - time.time()) // 60
             button = Button(emoji=get_emoji("topgg"), label=f"{str(left//60).zfill(2)}:{str(left%60).zfill(2)}", style=ButtonStyle.gray, disabled=True)
         else:
-            button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url=f"https://top.gg/bot/966695034340663367/vote")
+            button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367/vote")
         view.add_item(button)
 
         if message.user.id in vote_remind:
