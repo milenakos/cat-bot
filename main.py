@@ -1865,6 +1865,7 @@ async def casino(message: discord.Interaction):
     await message.response.send_message(embed=embed, view=myview)
 
 async def toggle_reminders(interaction):
+    vote_remind = db["vote_remind"]
     if interaction.user.id in vote_remind:
         vote_remind.remove(interaction.user.id)
         await interaction.response.send_message("Vote reminders have been turned off.", ephemeral=True)
