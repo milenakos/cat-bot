@@ -2617,11 +2617,6 @@ async def on_command_error(ctx, error):
         print("not a common error, crash reporting.")
         normal_crash = True
         await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
-        # give the ach! (or atleast try)
-        try:
-            await achemb(ctx, "crasher", "send")
-        except Exception:
-            pass
 
     # try to get some context maybe if we get lucky
     try:
