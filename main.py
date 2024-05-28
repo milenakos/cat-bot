@@ -828,28 +828,29 @@ async def on_message(message):
                 button = Button(label="Join our Discord!", url="https://discord.gg/staring")
             elif randint(0, 6) == 0 and WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
                 button_texts = [
-                    "If you vote cat will be your friend :)",
+                    "If vote cat will you friend :)",
                     "Vote cat for president",
-                    "if you vote there is 0.01% you'll escape the basement",
+                    "vote = 0.01% to escape basement",
                     "vote vote vote vote vote",
                     "mrrp mrrow go and vote now",
-                    "if you vote now you'll be free, maybe",
-                    "Like gambling? Vote now for free cats!",
-                    "you should vote. on an unrelated note, i have a pipebomb",
+                    "if you vote you'll be free (no)",
+                    "Like gambling? Vote!",
+                    "vote. btw, i have a pipebomb",
                     "No votes? :megamind:",
                     "Cat says you should vote",
-                    "voting gives you random cats. wanna gamble?",
+                    "vote = random cats. lets gamble?",
                     "cat will be happy if you vote",
                     "VOTE NOW!!",
                     "Vote on top.gg for free cats",
                     "Vote for free cats",
-                    "You havent voted and missed out on free cats :(",
-                    "there is 0.04% chance to get an egirl when you vote",
-                    "I voted for Cat Bot and got 1000000$ and found a gf",
-                    "lebron james reportedly forgot to vote for cat",
+                    "No vote = no free cats :(",
+                    "0.04% to get egirl on voting",
+                    "I voted and got 1000000$",
+                    "I voted and found a gf",
+                    "lebron james forgot to vote",
                     "vote if you like cats",
-                    "vote if cats are better than dogs",
-                    "you should vote for free cats NOW!"
+                    "vote if cats > dogs",
+                    "you should vote for cat NOW!"
                 ]
                 button = Button(emoji=get_emoji("topgg"), label=choice(button_texts), url="https://top.gg/bot/966695034340663367/vote")
             elif randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
@@ -1909,7 +1910,7 @@ if WEBHOOK_VERIFY:
         if message.user.id in vote_remind:
             button = Button(label="Disable reminders", style=ButtonStyle.gray)
         else:
-            button = Button(label="Enable Vote Reminders!", style=ButtonStyle.green)
+            button = Button(label="Enable Reminders!", style=ButtonStyle.green)
         button.callback = toggle_reminders
         view.add_item(button)
         
