@@ -646,7 +646,7 @@ async def on_message(message):
             await achemb(message, ach[2], "reply")
             
     for r in reactions:
-        if r[0] in text.lower() and reactions_ratelimit.get(message.author.id, 0) < 50:
+        if r[0] in text.lower() and reactions_ratelimit.get(message.author.id, 0) < 20:
             if r[1] == "custom": em = get_emoji(r[2])
             elif r[1] == "vanilla": em = r[2]
             reactions_ratelimit[message.author.id] = reactions_ratelimit.get(message.author.id, 0) + 1
