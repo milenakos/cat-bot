@@ -139,10 +139,6 @@ for e in CAT_TYPES:
     if e not in cattypes:
         cattypes.append(e)
 
-# function to autocomplete cat_type choices for /gift, /giftcat, and /forcespawn, which also allows more than 25 options
-async def cat_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
-    return [discord.app_commands.Choice(name=choice, value=choice) for choice in cattypes if current.lower() in choice.lower()][:25]
-
 funny = ["why did you click this this arent yours", "absolutely not", "cat bot not responding, try again later", "you cant", "can you please stop", "try again", "403 not allowed", "stop", "get a life", "not for you", "no", "nuh uh"]
 
 summon_id = db["summon_ids"]
@@ -346,6 +342,9 @@ async def achemb(message, ach_id, send_type, author_string=None):
             await asyncio.sleep(2)
             await result.edit(embed=embed)
 
+# function to autocomplete cat_type choices for /gift, /giftcat, and /forcespawn, which also allows more than 25 options
+async def cat_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
+    return [discord.app_commands.Choice(name=choice, value=choice) for choice in cattypes if current.lower() in choice.lower()][:25]
 
 # if ch_id is None it runs the default loop for all servers
 # otherwise only for ch_id
