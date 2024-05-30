@@ -353,11 +353,6 @@ async def run_spawn(ch_id=None):
         summon_id = [int(ch_id)]
     else:
         reactions_ratelimit = {}
-        # update status
-        await bot.change_presence(
-                activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
-        )
-
         summon_id = db["summon_ids"]
         print("Main cat loop is running")
     
@@ -391,6 +386,9 @@ async def run_spawn(ch_id=None):
     save("cat")
     
     if not ch_id:
+        await bot.change_presence(
+            activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
+        )
         db["summon_ids"] = list(set(summon_id)) # remove all duplicates
         save("summon_ids")
         print("Finished cat loop")
