@@ -139,9 +139,9 @@ for e in CAT_TYPES:
     if e not in cattypes:
         cattypes.append(e)
 
-# function to autocomplete choices for /gift, /giftcat, and /forcespawn, which also allows more than 25 options
-async def choicer(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
-    return [app_commands.Choice(name=choice, value=choice) for choice in cattypes if current.lower() in choice.lower()][:25]
+# function to autocomplete cat_type choices for /gift, /giftcat, and /forcespawn, which also allows more than 25 options
+async def cat_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
+    return [discord.app_commands.Choice(name=choice, value=choice) for choice in cattypes if current.lower() in choice.lower()][:25]
 
 funny = ["why did you click this this arent yours", "absolutely not", "cat bot not responding, try again later", "you cant", "can you please stop", "try again", "403 not allowed", "stop", "get a life", "not for you", "no", "nuh uh"]
 
@@ -1494,7 +1494,7 @@ async def ping(message: discord.Interaction):
 @bot.tree.command(description="give cats now")
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(person="Whom to donate?", cat_type="Select a donate cat type", amount="And how much?")
-@discord.app_commands.autocomplete(cat_type=choicer)
+@discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
 async def gift(message: discord.Interaction, person: discord.Member, cat_type: str, amount: Optional[int]):
     if not amount: amount = 1  # default the amount to 1
     person_id = person.id
@@ -2416,7 +2416,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="who", amount="how many", cat_type="what")
-@discord.app_commands.autocomplete(cat_type=choicer)
+@discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
 async def givecat(message: discord.Interaction, person_id: discord.Member, amount: int, cat_type: str):
     add_cat(message.guild.id, person_id.id, cat_type, amount)
     embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount} {cat_type} cats", color=0x6E593C)
@@ -2493,7 +2493,7 @@ async def soft_force(channeley, cat_type=None):
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(cat_type="select a cat type ok")
-@discord.app_commands.autocomplete(cat_type=choicer)
+@discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
 async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
     try:
         if db["cat"][str(message.channel.id)]:
