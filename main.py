@@ -346,6 +346,13 @@ async def achemb(message, ach_id, send_type, author_string=None):
 async def cat_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     return [discord.app_commands.Choice(name=choice, value=choice) for choice in cattypes if current.lower() in choice.lower()][:25]
 
+# converts string to lowercase alphanumeric characters only
+def alnum(string):
+    return "".join(item for item in string.lower() if item.isalnum())
+# function to autocomplete achievement choice for /giveachievement, which also allows more than 25 options
+async def ach_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
+    return [discord.app_commands.Choice(name=val, value=val) for (key, val) in ach_list.items() if (alnum(current) in alnum(key) or alnum(current) in alphanumeric(val))][:25]
+
 # if ch_id is None it runs the default loop for all servers
 # otherwise only for ch_id
 # this is used for custom cat spawn timings
@@ -2506,6 +2513,7 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(person_id="user", ach_id="name")
 @discord.app_commands.describe(person_id="who", ach_id="name or id of the achievement")
+@discord.app_commands.autocomplete(ach_id=ach_autocomplete)
 async def giveachievement(message: discord.Interaction, person_id: discord.Member, ach_id: str):
     # check if ach is real
     try:
@@ -2520,7 +2528,7 @@ async def giveachievement(message: discord.Interaction, person_id: discord.Membe
         ach_id = ach_titles[ach_id.lower()]
         valid = True
 
-    if valid and ach_id == "thanksforplaying":
+    if valid and ach_id == "thanksforplaying" and not has_ach(message.guild.id, person_id.id, ach_id):
         await message.response.send_message("HAHAHHAHAH\nno", ephemeral=True)
         return
                       
