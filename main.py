@@ -1956,6 +1956,7 @@ async def light_market(message):
         else:
             embed = discord.Embed(title="The Mafia Hideout", description=f"you have used up all of your cataine for the week. please come back later.")
             await message.followup.send(embed=embed, ephemeral=True)
+            return
         type = deal[1]
         amount = deal[0]
         embed.add_field(name="🧂 12h of Cataine", value=f"Price: {get_emoji(type.lower() + 'cat')} {amount} {type}")
