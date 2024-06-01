@@ -475,12 +475,13 @@ async def spawning_loop(times, ch_id):
         if str(ch_id) in update_queue:
             print("updating", ch_id)
             update_queue.remove(str(ch_id))
-            times = db["spawn_times"][ch_id]
+            try:
+                times = db["spawn_times"][ch_id]
+            except KeyError:
+                # we got unsetup but somehow werent in terminate queue, so terminate forcefully
+                return
 
-        try:
-            await run_spawn(ch_id)
-        except Exception as e:
-            print(e)
+        await run_spawn(ch_id)
 
 # some code which is run when bot is started
 @bot.event
@@ -650,8 +651,8 @@ async def on_message(message):
         if r[0] in text.lower() and reactions_ratelimit.get(message.author.id, 0) < 20:
             if r[1] == "custom": em = get_emoji(r[2])
             elif r[1] == "vanilla": em = r[2]
-            reactions_ratelimit[message.author.id] = reactions_ratelimit.get(message.author.id, 0) + 1
             await message.add_reaction(em)
+            reactions_ratelimit[message.author.id] = reactions_ratelimit.get(message.author.id, 0) + 1
             
     for resp in responses:
         if (resp[1] == "startswith" and text.lower().startswith(resp[0])) or \
@@ -1006,11 +1007,9 @@ async def on_guild_join(guild):
     ch = find("cat", guild.text_channels)
     if not verify(ch): ch = find("bots", guild.text_channels)
     if not verify(ch):
-        chindex = 1
-        ch = guild.text_channels[0]
-        while not verify(ch):
-            ch = guild.text_channels[chindex]
-            chindex += 1
+        for ch in guild.text_channels:
+            if verify(ch):
+                break
     
     # you are free to change/remove this, its just a note for general user letting them know
     unofficial_note = "**NOTE: This is an unofficial Cat Bot instance.**\n\n"
@@ -1888,7 +1887,8 @@ if WEBHOOK_VERIFY:
         
         current_day = datetime.datetime.utcnow().isoweekday()
 
-        add_cat(0, message.user.id, "vote_channel", message.channel.id, True)
+        if message.guild != None:
+            add_cat(0, message.user.id, "vote_channel", message.channel.id, True)
 
         if current_day == 6 or current_day == 7:
             weekend_message = "🌟 **It's weekend! All vote rewards are DOUBLED!**\n\n"
@@ -2039,7 +2039,7 @@ async def dark_market(message):
                 counter += 1
                 await interaction2.response.defer()
                 if counter == 30:
-                    await interaction2.edit_original_message(view=None)
+                    await interaction2.edit_original_response(view=None)
                     await asyncio.sleep(5)
                     await interaction2.followup.send("You barely manage to turn around a corner and hide to run away.", ephemeral=True)
                     await asyncio.sleep(5)
@@ -2580,6 +2580,7 @@ async def nuke(message: discord.Interaction):
     await message.response.send_message(warning_text, view=view)
 
 # this is the crash handler
+@bot.on_error
 @bot.tree.error
 async def on_command_error(ctx, error):
     def in_error(x):
@@ -2597,7 +2598,7 @@ async def on_command_error(ctx, error):
         # forbidden error usually means we dont have permission to send messages in the channel
         print("logged a Forbidden error.")
         # except-ception lessgo
-        forbidden_error = "i don't have permissions to do that.\ntry reinviting the bot or give it roles needed to access this chat (for example, verified role)"
+        forbidden_error = "i don't have permissions to do that.\ntry reinviting the bot or give it roles needed to access this chat (for example, verified role). more ideally, give it admin/mod."
         try:
             await ctx.channel.send(forbidden_error) # try as normal message (most likely will fail)
         except Exception:
@@ -2608,9 +2609,12 @@ async def on_command_error(ctx, error):
                     await ctx.followup.send(forbidden_error) # or as a followup if it already got responded to
                 except Exception:
                     try:
-                        await ctx.user.send(forbidden_error) # as last resort, dm the runner
+                        await ctx.user.send(forbidden_error) # dm the runner
                     except Exception:
-                        pass # give up
+                        try:
+                            await ctx.guild.owner.send(forbidden_error) # dm the guild owner
+                        except Exception:
+                            pass # give up
     elif in_error("NotFound"):
         # discord just pretends if interaction took more than 3 seconds it never happened and its annoying af
         print("logged a NotFound error.")
@@ -2696,6 +2700,8 @@ async def recieve_vote(request):
     
     try:
         channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
+        if not channeley.guild:
+            raise Exception
     except Exception:
         pending_votes.append([user, type])
         return web.Response(text="ok", status=200)
