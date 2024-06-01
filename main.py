@@ -45,6 +45,9 @@ WHITELISTED_BOTS = [] # bots which are allowed to catch cats
 # you can remove this line
 OWNER_ID = 553093932012011520
 
+# what to do when there is a crash
+CRASH_MODE = "RAISE"
+
 ### Setup values end
 
 # trigger warning, base64 encoded for your convinience
@@ -2577,7 +2580,7 @@ async def nuke(message: discord.Interaction):
     await message.response.send_message(warning_text, view=view)
 
 # this is the crash handler
-@bot.event
+@bot.tree.error
 async def on_command_error(ctx, error):
     def in_error(x):
         return bool(x in str(type(error)) or x in str(error))
@@ -2585,7 +2588,7 @@ async def on_command_error(ctx, error):
     if ctx.guild == None:
         await ctx.channel.send("hello good sir i would politely let you know cat bot is no workey in dms please consider gettng the hell out of here")
         return
-    
+
     # ctx here is interaction
     normal_crash = False
     if in_error("KeyboardInterrupt"): # keyboard interrupt
@@ -2617,26 +2620,24 @@ async def on_command_error(ctx, error):
         normal_crash = True
         await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
 
-    # try to get some context maybe if we get lucky
-    try:
-        cont = ctx.guild.id
-        print("debug", cont)
-    except Exception as e:
-        cont = "Error getting"
-
-    error2 = error.original.__traceback__
-
-    # if actually interesting crash, dm to bot owner
-    if normal_crash:
-        await milenakoos.send(
-                "There is an error happend:\n"
-                + str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error)
-                + "\n\nMessage guild: "
-                + str(cont)
-        )
-    else:
-        # otherwise log to console
-        print(str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error))
+        if CRASH_MODE == "DM":
+            # try to get some context maybe if we get lucky
+            try:
+                cont = ctx.guild.id
+            except Exception:
+                cont = "Error getting"
+        
+            error2 = error.original.__traceback__
+        
+            # if actually interesting crash, dm to bot owner
+            await milenakoos.send(
+                    "There is an error happend:\n"
+                    + str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error)
+                    + "\n\nMessage guild: "
+                    + str(cont)
+            )
+        elif CRASH_MODE == "RAISE":
+            raise
 
 async def claim_reward(user, channeley, type):
     # who at python hq though this was reasonable syntax
