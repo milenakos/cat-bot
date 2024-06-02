@@ -864,7 +864,7 @@ async def on_message(message):
                 view.add_item(button)
             
             await message.channel.send(coughstring.replace("{username}", message.author.name.replace("_", "\_"))
-                                                  .replace("{emoji}", icon)
+                                                  .replace("{emoji}", str(icon))
                                                   .replace("{type}", le_emoji)
                                                   .replace("{count}", str(add_cat(message.guild.id, message.author.id, le_emoji, silly_amount)))
                                                   .replace("{time}", caught_time[:-1]) + suffix_string,
@@ -1219,7 +1219,7 @@ async def changemessage(message: discord.Interaction):
                         return
                 icon = get_emoji("fine_cat")
                 await interaction.response.send_message("Success! Here is a preview:\n" + \
-                    input_value.replace("{emoji}", icon).replace("{type}", "Fine").replace("{username}", "Cat Bot").replace("{count}", "1").replace("{time}", "69 years 420 days"))
+                    input_value.replace("{emoji}", str(icon)).replace("{type}", "Fine").replace("{username}", "Cat Bot").replace("{count}", "1").replace("{time}", "69 years 420 days"))
             else:
                 await interaction.response.send_message("Reset to defaults.")
             db[str(message.guild.id)][self.type.lower()] = input_value
