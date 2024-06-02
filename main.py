@@ -1422,7 +1422,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
     
     if me:
         # give some aches if we are vieweing our own inventory
-        if give_collector: await achemb(message, "collector", "send")
+        if give_collector: await achemb(message, "collecter", "send")
         if get_time(message.guild.id, message.user.id) <= 5: await achemb(message, "fast_catcher", "send")
         if get_time(message.guild.id, message.user.id, "slow") >= 3600: await achemb(message, "slow_catcher", "send")
 
