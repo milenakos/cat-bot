@@ -11,7 +11,7 @@
   "beggar": {"title": "Beggar", "description": "beg server admins for this ach (/giveachievement)", "is_hidden": false, "category": "Unfair"},
   "rich": {"title": "R I C H", "description": "donate 5 ultimates to cat bot", "is_hidden": false, "category": "Unfair"},
   "cellua": {"title": "CelLua", "description": "you said \"cellua bad\". they are coming after both you and me", "is_hidden": true, "category": "Unfair"},
-  "collecter": {"title": "Collecter", "description": "get all cat types", "is_hidden": true, "category": "Cat Hunt"},
+  "collector": {"title": "Collector", "description": "get all cat types", "is_hidden": true, "category": "Cat Hunt"},
   "dm": {"title": "DM", "description": "dm cat", "is_hidden": true, "category": "Random"},
   "cancer": {"title": "Cancer", "description": "say \"new cells cause cancer\"", "is_hidden": true, "category": "Unfair"},
   "who_ping": {"title": "who ping", "description": "ping cat bot", "is_hidden": true, "category": "Random"},
