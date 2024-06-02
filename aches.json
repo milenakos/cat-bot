@@ -21,7 +21,7 @@
   "worship": {"title": "Cat Worshipper", "description": "have both :place_of_worship: and <:staring_cat:966697804611321908> in your message", "is_hidden": true, "category": "Random"},
   "test_ach": {"title": "Test Achievement", "description": "run the cat!ach command", "is_hidden": true, "category": "Random"},
   "fuwu": {"title": "fUwU", "description": "say fowo. yes thats it.", "is_hidden": true, "category": "Unfair"},
-  "4k": {"title": "Cought in 4k", "description": "catch someone in 4k", "is_hidden": true, "category": "Random"},
+  "4k": {"title": "Caught in 4k", "description": "catch someone in 4k", "is_hidden": true, "category": "Random"},
   "curious": {"title": "Curious", "description": "try to open a private embed", "is_hidden": true, "category": "Random"},
   "car": {"title": "Car", "description": ":red_car::red_car:", "is_hidden": false, "category": "Random"},
   "catn": {"title": "Cat'n", "description": "no cat??? :megamind:", "is_hidden": true, "category": "Hidden"},
