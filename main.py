@@ -1102,7 +1102,7 @@ async def tiktok(message: discord.Interaction, text: str):
 @bot.tree.command(description="(ADMIN) Prevent someone from catching cats for a certain time period")
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.describe(person="A person to timeout!", timeout="How many seconds? (0 to reset)")
-async def preventcatch(message: discord.Interaction, person: discord.Member, timeout: int):
+async def preventcatch(message: discord.Interaction, person: discord.User, timeout: int):
     if timeout < 0:
         await message.response.send_message("uhh i think time is supposed to be a number", ephemeral=True)
         return
@@ -1301,7 +1301,7 @@ async def last(message: discord.Interaction):
 @bot.tree.command(description="View your inventory")
 @discord.app_commands.rename(person_id='user')
 @discord.app_commands.describe(person_id="Person to view the inventory of!")
-async def inventory(message: discord.Interaction, person_id: Optional[discord.Member]):
+async def inventory(message: discord.Interaction, person_id: Optional[discord.User]):
     # UGGHHH GOOD LUCK
 
     # check if we are viewing our own inv or some other person
@@ -1490,7 +1490,7 @@ async def ping(message: discord.Interaction):
 @bot.tree.command(description="give cats now")
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(person="Whom to donate?", cat_type="Select a donate cat type", amount="And how much?")
-async def gift(message: discord.Interaction, person: discord.Member, cat_type: Literal[tuple(cattypes)], amount: Optional[int]):
+async def gift(message: discord.Interaction, person: discord.User, cat_type: Literal[tuple(cattypes)], amount: Optional[int]):
     if not amount: amount = 1  # default the amount to 1
     person_id = person.id
 
@@ -1546,7 +1546,7 @@ async def gift(message: discord.Interaction, person: discord.Member, cat_type: L
 @bot.tree.command(description="Trade cats!")
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="why would you need description")
-async def trade(message: discord.Interaction, person_id: discord.Member):
+async def trade(message: discord.Interaction, person_id: discord.User):
     person1 = message.user
     person2 = person_id
         
@@ -2413,7 +2413,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="who", amount="how many", cat_type="what")
-async def givecat(message: discord.Interaction, person_id: discord.Member, amount: int, cat_type: Literal[tuple(cattypes)]):
+async def givecat(message: discord.Interaction, person_id: discord.User, amount: int, cat_type: Literal[tuple(cattypes)]):
     add_cat(message.guild.id, person_id.id, cat_type, amount)
     embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount} {cat_type} cats", color=0x6E593C)
     await message.response.send_message(embed=embed)
@@ -2504,7 +2504,7 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[Literal[tu
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(person_id="user", ach_id="name")
 @discord.app_commands.describe(person_id="who", ach_id="name or id of the achievement")
-async def giveachievement(message: discord.Interaction, person_id: discord.Member, ach_id: str):
+async def giveachievement(message: discord.Interaction, person_id: discord.User, ach_id: str):
     # check if ach is real
     try:
         if ach_id in ach_names:
