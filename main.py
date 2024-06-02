@@ -1313,7 +1313,6 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
     await message.response.defer()
 
     register_member(message.guild.id, person_id.id)
-    has_ach(message.guild.id, person_id.id, "test_ach") # why is this here? im not sure and im too scared to remove this
 
     # around here we count aches
     db_var = db[str(message.guild.id)][str(person_id.id)]["ach"]
@@ -1423,7 +1422,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
     
     if me:
         # give some aches if we are vieweing our own inventory
-        if give_collector: await achemb(message, "collecter", "send")
+        if give_collector: await achemb(message, "collector", "send")
         if get_time(message.guild.id, message.user.id) <= 5: await achemb(message, "fast_catcher", "send")
         if get_time(message.guild.id, message.user.id, "slow") >= 3600: await achemb(message, "slow_catcher", "send")
 
