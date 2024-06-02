@@ -765,10 +765,10 @@ async def on_message(message):
             icon = get_emoji(partial_type)
 
             try:
-                if db[str(message.guild.id)]["cought"]:
+                if db[str(message.guild.id)]["cought"]: # fix
                     pass
             except Exception:
-                db[str(message.guild.id)]["cought"] = ""
+                db[str(message.guild.id)]["cought"] = "" # fix
 
             suffix_string = ""
             silly_amount = 1
@@ -782,24 +782,24 @@ async def on_message(message):
                 add_cat(message.guild.id, message.author.id, "cataine_active", 0, True)
                 suffix_string = f"\nyour cataine buff has expired. you know where to get a new one 😏"
             
-            if db[str(message.guild.id)]["cought"]:
-                coughstring = db[str(message.guild.id)]["cought"]
+            if db[str(message.guild.id)]["cought"]: # fix
+                coughstring = db[str(message.guild.id)]["cought"] # fix
             elif le_emoji == "Corrupt":
-                coughstring = "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!"
+                coughstring = "{username} c@@ught{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!"
             elif le_emoji == "eGirl":
-                coughstring = "{username} cowought {emoji} {type} cat~~ ^^\nYou-u now *blushes* hawe {count} cats of dat tywe~!!!\nthis fella was <3 cought in {time}!!!!"
+                coughstring = "{username} cowought {emoji} {type} cat~~ ^^\nYou-u now *blushes* hawe {count} cats of dat tywe~!!!\nthis fella was <3 caught in {time}!!!!"
             elif le_emoji == "Rickroll":
-                coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou will never give up {count} cats of dat type!!!\nYou wouldn't let them down even after {time}!!!!"
+                coughstring = "{username} caught {emoji} {type} cat!!!!1!\nYou will never give up {count} cats of dat type!!!\nYou wouldn't let them down even after {time}!!!!"
             elif le_emoji == "Sus":
-                coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou have vented infront of {count} cats of dat type!!!\nthis sussy baka was cought in {time}!!!!"
+                coughstring = "{username} caught {emoji} {type} cat!!!!1!\nYou have vented infront of {count} cats of dat type!!!\nthis sussy baka was caught in {time}!!!!"
             elif le_emoji == "Professor":
                 coughstring = "{username} caught {emoji} {type} cat!\nThou now hast {count} cats of that type!\nThis fellow was caught 'i {time}!"
             elif le_emoji == "8bit":
                 coughstring = "{username} c0ught {emoji} {type} cat!!!!1!\nY0u n0w h0ve {count} cats 0f dat type!!!\nth1s fe11a was c0ught 1n {time}!!!!"
             elif le_emoji == "Reverse":
-                coughstring = "!!!!{time} in cought was fella this\n!!!type dat of cats {count} have now You\n!1!!!!cat {type} {emoji} cought {username}"
+                coughstring = "!!!!{time} in caught was fella this\n!!!type dat of cats {count} have now You\n!1!!!!cat {type} {emoji} caught {username}"
             else:
-                coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
+                coughstring = "{username} caught {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was caught in {time}!!!!"
             view = None
             button = None
 
@@ -1179,7 +1179,7 @@ async def changetimings(message: discord.Interaction, minimum_time: Optional[int
         await message.response.send_message("Please input all times.", ephemeral=True)
 
 
-@bot.tree.command(description="(ADMIN) Change the cat appear and cought messages")
+@bot.tree.command(description="(ADMIN) Change the cat appear and caught messages")
 @discord.app_commands.default_permissions(manage_guild=True)
 async def changemessage(message: discord.Interaction):
     caller = message.user
@@ -1245,25 +1245,25 @@ async def changemessage(message: discord.Interaction):
         nonlocal caller
         
         try:
-            if db[str(message.guild.id)]["cought"]:
+            if db[str(message.guild.id)]["cought"]: # fix
                 pass
         except Exception:
-            db[str(message.guild.id)]["cought"] = ""
+            db[str(message.guild.id)]["cought"] = "" # fix
         
         if interaction.user != caller:
             await interaction.response.send_message(choice(funny), ephemeral=True)
             return
-        modal = InputModal("Cought")
+        modal = InputModal("Caught")
         await interaction.response.send_modal(modal)
     
-    embed = discord.Embed(title="Change appear and cought messages", description="""below are buttons to change them.
+    embed = discord.Embed(title="Change appear and caught messages", description="""below are buttons to change them.
 they are required to have all placeholders somewhere in them.
 that being:
 
 for appear:
 `{emoji}`, `{type}`
 
-for cought:
+for caught:
 `{emoji}`, `{type}`, `{username}`, `{count}`, `{time}`
 
 missing any of these will result in a failure.
@@ -2225,7 +2225,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
     msg2img.msg2img(msg, bot, True)
     file = discord.File("generated.png", filename="generated.png")
     set_cat(message.guild.id, message.user.id, "catchcooldown", time.time())
-    await message.followup.send("cought in 4k", file=file)
+    await message.followup.send("caught in 4k", file=file)
     register_member(message.guild.id, msg.author.id)
     if msg.author.id != bot.user.id: await achemb(message, "4k", "send")
 
@@ -2548,7 +2548,7 @@ async def reset(message: discord.Interaction, person_id: discord.User):
 @bot.tree.command(description="(ADMIN) [VERY DANGEROUS] Reset all Cat Bot data of this server")
 @discord.app_commands.default_permissions(manage_guild=True)
 async def nuke(message: discord.Interaction):
-    warning_text = "⚠️ This will completely reset **all** Cat Bot progress of **everyone** in this server. It will also reset some Cat Bot settings (notably custom spawn messages). Following will not be affected: settuped channels, cats which arent yet cought, custom spawn timings.\nPress the button 5 times to continue."
+    warning_text = "⚠️ This will completely reset **all** Cat Bot progress of **everyone** in this server. It will also reset some Cat Bot settings (notably custom spawn messages). Following will not be affected: settuped channels, cats which arent yet caught, custom spawn timings.\nPress the button 5 times to continue."
     counter = 5
 
     async def gen(counter):
