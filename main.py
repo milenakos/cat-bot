@@ -376,7 +376,7 @@ async def run_spawn(ch_id=None):
                     db[str(channeley.guild.id)]["appear"] = ""
                     appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
                 
-                message_is_sus = await channeley.send(appearstring.format(emoji=str(icon), type=localcat), file=file)
+                message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file)
                 db["cat"][str(i)] = message_is_sus.id
         except discord.NotFound:
             summon_id.remove(i)
@@ -863,11 +863,11 @@ async def on_message(message):
                 view = View(timeout=3600)
                 view.add_item(button)
             
-            await message.channel.send(coughstring.format(username=message.author.name.replace("_", "\_"),
-                                                           emoji=icon,
-                                                           type=le_emoji,
-                                                           count=add_cat(message.guild.id, message.author.id, le_emoji, silly_amount),
-                                                           time=caught_time[:-1]) + suffix_string,
+            await message.channel.send(coughstring.replace("{username}", message.author.name.replace("_", "\_"))
+                                                  .replace("{emoji}", str(icon))
+                                                  .replace("{type}", le_emoji)
+                                                  .replace("{count}", str(add_cat(message.guild.id, message.author.id, le_emoji, silly_amount)))
+                                                  .replace("{time}", caught_time[:-1]) + suffix_string,
                                        view=view,
                                        allowed_mentions=None)
             
@@ -1217,9 +1217,9 @@ async def changemessage(message: discord.Interaction):
                     if i not in input_value:
                         await interaction.response.send_message(f"nuh uh! you are missing `{i}`.", ephemeral=True)
                         return
-                icon = get_emoji("staring_cat")
+                icon = get_emoji("fine_cat")
                 await interaction.response.send_message("Success! Here is a preview:\n" + \
-                                                    input_value.format(emoji=icon, type="Example", username="Cat Bot", count="1", time="69 years 420 days"))
+                    input_value.replace("{emoji}", str(icon)).replace("{type}", "Fine").replace("{username}", "Cat Bot").replace("{count}", "1").replace("{time}", "69 years 420 days"))
             else:
                 await interaction.response.send_message("Reset to defaults.")
             db[str(message.guild.id)][self.type.lower()] = input_value
@@ -2480,7 +2480,7 @@ async def soft_force(channeley, cat_type=None):
         db[str(channeley.guild.id)]["appear"] = ""
         appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
     
-    message_is_sus = await channeley.send(appearstring.format(emoji=str(icon), type=localcat), file=file)
+    message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file)
     db["cat"][str(channeley.id)] = message_is_sus.id
     save("cat")
 
