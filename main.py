@@ -1493,12 +1493,8 @@ async def ping(message: discord.Interaction):
 @bot.tree.command(description="give cats now")
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(person="Whom to donate?", cat_type="Select a donate cat type", amount="And how much?")
-<<<<<<< HEAD
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
 async def gift(message: discord.Interaction, person: discord.Member, cat_type: str, amount: Optional[int]):
-=======
-async def gift(message: discord.Interaction, person: discord.User, cat_type: Literal[tuple(cattypes)], amount: Optional[int]):
->>>>>>> upstream/main
     if not amount: amount = 1  # default the amount to 1
     person_id = person.id
 
@@ -2421,12 +2417,8 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="who", amount="how many", cat_type="what")
-<<<<<<< HEAD
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
 async def givecat(message: discord.Interaction, person_id: discord.Member, amount: int, cat_type: str):
-=======
-async def givecat(message: discord.Interaction, person_id: discord.User, amount: int, cat_type: Literal[tuple(cattypes)]):
->>>>>>> upstream/main
     add_cat(message.guild.id, person_id.id, cat_type, amount)
     embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount} {cat_type} cats", color=0x6E593C)
     await message.response.send_message(embed=embed)
