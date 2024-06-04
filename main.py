@@ -142,8 +142,6 @@ for e in CAT_TYPES:
     if e not in cattypes:
         cattypes.append(e)
 
-cattypes_lower = [i.lower() for i in cattypes]
-
 funny = ["why did you click this this arent yours", "absolutely not", "cat bot not responding, try again later", "you cant", "can you please stop", "try again", "403 not allowed", "stop", "get a life", "not for you", "no", "nuh uh"]
 
 summon_id = db["summon_ids"]
@@ -1501,7 +1499,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
     if not amount: amount = 1  # default the amount to 1
     person_id = person.id
 
-    if cat_type not in cattypes_lower:
+    if cat_type not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
         return
 
@@ -2426,7 +2424,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 @discord.app_commands.describe(person_id="who", amount="how many", cat_type="what")
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
 async def givecat(message: discord.Interaction, person_id: discord.User, amount: int, cat_type: str):
-    if cat_type not in cattypes_lower:
+    if cat_type not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
         return
 
@@ -2507,7 +2505,7 @@ async def soft_force(channeley, cat_type=None):
 @discord.app_commands.describe(cat_type="select a cat type ok")
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
 async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
-    if cat_type not in cattypes_lower:
+    if cat_type not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
         return
 
