@@ -753,17 +753,18 @@ async def on_message(message):
                 caught_time = "undefined amounts of time "
 
             icon = None
+            partial_type = None
             for v in allowedemojis:
                 if v in catchcontents:
                     partial_type = v
                     break
 
+            if not partial_type: return
+
             for i in type_dict.keys():
                 if i.lower() in partial_type:
                     le_emoji = i
                     break
-
-            if not le_emoji: return
                 
             icon = get_emoji(partial_type)
 
