@@ -2505,7 +2505,7 @@ async def soft_force(channeley, cat_type=None):
 @discord.app_commands.describe(cat_type="select a cat type ok")
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
 async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
-    if cat_type not in cattypes:
+    if not cat_type or cat_type not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
         return
 
