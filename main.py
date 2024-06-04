@@ -2518,12 +2518,8 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(person_id="user", ach_id="name")
 @discord.app_commands.describe(person_id="who", ach_id="name or id of the achievement")
-<<<<<<< HEAD
 @discord.app_commands.autocomplete(ach_id=ach_autocomplete)
-async def giveachievement(message: discord.Interaction, person_id: discord.Member, ach_id: str):
-=======
 async def giveachievement(message: discord.Interaction, person_id: discord.User, ach_id: str):
->>>>>>> upstream/main
     # check if ach is real
     try:
         if ach_id in ach_names:
