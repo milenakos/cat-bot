@@ -1506,6 +1506,10 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
     if not amount: amount = 1  # default the amount to 1
     person_id = person.id
 
+    if cat_type not in cattypes:
+        await message.response.send_message("bro what", ephemeral=True)
+        return
+
     # if we even have enough cats
     if get_cat(message.guild.id, message.user.id, cat_type) >= amount and amount > 0 and message.user.id != person_id:
         remove_cat(message.guild.id, message.user.id, cat_type, amount)
@@ -2427,6 +2431,10 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 @discord.app_commands.describe(person_id="who", amount="how many", cat_type="what")
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
 async def givecat(message: discord.Interaction, person_id: discord.User, amount: int, cat_type: str):
+    if cat_type not in cattypes:
+        await message.response.send_message("bro what", ephemeral=True)
+        return
+
     add_cat(message.guild.id, person_id.id, cat_type, amount)
     embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount} {cat_type} cats", color=0x6E593C)
     await message.response.send_message(embed=embed)
@@ -2504,6 +2512,10 @@ async def soft_force(channeley, cat_type=None):
 @discord.app_commands.describe(cat_type="select a cat type ok")
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
 async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
+    if cat_type and cat_type not in cattypes:
+        await message.response.send_message("bro what", ephemeral=True)
+        return
+
     try:
         if db["cat"][str(message.channel.id)]:
             await message.response.send_message("there is already a cat", ephemeral=True)
@@ -2580,7 +2592,7 @@ async def nuke(message: discord.Interaction):
         if interaction.user.id == message.user.id:
             await interaction.response.defer()
             counter -= 1
-            if counter == 0:
+            if counter <= 0:
                 # Scary!
                 db[str(message.guild.id)] = {}
                 save(message.guild.id)
