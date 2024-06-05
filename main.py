@@ -2584,7 +2584,7 @@ async def nuke(message: discord.Interaction):
         if interaction.user.id == message.user.id:
             await interaction.response.defer()
             counter -= 1
-            if counter == 0:
+            if counter <= 0:
                 # Scary!
                 db[str(message.guild.id)] = {}
                 save(message.guild.id)
