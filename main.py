@@ -392,8 +392,11 @@ async def run_spawn(ch_id=None):
     save("cat")
     
     if not ch_id:
+        today = datetime.date.today()
+        future = datetime.date(2024, 7, 8)
+        diff = future - today
         await bot.change_presence(
-            activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
+            activity=discord.CustomActivity(name=f"{diff.days} days left. In {len(bot.guilds):,} servers", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
         )
         db["summon_ids"] = list(set(summon_id)) # remove all duplicates
         save("summon_ids")
