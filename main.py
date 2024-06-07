@@ -358,7 +358,6 @@ async def run_spawn(ch_id=None):
     if ch_id:
         summon_id = [int(ch_id)]
     else:
-        reactions_ratelimit = {}
         summon_id = db["summon_ids"]
         print("Main cat loop is running")
     
@@ -392,6 +391,7 @@ async def run_spawn(ch_id=None):
     save("cat")
     
     if not ch_id:
+        reactions_ratelimit = {}
         today = datetime.date.today()
         future = datetime.date(2024, 7, 8)
         diff = future - today
