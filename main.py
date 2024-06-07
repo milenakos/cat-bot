@@ -374,6 +374,7 @@ async def spawn_cat(ch_id, localcat=None):
 
 # a loop for various maintaince which is ran every 10 minutes
 async def maintaince_loop():
+    global save_queue, reactions_ratelimit
     while True:
         reactions_ratelimit = {}
         today = datetime.date.today()
