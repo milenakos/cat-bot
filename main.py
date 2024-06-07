@@ -399,8 +399,11 @@ async def run_spawn(ch_id=None):
     save("cat")
     
     if not ch_id:
+        today = datetime.date.today()
+        future = datetime.date(2024, 7, 8)
+        diff = future - today
         await bot.change_presence(
-            activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
+            activity=discord.CustomActivity(name=f"{diff.days} days left. In {len(bot.guilds):,} servers", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
         )
         db["summon_ids"] = list(set(summon_id)) # remove all duplicates
         save("summon_ids")
@@ -1687,8 +1690,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         view.add_item(deny)
         view.add_item(add)
 
-        coolembed = discord.Embed(color=0x6E593C, title=f"{person1.name} and {person2.name} trade", description="no way")
-
+        coolembed = discord.Embed(color=0x6E593C, title=f"{person1.name.replace("_", r"\_")} and {person2.name.replace("_", r"\_")} trade", description="no way")
         # a single field for one person
         def field(personaccept, persongives, person):
             nonlocal coolembed
