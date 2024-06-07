@@ -367,7 +367,7 @@ async def spawn_cat(ch_id, localcat=None):
             appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
         
         message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file)
-        db["cat"][str(i)] = message_is_sus.id
+        db["cat"][str(ch_id)] = message_is_sus.id
         save("cat")
     except Exception:
         pass
