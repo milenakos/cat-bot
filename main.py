@@ -2440,7 +2440,7 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
         await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
         return
     await spawn_cat(str(message.channel.id), cat_type)
-    await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this", ephemeral=True)
+    await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this")
 
 @bot.tree.command(description="(ADMIN) Give achievements to people")
 @discord.app_commands.default_permissions(manage_guild=True)
