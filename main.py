@@ -870,14 +870,13 @@ async def on_message(message):
                         await do_reward(message, battlelevel)
                 if battlelevel["req"] == "catch_type" and le_emoji == battlelevel["req_data"]:
                     await do_reward(message, battlelevel)
-    
+            except Exception:
+                raise
+            finally:
                 try:
                     times = db["spawn_times"][str(message.channel.id)]
                 except KeyError:
                     times = [120, 1200]
-            except Exception:
-                raise
-            finally:
                 db["yet_to_spawn"].append(str(message.channel.id))
                 save("yet_to_spawn")
                 await asyncio.sleep(randint(times[0], times[1]))
