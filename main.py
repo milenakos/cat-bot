@@ -373,63 +373,62 @@ async def spawn_cat(ch_id, localcat=None):
         pass
 
 # a loop for various maintaince which is ran every 10 minutes
+@tasks.loop(minutes=10.0)
 async def maintaince_loop():
     global save_queue, reactions_ratelimit
-    while True:
-        reactions_ratelimit = {}
-        today = datetime.date.today()
-        future = datetime.date(2024, 7, 8)
-        diff = future - today
-        await bot.change_presence(
-            activity=discord.CustomActivity(name=f"{diff.days} days left. In {len(bot.guilds):,} servers", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
-        )
+    reactions_ratelimit = {}
+    today = datetime.date.today()
+    future = datetime.date(2024, 7, 8)
+    diff = future - today
+    await bot.change_presence(
+        activity=discord.CustomActivity(name=f"{diff.days} days left. In {len(bot.guilds):,} servers")
+    )
+
+    for id in set(save_queue):
+        with open(f"data/{id}.json", "w") as f:
+            json.dump(db[id], f)
+
+    save_queue = []
+
+    # backup
+    with tarfile.open("backup.tar.gz", "w:gz") as tar:
+        tar.add("data", arcname=os.path.sep)
     
-        for id in set(save_queue):
-            with open(f"data/{id}.json", "w") as f:
-                json.dump(db[id], f)
+    backupchannel = await bot.fetch_channel(BACKUP_ID)
+    thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
+    await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
+
+    vote_remind = db["vote_remind"]
+
+    # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
+    for i in vote_remind:
+        if get_cat(0, i, "vote_time_topgg") + 43200 < time.time() and not get_cat(0, i, "reminder_topgg_exists"):
+            await asyncio.sleep(0.1)
+            try:
+                person = await bot.fetch_user(i)
+                
+                view = View(timeout=1)
+                button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367/vote")
+                view.add_item(button)
+                
+                await person.send("You can vote on Top.gg now!", view=view)
+                set_cat(0, i, "reminder_topgg_exists", int(time.time()))
+            except Exception:
+                vote_remind.remove(i)
+
+    db["vote_remind"] = vote_remind
+    save("vote_remind")
     
-        save_queue = []
-    
-        # backup
-        with tarfile.open("backup.tar.gz", "w:gz") as tar:
-            tar.add("data", arcname=os.path.sep)
-        
-        backupchannel = await bot.fetch_channel(BACKUP_ID)
-        thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
-        await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
-    
-        vote_remind = db["vote_remind"]
-    
-        # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
-        for i in vote_remind:
-            if get_cat(0, i, "vote_time_topgg") + 43200 < time.time() and not get_cat(0, i, "reminder_topgg_exists"):
-                await asyncio.sleep(0.1)
-                try:
-                    person = await bot.fetch_user(i)
-                    
-                    view = View(timeout=1)
-                    button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367/vote")
-                    view.add_item(button)
-                    
-                    await person.send("You can vote on Top.gg now!", view=view)
-                    set_cat(0, i, "reminder_topgg_exists", int(time.time()))
-                except Exception:
-                    vote_remind.remove(i)
-    
-        db["vote_remind"] = vote_remind
-        save("vote_remind")
-        
-        if TOP_GG_TOKEN:
-            async with aiohttp.ClientSession() as session:
-                # send server count to top.gg
-                try:
-                    await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
-                                        headers={"Authorization": TOP_GG_TOKEN},
-                                        json={"server_count": len(bot.guilds), "shard_count": len(bot.shards)},
-                                        timeout=15)
-                except Exception:
-                    print("Posting failed.")
-        await asyncio.sleep(600)
+    if TOP_GG_TOKEN:
+        async with aiohttp.ClientSession() as session:
+            # send server count to top.gg
+            try:
+                await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
+                                    headers={"Authorization": TOP_GG_TOKEN},
+                                    json={"server_count": len(bot.guilds), "shard_count": len(bot.shards)},
+                                    timeout=15)
+            except Exception:
+                print("Posting failed.")
 
 
 # some code which is run when bot is started
@@ -484,7 +483,7 @@ async def on_ready():
             pass # death
         gen_credits[key] = ", ".join(peoples)
 
-    bot.loop.create_task(maintaince_loop())
+    maintaince_loop.start()
 
     for i in db["yet_to_spawn"]:
         await spawn_cat(i)
@@ -660,20 +659,220 @@ async def on_message(message):
             # if there is no cat, you are /preventcatch-ed, or you aren't a whitelisted bot
             icon = get_emoji("pointlaugh")
             await message.add_reaction(icon)
-        elif cat_temp:
-            current_time = message.created_at.timestamp()
-            db["lastcatches"][str(message.channel.id)] = current_time
-            db["cat"][str(message.channel.id)] = False
-            save("cat")
-            save("lastcatches")
+        elif is_cat:
             try:
-                await message.delete()
-            except discord.errors.Forbidden:
-                await message.channel.send("I don't have permission to delete messages. Please re-invite the bot or manually add that permission.")
-            try:
-                var = await message.channel.fetch_message(cat_temp)
+                current_time = message.created_at.timestamp()
+                db["lastcatches"][str(message.channel.id)] = current_time
+                cat_temp = db["cat"][str(message.channel.id)]
+                db["cat"][str(message.channel.id)] = False
+                save("cat")
+                save("lastcatches")
+                try:
+                    await message.delete()
+                except discord.errors.Forbidden:
+                    await message.channel.send("I don't have permission to delete messages. Please re-invite the bot or manually add that permission.")
+                try:
+                    var = await message.channel.fetch_message(cat_temp)
+                except Exception:
+                    await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
+                    return
+                catchtime = var.created_at
+                catchcontents = var.content
+                await var.delete()
+                try:
+                    # some math to make time look cool
+                    then = catchtime.timestamp()
+                    time_caught = abs(round(((current_time - then) * 100)) / 100) # cry about it
+                    days = time_caught // 86400
+                    time_left = time_caught - (days * 86400)
+                    hours = time_left // 3600
+                    time_left = time_left - (hours * 3600)
+                    minutes = time_left // 60
+                    seconds = time_left - (minutes * 60)
+                    caught_time = ""
+                    if days:
+                        caught_time = caught_time + str(int(days)) + " days "
+                    if hours:
+                        caught_time = caught_time + str(int(hours)) + " hours "
+                    if minutes:
+                        caught_time = caught_time + str(int(minutes)) + " minutes "
+                    if seconds:
+                        acc_seconds = round(seconds * 100) / 100
+                        caught_time = caught_time + str(acc_seconds) + " seconds "
+                    do_time = True
+                    if time_caught <= 0:
+                        do_time = False
+                except Exception as e:
+                    # if some of the above explodes just give up
+                    print(e)
+                    do_time = False
+                    caught_time = "undefined amounts of time "
+    
+                icon = None
+                partial_type = None
+                for v in allowedemojis:
+                    if v in catchcontents:
+                        partial_type = v
+                        break
+    
+                if not partial_type: return
+    
+                for i in type_dict.keys():
+                    if i.lower() in partial_type:
+                        le_emoji = i
+                        break
+                    
+                icon = get_emoji(partial_type)
+    
+                try:
+                    if db[str(message.guild.id)]["cought"]:
+                        pass
+                except Exception:
+                    db[str(message.guild.id)]["cought"] = ""
+    
+                suffix_string = ""
+                silly_amount = 1
+                if get_cat(message.guild.id, message.author.id, "cataine_active") > time.time():
+                    # cataine is active
+                    silly_amount = 2
+                    suffix_string = f"\n🧂 cataine worked! you got 2 cats instead!"
+                    
+                elif get_cat(message.guild.id, message.author.id, "cataine_active") != 0:
+                    # cataine ran out
+                    add_cat(message.guild.id, message.author.id, "cataine_active", 0, True)
+                    suffix_string = f"\nyour cataine buff has expired. you know where to get a new one 😏"
+                
+                if db[str(message.guild.id)]["cought"]:
+                    coughstring = db[str(message.guild.id)]["cought"]
+                elif le_emoji == "Corrupt":
+                    coughstring = "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!"
+                elif le_emoji == "eGirl":
+                    coughstring = "{username} cowought {emoji} {type} cat~~ ^^\nYou-u now *blushes* hawe {count} cats of dat tywe~!!!\nthis fella was <3 cought in {time}!!!!"
+                elif le_emoji == "Rickroll":
+                    coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou will never give up {count} cats of dat type!!!\nYou wouldn't let them down even after {time}!!!!"
+                elif le_emoji == "Sus":
+                    coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou have vented infront of {count} cats of dat type!!!\nthis sussy baka was cought in {time}!!!!"
+                elif le_emoji == "Professor":
+                    coughstring = "{username} caught {emoji} {type} cat!\nThou now hast {count} cats of that type!\nThis fellow was caught 'i {time}!"
+                elif le_emoji == "8bit":
+                    coughstring = "{username} c0ught {emoji} {type} cat!!!!1!\nY0u n0w h0ve {count} cats 0f dat type!!!\nth1s fe11a was c0ught 1n {time}!!!!"
+                elif le_emoji == "Reverse":
+                    coughstring = "!!!!{time} in cought was fella this\n!!!type dat of cats {count} have now You\n!1!!!!cat {type} {emoji} cought {username}"
+                else:
+                    coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
+                view = None
+                button = None
+    
+                async def dark_market_cutscene(interaction):
+                    nonlocal message
+                    if interaction.user != message.author:
+                        await interaction.response.send_message("the shadow you saw runs away. perhaps you need to be the one to catch the cat.", ephemeral=True)
+                        return
+                    if get_cat(message.guild.id, message.author.id, "dark_market") != 0:
+                        await interaction.response.send_message("the shadowy figure is nowhere to be found.", ephemeral=True)
+                        return
+                    add_cat(message.guild.id, message.author.id, "dark_market", 1, True)
+                    await interaction.response.send_message("is someone watching after you?", ephemeral=True)
+                    await asyncio.sleep(5)
+                    await interaction.followup.send("you walk up to them. the dark voice says:", ephemeral=True)
+                    await asyncio.sleep(5)
+                    await interaction.followup.send("**???**: Hello. We have a unique deal for you.", ephemeral=True)
+                    await asyncio.sleep(5)
+                    await interaction.followup.send("**???**: To access our services, press \"Hidden\" `/achievements` tab 3 times in a row.", ephemeral=True)
+                    await asyncio.sleep(5)
+                    await interaction.followup.send("**???**: You won't be disappointed.", ephemeral=True)
+                    await asyncio.sleep(5)
+                    await interaction.followup.send("before you manage to process that, the figure disappears. will you figure out whats going on?", ephemeral=True)
+                    await asyncio.sleep(5)
+                    await interaction.followup.send("the only choice is to go to that place.", ephemeral=True)
+                
+                if randint(0, 50) == 0:
+                    button = Button(label="Join our Discord!", url="https://discord.gg/staring")
+                elif randint(0, 6) == 0 and WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
+                    button_texts = [
+                        "If vote cat will you friend :)",
+                        "Vote cat for president",
+                        "vote = 0.01% to escape basement",
+                        "vote vote vote vote vote",
+                        "mrrp mrrow go and vote now",
+                        "if you vote you'll be free (no)",
+                        "Like gambling? Vote!",
+                        "vote. btw, i have a pipebomb",
+                        "No votes? :megamind:",
+                        "Cat says you should vote",
+                        "vote = random cats. lets gamble?",
+                        "cat will be happy if you vote",
+                        "VOTE NOW!!",
+                        "Vote on top.gg for free cats",
+                        "Vote for free cats",
+                        "No vote = no free cats :(",
+                        "0.04% to get egirl on voting",
+                        "I voted and got 1000000$",
+                        "I voted and found a gf",
+                        "lebron james forgot to vote",
+                        "vote if you like cats",
+                        "vote if cats > dogs",
+                        "you should vote for cat NOW!"
+                    ]
+                    button = Button(emoji=get_emoji("topgg"), label=choice(button_texts), url="https://top.gg/bot/966695034340663367/vote")
+                elif randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
+                    button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
+                    button.callback = dark_market_cutscene
+                
+                if button:
+                    view = View(timeout=3600)
+                    view.add_item(button)
+                
+                await message.channel.send(coughstring.replace("{username}", message.author.name.replace("_", "\_"))
+                                                      .replace("{emoji}", str(icon))
+                                                      .replace("{type}", le_emoji)
+                                                      .replace("{count}", str(add_cat(message.guild.id, message.author.id, le_emoji, silly_amount)))
+                                                      .replace("{time}", caught_time[:-1]) + suffix_string,
+                                           view=view,
+                                           allowed_mentions=None)
+                
+                # handle fastest and slowest catches
+                if do_time and time_caught < get_time(message.guild.id, message.author.id):
+                    set_time(message.guild.id, message.author.id, time_caught)
+                if do_time and time_caught > get_time(message.guild.id, message.author.id, "slow"):
+                    set_time(message.guild.id, message.author.id, time_caught, "slow")
+    
+                await achemb(message, "first", "send")
+                
+                if do_time and get_time(message.guild.id, message.author.id) <= 5: await achemb(message, "fast_catcher", "send")
+    
+                if do_time and get_time(message.guild.id, message.author.id, "slow") >= 3600: await achemb(message, "slow_catcher", "send")
+    
+                if do_time and time_caught == 3.14: await achemb(message, "pie", "send")
+    
+                # handle battlepass
+                async def do_reward(message, level):
+                    db[str(message.guild.id)][str(message.author.id)]["progress"] = 0
+                    reward = level["reward"]
+                    reward_amount = level["reward_amount"]
+                    add_cat(message.guild.id, message.author.id, reward, reward_amount)
+                    icon = get_emoji(reward.lower() + "cat")
+                    new = add_cat(message.guild.id, message.author.id, "battlepass")
+                    embed = discord.Embed(title=f"Level {new} complete!", description=f"You have recieved {icon} {reward_amount} {reward} cats!", color=0x007F0E).set_author(name="Cattlepass level!", icon_url="https://pomf2.lain.la/f/zncxu6ej.png")
+                    await message.channel.send(embed=embed)
+    
+                if not get_cat(message.guild.id, message.author.id, "battlepass"):
+                    db[str(message.guild.id)][str(message.author.id)]["battlepass"] = 0
+                if not get_cat(message.guild.id, message.author.id, "progress"):
+                    db[str(message.guild.id)][str(message.author.id)]["progress"] = 0
+    
+                battlelevel = battle["levels"][get_cat(message.guild.id, message.author.id, "battlepass")]
+                if battlelevel["req"] == "catch_fast" and do_time and time_caught < battlelevel["req_data"]:
+                    await do_reward(message, battlelevel)
+                if battlelevel["req"] == "catch":
+                    add_cat(message.guild.id, message.author.id, "progress")
+                    if get_cat(message.guild.id, message.author.id, "progress") == battlelevel["req_data"]:
+                        await do_reward(message, battlelevel)
+                if battlelevel["req"] == "catch_type" and le_emoji == battlelevel["req_data"]:
+                    await do_reward(message, battlelevel)
             except Exception:
-                await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
+                raise
+            finally:
                 try:
                     times = db["spawn_times"][str(message.channel.id)]
                 except KeyError:
