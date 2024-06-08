@@ -180,6 +180,14 @@ def save(id):
     if id not in save_queue:
         save_queue.append(id)
 
+# migrate yet_to_spawn
+if isinstance(db["yet_to_spawn"], list):
+    saved_yet_to_spawn = db["yet_to_spawn"]
+    db["yet_to_spawn"] = {}
+    for i in saved_yet_to_spawn:
+        db[i] = 1
+    save("yet_to_spawn")
+
 # this is probably a good time to explain the database structure
 # each server is a json file
 # however there are multiple jsons which arent for servers yet are stored the same way
@@ -346,9 +354,6 @@ async def spawn_cat(ch_id, localcat=None):
     try:
         if db["cat"][ch_id]:
             return
-        if ch_id in db["yet_to_spawn"]:
-            db["yet_to_spawn"].remove(ch_id)
-            save("yet_to_spawn")
         
         file = discord.File("cat.png")
         
@@ -367,13 +372,15 @@ async def spawn_cat(ch_id, localcat=None):
             appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
         
         message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file)
-        db["cat"][str(ch_id)] = message_is_sus.id
+        db["cat"][ch_id] = message_is_sus.id
+        db["yet_to_spawn"][ch_id] = 0
         save("cat")
+        save("yet_to_spawn")
     except Exception:
         pass
 
-# a loop for various maintaince which is ran every 10 minutes
-@tasks.loop(minutes=10.0)
+# a loop for various maintaince which is ran every 5 minutes
+@tasks.loop(minutes=5.0)
 async def maintaince_loop():
     global save_queue, reactions_ratelimit
     reactions_ratelimit = {}
@@ -430,6 +437,11 @@ async def maintaince_loop():
             except Exception:
                 print("Posting failed.")
 
+    for ch_id, ch_timer in db["yet_to_spawn"].values():
+        if time.time() > ch_timer:
+            await spawn_cat(i)
+            await asyncio.sleep(0.2)
+
 
 # some code which is run when bot is started
 @bot.event
@@ -484,10 +496,6 @@ async def on_ready():
         gen_credits[key] = ", ".join(peoples)
 
     maintaince_loop.start()
-
-    for i in db["yet_to_spawn"]:
-        await spawn_cat(i)
-        await asyncio.sleep(0.2)
 
 
 # this is all the code which is ran on every message sent
@@ -660,6 +668,13 @@ async def on_message(message):
             icon = get_emoji("pointlaugh")
             await message.add_reaction(icon)
         elif is_cat:
+            try:
+                times = db["spawn_times"][str(message.channel.id)]
+            except KeyError:
+                times = [120, 1200]
+            decided_time = randint(times[0], times[1])
+            db["yet_to_spawn"][str(message.channel.id)] = int(time.time()) + decided_time + 3
+            save("yet_to_spawn")
             try:
                 current_time = message.created_at.timestamp()
                 db["lastcatches"][str(message.channel.id)] = current_time
@@ -873,13 +888,7 @@ async def on_message(message):
             except Exception:
                 raise
             finally:
-                try:
-                    times = db["spawn_times"][str(message.channel.id)]
-                except KeyError:
-                    times = [120, 1200]
-                db["yet_to_spawn"].append(str(message.channel.id))
-                save("yet_to_spawn")
-                await asyncio.sleep(randint(times[0], times[1]))
+                await asyncio.sleep(decided_time)
                 await spawn_cat(str(message.channel.id))
 
     # those are "owner" commands which are not really interesting
