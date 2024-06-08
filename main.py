@@ -7,6 +7,7 @@ from random import randint, choice, shuffle, seed
 from PIL import Image
 from aiohttp import web
 from collections import UserDict
+import requests
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -2650,5 +2651,32 @@ async def recieve_vote(request):
     await claim_reward(user, channeley, type)
     return web.Response(text="ok", status=200)
 
+@bot.tree.command(name="fact", description="a fact")
+async def fact(message: discord.Interaction):
+    url = "https://catfact.ninja/fact"
+    facts = [
+        "You Suck",
+        "You Love cats",
+        "No Bitches?", # 😂
+        "Cat Bot Is In 23,680 Servers",
+        "Chocolate Is Bad For Cats",
+        "Cat",
+        "Cats Land On Their Feet",
+        "Cats Bring You Mice/Birds As a Gift",
+        "You Spend All Of Your Time On Discord",
+        "Cats Are The Best",
+        "You Haven't Touched Grass In a Long Time"
+    ]
+
+    C = randint(0, 20)
+    CC = randint(0, 20)
+
+    # give a fact from the list or the API
+
+    if C <= CC:
+        await message.response.send_message(choice(facts))
+    else:
+        data = requests.get(url).json()
+        await message.response.send_message(data['fact'])
 
 bot.run(TOKEN)
