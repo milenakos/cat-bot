@@ -440,7 +440,7 @@ async def maintaince_loop():
 
     yet_to_spawn_copy = db["yet_to_spawn"].copy()
     for ch_id, ch_timer in yet_to_spawn_copy.items():
-        if time.time() > ch_timer and (ch_id not in db["cat"].keys() or not db["cat"][ch_id]):
+        if ch_timer and time.time() > ch_timer and (ch_id not in db["cat"].keys() or not db["cat"][ch_id]):
             await spawn_cat(ch_id)
             await asyncio.sleep(0.1)
 
