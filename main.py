@@ -185,7 +185,7 @@ if isinstance(db["yet_to_spawn"], list):
     saved_yet_to_spawn = db["yet_to_spawn"]
     db["yet_to_spawn"] = {}
     for i in saved_yet_to_spawn:
-        db[i] = 1
+        db["yet_to_spawn"][i] = 1
     save("yet_to_spawn")
 
 # this is probably a good time to explain the database structure
