@@ -439,7 +439,7 @@ async def maintaince_loop():
 
     for ch_id, ch_timer in db["yet_to_spawn"].values():
         if time.time() > ch_timer:
-            await spawn_cat(i)
+            await spawn_cat(ch_id)
             await asyncio.sleep(0.2)
 
 
