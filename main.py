@@ -381,7 +381,7 @@ async def maintaince_loop():
     future = datetime.date(2024, 7, 8)
     diff = future - today
     await bot.change_presence(
-        activity=discord.CustomActivity(name=f"{diff.days} days left. In {len(bot.guilds):,} servers", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
+        activity=discord.CustomActivity(name=f"{diff.days} days left. In {len(bot.guilds):,} servers")
     )
 
     for id in set(save_queue):
