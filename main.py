@@ -373,11 +373,12 @@ async def spawn_cat(ch_id, localcat=None):
         
         message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file)
         db["cat"][ch_id] = message_is_sus.id
-        db["yet_to_spawn"][ch_id] = 0
         save("cat")
-        save("yet_to_spawn")
     except Exception:
         pass
+    finally:
+        db["yet_to_spawn"][ch_id] = 0
+        save("yet_to_spawn")
 
 # a loop for various maintaince which is ran every 5 minutes
 @tasks.loop(minutes=5.0)
@@ -412,7 +413,7 @@ async def maintaince_loop():
         if get_cat(0, i, "vote_time_topgg") + 43200 < time.time() and not get_cat(0, i, "reminder_topgg_exists"):
             await asyncio.sleep(0.1)
             try:
-                person = await bot.fetch_user(i)
+                person = bot.get_user(i)
                 
                 view = View(timeout=1)
                 button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367/vote")
@@ -437,10 +438,11 @@ async def maintaince_loop():
             except Exception:
                 print("Posting failed.")
 
-    for ch_id, ch_timer in db["yet_to_spawn"].values():
-        if time.time() > ch_timer:
+    yet_to_spawn_copy = db["yet_to_spawn"].copy()
+    for ch_id, ch_timer in yet_to_spawn_copy.items():
+        if time.time() > ch_timer and (ch_id not in db["cat"].keys() or not db["cat"][ch_id]):
             await spawn_cat(ch_id)
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(0.1)
 
 
 # some code which is run when bot is started
@@ -909,7 +911,10 @@ async def on_message(message):
         await message.reply(f"ok, now i will also send cats in <#{message.channel.id}>")
     if text.lower().startswith("cat!print") and message.author.id == OWNER_ID:
         # just a simple one-line with no async (e.g. 2+3)
-        await message.reply(eval(text[9:]))
+        try:
+            await message.reply(eval(text[9:]))
+        except Exception:
+            await message.reply(traceback.format_exc())
     if text.lower().startswith("cat!eval") and message.author.id == OWNER_ID:
         # complex eval, multi-line + async support
         # requires the full `await message.channel.send(2+3)` to get the result
@@ -930,7 +935,10 @@ async def on_message(message):
 
         complete = intro + spaced + ending
         print(complete)
-        exec(complete)
+        try:
+            exec(complete)
+        except Exception:
+            await message.reply(traceback.format_exc())
     if text.lower().startswith("cat!news") and message.author.id == OWNER_ID:
         for i in db["summon_ids"]:
             try:
