@@ -154,8 +154,6 @@ except Exception:
     OWNER_ID = 0
 
 save_queue = []
-terminate_queue = []
-update_queue = []
 
 # due to some stupid individuals spamming the hell out of reactions, we ratelimit them
 # you can do 50 reactions before they stop, limit resets on global cat loop
@@ -176,16 +174,11 @@ on_ready_debounce = False
 emojis = {}
 do_save_emojis = False
 
-# fire list controls whether to spawn the cat or skip to the next cycle
-# (this is done on /forcespawn to prevent too many spawns)
-fire = {}
-for i in summon_id:
-    fire[i] = True
-
 # this is a helper which saves id to its .json file
 def save(id):
     id = str(id)
-    save_queue.append(id)
+    if id not in save_queue:
+        save_queue.append(id)
 
 # this is probably a good time to explain the database structure
 # each server is a json file
@@ -370,45 +363,48 @@ async def run_spawn(ch_id=None):
         print("Main cat loop is running")
     
     for i in summon_id:
+async def spawn_cat(ch_id, localcat=None):
+    try:
+        if db["cat"][ch_id]:
+            return
+        if ch_id in db["yet_to_spawn"]:
+            db["yet_to_spawn"].remove(ch_id)
+            save("yet_to_spawn")
+        
+        file = discord.File("cat.png")
+        
+        if not localcat:
+            localcat = choice(CAT_TYPES)
+        icon = get_emoji(localcat.lower() + "cat")
+        channeley = bot.get_channel(int(ch_id))
+        
         try:
-            if fire[i] and not db["cat"][str(i)] and (ch_id or str(i) not in db["spawn_times"].keys()):
-                await asyncio.sleep(0.1)
-                file = discord.File("cat.png")
-                localcat = choice(CAT_TYPES)
-                icon = get_emoji(localcat.lower() + "cat")
-                channeley = bot.get_channel(int(i))
-                try:
-                    if db[str(channeley.guild.id)]["appear"]:
-                        appearstring = db[str(channeley.guild.id)]["appear"]
-                    else:
-                        appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
-                except Exception as e:
-                    db[str(channeley.guild.id)]["appear"] = ""
-                    appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
-                
-                message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file)
-                db["cat"][str(i)] = message_is_sus.id
-        except discord.NotFound:
-            summon_id.remove(i)
-        except discord.Forbidden:
-            summon_id.remove(i)
-        except Exception:
-            pass
-        fire[i] = True
-    
-    save("cat")
-    
-    if not ch_id:
+            if db[str(channeley.guild.id)]["appear"]:
+                appearstring = db[str(channeley.guild.id)]["appear"]
+            else:
+                appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
+        except Exception as e:
+            db[str(channeley.guild.id)]["appear"] = ""
+            appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
+        
+        message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file)
+        db["cat"][str(ch_id)] = message_is_sus.id
+        save("cat")
+    except Exception:
+        pass
+
+# a loop for various maintaince which is ran every 10 minutes
+async def maintaince_loop():
+    global save_queue, reactions_ratelimit
+    while True:
+        reactions_ratelimit = {}
         today = datetime.date.today()
         future = datetime.date(2024, 7, 8)
         diff = future - today
         await bot.change_presence(
             activity=discord.CustomActivity(name=f"{diff.days} days left. In {len(bot.guilds):,} servers", emoji=discord.PartialEmoji.from_str(get_emoji("staring_cat")))
         )
-        db["summon_ids"] = list(set(summon_id)) # remove all duplicates
-        save("summon_ids")
-        print("Finished cat loop")
-
+    
         for id in set(save_queue):
             with open(f"data/{id}.json", "w") as f:
                 json.dump(db[id], f)
@@ -422,9 +418,9 @@ async def run_spawn(ch_id=None):
         backupchannel = await bot.fetch_channel(BACKUP_ID)
         thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
         await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
-
+    
         vote_remind = db["vote_remind"]
-
+    
         # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
         for i in vote_remind:
             if get_cat(0, i, "vote_time_topgg") + 43200 < time.time() and not get_cat(0, i, "reminder_topgg_exists"):
@@ -440,61 +436,22 @@ async def run_spawn(ch_id=None):
                     set_cat(0, i, "reminder_topgg_exists", int(time.time()))
                 except Exception:
                     vote_remind.remove(i)
-
+    
         db["vote_remind"] = vote_remind
         save("vote_remind")
         
-        if not TOP_GG_TOKEN:
-            return
-        async with aiohttp.ClientSession() as session:
-            # send server count to top.gg
-            try:
-                await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
-                                    headers={"Authorization": TOP_GG_TOKEN},
-                                    json={"server_count": len(bot.guilds), "shard_count": len(bot.shards)},
-                                    timeout=15)
-            except Exception:
-                print("Posting failed.")
+        if TOP_GG_TOKEN:
+            async with aiohttp.ClientSession() as session:
+                # send server count to top.gg
+                try:
+                    await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
+                                        headers={"Authorization": TOP_GG_TOKEN},
+                                        json={"server_count": len(bot.guilds), "shard_count": len(bot.shards)},
+                                        timeout=15)
+                except Exception:
+                    print("Posting failed.")
+        await asyncio.sleep(600)
 
-
-# main spawn waiting loop
-# again, if ch_id is None its for basic spawns
-# otherwise for custom timings
-async def spawning_loop(times, ch_id):
-    global terminate_queue, update_queue
-    print("opened a loop for", ch_id)
-    can_recover = True # we only recover the first time the loop is ran
-    while True:
-        try:
-            if can_recover and db["recovery_times"][str(ch_id)] > time.time():
-                # recover
-                wait_time = db["recovery_times"][str(ch_id)] - time.time()
-                print("recovered", ch_id, "looping in", wait_time)
-            else:
-                raise Exception
-        except Exception:
-            wait_time = randint(times[0], times[1])
-            db["recovery_times"][str(ch_id)] = time.time() + wait_time
-            save("recovery_times")
-
-        can_recover = False
-
-        await asyncio.sleep(wait_time)
-
-        if str(ch_id) in terminate_queue:
-            print("terminating", ch_id)
-            terminate_queue.remove(str(ch_id))
-            return
-        if str(ch_id) in update_queue:
-            print("updating", ch_id)
-            update_queue.remove(str(ch_id))
-            try:
-                times = db["spawn_times"][ch_id]
-            except KeyError:
-                # we got unsetup but somehow werent in terminate queue, so terminate forcefully
-                return
-
-        await run_spawn(ch_id)
 
 # some code which is run when bot is started
 @bot.event
@@ -548,18 +505,18 @@ async def on_ready():
             pass # death
         gen_credits[key] = ", ".join(peoples)
 
-    # we create all spawning loops
-    for k, v in db["spawn_times"].items():
-        bot.loop.create_task(spawning_loop(v, k))
+    bot.loop.create_task(maintaince_loop())
 
-    bot.loop.create_task(spawning_loop([120, 1200], None))
+    for i in db["yet_to_spawn"]:
+        await spawn_cat(i)
+        await asyncio.sleep(0.2)
 
 
 # this is all the code which is ran on every message sent
 # its mostly for easter eggs or achievements
 @bot.event
 async def on_message(message):
-    global fire, save_queue
+    global save_queue
     text = message.content
     if message.author.id == bot.user.id:
         return
@@ -698,6 +655,16 @@ async def on_message(message):
         embed = discord.Embed(title="cart!", color=0x6E593C).set_image(url="attachment://cart.png")
         await message.reply(file=file, embed=embed)
 
+    try:
+        catchmsg = await message.channel.fetch_message(db["cat"][str(message.channel.id)])
+        if get_emoji("suscat") in catchmsg.content:
+            for i in ["sus", "amogus", "among", "vent", "report"]:
+                if i in text.lower():
+                    await achemb(message, "sussy", "send")
+                    break
+    except Exception:
+        pass
+
     # this is run whether someone says "cat" (very complex)
     if text.lower() == "cat":
         register_member(message.guild.id, message.author.id)
@@ -729,6 +696,14 @@ async def on_message(message):
                 var = await message.channel.fetch_message(cat_temp)
             except Exception:
                 await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
+                try:
+                    times = db["spawn_times"][str(message.channel.id)]
+                except KeyError:
+                    times = [120, 1200]
+                db["yet_to_spawn"].append(str(message.channel.id))
+                save("yet_to_spawn")
+                await asyncio.sleep(randint(times[0], times[1]))
+                await spawn_cat(str(message.channel.id))
                 return
             catchtime = var.created_at
             catchcontents = var.content
@@ -925,6 +900,16 @@ async def on_message(message):
             if battlelevel["req"] == "catch_type" and le_emoji == battlelevel["req_data"]:
                 await do_reward(message, battlelevel)
 
+            try:
+                times = db["spawn_times"][str(message.channel.id)]
+            except KeyError:
+                times = [120, 1200]
+
+            db["yet_to_spawn"].append(str(message.channel.id))
+            save("yet_to_spawn")
+            await asyncio.sleep(randint(times[0], times[1]))
+            await spawn_cat(str(message.channel.id))
+
     # those are "owner" commands which are not really interesting
     if text.lower().startswith("cat!beggar") and message.author.id == OWNER_ID:
         give_ach(message.guild.id, int(text[10:].split(" ")[1]), text[10:].split(" ")[2])
@@ -938,7 +923,6 @@ async def on_message(message):
         abc.append(int(message.channel.id))
         db["summon_ids"] = abc
         db["cat"][str(message.channel.id)] = False
-        fire[str(message.channel.id)] = True
         save("summon_ids")
         save("cat")
         await message.reply(f"ok, now i will also send cats in <#{message.channel.id}>")
@@ -995,15 +979,6 @@ async def on_message(message):
         save("0")
         await message.reply("success")
 
-    try:
-        catchmsg = await message.channel.fetch_message(db["cat"][str(message.channel.id)])
-        if get_emoji("suscat") in catchmsg.content:
-            for i in ["sus", "amogus", "among", "vent", "report"]:
-                if i in text.lower():
-                    await achemb(message, "sussy", "send")
-                    break
-    except Exception:
-        pass
 
 
 # the message when cat gets added to a new server
@@ -1145,48 +1120,29 @@ async def repair(message: discord.Interaction):
 @discord.app_commands.describe(minimum_time="In seconds, minimum possible time between spawns (leave both empty to reset)",
                                maximum_time="In seconds, maximum possible time between spawns (leave both empty to reset)")
 async def changetimings(message: discord.Interaction, minimum_time: Optional[int], maximum_time: Optional[int]):
-    global terminate_queue, update_queue
-    # terminate and update queues indicate the loops to do stuff when they are done with waiting
-
     if int(message.channel.id) not in db["summon_ids"]:
         await message.response.send_message("This channel isnt setupped. Please select a valid channel.", ephemeral=True)
         return
 
     if not minimum_time and not maximum_time:
         # reset
-        if str(message.channel.id) in terminate_queue:
-            await message.response.send_message("You already reset the timings here recently. To prevent weird behaviour, please wait before doing this again.")
-            return
-        terminate_queue.append(str(message.channel.id))
         try:
             del db["spawn_times"][str(message.channel.id)]
-            del db["recovery_times"][str(message.channel.id)]
         except:
             await message.response.send_message("This channel already has default spawning intervals.")
             return
         save("spawn_times")
-        save("recovery_times")
         await message.response.send_message("Success! This channel is now reset back to usual spawning intervals.")
     elif minimum_time and maximum_time:
         if minimum_time < 20:
             await message.response.send_message("Sorry, but minimum time must be above 20 seconds.", ephemeral=True)
             return
-        if maximum_time <= minimum_time:
+        if maximum_time < minimum_time:
             await message.response.send_message("Sorry, but minimum time must be less than maximum time.", ephemeral=True)
             return
 
-        # create a custom loop if it wasnt already created
-        if str(message.channel.id) not in db["spawn_times"].keys():
-            do_spawn = True
-        else:
-            do_spawn = False
-            update_queue.append(str(message.channel.id))
-
         db["spawn_times"][str(message.channel.id)] = [minimum_time, maximum_time]
         save("spawn_times")
-
-        if do_spawn:
-            bot.loop.create_task(spawning_loop([minimum_time, maximum_time], message.channel.id))
 
         await message.response.send_message(f"Success! The next spawn will be {minimum_time} to {maximum_time} seconds from now.")
     else:
@@ -1503,7 +1459,7 @@ async def ping(message: discord.Interaction):
 
 @bot.tree.command(description="give cats now")
 @discord.app_commands.rename(cat_type="type")
-@discord.app_commands.describe(person="Whom to donate?", cat_type="Select a donate cat type", amount="And how much?")
+@discord.app_commands.describe(person="Whom to donate?", cat_type="Select a fucking cat type", amount="And how much?")
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
 async def gift(message: discord.Interaction, person: discord.User, cat_type: str, amount: Optional[int]):
     if not amount: amount = 1  # default the amount to 1
@@ -2458,10 +2414,9 @@ async def setup(message: discord.Interaction):
     except Exception:
          pass
     db["cat"][str(message.channel.id)] = False
-    fire[str(message.channel.id)] = True
     save("summon_ids")
     save("cat")
-    await soft_force(message.channel) # force the first cat spawn incase something isnt working
+    await spawn_cat(str(message.channel.id)) # force the first cat spawn incase something isnt working
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
 
 @bot.tree.command(description="(ADMIN) Undo the setup")
@@ -2486,28 +2441,6 @@ async def fake(message: discord.Interaction):
     await message.response.send_message("OMG TROLLED SO HARD LMAOOOO 😂", ephemeral=True)
     await achemb(message, "trolled", "followup")
 
-async def soft_force(channeley, cat_type=None):
-    # this is common called between /forcespawn and /setup
-    fire[channeley.id] = False
-    file = discord.File("cat.png", filename="cat.png")
-    if not cat_type:
-        localcat = choice(CAT_TYPES)
-    else:
-        localcat = cat_type
-    icon = get_emoji(localcat.lower() + "cat")
-    try:
-        if db[str(channeley.guild.id)]["appear"]:
-            appearstring = db[str(channeley.guild.id)]["appear"]
-        else:
-            appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
-    except Exception as e:
-        db[str(channeley.guild.id)]["appear"] = ""
-        appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
-    
-    message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file)
-    db["cat"][str(channeley.id)] = message_is_sus.id
-    save("cat")
-
 @bot.tree.command(description="(ADMIN) Force cats to appear")
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(cat_type="type")
@@ -2525,7 +2458,7 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
     except Exception:
         await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
         return
-    await soft_force(message.channel, cat_type)
+    await spawn_cat(str(message.channel.id), cat_type)
     await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this", ephemeral=True)
 
 @bot.tree.command(description="(ADMIN) Give achievements to people")
