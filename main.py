@@ -653,17 +653,16 @@ async def on_message(message):
             db[str(message.guild.id)][str(message.author.id)]["timeout"] = 0
             timestamp = 0
         try:
-            is_cat = db["cat"][str(message.channel.id)]
+            cat_temp = db["cat"][str(message.channel.id)]
         except Exception:
-            is_cat = False
-        if not is_cat or timestamp > time.time() or (message.author.bot and message.author.id not in WHITELISTED_BOTS):
+            cat_temp = False
+        if not cat_temp or timestamp > time.time() or (message.author.bot and message.author.id not in WHITELISTED_BOTS):
             # if there is no cat, you are /preventcatch-ed, or you aren't a whitelisted bot
             icon = get_emoji("pointlaugh")
             await message.add_reaction(icon)
-        elif is_cat:
+        elif cat_temp:
             current_time = message.created_at.timestamp()
             db["lastcatches"][str(message.channel.id)] = current_time
-            cat_temp = db["cat"][str(message.channel.id)]
             db["cat"][str(message.channel.id)] = False
             save("cat")
             save("lastcatches")
@@ -690,7 +689,7 @@ async def on_message(message):
             try:
                 # some math to make time look cool
                 then = catchtime.timestamp()
-                time_caught = abs(round(((current_time - then) * 100)) / 100) # cry about it
+                time_caught = abs(round((current_time - then), 2)) # alexander wept.
                 days = time_caught // 86400
                 time_left = time_caught - (days * 86400)
                 hours = time_left // 3600
@@ -705,7 +704,7 @@ async def on_message(message):
                 if minutes:
                     caught_time = caught_time + str(int(minutes)) + " minutes "
                 if seconds:
-                    acc_seconds = round(seconds * 100) / 100
+                    acc_seconds = round(seconds, 2)
                     caught_time = caught_time + str(acc_seconds) + " seconds "
                 do_time = True
                 if time_caught <= 0:
@@ -1291,7 +1290,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
     if catch_time >= "99999999999999":
         catch_time = "never"
     else:
-        catch_time = str(round(float(catch_time) * 100) / 100)
+        catch_time = str(round(float(catch_time), 2))
     
     slow_time = get_time(message.guild.id, person_id.id, "slow")
     
@@ -1299,7 +1298,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
         slow_time = "never"
     else:
         slow_time = slow_time / 3600
-        slow_time = str(round(slow_time * 100) / 100)
+        slow_time = str(round(slow_time, 2))
     try:
         if float(slow_time) <= 0:
             set_time(message.guild.id, person_id.id, 0, "slow")
@@ -2255,7 +2254,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                             pass
             if str(value) != default_value:
                 # round the value (for time dislays)
-                thingy = round((value / devider) * 100) / 100
+                thingy = round((value / devider), 2)
                 
                 # if it perfectly ends on .00, trim it
                 if thingy == int(thingy):
