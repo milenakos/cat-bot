@@ -1398,7 +1398,7 @@ async def gen_inventory(message, person_id):
     embedVar.description += f"\nTotal cats: {total}"
     
     if get_cat("0", person_id.id, "image"):
-        embedVar.set_thumbnail(get_cat("0", person_id.id, "image"))
+        embedVar.set_thumbnail(url=get_cat("0", person_id.id, "image"))
 
     if me:
         # give some aches if we are vieweing our own inventory
@@ -1417,7 +1417,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
     embedVar = await gen_inventory(message, person_id)
     
     if DONOR_CHANNEL_ID:
-        embedVar.set_footer(text="Customize your profile with /editprofile! Supporter only - /donate")
+        embedVar.set_footer(text="Make this pretty with /editprofile")
     
     await message.followup.send(embed=embedVar)
 
