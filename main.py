@@ -7,7 +7,6 @@ from random import randint, choice, shuffle, seed
 from PIL import Image
 from aiohttp import web
 from collections import UserDict
-import requests
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -2651,32 +2650,30 @@ async def recieve_vote(request):
     await claim_reward(user, channeley, type)
     return web.Response(text="ok", status=200)
 
-@bot.tree.command(name="fact", description="a fact")
-async def fact(message: discord.Interaction):
-    url = "https://catfact.ninja/fact"
+@bot.tree.command(name="cat_fact", description="get a random cat fact")
+async def cat_fact(message: discord.Interaction):
+    
     facts = [
-        "You Suck",
-        "You Love cats",
-        "No Bitches?", # 😂
-        "Cat Bot Is In 23,680 Servers",
-        "Chocolate Is Bad For Cats",
-        "Cat",
-        "Cats Land On Their Feet",
-        "Cats Bring You Mice/Birds As a Gift",
-        "You Spend All Of Your Time On Discord",
-        "Cats Are The Best",
-        "You Haven't Touched Grass In a Long Time"
+        "you love cats",
+        "cat bot is in 23,805+ servers",
+        "chocolate is bad for cats",
+        "cat",
+        "cats land on their feet",
+        "cats bring you mice/birds as a gift",
+        "cats are the best"
     ]
 
-    C = randint(0, 20)
-    CC = randint(0, 20)
-
     # give a fact from the list or the API
-
-    if C <= CC:
+    if randint(0, 1) == 0:
         await message.response.send_message(choice(facts))
     else:
-        data = requests.get(url).json()
-        await message.response.send_message(data['fact'])
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://catfact.ninja/fact") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    await message.response.send_message(data['fact'])
+                else:
+                    await message.response.send_message("failed to fetch a cat fact.")
 
+    
 bot.run(TOKEN)
