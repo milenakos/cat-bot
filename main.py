@@ -1417,7 +1417,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
     embedVar = await gen_inventory(message, person_id)
     
     if DONOR_CHANNEL_ID:
-        embedVar.set_author(name="Customize your profile with /editprofile! Supporter only - /donate")
+        embedVar.description += "Customize your profile with /editprofile! Supporter only - /donate"
     
     await message.followup.send(embed=embedVar)
 
@@ -1445,7 +1445,7 @@ async def editprofile(message: discord.Interaction, color: Optional[str], provid
     if image:
         set_cat("0", person_id.id, "image", image.url)
     embedVar = await gen_inventory(message, message.user)
-    await message.reponse.send_message("Success! Here is a preview:", embed=embedVar)
+    await message.response.send_message("Success! Here is a preview:", embed=embedVar)
 
 
 @bot.tree.command(description="I like fortnite")
