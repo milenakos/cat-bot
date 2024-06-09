@@ -2655,7 +2655,7 @@ async def cat_fact(message: discord.Interaction):
     
     facts = [
         "you love cats",
-        "cat bot is in 23,805+ servers",
+        f"cat bot is in {len(bot.guilds)} servers",
         "chocolate is bad for cats",
         "cat",
         "cats land on their feet",
