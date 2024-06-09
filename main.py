@@ -357,20 +357,6 @@ def alnum(string):
 async def ach_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     return [discord.app_commands.Choice(name=val, value=val) for (key, val) in ach_list.items() if (alnum(current) in alnum(key) or alnum(current) in alphanumeric(val))][:25]
 
-# if ch_id is None it runs the default loop for all servers
-# otherwise only for ch_id
-# this is used for custom cat spawn timings
-async def run_spawn(ch_id=None):
-    global bot, fire, save_queue, db, reactions_ratelimit
-    
-    if ch_id:
-        summon_id = [int(ch_id)]
-    else:
-        reactions_ratelimit = {}
-        summon_id = db["summon_ids"]
-        print("Main cat loop is running")
-    
-    for i in summon_id:
 async def spawn_cat(ch_id, localcat=None):
     try:
         if db["cat"][ch_id]:
