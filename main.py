@@ -1883,6 +1883,31 @@ async def random(message: discord.Interaction):
         except Exception:
             await message.followup.send("no cats :(")
 
+@bot.tree.command(name="fact", description="get a random cat fact")
+async def cat_fact(message: discord.Interaction):
+    facts = [
+        "you love cats",
+        f"cat bot is in {len(bot.guilds):,} servers",
+        "chocolate is bad for cats",
+        "cat",
+        "cats land on their feet",
+        "cats bring you mice/birds as a gift",
+        "cats are the best"
+    ]
+
+    # give a fact from the list or the API
+    if randint(0, 1) == 0:
+        await message.response.send_message(choice(facts))
+    else:
+        await message.response.defer()
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://catfact.ninja/fact", timeout=10) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    await message.followup.send(data["fact"])
+                else:
+                    await message.followup.send("failed to fetch a cat fact.")
+
 async def light_market(message):
     cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
                       [7, "Superior"], [5, "Legendary"], [3, "8bit"], [4, "Professor"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"]]
@@ -2649,31 +2674,6 @@ async def recieve_vote(request):
     
     await claim_reward(user, channeley, type)
     return web.Response(text="ok", status=200)
-
-@bot.tree.command(name="cat_fact", description="get a random cat fact")
-async def cat_fact(message: discord.Interaction):
-    
-    facts = [
-        "you love cats",
-        f"cat bot is in {len(bot.guilds)} servers",
-        "chocolate is bad for cats",
-        "cat",
-        "cats land on their feet",
-        "cats bring you mice/birds as a gift",
-        "cats are the best"
-    ]
-
-    # give a fact from the list or the API
-    if randint(0, 1) == 0:
-        await message.response.send_message(choice(facts))
-    else:
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://catfact.ninja/fact") as response:
-                if response.status == 200:
-                    data = await response.json()
-                    await message.response.send_message(data['fact'])
-                else:
-                    await message.response.send_message("failed to fetch a cat fact.")
 
     
 bot.run(TOKEN)
