@@ -1395,7 +1395,7 @@ async def gen_inventory(message, person_id):
     if do_save:
         save(message.guild.id)
 
-    embedVar.set_footer(text=f"Total cats: {total}")
+    embedVar.description += f"\nTotal cats: {total}"
     
     if get_cat("0", person_id.id, "image"):
         embedVar.set_thumbnail(get_cat("0", person_id.id, "image"))
@@ -1417,7 +1417,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
     embedVar = await gen_inventory(message, person_id)
     
     if DONOR_CHANNEL_ID:
-        embedVar.description += "Customize your profile with /editprofile! Supporter only - /donate"
+        embedVar.set_footer(text="Customize your profile with /editprofile! Supporter only - /donate")
     
     await message.followup.send(embed=embedVar)
 
@@ -1437,13 +1437,13 @@ async def editprofile(message: discord.Interaction, color: Optional[str], provid
         return
     
     if provided_emoji and discord_emoji.to_discord(provided_emoji.strip()):
-        set_cat("0", person_id.id, "emoji", provided_emoji.strip())
+        set_cat("0", message.user.id, "emoji", provided_emoji.strip())
         
     if color:
         match = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', color)
-        if match: set_cat("0", person_id.id, "color", match.group(0))
+        if match: set_cat("0", message.user.id, "color", match.group(0))
     if image:
-        set_cat("0", person_id.id, "image", image.url)
+        set_cat("0", message.user.id, "image", image.url)
     embedVar = await gen_inventory(message, message.user)
     await message.response.send_message("Success! Here is a preview:", embed=embedVar)
 
