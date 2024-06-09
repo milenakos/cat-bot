@@ -179,6 +179,9 @@ on_ready_debounce = False
 emojis = {}
 do_save_emojis = False
 
+# for mentioning it in catch message, will be auto-fetched in on_ready()
+DONATE_ID = 1249368737824374896
+
 # this is a helper which saves id to its .json file
 def save(id):
     id = str(id)
@@ -453,12 +456,15 @@ async def maintaince_loop():
 # some code which is run when bot is started
 @bot.event
 async def on_ready():
-    global milenakoos, OWNER_ID, do_save_emojis, save_queue, on_ready_debounce, gen_credits
+    global milenakoos, OWNER_ID, do_save_emojis, save_queue, on_ready_debounce, gen_credits, DONATE_ID
     if on_ready_debounce:
         return
     on_ready_debounce = True
     print("cat is now online")
-    await bot.tree.sync()
+    app_commands = await bot.tree.sync()
+    for i in app_commands:
+        if i.name == "donate":
+            DONATE_ID = i.id
     do_save_emojis = True
     await bot.change_presence(
         activity=discord.CustomActivity(name=f"Just restarted! Catting in {len(bot.guilds):,} servers.")
@@ -767,6 +773,11 @@ async def on_message(message):
                     # cataine ran out
                     add_cat(message.guild.id, message.author.id, "cataine_active", 0, True)
                     suffix_string = f"\nyour cataine buff has expired. you know where to get a new one 😏"
+
+                elif randint(0, 7) == 0:
+                    # shill donating
+                    add_cat(message.guild.id, message.author.id, "cataine_active", 0, True)
+                    suffix_string += f"\n👑 donate to cat bot and get cool perks: </donate:{DONATE_ID}>"
                 
                 if db[str(message.guild.id)]["cought"]:
                     coughstring = db[str(message.guild.id)]["cought"]
