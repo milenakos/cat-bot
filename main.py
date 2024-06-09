@@ -1,4 +1,4 @@
-import discord, msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile, server
+import discord, msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile, server, discord_emoji
 from discord.ext import tasks, commands
 from discord import ButtonStyle
 from discord.ui import Button, View
@@ -22,15 +22,20 @@ TOKEN = os.environ['token']
 # TOKEN = "token goes here"
 
 # top.gg voting key
-# you can set it to false ig
+# set to False to disable
 WEBHOOK_VERIFY = os.environ["webhook_verify"]
 
 # top.gg api token because they use ancient technology and you need to post server count manually smh
+# set to False to disable
 TOP_GG_TOKEN = os.environ["top_gg_token"]
 
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 # set to False to disable
 GITHUB_CHANNEL_ID = 1060965767044149249
+
+# all messages in this channel will be interpreted as user ids to give premium access to
+# set to False to disable
+DONOR_CHANNEL_ID = 1249343008890028144
 
 # whether you use pm2 for running it or not
 # that will just silently kill it on autoupdate and let pm2 restart it instead of manually restarting it
@@ -545,6 +550,10 @@ async def on_message(message):
             sys.exit()
         else:
             os.execv(sys.executable, ['python'] + sys.argv)
+
+    if DONOR_CHANNEL_ID and message.channel.id == DONOR_CHANNEL_ID:
+        register_member("0", text)
+        set_cat("0", text, "premium", 1)
 
     # :staring_cat: reaction on "bullshit"
     if not (" " in text) and len(text) > 7 and text.isalnum():
@@ -1257,22 +1266,24 @@ async def last(message: discord.Interaction):
         displayedtime = "forever ago"
     await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.")
 
-@bot.tree.command(description="View your inventory")
-@discord.app_commands.rename(person_id='user')
-@discord.app_commands.describe(person_id="Person to view the inventory of!")
-async def inventory(message: discord.Interaction, person_id: Optional[discord.User]):
-    # UGGHHH GOOD LUCK
 
+async def gen_inventory(message):
     # check if we are viewing our own inv or some other person
     if person_id is None:
         me = True
         person_id = message.user
     else:
         me = False
-    await message.response.defer()
 
     register_member(message.guild.id, person_id.id)
     has_ach(message.guild.id, person_id.id, "test_ach") # why is this here? im not sure and im too scared to remove this
+
+    if not get_cat("0", person_id.id, "emoji"):
+        set_cat("0", person_id.id, "emoji", "")
+    if not get_cat("0", person_id.id, "color"):
+        set_cat("0", person_id.id, "color", "#6E593C")
+    if not get_cat("0", person_id.id, "image"):
+        set_cat("0", person_id.id, "image", None)
 
     # around here we count aches
     db_var = db[str(message.guild.id)][str(person_id.id)]["ach"]
@@ -1323,8 +1334,15 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
     else:
         your = person_id.name + "'s"
 
+    if get_cat("0", person_id.id, "emoji"):
+        emoji_prefix = get_cat("0", person_id.id, "emoji") + " "
+    else:
+        emoji_prefix = ""
+
     embedVar = discord.Embed(
-            title=your + " cats:", description=f"{your} fastest catch is: {catch_time} s\nand {your} slowest catch is: {slow_time} h\nAchievements unlocked: {unlocked}/{total_achs}{minus_achs}", color=0x6E593C
+        title=f"{emoji_prefix}{your} cats:",
+        description=f"{your} fastest catch is: {catch_time} s\nand {your} slowest catch is: {slow_time} h\nAchievements unlocked: {unlocked}/{total_achs}{minus_achs}",
+        color=discord.Colour.from_str(get_cat("0", person_id.id, "color"))
     )
     
     give_collector = True
@@ -1376,15 +1394,59 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
     
     if do_save:
         save(message.guild.id)
-    
+
     embedVar.set_footer(text=f"Total cats: {total}")
-    await message.followup.send(embed=embedVar)
     
+    if get_cat("0", person_id.id, "image"):
+        embedVar.set_thumbnail(get_cat("0", person_id.id, "image"))
+
     if me:
         # give some aches if we are vieweing our own inventory
         if give_collector: await achemb(message, "collecter", "send")
         if get_time(message.guild.id, message.user.id) <= 5: await achemb(message, "fast_catcher", "send")
         if get_time(message.guild.id, message.user.id, "slow") >= 3600: await achemb(message, "slow_catcher", "send")
+
+    return embedVar
+    
+@bot.tree.command(description="View your inventory")
+@discord.app_commands.rename(person_id='user')
+@discord.app_commands.describe(person_id="Person to view the inventory of!")
+async def inventory(message: discord.Interaction, person_id: Optional[discord.User]):
+    await message.response.defer()
+    
+    embedVar = await gen_inventory(message)
+    
+    if DONOR_CHANNEL_ID:
+        embedVar.set_author(name="Customize your profile with /editprofile! Supporter only - /donate")
+    
+    await message.followup.send(embed=embedVar)
+
+
+@bot.tree.command(description="Support Cat Bot!")
+async def donate(message: discord.Interaction):
+    await message.response.send_message("👑 For as little as $3 you can support Cat Bot and unlock profile customization!\n<https://catbot.minkos.lol/donate>")
+
+@bot.tree.command(description="[SUPPORTER] Customize your profile!")
+@discord.app_commands.rename(provided_emoji='emoji')
+@discord.app_commands.describe(color="Color for your profile in hex form (e.g. #6E593C)",
+                               provided_emoji="A default Discord emoji to show near your username.",
+                               image="A square image to show in top-right corner of your profile.")
+async def editprofile(message: discord.Interaction, color: Optional[str], provided_emoji: Optional[str], image: Optional[discord.Attachment]):
+    if not get_cat("0", message.user.id, "premium"):
+        await message.response.send_message("👑 This feature is supporter-only!\nFor as little as $3 you can support Cat Bot and unlock profile customization!\n<https://catbot.minkos.lol/donate>")
+        return
+    
+    if provided_emoji and discord_emoji.to_discord(provided_emoji.strip()):
+        set_cat("0", person_id.id, "emoji", provided_emoji.strip())
+        
+    if color:
+        match = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', color)
+        if match: set_cat("0", person_id.id, "color", match.group(0))
+    if image:
+        set_cat("0", person_id.id, "image", image.url)
+    embedVar = await gen_inventory(message)
+    await message.reponse.send_message("Success! Here is a preview:", embed=embedVar)
+
 
 @bot.tree.command(description="I like fortnite")
 async def battlepass(message: discord.Interaction):
