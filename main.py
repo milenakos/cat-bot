@@ -1267,7 +1267,7 @@ async def last(message: discord.Interaction):
     await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.")
 
 
-async def gen_inventory(message):
+async def gen_inventory(message, person_id):
     # check if we are viewing our own inv or some other person
     if person_id is None:
         me = True
@@ -1414,7 +1414,7 @@ async def gen_inventory(message):
 async def inventory(message: discord.Interaction, person_id: Optional[discord.User]):
     await message.response.defer()
     
-    embedVar = await gen_inventory(message)
+    embedVar = await gen_inventory(message, person_id)
     
     if DONOR_CHANNEL_ID:
         embedVar.set_author(name="Customize your profile with /editprofile! Supporter only - /donate")
@@ -1444,7 +1444,7 @@ async def editprofile(message: discord.Interaction, color: Optional[str], provid
         if match: set_cat("0", person_id.id, "color", match.group(0))
     if image:
         set_cat("0", person_id.id, "image", image.url)
-    embedVar = await gen_inventory(message)
+    embedVar = await gen_inventory(message, message.user)
     await message.reponse.send_message("Success! Here is a preview:", embed=embedVar)
 
 
