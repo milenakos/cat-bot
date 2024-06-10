@@ -3,3 +3,4 @@ discord
 Pillow==9.5.0
 Pilmoji
 requests
+discord-emoji
