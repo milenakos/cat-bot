@@ -1435,7 +1435,8 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
 
 @bot.tree.command(description="Support Cat Bot!")
 async def donate(message: discord.Interaction):
-    await message.response.send_message("👑 For as little as $3 you can support Cat Bot and unlock profile customization!\n<https://catbot.minkos.lol/donate>")
+    thing = discord.File("supporter.png", filename="supporter.png")
+    await message.response.send_message("👑 For as little as $3 you can support Cat Bot and unlock profile customization!\n<https://catbot.minkos.lol/donate>", file=thing)
 
 @bot.tree.command(description="[SUPPORTER] Customize your profile!")
 @discord.app_commands.rename(provided_emoji='emoji')
