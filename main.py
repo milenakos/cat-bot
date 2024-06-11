@@ -223,7 +223,7 @@ def remove_cat(server_id, person_id, cattype, val=1):
         result = db[str(server_id)][str(person_id)][cattype]
     except Exception:
         db[str(server_id)][str(person_id)][cattype] = 0
-        result = False
+        result = 0
     save(server_id)
     return result
 
@@ -640,8 +640,7 @@ async def on_message(message):
     if text.lower() in ["ach", "cat!ach"]: await achemb(message, "test_ach", "reply")
     
     if text.lower() == "please do not the cat":
-        await message.reply(f"ok then\n{message.author.name} lost 1 fine cat!!!1!")
-        remove_cat(message.guild.id, message.author.id, "Fine")
+        await message.reply(f"ok then\n{message.author.name} lost 1 fine cat!!!1!\nYou now have {str(remove_cat(message.guild.id, message.author.id, "Fine"))} cats of dat type!")
         await achemb(message, "pleasedonotthecat", "reply")
     
     if text.lower() == "please do the cat":
