@@ -361,6 +361,7 @@ async def cat_type_autocomplete(interaction: discord.Interaction, current: str) 
 # converts string to lowercase alphanumeric characters only
 def alnum(string):
     return "".join(item for item in string.lower() if item.isalnum())
+
 # function to autocomplete achievement choice for /giveachievement, which also allows more than 25 options
 async def ach_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     return [discord.app_commands.Choice(name=val, value=val) for (key, val) in ach_list.items() if (alnum(current) in alnum(key) or alnum(current) in alphanumeric(val))][:25]
