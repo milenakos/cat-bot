@@ -648,7 +648,7 @@ async def on_message(message):
     if text.lower() in ["ach", "cat!ach"]: await achemb(message, "test_ach", "reply")
     
     if text.lower() == "please do not the cat":
-        await message.reply(f"ok then\n{message.author.name} lost 1 fine cat!!!1!\nYou now have {str(remove_cat(message.guild.id, message.author.id, "Fine"))} cats of dat type!")
+        await message.reply(f"ok then\n{message.author.name} lost 1 fine cat!!!1!\nYou now have {str(remove_cat(message.guild.id, message.author.id, "Fine"))} cats of dat type!!!")
         await achemb(message, "pleasedonotthecat", "reply")
     
     if text.lower() == "please do the cat":
