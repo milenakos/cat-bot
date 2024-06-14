@@ -1815,6 +1815,15 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             await interaction.response.defer()
             await update_trade_embed(interaction)
 
+@bot.tree.command(description="See the rarity and trade value of each cat type")
+async def cat(message: discord.Interaction):
+    embed = discord.Embed(name="Cat Type Rarities", description="Format: **type** / rarity / trade value")
+    sum = sum(type_dict.values())
+    for k, v in type_dict.items():
+        embed.add_field(name=f"**{k} cat / {v / sum * 100}% / {int(sum / v)}")
+    await message.response.send_message(embed=embed)
+    
+
 @bot.tree.command(description="Get Cat Image, does not add a cat to your inventory")
 async def cat(message: discord.Interaction):
     file = discord.File("cat.png", filename="cat.png")
