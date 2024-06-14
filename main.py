@@ -2741,14 +2741,14 @@ async def on_command_error(ctx, error):
         # discord just pretends if interaction took more than 3 seconds it never happened and its annoying af
         print("logged a NotFound error.")
         await ctx.channel.send("took too long, try running the command again")
-    elif isinstance(error, discord.HTTPException) or
-             isinstance(error, discord.DiscordServerError) or
-             isinstance(error, discord.ConnectionClosed) or
-             isinstance(error, asyncio.TimeoutError) or
-             isinstance(error, aiohttp.client_exceptions.ServerDisconnectedError) or
-             isinstance(error, commands.CommandInvokeError) or
-             isinstance(error, aiohttp.client_exceptions.ClientOSError) or 
-             "NoneType" in str(error):
+    elif isinstance(error, discord.HTTPException)
+             or isinstance(error, discord.DiscordServerError)
+             or isinstance(error, discord.ConnectionClosed)
+             or isinstance(error, asyncio.TimeoutError)
+             or isinstance(error, aiohttp.client_exceptions.ServerDisconnectedError)
+             or isinstance(error, commands.CommandInvokeError)
+             or isinstance(error, aiohttp.client_exceptions.ClientOSError)
+             or "NoneType" in str(error):
          # various other issues we dont care about
          pass
     else:
