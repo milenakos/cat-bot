@@ -1821,7 +1821,7 @@ async def rarities(message: discord.Interaction):
     s = sum(type_dict.values())
     for k, v in type_dict.items():
         icon = get_emoji(k.lower() + "cat")
-        embed.add_field(name=f"{icon} {k}", inline=True, value=f"Rarity: {round(v / s * 100, 2)}%\nValue: {int(s / v)}")
+        embed.add_field(name=f"{icon} {k}", inline=True, value=f"Rarity: {round(v / s * 100, 2)}%\nValue: {round(s / v)}")
     await message.response.send_message(embed=embed)
     
 
