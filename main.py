@@ -2637,70 +2637,6 @@ async def nuke(message: discord.Interaction):
     view = await gen(counter)
     await message.response.send_message(warning_text, view=view)
 
-# this is the crash handler
-@bot.on_error
-@bot.tree.error
-async def on_command_error(ctx, error):
-    def in_error(x):
-        return bool(x in str(type(error)) or x in str(error))
-
-    if ctx.guild == None:
-        await ctx.channel.send("hello good sir i would politely let you know cat bot is no workey in dms please consider gettng the hell out of here")
-        return
-
-    # ctx here is interaction
-    normal_crash = False
-    if in_error("KeyboardInterrupt"): # keyboard interrupt
-        sys.exit()
-    elif in_error("Forbidden"):
-        # forbidden error usually means we dont have permission to send messages in the channel
-        print("logged a Forbidden error.")
-        # except-ception lessgo
-        forbidden_error = "i don't have permissions to do that.\ntry reinviting the bot or give it roles needed to access this chat (for example, verified role). more ideally, give it admin/mod."
-        try:
-            await ctx.channel.send(forbidden_error) # try as normal message (most likely will fail)
-        except Exception:
-            try:
-                await ctx.response.send_message(forbidden_error) # try to respond to /command literally
-            except Exception:
-                try:
-                    await ctx.followup.send(forbidden_error) # or as a followup if it already got responded to
-                except Exception:
-                    try:
-                        await ctx.user.send(forbidden_error) # dm the runner
-                    except Exception:
-                        try:
-                            await ctx.guild.owner.send(forbidden_error) # dm the guild owner
-                        except Exception:
-                            pass # give up
-    elif in_error("NotFound"):
-        # discord just pretends if interaction took more than 3 seconds it never happened and its annoying af
-        print("logged a NotFound error.")
-        await ctx.channel.send("took too long, try running the command again")
-    else:
-        print("not a common error, crash reporting.")
-        normal_crash = True
-        await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
-
-        if CRASH_MODE == "DM":
-            # try to get some context maybe if we get lucky
-            try:
-                cont = ctx.guild.id
-            except Exception:
-                cont = "Error getting"
-        
-            error2 = error.original.__traceback__
-        
-            # if actually interesting crash, dm to bot owner
-            await milenakoos.send(
-                    "There is an error happend:\n"
-                    + str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error)
-                    + "\n\nMessage guild: "
-                    + str(cont)
-            )
-        elif CRASH_MODE == "RAISE":
-            raise
-
 async def claim_reward(user, channeley, type):
     # who at python hq though this was reasonable syntax
     vote_choices = [
@@ -2767,5 +2703,75 @@ async def recieve_vote(request):
     await claim_reward(user, channeley, type)
     return web.Response(text="ok", status=200)
 
+
+# this is the crash handler
+@bot.on_error
+@bot.tree.error
+async def on_command_error(ctx, error):
+    if ctx.guild == None:
+        await ctx.channel.send("hello good sir i would politely let you know cat bot is no workey in dms please consider gettng the hell out of here")
+        return
+
+    # ctx here is interaction
+    if isinstance(error, KeyboardInterrupt):
+        # keyboard interrupt
+        sys.exit()
+    elif isinstance(error, discord.Forbidden):
+        # forbidden error usually means we dont have permission to send messages in the channel
+        print("logged a Forbidden error.")
+        # except-ception lessgo
+        forbidden_error = "i don't have permissions to do that.\ntry reinviting the bot or give it roles needed to access this chat (for example, verified role). more ideally, give it admin/mod."
+        try:
+            await ctx.channel.send(forbidden_error) # try as normal message (most likely will fail)
+        except Exception:
+            try:
+                await ctx.response.send_message(forbidden_error) # try to respond to /command literally
+            except Exception:
+                try:
+                    await ctx.followup.send(forbidden_error) # or as a followup if it already got responded to
+                except Exception:
+                    try:
+                        await ctx.user.send(forbidden_error) # dm the runner
+                    except Exception:
+                        try:
+                            await ctx.guild.owner.send(forbidden_error) # dm the guild owner
+                        except Exception:
+                            pass # give up
+    elif isinstance(error, discord.NotFound):
+        # discord just pretends if interaction took more than 3 seconds it never happened and its annoying af
+        print("logged a NotFound error.")
+        await ctx.channel.send("took too long, try running the command again")
+    elif isinstance(error, discord.HTTPException) or
+             isinstance(error, discord.DiscordServerError) or
+             isinstance(error, discord.ConnectionClosed) or
+             isinstance(error, asyncio.TimeoutError) or
+             isinstance(error, aiohttp.client_exceptions.ServerDisconnectedError) or
+             isinstance(error, commands.CommandInvokeError) or
+             isinstance(error, aiohttp.client_exceptions.ClientOSError) or 
+             "NoneType" in str(error):
+         # various other issues we dont care about
+         pass
+    else:
+        print("not a common error, crash reporting.")
+        await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
+
+        if CRASH_MODE == "DM":
+            # try to get some context maybe if we get lucky
+            try:
+                cont = ctx.guild.id
+            except Exception:
+                cont = "Error getting"
+        
+            error2 = error.original.__traceback__
+        
+            # if actually interesting crash, dm to bot owner
+            await milenakoos.send(
+                    "There is an error happend:\n"
+                    + str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error)
+                    + "\n\nMessage guild: "
+                    + str(cont)
+            )
+        elif CRASH_MODE == "RAISE":
+            raise
     
 bot.run(TOKEN)
