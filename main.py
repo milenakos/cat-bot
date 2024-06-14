@@ -1816,11 +1816,12 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             await update_trade_embed(interaction)
 
 @bot.tree.command(description="See the rarity and trade value of each cat type")
-async def cat(message: discord.Interaction):
-    embed = discord.Embed(name="Cat Type Rarities", description="Format: **type** / rarity / trade value")
-    sum = sum(type_dict.values())
+async def rarities(message: discord.Interaction):
+    embed = discord.Embed(title="Cat Type Rarities")
+    s = sum(type_dict.values())
     for k, v in type_dict.items():
-        embed.add_field(name=f"**{k} cat / {v / sum * 100}% / {int(sum / v)}")
+        icon = get_emoji(k.lower() + "cat")
+        embed.add_field(name=f"{icon} {k}", inline=True, value=f"Rarity: {round(v / s * 100, 2)}%\nValue: {int(s / v)}")
     await message.response.send_message(embed=embed)
     
 
