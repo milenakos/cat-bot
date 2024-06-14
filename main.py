@@ -1823,7 +1823,6 @@ async def rarities(message: discord.Interaction):
         icon = get_emoji(k.lower() + "cat")
         embed.add_field(name=f"{icon} {k}", inline=True, value=f"Rarity: {round(v / s * 100, 2)}%\nValue: {round(s / v)}")
     await message.response.send_message(embed=embed)
-    
 
 @bot.tree.command(description="Get Cat Image, does not add a cat to your inventory")
 async def cat(message: discord.Interaction):
