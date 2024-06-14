@@ -364,7 +364,7 @@ def alnum(string):
 
 # function to autocomplete achievement choice for /giveachievement, which also allows more than 25 options
 async def ach_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
-    return [discord.app_commands.Choice(name=val, value=val) for (key, val) in ach_list.items() if (alnum(current) in alnum(key) or alnum(current) in alphanumeric(val))][:25]
+    return [discord.app_commands.Choice(name=val, value=val) for (key, val) in ach_list.items() if (alnum(current) in alnum(key) or alnum(current) in alnum(val))][:25]
 
 # split embeds to avoid the 25 embed limit
 async def split_embed():
