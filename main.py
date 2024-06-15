@@ -1817,7 +1817,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
 @bot.tree.command(description="See the rarity and trade value of each cat type")
 async def rarities(message: discord.Interaction):
-    embed = discord.Embed(title="Cat Type Rarities")
+    embed = discord.Embed(title="Cat Type Rarities", color=0x6E593C)
     s = sum(type_dict.values())
     for k, v in type_dict.items():
         icon = get_emoji(k.lower() + "cat")
