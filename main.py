@@ -182,6 +182,9 @@ do_save_emojis = False
 # for mentioning it in catch message, will be auto-fetched in on_ready()
 DONATE_ID = 1249368737824374896
 
+# loops in dpy can randomly break, i check if is been over 20 minutes since last loop to restart it
+last_loop_time = time.time()
+
 # this is a helper which saves id to its .json file
 def save(id):
     id = str(id)
@@ -399,7 +402,7 @@ async def spawn_cat(ch_id, localcat=None):
 # a loop for various maintaince which is ran every 5 minutes
 @tasks.loop(minutes=5.0)
 async def maintaince_loop():
-    global save_queue, reactions_ratelimit
+    global save_queue, reactions_ratelimit, last_loop_time
     reactions_ratelimit = {}
     today = datetime.date.today()
     future = datetime.date(2024, 7, 8)
@@ -459,12 +462,14 @@ async def maintaince_loop():
         if ch_timer and time.time() > ch_timer and (ch_id not in db["cat"].keys() or not db["cat"][ch_id]):
             await spawn_cat(ch_id)
             await asyncio.sleep(0.1)
+    
+    last_loop_time = time.time()
 
 
 # some code which is run when bot is started
 @bot.event
 async def on_ready():
-    global milenakoos, OWNER_ID, do_save_emojis, save_queue, on_ready_debounce, gen_credits, DONATE_ID
+    global milenakoos, OWNER_ID, do_save_emojis, save_queue, on_ready_debounce, gen_credits, DONATE_ID, last_loop_time
     if on_ready_debounce:
         return
     on_ready_debounce = True
@@ -527,6 +532,9 @@ async def on_message(message):
     text = message.content
     if message.author.id == bot.user.id:
         return
+
+    if time.time() + 1200 > last_loop_time:
+        maintaince_loop.start()  # revive the loop
     
     achs = [["cat?", "startswith", "???"],
         ["catn", "exact", "catn"], 
