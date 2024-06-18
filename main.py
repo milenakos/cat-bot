@@ -533,7 +533,7 @@ async def on_message(message):
     if message.author.id == bot.user.id:
         return
 
-    if time.time() + 1200 > last_loop_time:
+    if time.time() > last_loop_time + 1200:
         maintaince_loop.start()  # revive the loop
     
     achs = [["cat?", "startswith", "???"],
