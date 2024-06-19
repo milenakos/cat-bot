@@ -2,5 +2,6 @@ aiohttp[speedups]
 discord
 Pillow==9.5.0
 Pilmoji
+emoji==1.7
 requests
 discord-emoji

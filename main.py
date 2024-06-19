@@ -182,6 +182,9 @@ do_save_emojis = False
 # for mentioning it in catch message, will be auto-fetched in on_ready()
 DONATE_ID = 1249368737824374896
 
+# loops in dpy can randomly break, i check if is been over 20 minutes since last loop to restart it
+last_loop_time = time.time()
+
 # this is a helper which saves id to its .json file
 def save(id):
     id = str(id)
@@ -399,7 +402,7 @@ async def spawn_cat(ch_id, localcat=None):
 # a loop for various maintaince which is ran every 5 minutes
 @tasks.loop(minutes=5.0)
 async def maintaince_loop():
-    global save_queue, reactions_ratelimit
+    global save_queue, reactions_ratelimit, last_loop_time
     reactions_ratelimit = {}
     today = datetime.date.today()
     future = datetime.date(2024, 7, 8)
@@ -425,9 +428,11 @@ async def maintaince_loop():
     vote_remind = db["vote_remind"]
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
+    # 100 users at a time to prevent loop overlaps
+    reminders_counter = 0
     for i in vote_remind:
         if get_cat(0, i, "vote_time_topgg") + 43200 < time.time() and not get_cat(0, i, "reminder_topgg_exists"):
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(1)
             try:
                 person = bot.get_user(i)
                 
@@ -437,6 +442,9 @@ async def maintaince_loop():
                 
                 await person.send("You can vote on Top.gg now!", view=view)
                 set_cat(0, i, "reminder_topgg_exists", int(time.time()))
+                reminders_counter += 1
+                if reminders_counter == 100:
+                    break
             except Exception:
                 vote_remind.remove(i)
 
@@ -459,12 +467,14 @@ async def maintaince_loop():
         if ch_timer and time.time() > ch_timer and (ch_id not in db["cat"].keys() or not db["cat"][ch_id]):
             await spawn_cat(ch_id)
             await asyncio.sleep(0.1)
+    
+    last_loop_time = time.time()
 
 
 # some code which is run when bot is started
 @bot.event
 async def on_ready():
-    global milenakoos, OWNER_ID, do_save_emojis, save_queue, on_ready_debounce, gen_credits, DONATE_ID
+    global milenakoos, OWNER_ID, do_save_emojis, save_queue, on_ready_debounce, gen_credits, DONATE_ID, last_loop_time
     if on_ready_debounce:
         return
     on_ready_debounce = True
@@ -527,6 +537,9 @@ async def on_message(message):
     text = message.content
     if message.author.id == bot.user.id:
         return
+
+    if time.time() > last_loop_time + 1200:
+        maintaince_loop.start()  # revive the loop
     
     achs = [["cat?", "startswith", "???"],
         ["catn", "exact", "catn"], 
@@ -2646,70 +2659,6 @@ async def nuke(message: discord.Interaction):
     view = await gen(counter)
     await message.response.send_message(warning_text, view=view)
 
-# this is the crash handler
-@bot.on_error
-@bot.tree.error
-async def on_command_error(ctx, error):
-    def in_error(x):
-        return bool(x in str(type(error)) or x in str(error))
-
-    if ctx.guild == None:
-        await ctx.channel.send("hello good sir i would politely let you know cat bot is no workey in dms please consider gettng the hell out of here")
-        return
-
-    # ctx here is interaction
-    normal_crash = False
-    if in_error("KeyboardInterrupt"): # keyboard interrupt
-        sys.exit()
-    elif in_error("Forbidden"):
-        # forbidden error usually means we dont have permission to send messages in the channel
-        print("logged a Forbidden error.")
-        # except-ception lessgo
-        forbidden_error = "i don't have permissions to do that.\ntry reinviting the bot or give it roles needed to access this chat (for example, verified role). more ideally, give it admin/mod."
-        try:
-            await ctx.channel.send(forbidden_error) # try as normal message (most likely will fail)
-        except Exception:
-            try:
-                await ctx.response.send_message(forbidden_error) # try to respond to /command literally
-            except Exception:
-                try:
-                    await ctx.followup.send(forbidden_error) # or as a followup if it already got responded to
-                except Exception:
-                    try:
-                        await ctx.user.send(forbidden_error) # dm the runner
-                    except Exception:
-                        try:
-                            await ctx.guild.owner.send(forbidden_error) # dm the guild owner
-                        except Exception:
-                            pass # give up
-    elif in_error("NotFound"):
-        # discord just pretends if interaction took more than 3 seconds it never happened and its annoying af
-        print("logged a NotFound error.")
-        await ctx.channel.send("took too long, try running the command again")
-    else:
-        print("not a common error, crash reporting.")
-        normal_crash = True
-        await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
-
-        if CRASH_MODE == "DM":
-            # try to get some context maybe if we get lucky
-            try:
-                cont = ctx.guild.id
-            except Exception:
-                cont = "Error getting"
-        
-            error2 = error.original.__traceback__
-        
-            # if actually interesting crash, dm to bot owner
-            await milenakoos.send(
-                    "There is an error happend:\n"
-                    + str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error)
-                    + "\n\nMessage guild: "
-                    + str(cont)
-            )
-        elif CRASH_MODE == "RAISE":
-            raise
-
 async def claim_reward(user, channeley, type):
     # who at python hq though this was reasonable syntax
     vote_choices = [
@@ -2776,5 +2725,71 @@ async def recieve_vote(request):
     await claim_reward(user, channeley, type)
     return web.Response(text="ok", status=200)
 
+
+# this is the crash handler
+@bot.on_error
+@bot.tree.error
+async def on_command_error(ctx, error):
+    if ctx.guild == None:
+        await ctx.channel.send("hello good sir i would politely let you know cat bot is no workey in dms please consider gettng the hell out of here")
+        return
+
+    # ctx here is interaction
+    if isinstance(error, KeyboardInterrupt):
+        # keyboard interrupt
+        sys.exit()
+    elif isinstance(error, discord.Forbidden):
+        # forbidden error usually means we dont have permission to send messages in the channel
+        print("logged a Forbidden error.")
+        # except-ception lessgo
+        forbidden_error = "i don't have permissions to do that.\ntry reinviting the bot or give it roles needed to access this chat (for example, verified role). more ideally, give it admin/mod."
+        try:
+            await ctx.channel.send(forbidden_error) # try as normal message (most likely will fail)
+        except Exception:
+            try:
+                await ctx.response.send_message(forbidden_error) # try to respond to /command literally
+            except Exception:
+                try:
+                    await ctx.followup.send(forbidden_error) # or as a followup if it already got responded to
+                except Exception:
+                    try:
+                        await ctx.user.send(forbidden_error) # dm the runner
+                    except Exception:
+                        try:
+                            await ctx.guild.owner.send(forbidden_error) # dm the guild owner
+                        except Exception:
+                            pass # give up
+    elif isinstance(error, discord.NotFound):
+        # discord just pretends if interaction took more than 3 seconds it never happened and its annoying af
+        print("logged a NotFound error.")
+        await ctx.channel.send("took too long, try running the command again")
+    elif isinstance(error, discord.HTTPException) or isinstance(error, discord.DiscordServerError) or isinstance(error, discord.ConnectionClosed) or \
+         isinstance(error, asyncio.TimeoutError) or isinstance(error, aiohttp.client_exceptions.ServerDisconnectedError) or \
+         isinstance(error, commands.CommandInvokeError) or isinstance(error, aiohttp.client_exceptions.ClientOSError) or "NoneType" in str(error):
+         
+        # various other issues we dont care about
+        pass
+    else:
+        print("not a common error, crash reporting.")
+        await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
+
+        if CRASH_MODE == "DM":
+            # try to get some context maybe if we get lucky
+            try:
+                cont = ctx.guild.id
+            except Exception:
+                cont = "Error getting"
+        
+            error2 = error.original.__traceback__
+        
+            # if actually interesting crash, dm to bot owner
+            await milenakoos.send(
+                    "There is an error happend:\n"
+                    + str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error)
+                    + "\n\nMessage guild: "
+                    + str(cont)
+            )
+        elif CRASH_MODE == "RAISE":
+            raise
     
 bot.run(TOKEN)
