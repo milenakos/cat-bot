@@ -428,9 +428,11 @@ async def maintaince_loop():
     vote_remind = db["vote_remind"]
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
+    # 100 users at a time to prevent loop overlaps
+    reminders_counter = 0
     for i in vote_remind:
         if get_cat(0, i, "vote_time_topgg") + 43200 < time.time() and not get_cat(0, i, "reminder_topgg_exists"):
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(1)
             try:
                 person = bot.get_user(i)
                 
@@ -440,6 +442,9 @@ async def maintaince_loop():
                 
                 await person.send("You can vote on Top.gg now!", view=view)
                 set_cat(0, i, "reminder_topgg_exists", int(time.time()))
+                reminders_counter += 1
+                if reminders_counter == 100:
+                    break
             except Exception:
                 vote_remind.remove(i)
 
