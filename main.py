@@ -1504,10 +1504,7 @@ async def battlepass(message: discord.Interaction):
         num = searching["req_data"]
         thetype = searching["reward"]
         amount = searching["reward_amount"]
-        try:
-            icon = get_emoji(thetype.lower() + "cat")
-        except Exception:
-            pass
+        icon = get_emoji(thetype.lower() + "cat")
         if req == "catch":
             num_str = num
             if home:
