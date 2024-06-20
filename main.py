@@ -1557,7 +1557,8 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
     if get_cat(message.guild.id, message.user.id, cat_type) >= amount and amount > 0 and message.user.id != person_id:
         remove_cat(message.guild.id, message.user.id, cat_type, amount)
         add_cat(message.guild.id, person_id, cat_type, amount)
-        embed = discord.Embed(title="Success!", description=f"Successfully transfered {amount} {cat_type} cats from <@{message.user.id}> to <@{person_id}>!", color=0x6E593C)
+        icon = get_emoji(cattype.lower() + "cat")
+        embed = discord.Embed(title="Success!", description=f"Successfully transfered {amount} {icon} {cat_type} cats from <@{message.user.id}> to <@{person_id}>!", color=0x6E593C)
         await message.response.send_message(embed=embed)
 
         # handle aches
@@ -2503,7 +2504,8 @@ async def givecat(message: discord.Interaction, person_id: discord.User, amount:
         return
 
     add_cat(message.guild.id, person_id.id, cat_type, amount)
-    embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount} {cat_type} cats", color=0x6E593C)
+    icon = get_emoji(cattype.lower() + "cat")
+    embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount} {icon} {cat_type} cats", color=0x6E593C)
     await message.response.send_message(embed=embed)
 
 @bot.tree.command(description="(ADMIN) Setup cat in current channel")
