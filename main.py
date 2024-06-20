@@ -1504,19 +1504,23 @@ async def battlepass(message: discord.Interaction):
         num = searching["req_data"]
         thetype = searching["reward"]
         amount = searching["reward_amount"]
+        try:
+            icon = get_emoji(thetype.lower() + "cat")
+        except Exception:
+            pass
         if req == "catch":
             num_str = num
             if home:
                 progress = int(get_cat(message.guild.id, message.user.id, "progress"))
                 num_str = f"{num - progress} more"
-            return f"Catch {num_str} cats. \nReward: {amount} {thetype} cats."
+            return f"Catch {num_str} cats. \nReward: {amount} {icon} {thetype} cats."
         elif req == "catch_fast":
-            return f"Catch a cat in under {num} seconds.\nReward: {amount} {thetype} cats."
+            return f"Catch a cat in under {num} seconds.\nReward: {amount} {icon} {thetype} cats."
         elif req == "catch_type":
             an = ""
             if num[0].lower() in "aieuo":
                 an = "n"
-            return f"Catch a{an} {num} cat.\nReward: {amount} {thetype} cats."
+            return f"Catch a{an} {num} cat.\nReward: {amount} {icon} {thetype} cats."
         elif req == "nothing":
             return "Touch grass.\nReward: 1 ~~e~~Girl~~cats~~friend."
         else:
