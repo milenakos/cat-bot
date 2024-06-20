@@ -27,7 +27,7 @@ Discord Cat Bot Source Code
 5. Go inside of the `main.py` file, on first few lines you can change some config values, such as guild ID, backup channel ID, and Discord token.
 > **Note**
 >
-> You will need to create a guild and upload all emojis to that guild, making sure your bot can view the guild. You can download all the emojis [here](https://zakchrom.github.io/emojis.zip)
+> You will need to create a guild and upload all emojis to that guild, making sure your bot can view the guild. You can download all the emojis [here]( https://github.com/staring-cat/emojis/releases/latest/download/emojis.zip)
 
 5. Run the bot with `python main.py`
 
