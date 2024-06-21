@@ -1097,7 +1097,7 @@ async def catinfo(message: discord.Interaction, cat_type: str):
     embed = discord.Embed(title=f"{icon} {cat_type} Cat Info", color=0x6E593C) # possibly make color different per cat type
     embed.add_field(name="LORE", value=lore[cat_type], inline=False)
     embed.add_field(name="You have:", value=get_cat(message.guild.id, message.author.id, cat_type), inline=True)
-    embed.add_field(name="Spawn Chance", value=f"{round(v / s * 100, 2)}%"), inline=True)
+    embed.add_field(name="Spawn Chance", value=f"{round(v / s * 100, 2)}%", inline=True)
     embed.add_field(name="Trade Value", value=str(round(s / v, 1)), inline=True)  
 
 @bot.tree.command(description="Read text as TikTok's TTS woman")
