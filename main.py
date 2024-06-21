@@ -2463,19 +2463,19 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             button1 = Button(label="Refresh", style=ButtonStyle.green)
 
         if not value:
-            button1 = Button(label="Value", style=ButtonStyle.blurple)
-        else:
-            button1 = Button(label="Refresh", style=ButtonStyle.green)
-        
-        if not fast:
-            button2 = Button(label="Fastest", style=ButtonStyle.blurple)
+            button2 = Button(label="Value", style=ButtonStyle.blurple)
         else:
             button2 = Button(label="Refresh", style=ButtonStyle.green)
-
-        if not slow:
-            button3 = Button(label="Slowest", style=ButtonStyle.blurple)
+        
+        if not fast:
+            button3 = Button(label="Fastest", style=ButtonStyle.blurple)
         else:
             button3 = Button(label="Refresh", style=ButtonStyle.green)
+
+        if not slow:
+            button4 = Button(label="Slowest", style=ButtonStyle.blurple)
+        else:
+            button4 = Button(label="Refresh", style=ButtonStyle.green)
 
         button1.callback = catlb
         button2.callback = vallb
