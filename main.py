@@ -84,9 +84,9 @@ type_dict = {
 }
 
 # create a huge list where each cat type is multipled the needed amount of times
-CAT_TYPES = []
+CATTYPES = []
 for k, v in type_dict.items():
-    CAT_TYPES.extend([k] * v)
+    CATTYPES.extend([k] * v)
 
 allowedemojis = []
 for i in type_dict.keys():
@@ -143,7 +143,7 @@ bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQ
 
 # this list stores unique non-duplicate cattypes
 cattypes = []
-for e in CAT_TYPES:
+for e in CATTYPES:
     if e not in cattypes:
         cattypes.append(e)
 
@@ -357,8 +357,8 @@ async def achemb(message, ach_id, send_type, author_string=None):
             await asyncio.sleep(2)
             await result.edit(embed=embed)
 
-# function to autocomplete cat_type choices for /gift, /giftcat, and /forcespawn, which also allows more than 25 options
-async def cat_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
+# function to autocomplete cattype choices for /gift, /giftcat, and /forcespawn, which also allows more than 25 options
+async def cattype_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     return [discord.app_commands.Choice(name=choice, value=choice) for choice in cattypes if current.lower() in choice.lower()][:25]
 
 # converts string to lowercase alphanumeric characters only
@@ -377,7 +377,7 @@ async def spawn_cat(ch_id, localcat=None):
         file = discord.File("cat.png")
         
         if not localcat:
-            localcat = choice(CAT_TYPES)
+            localcat = choice(CATTYPES)
         icon = get_emoji(localcat.lower() + "cat")
         channeley = bot.get_channel(int(ch_id))
         
@@ -1542,32 +1542,32 @@ async def ping(message: discord.Interaction):
     await message.response.send_message(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
 
 @bot.tree.command(description="give cats now")
-@discord.app_commands.rename(cat_type="type")
-@discord.app_commands.describe(person="Whom to donate?", cat_type="Select a fucking cat type", amount="And how much?")
-@discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
-async def gift(message: discord.Interaction, person: discord.User, cat_type: str, amount: Optional[int]):
+@discord.app_commands.rename(cattype="type")
+@discord.app_commands.describe(person="Whom to donate?", cattype="Select a fucking cat type", amount="And how much?")
+@discord.app_commands.autocomplete(cattype=cattype_autocomplete)
+async def gift(message: discord.Interaction, person: discord.User, cattype: str, amount: Optional[int]):
     if not amount: amount = 1  # default the amount to 1
     person_id = person.id
 
-    if cat_type not in cattypes:
+    if cattype not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
         return
 
     # if we even have enough cats
-    if get_cat(message.guild.id, message.user.id, cat_type) >= amount and amount > 0 and message.user.id != person_id:
-        remove_cat(message.guild.id, message.user.id, cat_type, amount)
-        add_cat(message.guild.id, person_id, cat_type, amount)
+    if get_cat(message.guild.id, message.user.id, cattype) >= amount and amount > 0 and message.user.id != person_id:
+        remove_cat(message.guild.id, message.user.id, cattype, amount)
+        add_cat(message.guild.id, person_id, cattype, amount)
         icon = get_emoji(cattype.lower() + "cat")
-        embed = discord.Embed(title="Success!", description=f"Successfully transfered {amount} {icon} {cat_type} cats from <@{message.user.id}> to <@{person_id}>!", color=0x6E593C)
+        embed = discord.Embed(title="Success!", description=f"Successfully transfered {amount} {icon} {cattype} cats from <@{message.user.id}> to <@{person_id}>!", color=0x6E593C)
         await message.response.send_message(embed=embed)
 
         # handle aches
         await achemb(message, "donator", "send")
         await achemb(message, "anti_donator", "send", person)
-        if person_id == bot.user.id and cat_type == "Ultimate" and int(amount) >= 5: await achemb(message, "rich", "send")
+        if person_id == bot.user.id and cattype == "Ultimate" and int(amount) >= 5: await achemb(message, "rich", "send")
 
         # handle tax
-        if amount >= 5 and person_id != OWNER_ID and cat_type == "Fine":
+        if amount >= 5 and person_id != OWNER_ID and cattype == "Fine":
             tax_amount = round(amount * 0.2)
 
             async def pay(interaction):
@@ -1741,7 +1741,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             valuestr = ""
             valuenum = 0
             for k, v in persongives.items():
-                valuenum += (len(CAT_TYPES) / type_dict[k]) * v
+                valuenum += (len(CATTYPES) / type_dict[k]) * v
                 aicon = get_emoji(k.lower() + "cat")
                 valuestr += str(aicon) + " " + k + " " + str(v) + "\n"
             if not valuestr:
@@ -2496,16 +2496,16 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 @bot.tree.command(description="(ADMIN) Give cats to people")
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(person_id="user")
-@discord.app_commands.describe(person_id="who", amount="how many", cat_type="what")
-@discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
-async def givecat(message: discord.Interaction, person_id: discord.User, amount: int, cat_type: str):
-    if cat_type not in cattypes:
+@discord.app_commands.describe(person_id="who", amount="how many", cattype="what")
+@discord.app_commands.autocomplete(cattype=cattype_autocomplete)
+async def givecat(message: discord.Interaction, person_id: discord.User, amount: int, cattype: str):
+    if cattype not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
         return
 
-    add_cat(message.guild.id, person_id.id, cat_type, amount)
+    add_cat(message.guild.id, person_id.id, cattype, amount)
     icon = get_emoji(cattype.lower() + "cat")
-    embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount} {icon} {cat_type} cats", color=0x6E593C)
+    embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount} {icon} {cattype} cats", color=0x6E593C)
     await message.response.send_message(embed=embed)
 
 @bot.tree.command(description="(ADMIN) Setup cat in current channel")
@@ -2554,11 +2554,11 @@ async def fake(message: discord.Interaction):
 
 @bot.tree.command(description="(ADMIN) Force cats to appear")
 @discord.app_commands.default_permissions(manage_guild=True)
-@discord.app_commands.rename(cat_type="type")
-@discord.app_commands.describe(cat_type="select a cat type ok")
-@discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
-async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
-    if cat_type and cat_type not in cattypes:
+@discord.app_commands.rename(cattype="type")
+@discord.app_commands.describe(cattype="select a cat type ok")
+@discord.app_commands.autocomplete(cattype=cattype_autocomplete)
+async def forcespawn(message: discord.Interaction, cattype: Optional[str]):
+    if cattype and cattype not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
         return
 
@@ -2569,7 +2569,7 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
     except Exception:
         await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
         return
-    await spawn_cat(str(message.channel.id), cat_type)
+    await spawn_cat(str(message.channel.id), cattype)
     await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this")
 
 @bot.tree.command(description="(ADMIN) Give achievements to people")
