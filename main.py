@@ -134,6 +134,9 @@ with open("aches.json", "r") as f:
 with open("battlepass.json", "r") as f:
     battle = json.load(f)
 
+with open("lore.json", "r") as f: # RIP MatPat
+    lore = json.load(f)
+
 # convert achievement json to a few other things
 ach_names = ach_list.keys()
 ach_titles = {value["title"].lower(): key for (key, value) in ach_list.items()}
@@ -1081,6 +1084,21 @@ async def info(message: discord.Interaction):
         embedVar.timestamp = datetime.datetime.fromtimestamp(int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8")))
         embedVar.set_footer(text="Last code update:")
     await message.followup.send(embed=embedVar)
+
+@bot.tree.command(description="View information about a cat")
+@discord.app_commands.rename(cat_type="type")
+@discord.app_commands.describe(cat_type="Select a cat type")
+@discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
+async def catinfo(message: discord.Interaction, cat_type: str):
+    if cat_type not in cattypes:
+        await message.response.send_message("cat does not exist", ephemeral=True)
+        return
+    icon = get_emoji(cat_type.lower() + "cat")
+    embed = discord.Embed(title=f"{icon} {cat_type} Cat Info", color=0x6E593C) # possibly make color different per cat type
+    embed.add_field(name="LORE", value=lore[cat_type], inline=False)
+    embed.add_field(name="You have:", value=get_cat(message.guild.id, message.author.id, cat_type), inline=True)
+    embed.add_field(name="Spawn Chance", value=f"{round(v / s * 100, 2)}%"), inline=True)
+    embed.add_field(name="Trade Value", value=str(round(s / v, 1)), inline=True)  
 
 @bot.tree.command(description="Read text as TikTok's TTS woman")
 @discord.app_commands.describe(text="The text to be read! (300 characters max)")
