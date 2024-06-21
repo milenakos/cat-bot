@@ -1101,7 +1101,7 @@ async def catinfo(message: discord.Interaction, cat_type: str):
     embed.add_field(name="You have:", value=get_cat(message.guild.id, message.user.id, cat_type), inline=True)
     embed.add_field(name="Spawn Chance", value=f"{round(v / s * 100, 2)}%", inline=True)
     embed.add_field(name="Trade Value", value=str(round(s / v, 1)), inline=True)
-    embed.set_footer(text=f"lore from the one and only, **{gen_credits['trash']}**!!")
+    embed.set_footer(text=f"lore from the one and only, {gen_credits['trash']}!!")
     await message.response.send_message(embed=embed)
 
 @bot.tree.command(description="Read text as TikTok's TTS woman")
