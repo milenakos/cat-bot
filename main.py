@@ -2372,12 +2372,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 int(i)
             except Exception:
                 continue
-            if not main:
-                value = get_time(message.guild.id, i, time_type)
-                if int(value) < 0:
-                    set_time(message.guild.id, i, int(default_value), time_type)
-                    continue
-            else:
+            if main:
                 value = 0
                 for a, b in db[str(message.guild.id)][i].items():
                     if a in cattypes:
@@ -2390,6 +2385,19 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                                 rarest_holder["<@" + i + ">"] = b
                         except Exception:
                             pass
+            elif val:
+                for a, b in db[str(message.guild.id)][i].items():
+                    if a in cattypes:
+                        try:
+                            value += b * type_dict[a]
+                        except Exception:
+                            pass
+                value *= sum(type_dict.values())
+            elif fast or slow:
+                value = get_time(message.guild.id, i, time_type)
+                if int(value) < 0:
+                    set_time(message.guild.id, i, int(default_value), time_type)
+                    continue
             if str(value) != default_value:
                 # round the value (for time dislays)
                 thingy = round(value / devider, 2)
