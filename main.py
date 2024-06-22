@@ -2393,7 +2393,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                             value += b / type_dict[a]
                         except Exception:
                             pass
-                value *= round(sum(type_dict.values()))
+                value = round(value * sum(type_dict.values()))
             elif fast or slow:
                 value = get_time(message.guild.id, i, time_type)
                 if int(value) < 0:
