@@ -1077,7 +1077,7 @@ async def info(message: discord.Interaction):
     await message.response.defer()
     embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/staring)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\n" + \
                              f"Bot made by {gen_credits['author']}\nWith contributions by {gen_credits['contrib']}.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n" + \
-                             f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits['emoji']}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**countik** for TikTok TTS API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**")
+                             f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits['emoji']}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**countik** for TikTok TTS API\n**{gen_credits['trash']}** for making cat, lore, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**")
     
     # add "last update" to footer if we are using git
     if GITHUB_CHANNEL_ID:
@@ -1101,7 +1101,6 @@ async def catinfo(message: discord.Interaction, cat_type: str):
     embed.add_field(name="You have", value=get_cat(message.guild.id, message.user.id, cat_type), inline=True)
     embed.add_field(name="Spawn Chance", value=f"{round(v / s * 100, 2)}%", inline=True)
     embed.add_field(name="Trade Value", value=str(round(s / v, 1)), inline=True)
-    embed.set_footer(text=f"lore from the one and only, {gen_credits['trash']}!!")
     await message.response.send_message(embed=embed)
 
 @bot.tree.command(description="Read text as TikTok's TTS woman")
