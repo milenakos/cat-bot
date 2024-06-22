@@ -2317,7 +2317,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @bot.tree.command(description="View the leaderboards")
 @discord.app_commands.rename(leaderboard_type="type")
 @discord.app_commands.describe(leaderboard_type="The leaderboard type to view!")
-async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[Literal["Cats", "Fastest", "Slowest"]]):
+async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[Literal["Cats", "Value", "Fastest", "Slowest"]]):
     if not leaderboard_type: leaderboard_type = "Cats"
 
     # this fat function handles a single page
@@ -2392,7 +2392,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                             pass
             if str(value) != default_value:
                 # round the value (for time dislays)
-                thingy = round((value / devider) * 100) / 100
+                thingy = round(value / devider, 2)
                 
                 # if it perfectly ends on .00, trim it
                 if thingy == int(thingy):
@@ -2403,12 +2403,12 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 if i == str(message.user.id): messager = thingy
 
         # some weird quick sorting thing (dont you just love when built-in libary you never heard of saves your ass)
-        heap = [(-value, key) for key, value in the_dict.items()]
+        heap = [(-val, key) for key, val in the_dict.items()]
         if fast:
             largest = heapq.nlargest(15, heap)
         else:
             largest = heapq.nsmallest(15, heap)
-        largest = [(key, -value) for value, key in largest]
+        largest = [(key, -val) for val, key in largest]
         string = ""
 
         # find the placement of the person who ran the command and optionally the person who pressed the button
