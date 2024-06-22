@@ -2386,6 +2386,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                         except Exception:
                             pass
             elif val:
+                value = 0
                 for a, b in db[str(message.guild.id)][i].items():
                     if a in cattypes:
                         try:
