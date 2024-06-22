@@ -2328,13 +2328,13 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         messager = None
         interactor = None
         main = False
-        value = False
+        val = False
         fast = False
         slow = False
         if type == "main":
             main = True
         elif type == "value":
-            value = True
+            val = True
         elif type == "fast":
             fast = True
         elif type == "slow":
@@ -2350,7 +2350,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             title = "Cat"
             unit = "cats"
             devider = 1
-        elif value:
+        elif val:
             default_value = "0"
             title = "Value"
             unit = ""
@@ -2403,12 +2403,12 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 if i == str(message.user.id): messager = thingy
 
         # some weird quick sorting thing (dont you just love when built-in libary you never heard of saves your ass)
-        heap = [(-val, key) for key, val in the_dict.items()]
+        heap = [(-value, key) for key, value in the_dict.items()]
         if fast:
             largest = heapq.nlargest(15, heap)
         else:
             largest = heapq.nsmallest(15, heap)
-        largest = [(key, -val) for val, key in largest]
+        largest = [(key, -value) for value, key in largest]
         string = ""
 
         # find the placement of the person who ran the command and optionally the person who pressed the button
@@ -2462,7 +2462,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         else:
             button1 = Button(label="Refresh", style=ButtonStyle.green)
 
-        if not value:
+        if not val:
             button2 = Button(label="Value", style=ButtonStyle.blurple)
         else:
             button2 = Button(label="Refresh", style=ButtonStyle.green)
@@ -2499,7 +2499,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         await lb_handler(interaction, "main")
 
     async def vallb(interaction):
-        await lb_handler(interaction, "value")
+        await lb_handler(interaction, "val")
     
     async def slowlb(interaction):
         await lb_handler(interaction, "slow")
@@ -2507,7 +2507,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
     async def fastlb(interaction):
         await lb_handler(interaction, "fast")
     
-    await lb_handler(message, {"Cats": "main", "Value": "value", "Fastest": "fast", "Slowest": "slow"}[leaderboard_type], False)
+    await lb_handler(message, {"Cats": "main", "Value": "val", "Fastest": "fast", "Slowest": "slow"}[leaderboard_type], False)
 
 @bot.tree.command(description="(ADMIN) Give cats to people")
 @discord.app_commands.default_permissions(manage_guild=True)
