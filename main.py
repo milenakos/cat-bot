@@ -2333,7 +2333,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         slow = False
         if type == "main":
             main = True
-        elif type == "value":
+        elif type == "val":
             val = True
         elif type == "fast":
             fast = True
