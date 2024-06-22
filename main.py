@@ -2390,10 +2390,10 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 for a, b in db[str(message.guild.id)][i].items():
                     if a in cattypes:
                         try:
-                            value += b * type_dict[a]
+                            value += b / type_dict[a]
                         except Exception:
                             pass
-                value /= sum(type_dict.values())
+                value *= sum(type_dict.values())
             elif fast or slow:
                 value = get_time(message.guild.id, i, time_type)
                 if int(value) < 0:
