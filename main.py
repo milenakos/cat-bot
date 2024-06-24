@@ -541,9 +541,11 @@ async def on_message(message):
         return
 
     if time.time() > last_loop_time + 1200:
-        if maintaince_loop.is_running:
-            maintaince_loop.cancel()
-        maintaince_loop.start()  # revive the loop
+        try:
+            if maintaince_loop.is_running: maintaince_loop.cancel()
+            maintaince_loop.start()  # revive the loop
+        except Exception:
+            pass
     
     achs = [["cat?", "startswith", "???"],
         ["catn", "exact", "catn"], 
