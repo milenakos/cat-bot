@@ -541,6 +541,8 @@ async def on_message(message):
         return
 
     if time.time() > last_loop_time + 1200:
+        if maintaince_loop.is_running:
+            maintaince_loop.cancel()
         maintaince_loop.start()  # revive the loop
     
     achs = [["cat?", "startswith", "???"],
