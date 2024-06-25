@@ -379,7 +379,18 @@ async def spawn_cat(ch_id, localcat=None):
         if not localcat:
             localcat = choice(CAT_TYPES)
         icon = get_emoji(localcat.lower() + "cat")
-        channeley = bot.get_channel(int(ch_id))
+        try:
+            channeley = discord.Webhook.from_url(db["webhook"][str(ch_id)])
+        except KeyError:
+            channeley = bot.get_channel(int(ch_id))
+            try:
+                wh = await channeley.create_webhook(name="Cat Bot", avatar=f.read())
+                db["webhook"][ch_id] = wh.url
+                save("webhook")
+                await spawn_cat(ch_id, localcat) # respawn
+            except:
+                await message.response.send_message("Error spawning the cat - cat moved to new system and failed to automatically migrate this channel. Please make sure the bot has **Manage Webhooks** permission - either give it manually or re-invite the bot, then resetup this channel.")
+            return
         
         try:
             if db[str(channeley.guild.id)]["appear"]:
@@ -947,14 +958,6 @@ async def on_message(message):
         db["cat"][str(message.channel.id)] = False
         save("cat")
         await message.reply("success")
-    if text.lower().startswith("cat!setup") and message.author.id == OWNER_ID:
-        abc = db["summon_ids"]
-        abc.append(int(message.channel.id))
-        db["summon_ids"] = abc
-        db["cat"][str(message.channel.id)] = False
-        save("summon_ids")
-        save("cat")
-        await message.reply(f"ok, now i will also send cats in <#{message.channel.id}>")
     if text.lower().startswith("cat!print") and message.author.id == OWNER_ID:
         # just a simple one-line with no async (e.g. 2+3)
         try:
@@ -992,14 +995,6 @@ async def on_message(message):
                 await channeley.send(text[8:])
             except Exception:
                 pass
-    if text.lower().startswith("cat!dark") and message.author.id == OWNER_ID:
-        stuff = text.split(" ")
-        add_cat(message.guild.id, stuff[1], "dark_market")
-        await message.reply("success")
-    if text.lower().startswith("cat!darkoff") and message.author.id == OWNER_ID:
-        stuff = text.split(" ")
-        add_cat(message.guild.id, stuff[1], "dark_market", 0, True)
-        await message.reply("success")
     if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
         stuff = text.split(" ")
         register_member(str(stuff[1]), str(message.guild.id))
@@ -2532,8 +2527,16 @@ async def setup(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
     save("summon_ids")
     save("cat")
-    await spawn_cat(str(message.channel.id)) # force the first cat spawn incase something isnt working
-    await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
+    
+    with open("cat.png", "rb") as f:
+        try:
+            wh = await message.channel.create_webhook(name="Cat Bot", avatar=f.read())
+            db["webhook"][str(message.channel.id)] = wh.url
+            save("webhook")
+            await spawn_cat(str(message.channel.id)) # force the first cat spawn incase something isnt working
+            await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
+        except:
+            await message.response.send_message("Error creating webhook. Please make sure the bot has **Manage Webhooks** permission - either give it manually or re-invite the bot.")
 
 @bot.tree.command(description="(ADMIN) Undo the setup")
 @discord.app_commands.default_permissions(manage_guild=True)
@@ -2543,6 +2546,8 @@ async def forget(message: discord.Interaction):
         abc.remove(int(message.channel.id))
         db["summon_ids"] = abc
         del db["cat"][str(message.channel.id)]
+        db["webhook"][str(message.channel.id)] = None
+        save("webhook")
         save("summon_ids")
         save("cat")
         await message.response.send_message(f"ok, now i wont send cats in <#{message.channel.id}>")
