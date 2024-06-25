@@ -381,20 +381,23 @@ async def spawn_cat(ch_id, localcat=None):
         icon = get_emoji(localcat.lower() + "cat")
         try:
             channeley = discord.Webhook.from_url(db["webhook"][str(ch_id)], client=bot)
+            guild_id = db["guild_mappings"][ch_id]
         except KeyError:
             channeley = bot.get_channel(int(ch_id))
             try:
                 wh = await channeley.create_webhook(name="Cat Bot", avatar=f.read())
                 db["webhook"][ch_id] = wh.url
+                db["guild_mappings"][ch_id] = str(channeley.guild.id)
                 save("webhook")
+                save("guild_mappings")
                 await spawn_cat(ch_id, localcat) # respawn
             except:
-                await message.response.send_message("Error spawning the cat - cat moved to new system and failed to automatically migrate this channel. Please make sure the bot has **Manage Webhooks** permission - either give it manually or re-invite the bot, then resetup this channel.")
+                await message.channel.send("Error spawning the cat - cat moved to new system and failed to automatically migrate this channel. Please make sure the bot has **Manage Webhooks** permission - either give it manually or re-invite the bot, then resetup this channel.")
             return
         
         try:
-            if db[str(channeley.guild.id)]["appear"]:
-                appearstring = db[str(channeley.guild.id)]["appear"]
+            if db[guild_id]["appear"]:
+                appearstring = db[guild_id]["appear"]
             else:
                 appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
         except Exception as e:
@@ -2532,7 +2535,9 @@ async def setup(message: discord.Interaction):
         try:
             wh = await message.channel.create_webhook(name="Cat Bot", avatar=f.read())
             db["webhook"][str(message.channel.id)] = wh.url
+            db["guild_mappings"][ch_id] = str(message.guild.id)
             save("webhook")
+            save("guild_mappings")
             await spawn_cat(str(message.channel.id)) # force the first cat spawn incase something isnt working
             await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
         except:
