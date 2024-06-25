@@ -404,7 +404,7 @@ async def spawn_cat(ch_id, localcat=None):
             db[str(channeley.guild.id)]["appear"] = ""
             appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
         
-        message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file)
+        message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file, wait=True)
         db["cat"][ch_id] = message_is_sus.id
         save("cat")
     except Exception:
