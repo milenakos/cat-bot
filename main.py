@@ -16,7 +16,6 @@ logging.basicConfig(level=logging.INFO)
 GUILD_ID = 966586000417619998 # for emojis
 CATS_GUILD_ID = False # alternative guild purely for cattype emojis (use for christmas/halloween etc), False to disable
 BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely recommended
-
 # discord bot token, use os.environ for more security
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
@@ -379,18 +378,33 @@ async def spawn_cat(ch_id, localcat=None):
         if not localcat:
             localcat = choice(CAT_TYPES)
         icon = get_emoji(localcat.lower() + "cat")
-        channeley = bot.get_channel(int(ch_id))
+        try:
+            channeley = discord.Webhook.from_url(db["webhook"][str(ch_id)], client=bot)
+            guild_id = db["guild_mappings"][ch_id]
+        except KeyError:
+            channeley = bot.get_channel(int(ch_id))
+            with open("cat.png", "rb") as f:
+                try:
+                    wh = await channeley.create_webhook(name="Cat Bot", avatar=f.read())
+                    db["webhook"][ch_id] = wh.url
+                    db["guild_mappings"][ch_id] = str(channeley.guild.id)
+                    save("webhook")
+                    save("guild_mappings")
+                    await spawn_cat(ch_id, localcat) # respawn
+                except:
+                    await channeley.send("Error spawning the cat - cat moved to new system and failed to automatically migrate this channel. Please make sure the bot has **Manage Webhooks** permission - either give it manually or re-invite the bot, then resetup this channel.")
+            return
         
         try:
-            if db[str(channeley.guild.id)]["appear"]:
-                appearstring = db[str(channeley.guild.id)]["appear"]
+            if db[guild_id]["appear"]:
+                appearstring = db[guild_id]["appear"]
             else:
                 appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
         except Exception as e:
-            db[str(channeley.guild.id)]["appear"] = ""
+            db[guild_id]["appear"] = ""
             appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
         
-        message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file)
+        message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file, wait=True)
         db["cat"][ch_id] = message_is_sus.id
         save("cat")
     except Exception:
@@ -408,7 +422,7 @@ async def maintaince_loop():
     future = datetime.date(2024, 7, 8)
     diff = future - today
     await bot.change_presence(
-        activity=discord.CustomActivity(name=f"{diff.days} days left. In {len(bot.guilds):,} servers")
+        activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
     )
 
     for id in set(save_queue):
@@ -425,6 +439,7 @@ async def maintaince_loop():
     thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
     await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
 
+    """
     vote_remind = db["vote_remind"]
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
@@ -450,6 +465,7 @@ async def maintaince_loop():
 
     db["vote_remind"] = vote_remind
     save("vote_remind")
+    """
     
     if TOP_GG_TOKEN:
         async with aiohttp.ClientSession() as session:
@@ -539,7 +555,11 @@ async def on_message(message):
         return
 
     if time.time() > last_loop_time + 1200:
-        maintaince_loop.start()  # revive the loop
+        try:
+            if maintaince_loop.is_running: maintaince_loop.cancel()
+            maintaince_loop.start()  # revive the loop
+        except Exception:
+            pass
     
     achs = [["cat?", "startswith", "???"],
         ["catn", "exact", "catn"], 
@@ -941,14 +961,6 @@ async def on_message(message):
         db["cat"][str(message.channel.id)] = False
         save("cat")
         await message.reply("success")
-    if text.lower().startswith("cat!setup") and message.author.id == OWNER_ID:
-        abc = db["summon_ids"]
-        abc.append(int(message.channel.id))
-        db["summon_ids"] = abc
-        db["cat"][str(message.channel.id)] = False
-        save("summon_ids")
-        save("cat")
-        await message.reply(f"ok, now i will also send cats in <#{message.channel.id}>")
     if text.lower().startswith("cat!print") and message.author.id == OWNER_ID:
         # just a simple one-line with no async (e.g. 2+3)
         try:
@@ -986,14 +998,6 @@ async def on_message(message):
                 await channeley.send(text[8:])
             except Exception:
                 pass
-    if text.lower().startswith("cat!dark") and message.author.id == OWNER_ID:
-        stuff = text.split(" ")
-        add_cat(message.guild.id, stuff[1], "dark_market")
-        await message.reply("success")
-    if text.lower().startswith("cat!darkoff") and message.author.id == OWNER_ID:
-        stuff = text.split(" ")
-        add_cat(message.guild.id, stuff[1], "dark_market", 0, True)
-        await message.reply("success")
     if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
         stuff = text.split(" ")
         register_member(str(stuff[1]), str(message.guild.id))
@@ -1475,7 +1479,11 @@ async def editprofile(message: discord.Interaction, color: Optional[str], provid
         match = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', color)
         if match: set_cat("0", message.user.id, "color", match.group(0))
     if image:
-        set_cat("0", message.user.id, "image", image.url)
+        # reupload image
+        channeley = bot.get_channel(DONOR_CHANNEL_ID)
+        file = await image.to_file()
+        msg = await channeley.send(file=file)
+        set_cat("0", message.user.id, "image", msg.attachments[0].url)
     embedVar = await gen_inventory(message, message.user)
     await message.response.send_message("Success! Here is a preview:", embed=embedVar)
 
@@ -1965,12 +1973,14 @@ if WEBHOOK_VERIFY:
             button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367/vote")
         view.add_item(button)
 
+        """
         if message.user.id in vote_remind:
             button = Button(label="Disable reminders", style=ButtonStyle.gray)
         else:
             button = Button(label="Enable Reminders!", style=ButtonStyle.green)
         button.callback = toggle_reminders
         view.add_item(button)
+        """
         
         embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg every 12 hours to recieve mystery cats.", color=0x6E593C)
         await message.followup.send(embed=embedVar, view=view)
@@ -2551,8 +2561,18 @@ async def setup(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
     save("summon_ids")
     save("cat")
-    await spawn_cat(str(message.channel.id)) # force the first cat spawn incase something isnt working
-    await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
+    
+    with open("cat.png", "rb") as f:
+        try:
+            wh = await message.channel.create_webhook(name="Cat Bot", avatar=f.read())
+            db["webhook"][str(message.channel.id)] = wh.url
+            db["guild_mappings"][str(message.channel.id)] = str(message.guild.id)
+            save("webhook")
+            save("guild_mappings")
+            await spawn_cat(str(message.channel.id)) # force the first cat spawn incase something isnt working
+            await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
+        except:
+            await message.response.send_message("Error creating webhook. Please make sure the bot has **Manage Webhooks** permission - either give it manually or re-invite the bot.")
 
 @bot.tree.command(description="(ADMIN) Undo the setup")
 @discord.app_commands.default_permissions(manage_guild=True)
@@ -2562,6 +2582,8 @@ async def forget(message: discord.Interaction):
         abc.remove(int(message.channel.id))
         db["summon_ids"] = abc
         del db["cat"][str(message.channel.id)]
+        db["webhook"][str(message.channel.id)] = None
+        save("webhook")
         save("summon_ids")
         save("cat")
         await message.response.send_message(f"ok, now i wont send cats in <#{message.channel.id}>")
@@ -2708,11 +2730,13 @@ async def claim_reward(user, channeley, type):
     
     add_cat(channeley.guild.id, user, cattype, num_amount)
     view = None
+    """
     if user not in db["vote_remind"]:
         view = View(timeout=3600)
         button = Button(label="Enable Vote Reminders!", style=ButtonStyle.green)
         button.callback = toggle_reminders
         view.add_item(button)
+    """
     embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats for voting on {cool_name}.\nVote again in 12 hours.", color=0x007F0E)
     await channeley.send(f"<@{user}>", embed=embedVar, view=view)
 
