@@ -15,13 +15,13 @@ logging.basicConfig(level=logging.INFO)
 
 GUILD_ID = 966586000417619998 # for emojis
 CATS_GUILD_ID = False # alternative guild purely for cattype emojis (use for christmas/halloween etc), False to disable
-BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely recommended
-
+BACKUP_ID = 1060545763194707998 # channel id 
 # discord bot token, use os.environ for more security
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
 
-# top.gg voting key
+# top.gg voting keyfor db backups, private extremely recommended
+
 # set to False to disable
 WEBHOOK_VERIFY = os.environ["webhook_verify"]
 
@@ -392,7 +392,7 @@ async def spawn_cat(ch_id, localcat=None):
                 save("guild_mappings")
                 await spawn_cat(ch_id, localcat) # respawn
             except:
-                await message.channel.send("Error spawning the cat - cat moved to new system and failed to automatically migrate this channel. Please make sure the bot has **Manage Webhooks** permission - either give it manually or re-invite the bot, then resetup this channel.")
+                await channeley.send("Error spawning the cat - cat moved to new system and failed to automatically migrate this channel. Please make sure the bot has **Manage Webhooks** permission - either give it manually or re-invite the bot, then resetup this channel.")
             return
         
         try:
