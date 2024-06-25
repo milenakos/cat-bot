@@ -15,13 +15,12 @@ logging.basicConfig(level=logging.INFO)
 
 GUILD_ID = 966586000417619998 # for emojis
 CATS_GUILD_ID = False # alternative guild purely for cattype emojis (use for christmas/halloween etc), False to disable
-BACKUP_ID = 1060545763194707998 # channel id 
+BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely recommended
 # discord bot token, use os.environ for more security
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
 
-# top.gg voting keyfor db backups, private extremely recommended
-
+# top.gg voting key
 # set to False to disable
 WEBHOOK_VERIFY = os.environ["webhook_verify"]
 
@@ -1480,7 +1479,11 @@ async def editprofile(message: discord.Interaction, color: Optional[str], provid
         match = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', color)
         if match: set_cat("0", message.user.id, "color", match.group(0))
     if image:
-        set_cat("0", message.user.id, "image", image.url)
+        # reupload image
+        channeley = bot.get_channel(DONOR_CHANNEL_ID)
+        file = await image.to_file()
+        msg = await channeley.send(file=file)
+        set_cat("0", message.user.id, "image", msg.attachments[0].url)
     embedVar = await gen_inventory(message, message.user)
     await message.response.send_message("Success! Here is a preview:", embed=embedVar)
 
