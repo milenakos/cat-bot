@@ -402,7 +402,7 @@ async def spawn_cat(ch_id, localcat=None):
             else:
                 appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
         except Exception as e:
-            db[str(channeley.guild.id)]["appear"] = ""
+            db[guild_id]["appear"] = ""
             appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
         
         message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file, wait=True)
