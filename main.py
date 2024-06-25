@@ -384,15 +384,16 @@ async def spawn_cat(ch_id, localcat=None):
             guild_id = db["guild_mappings"][ch_id]
         except KeyError:
             channeley = bot.get_channel(int(ch_id))
-            try:
-                wh = await channeley.create_webhook(name="Cat Bot", avatar=f.read())
-                db["webhook"][ch_id] = wh.url
-                db["guild_mappings"][ch_id] = str(channeley.guild.id)
-                save("webhook")
-                save("guild_mappings")
-                await spawn_cat(ch_id, localcat) # respawn
-            except:
-                await channeley.send("Error spawning the cat - cat moved to new system and failed to automatically migrate this channel. Please make sure the bot has **Manage Webhooks** permission - either give it manually or re-invite the bot, then resetup this channel.")
+            with open("cat.png", "rb") as f:
+                try:
+                    wh = await channeley.create_webhook(name="Cat Bot", avatar=f.read())
+                    db["webhook"][ch_id] = wh.url
+                    db["guild_mappings"][ch_id] = str(channeley.guild.id)
+                    save("webhook")
+                    save("guild_mappings")
+                    await spawn_cat(ch_id, localcat) # respawn
+                except:
+                    await channeley.send("Error spawning the cat - cat moved to new system and failed to automatically migrate this channel. Please make sure the bot has **Manage Webhooks** permission - either give it manually or re-invite the bot, then resetup this channel.")
             return
         
         try:
