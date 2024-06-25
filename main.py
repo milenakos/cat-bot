@@ -380,7 +380,7 @@ async def spawn_cat(ch_id, localcat=None):
             localcat = choice(CAT_TYPES)
         icon = get_emoji(localcat.lower() + "cat")
         try:
-            channeley = discord.Webhook.from_url(db["webhook"][str(ch_id)])
+            channeley = discord.Webhook.from_url(db["webhook"][str(ch_id)], client=bot)
         except KeyError:
             channeley = bot.get_channel(int(ch_id))
             try:
