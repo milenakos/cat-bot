@@ -2535,7 +2535,7 @@ async def setup(message: discord.Interaction):
         try:
             wh = await message.channel.create_webhook(name="Cat Bot", avatar=f.read())
             db["webhook"][str(message.channel.id)] = wh.url
-            db["guild_mappings"][ch_id] = str(message.guild.id)
+            db["guild_mappings"][str(message.channel.id)] = str(message.guild.id)
             save("webhook")
             save("guild_mappings")
             await spawn_cat(str(message.channel.id)) # force the first cat spawn incase something isnt working
