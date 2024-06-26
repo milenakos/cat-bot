@@ -632,18 +632,18 @@ async def on_message(message):
         if total_vow != len(text):
             const_perc = len(text) / (len(text) - total_vow)
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
-            await message.add_reaction(get_emoji("staring_cat"))
+            # await message.add_reaction(get_emoji("staring_cat"))
     
     if "robotop" in message.author.name.lower() and "i rate **cat" in message.content.lower():
         icon = str(get_emoji("no_cat_throphy")) + " "
-        await message.reply("**RoboTop**, I rate **you** 0 cats " + icon * 5)
+        # await message.reply("**RoboTop**, I rate **you** 0 cats " + icon * 5)
 
     if "leafbot" in message.author.name.lower() and "hmm... i would rate cat" in message.content.lower():
         icon = str(get_emoji("no_cat_throphy")) + " "
-        await message.reply("Hmm... I would rate you **0 cats**! " + icon * 5)
+        # await message.reply("Hmm... I would rate you **0 cats**! " + icon * 5)
         
     if text == "lol_i_have_dmed_the_cat_bot_and_got_an_ach" and not message.guild:
-        await message.channel.send("which part of \"send in server\" was unclear?")
+        # await message.channel.send("which part of \"send in server\" was unclear?")
         return
     elif message.guild == None:
         await message.channel.send("good job! please send \"lol_i_have_dmed_the_cat_bot_and_got_an_ach\" in server to get your ach!")
@@ -651,7 +651,7 @@ async def on_message(message):
     
     if "cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6" in text:
         msg = message
-        await message.delete()
+        # await message.delete()
         await achemb(msg, "dataminer", "send")
     
     for ach in achs:
@@ -665,7 +665,7 @@ async def on_message(message):
         if r[0] in text.lower() and reactions_ratelimit.get(message.author.id, 0) < 20:
             if r[1] == "custom": em = get_emoji(r[2])
             elif r[1] == "vanilla": em = r[2]
-            await message.add_reaction(em)
+            # await message.add_reaction(em)
             reactions_ratelimit[message.author.id] = reactions_ratelimit.get(message.author.id, 0) + 1
             
     for resp in responses:
@@ -673,30 +673,30 @@ async def on_message(message):
         (resp[1] == "re" and re.seach(resp[0], text.lower())) or \
         (resp[1] == "exact" and resp[0] == text.lower()) or \
         (resp[1] == "in" and resp[0] in text.lower()):
-            await message.reply(resp[2])
+            # await message.reply(resp[2])
         
-    if message.author in message.mentions: await message.add_reaction(get_emoji("staring_cat"))
+    # if message.author in message.mentions: await message.add_reaction(get_emoji("staring_cat"))
 
     if (":place_of_worship:" in text or "🛐" in text) and (":cat:" in text or ":staring_cat:" in text or "🐱" in text): await achemb(message, "worship", "reply")
     if text.lower() in ["ach", "cat!ach"]: await achemb(message, "test_ach", "reply")
     
     if text.lower() == "please do not the cat":
-        await message.reply(f"ok then\n{message.author.name} lost 1 fine cat!!!1!\nYou now have {str(remove_cat(message.guild.id, message.author.id, "Fine"))} cats of dat type!")
+        # await message.reply(f"ok then\n{message.author.name} lost 1 fine cat!!!1!\nYou now have {str(remove_cat(message.guild.id, message.author.id, "Fine"))} cats of dat type!")
         await achemb(message, "pleasedonotthecat", "reply")
     
     if text.lower() == "please do the cat":
         thing = discord.File("socialcredit.jpg", filename="socialcredit.jpg")
-        await message.reply(file=thing)
+        #await message.reply(file=thing)
         await achemb(message, "pleasedothecat", "reply")
     if text.lower() == "car":
         file = discord.File("car.png", filename="car.png")
         embed = discord.Embed(title="car!", color=0x6E593C).set_image(url="attachment://car.png")
-        await message.reply(file=file, embed=embed)
+        #await message.reply(file=file, embed=embed)
         await achemb(message, "car", "reply")
     if text.lower() == "cart":
         file = discord.File("cart.png", filename="cart.png")
         embed = discord.Embed(title="cart!", color=0x6E593C).set_image(url="attachment://cart.png")
-        await message.reply(file=file, embed=embed)
+        #await message.reply(file=file, embed=embed)
 
     try:
         catchmsg = await message.channel.fetch_message(db["cat"][str(message.channel.id)])
@@ -724,7 +724,7 @@ async def on_message(message):
             # if there is no cat, you are /preventcatch-ed, or you aren't a whitelisted bot
             icon = get_emoji("pointlaugh")
             try:
-                await message.add_reaction(icon)
+                #await message.add_reaction(icon)
             except Exception:
                 pass
         elif is_cat:
@@ -745,7 +745,7 @@ async def on_message(message):
                 try:
                     var = await message.channel.fetch_message(cat_temp)
                 except Exception:
-                    await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
+                    #await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
                     return
                 catchtime = var.created_at
                 catchcontents = var.content
@@ -1053,7 +1053,7 @@ async def on_guild_join(guild):
     # you are free to change/remove this, its just a note for general user letting them know
     unofficial_note = "**NOTE: This is an unofficial Cat Bot instance.**\n\n"
     if bot.user.id == 966695034340663367: unofficial_note = ""
-    await ch.send(unofficial_note + "Thanks for adding me!\nTo start, use `/help`!\nJoin the support server here: https://discord.gg/staring\nHave a nice day :)")
+    #await ch.send(unofficial_note + "Thanks for adding me!\nTo start, use `/help`!\nJoin the support server here: https://discord.gg/staring\nHave a nice day :)")
 
 @bot.tree.command(description="Learn to use the bot")
 async def help(message):
@@ -2766,7 +2766,7 @@ async def recieve_vote(request):
 @bot.tree.error
 async def on_command_error(ctx, error):
     if ctx.guild == None:
-        await ctx.channel.send("hello good sir i would politely let you know cat bot is no workey in dms please consider gettng the hell out of here")
+        # await ctx.channel.send("hello good sir i would politely let you know cat bot is no workey in dms please consider gettng the hell out of here")
         return
 
     # ctx here is interaction
@@ -2776,6 +2776,7 @@ async def on_command_error(ctx, error):
     elif isinstance(error, discord.Forbidden):
         # forbidden error usually means we dont have permission to send messages in the channel
         print("logged a Forbidden error.")
+        return
         # except-ception lessgo
         forbidden_error = "i don't have permissions to do that.\ntry reinviting the bot or give it roles needed to access this chat (for example, verified role). more ideally, give it admin/mod."
         try:
@@ -2797,7 +2798,7 @@ async def on_command_error(ctx, error):
     elif isinstance(error, discord.NotFound):
         # discord just pretends if interaction took more than 3 seconds it never happened and its annoying af
         print("logged a NotFound error.")
-        await ctx.channel.send("took too long, try running the command again")
+        # await ctx.channel.send("took too long, try running the command again")
     elif isinstance(error, discord.HTTPException) or isinstance(error, discord.DiscordServerError) or isinstance(error, discord.ConnectionClosed) or \
          isinstance(error, asyncio.TimeoutError) or isinstance(error, aiohttp.client_exceptions.ServerDisconnectedError) or \
          isinstance(error, commands.CommandInvokeError) or isinstance(error, aiohttp.client_exceptions.ClientOSError) or "NoneType" in str(error):
@@ -2806,7 +2807,7 @@ async def on_command_error(ctx, error):
         pass
     else:
         print("not a common error, crash reporting.")
-        await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
+        # await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
 
         if CRASH_MODE == "DM":
             # try to get some context maybe if we get lucky
