@@ -723,7 +723,10 @@ async def on_message(message):
         if not is_cat or timestamp > time.time() or (message.author.bot and message.author.id not in WHITELISTED_BOTS):
             # if there is no cat, you are /preventcatch-ed, or you aren't a whitelisted bot
             icon = get_emoji("pointlaugh")
-            await message.add_reaction(icon)
+            try:
+                await message.add_reaction(icon)
+            except Exception:
+                pass
         elif is_cat:
             try:
                 times = db["spawn_times"][str(message.channel.id)]
@@ -740,17 +743,17 @@ async def on_message(message):
                 save("cat")
                 save("lastcatches")
                 try:
-                    await message.delete()
-                except discord.errors.Forbidden:
-                    await message.channel.send("I don't have permission to delete messages. Please re-invite the bot or manually add that permission.")
-                try:
                     var = await message.channel.fetch_message(cat_temp)
                 except Exception:
                     await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
                     return
                 catchtime = var.created_at
                 catchcontents = var.content
-                await var.delete()
+                try:
+                    channeley = discord.Webhook.from_url(db["webhook"][str(ch_id)], client=bot)
+                    await channeley.delete_message(cat_temp)
+                except Exception:
+                    pass
                 try:
                     # some math to make time look cool
                     then = catchtime.timestamp()
@@ -900,7 +903,12 @@ async def on_message(message):
                     view = View(timeout=3600)
                     view.add_item(button)
                 
-                await message.channel.send(coughstring.replace("{username}", message.author.name.replace("_", "\_"))
+                try:
+                    send_target = discord.Webhook.from_url(db["webhook"][str(ch_id)], client=bot)
+                except Exception:
+                    send_target = message.channel
+                
+                await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\_"))
                                                       .replace("{emoji}", str(icon))
                                                       .replace("{type}", le_emoji)
                                                       .replace("{count}", str(add_cat(message.guild.id, message.author.id, le_emoji, silly_amount)))
@@ -2534,18 +2542,21 @@ async def setup(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
     save("summon_ids")
     save("cat")
-    
-    with open("cat.png", "rb") as f:
-        try:
-            wh = await message.channel.create_webhook(name="Cat Bot", avatar=f.read())
-            db["webhook"][str(message.channel.id)] = wh.url
-            db["guild_mappings"][str(message.channel.id)] = str(message.guild.id)
-            save("webhook")
-            save("guild_mappings")
-            await spawn_cat(str(message.channel.id)) # force the first cat spawn incase something isnt working
-            await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
-        except:
-            await message.response.send_message("Error creating webhook. Please make sure the bot has **Manage Webhooks** permission - either give it manually or re-invite the bot.")
+
+    if not db["webhook"].get(str(message.channel.id), None):
+        with open("cat.png", "rb") as f:
+            try:
+                wh = await message.channel.create_webhook(name="Cat Bot", avatar=f.read())
+                db["webhook"][str(message.channel.id)] = wh.url
+                db["guild_mappings"][str(message.channel.id)] = str(message.guild.id)
+                save("webhook")
+                save("guild_mappings")
+            except:
+                await message.response.send_message("Error creating webhook. Please make sure the bot has **Manage Webhooks** permission - either give it manually or re-invite the bot.")
+                return
+
+    await spawn_cat(str(message.channel.id))
+    await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
 
 @bot.tree.command(description="(ADMIN) Undo the setup")
 @discord.app_commands.default_permissions(manage_guild=True)
