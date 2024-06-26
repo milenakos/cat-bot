@@ -907,13 +907,22 @@ async def on_message(message):
                     send_target = discord.Webhook.from_url(db["webhook"][str(message.channel.id)], client=bot)
                 except Exception:
                     send_target = message.channel
-                
-                await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\_"))
+
+                # i love dpy
+                if view:
+                    await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\_"))
                                                       .replace("{emoji}", str(icon))
                                                       .replace("{type}", le_emoji)
                                                       .replace("{count}", str(add_cat(message.guild.id, message.author.id, le_emoji, silly_amount)))
                                                       .replace("{time}", caught_time[:-1]) + suffix_string,
                                            view=view,
+                                           allowed_mentions=None)
+                else:
+                    await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\_"))
+                                                      .replace("{emoji}", str(icon))
+                                                      .replace("{type}", le_emoji)
+                                                      .replace("{count}", str(add_cat(message.guild.id, message.author.id, le_emoji, silly_amount)))
+                                                      .replace("{time}", caught_time[:-1]) + suffix_string,
                                            allowed_mentions=None)
                 
                 # handle fastest and slowest catches
