@@ -750,7 +750,7 @@ async def on_message(message):
                 catchtime = var.created_at
                 catchcontents = var.content
                 try:
-                    channeley = discord.Webhook.from_url(db["webhook"][str(ch_id)], client=bot)
+                    channeley = discord.Webhook.from_url(db["webhook"][str(message.channel.id)], client=bot)
                     await channeley.delete_message(cat_temp)
                 except Exception:
                     pass
@@ -904,7 +904,7 @@ async def on_message(message):
                     view.add_item(button)
                 
                 try:
-                    send_target = discord.Webhook.from_url(db["webhook"][str(ch_id)], client=bot)
+                    send_target = discord.Webhook.from_url(db["webhook"][str(message.channel.id)], client=bot)
                 except Exception:
                     send_target = message.channel
                 
