@@ -633,6 +633,7 @@ async def on_message(message):
             const_perc = len(text) / (len(text) - total_vow)
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
             # await message.add_reaction(get_emoji("staring_cat"))
+            pass
     
     if "robotop" in message.author.name.lower() and "i rate **cat" in message.content.lower():
         icon = str(get_emoji("no_cat_throphy")) + " "
