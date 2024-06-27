@@ -1,4 +1,5 @@
 import discord, msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile, server, discord_emoji
+import concurrent.futures
 from discord.ext import tasks, commands
 from discord import ButtonStyle
 from discord.ui import Button, View
@@ -417,6 +418,22 @@ async def spawn_cat(ch_id, localcat=None):
         db["yet_to_spawn"][ch_id] = 0
         save("yet_to_spawn")
 
+def backup():
+    global save_queue
+    for id in set(save_queue):
+        with open(f"data/{id}.json", "w") as f:
+            json.dump(db[id], f)
+
+    save_queue = []
+
+    # backup
+    with tarfile.open("backup.tar.gz", "w:gz") as tar:
+        tar.add("data", arcname=os.path.sep)
+
+    backupchannel = bot.get_channel(BACKUP_ID)
+    thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
+    asyncio.run_coroutine_threadsafe(backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing), bot.loop)
+
 # a loop for various maintaince which is ran every 5 minutes
 @tasks.loop(minutes=5.0)
 async def maintaince_loop():
@@ -429,19 +446,8 @@ async def maintaince_loop():
         activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
     )
 
-    for id in set(save_queue):
-        with open(f"data/{id}.json", "w") as f:
-            json.dump(db[id], f)
-
-    save_queue = []
-
-    # backup
-    with tarfile.open("backup.tar.gz", "w:gz") as tar:
-        tar.add("data", arcname=os.path.sep)
-
-    backupchannel = await bot.fetch_channel(BACKUP_ID)
-    thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
-    await backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing)
+    event_loop = asyncio.get_event_loop()
+    await event_loop.run_in_executor(None, backup)
 
     """
     vote_remind = db["vote_remind"]
