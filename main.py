@@ -753,7 +753,7 @@ async def on_message(message):
                 catchcontents = var.content
                 try:
                     channeley = discord.Webhook.from_url(db["webhook"][str(message.channel.id)], client=bot)
-                    thread_id = db["thread_mappings"].get(ch_id, False)
+                    thread_id = db["thread_mappings"].get(str(message.channel.id), False)
                     if thread_id:
                         await channeley.delete_message(cat_temp, thread=discord.Object(int(message.channel.id)))
                     else:
@@ -910,7 +910,7 @@ async def on_message(message):
 
                 try:
                     send_target = discord.Webhook.from_url(db["webhook"][str(message.channel.id)], client=bot)
-                    thread_id = db["thread_mappings"].get(ch_id, False)
+                    thread_id = db["thread_mappings"].get(str(message.channel.id), False)
                 except Exception:
                     send_target = message.channel
                     thread_id = False
