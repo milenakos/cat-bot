@@ -1,5 +1,4 @@
 import discord, msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile, server, discord_emoji
-import concurrent.futures
 from discord.ext import tasks, commands
 from discord import ButtonStyle
 from discord.ui import Button, View
@@ -2832,18 +2831,13 @@ async def on_command_error(ctx, error):
                             await ctx.guild.owner.send(forbidden_error) # dm the guild owner
                         except Exception:
                             pass # give up
-    elif isinstance(error, discord.NotFound):
-        # discord just pretends if interaction took more than 3 seconds it never happened and its annoying af
-        await ctx.channel.send("took too long, try running the command again")
-    elif isinstance(error, discord.HTTPException) or isinstance(error, discord.DiscordServerError) or isinstance(error, discord.ConnectionClosed) or \
-         isinstance(error, asyncio.TimeoutError) or isinstance(error, aiohttp.client_exceptions.ServerDisconnectedError) or \
+    elif isinstance(error, discord.NotFound) or isinstance(error, discord.HTTPException) or isinstance(error, discord.DiscordServerError) or \
+         isinstance(error, asyncio.TimeoutError) or isinstance(error, aiohttp.client_exceptions.ServerDisconnectedError) or isinstance(error, discord.ConnectionClosed) or \
          isinstance(error, commands.CommandInvokeError) or isinstance(error, aiohttp.client_exceptions.ClientOSError) or "NoneType" in str(error):
 
         # various other issues we dont care about
         pass
     else:
-        await ctx.channel.send("cat crashed lmao\ni automatically sent crash reports so yes")
-
         if CRASH_MODE == "DM":
             # try to get some context maybe if we get lucky
             try:
