@@ -454,7 +454,7 @@ async def maintaince_loop():
     reminders_counter = 0
     for i in vote_remind:
         if get_cat(0, i, "vote_time_topgg") + 43200 < time.time() and not get_cat(0, i, "reminder_topgg_exists"):
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(1)
             try:
                 person = bot.get_user(i)
 
