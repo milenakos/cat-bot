@@ -411,11 +411,10 @@ async def spawn_cat(ch_id, localcat=None):
             message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file, wait=True)
         db["cat"][ch_id] = message_is_sus.id
         save("cat")
-    except Exception:
-        pass
-    finally:
         db["yet_to_spawn"][ch_id] = 0
         save("yet_to_spawn")
+    except Exception:
+        pass
 
 def backup():
     global save_queue
@@ -448,10 +447,26 @@ async def maintaince_loop():
     event_loop = asyncio.get_event_loop()
     await event_loop.run_in_executor(None, backup)
 
+    if TOP_GG_TOKEN:
+        async with aiohttp.ClientSession() as session:
+            # send server count to top.gg
+            try:
+                await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
+                                    headers={"Authorization": TOP_GG_TOKEN},
+                                    json={"server_count": len(bot.guilds), "shard_count": len(bot.shards)},
+                                    timeout=15)
+            except Exception:
+                print("Posting failed.")
+
+    yet_to_spawn_copy = db["yet_to_spawn"].copy()
+    for ch_id, ch_timer in yet_to_spawn_copy.items():
+        if ch_timer and time.time() > ch_timer and (ch_id not in db["cat"].keys() or not db["cat"][ch_id]):
+            await spawn_cat(ch_id)
+            await asyncio.sleep(0.1)
+
     vote_remind = db["vote_remind"]
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
-    reminders_counter = 0
     for i in vote_remind:
         if get_cat(0, i, "vote_time_topgg") + 43200 < time.time() and not get_cat(0, i, "reminder_topgg_exists"):
             await asyncio.sleep(1)
@@ -469,23 +484,6 @@ async def maintaince_loop():
 
     db["vote_remind"] = vote_remind
     save("vote_remind")
-
-    if TOP_GG_TOKEN:
-        async with aiohttp.ClientSession() as session:
-            # send server count to top.gg
-            try:
-                await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
-                                    headers={"Authorization": TOP_GG_TOKEN},
-                                    json={"server_count": len(bot.guilds), "shard_count": len(bot.shards)},
-                                    timeout=15)
-            except Exception:
-                print("Posting failed.")
-
-    yet_to_spawn_copy = db["yet_to_spawn"].copy()
-    for ch_id, ch_timer in yet_to_spawn_copy.items():
-        if ch_timer and time.time() > ch_timer and (ch_id not in db["cat"].keys() or not db["cat"][ch_id]):
-            await spawn_cat(ch_id)
-            await asyncio.sleep(0.1)
 
     last_loop_time = time.time()
 
