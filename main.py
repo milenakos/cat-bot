@@ -464,6 +464,7 @@ async def maintaince_loop():
             await spawn_cat(ch_id)
             await asyncio.sleep(0.1)
 
+    """
     vote_remind = db["vote_remind"]
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
@@ -484,6 +485,7 @@ async def maintaince_loop():
 
     db["vote_remind"] = vote_remind
     save("vote_remind")
+    """
 
     last_loop_time = time.time()
 
@@ -2013,12 +2015,14 @@ if WEBHOOK_VERIFY:
             button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367/vote")
         view.add_item(button)
 
+        """
         if message.user.id in vote_remind:
             button = Button(label="Disable reminders", style=ButtonStyle.gray)
         else:
             button = Button(label="Enable Reminders!", style=ButtonStyle.green)
         button.callback = toggle_reminders
         view.add_item(button)
+        """
 
         embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg every 12 hours to recieve mystery cats.", color=0x6E593C)
         await message.followup.send(embed=embedVar, view=view)
@@ -2752,11 +2756,13 @@ async def claim_reward(user, channeley, type):
 
     add_cat(channeley.guild.id, user, cattype, num_amount)
     view = None
+    """
     if user not in db["vote_remind"]:
         view = View(timeout=3600)
         button = Button(label="Enable Vote Reminders!", style=ButtonStyle.green)
         button.callback = toggle_reminders
         view.add_item(button)
+    """
     embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats for voting on {cool_name}.\nVote again in 12 hours.", color=0x007F0E)
     await channeley.send(f"<@{user}>", embed=embedVar, view=view)
 
