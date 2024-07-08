@@ -181,6 +181,9 @@ do_save_emojis = False
 # for mentioning it in catch message, will be auto-fetched in on_ready()
 DONATE_ID = 1249368737824374896
 
+# we restart every 20 loops
+loop_count = 0
+
 # loops in dpy can randomly break, i check if is been over 20 minutes since last loop to restart it
 last_loop_time = time.time()
 
@@ -435,7 +438,7 @@ def backup():
 # a loop for various maintaince which is ran every 5 minutes
 @tasks.loop(minutes=5.0)
 async def maintaince_loop():
-    global save_queue, reactions_ratelimit, last_loop_time
+    global save_queue, reactions_ratelimit, last_loop_time, loop_count
     reactions_ratelimit = {}
     today = datetime.date.today()
     future = datetime.date(2024, 7, 8)
@@ -488,6 +491,11 @@ async def maintaince_loop():
     """
 
     last_loop_time = time.time()
+    loop_count += 1
+    if USING_PM2:
+        sys.exit()
+    else:
+        os.execv(sys.executable, ['python'] + sys.argv)
 
 
 # some code which is run when bot is started
