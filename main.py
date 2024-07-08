@@ -492,10 +492,11 @@ async def maintaince_loop():
 
     last_loop_time = time.time()
     loop_count += 1
-    if USING_PM2:
-        sys.exit()
-    else:
-        os.execv(sys.executable, ['python'] + sys.argv)
+    if loop_count >= 20:
+        if USING_PM2:
+            sys.exit()
+        else:
+            os.execv(sys.executable, ['python'] + sys.argv)
 
 
 # some code which is run when bot is started
