@@ -175,7 +175,7 @@ def msg2img(message, bot, sansgg=False):
             (
                 129 + getsize(font, nick)[0] + 5,
                 8 + 5,
-                129 + getsize(font, nick)[0] + 14 + getsize(botfont, "BOT")[0],
+                129 + getsize(font, nick)[0] + 14 + getsize(botfont, "APP")[0],
                 10 + 6 + 25,
             ),
             fill=(88, 101, 242),
@@ -184,11 +184,11 @@ def msg2img(message, bot, sansgg=False):
 
         pencil.text(
             (131 + getsize(font, nick)[0] + 8, 10 + 4),
-            "BOT",
+            "APP",
             font=botfont,
             fill=(255, 255, 255),
         )
-        move = getsize(botfont, "BOT")[0] + 20
+        move = getsize(botfont, "APP")[0] + 20
     
     with Pilmoji(new_img) as pilmoji2:
         pilmoji2.text((122, 55), text.strip(), (255, 255, 255), font2, emoji_scale_factor=45/33)
