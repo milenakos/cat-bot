@@ -181,7 +181,7 @@ do_save_emojis = False
 # for mentioning it in catch message, will be auto-fetched in on_ready()
 DONATE_ID = 1249368737824374896
 
-# we restart every 20 loops
+# we restart every 6 loops
 loop_count = 0
 
 # loops in dpy can randomly break, i check if is been over 20 minutes since last loop to restart it
@@ -492,7 +492,7 @@ async def maintaince_loop():
 
     last_loop_time = time.time()
     loop_count += 1
-    if loop_count >= 20:
+    if loop_count >= 6:
         if USING_PM2:
             sys.exit()
         else:
