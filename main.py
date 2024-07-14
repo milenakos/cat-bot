@@ -440,9 +440,6 @@ def backup():
 async def maintaince_loop():
     global save_queue, reactions_ratelimit, last_loop_time, loop_count
     reactions_ratelimit = {}
-    today = datetime.date.today()
-    future = datetime.date(2024, 7, 8)
-    diff = future - today
     await bot.change_presence(
         activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
     )
