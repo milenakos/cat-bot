@@ -523,7 +523,7 @@ async def on_ready():
         milenakoos = await bot.fetch_user(OWNER_ID)
 
     register_guild("spawn_times")
-    register_guild("recovery_times")
+    # register_guild("recovery_times")
 
     if WEBHOOK_VERIFY:
         bot.server = server.HTTPServer(
@@ -1193,10 +1193,17 @@ async def preventcatch(message: discord.Interaction, person: discord.User, timeo
 async def repair(message: discord.Interaction):
     db["cat"][str(message.channel.id)] = False
     save("cat")
-    if int(message.channel.id) in db["spawn_times"]:
-        try: del db["recovery_times"][str(message.channel.id)]
-        except: pass
-        save("recovery_times")
+    # if int(message.channel.id) in db["spawn_times"]:
+    #     try: del db["recovery_times"][str(message.channel.id)]
+    #     except: pass
+    #     save("recovery_times")
+    try:
+        times = db["spawn_times"][str(message.channel.id)]
+    except KeyError:
+        times = [120, 1200]
+    decided_time = randint(times[0], times[1])
+    db["yet_to_spawn"][str(message.channel.id)] = int(time.time()) + decided_time + 3
+    save("yet_to_spawn")
     await message.response.send_message("success. if you still have issues, join our server: https://discord.gg/staring")
 
 @bot.tree.command(description="(ADMIN) Change the cat appear timings")
