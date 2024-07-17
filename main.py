@@ -181,7 +181,7 @@ do_save_emojis = False
 # for mentioning it in catch message, will be auto-fetched in on_ready()
 DONATE_ID = 1249368737824374896
 
-# we restart every 6 loops
+# we restart every 12 loops
 loop_count = 0
 
 # loops in dpy can randomly break, i check if is been over 20 minutes since last loop to restart it
@@ -447,9 +447,6 @@ async def maintaince_loop():
         activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
     )
 
-    event_loop = asyncio.get_event_loop()
-    await event_loop.run_in_executor(None, backup)
-
     if TOP_GG_TOKEN:
         async with aiohttp.ClientSession() as session:
             # send server count to top.gg
@@ -490,9 +487,12 @@ async def maintaince_loop():
     save("vote_remind")
     """
 
+    event_loop = asyncio.get_event_loop()
+    await event_loop.run_in_executor(None, backup)
+
     last_loop_time = time.time()
     loop_count += 1
-    if loop_count >= 6:
+    if loop_count >= 12:
         if USING_PM2:
             sys.exit()
         else:
