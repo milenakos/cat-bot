@@ -743,7 +743,7 @@ async def on_message(message):
             except KeyError:
                 times = [120, 1200]
             decided_time = randint(times[0], times[1])
-            db["yet_to_spawn"][str(message.channel.id)] = int(time.time()) + decided_time + 3
+            db["yet_to_spawn"][str(message.channel.id)] = int(time.time()) + decided_time + 10
             save("yet_to_spawn")
             try:
                 current_time = message.created_at.timestamp()
