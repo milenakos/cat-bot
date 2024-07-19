@@ -882,30 +882,37 @@ async def on_message(message):
                 if randint(0, 50) == 0:
                     button = Button(label="Join our Discord!", url="https://discord.gg/staring")
                 elif randint(0, 6) == 0 and WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
+                    # button_texts = [
+                    #    "If vote cat will you friend :)",
+                    #    "Vote cat for president",
+                    #    "vote = 0.01% to escape basement",
+                    #    "vote vote vote vote vote",
+                    #    "mrrp mrrow go and vote now",
+                    #    "if you vote you'll be free (no)",
+                    #    "Like gambling? Vote!",
+                    #    "vote. btw, i have a pipebomb",
+                    #    "No votes? :megamind:",
+                    #    "Cat says you should vote",
+                    #    "vote = random cats. lets gamble?",
+                    #    "cat will be happy if you vote",
+                    #    "VOTE NOW!!",
+                    #    "Vote on top.gg for free cats",
+                    #    "Vote for free cats",
+                    #    "No vote = no free cats :(",
+                    #    "0.04% to get egirl on voting",
+                    #    "I voted and got 1000000$",
+                    #    "I voted and found a gf",
+                    #    "lebron james forgot to vote",
+                    #    "vote if you like cats",
+                    #    "vote if cats > dogs",
+                    #    "you should vote for cat NOW!"
+                    # ]
                     button_texts = [
-                        "If vote cat will you friend :)",
-                        "Vote cat for president",
-                        "vote = 0.01% to escape basement",
-                        "vote vote vote vote vote",
-                        "mrrp mrrow go and vote now",
-                        "if you vote you'll be free (no)",
-                        "Like gambling? Vote!",
-                        "vote. btw, i have a pipebomb",
-                        "No votes? :megamind:",
-                        "Cat says you should vote",
-                        "vote = random cats. lets gamble?",
-                        "cat will be happy if you vote",
-                        "VOTE NOW!!",
-                        "Vote on top.gg for free cats",
-                        "Vote for free cats",
-                        "No vote = no free cats :(",
-                        "0.04% to get egirl on voting",
-                        "I voted and got 1000000$",
-                        "I voted and found a gf",
-                        "lebron james forgot to vote",
-                        "vote if you like cats",
-                        "vote if cats > dogs",
-                        "you should vote for cat NOW!"
+                        "10x egirl chance TODAY ONLY",
+                        "VOTING EVENT!! egirl++",
+                        "vote vote vote vote",
+                        "voting event: vote.",
+                        "xi jinping says vote bc 10x egirl"
                     ]
                     button = Button(emoji=get_emoji("topgg"), label=choice(button_texts), url="https://top.gg/bot/966695034340663367/vote")
                 elif randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
@@ -2752,7 +2759,7 @@ async def claim_reward(user, channeley, type):
         *([["8bit", 1]] * 100),
         *([["Divine", 1]] * 50),
         *([["Real", 1]] * 20),
-        ["eGirl", 1]
+        *([["eGirl", 1]] * 10)
     ]
 
     storekey = "vote_time_topgg"
