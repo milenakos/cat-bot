@@ -4,7 +4,6 @@ from discord import ButtonStyle
 from discord.ui import Button, View
 from typing import Optional, Literal
 from random import randint, choice, shuffle, seed
-from PIL import Image
 from aiohttp import web
 from collections import UserDict
 import logging
@@ -16,6 +15,7 @@ logging.basicConfig(level=logging.INFO)
 GUILD_ID = 966586000417619998 # for emojis
 CATS_GUILD_ID = False # alternative guild purely for cattype emojis (use for christmas/halloween etc), False to disable
 BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely recommended
+
 # discord bot token, use os.environ for more security
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
@@ -440,9 +440,6 @@ def backup():
 async def maintaince_loop():
     global save_queue, reactions_ratelimit, last_loop_time, loop_count
     reactions_ratelimit = {}
-    today = datetime.date.today()
-    future = datetime.date(2024, 7, 8)
-    diff = future - today
     await bot.change_presence(
         activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
     )
@@ -682,7 +679,7 @@ async def on_message(message):
 
     for resp in responses:
         if (resp[1] == "startswith" and text.lower().startswith(resp[0])) or \
-        (resp[1] == "re" and re.seach(resp[0], text.lower())) or \
+        (resp[1] == "re" and re.search(resp[0], text.lower())) or \
         (resp[1] == "exact" and resp[0] == text.lower()) or \
         (resp[1] == "in" and resp[0] in text.lower()):
             await message.reply(resp[2])
@@ -743,7 +740,7 @@ async def on_message(message):
             except KeyError:
                 times = [120, 1200]
             decided_time = randint(times[0], times[1])
-            db["yet_to_spawn"][str(message.channel.id)] = int(time.time()) + decided_time + 3
+            db["yet_to_spawn"][str(message.channel.id)] = int(time.time()) + decided_time + 10
             save("yet_to_spawn")
             try:
                 current_time = message.created_at.timestamp()
@@ -926,7 +923,7 @@ async def on_message(message):
                 # i love dpy
                 if thread_id:
                     if view:
-                        await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\_"))
+                        await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
                                                           .replace("{emoji}", str(icon))
                                                           .replace("{type}", le_emoji)
                                                           .replace("{count}", str(add_cat(message.guild.id, message.author.id, le_emoji, silly_amount)))
@@ -2505,12 +2502,12 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             # sort them correctly!
             if messager_placement > interactor_placement:
                 # interactor should go first
-                if interactor_placement > 15: string = string + f"{interactor_placement}\. {interactor} {unit}: <@{interaction.user.id}>\n"
-                if messager_placement > 15: string = string + f"{messager_placement}\. {messager} {unit}: <@{message.user.id}>\n"
+                if interactor_placement > 15: string = string + f"{interactor_placement}\\. {interactor} {unit}: <@{interaction.user.id}>\n"
+                if messager_placement > 15: string = string + f"{messager_placement}\\. {messager} {unit}: <@{message.user.id}>\n"
             else:
                 # messager should go first
-                if messager_placement > 15: string = string + f"{messager_placement}\. {messager} {unit}: <@{message.user.id}>\n"
-                if interactor_placement > 15: string = string + f"{interactor_placement}\. {interactor} {unit}: <@{interaction.user.id}>\n"
+                if messager_placement > 15: string = string + f"{messager_placement}\\. {messager} {unit}: <@{message.user.id}>\n"
+                if interactor_placement > 15: string = string + f"{interactor_placement}\\. {interactor} {unit}: <@{interaction.user.id}>\n"
 
         embedVar = discord.Embed(
                 title=f"{title} Leaderboards:", description=string, color=0x6E593C
@@ -2603,7 +2600,7 @@ async def setup(message: discord.Interaction):
                 else:
                     wh = await message.channel.create_webhook(name="Cat Bot", avatar=f.read())
                     db["thread_mappings"][str(message.channel.id)] = False
-                
+
                 db["webhook"][str(message.channel.id)] = wh.url
                 db["guild_mappings"][str(message.channel.id)] = str(message.guild.id)
                 save("webhook")
@@ -2842,8 +2839,8 @@ async def on_command_error(ctx, error):
                         except Exception:
                             pass # give up
     elif isinstance(error, discord.NotFound) or isinstance(error, discord.HTTPException) or isinstance(error, discord.DiscordServerError) or \
-         isinstance(error, asyncio.TimeoutError) or isinstance(error, aiohttp.client_exceptions.ServerDisconnectedError) or isinstance(error, discord.ConnectionClosed) or \
-         isinstance(error, commands.CommandInvokeError) or isinstance(error, aiohttp.client_exceptions.ClientOSError) or "NoneType" in str(error):
+         isinstance(error, asyncio.TimeoutError) or isinstance(error, aiohttp.ServerDisconnectedError) or isinstance(error, discord.ConnectionClosed) or \
+         isinstance(error, commands.CommandInvokeError) or isinstance(error, aiohttp.ClientOSError) or "NoneType" in str(error):
 
         # various other issues we dont care about
         pass
