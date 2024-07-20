@@ -206,7 +206,8 @@ if isinstance(db["yet_to_spawn"], list):
 # however there are multiple jsons which arent for servers yet are stored the same way
 
 # those are helper functions to automatically check if value exists, save it if needed etc
-def add_cat(server_id, person_id, cattype, val=1, overwrite=False):
+def add_cat(server_id, person_id, cattype, val=None, overwrite=False):
+    if not val: val = 1
     register_member(server_id, person_id)
     try:
         if overwrite:
@@ -218,7 +219,7 @@ def add_cat(server_id, person_id, cattype, val=1, overwrite=False):
     save(server_id)
     return db[str(server_id)][str(person_id)][cattype]
 
-def set_cat(server_id, person_id, cattype, val=1):
+def set_cat(server_id, person_id, cattype, val=None):
     return add_cat(server_id, person_id, cattype, val, True)
 
 def remove_cat(server_id, person_id, cattype, val=1):
@@ -526,7 +527,7 @@ async def on_ready():
         bot.server = server.HTTPServer(
             bot=bot,
             host="0.0.0.0",
-            port="8069",
+            port=8069,
         )
         await bot.server.start()
 
@@ -930,31 +931,31 @@ async def on_message(message):
                                                           .replace("{time}", caught_time[:-1]) + suffix_string,
                                                view=view,
                                                thread=discord.Object(message.channel.id),
-                                               allowed_mentions=None)
+                                               allowed_mentions=discord.AllowedMentions.none())
                     else:
-                        await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\_"))
+                        await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
                                                           .replace("{emoji}", str(icon))
                                                           .replace("{type}", le_emoji)
                                                           .replace("{count}", str(add_cat(message.guild.id, message.author.id, le_emoji, silly_amount)))
                                                           .replace("{time}", caught_time[:-1]) + suffix_string,
                                                thread=discord.Object(message.channel.id),
-                                               allowed_mentions=None)
+                                               allowed_mentions=discord.AllowedMentions.none())
                 else:
                     if view:
-                        await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\_"))
+                        await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
                                                           .replace("{emoji}", str(icon))
                                                           .replace("{type}", le_emoji)
                                                           .replace("{count}", str(add_cat(message.guild.id, message.author.id, le_emoji, silly_amount)))
                                                           .replace("{time}", caught_time[:-1]) + suffix_string,
                                                view=view,
-                                               allowed_mentions=None)
+                                               allowed_mentions=discord.AllowedMentions.none())
                     else:
-                        await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\_"))
+                        await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
                                                           .replace("{emoji}", str(icon))
                                                           .replace("{type}", le_emoji)
                                                           .replace("{count}", str(add_cat(message.guild.id, message.author.id, le_emoji, silly_amount)))
                                                           .replace("{time}", caught_time[:-1]) + suffix_string,
-                                               allowed_mentions=None)
+                                               allowed_mentions=discord.AllowedMentions.none())
 
                 # handle fastest and slowest catches
                 if do_time and time_caught < get_time(message.guild.id, message.author.id):
@@ -964,9 +965,9 @@ async def on_message(message):
 
                 await achemb(message, "first", "send")
 
-                if do_time and get_time(message.guild.id, message.author.id) <= 5: await achemb(message, "fast_catcher", "send")
+                if do_time and float(get_time(message.guild.id, message.author.id)) <= 5: await achemb(message, "fast_catcher", "send")
 
-                if do_time and get_time(message.guild.id, message.author.id, "slow") >= 3600: await achemb(message, "slow_catcher", "send")
+                if do_time and float(get_time(message.guild.id, message.author.id, "slow")) >= 3600: await achemb(message, "slow_catcher", "send")
 
                 if do_time and time_caught == 3.14: await achemb(message, "pie", "send")
 
@@ -1409,7 +1410,7 @@ async def gen_inventory(message, person_id):
     if str(slow_time) == "0":
         slow_time = "never"
     else:
-        slow_time = slow_time / 3600
+        slow_time = float(slow_time) / 3600
         slow_time = str(round(slow_time * 100) / 100)
     try:
         if float(slow_time) <= 0:
@@ -1425,14 +1426,14 @@ async def gen_inventory(message, person_id):
         your = person_id.name + "'s"
 
     if get_cat("0", person_id.id, "emoji"):
-        emoji_prefix = get_cat("0", person_id.id, "emoji") + " "
+        emoji_prefix = str(get_cat("0", person_id.id, "emoji")) + " "
     else:
         emoji_prefix = ""
 
     embedVar = discord.Embed(
         title=f"{emoji_prefix}{your} cats:",
         description=f"{your} fastest catch is: {catch_time} s\nand {your} slowest catch is: {slow_time} h\nAchievements unlocked: {unlocked}/{total_achs}{minus_achs}",
-        color=discord.Colour.from_str(get_cat("0", person_id.id, "color"))
+        color=discord.Colour.from_str(str(get_cat("0", person_id.id, "color")))
     )
 
     give_collector = True
@@ -1485,7 +1486,8 @@ async def gen_inventory(message, person_id):
     if do_save:
         save(message.guild.id)
 
-    embedVar.description += f"\nTotal cats: {total}"
+    if embedVar.description:
+        embedVar.description += f"\nTotal cats: {total}"
 
     if get_cat("0", person_id.id, "image"):
         embedVar.set_thumbnail(url=get_cat("0", person_id.id, "image"))
@@ -1493,8 +1495,8 @@ async def gen_inventory(message, person_id):
     if me:
         # give some aches if we are vieweing our own inventory
         if give_collector: await achemb(message, "collecter", "send")
-        if get_time(message.guild.id, message.user.id) <= 5: await achemb(message, "fast_catcher", "send")
-        if get_time(message.guild.id, message.user.id, "slow") >= 3600: await achemb(message, "slow_catcher", "send")
+        if float(get_time(message.guild.id, message.user.id)) <= 5: await achemb(message, "fast_catcher", "send")
+        if float(get_time(message.guild.id, message.user.id, "slow")) >= 3600: await achemb(message, "slow_catcher", "send")
 
     return embedVar
 
@@ -1527,7 +1529,7 @@ async def editprofile(message: discord.Interaction, color: Optional[str], provid
         await message.response.send_message("👑 This feature is supporter-only!\nFor as little as $3 you can support Cat Bot and unlock profile customization!\n<https://catbot.minkos.lol/donate>")
         return
 
-    if provided_emoji and discord_emoji.to_discord(provided_emoji.strip()):
+    if provided_emoji and discord_emoji.to_discord(provided_emoji.strip(), get_all=False, put_colons=False):
         set_cat("0", message.user.id, "emoji", provided_emoji.strip())
 
     if color:
@@ -1817,7 +1819,10 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         return coolembed, view
 
     embed, view = await gen_embed()
-    await message.response.send_message(embed=embed, view=view)
+    if not view:
+        await message.response.send_message(embed=embed)
+    else:
+        await message.response.send_message(embed=embed, view=view)
 
     # this is wrapper around gen_embed() to edit the mesage automatically
     async def update_trade_embed(interaction):
@@ -2449,7 +2454,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                             pass
             if str(value) != default_value:
                 # round the value (for time dislays)
-                thingy = round((value / devider) * 100) / 100
+                thingy = round((float(value) / float(devider)) * 100) / 100
 
                 # if it perfectly ends on .00, trim it
                 if thingy == int(thingy):
@@ -2807,7 +2812,6 @@ async def recieve_vote(request):
 
 
 # this is the crash handler
-@bot.on_error
 @bot.tree.error
 async def on_command_error(ctx, error):
     if ctx.guild == None:
