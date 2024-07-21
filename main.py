@@ -1491,6 +1491,8 @@ async def gen_inventory(message, person_id):
     # fix a tragic bug
     if str(get_cat("0", person_id.id, "image")) == "1":
         set_cat("0", person_id.id, "image", "")
+    if str(get_cat("0", person_id.id, "emoji")) == "1":
+        set_cat("0", person_id.id, "image", "")
 
     if get_cat("0", person_id.id, "image"):
         embedVar.set_thumbnail(url=get_cat("0", person_id.id, "image"))
