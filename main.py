@@ -1,9 +1,8 @@
-import discord, msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile, server, discord_emoji
+import discord, msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp, heapq, datetime, subprocess, asyncio, tarfile, server, discord_emoji, random
 from discord.ext import tasks, commands
 from discord import ButtonStyle
 from discord.ui import Button, View
 from typing import Optional, Literal, Union
-from random import _inst, randint, choice, shuffle, seed
 from aiohttp import web
 from collections import UserDict
 import logging
@@ -380,7 +379,7 @@ async def spawn_cat(ch_id, localcat=None):
         file = discord.File("cat.png")
 
         if not localcat:
-            localcat = choice(CAT_TYPES)
+            localcat = random.choice(CAT_TYPES)
         icon = get_emoji(localcat.lower() + "cat")
         try:
             channeley = discord.Webhook.from_url(db["webhook"][str(ch_id)], client=bot)
@@ -596,7 +595,7 @@ async def on_message(message):
 
     responses = [["testing testing 1 2 3", "exact", "test success"],
         ["cat!sex", "exact", "..."],
-        ["cellua good", "in", ".".join([str(randint(2, 254)) for _ in range(4)])],
+        ["cellua good", "in", ".".join([str(random.randint(2, 254)) for _ in range(4)])],
         ["https://tenor.com/view/this-cat-i-have-hired-this-cat-to-stare-at-you-hired-cat-cat-stare-gif-26392360", "exact", "https://tenor.com/view/cat-staring-cat-gif-16983064494644320763"]]
 
     # this is auto-update thing
@@ -742,7 +741,7 @@ async def on_message(message):
                 times = db["spawn_times"][str(message.channel.id)]
             except KeyError:
                 times = [120, 1200]
-            decided_time = randint(times[0], times[1])
+            decided_time = random.randint(times[0], times[1])
             db["yet_to_spawn"][str(message.channel.id)] = int(time.time()) + decided_time + 10
             save("yet_to_spawn")
             try:
@@ -830,7 +829,7 @@ async def on_message(message):
                     add_cat(message.guild.id, message.author.id, "cataine_active", 0, True)
                     suffix_string = f"\nyour cataine buff has expired. you know where to get a new one 😏"
 
-                elif randint(0, 7) == 0:
+                elif random.randint(0, 7) == 0:
                     # shill donating
                     suffix_string += f"\n👑 donate to cat bot and get cool perks: </donate:{DONATE_ID}>"
 
@@ -878,9 +877,9 @@ async def on_message(message):
                     await asyncio.sleep(5)
                     await interaction.followup.send("the only choice is to go to that place.", ephemeral=True)
 
-                if randint(0, 50) == 0:
+                if random.randint(0, 50) == 0:
                     button = Button(label="Join our Discord!", url="https://discord.gg/staring")
-                elif randint(0, 6) == 0 and WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
+                elif random.randint(0, 6) == 0 and WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
                     button_texts = [
                         "If vote cat will you friend :)",
                         "Vote cat for president",
@@ -906,8 +905,8 @@ async def on_message(message):
                         "vote if cats > dogs",
                         "you should vote for cat NOW!"
                     ]
-                    button = Button(emoji=get_emoji("topgg"), label=choice(button_texts), url="https://top.gg/bot/966695034340663367/vote")
-                elif randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
+                    button = Button(emoji=get_emoji("topgg"), label=random.choice(button_texts), url="https://top.gg/bot/966695034340663367/vote")
+                elif random.randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
                     button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
                     button.callback = dark_market_cutscene
 
@@ -1201,7 +1200,7 @@ async def repair(message: discord.Interaction):
         times = db["spawn_times"][str(message.channel.id)]
     except KeyError:
         times = [120, 1200]
-    decided_time = randint(times[0], times[1])
+    decided_time = random.randint(times[0], times[1])
     db["yet_to_spawn"][str(message.channel.id)] = int(time.time()) + decided_time + 3
     save("yet_to_spawn")
     await message.response.send_message("success. if you still have issues, join our server: https://discord.gg/staring")
@@ -1297,7 +1296,7 @@ async def changemessage(message: discord.Interaction):
             db[str(message.guild.id)]["appear"] = ""
 
         if interaction.user != caller:
-            await interaction.response.send_message(choice(funny), ephemeral=True)
+            await interaction.response.send_message(random.choice(funny), ephemeral=True)
             return
         modal = InputModal("Appear")
         await interaction.response.send_modal(modal)
@@ -1312,7 +1311,7 @@ async def changemessage(message: discord.Interaction):
             db[str(message.guild.id)]["cought"] = ""
 
         if interaction.user != caller:
-            await interaction.response.send_message(choice(funny), ephemeral=True)
+            await interaction.response.send_message(random.choice(funny), ephemeral=True)
             return
         modal = InputModal("Cought")
         await interaction.response.send_modal(modal)
@@ -1648,7 +1647,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     remove_cat(interaction.guild.id, interaction.user.id, "Fine", tax_amount)
                     await interaction.response.send_message(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
                 else:
-                    await interaction.response.send_message(choice(funny), ephemeral=True)
+                    await interaction.response.send_message(random.choice(funny), ephemeral=True)
 
             async def evade(interaction):
                 if interaction.user.id == message.user.id:
@@ -1656,7 +1655,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     await achemb(message, "secret", "send")
                     await interaction.response.send_message(f"You evaded the tax of {tax_amount} Fine cats.")
                 else:
-                    await interaction.response.send_message(choice(funny), ephemeral=True)
+                    await interaction.response.send_message(random.choice(funny), ephemeral=True)
 
             embed = discord.Embed(title="HOLD UP!", description="Thats rather large amount of fine cats! You will need to pay a cat tax of 20% your transaction, do you agree?", color=0x6E593C)
 
@@ -1701,7 +1700,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
     async def denyb(interaction):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, blackhole
         if interaction.user != person1 and interaction.user != person2:
-            await interaction.response.send_message(choice(funny), ephemeral=True)
+            await interaction.response.send_message(random.choice(funny), ephemeral=True)
             return
 
         blackhole = True
@@ -1713,7 +1712,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
     async def acceptb(interaction):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
         if interaction.user != person1 and interaction.user != person2:
-            await interaction.response.send_message(choice(funny), ephemeral=True)
+            await interaction.response.send_message(random.choice(funny), ephemeral=True)
             return
         # clicking accept again would make you un-accept
         if interaction.user == person1:
@@ -1758,7 +1757,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
     async def addb(interaction):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
         if interaction.user != person1 and interaction.user != person2:
-            await interaction.response.send_message(choice(funny), ephemeral=True)
+            await interaction.response.send_message(random.choice(funny), ephemeral=True)
             return
         if interaction.user == person1:
             currentuser = 1
@@ -1943,7 +1942,7 @@ async def casino(message: discord.Interaction):
     async def spin(interaction):
         nonlocal message
         if interaction.user.id != message.user.id:
-            await interaction.response.send_message(choice(funny), ephemeral=True)
+            await interaction.response.send_message(random.choice(funny), ephemeral=True)
             return
         if message.user.id in casino_lock:
             await interaction.response.send_message("you get kicked out of the casino because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
@@ -1970,14 +1969,14 @@ async def casino(message: discord.Interaction):
             f"{get_emoji('8bitcat')} 7 8bit cats"
         ]
 
-        shuffle(variants)
+        random.shuffle(variants)
 
         for i in variants:
             embed = discord.Embed(title="The Casino", description=f"**{i}**", color=0x750F0E)
             await interaction.edit_original_response(embed=embed, view=None)
             await asyncio.sleep(1.5)
 
-        amount = randint(1, 5)
+        amount = random.randint(1, 5)
 
         embed = discord.Embed(title="The Casino", description=f"You won:\n**{get_emoji('finecat')} {amount} Fine cats**", color=0x750F0E)
         add_cat(message.guild.id, message.user.id, "Fine", amount)
@@ -2056,8 +2055,8 @@ if WEBHOOK_VERIFY:
         embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg every 12 hours to recieve mystery cats.", color=0x6E593C)
         await message.followup.send(embed=embedVar, view=view)
 
-@bot.tree.command(description="Get a random cat")
-async def random(message: discord.Interaction):
+@bot.tree.command(name="random", description="Get a random cat")
+async def random_cat(message: discord.Interaction):
     await message.response.defer()
     async with aiohttp.ClientSession() as session:
         try:
@@ -2081,8 +2080,8 @@ async def cat_fact(message: discord.Interaction):
     ]
 
     # give a fact from the list or the API
-    if randint(0, 1) == 0:
-        await message.response.send_message(choice(facts))
+    if random.randint(0, 1) == 0:
+        await message.response.send_message(random.choice(facts))
     else:
         await message.response.defer()
         async with aiohttp.ClientSession() as session:
@@ -2105,15 +2104,15 @@ async def light_market(message):
             count = 0
             set_cat(message.guild.id, message.user.id, "cataine_week", 0)
             set_cat(message.guild.id, message.user.id, "recent_week", datetime.datetime.utcnow().isocalendar()[1])
-        seed(datetime.datetime.utcnow().isocalendar()[1]) # hopefully that works
+        random.seed(datetime.datetime.utcnow().isocalendar()[1]) # hopefully that works
         deals = []
-        r = range(randint(3, 5))
+        r = range(random.randint(3, 5))
         for i in r: # 3-5 prices are possible per week
-            deals.append(randint(0, 14))
+            deals.append(random.randint(0, 14))
         deals.sort()
         for i in r:
             deals[i] = cataine_prices[deals[i]]
-        seed(time.time()) # because we don’t want the most recent time this was opened to influence cat spawn times and rarities
+        random.seed(time.time()) # because we don’t want the most recent time this was opened to influence cat spawn times and rarities
         if count < len(deals):
             deal = deals[count]
         else:
@@ -2312,7 +2311,7 @@ async def achievements(message: discord.Interaction):
         if interaction.user.id == message.user.id:
             await interaction.response.send_message(embed=gen_new("Cat Hunt"), ephemeral=True, view=insane_view_generator("Cat Hunt"))
         else:
-            await interaction.response.send_message(choice(funny), ephemeral=True)
+            await interaction.response.send_message(random.choice(funny), ephemeral=True)
             await achemb(interaction, "curious", "send")
 
     # creates buttons at the bottom of the full view
@@ -2752,7 +2751,7 @@ async def nuke(message: discord.Interaction):
                 view = await gen(counter)
                 await interaction.edit_original_response(content=warning_text, view=view)
         else:
-            await interaction.response.send_message(choice(funny), ephemeral=True)
+            await interaction.response.send_message(random.choice(funny), ephemeral=True)
             await achemb(interaction, "curious", "send")
 
     view = await gen(counter)
@@ -2775,7 +2774,7 @@ async def claim_reward(user, channeley, type):
     storekey = "vote_time_topgg"
     cool_name = "Top.gg"
 
-    cattype, amount = choice(vote_choices)
+    cattype, amount = random.choice(vote_choices)
     icon = get_emoji(cattype.lower() + "cat")
     num_amount = amount
 
