@@ -880,7 +880,7 @@ async def on_message(message):
                 if WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
                     button_texts = [
                         "You havent voted today!",
-                        "I know you havent voted ;)"
+                        "I know you havent voted ;)",
                         "If vote cat will you friend :)",
                         "Vote cat for president",
                         "vote = 0.01% to escape basement",
