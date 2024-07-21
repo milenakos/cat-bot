@@ -2839,7 +2839,9 @@ async def on_command_error(ctx, error):
         "TimeoutError",
         "ServerDisconnectedError",
         "ClientOSError",
-        "NotFound"
+        "NotFound",
+        "Unknown Emoji",
+        "Missing Permissions"
     ]
 
     search_strings = [str(error)]
@@ -2849,6 +2851,10 @@ async def on_command_error(ctx, error):
         pass
     try:
         search_strings.append(str(error.original.__name__))
+    except Exception:
+        pass
+    try:
+        search_strings.append(str(error.text))
     except Exception:
         pass
 
