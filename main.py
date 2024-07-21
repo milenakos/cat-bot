@@ -424,7 +424,7 @@ def backup():
     global save_queue
     for id in set(save_queue.copy()):
         with open(f"data/{id}.json", "w") as f:
-            json.dump(db[id], f)
+            json.dump(db[id].copy(), f)
 
     save_queue = []
 
