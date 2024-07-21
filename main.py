@@ -2871,10 +2871,20 @@ async def on_command_error(ctx, error):
     if "NoneType" in str(error):
         return
 
+    search_strings = [str(error)]
+    try:
+        search_strings.append(str(error.__name__))
+    except Exception:
+        pass
+    try:
+        search_strings.append(str(error.original.__name__))
+    except Exception:
+        pass
+
     for i in filtered_errors:
-        if i in str(error.original.__name__):
-            # various other issues we dont care about
-            return
+        for j in search_strings:
+            if i in j:
+                return
 
     if CRASH_MODE == "DM":
         # try to get some context maybe if we get lucky
