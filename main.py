@@ -643,7 +643,10 @@ async def on_message(message):
         if total_vow != len(text):
             const_perc = len(text) / (len(text) - total_vow)
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
-            await message.add_reaction(get_emoji("staring_cat"))
+            try:
+                await message.add_reaction(get_emoji("staring_cat"))
+            except Exception:
+                pass
 
     if "robotop" in message.author.name.lower() and "i rate **cat" in message.content.lower():
         icon = str(get_emoji("no_cat_throphy")) + " "
@@ -676,8 +679,11 @@ async def on_message(message):
         if r[0] in text.lower() and reactions_ratelimit.get(message.author.id, 0) < 20:
             if r[1] == "custom": em = get_emoji(r[2])
             elif r[1] == "vanilla": em = r[2]
-            await message.add_reaction(em)
-            reactions_ratelimit[message.author.id] = reactions_ratelimit.get(message.author.id, 0) + 1
+            try:
+                await message.add_reaction(em)
+                reactions_ratelimit[message.author.id] = reactions_ratelimit.get(message.author.id, 0) + 1
+            except Exception:
+                pass
 
     for resp in responses:
         if (resp[1] == "startswith" and text.lower().startswith(resp[0])) or \
@@ -686,7 +692,10 @@ async def on_message(message):
         (resp[1] == "in" and resp[0] in text.lower()):
             await message.reply(resp[2])
 
-    if message.author in message.mentions: await message.add_reaction(get_emoji("staring_cat"))
+    try:
+        if message.author in message.mentions: await message.add_reaction(get_emoji("staring_cat"))
+    except Exception:
+        pass
 
     if (":place_of_worship:" in text or "🛐" in text) and (":cat:" in text or ":staring_cat:" in text or "🐱" in text): await achemb(message, "worship", "reply")
     if text.lower() in ["ach", "cat!ach"]: await achemb(message, "test_ach", "reply")
