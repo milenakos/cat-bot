@@ -2842,35 +2842,6 @@ async def on_command_error(ctx, error):
         "NotFound"
     ]
 
-    if isinstance(error, KeyboardInterrupt):
-        # keyboard interrupt
-        sys.exit()
-
-    if isinstance(error, discord.Forbidden):
-        # forbidden error usually means we dont have permission to send messages in the channel
-        # except-ception lessgo
-        forbidden_error = "i don't have permissions to do that.\ntry reinviting the bot or give it roles needed to access this chat (for example, verified role). more ideally, give it admin/mod."
-        try:
-            await ctx.channel.send(forbidden_error) # try as normal message (most likely will fail)
-        except Exception:
-            try:
-                await ctx.response.send_message(forbidden_error) # try to respond to /command literally
-            except Exception:
-                try:
-                    await ctx.followup.send(forbidden_error) # or as a followup if it already got responded to
-                except Exception:
-                    try:
-                        await ctx.user.send(forbidden_error) # dm the runner
-                    except Exception:
-                        try:
-                            await ctx.guild.owner.send(forbidden_error) # dm the guild owner
-                        except Exception:
-                            pass # give up
-        return
-
-    if "NoneType" in str(error):
-        return
-
     search_strings = [str(error)]
     try:
         search_strings.append(str(error.__name__))
@@ -2881,9 +2852,38 @@ async def on_command_error(ctx, error):
     except Exception:
         pass
 
-    for i in filtered_errors:
-        for j in search_strings:
-            if i in j:
+    for search in search_strings:
+        if "KeyboardInterrupt" in search:
+            # keyboard interrupt
+            sys.exit()
+
+        if "Forbidden" in search:
+            # forbidden error usually means we dont have permission to send messages in the channel
+            # except-ception lessgo
+            forbidden_error = "i don't have permissions to do that.\ntry reinviting the bot or give it roles needed to access this chat (for example, verified role). more ideally, give it admin/mod."
+            try:
+                await ctx.channel.send(forbidden_error) # try as normal message (most likely will fail)
+            except Exception:
+                try:
+                    await ctx.response.send_message(forbidden_error) # try to respond to /command literally
+                except Exception:
+                    try:
+                        await ctx.followup.send(forbidden_error) # or as a followup if it already got responded to
+                    except Exception:
+                        try:
+                            await ctx.user.send(forbidden_error) # dm the runner
+                        except Exception:
+                            try:
+                                await ctx.guild.owner.send(forbidden_error) # dm the guild owner
+                            except Exception:
+                                pass # give up
+            return
+
+        if "NoneType" in search:
+            return
+
+        for i in filtered_errors:
+            if i in search:
                 return
 
     if CRASH_MODE == "DM":
