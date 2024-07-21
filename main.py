@@ -2850,68 +2850,9 @@ async def on_command_error(ctx, error):
         await ctx.channel.send("hello good sir i would politely let you know cat bot is no workey in dms please consider gettng the hell out of here")
         return
 
-    filtered_errors = [
-        "HTTPException",
-        "DiscordServerError",
-        "ConnectionClosed",
-        "TimeoutError",
-        "ServerDisconnectedError",
-        "ClientOSError",
-        "NotFound",
-        "Unknown Emoji",
-        "Missing Permissions"
-    ]
-
-    search_strings = [str(error)]
-    try:
-        search_strings.append(str(type(error).__name__))
-    except Exception:
-        pass
-    try:
-        search_strings.append(str(type(error.original).__name__))
-    except Exception:
-        pass
-    try:
-        search_strings.append(str(error.text))
-    except Exception:
-        pass
-
-    for search in search_strings:
-        if "KeyboardInterrupt" in search:
-            # keyboard interrupt
-            sys.exit()
-
-        if "Forbidden" in search:
-            # forbidden error usually means we dont have permission to send messages in the channel
-            # except-ception lessgo
-            forbidden_error = "i don't have permissions to do that.\ntry reinviting the bot or give it roles needed to access this chat (for example, verified role). more ideally, give it admin/mod."
-            try:
-                await ctx.channel.send(forbidden_error) # try as normal message (most likely will fail)
-            except Exception:
-                try:
-                    await ctx.response.send_message(forbidden_error) # try to respond to /command literally
-                except Exception:
-                    try:
-                        await ctx.followup.send(forbidden_error) # or as a followup if it already got responded to
-                    except Exception:
-                        try:
-                            await ctx.user.send(forbidden_error) # dm the runner
-                        except Exception:
-                            try:
-                                await ctx.guild.owner.send(forbidden_error) # dm the guild owner
-                            except Exception:
-                                pass # give up
-            return
-
-        if "NoneType" in search:
-            return
-
-        for i in filtered_errors:
-            if i in search:
-                return
+    # implement your own filtering i give up
 
     if CRASH_MODE == "DM":
-        # try to get some context maybe if we get lucky
         try:
             cont = ctx.guild.id
         except Exception:
@@ -2919,12 +2860,11 @@ async def on_command_error(ctx, error):
 
         error2 = error.original.__traceback__
 
-        # if actually interesting crash, dm to bot owner
         if not milenakoos: return
         await milenakoos.send(
                 "There is an error happend:\n"
                 + str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error)
-                + "\n\nMessage guild: "
+                + "\n\nGuild: "
                 + str(cont)
         )
     elif CRASH_MODE == "RAISE":
