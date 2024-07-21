@@ -1089,15 +1089,22 @@ async def on_guild_join(guild):
     # we try to find a channel with the name "cat", then "bots", then whenever we cat atleast chat
     ch = find("cat", guild.text_channels)
     if not verify(ch): ch = find("bots", guild.text_channels)
+
+    found = False
     if not verify(ch):
         for ch in guild.text_channels:
             if verify(ch):
+                found = True
                 break
+        if not found: ch = guild.owner
 
     # you are free to change/remove this, its just a note for general user letting them know
     unofficial_note = "**NOTE: This is an unofficial Cat Bot instance.**\n\n"
     if bot.user.id == 966695034340663367: unofficial_note = ""
-    await ch.send(unofficial_note + "Thanks for adding me!\nTo start, use `/help`!\nJoin the support server here: https://discord.gg/staring\nHave a nice day :)")
+    try:
+        await ch.send(unofficial_note + "Thanks for adding me!\nTo start, use `/help`!\nJoin the support server here: https://discord.gg/staring\nHave a nice day :)")
+    except Exception:
+        pass
 
 @bot.tree.command(description="Learn to use the bot")
 async def help(message):
