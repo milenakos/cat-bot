@@ -207,7 +207,7 @@ if isinstance(db["yet_to_spawn"], list):
 
 # those are helper functions to automatically check if value exists, save it if needed etc
 def add_cat(server_id, person_id, cattype, val=None, overwrite=False):
-    if not val: val = 1
+    if val == None: val = 1
     register_member(server_id, person_id)
     try:
         if overwrite:
@@ -422,7 +422,7 @@ async def spawn_cat(ch_id, localcat=None):
 
 def backup():
     global save_queue
-    for id in set(save_queue):
+    for id in set(save_queue.copy()):
         with open(f"data/{id}.json", "w") as f:
             json.dump(db[id], f)
 
@@ -830,7 +830,6 @@ async def on_message(message):
 
                 elif randint(0, 7) == 0:
                     # shill donating
-                    add_cat(message.guild.id, message.author.id, "cataine_active", 0, True)
                     suffix_string += f"\n👑 donate to cat bot and get cool perks: </donate:{DONATE_ID}>"
 
                 if db[str(message.guild.id)]["cought"]:
@@ -1397,10 +1396,10 @@ async def gen_inventory(message, person_id):
         minus_achs = ""
 
     # now we count time i think
-    catch_time = str(get_time(message.guild.id, person_id.id))
+    catch_time = float(get_time(message.guild.id, person_id.id))
     is_empty = True
 
-    if catch_time >= "99999999999999":
+    if catch_time >= 99999999999999:
         catch_time = "never"
     else:
         catch_time = str(round(float(catch_time) * 100) / 100)
@@ -1488,6 +1487,10 @@ async def gen_inventory(message, person_id):
 
     if embedVar.description:
         embedVar.description += f"\nTotal cats: {total}"
+
+    # fix a tragic bug
+    if str(get_cat("0", person_id.id, "image")) == "1":
+        set_cat("0", person_id.id, "image", "")
 
     if get_cat("0", person_id.id, "image"):
         embedVar.set_thumbnail(url=get_cat("0", person_id.id, "image"))
@@ -2818,11 +2821,21 @@ async def on_command_error(ctx, error):
         await ctx.channel.send("hello good sir i would politely let you know cat bot is no workey in dms please consider gettng the hell out of here")
         return
 
-    # ctx here is interaction
+    filtered_errors = [
+        "HTTPException",
+        "DiscordServerError",
+        "ConnectionClosed",
+        "TimeoutError",
+        "ServerDisconnectedError",
+        "ClientOSError",
+        "NotFound"
+    ]
+
     if isinstance(error, KeyboardInterrupt):
         # keyboard interrupt
         sys.exit()
-    elif isinstance(error, discord.Forbidden):
+
+    if isinstance(error, discord.Forbidden):
         # forbidden error usually means we dont have permission to send messages in the channel
         # except-ception lessgo
         forbidden_error = "i don't have permissions to do that.\ntry reinviting the bot or give it roles needed to access this chat (for example, verified role). more ideally, give it admin/mod."
@@ -2842,30 +2855,33 @@ async def on_command_error(ctx, error):
                             await ctx.guild.owner.send(forbidden_error) # dm the guild owner
                         except Exception:
                             pass # give up
-    elif isinstance(error, discord.NotFound) or isinstance(error, discord.HTTPException) or isinstance(error, discord.DiscordServerError) or \
-         isinstance(error, asyncio.TimeoutError) or isinstance(error, aiohttp.ServerDisconnectedError) or isinstance(error, discord.ConnectionClosed) or \
-         isinstance(error, commands.CommandInvokeError) or isinstance(error, aiohttp.ClientOSError) or "NoneType" in str(error):
+        return
 
-        # various other issues we dont care about
-        pass
-    else:
-        if CRASH_MODE == "DM":
-            # try to get some context maybe if we get lucky
-            try:
-                cont = ctx.guild.id
-            except Exception:
-                cont = "Error getting"
+    if "NoneType" in str(error):
+        return
 
-            error2 = error.original.__traceback__
+    for i in filtered_errors:
+        if i in str(error.__name__) or i in str(error):
+            # various other issues we dont care about
+            return
 
-            # if actually interesting crash, dm to bot owner
-            await milenakoos.send(
-                    "There is an error happend:\n"
-                    + str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error)
-                    + "\n\nMessage guild: "
-                    + str(cont)
-            )
-        elif CRASH_MODE == "RAISE":
-            raise
+    if CRASH_MODE == "DM":
+        # try to get some context maybe if we get lucky
+        try:
+            cont = ctx.guild.id
+        except Exception:
+            cont = "Error getting"
+
+        error2 = error.original.__traceback__
+
+        # if actually interesting crash, dm to bot owner
+        await milenakoos.send(
+                "There is an error happend:\n"
+                + str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error)
+                + "\n\nMessage guild: "
+                + str(cont)
+        )
+    elif CRASH_MODE == "RAISE":
+        raise
 
 bot.run(TOKEN)
