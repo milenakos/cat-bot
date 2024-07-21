@@ -2848,11 +2848,11 @@ async def on_command_error(ctx, error):
 
     search_strings = [str(error)]
     try:
-        search_strings.append(str(error.__name__))
+        search_strings.append(str(type(error).__name__))
     except Exception:
         pass
     try:
-        search_strings.append(str(error.original.__name__))
+        search_strings.append(str(type(error.original).__name__))
     except Exception:
         pass
     try:
