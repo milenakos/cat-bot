@@ -2,8 +2,8 @@ import discord, msg2img, base64, sys, re, time, json, traceback, os, io, aiohttp
 from discord.ext import tasks, commands
 from discord import ButtonStyle
 from discord.ui import Button, View
-from typing import Optional, Literal
-from random import randint, choice, shuffle, seed
+from typing import Optional, Literal, Union
+from random import _inst, randint, choice, shuffle, seed
 from aiohttp import web
 from collections import UserDict
 import logging
@@ -150,7 +150,7 @@ funny = ["why did you click this this arent yours", "absolutely not", "cat bot n
 
 summon_id = db["summon_ids"]
 
-milenakoos = 0
+milenakoos = None
 try:
     if not OWNER_ID:
         OWNER_ID = 0
@@ -388,6 +388,7 @@ async def spawn_cat(ch_id, localcat=None):
             thread_id = db["thread_mappings"].get(ch_id, False)
         except KeyError:
             channeley = bot.get_channel(int(ch_id))
+            if not isinstance(channeley, Union[discord.TextChannel, discord.VoiceChannel]): return
             with open("cat.png", "rb") as f:
                 try:
                     wh = await channeley.create_webhook(name="Cat Bot", avatar=f.read())
@@ -434,6 +435,7 @@ def backup():
 
     backupchannel = bot.get_channel(BACKUP_ID)
     thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
+    if not isinstance(backupchannel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]): raise ValueError
     asyncio.run_coroutine_threadsafe(backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing), bot.loop)
 
 # a loop for various maintaince which is ran every 5 minutes
@@ -524,12 +526,12 @@ async def on_ready():
     # register_guild("recovery_times")
 
     if WEBHOOK_VERIFY:
-        bot.server = server.HTTPServer(
+        bot.server = server.HTTPServer(  # pyright: ignore
             bot=bot,
             host="0.0.0.0",
             port=8069,
         )
-        await bot.server.start()
+        await bot.server.start()  # pyright: ignore
 
     credits = {
         "author": [553093932012011520],
@@ -1043,6 +1045,7 @@ async def on_message(message):
         for i in db["summon_ids"]:
             try:
                 channeley = await bot.fetch_channel(int(i))
+                if not isinstance(channeley, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]): continue
                 await channeley.send(text[8:])
             except Exception:
                 pass
@@ -1492,7 +1495,7 @@ async def gen_inventory(message, person_id):
     if str(get_cat("0", person_id.id, "image")) == "1":
         set_cat("0", person_id.id, "image", "")
     if str(get_cat("0", person_id.id, "emoji")) == "1":
-        set_cat("0", person_id.id, "image", "")
+        set_cat("0", person_id.id, "emoji", "")
 
     if get_cat("0", person_id.id, "image"):
         embedVar.set_thumbnail(url=get_cat("0", person_id.id, "image"))
@@ -1544,6 +1547,7 @@ async def editprofile(message: discord.Interaction, color: Optional[str], provid
         # reupload image
         channeley = bot.get_channel(DONOR_CHANNEL_ID)
         file = await image.to_file()
+        if not isinstance(channeley, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]): raise ValueError
         msg = await channeley.send(file=file)
         set_cat("0", message.user.id, "image", msg.attachments[0].url)
     embedVar = await gen_inventory(message, message.user)
@@ -1666,6 +1670,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
 
             myview.add_item(button)
             myview.add_item(button2)
+            if not isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]): return
             await message.channel.send(embed=embed, view=myview)
     else:
         # haha skill issue
@@ -1997,6 +2002,7 @@ async def casino(message: discord.Interaction):
 
 async def toggle_reminders(interaction):
     vote_remind = db["vote_remind"]
+    if not isinstance(vote_remind, list): vote_remind = []
     if interaction.user.id in vote_remind:
         vote_remind.remove(interaction.user.id)
         await interaction.response.send_message("Vote reminders have been turned off.", ephemeral=True)
@@ -2192,24 +2198,24 @@ async def dark_market(message):
 
             # there is actually no time pressure anywhere but try to imagine there is
             counter = 0
-            async def step(interaction2):
+            async def step(interaction):
                 nonlocal counter
                 counter += 1
-                await interaction2.response.defer()
+                await interaction.response.defer()
                 if counter == 30:
-                    await interaction2.edit_original_response(view=None)
+                    await interaction.edit_original_response(view=None)
                     await asyncio.sleep(5)
-                    await interaction2.followup.send("You barely manage to turn around a corner and hide to run away.", ephemeral=True)
+                    await interaction.followup.send("You barely manage to turn around a corner and hide to run away.", ephemeral=True)
                     await asyncio.sleep(5)
-                    await interaction2.followup.send("You quietly get to the police station and tell them everything.", ephemeral=True)
+                    await interaction.followup.send("You quietly get to the police station and tell them everything.", ephemeral=True)
                     await asyncio.sleep(5)
-                    await interaction2.followup.send("## The next day.", ephemeral=True)
+                    await interaction.followup.send("## The next day.", ephemeral=True)
                     await asyncio.sleep(5)
-                    await interaction2.followup.send("A nice day outside. You open the news:", ephemeral=True)
+                    await interaction.followup.send("A nice day outside. You open the news:", ephemeral=True)
                     await asyncio.sleep(5)
-                    await interaction2.followup.send("*Dog Mafia, the biggest cataine distributor, was finally caught after anonymous report.*", ephemeral=True)
+                    await interaction.followup.send("*Dog Mafia, the biggest cataine distributor, was finally caught after anonymous report.*", ephemeral=True)
                     await asyncio.sleep(5)
-                    await interaction2.followup.send("HUH? It was dogs all along...", ephemeral=True)
+                    await interaction.followup.send("HUH? It was dogs all along...", ephemeral=True)
                     await asyncio.sleep(5)
                     await achemb(interaction, "thanksforplaying", "send")
                     add_cat(interaction.guild.id, interaction.user.id, "story_complete")
@@ -2589,6 +2595,7 @@ async def setup(message: discord.Interaction):
         return
     # we just set a lot of variables nothing to see here
     abc = db["summon_ids"]
+    if not isinstance(abc, list): abc = []
     abc.append(int(message.channel.id))
     db["summon_ids"] = abc
     try:
@@ -2605,9 +2612,10 @@ async def setup(message: discord.Interaction):
             try:
                 if isinstance(message.channel, discord.Thread):
                     parent = bot.get_channel(message.channel.parent_id)
+                    if not isinstance(parent, discord.TextChannel): raise ValueError
                     wh = await parent.create_webhook(name="Cat Bot", avatar=f.read())
                     db["thread_mappings"][str(message.channel.id)] = True
-                else:
+                elif isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel]):
                     wh = await message.channel.create_webhook(name="Cat Bot", avatar=f.read())
                     db["thread_mappings"][str(message.channel.id)] = False
 
@@ -2628,6 +2636,7 @@ async def setup(message: discord.Interaction):
 async def forget(message: discord.Interaction):
     if int(message.channel.id) in db["summon_ids"]:
         abc = db["summon_ids"]
+        if not isinstance(abc, list): abc = []
         abc.remove(int(message.channel.id))
         db["summon_ids"] = abc
         del db["cat"][str(message.channel.id)]
@@ -2643,6 +2652,7 @@ async def forget(message: discord.Interaction):
 async def fake(message: discord.Interaction):
     file = discord.File("australian cat.png", filename="australian cat.png")
     icon = get_emoji("egirlcat")
+    if not isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]): return
     await message.channel.send(str(icon) + " eGirl cat hasn't appeared! Type \"cat\" to catch ratio!", file=file)
     await message.response.send_message("OMG TROLLED SO HARD LMAOOOO 😂", ephemeral=True)
     await achemb(message, "trolled", "followup")
@@ -2806,7 +2816,7 @@ async def recieve_vote(request):
 
     try:
         channeley = await bot.fetch_channel(get_cat("0", user, "vote_channel"))
-        if not channeley.guild:
+        if not isinstance(channeley, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]) or not channeley.guild:
             raise Exception
     except Exception:
         pending_votes.append([user, type])
@@ -2863,7 +2873,7 @@ async def on_command_error(ctx, error):
         return
 
     for i in filtered_errors:
-        if i in str(error.__name__) or i in str(error):
+        if i in str(error.original.__name__):
             # various other issues we dont care about
             return
 
@@ -2877,6 +2887,7 @@ async def on_command_error(ctx, error):
         error2 = error.original.__traceback__
 
         # if actually interesting crash, dm to bot owner
+        if not milenakoos: return
         await milenakoos.send(
                 "There is an error happend:\n"
                 + str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error)
