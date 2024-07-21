@@ -828,9 +828,8 @@ async def on_message(message):
                     add_cat(message.guild.id, message.author.id, "cataine_active", 0, True)
                     suffix_string = f"\nyour cataine buff has expired. you know where to get a new one 😏"
 
-                elif randint(0, 7) == 0:
+                if randint(0, 7) == 0:
                     # shill donating
-                    add_cat(message.guild.id, message.author.id, "cataine_active", 0, True)
                     suffix_string += f"\n👑 donate to cat bot and get cool perks: </donate:{DONATE_ID}>"
 
                 if db[str(message.guild.id)]["cought"]:
