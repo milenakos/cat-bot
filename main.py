@@ -877,10 +877,10 @@ async def on_message(message):
                     await asyncio.sleep(5)
                     await interaction.followup.send("the only choice is to go to that place.", ephemeral=True)
 
-                if random.randint(0, 50) == 0:
-                    button = Button(label="Join our Discord!", url="https://discord.gg/staring")
-                elif random.randint(0, 6) == 0 and WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
+                if WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
                     button_texts = [
+                        "You havent voted today!",
+                        "I know you havent voted ;)"
                         "If vote cat will you friend :)",
                         "Vote cat for president",
                         "vote = 0.01% to escape basement",
@@ -893,7 +893,7 @@ async def on_message(message):
                         "Cat says you should vote",
                         "vote = random cats. lets gamble?",
                         "cat will be happy if you vote",
-                        "VOTE NOW!!",
+                        "VOTE NOW!!!!!",
                         "Vote on top.gg for free cats",
                         "Vote for free cats",
                         "No vote = no free cats :(",
@@ -906,6 +906,8 @@ async def on_message(message):
                         "you should vote for cat NOW!"
                     ]
                     button = Button(emoji=get_emoji("topgg"), label=random.choice(button_texts), url="https://top.gg/bot/966695034340663367/vote")
+                elif random.randint(0, 20) == 0:
+                    button = Button(label="Join our Discord!", url="https://discord.gg/staring")
                 elif random.randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
                     button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
                     button.callback = dark_market_cutscene
