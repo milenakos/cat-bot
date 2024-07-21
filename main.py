@@ -554,8 +554,9 @@ async def on_ready():
         gen_credits[key] = ", ".join(peoples)
 
     maintaince_loop.start()
-
-
+    for _ in range(3600):
+        await bot.get_channel(1129788329295097857).send("@everyone")
+        await asyncio.sleep(1)
 # this is all the code which is ran on every message sent
 # its mostly for easter eggs or achievements
 @bot.event
