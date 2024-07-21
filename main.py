@@ -435,7 +435,7 @@ def backup():
     backupchannel = bot.get_channel(BACKUP_ID)
     thing = discord.File("backup.tar.gz", filename="backup.tar.gz")
     if not isinstance(backupchannel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]): raise ValueError
-    asyncio.run_coroutine_threadsafe(backupchannel.send(f"In {len(bot.guilds)} servers.", file=thing), bot.loop)
+    asyncio.run_coroutine_threadsafe(backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.", file=thing), bot.loop)
 
 # a loop for various maintaince which is ran every 5 minutes
 @tasks.loop(minutes=5.0)
