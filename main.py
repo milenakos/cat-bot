@@ -332,6 +332,9 @@ async def achemb(message, ach_id, send_type, author_string=None):
             author_string = message.user
     else:
         author = author_string.id
+    if message.guild == None:
+        await message.channel.send("no that's not how this works there are no achievements to get in dms now stop before i block you")
+    return
     if not has_ach(message.guild.id, author, ach_id):
         ach_data = give_ach(message.guild.id, author, ach_id)
         desc = ach_data["description"]
