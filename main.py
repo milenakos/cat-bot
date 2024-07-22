@@ -1706,6 +1706,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
 
             async def pay(interaction):
                 if interaction.user.id == message.user.id:
+                    await interaction.response.defer()
                     await interaction.edit_original_response(view=None)
                     remove_cat(interaction.guild.id, interaction.user.id, "Fine", tax_amount)
                     await interaction.response.send_message(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
@@ -1714,6 +1715,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
 
             async def evade(interaction):
                 if interaction.user.id == message.user.id:
+                    await interaction.response.defer()
                     await interaction.edit_original_response(view=None)
                     await achemb(message, "secret", "send")
                     await interaction.response.send_message(f"You evaded the tax of {tax_amount} Fine cats.")
