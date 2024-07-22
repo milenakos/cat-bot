@@ -1709,7 +1709,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     await interaction.response.defer()
                     await interaction.edit_original_response(view=None)
                     remove_cat(interaction.guild.id, interaction.user.id, "Fine", tax_amount)
-                    await interaction.response.send_message(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
+                    await interaction.followup.send(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
                 else:
                     await interaction.response.send_message(random.choice(funny), ephemeral=True)
 
@@ -1720,7 +1720,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     await achemb(message, "secret", "send")
                     await interaction.response.send_message(f"You evaded the tax of {tax_amount} Fine cats.")
                 else:
-                    await interaction.response.send_message(random.choice(funny), ephemeral=True)
+                    await interaction.followup.send(random.choice(funny), ephemeral=True)
 
             embed = discord.Embed(title="HOLD UP!", description="Thats rather large amount of fine cats! You will need to pay a cat tax of 20% your transaction, do you agree?", color=0x6E593C)
 
