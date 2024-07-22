@@ -1718,7 +1718,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     await interaction.response.defer()
                     await interaction.edit_original_response(view=None)
                     await achemb(message, "secret", "send")
-                    await interaction.response.send_message(f"You evaded the tax of {tax_amount} Fine cats.")
+                    await interaction.followup.send(f"You evaded the tax of {tax_amount} Fine cats.")
                 else:
                     await interaction.followup.send(random.choice(funny), ephemeral=True)
 
