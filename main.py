@@ -1192,6 +1192,7 @@ async def info(message: discord.Interaction):
 
     if not gen_credits:
         await message.response.send_message("credits not yet ready! this is a very rare error, congrats.", ephemeral=True)
+        return
 
     await message.response.defer()
 
