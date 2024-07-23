@@ -158,6 +158,9 @@ except Exception:
 
 save_queue = []
 
+# store credits usernames to prevent excessive api calls
+gen_credits = {}
+
 # due to some stupid individuals spamming the hell out of reactions, we ratelimit them
 # you can do 50 reactions before they stop, limit resets on global cat loop
 reactions_ratelimit = {}
@@ -542,8 +545,6 @@ async def on_ready():
         "emoji": [709374062237057074],
         "trash": [520293520418930690]
     }
-
-    gen_credits = {}
 
     # fetch discord usernames by user ids
     for key in credits.keys():
@@ -1188,7 +1189,12 @@ async def help(message):
 @bot.tree.command(description="View information about the bot")
 async def info(message: discord.Interaction):
     global gen_credits
+
+    if not gen_credits:
+        await message.response.send_message("credits not yet ready! this is a very rare error, congrats.", ephemeral=True)
+
     await message.response.defer()
+
     embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/staring)\n[GitHub Page](https://github.com/milena-kos/cat-bot)\n\n" + \
                              f"Bot made by {gen_credits['author']}\nWith contributions by {gen_credits['contrib']}.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n" + \
                              f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits['emoji']}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**countik** for TikTok TTS API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**")
@@ -1707,7 +1713,10 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
             async def pay(interaction):
                 if interaction.user.id == message.user.id:
                     await interaction.response.defer()
-                    await interaction.edit_original_response(view=None)
+                    try:
+                        await interaction.edit_original_response(view=None)
+                    except Exception:
+                        pass
                     remove_cat(interaction.guild.id, interaction.user.id, "Fine", tax_amount)
                     await interaction.followup.send(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
                 else:
@@ -1716,7 +1725,10 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
             async def evade(interaction):
                 if interaction.user.id == message.user.id:
                     await interaction.response.defer()
-                    await interaction.edit_original_response(view=None)
+                    try:
+                        await interaction.edit_original_response(view=None)
+                    except Exception:
+                        pass
                     await achemb(message, "secret", "send")
                     await interaction.followup.send(f"You evaded the tax of {tax_amount} Fine cats.")
                 else:
@@ -1774,7 +1786,10 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         blackhole = True
         person1gives = {}
         person2gives = {}
-        await interaction.edit_original_response(content=f"<@{interaction.user.id}> has cancelled the trade.", embed=None, view=None)
+        try:
+            await interaction.edit_original_response(content=f"<@{interaction.user.id}> has cancelled the trade.", embed=None, view=None)
+        except Exception:
+            pass
 
     # this is the accept button code
     async def acceptb(interaction):
@@ -1805,7 +1820,10 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     break
 
             if error:
-                await interaction.edit_original_response(content="Not enough cats - some of the cats disappeared while trade was happening", embed=None, view=None)
+                try:
+                    await interaction.edit_original_response(content="Not enough cats - some of the cats disappeared while trade was happening", embed=None, view=None)
+                except Exception:
+                    await interaction.followup.send("Not enough cats - some of the cats disappeared while trade was happening")
                 return
 
             # exchange cats
@@ -1817,7 +1835,10 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 remove_cat(interaction.guild.id, person2.id, k, v)
                 add_cat(interaction.guild.id, person1.id, k, v)
 
-            await interaction.edit_original_response(content="Trade finished!", view=None)
+            try:
+                await interaction.edit_original_response(content="Trade finished!", view=None)
+            except Exception:
+                await interaction.followup.send()
             await achemb(message, "extrovert", "send")
             await achemb(message, "extrovert", "send", person2)
 
@@ -1904,7 +1925,11 @@ async def trade(message: discord.Interaction, person_id: discord.User):
     # this is wrapper around gen_embed() to edit the mesage automatically
     async def update_trade_embed(interaction):
         embed, view = await gen_embed()
-        await interaction.edit_original_response(embed=embed, view=view)
+        try:
+            await interaction.edit_original_response(embed=embed, view=view)
+        except Exception:
+            await achemb(message, "blackhole", "send")
+            await achemb(message, "blackhole", "send", person2)
 
     # lets go add cats modal thats fun
     class TradeModal(discord.ui.Modal):
@@ -2041,7 +2066,10 @@ async def casino(message: discord.Interaction):
 
         for i in variants:
             embed = discord.Embed(title="The Casino", description=f"**{i}**", color=0x750F0E)
-            await interaction.edit_original_response(embed=embed, view=None)
+            try:
+                await interaction.edit_original_response(embed=embed, view=None)
+            except Exception:
+                pass
             await asyncio.sleep(1.5)
 
         amount = random.randint(1, 5)
@@ -2057,7 +2085,10 @@ async def casino(message: discord.Interaction):
 
         casino_lock.remove(message.user.id)
 
-        await interaction.edit_original_response(embed=embed, view=myview)
+        try:
+            await interaction.edit_original_response(embed=embed, view=myview)
+        except Exception:
+            await interaction.followup.send(embed=embed, view=myview)
 
     button = Button(label="Spin", style=ButtonStyle.blurple)
     button.callback = spin
@@ -2270,7 +2301,10 @@ async def dark_market(message):
                 counter += 1
                 await interaction.response.defer()
                 if counter == 30:
-                    await interaction.edit_original_response(view=None)
+                    try:
+                        await interaction.edit_original_response(view=None)
+                    except Exception:
+                        pass
                     await asyncio.sleep(5)
                     await interaction.followup.send("You barely manage to turn around a corner and hide to run away.", ephemeral=True)
                     await asyncio.sleep(5)
@@ -2399,7 +2433,10 @@ async def achievements(message: discord.Interaction):
 
         async def callback_hell(interaction, thing):
             await interaction.response.defer()
-            await interaction.edit_original_response(embed=gen_new(thing), view=insane_view_generator(thing))
+            try:
+                await interaction.edit_original_response(embed=gen_new(thing), view=insane_view_generator(thing))
+            except Exception:
+                pass
 
             if hidden_counter == 3 and get_cat(message.guild.id, message.user.id, "dark_market"):
                 if get_cat(message.guild.id, message.user.id, "story_complete") != 1:
@@ -2407,6 +2444,7 @@ async def achievements(message: discord.Interaction):
                     await dark_market(message)
                 else:
                     await light_market(message)
+
         if category == "Cat Hunt":
             buttons_list.append(Button(label="Cat Hunt", style=ButtonStyle.green))
         else:
@@ -2622,9 +2660,10 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         myview.add_item(button3)
 
         # just send if first time, otherwise edit existing
-        if do_edit:
+        try:
+            if not do_edit: raise Exception
             await interaction.edit_original_response(embed=embedVar, view=myview)
-        else:
+        except Exception:
             await interaction.followup.send(embed=embedVar, view=myview)
 
     # helpers! everybody loves helpers.
@@ -2818,10 +2857,16 @@ async def nuke(message: discord.Interaction):
                 # Scary!
                 db[str(message.guild.id)] = {}
                 save(message.guild.id)
-                await interaction.edit_original_response(content="Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.", view=None)
+                try:
+                    await interaction.edit_original_response(content="Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.", view=None)
+                except Exception:
+                    await interaction.followup.send("Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.")
             else:
                 view = await gen(counter)
-                await interaction.edit_original_response(content=warning_text, view=view)
+                try:
+                    await interaction.edit_original_response(content=warning_text, view=view)
+                except Exception:
+                    pass
         else:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
             await achemb(interaction, "curious", "send")
