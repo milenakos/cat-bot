@@ -914,7 +914,10 @@ async def on_message(message):
                     await asyncio.sleep(5)
                     await interaction.followup.send("the only choice is to go to that place.", ephemeral=True)
 
-                if WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
+                if random.randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
+                    button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
+                    button.callback = dark_market_cutscene
+                elif WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
                     button_texts = [
                         "You havent voted today!",
                         "I know you havent voted ;)",
@@ -945,9 +948,6 @@ async def on_message(message):
                     button = Button(emoji=get_emoji("topgg"), label=random.choice(button_texts), url="https://top.gg/bot/966695034340663367/vote")
                 elif random.randint(0, 20) == 0:
                     button = Button(label="Join our Discord!", url="https://discord.gg/staring")
-                elif random.randint(0, 10) == 0 and get_cat(message.guild.id, message.author.id, "Fine") >= 20 and get_cat(message.guild.id, message.author.id, "dark_market") == 0:
-                    button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
-                    button.callback = dark_market_cutscene
 
                 if button:
                     view = View(timeout=3600)
