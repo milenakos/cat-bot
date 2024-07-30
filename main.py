@@ -419,6 +419,9 @@ async def spawn_cat(ch_id, localcat=None):
             message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file, wait=True, thread=discord.Object(int(ch_id)))
         else:
             message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file, wait=True)
+        if str(message_is_sus.id)[0] != "1":
+            # check for broken ids idk
+            return
         db["cat"][ch_id] = message_is_sus.id
         save("cat")
         db["yet_to_spawn"][ch_id] = 0
