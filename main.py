@@ -2009,11 +2009,6 @@ async def cursed(message: discord.Interaction):
     file = discord.File("cursed.jpg", filename="cursed.jpg")
     await message.response.send_message(file=file)
 
-@bot.tree.command(description="Get a warning")
-async def warning(message: discord.Interaction):
-    file = discord.File("warning.png", filename="warning.png")
-    await message.response.send_message(file=file)
-
 @bot.tree.command(description="Get Your balance")
 async def bal(message: discord.Interaction):
     file = discord.File("money.png", filename="money.png")
