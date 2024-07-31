@@ -3030,7 +3030,7 @@ async def on_command_error(ctx, error):
 async def setup(bot2):
     global bot
 
-    bot2.tree.clear_commands(None)
+    bot2.tree.clear_commands(guild=None)
     for command in bot.tree.walk_commands():
         # copy all the commands
         bot2.tree.add_command(command)
