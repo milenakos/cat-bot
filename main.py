@@ -1270,6 +1270,8 @@ async def tiktok(message: discord.Interaction, text: str):
                     f.write(base64.b64decode(ba))
                     f.seek(0)
                     await message.followup.send(file=discord.File(fp=f, filename='output.mp3'))
+        except discord.NotFound:
+            pass
         except Exception:
             await message.followup.send("i dont speak your language (remove non-english characters, make sure the message is below 300 chars)")
 
@@ -2073,7 +2075,7 @@ async def casino(message: discord.Interaction):
 
     async def spin(interaction):
         nonlocal message
-        if interaction.user.id != message.user.id:
+        if not message.guild or interaction.user.id != message.user.id:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
             return
         if message.user.id in casino_lock:
