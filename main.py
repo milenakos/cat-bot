@@ -1625,7 +1625,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
     embedVar = await gen_inventory(message, person_id)
 
     if DONOR_CHANNEL_ID:
-        embedVar.set_footer(text="Make this pretty with /editprofile")
+        embedVar.set_footer(text="👑 Make this pretty with /editprofile")
 
     await message.followup.send(embed=embedVar)
 
