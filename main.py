@@ -3027,10 +3027,11 @@ async def on_command_error(ctx, error):
 
 async def setup(bot2):
     global bot
+
+    bot2.tree.clear_commands()
     for command in bot.tree.walk_commands():
         # copy all the commands
         bot2.tree.add_command(command)
-        # you might need to manually delete commands? not sure
 
     # copy all the events
     bot2.on_ready = on_ready
@@ -3042,3 +3043,6 @@ async def setup(bot2):
 
     # finally replace the fake bot with the real one
     bot = bot2
+
+    if bot.is_ready() and not on_ready_debounce:
+        await on_ready()
