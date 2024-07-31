@@ -522,7 +522,7 @@ async def maintaince_loop():
 
     last_loop_time = time.time()
     loop_count += 1
-    if loop_count >= 36:
+    if loop_count >= 12:
         await bot.reload_extension("main")
 
 
