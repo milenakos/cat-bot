@@ -15,10 +15,6 @@ GUILD_ID = 966586000417619998 # for emojis
 CATS_GUILD_ID = False # alternative guild purely for cattype emojis (use for christmas/halloween etc), False to disable
 BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely recommended
 
-# discord bot token, use os.environ for more security
-TOKEN = os.environ['token']
-# TOKEN = "token goes here"
-
 # top.gg voting key
 # set to False to disable
 WEBHOOK_VERIFY = os.environ["webhook_verify"]
@@ -34,10 +30,6 @@ GITHUB_CHANNEL_ID = 1060965767044149249
 # all messages in this channel will be interpreted as user ids to give premium access to
 # set to False to disable
 DONOR_CHANNEL_ID = 1249343008890028144
-
-# whether you use pm2 for running it or not
-# that will just silently kill it on autoupdate and let pm2 restart it instead of manually restarting it
-USING_PM2 = True
 
 BANNED_ID = [] # banned from using /tiktok
 
@@ -137,7 +129,7 @@ ach_names = ach_list.keys()
 ach_titles = {value["title"].lower(): key for (key, value) in ach_list.items()}
 
 intents = discord.Intents(message_content=True, messages=True, guilds=True, emojis=True)
-bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ", intents=intents, help_command=None, chunk_guilds_at_startup=False)
+bot = commands.AutoShardedBot(command_prefix="this is a placebo bot which will be replaced when this will get loaded", intents=intents, help_command=None, chunk_guilds_at_startup=False)
 
 # this list stores unique non-duplicate cattypes
 cattypes = []
@@ -501,14 +493,10 @@ async def maintaince_loop():
     last_loop_time = time.time()
     loop_count += 1
     if loop_count >= 36:
-        if USING_PM2:
-            sys.exit()
-        else:
-            os.execv(sys.executable, ['python'] + sys.argv)
+        await bot.reload_extension("main")
 
 
 # some code which is run when bot is started
-@bot.event
 async def on_ready():
     global milenakoos, OWNER_ID, do_save_emojis, save_queue, on_ready_debounce, gen_credits, DONATE_ID, last_loop_time
     if on_ready_debounce:
@@ -565,7 +553,6 @@ async def on_ready():
 
 # this is all the code which is ran on every message sent
 # its mostly for easter eggs or achievements
-@bot.event
 async def on_message(message):
     global save_queue
     text = message.content
@@ -611,10 +598,7 @@ async def on_message(message):
             with open(f"data/{id}.json", "w") as f:
                 json.dump(db[id], f)
         os.system("git pull")
-        if USING_PM2:
-            sys.exit()
-        else:
-            os.execv(sys.executable, ['python'] + sys.argv)
+        await bot.reload_extension("main")
 
     if DONOR_CHANNEL_ID and message.channel.id == DONOR_CHANNEL_ID:
         register_member("0", text)
@@ -1125,7 +1109,6 @@ async def on_message(message):
 
 
 # the message when cat gets added to a new server
-@bot.event
 async def on_guild_join(guild):
     def verify(ch):
         return ch and ch.permissions_for(guild.me).send_messages
@@ -2691,9 +2674,9 @@ async def givecat(message: discord.Interaction, person_id: discord.User, amount:
     embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount} {cat_type} cats", color=0x6E593C)
     await message.response.send_message(embed=embed)
 
-@bot.tree.command(description="(ADMIN) Setup cat in current channel")
+@bot.tree.command(name="setup", description="(ADMIN) Setup cat in current channel")
 @discord.app_commands.default_permissions(manage_guild=True)
-async def setup(message: discord.Interaction):
+async def setup_channel(message: discord.Interaction):
     register_guild(message.guild.id)
     if int(message.channel.id) in db["summon_ids"]:
         await message.response.send_message("bruh you already setup cat here are you dumb\n\nthere might already be a cat sitting in chat. type `cat` to catch it.\nalternatively, you can try `/repair` if it still doesnt work")
@@ -2945,7 +2928,6 @@ async def recieve_vote(request):
 
 
 # this is the crash handler
-@bot.tree.error
 async def on_command_error(ctx, error):
     if ctx.guild == None:
         try:
@@ -2974,4 +2956,20 @@ async def on_command_error(ctx, error):
     elif CRASH_MODE == "RAISE":
         raise
 
-bot.run(TOKEN)
+async def setup(bot2):
+    global bot
+    for command in bot.tree.walk_commands():
+        # copy all the commands
+        bot2.tree.add_command(command)
+        # you might need to manually delete commands? not sure
+
+    # copy all the events
+    bot2.on_ready = on_ready
+    bot2.on_guild_join = on_guild_join
+    bot2.on_message = on_message
+
+    # copy the error logger
+    bot2.tree.error = on_command_error
+
+    # finally replace the fake bot with the real one
+    bot = bot2
