@@ -1,4 +1,5 @@
-import discord, os
+import discord
+import os
 from discord.ext import commands
 
 # discord bot token, use os.environ for more security
