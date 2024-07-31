@@ -16,4 +16,8 @@ bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQ
 async def setup_hook():
     await bot.load_extension("main")
 
+async def reload():
+    await bot.reload_extension("main")
+
+bot.cat_bot_reload_hook = reload  # pyright: ignore
 bot.run(TOKEN)

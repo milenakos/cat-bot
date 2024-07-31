@@ -523,7 +523,7 @@ async def maintaince_loop():
     last_loop_time = time.time()
     loop_count += 1
     if loop_count >= 12:
-        await bot.reload_extension("main")
+        await bot.cat_bot_reload_hook()  # pyright: ignore
 
 
 # some code which is run when bot is started
@@ -629,7 +629,7 @@ async def on_message(message):
             with open(f"data/{id}.json", "w") as f:
                 json.dump(db[id], f)
         os.system("git pull")
-        await bot.reload_extension("main")
+        await bot.cat_bot_reload_hook()  # pyright: ignore
 
     if DONOR_CHANNEL_ID and message.channel.id == DONOR_CHANNEL_ID:
         register_member("0", text)
