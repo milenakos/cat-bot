@@ -524,6 +524,7 @@ async def maintaince_loop():
     loop_count += 1
     if loop_count >= 2: # temp increase for testing
         await bot.server.stop()  # pyright: ignore
+        await asyncio.sleep(10)
         await bot.cat_bot_reload_hook()  # pyright: ignore
 
 
@@ -627,6 +628,7 @@ async def on_message(message):
                 json.dump(db[id], f)
         os.system("git pull")
         await bot.server.stop()  # pyright: ignore
+        await asyncio.sleep(10)
         await bot.cat_bot_reload_hook()  # pyright: ignore
 
     if DONOR_CHANNEL_ID and message.channel.id == DONOR_CHANNEL_ID:
