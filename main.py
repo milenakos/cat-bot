@@ -24,7 +24,6 @@ from discord.ext import commands, tasks
 from discord.ui import Button, View
 
 import msg2img
-import server
 
 logging.basicConfig(level=logging.INFO)
 
@@ -526,8 +525,8 @@ async def maintaince_loop():
         os.system("git pull")
         if maintaince_loop.is_running:
             maintaince_loop.cancel()
-        await bot.server.stop()  # pyright: ignore
-        await asyncio.sleep(10)
+        await vote_server.cleanup()
+        await asyncio.sleep(1)
         await bot.cat_bot_reload_hook()  # pyright: ignore
 
 
@@ -551,14 +550,6 @@ async def on_ready():
 
     register_guild("spawn_times")
     # register_guild("recovery_times")
-
-    if WEBHOOK_VERIFY:
-        bot.server = server.HTTPServer(  # pyright: ignore
-            bot=bot,
-            host="0.0.0.0",
-            port=8069,
-        )
-        await bot.server.start()  # pyright: ignore
 
     credits = {
         "author": [553093932012011520],
@@ -632,8 +623,8 @@ async def on_message(message):
         os.system("git pull")
         if maintaince_loop.is_running:
             maintaince_loop.cancel()
-        await bot.server.stop()  # pyright: ignore
-        await asyncio.sleep(10)
+        await vote_server.cleanup()
+        await asyncio.sleep(1)
         await bot.cat_bot_reload_hook()  # pyright: ignore
 
     if DONOR_CHANNEL_ID and message.channel.id == DONOR_CHANNEL_ID:
@@ -2975,8 +2966,6 @@ async def claim_reward(user, channeley, type):
     except Exception:
         pass
 
-
-@server.add_route(path="/", method="POST")
 async def recieve_vote(request):
     if request.headers.get('authorization', '') != WEBHOOK_VERIFY:
         return web.Response(text="bad", status=403)
@@ -3033,7 +3022,7 @@ async def on_command_error(ctx, error):
         raise
 
 async def setup(bot2):
-    global bot, DONATE_ID
+    global bot, DONATE_ID, vote_server
 
     for command in bot.tree.walk_commands():
         # copy all the commands
@@ -3046,6 +3035,14 @@ async def setup(bot2):
 
     # copy the error logger
     bot2.tree.error = on_command_error
+
+    if WEBHOOK_VERIFY:
+        app = web.Application()
+        app.add_routes([web.post("/", recieve_vote)])
+        vote_server = web.AppRunner(app)
+        await vote_server.setup()
+        site = web.TCPSite(vote_server, '0.0.0.0', 8069)
+        await site.start()
 
     # finally replace the fake bot with the real one
     bot = bot2
@@ -3064,3 +3061,4 @@ async def teardown(bot):
             json.dump(db[id], f)
     if maintaince_loop.is_running:
         maintaince_loop.cancel()
+    await vote_server.cleanup()
