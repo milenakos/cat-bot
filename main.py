@@ -592,7 +592,7 @@ async def on_message(message):
 
     if time.time() > last_loop_time + 1200:
         try:
-            if maintaince_loop.is_running:
+            if maintaince_loop.is_running():
                 maintaince_loop.cancel()
             maintaince_loop.start()  # revive the loop
         except Exception:
