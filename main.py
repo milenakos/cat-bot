@@ -522,7 +522,7 @@ async def maintaince_loop():
 
     last_loop_time = time.time()
     loop_count += 1
-    if loop_count >= 2: # temp increase for testing
+    if loop_count >= 12:
         await bot.server.stop()  # pyright: ignore
         await asyncio.sleep(10)
         await bot.cat_bot_reload_hook()  # pyright: ignore
