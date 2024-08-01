@@ -524,7 +524,7 @@ async def maintaince_loop():
     vote_remind = db["vote_remind"]
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
-    for i, ch_id in vote_remind:
+    for i, ch_id in vote_remind.items():
         if get_cat(0, int(i), "vote_time_topgg") + 43200 < time.time() and not get_cat(0, i, "reminder_topgg_exists"):
             await asyncio.sleep(1)
             try:
@@ -609,7 +609,7 @@ async def on_message(message):
     if not bot.user or message.author.id == bot.user.id:
         return
 
-    if time.time() > last_loop_time + 1200:
+    if time.time() > last_loop_time + 400:
         try:
             if maintaince_loop.is_running():
                 maintaince_loop.cancel()
