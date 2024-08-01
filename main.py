@@ -100,6 +100,34 @@ allowedemojis = []
 for i in type_dict.keys():
     allowedemojis.append(i.lower() + "cat")
 
+vote_button_texts = [
+    "You havent voted today!",
+    "I know you havent voted ;)",
+    "If vote cat will you friend :)",
+    "Vote cat for president",
+    "vote = 0.01% to escape basement",
+    "vote vote vote vote vote",
+    "mrrp mrrow go and vote now",
+    "if you vote you'll be free (no)",
+    "Like gambling? Vote!",
+    "vote. btw, i have a pipebomb",
+    "No votes? :megamind:",
+    "Cat says you should vote",
+    "vote = random cats. lets gamble?",
+    "cat will be happy if you vote",
+    "VOTE NOW!!!!!",
+    "Vote on top.gg for free cats",
+    "Vote for free cats",
+    "No vote = no free cats :(",
+    "0.04% to get egirl on voting",
+    "I voted and got 1000000$",
+    "I voted and found a gf",
+    "lebron james forgot to vote",
+    "vote if you like cats",
+    "vote if cats > dogs",
+    "you should vote for cat NOW!"
+]
+
 # migrate from db.json if found
 if os.path.isfile("db.json"):
     print("db.json file found, migrating...")
@@ -493,28 +521,28 @@ async def maintaince_loop():
             await spawn_cat(ch_id)
             await asyncio.sleep(0.1)
 
-    """
     vote_remind = db["vote_remind"]
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
-    for i in vote_remind:
-        if get_cat(0, i, "vote_time_topgg") + 43200 < time.time() and not get_cat(0, i, "reminder_topgg_exists"):
+    for i, ch_id in vote_remind:
+        if get_cat(0, int(i), "vote_time_topgg") + 43200 < time.time() and not get_cat(0, i, "reminder_topgg_exists"):
             await asyncio.sleep(1)
             try:
-                person = bot.get_user(i)
+                channeley = bot.get_channel(ch_id)
+                if not isinstance(channeley, discord.TextChannel):
+                    continue
 
                 view = View(timeout=1)
-                button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367/vote")
+                button = Button(emoji=get_emoji("topgg"), label=random.choice(vote_button_texts), style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367/vote")
                 view.add_item(button)
 
-                await person.send("You can vote on Top.gg now!", view=view)
+                await channeley.send(f"<@{i}> You can vote now!", view=view)
                 set_cat(0, i, "reminder_topgg_exists", int(time.time()))
             except Exception:
-                vote_remind.remove(i)
+                vote_remind.pop(i)
 
     db["vote_remind"] = vote_remind
     save("vote_remind")
-    """
 
     event_loop = asyncio.get_event_loop()
     await event_loop.run_in_executor(None, backup)
@@ -621,7 +649,7 @@ async def on_message(message):
             with open(f"data/{id}.json", "w") as f:
                 json.dump(db[id], f)
         os.system("git pull")
-        if maintaince_loop.is_running:
+        if maintaince_loop.is_running():
             maintaince_loop.cancel()
         await vote_server.cleanup()
         await asyncio.sleep(1)
@@ -940,34 +968,7 @@ async def on_message(message):
                     button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
                     button.callback = dark_market_cutscene
                 elif WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
-                    button_texts = [
-                        "You havent voted today!",
-                        "I know you havent voted ;)",
-                        "If vote cat will you friend :)",
-                        "Vote cat for president",
-                        "vote = 0.01% to escape basement",
-                        "vote vote vote vote vote",
-                        "mrrp mrrow go and vote now",
-                        "if you vote you'll be free (no)",
-                        "Like gambling? Vote!",
-                        "vote. btw, i have a pipebomb",
-                        "No votes? :megamind:",
-                        "Cat says you should vote",
-                        "vote = random cats. lets gamble?",
-                        "cat will be happy if you vote",
-                        "VOTE NOW!!!!!",
-                        "Vote on top.gg for free cats",
-                        "Vote for free cats",
-                        "No vote = no free cats :(",
-                        "0.04% to get egirl on voting",
-                        "I voted and got 1000000$",
-                        "I voted and found a gf",
-                        "lebron james forgot to vote",
-                        "vote if you like cats",
-                        "vote if cats > dogs",
-                        "you should vote for cat NOW!"
-                    ]
-                    button = Button(emoji=get_emoji("topgg"), label=random.choice(button_texts), url="https://top.gg/bot/966695034340663367/vote")
+                    button = Button(emoji=get_emoji("topgg"), label=random.choice(vote_button_texts), url="https://top.gg/bot/966695034340663367/vote")
                 elif random.randint(0, 20) == 0:
                     button = Button(label="Join our Discord!", url="https://discord.gg/staring")
 
@@ -2137,13 +2138,16 @@ async def casino(message: discord.Interaction):
 
 async def toggle_reminders(interaction):
     vote_remind = db["vote_remind"]
-    if not isinstance(vote_remind, list):
-        vote_remind = []
-    if interaction.user.id in vote_remind:
-        vote_remind.remove(interaction.user.id)
+    if not isinstance(vote_remind, dict):
+        vote_remind = {}
+    if not isinstance(interaction.channel, discord.TextChannel):
+        await interaction.response.send_message("Please use a text channel.", ephemeral=True)
+        return
+    if str(interaction.user.id) in vote_remind:
+        vote_remind.pop(str(interaction.user.id))
         await interaction.response.send_message("Vote reminders have been turned off.", ephemeral=True)
     else:
-        vote_remind.append(interaction.user.id)
+        vote_remind[str(interaction.user.id)] = interaction.channel.id
         await interaction.response.send_message("Vote reminders have been turned on.", ephemeral=True)
     db["vote_remind"] = vote_remind
     save("vote_remind")
@@ -2176,14 +2180,12 @@ if WEBHOOK_VERIFY:
             button = Button(emoji=get_emoji("topgg"), label="Vote", style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367/vote")
         view.add_item(button)
 
-        """
-        if message.user.id in vote_remind:
+        if str(message.user.id) in db["vote_remind"].keys():
             button = Button(label="Disable reminders", style=ButtonStyle.gray)
         else:
             button = Button(label="Enable Reminders!", style=ButtonStyle.green)
         button.callback = toggle_reminders
         view.add_item(button)
-        """
 
         embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg every 12 hours to recieve mystery cats.", color=0x6E593C)
         await message.followup.send(embed=embedVar, view=view)
@@ -2953,13 +2955,12 @@ async def claim_reward(user, channeley, type):
 
     add_cat(channeley.guild.id, user, cattype, num_amount)
     view = None
-    """
-    if user not in db["vote_remind"]:
+    if str(user) not in db["vote_remind"].keys():
         view = View(timeout=3600)
         button = Button(label="Enable Vote Reminders!", style=ButtonStyle.green)
         button.callback = toggle_reminders
         view.add_item(button)
-    """
+
     embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats for voting on {cool_name}.\nVote again in 12 hours.", color=0x007F0E)
     try:
         await channeley.send(f"<@{user}>", embed=embedVar, view=view)
