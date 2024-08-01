@@ -523,6 +523,7 @@ async def maintaince_loop():
     last_loop_time = time.time()
     loop_count += 1
     if loop_count >= 12:
+        os.system("git pull")
         await bot.server.stop()  # pyright: ignore
         await asyncio.sleep(10)
         await bot.cat_bot_reload_hook()  # pyright: ignore
