@@ -524,6 +524,8 @@ async def maintaince_loop():
     loop_count += 1
     if loop_count >= 12:
         os.system("git pull")
+        if maintaince_loop.is_running:
+            maintaince_loop.cancel()
         await bot.server.stop()  # pyright: ignore
         await asyncio.sleep(10)
         await bot.cat_bot_reload_hook()  # pyright: ignore
@@ -628,6 +630,8 @@ async def on_message(message):
             with open(f"data/{id}.json", "w") as f:
                 json.dump(db[id], f)
         os.system("git pull")
+        if maintaince_loop.is_running:
+            maintaince_loop.cancel()
         await bot.server.stop()  # pyright: ignore
         await asyncio.sleep(10)
         await bot.cat_bot_reload_hook()  # pyright: ignore
@@ -3053,3 +3057,10 @@ async def setup(bot2):
 
     if bot.is_ready() and not on_ready_debounce:
         await on_ready()
+
+async def teardown(bot):
+    for id in set(save_queue):
+        with open(f"data/{id}.json", "w") as f:
+            json.dump(db[id], f)
+    if maintaince_loop.is_running:
+        maintaince_loop.cancel()
