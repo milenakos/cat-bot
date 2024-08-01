@@ -522,21 +522,18 @@ async def maintaince_loop():
 
     last_loop_time = time.time()
     loop_count += 1
-    if loop_count >= 12:
+    if loop_count >= 2: # temp increase for testing
+        await bot.server.stop()  # pyright: ignore
         await bot.cat_bot_reload_hook()  # pyright: ignore
 
 
 # some code which is run when bot is started
 async def on_ready():
-    global milenakoos, OWNER_ID, do_save_emojis, save_queue, on_ready_debounce, gen_credits, DONATE_ID, last_loop_time
+    global milenakoos, OWNER_ID, do_save_emojis, save_queue, on_ready_debounce, gen_credits, last_loop_time
     if on_ready_debounce:
         return
     on_ready_debounce = True
     print("cat is now online")
-    app_commands = await bot.tree.sync()
-    for i in app_commands:
-        if i.name == "donate":
-            DONATE_ID = i.id
     do_save_emojis = True
     await bot.change_presence(
         activity=discord.CustomActivity(name=f"Just restarted! Catting in {len(bot.guilds):,} servers.")
@@ -629,6 +626,7 @@ async def on_message(message):
             with open(f"data/{id}.json", "w") as f:
                 json.dump(db[id], f)
         os.system("git pull")
+        await bot.server.stop()  # pyright: ignore
         await bot.cat_bot_reload_hook()  # pyright: ignore
 
     if DONOR_CHANNEL_ID and message.channel.id == DONOR_CHANNEL_ID:
@@ -3028,9 +3026,8 @@ async def on_command_error(ctx, error):
         raise
 
 async def setup(bot2):
-    global bot
+    global bot, DONATE_ID
 
-    bot2.tree.clear_commands(guild=None)
     for command in bot.tree.walk_commands():
         # copy all the commands
         bot2.tree.add_command(command)
@@ -3045,6 +3042,11 @@ async def setup(bot2):
 
     # finally replace the fake bot with the real one
     bot = bot2
+
+    app_commands = await bot.tree.sync()
+    for i in app_commands:
+        if i.name == "donate":
+            DONATE_ID = i.id
 
     if bot.is_ready() and not on_ready_debounce:
         await on_ready()
