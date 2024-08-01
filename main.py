@@ -578,7 +578,7 @@ async def on_ready():
 async def on_message(message):
     global save_queue
     text = message.content
-    if message.author.id == bot.user.id:
+    if not bot.user or message.author.id == bot.user.id:
         return
 
     if time.time() > last_loop_time + 1200:
