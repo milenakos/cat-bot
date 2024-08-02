@@ -2962,6 +2962,12 @@ async def claim_reward(user, channeley, type):
     except Exception:
         pass
 
+async def dump_jsons(request):
+    for id in set(save_queue):
+        with open(f"data/{id}.json", "w") as f:
+            json.dump(db[id], f)
+    return web.Response(text="ok", status=200)
+
 async def recieve_vote(request):
     if request.headers.get('authorization', '') != WEBHOOK_VERIFY:
         return web.Response(text="bad", status=403)
@@ -3034,7 +3040,7 @@ async def setup(bot2):
 
     if WEBHOOK_VERIFY:
         app = web.Application()
-        app.add_routes([web.post("/", recieve_vote)])
+        app.add_routes([web.post("/", recieve_vote), web.get("/save", dump_jsons)])
         vote_server = web.AppRunner(app)
         await vote_server.setup()
         site = web.TCPSite(vote_server, '0.0.0.0', 8069)
