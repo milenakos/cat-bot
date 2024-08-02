@@ -369,6 +369,8 @@ def get_emoji(name):
 
 # this is some common code which is run whether someone gets an achievement
 async def achemb(message, ach_id, send_type, author_string=None):
+    if not message.guild:
+        return
     if not author_string:
         try:
             author = message.author.id
