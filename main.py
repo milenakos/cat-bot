@@ -500,6 +500,7 @@ def backup():
 # a loop for various maintaince which is ran every 5 minutes
 async def maintaince_loop():
     global save_queue, reactions_ratelimit, last_loop_time, loop_count
+    last_loop_time = time.time()
     reactions_ratelimit = {}
     await bot.change_presence(
         activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
@@ -548,7 +549,6 @@ async def maintaince_loop():
     event_loop = asyncio.get_event_loop()
     await event_loop.run_in_executor(None, backup)
 
-    last_loop_time = time.time()
     loop_count += 1
     if loop_count >= 12:
         os.system("git pull")
