@@ -500,64 +500,61 @@ def backup():
 # a loop for various maintaince which is ran every 5 minutes
 async def maintaince_loop():
     global save_queue, reactions_ratelimit, last_loop_time, loop_count
-    while True:
-        reactions_ratelimit = {}
-        await bot.change_presence(
-            activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
-        )
+    reactions_ratelimit = {}
+    await bot.change_presence(
+        activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
+    )
 
-        if TOP_GG_TOKEN:
-            async with aiohttp.ClientSession() as session:
-                # send server count to top.gg
-                try:
-                    await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
-                                        headers={"Authorization": TOP_GG_TOKEN},
-                                        json={"server_count": len(bot.guilds), "shard_count": len(bot.shards)},
-                                        timeout=15)
-                except Exception:
-                    print("Posting failed.")
+    if TOP_GG_TOKEN:
+        async with aiohttp.ClientSession() as session:
+            # send server count to top.gg
+            try:
+                await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
+                                    headers={"Authorization": TOP_GG_TOKEN},
+                                    json={"server_count": len(bot.guilds), "shard_count": len(bot.shards)},
+                                    timeout=15)
+            except Exception:
+                print("Posting failed.")
 
-        yet_to_spawn_copy = db["yet_to_spawn"].copy()
-        for ch_id, ch_timer in yet_to_spawn_copy.items():
-            if ch_timer and time.time() > ch_timer and (ch_id not in db["cat"].keys() or not db["cat"][ch_id]):
-                await spawn_cat(ch_id)
-                await asyncio.sleep(0.1)
+    yet_to_spawn_copy = db["yet_to_spawn"].copy()
+    for ch_id, ch_timer in yet_to_spawn_copy.items():
+        if ch_timer and time.time() > ch_timer and (ch_id not in db["cat"].keys() or not db["cat"][ch_id]):
+            await spawn_cat(ch_id)
+            await asyncio.sleep(0.1)
 
-        vote_remind = db["vote_remind"]
+    vote_remind = db["vote_remind"]
 
-        # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
-        for i, ch_id in vote_remind.items():
-            if get_cat(0, int(i), "vote_time_topgg") + 43200 < time.time() and not get_cat(0, i, "reminder_topgg_exists"):
-                await asyncio.sleep(1)
-                try:
-                    channeley = bot.get_channel(ch_id)
-                    if not isinstance(channeley, discord.TextChannel):
-                        continue
-
-                    view = View(timeout=1)
-                    button = Button(emoji=get_emoji("topgg"), label=random.choice(vote_button_texts), style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367/vote")
-                    view.add_item(button)
-
-                    await channeley.send(f"<@{i}> You can vote now!", view=view)
-                    set_cat(0, i, "reminder_topgg_exists", int(time.time()))
-                except Exception:
-                    vote_remind.pop(i)
-
-        db["vote_remind"] = vote_remind
-        save("vote_remind")
-
-        event_loop = asyncio.get_event_loop()
-        await event_loop.run_in_executor(None, backup)
-
-        last_loop_time = time.time()
-        loop_count += 1
-        if loop_count >= 12:
-            os.system("git pull")
-            await vote_server.cleanup()
+    # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
+    for i, ch_id in vote_remind.items():
+        if get_cat(0, int(i), "vote_time_topgg") + 43200 < time.time() and not get_cat(0, i, "reminder_topgg_exists"):
             await asyncio.sleep(1)
-            await bot.cat_bot_reload_hook()  # pyright: ignore
+            try:
+                channeley = bot.get_channel(ch_id)
+                if not isinstance(channeley, discord.TextChannel):
+                    continue
 
-        await asyncio.sleep(5 * 60)
+                view = View(timeout=1)
+                button = Button(emoji=get_emoji("topgg"), label=random.choice(vote_button_texts), style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367/vote")
+                view.add_item(button)
+
+                await channeley.send(f"<@{i}> You can vote now!", view=view)
+                set_cat(0, i, "reminder_topgg_exists", int(time.time()))
+            except Exception:
+                vote_remind.pop(i)
+
+    db["vote_remind"] = vote_remind
+    save("vote_remind")
+
+    event_loop = asyncio.get_event_loop()
+    await event_loop.run_in_executor(None, backup)
+
+    last_loop_time = time.time()
+    loop_count += 1
+    if loop_count >= 12:
+        os.system("git pull")
+        await vote_server.cleanup()
+        await asyncio.sleep(1)
+        await bot.cat_bot_reload_hook()  # pyright: ignore
 
 
 # some code which is run when bot is started
@@ -600,8 +597,6 @@ async def on_ready():
             pass # death
         gen_credits[key] = ", ".join(peoples)
 
-    await maintaince_loop()
-
 
 # this is all the code which is ran on every message sent
 # its mostly for easter eggs or achievements
@@ -611,11 +606,8 @@ async def on_message(message):
     if not bot.user or message.author.id == bot.user.id:
         return
 
-    if time.time() > last_loop_time + 400:
-        try:
-            await maintaince_loop()  # revive the loop
-        except Exception:
-            pass
+    if time.time() > last_loop_time + 300:
+        await maintaince_loop()
 
     achs = [["cat?", "startswith", "???"],
         ["catn", "exact", "catn"],
