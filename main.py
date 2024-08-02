@@ -557,6 +557,8 @@ async def maintaince_loop():
             await asyncio.sleep(1)
             await bot.cat_bot_reload_hook()  # pyright: ignore
 
+        await asyncio.sleep(5 * 60)
+
 
 # some code which is run when bot is started
 async def on_ready():
