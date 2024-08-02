@@ -1469,6 +1469,9 @@ async def gen_inventory(message, person_id):
     else:
         me = False
 
+    if not message.guild:
+        return
+
     register_member(message.guild.id, person_id.id)
     has_ach(message.guild.id, person_id.id, "test_ach") # why is this here? im not sure and im too scared to remove this
 
@@ -2387,6 +2390,8 @@ async def dark_market(message):
 @bot.tree.command(description="View your achievements")
 async def achievements(message: discord.Interaction):
     # this is very close to /inv's ach counter
+    if not message.guild:
+        return
     register_member(message.guild.id, message.user.id)
     has_ach(message.guild.id, message.user.id, "test_ach") # and there is this cursed line again wtf
     db_var = db[str(message.guild.id)][str(message.user.id)]["ach"]
