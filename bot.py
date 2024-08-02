@@ -1,4 +1,3 @@
-import asyncio
 import os
 
 import discord
@@ -19,8 +18,10 @@ async def setup_hook():
     await bot.load_extension("main")
 
 async def reload():
-    await bot.unload_extension("main")
-    await asyncio.sleep(3)
+    try:
+        await bot.unload_extension("main")
+    except commands.ExtensionNotLoaded:
+        pass
     await bot.load_extension("main")
 
 bot.cat_bot_reload_hook = reload  # pyright: ignore
