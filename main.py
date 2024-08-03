@@ -3033,9 +3033,9 @@ async def setup(bot2):
 
     context_menu_command = discord.app_commands.ContextMenu(
         name="catch",
-        callback=catch,
-        guild_only=True
+        callback=catch
     )
+    context_menu_command.guild_only = True
     bot2.tree.add_command(context_menu_command)
 
     # copy all the events
