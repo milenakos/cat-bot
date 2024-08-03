@@ -369,8 +369,6 @@ def get_emoji(name):
 
 # this is some common code which is run whether someone gets an achievement
 async def achemb(message, ach_id, send_type, author_string=None):
-    if not message.guild:
-        return
     if not author_string:
         try:
             author = message.author.id
@@ -705,8 +703,7 @@ async def on_message(message):
             await message.channel.send("good job! please send \"lol_i_have_dmed_the_cat_bot_and_got_an_ach\" in server to get your ach!")
             return
     except Exception:
-        if not message.guild:
-            return
+        pass
 
     if "cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6" in text:
         msg = message
@@ -1464,9 +1461,6 @@ async def gen_inventory(message, person_id):
     else:
         me = False
 
-    if not message.guild:
-        return
-
     register_member(message.guild.id, person_id.id)
     has_ach(message.guild.id, person_id.id, "test_ach") # why is this here? im not sure and im too scared to remove this
 
@@ -1617,8 +1611,6 @@ async def gen_inventory(message, person_id):
 async def inventory(message: discord.Interaction, person_id: Optional[discord.User]):
     await message.response.defer()
 
-    if not message.guild:
-        return
 
     embedVar = await gen_inventory(message, person_id)
 
@@ -2073,7 +2065,7 @@ async def casino(message: discord.Interaction):
 
     async def spin(interaction):
         nonlocal message
-        if not message.guild or interaction.user.id != message.user.id:
+        if interaction.user.id != message.user.id:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
             return
         if message.user.id in casino_lock:
@@ -2388,8 +2380,6 @@ async def dark_market(message):
 @bot.tree.command(description="View your achievements")
 async def achievements(message: discord.Interaction):
     # this is very close to /inv's ach counter
-    if not message.guild:
-        return
     register_member(message.guild.id, message.user.id)
     has_ach(message.guild.id, message.user.id, "test_ach") # and there is this cursed line again wtf
     db_var = db[str(message.guild.id)][str(message.user.id)]["ach"]
@@ -3035,11 +3025,13 @@ async def setup(bot2):
 
     for command in bot.tree.walk_commands():
         # copy all the commands
+        command.guild_only = True
         bot2.tree.add_command(command)
 
     context_menu_command = discord.app_commands.ContextMenu(
         name="catch",
-        callback=catch
+        callback=catch,
+        guild_only=True
     )
     bot2.tree.add_command(context_menu_command)
 
