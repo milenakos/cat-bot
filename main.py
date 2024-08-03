@@ -463,6 +463,9 @@ async def spawn_cat(ch_id, localcat=None):
             db[guild_id]["appear"] = ""
             appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
 
+        if db["cat"][ch_id]:
+            return  # its never too late to return
+
         if thread_id:
             message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file, wait=True, thread=discord.Object(int(ch_id)))
         else:
