@@ -474,6 +474,8 @@ async def spawn_cat(ch_id, localcat=None):
             return
         db["cat"][ch_id] = message_is_sus.id
         save("cat")
+        if db["cat"][ch_id] != message_is_sus.id:
+            print(f"mismatch! actual: {message_is_sus.id}, saved: {db['cat'][ch_id]}")
         db["yet_to_spawn"][ch_id] = 0
         save("yet_to_spawn")
     except Exception:
