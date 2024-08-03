@@ -554,6 +554,9 @@ async def maintaince_loop():
         os.system("git pull")
         await vote_server.cleanup()
         await asyncio.sleep(1)
+        for id in set(save_queue.copy()):
+            with open(f"data/{id}.json", "w") as f:
+                json.dump(db[id].copy(), f)
         await bot.cat_bot_reload_hook()  # pyright: ignore
 
 
@@ -637,12 +640,12 @@ async def on_message(message):
 
     # this is auto-update thing
     if GITHUB_CHANNEL_ID and message.channel.id == GITHUB_CHANNEL_ID:
-        for id in set(save_queue):
-            with open(f"data/{id}.json", "w") as f:
-                json.dump(db[id], f)
         os.system("git pull")
         await vote_server.cleanup()
         await asyncio.sleep(1)
+        for id in set(save_queue.copy()):
+            with open(f"data/{id}.json", "w") as f:
+                json.dump(db[id], f)
         await bot.cat_bot_reload_hook()  # pyright: ignore
 
     if DONOR_CHANNEL_ID and message.channel.id == DONOR_CHANNEL_ID:
