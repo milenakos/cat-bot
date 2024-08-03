@@ -2520,7 +2520,6 @@ async def achievements(message: discord.Interaction):
 
     await message.response.send_message(embed=embedVar, view=myview)
 
-@bot.tree.context_menu(name="catch")
 async def catch(message: discord.Interaction, msg: discord.Message):
     if get_cat(message.guild.id, message.user.id, "catchcooldown") + 6 > time.time():
         await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
@@ -3032,6 +3031,12 @@ async def setup(bot2):
     for command in bot.tree.walk_commands():
         # copy all the commands
         bot2.tree.add_command(command)
+
+    context_menu_command = discord.app_commands.ContextMenu(
+        name="catch",
+        callback=catch
+    )
+    bot2.tree.add_command(context_menu_command)
 
     # copy all the events
     bot2.on_ready = on_ready
