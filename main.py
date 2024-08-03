@@ -1617,6 +1617,9 @@ async def gen_inventory(message, person_id):
 async def inventory(message: discord.Interaction, person_id: Optional[discord.User]):
     await message.response.defer()
 
+    if not message.guild:
+        return
+
     embedVar = await gen_inventory(message, person_id)
 
     if DONOR_CHANNEL_ID:
