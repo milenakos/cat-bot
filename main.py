@@ -2777,7 +2777,7 @@ async def setup_channel(message: discord.Interaction):
 
                 missing_perms = list(needed_perms.keys())
                 if len(missing_perms) != 0:
-                    await message.response.send_message(f":x: Missing Permissions! Please give me the following: - {'\n- '.join(missing_perms)}")
+                    await message.response.send_message(f":x: Missing Permissions! Please give me the following: - {'\n- '.join(missing_perms)}]\nHint: try setting channel permissions if server ones don't work.")
                     return
 
                 if isinstance(message.channel, discord.Thread):
