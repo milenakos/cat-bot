@@ -2759,10 +2759,31 @@ async def setup_channel(message: discord.Interaction):
     if not db["webhook"].get(str(message.channel.id), None):
         with open("cat.png", "rb") as f:
             try:
+                channel_permissions = message.channel.permissions_for(message.guild.me)
+                needed_perms = {
+                    "View Channel": channel_permissions.view_channel,
+                    "Manage Webhooks": channel_permissions.manage_webhooks,
+                    "Send Messages": channel_permissions.send_messages,
+                    "Attach Files": channel_permissions.attach_files,
+                    "Use External Emojis": channel_permissions.use_external_emojis,
+                    "Read Message History": channel_permissions.read_message_history
+                }
+                if isinstance(message.channel, discord.Thread):
+                    needed_perms["Send Messages in Threads"] = channel_permissions.send_messages_in_threads
+
+                for name, value in needed_perms.copy().items():
+                    if value:
+                        needed_perms.pop(name)
+
+                missing_perms = list(needed_perms.keys())
+                if len(missing_perms) != 0:
+                    await message.response.send_message(f":x: Missing Permissions! Please give me the following: - {'\n- '.join(missing_perms)}")
+                    return
+
                 if isinstance(message.channel, discord.Thread):
                     parent = bot.get_channel(message.channel.parent_id)
                     if not isinstance(parent, discord.TextChannel):
-                        raise ValueError
+                        return
                     wh = await parent.create_webhook(name="Cat Bot", avatar=f.read())
                     db["thread_mappings"][str(message.channel.id)] = True
                 elif isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel]):
@@ -2775,8 +2796,7 @@ async def setup_channel(message: discord.Interaction):
                 save("guild_mappings")
                 save("thread_mappings")
             except Exception:
-                await message.response.send_message("Error creating webhook. Please make sure the bot has **Manage Webhooks** permission - either give it manually or re-invite the bot.")
-                return
+                pass
 
     await spawn_cat(str(message.channel.id))
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
