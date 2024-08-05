@@ -210,6 +210,9 @@ pending_votes = []
 # prevent ratelimits
 casino_lock = []
 
+# prevent timetravel
+in_the_past = False
+
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
 
@@ -426,7 +429,7 @@ async def ach_autocomplete(interaction: discord.Interaction, current: str) -> li
 
 async def spawn_cat(ch_id, localcat=None):
     try:
-        if db["cat"][ch_id]:
+        if db["cat"][ch_id] or in_the_past:
             return
 
         file = discord.File("cat.png")
@@ -475,8 +478,6 @@ async def spawn_cat(ch_id, localcat=None):
             return
         db["cat"][ch_id] = message_is_sus.id
         save("cat")
-        if db["cat"][ch_id] != message_is_sus.id:
-            print(f"mismatch! actual: {message_is_sus.id}, saved: {db['cat'][ch_id]}")
         db["yet_to_spawn"][ch_id] = 0
         save("yet_to_spawn")
     except Exception:
@@ -502,7 +503,7 @@ def backup():
 
 # a loop for various maintaince which is ran every 5 minutes
 async def maintaince_loop():
-    global save_queue, reactions_ratelimit, last_loop_time, loop_count
+    global save_queue, reactions_ratelimit, last_loop_time, loop_count, in_the_past
     last_loop_time = time.time()
     reactions_ratelimit = {}
     await bot.change_presence(
@@ -560,6 +561,7 @@ async def maintaince_loop():
         for id in set(save_queue.copy()):
             with open(f"data/{id}.json", "w") as f:
                 json.dump(db[id].copy(), f)
+        in_the_past = True
         await bot.cat_bot_reload_hook()  # pyright: ignore
 
 
@@ -607,7 +609,7 @@ async def on_ready():
 # this is all the code which is ran on every message sent
 # its mostly for easter eggs or achievements
 async def on_message(message):
-    global save_queue
+    global save_queue, in_the_past
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
         return
@@ -649,6 +651,7 @@ async def on_message(message):
         for id in set(save_queue.copy()):
             with open(f"data/{id}.json", "w") as f:
                 json.dump(db[id], f)
+        in_the_past = True
         await bot.cat_bot_reload_hook()  # pyright: ignore
 
     if DONOR_CHANNEL_ID and message.channel.id == DONOR_CHANNEL_ID:
