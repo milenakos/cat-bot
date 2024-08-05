@@ -795,7 +795,7 @@ async def on_message(message):
     except Exception:
         pass
 
-    if text.lower() == "i voted" and get_cat(0, message.user.id, "vote_time_topgg") + 43200 < time.time():
+    if text.lower() == "i voted" and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
         # recheck votes
         async with aiohttp.ClientSession() as session:
             try:
@@ -804,9 +804,9 @@ async def on_message(message):
                                             timeout=15)
                 resp = await answer.json()
                 if resp["voted"]:
-                    add_cat(0, message.user.id, "vote_time_topgg", time.time(), True)
-                    set_cat(0, message.user.id, "reminder_topgg_exists", 0)
-                    await claim_reward(message.user.id, message.channel, "topgg")
+                    add_cat(0, message.author.id, "vote_time_topgg", time.time(), True)
+                    set_cat(0, message.author.id, "reminder_topgg_exists", 0)
+                    await claim_reward(message.author.id, message.channel, "topgg")
             except Exception:
                 pass
 
