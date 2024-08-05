@@ -711,6 +711,9 @@ async def on_message(message):
     except Exception:
         pass
 
+    if message.author.bot or message.webhook_id is not None:
+        return
+
     if "cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6" in text:
         msg = message
         try:
