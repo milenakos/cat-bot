@@ -1087,12 +1087,6 @@ async def on_message(message):
                 await spawn_cat(str(message.channel.id))
 
     # those are "owner" commands which are not really interesting
-    if text.lower().startswith("cat!beggar") and message.author.id == OWNER_ID:
-        give_ach(message.guild.id, int(text[10:].split(" ")[1]), text[10:].split(" ")[2])
-        try:
-            await message.reply("success")
-        except Exception:
-            pass
     if text.lower().startswith("cat!sweep") and message.author.id == OWNER_ID:
         db["cat"][str(message.channel.id)] = False
         save("cat")
