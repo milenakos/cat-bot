@@ -1107,6 +1107,10 @@ async def on_message(message):
             await message.reply("success")
         except Exception:
             pass
+    if text.lower().startswith("cat!rain") and message.author.id == OWNER_ID:
+        # syntax: cat!rain 553093932012011520 short
+        things = text.split(" ")
+        add_cat("rains", things[1], things[2] + "rain")
     if text.lower().startswith("cat!print") and message.author.id == OWNER_ID:
         # just a simple one-line with no async (e.g. 2+3)
         try:
