@@ -210,6 +210,9 @@ pending_votes = []
 # prevent ratelimits
 casino_lock = []
 
+# cat rains
+cat_rains = {}
+
 # prevent timetravel
 in_the_past = False
 
@@ -554,7 +557,7 @@ async def maintaince_loop():
     await event_loop.run_in_executor(None, backup)
 
     loop_count += 1
-    if loop_count >= 12:
+    if loop_count >= 12 and not cat_rains:
         os.system("git pull")
         await vote_server.cleanup()
         await asyncio.sleep(1)
@@ -837,6 +840,8 @@ async def on_message(message):
                 times = db["spawn_times"][str(message.channel.id)]
             except KeyError:
                 times = [120, 1200]
+            if cat_rains.get(str(message.channel.id), 0) > time.time():
+                times = [1, 2]
             decided_time = random.randint(times[0], times[1])
             db["yet_to_spawn"][str(message.channel.id)] = int(time.time()) + decided_time + 10
             save("yet_to_spawn")
@@ -1634,6 +1639,72 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
 
     await message.followup.send(embed=embedVar)
 
+
+@bot.tree.command(description="its raining cats")
+async def rain(message: discord.Interaction):
+    embed = discord.Embed(title="Cat Rains", description=f"""Cat Rains are power-ups which spawn cats instantly for a limited amounts of time in channel of your choice.
+
+You can get those by buying them at our [store](<https://hipolink.me/milenakos>) or by winning them in an event.
+This bot is developed by a single person so buying one would be very appreciated.
+
+You currently have:
+2-minute long rains **{get_cat('rains', message.user.id, 'shortrain')}**
+10-minute long rains **{get_cat('rains', message.user.id, 'mediumrain')}**
+20-minute long rains **{get_cat('rains', message.user.id, 'longrain')}**
+
+Click buttons below to start a rain in the current channel.""", color=0x6E593C)
+
+    async def do_rain(interaction, rain_type):
+        # i LOOOOVE checks
+        if message.user.id != interaction.user.id:
+            await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            return
+
+        if not get_cat("rains", message.user.id, rain_type):
+            await interaction.response.send_message("you dont have a rain of dat type! buy one [here](<https://hipolink.me/milenakos>)", ephemeral=True)
+            return
+
+        if db["cat"][str(message.channel.id)]:
+            await interaction.response.send_message("please catch the cat in this channel first.", ephemeral=True)
+            return
+
+        if int(message.channel.id) not in db["summon_ids"]:
+            await interaction.response.send_message("please run this in a setupped channel.", ephemeral=True)
+            return
+
+        if str(message.channel.id) in cat_rains:
+            await interaction.response.send_message("there is already a rain running!", ephemeral=True)
+            return
+
+        type_mappings = {"shortrain": 120, "mediumrain": 600, "longrain": 1200}
+        cat_rains[str(message.channel.id)] = time.time() + type_mappings[rain_type]
+        remove_cat("rains", message.user.id, rain_type)
+        await spawn_cat(str(message.channel.id))
+
+    async def short(interaction):
+        await do_rain(interaction, "shortrain")
+
+    async def medium(interaction):
+        await do_rain(interaction, "mediumrain")
+
+    async def long(interaction):
+        await do_rain(interaction, "longrain")
+
+    button1 = Button(label="Short", style=ButtonStyle.blurple)
+    button1.callback = short
+
+    button2 = Button(label="Medium", style=ButtonStyle.blurple)
+    button2.callback = medium
+
+    button3 = Button(label="Long", style=ButtonStyle.blurple)
+    button3.callback = long
+
+    view = View(timeout=3600)
+    view.add_item(button1)
+    view.add_item(button2)
+    view.add_item(button3)
+
+    await message.response.send_message(embed=embed, view=view)
 
 @bot.tree.command(description="Support Cat Bot!")
 async def donate(message: discord.Interaction):
