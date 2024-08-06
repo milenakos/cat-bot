@@ -847,7 +847,7 @@ async def on_message(message):
                 else:
                     cat_rains[str(message.channel.id)] = 0
                     await message.channel.send("# :bangbang: this concludes the cat rain.")
-            decided_time = random.randint(times[0], times[1])
+            decided_time = random.uniform(times[0], times[1])
             db["yet_to_spawn"][str(message.channel.id)] = int(time.time()) + decided_time + 10
             save("yet_to_spawn")
             try:
@@ -1325,7 +1325,7 @@ async def repair(message: discord.Interaction):
         times = db["spawn_times"][str(message.channel.id)]
     except KeyError:
         times = [120, 1200]
-    decided_time = random.randint(times[0], times[1])
+    decided_time = random.uniform(times[0], times[1])
     db["yet_to_spawn"][str(message.channel.id)] = int(time.time()) + decided_time + 3
     save("yet_to_spawn")
     await message.response.send_message("success. if you still have issues, join our server: https://discord.gg/staring")
