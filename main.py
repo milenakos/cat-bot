@@ -904,6 +904,9 @@ async def on_message(message):
                     do_time = False
                     caught_time = "undefined amounts of time "
 
+                if cat_rains.get(str(message.channel.id), 0) > time.time():
+                    do_time = False
+
                 icon = None
                 partial_type = None
                 for v in allowedemojis:
