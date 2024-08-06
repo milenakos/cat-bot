@@ -846,7 +846,7 @@ async def on_message(message):
                     times = [1, 2]
                 else:
                     cat_rains[str(message.channel.id)] = 0
-                    await message.channel.send("this concludes the cat rain.")
+                    await message.channel.send("# :bangbang: this concludes the cat rain.")
             decided_time = random.randint(times[0], times[1])
             db["yet_to_spawn"][str(message.channel.id)] = int(time.time()) + decided_time + 10
             save("yet_to_spawn")
