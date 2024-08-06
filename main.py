@@ -2773,7 +2773,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 
         embedVar = discord.Embed(
                 title=f"{title} Leaderboards:", description=string, color=0x6E593C
-        )
+        ).set_footer(text="☔ Get tons of cats /rain")
 
         # handle funny buttons
         if not main:
