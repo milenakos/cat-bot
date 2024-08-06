@@ -830,7 +830,8 @@ async def on_message(message):
             is_cat = False
         if not is_cat or timestamp > time.time() or message.webhook_id or (message.author.bot and message.author.id not in WHITELISTED_BOTS):
             # if there is no cat, you are /preventcatch-ed, or you aren't a whitelisted bot
-            icon = get_emoji("pointlaugh")
+            if cat_rains.get(str(message.channel.id), 0) < time.time():
+                icon = get_emoji("pointlaugh")
             try:
                 await message.add_reaction(icon)
             except Exception:
@@ -840,8 +841,12 @@ async def on_message(message):
                 times = db["spawn_times"][str(message.channel.id)]
             except KeyError:
                 times = [120, 1200]
-            if cat_rains.get(str(message.channel.id), 0) > time.time():
-                times = [1, 2]
+            if cat_rains.get(str(message.channel.id), 0) != 0:
+                if cat_rains.get(str(message.channel.id), 0) > time.time():
+                    times = [1, 2]
+                else:
+                    cat_rains[str(message.channel.id)] = 0
+                    await message.channel.send("this concludes the cat rain.")
             decided_time = random.randint(times[0], times[1])
             db["yet_to_spawn"][str(message.channel.id)] = int(time.time()) + decided_time + 10
             save("yet_to_spawn")
@@ -1676,9 +1681,13 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
             await interaction.response.send_message("there is already a rain running!", ephemeral=True)
             return
 
+        if not isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]):
+            return
+
         type_mappings = {"shortrain": 120, "mediumrain": 600, "longrain": 1200}
         cat_rains[str(message.channel.id)] = time.time() + type_mappings[rain_type]
         remove_cat("rains", message.user.id, rain_type)
+        await message.channel.send(f"cat rain was started by <@{interaction.user.id}>!")
         await spawn_cat(str(message.channel.id))
 
     async def short(interaction):
