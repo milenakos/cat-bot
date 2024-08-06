@@ -1678,12 +1678,12 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
             await interaction.response.send_message("you dont have a rain of dat type! buy one [here](<https://hipolink.me/milenakos>)", ephemeral=True)
             return
 
-        if db["cat"][str(message.channel.id)]:
-            await interaction.response.send_message("please catch the cat in this channel first.", ephemeral=True)
-            return
-
         if int(message.channel.id) not in db["summon_ids"]:
             await interaction.response.send_message("please run this in a setupped channel.", ephemeral=True)
+            return
+
+        if db["cat"][str(message.channel.id)]:
+            await interaction.response.send_message("please catch the cat in this channel first.", ephemeral=True)
             return
 
         if cat_rains.get(str(message.channel.id), 0) != 0:
