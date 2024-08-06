@@ -1686,7 +1686,7 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
             await interaction.response.send_message("please run this in a setupped channel.", ephemeral=True)
             return
 
-        if str(message.channel.id) in cat_rains:
+        if cat_rains.get(str(message.channel.id), 0) != 0:
             await interaction.response.send_message("there is already a rain running!", ephemeral=True)
             return
 
