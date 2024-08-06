@@ -1823,6 +1823,9 @@ async def trade(message: discord.Interaction, person_id: discord.User):
     person1gives = {}
     person2gives = {}
 
+    if not bot.user:
+        return
+
     # do the funny
     if person2.id == bot.user.id:
         person2gives = {"eGirl": 9999999}
