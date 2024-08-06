@@ -1660,6 +1660,8 @@ You currently have:
 10-minute long rains **{get_cat('rains', message.user.id, 'mediumrain')}**
 20-minute long rains **{get_cat('rains', message.user.id, 'longrain')}**
 
+Note: fastest times are not saved during rains.
+
 Click buttons below to start a rain in the current channel.""", color=0x6E593C)
 
     async def do_rain(interaction, rain_type):
