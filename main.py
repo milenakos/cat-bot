@@ -226,6 +226,7 @@ do_save_emojis = False
 
 # for mentioning it in catch message, will be auto-fetched in on_ready()
 DONATE_ID = 1249368737824374896
+RAIN_ID = 1270470307102195752
 
 # we restart every some loops to pull new code and fix stuff it breaks
 loop_count = 0
@@ -940,6 +941,10 @@ async def on_message(message):
                     # cataine ran out
                     add_cat(message.guild.id, message.author.id, "cataine_active", 0, True)
                     suffix_string = "\nyour cataine buff has expired. you know where to get a new one 😏"
+
+                if random.randint(0, 7) == 0:
+                    # shill rains
+                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
 
                 elif random.randint(0, 7) == 0:
                     # shill donating
@@ -3147,7 +3152,7 @@ async def on_command_error(ctx, error):
         raise
 
 async def setup(bot2):
-    global bot, DONATE_ID, vote_server
+    global bot, DONATE_ID, RAIN_ID, vote_server
 
     for command in bot.tree.walk_commands():
         # copy all the commands
@@ -3184,6 +3189,8 @@ async def setup(bot2):
     for i in app_commands:
         if i.name == "donate":
             DONATE_ID = i.id
+        elif i.name == "rain":
+            RAIN_ID = i.id
 
     if bot.is_ready() and not on_ready_debounce:
         await on_ready()
