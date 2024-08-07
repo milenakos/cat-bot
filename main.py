@@ -438,7 +438,7 @@ async def spawn_cat(ch_id, localcat=None):
         if not localcat:
             localcat = random.choice(CAT_TYPES)
         icon = get_emoji(localcat.lower() + "cat")
-        file = discord.File(f"spawn/{localcat}_cat.png")
+        file = discord.File(f"spawn/{localcat.lower()}_cat.png")
         try:
             channeley = discord.Webhook.from_url(db["webhook"][str(ch_id)], client=bot)
             guild_id = db["guild_mappings"][ch_id]
