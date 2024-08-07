@@ -435,11 +435,10 @@ async def spawn_cat(ch_id, localcat=None):
         if db["cat"][ch_id] or in_the_past:
             return
 
-        file = discord.File("cat.png")
-
         if not localcat:
             localcat = random.choice(CAT_TYPES)
         icon = get_emoji(localcat.lower() + "cat")
+        file = discord.File(f"spawn/{localcat}_cat.png")
         try:
             channeley = discord.Webhook.from_url(db["webhook"][str(ch_id)], client=bot)
             guild_id = db["guild_mappings"][ch_id]
@@ -448,7 +447,7 @@ async def spawn_cat(ch_id, localcat=None):
             channeley = bot.get_channel(int(ch_id))
             if not isinstance(channeley, Union[discord.TextChannel, discord.VoiceChannel]):
                 return
-            with open(f"spawn/{localcat}_cat.png", "rb") as f:
+            with open("cat.png", "rb") as f:
                 try:
                     wh = await channeley.create_webhook(name="Cat Bot", avatar=f.read())
                     db["webhook"][ch_id] = wh.url
