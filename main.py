@@ -448,7 +448,7 @@ async def spawn_cat(ch_id, localcat=None):
             channeley = bot.get_channel(int(ch_id))
             if not isinstance(channeley, Union[discord.TextChannel, discord.VoiceChannel]):
                 return
-            with open("cat.png", "rb") as f:
+            with open(f"spawn/{localcat}_cat.png", "rb") as f:
                 try:
                     wh = await channeley.create_webhook(name="Cat Bot", avatar=f.read())
                     db["webhook"][ch_id] = wh.url
