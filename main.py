@@ -2291,8 +2291,14 @@ if WEBHOOK_VERIFY:
         button.callback = toggle_reminders
         view.add_item(button)
 
-        embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg every 12 hours to recieve mystery cats.\nIf bot didn't detect your vote, just say `i voted`.", color=0x6E593C)
+        embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg every 12 hours to recieve mystery cats.\nIf bot didn't automatically detect your vote, just say `i voted`.", color=0x6E593C)
         await message.followup.send(embed=embedVar, view=view)
+
+@bot.tree.command(description="get a super accurate rating of something")
+@discord.app_commands.describe(thing="The thing or person to check", stat="The stat to check")
+async def rate(message: discord.Interaction, thing: str, stat: str):
+    await message.response.send_message(f"{thing} is {random.randint(0, 100)} {stat}")
+
 
 @bot.tree.command(name="random", description="Get a random cat")
 async def random_cat(message: discord.Interaction):
