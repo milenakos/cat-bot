@@ -1680,7 +1680,7 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
             return
 
-        if not get_cat("rains", message.user.id, rain_type):
+        if get_cat("rains", message.user.id, rain_type) < 1:
             await interaction.response.send_message("you dont have a rain of dat type! buy one [here](<https://hipolink.me/milenakos>)", ephemeral=True)
             return
 
