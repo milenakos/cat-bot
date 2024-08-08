@@ -2299,7 +2299,7 @@ if WEBHOOK_VERIFY:
 @bot.tree.command(description="get a super accurate rating of something")
 @discord.app_commands.describe(thing="The thing or person to check", stat="The stat to check")
 async def rate(message: discord.Interaction, thing: str, stat: str):
-    await message.response.send_message(f"{thing} is {random.randint(0, 100)} {stat}")
+    await message.response.send_message(f"{thing} is {random.randint(0, 100)}% {stat}")
 
 
 @bot.tree.command(name="random", description="Get a random cat")
