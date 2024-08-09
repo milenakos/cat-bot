@@ -2304,9 +2304,13 @@ if WEBHOOK_VERIFY:
         embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg every 12 hours to recieve mystery cats.\nIf bot didn't automatically detect your vote, just say `i voted`.", color=0x6E593C)
         await message.followup.send(embed=embedVar, view=view)
 
+
 @bot.tree.command(description="get a super accurate rating of something")
 @discord.app_commands.describe(thing="The thing or person to check", stat="The stat to check")
 async def rate(message: discord.Interaction, thing: str, stat: str):
+    if len(stat) > 100:
+        await message.response.send_message("thats kinda long")
+        return
     await message.response.send_message(f"{thing} is {random.randint(0, 100)}% {stat}")
 
 
