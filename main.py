@@ -2148,8 +2148,16 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             await update_trade_embed(interaction)
 
 @bot.tree.command(description="Get Cat Image, does not add a cat to your inventory")
-async def cat(message: discord.Interaction):
-    file = discord.File("cat.png", filename="cat.png")
+@discord.app_commands.rename(cat_type="type")
+@discord.app_commands.describe(cat_type="select a cat type ok")
+@discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
+async def cat(message: discord.Interaction, cat_type: Optional[str]):
+    if cat_type and cat_type not in cattypes:
+        await message.response.send_message("bro what", ephemeral=True)
+        return
+
+    image = f"spawn/{cat_type.lower()}_cat.png" if cat_type else "cat.png" # ternary operator because why not
+    file = discord.File(image, filename=image)
     await message.response.send_message(file=file)
 
 @bot.tree.command(description="Get Cursed Cat")
