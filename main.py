@@ -1027,10 +1027,6 @@ async def on_message(message):
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT":
                     await achemb(message, "loud_cat", "send")
-                if message.author.voice:
-                    await achemb(message, "vc_cat", "send")
-                if bot.user in message.mentions:
-                    await achemb(message, "ping_reply", "send")
                 if cat_rains.get(str(message.channel.id), 0) != 0:
                     await achemb(message, "cat_rain", "send")
 
@@ -2297,7 +2293,7 @@ async def casino(message: discord.Interaction):
 
         if get_cat(message.guild.id, message.user.id, "gambles") >= 10:
             await achemb(message, "gambling_one", "send")
-        if get_cat(message.guild.id, message.user.id, "gambles") >= 100:
+        if get_cat(message.guild.id, message.user.id, "gambles") >= 50:
             await achemb(message, "gambling_two", "send")
 
         try:
@@ -2582,8 +2578,6 @@ async def dark_market(message):
         myview.add_item(button)
 
         await message.followup.send(embed=embed, view=myview, ephemeral=True)
-
-        await achemb(message, "dark_market", "followup")
     else:
         embed = discord.Embed(title="The Dark Market", description=f"you already bought from us recently. you can do next purchase <t:{get_cat(message.guild.id, message.user.id, 'cataine_active')}:R>.")
         await message.followup.send(embed=embed, ephemeral=True)
@@ -2633,7 +2627,7 @@ async def achievements(message: discord.Interaction):
             hidden_counter = 0
         newembed = discord.Embed(
                 title=category, description=f"Achievements unlocked (total): {unlocked}/{total_achs}{minus_achs}{hidden_suffix}", color=0x6E593C
-        )
+        ).set_footer(text="☔ Get tons of cats /rain")
         for k, v in ach_list.items():
             if v["category"] == category:
                 if k == "thanksforplaying":
@@ -2687,6 +2681,7 @@ async def achievements(message: discord.Interaction):
                 pass
 
             if hidden_counter == 3 and get_cat(message.guild.id, message.user.id, "dark_market"):
+                await achemb(message, "dark_market", "followup")
                 if get_cat(message.guild.id, message.user.id, "story_complete") != 1:
                     # open the totally not suspicious dark market
                     await dark_market(message)
@@ -2906,10 +2901,10 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 if interactor_placement > 15 and str(interaction.user.id) not in string:
                     string = string + f"{interactor_placement}\\. {interactor} {unit}: <@{interaction.user.id}>\n"
 
-        if messager_placement <= 5:
-            await achemb(message, "leader", "followup")
+        if messager_placement <= 5 and message.user.id != interaction.user.id:
+            await achemb(message, "leader", "send")
         if interactor_placement <= 5:
-            await achemb(interaction, "leader", "followup")
+            await achemb(interaction, "leader", "send")
 
         embedVar = discord.Embed(
                 title=f"{title} Leaderboards:", description=string, color=0x6E593C
