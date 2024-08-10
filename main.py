@@ -870,7 +870,7 @@ async def on_message(message):
                 try:
                     channeley = discord.Webhook.from_url(db["webhook"][str(message.channel.id)], client=bot)
                     thread_id = db["thread_mappings"].get(str(message.channel.id), False)
-                    await channeley.delete_message(cat_temp, thread=discord.Object(int(message.channel.id)) if thread_id else None)
+                    await channeley.delete_message(cat_temp, *[thread=discord.Object(int(message.channel.id))] if thread_id else [])
                 except Exception:
                     pass
                 try:
@@ -1017,8 +1017,8 @@ async def on_message(message):
                                                             .replace("{type}", le_emoji)
                                                             .replace("{count}", str(add_cat(message.guild.id, message.author.id, le_emoji, silly_amount)))
                                                             .replace("{time}", caught_time[:-1]) + suffix_string,
-                                                view=view if view else None,
-                                                thread=discord.Object(message.channel.id) if thread_id else None,
+                                                *[view=view] if view else [],
+                                                *[thread=discord.Object(message.channel.id)] if thread_id else [],
                                                 allowed_mentions=discord.AllowedMentions.none())
                 except Exception:
                     pass
@@ -1384,6 +1384,7 @@ async def changemessage(message: discord.Interaction):
             input_value = self.input.value
             # check if all placeholders are there
             if input_value != "":
+                check = ["{emoji}", "{type}"]
                 if self.type == "Appear":
                     check = ["{emoji}", "{type}"]
                 else:
