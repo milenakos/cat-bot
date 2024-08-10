@@ -2677,7 +2677,7 @@ async def achievements(message: discord.Interaction):
             hidden_counter = 0
         newembed = discord.Embed(
                 title=category, description=f"Achievements unlocked (total): {unlocked}/{total_achs}{minus_achs}{hidden_suffix}", color=0x6E593C
-        )
+        ).set_footer(text="☔ Get tons of cats /rain")
         for k, v in ach_list.items():
             if v["category"] == category:
                 if k == "thanksforplaying":
