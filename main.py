@@ -2622,8 +2622,6 @@ async def dark_market(message):
         myview.add_item(button)
 
         await message.followup.send(embed=embed, view=myview, ephemeral=True)
-
-        await achemb(message, "dark_market", "followup")
     else:
         embed = discord.Embed(title="The Dark Market", description=f"you already bought from us recently. you can do next purchase <t:{get_cat(message.guild.id, message.user.id, 'cataine_active')}:R>.")
         await message.followup.send(embed=embed, ephemeral=True)
@@ -2727,6 +2725,7 @@ async def achievements(message: discord.Interaction):
                 pass
 
             if hidden_counter == 3 and get_cat(message.guild.id, message.user.id, "dark_market"):
+                await achemb(message, "dark_market", "followup")
                 if get_cat(message.guild.id, message.user.id, "story_complete") != 1:
                     # open the totally not suspicious dark market
                     await dark_market(message)
