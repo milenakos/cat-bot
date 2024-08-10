@@ -39,6 +39,7 @@
   "nice": {"title": "Nice!", "description": "donate 69 fine cats", "is_hidden": false, "category": "Silly"},
   "click_here": {"title": "Click Here", "description": "[???](https://catbot.minkos.lol/clickhere)", "is_hidden": false, "category": "Silly"},
   "patient_reader": {"title": "Patient Reader", "description": "find this ach in /help command", "is_hidden": true, "category": "Silly"},
+  "nerd": {"title": "Nerd", "description": "find this ach in cat bot terms of service", "is_hidden": true, "category": "Hidden"},
   "vc_cat": {"title": "IT TALKS??", "description": "get a cat while in vc", "is_hidden": false, "category": "Silly"},
   "loud_cat": {"title": "LOUD CAT", "description": "CATCH A CAT IN CAPS", "is_hidden": true, "category": "Silly"},
   "reverse": {"title": "Reverse", "description": "say tac when a cat appears", "is_hidden": true, "category": "Silly"},
@@ -53,7 +54,6 @@
   "broke": {"title": "Broke", "description": "BROKE ALERT", "is_hidden": true, "category": "Silly"},
   "ping_reply": {"title": "Ping Reply", "description": "turn it off bozo", "is_hidden": true, "category": "Silly"},
   "perfectly_balanced": {"title": "Perfectly Balanced", "description": "as all things should be", "is_hidden": true, "category": "Silly"},
-  "capitalism": {"title": "Capitalism", "description": "trade over 1k cats", "is_hidden": false, "category": "Silly"},
   "fact_enjoyer": {"title": "Fact Enjoyer", "description": "hmm yes those are some quality facts", "is_hidden": true, "category": "Silly"},
   "morse_cat": {"title": "Morse Cat", "description": "beep boop", "is_hidden": false, "category": "Silly"},
 
@@ -68,6 +68,7 @@
   "all_the_same": {"title": "All the same", "description": "get all digits repeating in the time", "is_hidden": false, "category": "Hard"},
   "paradoxical_gambler": {"title": "Paradoxical Gambler", "description": "qhar", "is_hidden": true, "category": "Hard"},
   "darkest_market": {"title": "Darkest Market", "description": "ooo spokey", "is_hidden": true, "category": "Hard"},
+  "capitalism": {"title": "Capitalism", "description": "trade over 1k cats", "is_hidden": false, "category": "Hard"},
   "profit": {"title": "Profit", "description": "Get 100+ more value in a trade", "is_hidden": true, "category": "Hard"},
 
   "catn": {"title": "Cat'n", "description": "no cat??? :megamind:", "is_hidden": true, "category": "Hidden"},
@@ -77,7 +78,6 @@
   "good_citizen": {"title": "Good Citizen", "description": "pay your taxes", "is_hidden": false, "category": "Hidden"},
   "blackhole": {"title": "Blackhole", "description": "WHERE THE FU ARE WE", "is_hidden": true, "category": "Hidden"},
   "cat_rain": {"title": "It's raining cats", "description": "participate in a cat rain", "is_hidden": true, "category": "Hidden"},
-  "nerd": {"title": "Nerd", "description": "find this ach in cat bot terms of service", "is_hidden": true, "category": "Hidden"},
 
   "thanksforplaying": {"title": "Thanks For Playing", "description": "Complete the story", "is_hidden": false, "category": "Cat Hunt"}
 }
