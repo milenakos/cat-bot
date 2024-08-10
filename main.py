@@ -2945,7 +2945,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 if interactor_placement > 15 and str(interaction.user.id) not in string:
                     string = string + f"{interactor_placement}\\. {interactor} {unit}: <@{interaction.user.id}>\n"
 
-        if messager_placement <= 5:
+        if messager_placement <= 5 and message.user.id != interaction.user.id:
             await achemb(message, "leader", "send")
         if interactor_placement <= 5:
             await achemb(interaction, "leader", "send")
