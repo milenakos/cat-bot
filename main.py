@@ -2070,14 +2070,14 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 await achemb(message, "absolutely_nothing", "send")
                 await achemb(message, "absolutely_nothing", "send", person2)
 
-            if person1value - person2value >= 100:
-                await achemb(message, "profit", "send")
             if person2value - person1value >= 100:
+                await achemb(message, "profit", "send")
+            if person1value - person2value >= 100:
                 await achemb(message, "profit", "send", person2)
 
-            if person1value < person2value:
+            if person1value > person2value:
                 await achemb(message, "scammed", "send")
-            if person2value < person1value:
+            if person2value > person1value:
                 await achemb(message, "scammed", "send", person2)
 
             if person1value == person2value and person1gives != person2gives:
