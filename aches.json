@@ -58,7 +58,7 @@
   "morse_cat": {"title": "Morse Cat", "description": "beep boop", "is_hidden": false, "category": "Silly"},
 
   "lucky": {"title": "Lucky", "description": "0.01% chance you get it each time you catch a cat", "is_hidden": true, "category": "Hard"},
-  "gambling_two": {"title": "GOD DANGIT", "description": "Gamble 100 times", "is_hidden": true, "category": "Hard"},
+  "gambling_two": {"title": "GOD DANGIT", "description": "Gamble 50 times", "is_hidden": true, "category": "Hard"},
   "nerd_battle": {"title": "Battle of the Wits", "description": "Run /fact when a professor spawns", "is_hidden": true, "category": "Hard"},
   "its_not_working": {"title": "its not working", "description": "click private button 50 times", "is_hidden": true, "category": "Hard"},
   "rich": {"title": "R I C H", "description": "donate 5 ultimates to cat bot", "is_hidden": false, "category": "Hard"},

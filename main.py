@@ -2337,7 +2337,7 @@ async def casino(message: discord.Interaction):
 
         if get_cat(message.guild.id, message.user.id, "gambles") >= 10:
             await achemb(message, "gambling_one", "send")
-        if get_cat(message.guild.id, message.user.id, "gambles") >= 100:
+        if get_cat(message.guild.id, message.user.id, "gambles") >= 50:
             await achemb(message, "gambling_two", "send")
 
         try:
