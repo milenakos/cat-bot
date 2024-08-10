@@ -1067,7 +1067,7 @@ async def on_message(message):
                 except Exception:
                     pass
 
-                if random.randint(0, 10000) == 69:
+                if random.randint(0, 1000) == 69:
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT":
                     await achemb(message, "loud_cat", "send")
@@ -1869,6 +1869,18 @@ async def ping(message: discord.Interaction):
         latency = "infinite"
         await achemb(message, "infinite", "send")
     await message.response.send_message(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
+
+@bot.tree.command()
+@discord.app_commands.describe(mentions='The members you want to get the joined date from; defaults to the user who uses the command')
+async def joined(interaction: discord.Interaction, mentions: Optional[str]):
+    if not mentions:
+        members = [interaction.user]
+    else:
+        members = []
+        for user_id in re.findall(r"\d{17,19}", mentions):
+            member = interaction.guild.get_member(user_id)
+            if member:
+                members.append(member)
 
 @bot.tree.command(description="give cats now")
 @discord.app_commands.rename(cat_type="type")
