@@ -39,7 +39,7 @@
   "nice": {"title": "Nice!", "description": "donate 69 fine cats", "is_hidden": false, "category": "Silly"},
   "click_here": {"title": "Click Here", "description": "[???](https://catbot.minkos.lol/clickhere)", "is_hidden": false, "category": "Silly"},
   "patient_reader": {"title": "Patient Reader", "description": "find this ach in /help command", "is_hidden": true, "category": "Silly"},
-  "nerd": {"title": "Nerd", "description": "find this ach in cat bot terms of service", "is_hidden": true, "category": "Hidden"},
+  "nerd": {"title": "Nerd", "description": "find this ach in cat bot terms of service", "is_hidden": true, "category": "Silly"},
   "vc_cat": {"title": "IT TALKS??", "description": "get a cat while in vc", "is_hidden": false, "category": "Silly"},
   "loud_cat": {"title": "LOUD CAT", "description": "CATCH A CAT IN CAPS", "is_hidden": true, "category": "Silly"},
   "reverse": {"title": "Reverse", "description": "say tac when a cat appears", "is_hidden": true, "category": "Silly"},
