@@ -610,10 +610,15 @@ async def on_message(message):
         ["cat!coupon jr0f-pzka", "exact", "coupon_user"],
         ["pineapple", "exact", "pineapple"],
         ["cat!i_like_cat_website", "exact", "website_user"],
+        ["cat!i_clicked_there", "exact", "click_here"],
+        ["cat!lia_is_cute", "exact", "nerd"],
+        ["i read help", "exact", "patient_reader"],
         [str(bot.user.id), "in", "who_ping"],
         ["lol_i_have_dmed_the_cat_bot_and_got_an_ach", "exact", "dm"],
         ["dog", "exact", "not_quite"],
-        ["egril", "exact", "egril"]]
+        ["egril", "exact", "egril"],
+        ["-.-. .- -", "exact", "morse_cat"],
+        ["tac", "exact", "reverse"]]
 
     reactions = [["v1;", "custom", "why_v1"],
         ["proglet", "custom", "professor_cat"],
@@ -641,6 +646,8 @@ async def on_message(message):
     if DONOR_CHANNEL_ID and message.channel.id == DONOR_CHANNEL_ID:
         register_member("0", text)
         set_cat("0", text, "premium", 1)
+
+    react_count = 0
 
     # :staring_cat: reaction on "bullshit"
     if " " not in text and len(text) > 7 and text.isalnum():
@@ -674,6 +681,7 @@ async def on_message(message):
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
             try:
                 await message.add_reaction(get_emoji("staring_cat"))
+                react_count += 1
             except Exception:
                 pass
 
@@ -722,6 +730,7 @@ async def on_message(message):
 
             try:
                 await message.add_reaction(em)
+                react_count += 1
                 reactions_ratelimit[message.author.id] = reactions_ratelimit.get(message.author.id, 0) + 1
             except Exception:
                 pass
@@ -739,8 +748,12 @@ async def on_message(message):
     try:
         if message.author in message.mentions:
             await message.add_reaction(get_emoji("staring_cat"))
+            react_count += 1
     except Exception:
         pass
+
+    if react_count >= 3:
+        await achemb(message, "silly", "send")
 
     if (":place_of_worship:" in text or "🛐" in text) and (":cat:" in text or ":staring_cat:" in text or "🐱" in text):
         await achemb(message, "worship", "reply")
@@ -1010,6 +1023,17 @@ async def on_message(message):
                 except Exception:
                     pass
 
+                if random.randint(0, 10000) == 69:
+                    await achemb(message, "lucky", "send")
+                if message.content == "CAT":
+                    await achemb(message, "loud_cat", "send")
+                if message.author.voice:
+                    await achemb(message, "vc_cat", "send")
+                if bot.user in message.mentions:
+                    await achemb(message, "ping_reply", "send")
+                if cat_rains.get(str(message.channel.id), 0) != 0:
+                    await achemb(message, "cat_rain", "send")
+
                 # handle fastest and slowest catches
                 if do_time and time_caught < get_time(message.guild.id, message.author.id):
                     set_time(message.guild.id, message.author.id, time_caught)
@@ -1026,6 +1050,14 @@ async def on_message(message):
 
                 if do_time and time_caught == 3.14:
                     await achemb(message, "pie", "send")
+
+                if do_time and time_caught == int(time_caught):
+                    await achemb(message, "perfection", "send")
+
+                if do_time:
+                    raw_digits = ''.join(char for char in caught_time[:-1] if char.isdigit())
+                    if len(set(raw_digits)) == 1:
+                        await achemb(message, "all_the_same", "send")
 
                 # handle battlepass
                 async def do_reward(message, level):
@@ -1188,7 +1220,7 @@ async def help(message):
         inline=False
     ).add_field(
         name="Let's get funky!",
-        value="Cat Bot has various other mechanics to make fun funnier. You can collect various `/achievements`, progress in the `/battlepass`, or have beef with the mafia over cataine addiction. The amount you worship is the limit!",
+        value="Cat Bot has various other mechanics to make fun funnier. You can collect various `/achievements`, for example saying \"i read help\", progress in the `/battlepass`, or have beef with the mafia over cataine addiction. The amount you worship is the limit!",
         inline=False
     ).add_field(
         name="Other features",
@@ -1384,6 +1416,7 @@ async def changemessage(message: discord.Interaction):
 
         if interaction.user != caller:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            add_cat(interaction.guild.id, interaction.user.id, "funny")
             return
         modal = InputModal("Appear")
         await interaction.response.send_modal(modal)
@@ -1399,6 +1432,7 @@ async def changemessage(message: discord.Interaction):
 
         if interaction.user != caller:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            add_cat(interaction.guild.id, interaction.user.id, "funny")
             return
         modal = InputModal("Cought")
         await interaction.response.send_modal(modal)
@@ -1592,10 +1626,21 @@ async def gen_inventory(message, person_id):
         # give some aches if we are vieweing our own inventory
         if give_collector:
             await achemb(message, "collecter", "send")
+
         if float(get_time(message.guild.id, message.user.id)) <= 5:
             await achemb(message, "fast_catcher", "send")
         if float(get_time(message.guild.id, message.user.id, "slow")) >= 3600:
             await achemb(message, "slow_catcher", "send")
+
+        if total >= 100:
+            await achemb(message, "second", "send")
+        if total >= 1000:
+            await achemb(message, "third", "send")
+        if total >= 10000:
+            await achemb(message, "fourth", "send")
+
+        if unlocked >= 15:
+            await achemb(message, "achiever", "send")
 
     return embedVar
 
@@ -1634,6 +1679,7 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
         # i LOOOOVE checks
         if message.user.id != interaction.user.id:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            add_cat(interaction.guild.id, interaction.user.id, "funny")
             return
 
         if get_cat("rains", message.user.id, rain_type) < 1:
@@ -1733,6 +1779,9 @@ async def battlepass(message: discord.Interaction):
     if not get_cat(message.guild.id, message.user.id, "progress"):
         db[str(message.guild.id)][str(message.user.id)]["progress"] = 0
 
+    if get_cat(message.guild.id, message.user.id, "funny") >= 50:
+        await achemb(message, "its_not_working", "send")
+
     current_level = get_cat(message.guild.id, message.user.id, "battlepass")
     embedVar = discord.Embed(title="Cattlepass™", description="who thought this was a good idea", color=0x6E593C)
 
@@ -1778,6 +1827,7 @@ async def ping(message: discord.Interaction):
         latency = round(bot.latency * 1000)
     except Exception:
         latency = "infinite"
+        await achemb(message, "infinite", "send")
     await message.response.send_message(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
 
 @bot.tree.command(description="give cats now")
@@ -1805,6 +1855,10 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
         await achemb(message, "anti_donator", "send", person)
         if person_id == bot.user.id and cat_type == "Ultimate" and int(amount) >= 5:
             await achemb(message, "rich", "send")
+        if person_id == bot.user.id:
+            await achemb(message, "sacrifice", "send")
+        if cat_type == "Nice" and int(amount) == 69:
+            await achemb(message, "nice", "send")
 
         # handle tax
         if amount >= 5 and person_id != OWNER_ID and cat_type == "Fine":
@@ -1818,9 +1872,11 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     except Exception:
                         pass
                     remove_cat(interaction.guild.id, interaction.user.id, "Fine", tax_amount)
+                    await achemb(message, "good_citizen", "send")
                     await interaction.followup.send(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
                 else:
                     await interaction.response.send_message(random.choice(funny), ephemeral=True)
+                    add_cat(interaction.guild.id, interaction.user.id, "funny")
 
             async def evade(interaction):
                 if interaction.user.id == message.user.id:
@@ -1833,6 +1889,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     await interaction.followup.send(f"You evaded the tax of {tax_amount} Fine cats.")
                 else:
                     await interaction.followup.send(random.choice(funny), ephemeral=True)
+                    add_cat(interaction.guild.id, interaction.user.id, "funny")
 
             embed = discord.Embed(title="HOLD UP!", description="Thats rather large amount of fine cats! You will need to pay a cat tax of 20% your transaction, do you agree?", color=0x6E593C)
 
@@ -1855,6 +1912,8 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
     else:
         # haha skill issue
         await message.response.send_message("no", ephemeral=True)
+        if message.user.id == person_id:
+            await achemb(message, "lonely", "send")
 
 @bot.tree.command(description="Trade cats!")
 @discord.app_commands.rename(person_id="user")
@@ -1871,6 +1930,9 @@ async def trade(message: discord.Interaction, person_id: discord.User):
     person1accept = False
     person2accept = False
 
+    person1value = 0
+    person2value = 0
+
     person1gives = {}
     person2gives = {}
 
@@ -1886,6 +1948,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, blackhole
         if interaction.user != person1 and interaction.user != person2:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            add_cat(interaction.guild.id, interaction.user.id, "funny")
             return
 
         blackhole = True
@@ -1898,9 +1961,10 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
     # this is the accept button code
     async def acceptb(interaction):
-        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
+        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, person1value, person2value
         if interaction.user != person1 and interaction.user != person2:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            add_cat(interaction.guild.id, interaction.user.id, "funny")
             return
         # clicking accept again would make you un-accept
         if interaction.user == person1:
@@ -1910,6 +1974,9 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
         await interaction.response.defer()
         await update_trade_embed(interaction)
+
+        if person1accept and person2 == bot.user:
+            await achemb(message, "desperate", "send")
 
         if person1accept and person2accept:
             error = False
@@ -1932,11 +1999,14 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 return
 
             # exchange cats
+            cat_count = 0
             for k, v in person1gives.items():
+                cat_count += v
                 remove_cat(interaction.guild.id, person1.id, k, v)
                 add_cat(interaction.guild.id, person2.id, k, v)
 
             for k, v in person2gives.items():
+                cat_count += v
                 remove_cat(interaction.guild.id, person2.id, k, v)
                 add_cat(interaction.guild.id, person1.id, k, v)
 
@@ -1944,14 +2014,38 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 await interaction.edit_original_response(content="Trade finished!", view=None)
             except Exception:
                 await interaction.followup.send()
+
             await achemb(message, "extrovert", "send")
             await achemb(message, "extrovert", "send", person2)
+
+            if cat_count >= 1000:
+                await achemb(message, "capitalism", "send")
+                await achemb(message, "capitalism", "send", person2)
+
+            if cat_count == 0:
+                await achemb(message, "absolutely_nothing", "send")
+                await achemb(message, "absolutely_nothing", "send", person2)
+
+            if person2value - person1value >= 100:
+                await achemb(message, "profit", "send")
+            if person1value - person2value >= 100:
+                await achemb(message, "profit", "send", person2)
+
+            if person1value > person2value:
+                await achemb(message, "scammed", "send")
+            if person2value > person1value:
+                await achemb(message, "scammed", "send", person2)
+
+            if person1value == person2value and person1gives != person2gives:
+                await achemb(message, "perfectly_balanced", "send")
+                await achemb(message, "perfectly_balanced", "send", person2)
 
     # add cat code
     async def addb(interaction):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
         if interaction.user != person1 and interaction.user != person2:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            add_cat(interaction.guild.id, interaction.user.id, "funny")
             return
         if interaction.user == person1:
             currentuser = 1
@@ -1974,7 +2068,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
     # this is ran like everywhere when you do anything
     # it updates the embed
     async def gen_embed():
-        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, blackhole
+        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, blackhole, person1value, person2value
 
         if blackhole:
             # no way thats fun
@@ -1999,8 +2093,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
         coolembed = discord.Embed(color=0x6E593C, title=f"{person1.name.replace("_", r"\_")} and {person2.name.replace("_", r"\_")} trade", description="no way")
         # a single field for one person
-        def field(personaccept, persongives, person):
-            nonlocal coolembed
+        def field(personaccept, persongives, person, number):
+            nonlocal coolembed, person1value, person2value
             icon = "⬜"
             if personaccept:
                 icon = "✅"
@@ -2014,10 +2108,14 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 valuestr = "No cats offered!"
             else:
                 valuestr += f"*Total value: {round(valuenum)}*"
+                if number == 1:
+                    person1value = round(valuenum)
+                else:
+                    person2value = round(valuenum)
             coolembed.add_field(name=f"{icon} {person.name}", inline=True, value=valuestr)
 
-        field(person1accept, person1gives, person1)
-        field(person2accept, person2gives, person2)
+        field(person1accept, person1gives, person1, 1)
+        field(person2accept, person2gives, person2, 2)
 
         return coolembed, view
 
@@ -2136,6 +2234,7 @@ async def brew(message: discord.Interaction):
 async def casino(message: discord.Interaction):
     if message.user.id in casino_lock:
         await message.response.send_message("you get kicked out of the casino because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
+        await achemb(message, "paradoxical_gambler", "send")
         return
 
     embed = discord.Embed(title="The Casino", description=f"One spin costs 5 {get_emoji('epiccat')} Epic cats", color=0x750F0E)
@@ -2144,12 +2243,14 @@ async def casino(message: discord.Interaction):
         nonlocal message
         if interaction.user.id != message.user.id:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            add_cat(interaction.guild.id, interaction.user.id, "funny")
             return
         if message.user.id in casino_lock:
             await interaction.response.send_message("you get kicked out of the casino because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
             return
         if get_cat(message.guild.id, message.user.id, "Epic") < 5:
             await interaction.response.send_message("BROKE ALERT ‼️", ephemeral=True)
+            await achemb(interaction, "broke", "send")
             return
 
         await interaction.response.defer()
@@ -2192,6 +2293,12 @@ async def casino(message: discord.Interaction):
         myview.add_item(button)
 
         casino_lock.remove(message.user.id)
+        add_cat(message.guild.id, message.user.id, "gambles")
+
+        if get_cat(message.guild.id, message.user.id, "gambles") >= 10:
+            await achemb(message, "gambling_one", "send")
+        if get_cat(message.guild.id, message.user.id, "gambles") >= 100:
+            await achemb(message, "gambling_two", "send")
 
         try:
             await interaction.edit_original_response(embed=embed, view=myview)
@@ -2306,6 +2413,21 @@ async def cat_fact(message: discord.Interaction):
                     await message.followup.send(data["fact"])
                 else:
                     await message.followup.send("failed to fetch a cat fact.")
+
+    if not isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]):
+        return
+
+    add_cat(message.guild.id, message.user.id, "facts")
+    if get_cat(message.guild.id, message.user.id, "facts") >= 10:
+        await achemb(message, "fact_enjoyer", "send")
+
+    try:
+        if msg_id := db["cat"][str(message.channel.id)]:
+            catchmsg = await message.channel.fetch_message(msg_id)
+            if str(get_emoji("professorcat")) in catchmsg.content:
+                await achemb(message, "nerd_battle", "send")
+    except Exception:
+        pass
 
 async def light_market(message):
     cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
@@ -2460,6 +2582,8 @@ async def dark_market(message):
         myview.add_item(button)
 
         await message.followup.send(embed=embed, view=myview, ephemeral=True)
+
+        await achemb(message, "dark_market", "followup")
     else:
         embed = discord.Embed(title="The Dark Market", description=f"you already bought from us recently. you can do next purchase <t:{get_cat(message.guild.id, message.user.id, 'cataine_active')}:R>.")
         await message.followup.send(embed=embed, ephemeral=True)
@@ -2470,6 +2594,9 @@ async def achievements(message: discord.Interaction):
     register_member(message.guild.id, message.user.id)
     has_ach(message.guild.id, message.user.id, "test_ach") # and there is this cursed line again wtf
     db_var = db[str(message.guild.id)][str(message.user.id)]["ach"]
+
+    if get_cat(message.guild.id, message.user.id, "funny") >= 50:
+        await achemb(message, "its_not_working", "send")
 
     unlocked = 0
     minus_achs = 0
@@ -2490,6 +2617,9 @@ async def achievements(message: discord.Interaction):
     embedVar = discord.Embed(
             title="Your achievements:", description=f"{unlocked}/{total_achs}{minus_achs}", color=0x6E593C
     )
+
+    if unlocked >= 15:
+        await achemb(message, "achiever", "send")
 
     hidden_counter = 0
     # this is a single page of the achievement list
@@ -2531,6 +2661,7 @@ async def achievements(message: discord.Interaction):
             await interaction.response.send_message(embed=gen_new("Cat Hunt"), ephemeral=True, view=insane_view_generator("Cat Hunt"))
         else:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            add_cat(interaction.guild.id, interaction.user.id, "funny")
             await achemb(interaction, "curious", "send")
 
     # creates buttons at the bottom of the full view
@@ -2562,6 +2693,9 @@ async def achievements(message: discord.Interaction):
                 else:
                     await light_market(message)
 
+            if hidden_counter == 20:
+                await achemb(interaction, "darkest_market", "send")
+
         if category == "Cat Hunt":
             buttons_list.append(Button(label="Cat Hunt", style=ButtonStyle.green))
         else:
@@ -2576,11 +2710,18 @@ async def achievements(message: discord.Interaction):
         lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Random") for _ in '_').__anext__())
         buttons_list[-1].callback = lambdas_list[-1]
 
-        if category == "Unfair":
-            buttons_list.append(Button(label="Unfair", style=ButtonStyle.green))
+        if category == "Silly":
+            buttons_list.append(Button(label="Silly", style=ButtonStyle.green))
         else:
-            buttons_list.append(Button(label="Unfair", style=ButtonStyle.blurple))
-        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Unfair") for _ in '_').__anext__())
+            buttons_list.append(Button(label="Silly", style=ButtonStyle.blurple))
+        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Silly") for _ in '_').__anext__())
+        buttons_list[-1].callback = lambdas_list[-1]
+
+        if category == "Hard":
+            buttons_list.append(Button(label="Hard", style=ButtonStyle.green))
+        else:
+            buttons_list.append(Button(label="Hard", style=ButtonStyle.blurple))
+        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Hard") for _ in '_').__anext__())
         buttons_list[-1].callback = lambdas_list[-1]
 
         if category == "Hidden":
@@ -2611,9 +2752,19 @@ async def catch(message: discord.Interaction, msg: discord.Message):
     file = discord.File("generated.png", filename="generated.png")
     set_cat(message.guild.id, message.user.id, "catchcooldown", time.time())
     await message.followup.send("cought in 4k", file=file)
-    register_member(message.guild.id, msg.author.id)
-    if msg.author.id != bot.user.id:
-        await achemb(message, "4k", "send")
+
+    await achemb(message, "4k", "send")
+
+    if msg.author.id == bot.user.id and msg.content == "cought in 4k":
+        await achemb(message, "8k", "send")
+
+    try:
+        is_cat = db["cat"][str(message.channel.id)]
+    except Exception:
+        is_cat = False
+
+    if int(is_cat) == int(msg.id):
+        await achemb(message, "not_like_that", "send")
 
 # pointLaugh lives on in our memories
 
@@ -2754,6 +2905,11 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                     string = string + f"{messager_placement}\\. {messager} {unit}: <@{message.user.id}>\n"
                 if interactor_placement > 15 and str(interaction.user.id) not in string:
                     string = string + f"{interactor_placement}\\. {interactor} {unit}: <@{interaction.user.id}>\n"
+
+        if messager_placement <= 5:
+            await achemb(message, "leader", "followup")
+        if interactor_placement <= 5:
+            await achemb(interaction, "leader", "followup")
 
         embedVar = discord.Embed(
                 title=f"{title} Leaderboards:", description=string, color=0x6E593C
