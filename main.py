@@ -2946,9 +2946,9 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                     string = string + f"{interactor_placement}\\. {interactor} {unit}: <@{interaction.user.id}>\n"
 
         if messager_placement <= 5:
-            await achemb(message, "leader", "followup")
+            await achemb(message, "leader", "send")
         if interactor_placement <= 5:
-            await achemb(interaction, "leader", "followup")
+            await achemb(interaction, "leader", "send")
 
         embedVar = discord.Embed(
                 title=f"{title} Leaderboards:", description=string, color=0x6E593C
