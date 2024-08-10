@@ -258,10 +258,7 @@ def add_cat(server_id, person_id, cattype, val=None, overwrite=False):
         val = 1
     register_member(server_id, person_id)
     try:
-        if overwrite:
-            db[str(server_id)][str(person_id)][cattype] = val
-        else:
-            db[str(server_id)][str(person_id)][cattype] = db[str(server_id)][str(person_id)][cattype] + val
+        db[str(server_id)][str(person_id)][cattype] = val if overwrite else db[str(server_id)][str(person_id)][cattype] + val
     except Exception:
         db[str(server_id)][str(person_id)][cattype] = val
     save(server_id)
@@ -315,10 +312,7 @@ def get_time(server_id, person_id, type=None):
         if isinstance(result, str):
             db[str(server_id)][str(person_id)]["time" + type] = float(result)
     except Exception:
-        if type == "":
-            result = 99999999999999
-        else:
-            result = 0
+        result = 99999999999999 if type == "" else 0
     return result
 
 def set_time(server_id, person_id, time, type=None):
@@ -362,10 +356,7 @@ def get_emoji(name):
         return emojis[name]
     else:
         try:
-            if name in allowedemojis and CATS_GUILD_ID:
-                result = discord.utils.get(bot.get_guild(CATS_GUILD_ID).emojis, name=name)
-            else:
-                result = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=name)
+            result = discord.utils.get(bot.get_guild(CATS_GUILD_ID if name in allowedemojis and CATS_GUILD_ID else GUILD_ID).emojis, name=name)
             if not result:
                 raise Exception
             if do_save_emojis:
@@ -461,10 +452,7 @@ async def spawn_cat(ch_id, localcat=None):
             return
 
         try:
-            if db[guild_id]["appear"]:
-                appearstring = db[guild_id]["appear"]
-            else:
-                appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
+            appearstring = db[guild_id]["appear"] if db[guild_id]["appear"] else "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
         except Exception:
             db[guild_id]["appear"] = ""
             appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!"
@@ -472,10 +460,7 @@ async def spawn_cat(ch_id, localcat=None):
         if db["cat"][ch_id]:
             return  # its never too late to return
 
-        if thread_id:
-            message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file, wait=True, thread=discord.Object(int(ch_id)))
-        else:
-            message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file, wait=True)
+        message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file, wait=True, thread=discord.Object(int(ch_id)) if thread_id else None)
         if str(message_is_sus.id)[0] != "1":
             # check for broken ids idk
             return
@@ -872,10 +857,7 @@ async def on_message(message):
                 try:
                     channeley = discord.Webhook.from_url(db["webhook"][str(message.channel.id)], client=bot)
                     thread_id = db["thread_mappings"].get(str(message.channel.id), False)
-                    if thread_id:
-                        await channeley.delete_message(cat_temp, thread=discord.Object(int(message.channel.id)))
-                    else:
-                        await channeley.delete_message(cat_temp)
+                    await channeley.delete_message(cat_temp, thread=discord.Object(int(message.channel.id)) if thread_id else None)
                 except Exception:
                     pass
                 try:
@@ -1015,41 +997,15 @@ async def on_message(message):
                     send_target = message.channel
                     thread_id = False
 
-                # i love dpy
+                # i love ~~dpy~~ the ternary operator
                 try:
-                    if thread_id:
-                        if view:
-                            await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
+                    await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
                                                             .replace("{emoji}", str(icon))
                                                             .replace("{type}", le_emoji)
                                                             .replace("{count}", str(add_cat(message.guild.id, message.author.id, le_emoji, silly_amount)))
                                                             .replace("{time}", caught_time[:-1]) + suffix_string,
-                                                view=view,
-                                                thread=discord.Object(message.channel.id),
-                                                allowed_mentions=discord.AllowedMentions.none())
-                        else:
-                            await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
-                                                            .replace("{emoji}", str(icon))
-                                                            .replace("{type}", le_emoji)
-                                                            .replace("{count}", str(add_cat(message.guild.id, message.author.id, le_emoji, silly_amount)))
-                                                            .replace("{time}", caught_time[:-1]) + suffix_string,
-                                                thread=discord.Object(message.channel.id),
-                                                allowed_mentions=discord.AllowedMentions.none())
-                    else:
-                        if view:
-                            await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
-                                                            .replace("{emoji}", str(icon))
-                                                            .replace("{type}", le_emoji)
-                                                            .replace("{count}", str(add_cat(message.guild.id, message.author.id, le_emoji, silly_amount)))
-                                                            .replace("{time}", caught_time[:-1]) + suffix_string,
-                                                view=view,
-                                                allowed_mentions=discord.AllowedMentions.none())
-                        else:
-                            await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
-                                                            .replace("{emoji}", str(icon))
-                                                            .replace("{type}", le_emoji)
-                                                            .replace("{count}", str(add_cat(message.guild.id, message.author.id, le_emoji, silly_amount)))
-                                                            .replace("{time}", caught_time[:-1]) + suffix_string,
+                                                view=view if view else None,
+                                                thread=discord.Object(message.channel.id) if thread_id else None,
                                                 allowed_mentions=discord.AllowedMentions.none())
                 except Exception:
                     pass
