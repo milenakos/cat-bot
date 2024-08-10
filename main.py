@@ -1384,11 +1384,7 @@ async def changemessage(message: discord.Interaction):
             input_value = self.input.value
             # check if all placeholders are there
             if input_value != "":
-                check = ["{emoji}", "{type}"]
-                if self.type == "Appear":
-                    check = ["{emoji}", "{type}"]
-                else:
-                    check = ["{emoji}", "{type}", "{username}", "{count}", "{time}"]
+                check = ["{emoji}", "{type}"] + (["{username}", "{count}", "{time}"] if self.type == "Cought" else [])
                 for i in check:
                     if i not in input_value:
                         await interaction.response.send_message(f"nuh uh! you are missing `{i}`.", ephemeral=True)
