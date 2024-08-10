@@ -1071,10 +1071,6 @@ async def on_message(message):
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT":
                     await achemb(message, "loud_cat", "send")
-                if message.author.voice:
-                    await achemb(message, "vc_cat", "send")
-                if bot.user in message.mentions:
-                    await achemb(message, "ping_reply", "send")
                 if cat_rains.get(str(message.channel.id), 0) != 0:
                     await achemb(message, "cat_rain", "send")
 
