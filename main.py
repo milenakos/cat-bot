@@ -1297,10 +1297,8 @@ async def preventcatch(message: discord.Interaction, person: discord.User, timeo
     timestamp = round(time.time()) + timeout
     db[str(message.guild.id)][str(person.id)]["timeout"] = timestamp
     save(message.guild.id)
-    if timeout > 0:
-        await message.response.send_message(f"{person.name} can't catch cats until <t:{timestamp}:R>")
-    else:
-        await message.response.send_message(f"{person.name} can now catch cats again.")
+    await message.response.send_message(f"{person.name} can't catch cats until <t:{timestamp}:R>" if timeout > 0
+                                        else f"{person.name} can now catch cats again.")
 
 @bot.tree.command(description="(ADMIN) Use if cat spawning is broken")
 @discord.app_commands.default_permissions(manage_guild=True)
@@ -1507,19 +1505,13 @@ async def gen_inventory(message, person_id):
             else:
                 unlocked += 1
     total_achs = len(ach_list) - minus_achs_count
-    if minus_achs != 0:
-        minus_achs = f" + {minus_achs}"
-    else:
-        minus_achs = ""
+    minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
 
     # now we count time i think
     catch_time = float(get_time(message.guild.id, person_id.id))
     is_empty = True
 
-    if catch_time >= 99999999999999:
-        catch_time = "never"
-    else:
-        catch_time = str(round(float(catch_time) * 100) / 100)
+    catch_time = "never" if catch_time >= 99999999999999 else str(round(float(catch_time) * 100) / 100)
 
     slow_time = get_time(message.guild.id, person_id.id, "slow")
 
@@ -1537,15 +1529,9 @@ async def gen_inventory(message, person_id):
     except Exception:
         pass
 
-    if me:
-        your = "Your"
-    else:
-        your = person_id.name + "'s"
+    your = "Your" if me else person_id.name + "'s"
 
-    if get_cat("0", person_id.id, "emoji"):
-        emoji_prefix = str(get_cat("0", person_id.id, "emoji")) + " "
-    else:
-        emoji_prefix = ""
+    emoji_prefix = str(get_cat("0", person_id.id, "emoji")) + " " if get_cat("0", person_id.id, "emoji") else ""
 
     embedVar = discord.Embed(
         title=f"{emoji_prefix}{your} cats:",
@@ -2113,10 +2099,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         return coolembed, view
 
     embed, view = await gen_embed()
-    if not view:
-        await message.response.send_message(embed=embed)
-    else:
-        await message.response.send_message(embed=embed, view=view)
+    await message.response.send_message(embed=embed, *[view = view] if view else [])
 
     # this is wrapper around gen_embed() to edit the mesage automatically
     async def update_trade_embed(interaction):
