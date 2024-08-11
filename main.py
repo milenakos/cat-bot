@@ -2320,7 +2320,7 @@ async def casino(message: discord.Interaction):
             f"{get_emoji('realcat')} 2 Real cats",
             f"{get_emoji('legendarycat')} 5 Legendary cats",
             f"{get_emoji('mythiccat')} 2 Mythic cats",
-            f"{get_emoji('8bitcat')} 7 8bit cats"
+            f"{get_emoji('8bitcat')} 8 8bit cats"
         ]
 
         random.shuffle(variants)
