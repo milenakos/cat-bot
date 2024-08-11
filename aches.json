@@ -44,7 +44,7 @@
   "reverse": {"title": "Reverse", "description": "say tac when a cat appears", "is_hidden": true, "category": "Silly"},
   "desperate": {"title": "Deseparate", "description": "accept the trade with cat bot", "is_hidden": true, "category": "Silly"},
   "lonely": {"title": "Lonely", "description": "gift to yourself", "is_hidden": true, "category": "Silly"},
-  "8k": {"title": "caught in 8k", "description": "catchception!", "is_hidden": false, "category": "Silly"},
+  "8k": {"title": "Cought in 8k", "description": "catchception!", "is_hidden": false, "category": "Silly"},
   "scammed": {"title": "Scammed", "description": "get less value in a trade", "is_hidden": true, "category": "Silly"},
   "absolutely_nothing": {"title": "Absolutely Nothing", "description": "why did you do this?", "is_hidden": true, "category": "Silly"},
   "sacrifice": {"title": "Sacrifice", "description": "gift to cat bot", "is_hidden": true, "category": "Silly"},
