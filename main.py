@@ -1026,7 +1026,7 @@ async def on_message(message):
                 except Exception:
                     pass
 
-                if random.randint(0, 10000) == 69:
+                if random.randint(0, 1000) == 69:
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT":
                     await achemb(message, "loud_cat", "send")
@@ -1812,6 +1812,18 @@ async def ping(message: discord.Interaction):
         latency = "infinite"
         await achemb(message, "infinite", "send")
     await message.response.send_message(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
+
+@bot.tree.command()
+@discord.app_commands.describe(mentions='The members you want to get the joined date from; defaults to the user who uses the command')
+async def joined(interaction: discord.Interaction, mentions: Optional[str]):
+    if not mentions:
+        members = [interaction.user]
+    else:
+        members = []
+        for user_id in re.findall(r"\d{17,19}", mentions):
+            member = interaction.guild.get_member(user_id)
+            if member:
+                members.append(member)
 
 @bot.tree.command(description="give cats now")
 @discord.app_commands.rename(cat_type="type")
@@ -2833,8 +2845,8 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         string = ""
 
         # find the placement of the person who ran the command and optionally the person who pressed the button
-        interactor_placement = 1
-        messager_placement = 1
+        interactor_placement = 0
+        messager_placement = 0
         if interactor:
             for i in the_dict.values():
                 if (fast and interactor >= i) or (not fast and interactor <= i):
