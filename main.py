@@ -639,6 +639,7 @@ async def on_message(message):
         ["proglet", "custom", "professor_cat"],
         ["xnopyt", "custom", "vanish"],
         ["silly", "custom", "sillycat"],
+        ["sillie", "custom", "sillycat"],
         ["indev", "vanilla", "🐸"],
         ["bleh", "custom", "blepcat"],
         ["blep", "custom", "blepcat"]]
