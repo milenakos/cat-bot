@@ -5,7 +5,7 @@ Discord Cat Bot Source Code
 
 ## Prerequisites
 
-- Python 3
+- Python 3.10 or newer
 - Git (optional)
 
 ----
