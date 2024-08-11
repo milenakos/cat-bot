@@ -388,14 +388,15 @@ async def achemb(message, ach_id, send_type, author_string=None):
             embed = discord.Embed(title="Cataine Addict", description="Defeat the dog mafia\nThanks for playing! ✨", color=0xC12929).set_author(name="Demonic achievement unlocked! 🌟", icon_url="https://pomf2.lain.la/f/ez0enx2d.png").set_footer(text=f"Congrats to {author_string.name}!!")
 
         try:
-            if send_type == "reply":
-                result = await message.reply(embed=embed)
-            elif send_type == "send":
-                result = await message.channel.send(embed=embed)
-            elif send_type == "followup":
-                result = await message.followup.send(embed=embed, ephemeral=True)
-            elif send_type == "response":
-                result = await message.response.send_message(embed=embed)
+            match send_type:
+                case "reply":
+                    result = await message.reply(embed=embed)
+                case "send":
+                    result = await message.channel.send(embed=embed)
+                case "followup":
+                    result = await message.followup.send(embed=embed, ephemeral=True)
+                case "response":
+                    result = await message.response.send_message(embed=embed)
         except Exception:
             pass
 
@@ -949,22 +950,24 @@ async def on_message(message):
 
                 if db[str(message.guild.id)]["cought"]:
                     coughstring = db[str(message.guild.id)]["cought"]
-                elif le_emoji == "Corrupt":
-                    coughstring = "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!"
-                elif le_emoji == "eGirl":
-                    coughstring = "{username} cowought {emoji} {type} cat~~ ^^\nYou-u now *blushes* hawe {count} cats of dat tywe~!!!\nthis fella was <3 cought in {time}!!!!"
-                elif le_emoji == "Rickroll":
-                    coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou will never give up {count} cats of dat type!!!\nYou wouldn't let them down even after {time}!!!!"
-                elif le_emoji == "Sus":
-                    coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou have vented infront of {count} cats of dat type!!!\nthis sussy baka was cought in {time}!!!!"
-                elif le_emoji == "Professor":
-                    coughstring = "{username} caught {emoji} {type} cat!\nThou now hast {count} cats of that type!\nThis fellow was caught 'i {time}!"
-                elif le_emoji == "8bit":
-                    coughstring = "{username} c0ught {emoji} {type} cat!!!!1!\nY0u n0w h0ve {count} cats 0f dat type!!!\nth1s fe11a was c0ught 1n {time}!!!!"
-                elif le_emoji == "Reverse":
-                    coughstring = "!!!!{time} in cought was fella this\n!!!type dat of cats {count} have now You\n!1!!!!cat {type} {emoji} cought {username}"
                 else:
-                    coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
+                    match le_emoji:
+                        case "Corrupt":
+                            coughstring = "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!"
+                        case "eGirl":
+                            coughstring = "{username} cowought {emoji} {type} cat~~ ^^\nYou-u now *blushes* hawe {count} cats of dat tywe~!!!\nthis fella was <3 cought in {time}!!!!"
+                        case "Rickroll":
+                            coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou will never give up {count} cats of dat type!!!\nYou wouldn't let them down even after {time}!!!!"
+                        case "Sus":
+                            coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou have vented infront of {count} cats of dat type!!!\nthis sussy baka was cought in {time}!!!!"
+                        case "Professor":
+                            coughstring = "{username} caught {emoji} {type} cat!\nThou now hast {count} cats of that type!\nThis fellow was caught 'i {time}!"
+                        case "8bit":
+                            coughstring = "{username} c0ught {emoji} {type} cat!!!!1!\nY0u n0w h0ve {count} cats 0f dat type!!!\nth1s fe11a was c0ught 1n {time}!!!!"
+                        case "Reverse":
+                            coughstring = "!!!!{time} in cought was fella this\n!!!type dat of cats {count} have now You\n!1!!!!cat {type} {emoji} cought {username}"
+                        case _:
+                            coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
                 view = None
                 button = None
 
@@ -1772,23 +1775,24 @@ async def battlepass(message: discord.Interaction):
         num = searching["req_data"]
         thetype = searching["reward"]
         amount = searching["reward_amount"]
-        if req == "catch":
-            num_str = num
-            if home:
-                progress = int(get_cat(message.guild.id, message.user.id, "progress"))
-                num_str = f"{num - progress} more"
-            return f"Catch {num_str} cats. \nReward: {amount} {thetype} cats."
-        elif req == "catch_fast":
-            return f"Catch a cat in under {num} seconds.\nReward: {amount} {thetype} cats."
-        elif req == "catch_type":
-            an = ""
-            if num[0].lower() in "aieuo":
-                an = "n"
-            return f"Catch a{an} {num} cat.\nReward: {amount} {thetype} cats."
-        elif req == "nothing":
-            return "Touch grass.\nReward: 1 ~~e~~Girl~~cats~~friend."
-        else:
-            return "Complete a battlepass level.\nReward: freedom"
+        match req:
+            case "catch":
+                num_str = num
+                if home:
+                    progress = int(get_cat(message.guild.id, message.user.id, "progress"))
+                    num_str = f"{num - progress} more"
+                return f"Catch {num_str} cats. \nReward: {amount} {thetype} cats."
+            case "catch_fast":
+                return f"Catch a cat in under {num} seconds.\nReward: {amount} {thetype} cats."
+            case "catch_type":
+                an = ""
+                if num[0].lower() in "aieuo":
+                    an = "n"
+                return f"Catch a{an} {num} cat.\nReward: {amount} {thetype} cats."
+            case "nothing":
+                return "Touch grass.\nReward: 1 ~~e~~Girl~~cats~~friend."
+            case _:
+                return "Complete a battlepass level.\nReward: freedom"
 
     current = "🟨"
     if battle["levels"][current_level]["req"] == "nothing":
@@ -2761,12 +2765,13 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         main = False
         fast = False
         slow = False
-        if type == "fast":
-            fast = True
-        elif type == "slow":
-            slow = True
-        else:
-            main = True
+        match type:
+            case "fast":
+                fast = True
+            case "slow":
+                slow = True
+            case _:
+                main = True
         the_dict = {}
         register_guild(message.guild.id)
         rarest = -1
