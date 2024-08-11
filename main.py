@@ -2913,8 +2913,8 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         string = ""
 
         # find the placement of the person who ran the command and optionally the person who pressed the button
-        interactor_placement = 1
-        messager_placement = 1
+        interactor_placement = 0
+        messager_placement = 0
         if interactor:
             for i in the_dict.values():
                 if (fast and interactor >= i) or (not fast and interactor <= i):
