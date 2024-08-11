@@ -2319,10 +2319,7 @@ if WEBHOOK_VERIFY:
         if message.guild is not None:
             add_cat(0, message.user.id, "vote_channel", message.channel.id, True)
 
-        if current_day == 6 or current_day == 7:
-            weekend_message = "🌟 **It's weekend! All vote rewards are DOUBLED!**\n\n"
-        else:
-            weekend_message = ""
+        weekend_message = "🌟 **It's weekend! All vote rewards are DOUBLED!**\n\n" if current_day in [6, 7] else ""
 
         if [message.user.id, "topgg"] in pending_votes:
             pending_votes.remove([message.user.id, "topgg"])
@@ -2588,10 +2585,7 @@ async def achievements(message: discord.Interaction):
             else:
                 unlocked += 1
     total_achs = len(ach_list) - minus_achs_count
-    if minus_achs != 0:
-        minus_achs = f" + {minus_achs}"
-    else:
-        minus_achs = ""
+    minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
     embedVar = discord.Embed(
             title="Your achievements:", description=f"{unlocked}/{total_achs}{minus_achs}", color=0x6E593C
     )
@@ -2625,10 +2619,7 @@ async def achievements(message: discord.Interaction):
                 if has_ach(message.guild.id, message.user.id, k, False, db_var):
                     newembed.add_field(name=str(get_emoji("cat_throphy")) + " " + v["title"], value=v["description"], inline=True)
                 elif category != "Hidden":
-                    if v["is_hidden"]:
-                        newembed.add_field(name=icon + v["title"], value="???", inline=True)
-                    else:
-                        newembed.add_field(name=icon + v["title"], value=v["description"], inline=True)
+                    newembed.add_field(name=icon + v["title"], value="???" if v["is_hidden"] else v["description"], inline=True)
 
         return newembed
 
@@ -3081,10 +3072,7 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
 async def giveachievement(message: discord.Interaction, person_id: discord.User, ach_id: str):
     # check if ach is real
     try:
-        if ach_id in ach_names:
-            valid = True
-        else:
-            valid = False
+        valid = True if ach_id in ach_names else False
     except KeyError:
         valid = False
 
