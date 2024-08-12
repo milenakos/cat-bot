@@ -1777,6 +1777,10 @@ async def donate(message: discord.Interaction):
     thing = discord.File("supporter.png", filename="supporter.png")
     await message.response.send_message("👑 For as little as $3 you can support Cat Bot and unlock profile customization!\n<https://catbot.minkos.lol/donate>", file=thing)
 
+@bot.tree.command(description="Buy Cat Rains!")
+async def store(message: discord.Interaction):
+    await message.response.send_message("☔ Cat rains make cats spawn instantly! Make your server active, get more cats and have fun!\n<https://hipolink.me/milenakos>")
+
 @bot.tree.command(description="[SUPPORTER] Customize your profile!")
 @discord.app_commands.rename(provided_emoji='emoji')
 @discord.app_commands.describe(color="Color for your profile in hex form (e.g. #6E593C)",
