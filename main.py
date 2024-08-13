@@ -3153,13 +3153,12 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str], chan
     if cat_type and cat_type not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
         return
+    
     if not channel:
         channel_id = message.channel.id
-    try:
-        if channel:
-            channel_id = channel.id
-    except Exception:
-        pass
+    else:
+        channel_id = channel.id
+
     try:
         if db["cat"][str(channel_id)]:
             await message.response.send_message("there is already a cat", ephemeral=True)
