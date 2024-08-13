@@ -778,7 +778,7 @@ async def on_message(message):
 
     if text.lower() == "please do not the cat":
         try:
-            await message.reply(f"ok then\n{message.author.name} lost 1 fine cat!!!1!\nYou now have {str(remove_cat(message.guild.id, message.author.id, "Fine"))} cats of dat type!")
+            await message.reply(f"ok then\n{message.author.name.replace("_", r"\_")} lost 1 fine cat!!!1!\nYou now have {str(remove_cat(message.guild.id, message.author.id, "Fine"))} cats of dat type!")
         except Exception:
             pass
         await achemb(message, "pleasedonotthecat", "reply")
@@ -1342,9 +1342,9 @@ async def preventcatch(message: discord.Interaction, person: discord.User, timeo
     db[str(message.guild.id)][str(person.id)]["timeout"] = timestamp
     save(message.guild.id)
     if timeout > 0:
-        await message.response.send_message(f"{person.name} can't catch cats until <t:{timestamp}:R>")
+        await message.response.send_message(f"{person.name.replace("_", r"\_")} can't catch cats until <t:{timestamp}:R>")
     else:
-        await message.response.send_message(f"{person.name} can now catch cats again.")
+        await message.response.send_message(f"{person.name.replace("_", r"\_")} can now catch cats again.")
 
 @bot.tree.command(description="(ADMIN) Use if cat spawning is broken")
 @discord.app_commands.default_permissions(manage_guild=True)
@@ -1587,7 +1587,7 @@ async def gen_inventory(message, person_id):
     if me:
         your = "Your"
     else:
-        your = person_id.name + "'s"
+        your = person_id.name.replace("_", r"\_") + "'s"
 
     if get_cat("0", person_id.id, "emoji"):
         emoji_prefix = str(get_cat("0", person_id.id, "emoji")) + " "
@@ -2168,7 +2168,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     person1value = round(valuenum)
                 else:
                     person2value = round(valuenum)
-            coolembed.add_field(name=f"{icon} {person.name}", inline=True, value=valuestr)
+            coolembed.add_field(name=f"{icon} {person.name.replace("_", r"\_")}", inline=True, value=valuestr)
 
         field(person1accept, person1gives, person1, 1)
         field(person2accept, person2gives, person2, 2)
