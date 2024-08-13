@@ -621,8 +621,6 @@ async def on_message(message):
         await maintaince_loop()
 
     achs = [["cat?", "startswith", "???"],
-        ["catn", "exact", "catn"],
-        ["cat!coupon jr0f-pzka", "exact", "coupon_user"],
         ["pineapple", "exact", "pineapple"],
         ["cat!i_like_cat_website", "exact", "website_user"],
         ["cat!i_clicked_there", "exact", "click_here"],
@@ -720,14 +718,6 @@ async def on_message(message):
 
     if message.author.bot or message.webhook_id is not None:
         return
-
-    if "cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6" in text:
-        msg = message
-        try:
-            await message.delete()
-        except Exception:
-            pass
-        await achemb(msg, "dataminer", "send")
 
     for ach in achs:
         if (ach[1] == "startswith" and text.lower().startswith(ach[0])) or \
@@ -1001,7 +991,7 @@ async def on_message(message):
                     await asyncio.sleep(5)
                     await interaction.followup.send("**???**: Hello. We have a unique deal for you.", ephemeral=True)
                     await asyncio.sleep(5)
-                    await interaction.followup.send("**???**: To access our services, press \"Hidden\" `/achievements` tab 3 times in a row.", ephemeral=True)
+                    await interaction.followup.send("**???**: To access our services, press \"Hard\" `/achievements` tab 3 times in a row.", ephemeral=True)
                     await asyncio.sleep(5)
                     await interaction.followup.send("**???**: You won't be disappointed.", ephemeral=True)
                     await asyncio.sleep(5)
@@ -1071,8 +1061,6 @@ async def on_message(message):
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT":
                     await achemb(message, "loud_cat", "send")
-                if cat_rains.get(str(message.channel.id), 0) != 0:
-                    await achemb(message, "cat_rain", "send")
 
                 # handle fastest and slowest catches
                 if do_time and time_caught < get_time(message.guild.id, message.author.id):
@@ -1543,21 +1531,10 @@ async def gen_inventory(message, person_id):
     db_var = db[str(message.guild.id)][str(person_id.id)]["ach"]
 
     unlocked = 0
-    minus_achs = 0
-    minus_achs_count = 0
     for k in ach_names:
-        if ach_list[k]["category"] == "Hidden":
-            minus_achs_count += 1
         if has_ach(message.guild.id, person_id.id, k, False, db_var):
-            if ach_list[k]["category"] == "Hidden":
-                minus_achs += 1
-            else:
-                unlocked += 1
-    total_achs = len(ach_list) - minus_achs_count
-    if minus_achs != 0:
-        minus_achs = f" + {minus_achs}"
-    else:
-        minus_achs = ""
+            unlocked += 1
+    total_achs = len(ach_list)
 
     # now we count time i think
     catch_time = float(get_time(message.guild.id, person_id.id))
@@ -1596,7 +1573,7 @@ async def gen_inventory(message, person_id):
 
     embedVar = discord.Embed(
         title=f"{emoji_prefix}{your} cats:",
-        description=f"{your} fastest catch is: {catch_time} s\nand {your} slowest catch is: {slow_time} h\nAchievements unlocked: {unlocked}/{total_achs}{minus_achs}",
+        description=f"{your} fastest catch is: {catch_time} s\nand {your} slowest catch is: {slow_time} h\nAchievements unlocked: {unlocked}/{total_achs}",
         color=discord.Colour.from_str(str(get_cat("0", person_id.id, "color")))
     )
 
@@ -2127,9 +2104,6 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, blackhole, person1value, person2value
 
         if blackhole:
-            # no way thats fun
-            await achemb(message, "blackhole", "send")
-            await achemb(message, "blackhole", "send", person2)
             return discord.Embed(color=0x6E593C, title="Blackhole", description="How Did We Get Here?"), None
 
         view = View(timeout=3600)
@@ -2653,23 +2627,12 @@ async def achievements(message: discord.Interaction):
         await achemb(message, "its_not_working", "send")
 
     unlocked = 0
-    minus_achs = 0
-    minus_achs_count = 0
     for k in ach_names:
-        if ach_list[k]["category"] == "Hidden":
-            minus_achs_count += 1
         if has_ach(message.guild.id, message.user.id, k, False, db_var):
-            if ach_list[k]["category"] == "Hidden":
-                minus_achs += 1
-            else:
-                unlocked += 1
-    total_achs = len(ach_list) - minus_achs_count
-    if minus_achs != 0:
-        minus_achs = f" + {minus_achs}"
-    else:
-        minus_achs = ""
+            unlocked += 1
+    total_achs = len(ach_list)
     embedVar = discord.Embed(
-            title="Your achievements:", description=f"{unlocked}/{total_achs}{minus_achs}", color=0x6E593C
+            title="Your achievements:", description=f"{unlocked}/{total_achs}", color=0x6E593C
     )
 
     if unlocked >= 15:
@@ -2679,14 +2642,12 @@ async def achievements(message: discord.Interaction):
     # this is a single page of the achievement list
     def gen_new(category):
         nonlocal db_var, message, unlocked, total_achs, hidden_counter
-        hidden_suffix = ""
-        if category == "Hidden":
-            hidden_suffix = "\n\nThis is a \"Hidden\" category. Achievements here only show up after you complete them."
+        if category == "Hard":
             hidden_counter += 1
         else:
             hidden_counter = 0
         newembed = discord.Embed(
-                title=category, description=f"Achievements unlocked (total): {unlocked}/{total_achs}{minus_achs}{hidden_suffix}", color=0x6E593C
+                title=category, description=f"Achievements unlocked (total): {unlocked}/{total_achs}", color=0x6E593C
         ).set_footer(text="☔ Get tons of cats /rain")
         for k, v in ach_list.items():
             if v["category"] == category:
@@ -2700,7 +2661,7 @@ async def achievements(message: discord.Interaction):
                 icon = str(get_emoji("no_cat_throphy")) + " "
                 if has_ach(message.guild.id, message.user.id, k, False, db_var):
                     newembed.add_field(name=str(get_emoji("cat_throphy")) + " " + v["title"], value=v["description"], inline=True)
-                elif category != "Hidden":
+                else:
                     if v["is_hidden"]:
                         newembed.add_field(name=icon + v["title"], value="???", inline=True)
                     else:
@@ -2777,13 +2738,6 @@ async def achievements(message: discord.Interaction):
         else:
             buttons_list.append(Button(label="Hard", style=ButtonStyle.blurple))
         lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Hard") for _ in '_').__anext__())
-        buttons_list[-1].callback = lambdas_list[-1]
-
-        if category == "Hidden":
-            buttons_list.append(Button(label="Hidden", style=ButtonStyle.green))
-        else:
-            buttons_list.append(Button(label="Hidden", style=ButtonStyle.blurple))
-        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Hidden") for _ in '_').__anext__())
         buttons_list[-1].callback = lambdas_list[-1]
 
         for j in buttons_list:
