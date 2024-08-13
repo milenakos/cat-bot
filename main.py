@@ -3147,21 +3147,26 @@ async def fake(message: discord.Interaction):
 @bot.tree.command(description="(ADMIN) Force cats to appear")
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(cat_type="type")
-@discord.app_commands.describe(cat_type="select a cat type ok")
+@discord.app_commands.describe(cat_type="select a cat type ok", channel="another channel then")
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
-async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
+async def forcespawn(message: discord.Interaction, cat_type: Optional[str], channel: Optional[discord.TextChannel]):
     if cat_type and cat_type not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
         return
-
+    channel_id = message.channel.id
     try:
-        if db["cat"][str(message.channel.id)]:
+        if channel:
+            channel_id = channel.id
+    except Exception:
+        pass
+    try:
+        if db["cat"][str(channel_id)]:
             await message.response.send_message("there is already a cat", ephemeral=True)
             return
     except Exception:
         await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
         return
-    await spawn_cat(str(message.channel.id), cat_type)
+    await spawn_cat(str(channel_id), cat_type)
     await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this")
 
 @bot.tree.command(description="(ADMIN) Give achievements to people")
