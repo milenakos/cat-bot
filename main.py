@@ -2679,6 +2679,22 @@ async def achievements(message: discord.Interaction):
     # this is a single page of the achievement list
     def gen_new(category):
         nonlocal db_var, message, unlocked, total_achs, hidden_counter
+        unlocked = 0
+        minus_achs = 0
+        minus_achs_count = 0
+        for k in ach_names:
+            if ach_list[k]["category"] == "Hidden":
+                minus_achs_count += 1
+            if has_ach(message.guild.id, message.user.id, k, False, db_var):
+                if ach_list[k]["category"] == "Hidden":
+                    minus_achs += 1
+                else:
+                    unlocked += 1
+        total_achs = len(ach_list) - minus_achs_count
+        if minus_achs != 0:
+            minus_achs = f" + {minus_achs}"
+        else:
+            minus_achs = ""
         hidden_suffix = ""
         if category == "Hidden":
             hidden_suffix = "\n\nThis is a \"Hidden\" category. Achievements here only show up after you complete them."
