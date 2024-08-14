@@ -1014,7 +1014,7 @@ async def on_message(message):
                     button.callback = dark_market_cutscene
                 elif WEBHOOK_VERIFY and get_cat(0, message.author.id, "vote_time_topgg") + 43200 < time.time():
                     button = Button(emoji=get_emoji("topgg"), label=random.choice(vote_button_texts), url="https://top.gg/bot/966695034340663367/vote")
-                elif random.randint(0, 20) == 0:
+                elif random.randint(0, 20) == 0 and message.guild.id != "966586000417619998":
                     button = Button(label="Join our Discord!", url="https://discord.gg/staring")
 
                 if button:
