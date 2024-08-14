@@ -1084,12 +1084,15 @@ async def on_message(message):
 
                 if do_time and float(get_time(message.guild.id, message.author.id)) <= 5:
                     await achemb(message, "fast_catcher", "send")
-
+                
                 if do_time and float(get_time(message.guild.id, message.author.id, "slow")) >= 3600:
                     await achemb(message, "slow_catcher", "send")
 
                 if do_time and time_caught == 3.14:
                     await achemb(message, "pie", "send")
+
+                if do_time and time_caught == 2.71:
+                    await achemb(message, "e", "send")
 
                 if do_time and time_caught == int(time_caught):
                     await achemb(message, "perfection", "send")
