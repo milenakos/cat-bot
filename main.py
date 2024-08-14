@@ -2541,8 +2541,8 @@ async def light_market(message):
         await message.followup.send(embed=embed, ephemeral=True)
 
 async def dark_market(message):
-    cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"], [7, "Superior"],
-                      [5, "Legendary"], [3, "8bit"], [4, "Professor"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"], [3, "eGirl"], [100, "eGirl"]]
+    cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
+                      [7, "Superior"], [5, "Legendary"], [3, "8bit"], [4, "Professor"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"], [100, "eGirl"]]
 
     if get_cat(message.guild.id, message.user.id, "cataine_active") < int(time.time()):
         level = get_cat(message.guild.id, message.user.id, "dark_market_level")
