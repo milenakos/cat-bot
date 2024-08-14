@@ -1869,6 +1869,8 @@ async def battlepass(message: discord.Interaction):
 async def ping(message: discord.Interaction):
     try:
         latency = round(bot.latency * 1000)
+        if latency >= 100:
+            await achemb(message, "infinite", "send")
     except Exception:
         latency = "infinite"
         await achemb(message, "infinite", "send")
