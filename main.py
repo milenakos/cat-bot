@@ -817,7 +817,7 @@ async def on_message(message):
                 if random.randint(0, 10) == 0 and user.cat_Fine >= 20 and not user.dark_market_active:
                     button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
                     button.callback = dark_market_cutscene
-                elif WEBHOOK_VERIFY and user.vote_time_topgg + 43200 < time.time():
+                elif WEBHOOK_VERIFY and User.get_or_create(user_id=message.author.id).vote_time_topgg + 43200 < time.time():
                     button = Button(emoji=get_emoji("topgg"), label=random.choice(vote_button_texts), url="https://top.gg/bot/966695034340663367/vote")
                 elif random.randint(0, 20) == 0:
                     button = Button(label="Join our Discord!", url="https://discord.gg/staring")
