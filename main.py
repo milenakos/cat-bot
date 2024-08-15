@@ -362,7 +362,7 @@ async def maintaince_loop():
     errored_users = []
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
     for user in User.select().where((User.vote_remind) & (User.vote_time_topgg + 43200 < time.time()) & (not User.reminder_topgg_exists)):
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.1)
 
         channeley = bot.get_channel(user.vote_remind)
         if not isinstance(channeley, discord.TextChannel):
@@ -373,7 +373,7 @@ async def maintaince_loop():
         view.add_item(button)
 
         try:
-            await channeley.send(f"<@{i}> You can vote now!", view=view)
+            await channeley.send(f"<@{user.user_id}> You can vote now!", view=view)
             user.reminder_topgg_exists = time.time()
             notified_users.append(user)
         except Exception:
