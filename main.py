@@ -677,7 +677,7 @@ async def on_message(message):
                     await message.channel.send("# :bangbang: this concludes the cat rain.")
                     await message.channel.send("# :bangbang: this concludes the cat rain.")
                     await message.channel.send("# :bangbang: this concludes the cat rain.")
-            decided_time = random.uniform(times[0], times[1])
+            decided_time = 1800
             channel.yet_to_spawn = time.time() + decided_time + 10
             try:
                 current_time = message.created_at.timestamp()
