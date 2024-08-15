@@ -2836,7 +2836,7 @@ async def givecat(message: discord.Interaction, person_id: discord.User, amount:
 @discord.app_commands.default_permissions(manage_guild=True)
 async def setup_channel(message: discord.Interaction):
     if Channel.get_or_none(channel_id=message.channel.id):
-        await message.response.send_message("bruh you already setup cat here are you dumb\n\nthere might already be a cat sitting in chat. type `cat` to catch it.\nalternatively, you can try `/repair` if it still doesnt work")
+        await message.response.send_message("bruh you already setup cat here are you dumb\n\nthere might already be a cat sitting in chat. type `cat` to catch it.")
         return
 
     with open("cat.png", "rb") as f:
