@@ -5,3 +5,4 @@ Pilmoji
 emoji==1.7
 requests
 discord-emoji
+peewee

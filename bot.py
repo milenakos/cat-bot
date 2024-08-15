@@ -3,6 +3,8 @@ import os
 import discord
 from discord.ext import commands
 
+from database import db, Profile, User, Channel
+
 # discord bot token, use os.environ for more security
 TOKEN = os.environ['token']
 # TOKEN = "token goes here"
@@ -25,4 +27,12 @@ async def reload():
     await bot.load_extension("main")
 
 bot.cat_bot_reload_hook = reload  # pyright: ignore
-bot.run(TOKEN)
+
+db.connect()
+if not db.get_tables():
+    db.create_tables([Profile, User, Channel])
+
+try:
+    bot.run(TOKEN)
+finally:
+    db.close()

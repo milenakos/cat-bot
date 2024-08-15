@@ -18,22 +18,16 @@ Discord Cat Bot Source Code
 
    `pip install -r requirements.txt`
 
-3. Create a `db.json` file. Here is a template of an empty db:
-
-   `{"cat": {}, "summon_ids": [], "0": {}, "cattype": {}}`
-
-   Note Cat Bot doesn't use that file and instead migrates it to `data` folder.
-
-4. Go inside of the `main.py` file, on first few lines you can change some config values, such as guild ID, backup channel ID, etc
+3. Go inside of the `main.py` file, on first few lines you can change some config values, such as guild ID, backup channel ID, etc
 > **Note**
 >
 > You will need to create a guild and upload all emojis to that guild, making sure your bot can view the guild. You can download all the emojis [here]( https://github.com/staring-cat/emojis/releases/latest/download/emojis.zip)
 
-5. Go inside `bot.py` file and add your bot token.
+4. Go inside `bot.py` file and add your bot token.
 
-6. Run the bot with `python bot.py`
+5. Run the bot with `python bot.py`
 
-7. Done!
+6. Done!
 
 # Customisation
 Most stuff can be customised by just using CTRL+F in main.py, but im gonna explain some stuff you might be intereted in.
