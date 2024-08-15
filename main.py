@@ -601,7 +601,7 @@ async def on_message(message):
         await achemb(message, "test_ach", "reply")
 
     if text.lower() == "please do not the cat":
-        user = get_profile(message.guild.id, message.user.id)
+        user = get_profile(message.guild.id, message.author.id)
         user.cat_Fine -= 1
         user.save()
         await message.reply(f"ok then\n{message.author.name.replace("_", r"\_")} lost 1 fine cat!!!1!\nYou now have {user.cat_Fine} cats of dat type!")
