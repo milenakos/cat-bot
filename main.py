@@ -354,14 +354,14 @@ async def maintaince_loop():
             except Exception:
                 print("Posting failed.")
 
-    for channel in Channel.select().where((Channel.yet_to_spawn < time.time()) & (not Channel.cat)):
+    for channel in Channel.select().where((Channel.yet_to_spawn < time.time()) & (~Channel.cat)):
         await spawn_cat(str(channel.channel_id))
         await asyncio.sleep(0.1)
 
     notified_users = []
     errored_users = []
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
-    for user in User.select().where((User.vote_remind) & (User.vote_time_topgg + 43200 < time.time()) & (not User.reminder_topgg_exists)):
+    for user in User.select().where((User.vote_remind) & (User.vote_time_topgg + 43200 < time.time()) & (~User.reminder_topgg_exists)):
         await asyncio.sleep(0.1)
 
         channeley = bot.get_channel(user.vote_remind)
