@@ -32,7 +32,10 @@ def msg2img(message, bot, sansgg=False):
         if "image" not in i.content_type:
             continue
 
-        custom_image = Image.open(requests.get(i.url, stream=True).raw).convert("RGBA")
+        try:
+            custom_image = Image.open(requests.get(i.url, stream=True).raw).convert("RGBA")
+        except Exception:
+            continue
 
         max_width = 930
         width, height = custom_image.size
