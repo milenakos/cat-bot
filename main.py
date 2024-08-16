@@ -2750,6 +2750,8 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         current = 1
         for i, num in largest:
             string = string + str(current) + ". " + str(num) + i + "\n"
+            if message.user.id in i and current <= 5:
+                await achemb(message, "leader", "send")
             current += 1
 
         # add the messager and interactor
@@ -2768,11 +2770,6 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                     string = string + f"{messager_placement}\\. {messager} {unit}: <@{message.user.id}>\n"
                 if interactor_placement > 15 and str(interaction.user.id) not in string:
                     string = string + f"{interactor_placement}\\. {interactor} {unit}: <@{interaction.user.id}>\n"
-
-        if messager_placement <= 5 and message.user.id != interaction.user.id:
-            await achemb(message, "leader", "send")
-        if interactor_placement <= 5:
-            await achemb(interaction, "leader", "send")
 
         embedVar = discord.Embed(
                 title=f"{title} Leaderboards:", description=string, color=0x6E593C
