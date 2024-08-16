@@ -2750,7 +2750,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         current = 1
         for i, num in largest:
             string = string + str(current) + ". " + str(num) + i + "\n"
-            if message.user.id in i and current <= 5:
+            if str(message.user.id) in i and current <= 5:
                 await achemb(message, "leader", "send")
             current += 1
 
