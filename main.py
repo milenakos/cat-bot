@@ -1406,7 +1406,7 @@ async def gen_inventory(message, person_id):
     if embedVar.description:
         embedVar.description += f"\nTotal cats: {total}"
 
-    if user.image:
+    if user.image.startswith("https://cdn.discordapp.com/attachments/"):
         embedVar.set_thumbnail(url=user.image)
 
     if me:
