@@ -947,12 +947,13 @@ async def on_message(message):
             pass
     if text.lower().startswith("cat!rain") and message.author.id == OWNER_ID:
         # syntax: cat!rain 553093932012011520 short
-        user, _ = User.get_or_create(user_id=text.split(" ")[1])
-        if text.split(" ")[2] == "short":
+        things = text.split(" ")
+        user, _ = User.get_or_create(user_id=[1])
+        if things[2] == "short":
             user.shortrain += 1
-        elif text.split(" ")[2] == "medium":
+        elif things[2] == "medium":
             user.mediumrain += 1
-        elif text.split(" ")[2] == "long":
+        elif things[2] == "long":
             user.longrain += 1
         user.save()
     if text.lower().startswith("cat!print") and message.author.id == OWNER_ID:
@@ -1002,7 +1003,7 @@ async def on_message(message):
                 pass
     if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
         stuff = text.split(" ")
-        user, _ = User.get_or_create(user_id=things[1])
+        user, _ = User.get_or_create(user_id=stuff[1])
         if stuff[2] == "None":
             user.custom = ""
         else:
