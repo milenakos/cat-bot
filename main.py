@@ -2679,6 +2679,8 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             if not main:
                 if time_type == "slow":
                     value = i.timeslow
+                    if value == 0:
+                        continue
                 else:
                     value = i.time
                     if value == 99999999999999:
@@ -2696,6 +2698,8 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                             rarest_holder[f"<@{i.user_id}>"] = b
                     except Exception:
                         pass
+                if value == 0:
+                    continue
             if str(value) != default_value:
                 # round the value (for time dislays)
                 thingy = round((float(value) / float(devider)) * 100) / 100
