@@ -3052,7 +3052,7 @@ async def claim_reward(user, channeley, type):
 
     embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats for voting on {cool_name}.\nVote again in 12 hours.", color=0x007F0E)
     try:
-        await channeley.send(f"<@{user}>", embed=embedVar, view=view)
+        await channeley.send(f"<@{user.user_id}>", embed=embedVar, view=view)
     except Exception:
         pass
 
