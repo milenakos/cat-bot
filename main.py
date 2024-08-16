@@ -800,6 +800,7 @@ async def on_message(message):
                         await interaction.response.send_message("the shadowy figure is nowhere to be found.", ephemeral=True)
                         return
                     user.dark_market_active = True
+                    user.save()
                     await interaction.response.send_message("is someone watching after you?", ephemeral=True)
                     await asyncio.sleep(5)
                     await interaction.followup.send("you walk up to them. the dark voice says:", ephemeral=True)
