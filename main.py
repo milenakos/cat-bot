@@ -948,7 +948,7 @@ async def on_message(message):
     if text.lower().startswith("cat!rain") and message.author.id == OWNER_ID:
         # syntax: cat!rain 553093932012011520 short
         things = text.split(" ")
-        user, _ = User.get_or_create(user_id=[1])
+        user, _ = User.get_or_create(user_id=things[1])
         if things[2] == "short":
             user.shortrain += 1
         elif things[2] == "medium":
