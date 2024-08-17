@@ -2105,8 +2105,8 @@ async def casino(message: discord.Interaction):
 
         random.shuffle(variants)
 
-        for i in variants:
-            embed = discord.Embed(title="The Casino", description=f"**{i}**", color=0x750F0E)
+        for i in range(4):
+            embed = discord.Embed(title="The Casino", description=f"**{variants[i]}**", color=0x750F0E)
             try:
                 await interaction.edit_original_response(embed=embed, view=None)
             except Exception:
