@@ -2336,7 +2336,7 @@ async def dark_market(message):
     if user.cataine_active < int(time.time()):
         level = user.dark_market_level
         embed = discord.Embed(title="The Dark Market", description="after entering the secret code, they let you in. today's deal is:")
-        deal = cataine_prices[level]
+        deal = cataine_prices[level] if level < len(cataine_prices) else cataine_prices[-1]
         type = deal[1]
         amount = deal[0]
         embed.add_field(name="🧂 12h of Cataine", value=f"Price: {get_emoji(type.lower() + 'cat')} {amount} {type}")
