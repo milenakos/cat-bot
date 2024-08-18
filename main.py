@@ -459,8 +459,7 @@ async def on_message(message):
         ["lol_i_have_dmed_the_cat_bot_and_got_an_ach", "exact", "dm"],
         ["dog", "exact", "not_quite"],
         ["egril", "exact", "egril"],
-        ["-.-. .- -", "exact", "morse_cat"],
-        ["tac", "exact", "reverse"]]
+        ["-.-. .- -", "exact", "morse_cat"]]
 
     reactions = [["v1;", "custom", "why_v1"],
         ["proglet", "custom", "professor_cat"],
@@ -653,6 +652,35 @@ async def on_message(message):
                         await claim_reward(user, message.channel, "topgg")
                 except Exception:
                     pass
+
+    if text.lower() == "tac":
+        channeled = Channel.get_or_none(channel_id=message.channel.id)  # I'm just gonna copy the relevant stuff over from "cat" but have unique variable names
+        if channeled and channeled.cat:
+            try:
+                goodmessage = await message.channel.fetch_message(channel.cat)
+            except Exception:
+                await message.channel.send(f"oopsie poopsie i cant access the original message so i can't be sure if {message.author.mention} got the reverse ach or not so imma play it safe and say no achievement received")
+                channeled.cat = 0
+                channeled.save()
+                return
+            goodcontent = goodmessage.content
+            party_type = None
+            
+            for v in allowedemojis:
+                if v in goodcontent:
+                    party_type = v
+                    break
+
+            if not party:
+                return
+
+            for i in type_dict.keys():
+                if i.lower() in party_type:
+                    thecattype = i
+                    break
+
+            if thecattype == "Reverse":
+                await achemb(message, "reverse", "reply")
 
     # this is run whether someone says "cat" (very complex)
     if text.lower() == "cat":
@@ -3041,12 +3069,12 @@ async def claim_reward(user, channeley, type):
         amount = f"~~{amount}~~ **{amount*2}**"
         weekend_message = "🌟 **It's weekend! All vote rewards are DOUBLED!**\n\n"
 
-    profile = get_profile(channeley.guild.id, user.user_id)
+    profile = get_profile(user.user_id, channeley.guild.id)
     profile[f"cat_{cattype}"] += num_amount
-    profile.save()
     user.vote_time_topgg = time.time()
     user.reminder_topgg_exists = 0
     user.save()
+    profile.save()
     view = None
     if not user.vote_remind:
         view = View(timeout=3600)
