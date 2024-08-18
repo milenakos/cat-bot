@@ -3043,10 +3043,10 @@ async def claim_reward(user, channeley, type):
 
     profile = get_profile(user.user_id, channeley.guild.id)
     profile[f"cat_{cattype}"] += num_amount
-    profile.save()
     user.vote_time_topgg = time.time()
     user.reminder_topgg_exists = 0
     user.save()
+    profile.save()
     view = None
     if not user.vote_remind:
         view = View(timeout=3600)
