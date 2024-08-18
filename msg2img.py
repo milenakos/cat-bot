@@ -103,12 +103,12 @@ def msg2img(message, bot, sansgg=False):
             lines.append(line)
         return lines, pings
 
-    font = ImageFont.truetype("whitneysemibold.otf", 32)  # load fonts
+    font = ImageFont.truetype("fonts/whitneysemibold.otf", 32)  # load fonts
     if sansgg:
-        font2 = ImageFont.truetype("ggsans-Medium.ttf", 32)  # load fonts
+        font2 = ImageFont.truetype("fonts/ggsans-Medium.ttf", 32)  # load fonts
     else:
-        font2 = ImageFont.truetype("whitneymedium.otf", 32)  # load fonts
-    font3 = ImageFont.truetype("whitneysemibold.otf", 23)  # load fonts
+        font2 = ImageFont.truetype("fonts/whitneymedium.otf", 32)  # load fonts
+    font3 = ImageFont.truetype("fonts/whitneysemibold.otf", 23)  # load fonts
 
     text_temp = ""
     lines, pings = break_text(text, font2, 930)
@@ -171,7 +171,7 @@ def msg2img(message, bot, sansgg=False):
 
     pencil.text((122, 8), nick, font=font, fill=color)  # draw author name
     if is_bot:
-        botfont = ImageFont.truetype("whitneysemibold.otf", 20)
+        botfont = ImageFont.truetype("fonts/whitneysemibold.otf", 20)
 
         pencil.rounded_rectangle(
             (

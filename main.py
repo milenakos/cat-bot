@@ -128,10 +128,10 @@ vote_button_texts = [
 ]
 
 # laod the jsons
-with open("aches.json", "r") as f:
+with open("config/aches.json", "r") as f:
     ach_list = json.load(f)
 
-with open("battlepass.json", "r") as f:
+with open("config/battlepass.json", "r") as f:
     battle = json.load(f)
 
 # convert achievement json to a few other things
@@ -306,7 +306,7 @@ async def spawn_cat(ch_id, localcat=None):
             channeley = bot.get_channel(int(ch_id))
             if not isinstance(channeley, Union[discord.TextChannel, discord.VoiceChannel]):
                 return
-            with open("cat.png", "rb") as f:
+            with open("images/cat.png", "rb") as f:
                 try:
                     wh = await channeley.create_webhook(name="Cat Bot", avatar=f.read())
                     channel.webhook = wh.url
@@ -608,14 +608,14 @@ async def on_message(message):
         await achemb(message, "pleasedonotthecat", "reply")
 
     if text.lower() == "please do the cat":
-        thing = discord.File("socialcredit.jpg", filename="socialcredit.jpg")
+        thing = discord.File("images/socialcredit.jpg", filename="socialcredit.jpg")
         try:
             await message.reply(file=thing)
         except Exception:
             pass
         await achemb(message, "pleasedothecat", "reply")
     if text.lower() == "car":
-        file = discord.File("car.png", filename="car.png")
+        file = discord.File("images/car.png", filename="car.png")
         embed = discord.Embed(title="car!", color=0x6E593C).set_image(url="attachment://car.png")
         try:
             await message.reply(file=file, embed=embed)
@@ -623,7 +623,7 @@ async def on_message(message):
             pass
         await achemb(message, "car", "reply")
     if text.lower() == "cart":
-        file = discord.File("cart.png", filename="cart.png")
+        file = discord.File("images/cart.png", filename="cart.png")
         embed = discord.Embed(title="cart!", color=0x6E593C).set_image(url="attachment://cart.png")
         try:
             await message.reply(file=file, embed=embed)
@@ -1532,7 +1532,7 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
 
 @bot.tree.command(description="Support Cat Bot!")
 async def donate(message: discord.Interaction):
-    thing = discord.File("supporter.png", filename="supporter.png")
+    thing = discord.File("images/supporter.png", filename="supporter.png")
     await message.response.send_message("👑 For as little as $3 you can support Cat Bot and unlock profile customization!\n<https://catbot.minkos.lol/donate>", file=thing)
 
 @bot.tree.command(description="Buy Cat Rains!")
@@ -2039,18 +2039,18 @@ async def cat(message: discord.Interaction, cat_type: Optional[str]):
         await message.response.send_message("bro what", ephemeral=True)
         return
 
-    image = f"spawn/{cat_type.lower()}_cat.png" if cat_type else "cat.png" # ternary operator because why not
+    image = f"spawn/{cat_type.lower()}_cat.png" if cat_type else "images/cat.png" # ternary operator because why not
     file = discord.File(image, filename=image)
     await message.response.send_message(file=file)
 
 @bot.tree.command(description="Get Cursed Cat")
 async def cursed(message: discord.Interaction):
-    file = discord.File("cursed.jpg", filename="cursed.jpg")
+    file = discord.File("images/cursed.jpg", filename="cursed.jpg")
     await message.response.send_message(file=file)
 
 @bot.tree.command(description="Get Your balance")
 async def bal(message: discord.Interaction):
-    file = discord.File("money.png", filename="money.png")
+    file = discord.File("images/money.png", filename="money.png")
     embed = discord.Embed(title="cat coins", color=0x6E593C).set_image(url="attachment://money.png")
     await message.response.send_message(file=file, embed=embed)
 
@@ -2843,7 +2843,7 @@ async def setup_channel(message: discord.Interaction):
         await message.response.send_message("bruh you already setup cat here are you dumb\n\nthere might already be a cat sitting in chat. type `cat` to catch it.")
         return
 
-    with open("cat.png", "rb") as f:
+    with open("images/cat.png", "rb") as f:
         try:
             channel_permissions = message.channel.permissions_for(message.guild.me)
             needed_perms = {
@@ -2892,7 +2892,7 @@ async def forget(message: discord.Interaction):
 
 @bot.tree.command(description="LMAO TROLLED SO HARD :JOY:")
 async def fake(message: discord.Interaction):
-    file = discord.File("australian cat.png", filename="australian cat.png")
+    file = discord.File("images/australian cat.png", filename="australian cat.png")
     icon = get_emoji("egirlcat")
     if not isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]):
         return
