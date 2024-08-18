@@ -3041,12 +3041,12 @@ async def claim_reward(user, channeley, type):
         amount = f"~~{amount}~~ **{amount*2}**"
         weekend_message = "🌟 **It's weekend! All vote rewards are DOUBLED!**\n\n"
 
-    profile = get_profile(user.user_id, channeley.guild.id)
+    profile = get_profile(channeley.guild.id, user.user_id)
     profile[f"cat_{cattype}"] += num_amount
+    profile.save()
     user.vote_time_topgg = time.time()
     user.reminder_topgg_exists = 0
     user.save()
-    profile.save()
     view = None
     if not user.vote_remind:
         view = View(timeout=3600)
