@@ -12,7 +12,7 @@ Discord Cat Bot Source Code
 
 1. Clone the repository. You can use green "Code" button at the top or a git command:
 
-   `git clone https://github.com/milena-kos/cat-bot.git`
+   `git clone https://github.com/milenakos/cat-bot.git`
 
 2. Install requirements:
 
