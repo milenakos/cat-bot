@@ -298,7 +298,7 @@ async def spawn_cat(ch_id, localcat=None):
         if not localcat:
             localcat = random.choice(CAT_TYPES)
         icon = get_emoji(localcat.lower() + "cat")
-        file = discord.File(f"spawn/{localcat.lower()}_cat.png")
+        file = discord.File(f"images/spawn/{localcat.lower()}_cat.png")
         try:
             channeley = discord.Webhook.from_url(channel.webhook, client=bot)
             thread_id = channel.thread_mappings
@@ -2039,7 +2039,7 @@ async def cat(message: discord.Interaction, cat_type: Optional[str]):
         await message.response.send_message("bro what", ephemeral=True)
         return
 
-    image = f"spawn/{cat_type.lower()}_cat.png" if cat_type else "images/cat.png" # ternary operator because why not
+    image = f"images/spawn/{cat_type.lower()}_cat.png" if cat_type else "images/cat.png" # ternary operator because why not
     file = discord.File(image, filename=image)
     await message.response.send_message(file=file)
 
