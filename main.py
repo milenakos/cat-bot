@@ -2892,6 +2892,11 @@ async def forget(message: discord.Interaction):
 
 @bot.tree.command(description="LMAO TROLLED SO HARD :JOY:")
 async def fake(message: discord.Interaction):
+    user = get_profile(message.guild.id, message.user.id)
+     if int(user.criminality) + 60 > time.time():
+        await message.response.send_message("stop spamming <@{message.user.id}>")
+        return
+    user.criminality = time.time()
     file = discord.File("images/australian cat.png", filename="australian cat.png")
     icon = get_emoji("egirlcat")
     if not isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]):
