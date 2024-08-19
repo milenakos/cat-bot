@@ -1,6 +1,9 @@
-from PIL import Image, ImageFont, ImageDraw, ImageColor
+import os
+
 import requests
+from PIL import Image, ImageColor, ImageDraw, ImageFont
 from pilmoji import Pilmoji
+
 
 def getsize(font, token):
     # thanks pillow
@@ -103,12 +106,12 @@ def msg2img(message, bot, sansgg=False):
             lines.append(line)
         return lines, pings
 
-    font = ImageFont.truetype("./fonts/whitneysemibold.otf", 32)  # load fonts
+    font = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 32)  # load fonts
     if sansgg:
-        font2 = ImageFont.truetype("./fonts/ggsans-Medium.ttf", 32)  # load fonts
+        font2 = ImageFont.truetype(os.path.abspath("./fonts/ggsans-Medium.ttf"), 32)  # load fonts
     else:
-        font2 = ImageFont.truetype("./fonts/whitneymedium.otf", 32)  # load fonts
-    font3 = ImageFont.truetype("./fonts/whitneysemibold.otf", 23)  # load fonts
+        font2 = ImageFont.truetype(os.path.abspath("./fonts/whitneymedium.otf"), 32)  # load fonts
+    font3 = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 23)  # load fonts
 
     text_temp = ""
     lines, pings = break_text(text, font2, 930)
@@ -171,7 +174,7 @@ def msg2img(message, bot, sansgg=False):
 
     pencil.text((122, 8), nick, font=font, fill=color)  # draw author name
     if is_bot:
-        botfont = ImageFont.truetype("fonts/whitneysemibold.otf", 20)
+        botfont = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 20)
 
         pencil.rounded_rectangle(
             (
