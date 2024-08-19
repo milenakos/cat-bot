@@ -2830,7 +2830,7 @@ async def givecat(message: discord.Interaction, person_id: discord.User, amount:
         await message.response.send_message("bro what", ephemeral=True)
         return
 
-    user = get_profile(message.guild.id, message.user.id)
+    user = get_profile(message.guild.id, person_id.id)
     user[f"cat_{cat_type}"] += amount
     user.save()
     embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount} {cat_type} cats", color=0x6E593C)
