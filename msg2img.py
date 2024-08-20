@@ -106,6 +106,7 @@ def msg2img(message, bot, sansgg=False):
             lines.append(line)
         return lines, pings
 
+    print(os.path.abspath('.'))  # woo debugging
     font = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 32)  # load fonts
     if sansgg:
         font2 = ImageFont.truetype(os.path.abspath("./fonts/ggsans-Medium.ttf"), 32)  # load fonts
