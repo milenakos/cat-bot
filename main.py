@@ -240,6 +240,8 @@ async def achemb(message, ach_id, send_type, author_string=None):
             author_string = message.user
     else:
         author = author_string.id
+    if author.bot:
+        return
     profile = get_profile(message.guild.id, author)
     if not profile[ach_id]:
         profile[ach_id] = True
@@ -2930,6 +2932,9 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
 @discord.app_commands.describe(person_id="who", ach_id="name or id of the achievement")
 @discord.app_commands.autocomplete(ach_id=ach_autocomplete)
 async def giveachievement(message: discord.Interaction, person_id: discord.User, ach_id: str):
+    # check if person is bot
+    if person_id.bot:
+        message.response.send_message("bruh that is a bot", ephemeral=True)
     # check if ach is real
     try:
         if ach_id in ach_names:
