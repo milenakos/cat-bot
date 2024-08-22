@@ -178,6 +178,7 @@ temp_catches_storage = []
 
 # prevent timetravel
 in_the_past = False
+about_to_stop = False
 
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
@@ -336,7 +337,7 @@ async def spawn_cat(ch_id, localcat=None):
 
 # a loop for various maintaince which is ran every 5 minutes
 async def maintaince_loop():
-    global reactions_ratelimit, last_loop_time, loop_count, in_the_past
+    global reactions_ratelimit, last_loop_time, loop_count, in_the_past, about_to_stop
     last_loop_time = time.time()
     reactions_ratelimit = {}
     await bot.change_presence(
@@ -392,6 +393,7 @@ async def maintaince_loop():
 
     loop_count += 1
     if loop_count >= 12 and not cat_rains:
+        about_to_stop = True
         os.system("git pull")
         await vote_server.cleanup()
         in_the_past = True
@@ -1475,6 +1477,10 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
 
         if (rain_type == "shortrain" and not user.shortrain) or (rain_type == "mediumrain" and not user.mediumrain) or (rain_type == "longrain" and not user.longrain):
             await interaction.response.send_message("you dont have a rain of dat type! buy one [here](<https://hipolink.me/milenakos>)", ephemeral=True)
+            return
+
+        if about_to_stop:
+            await interaction.response.send_message("cat bot is currently restarting. please try again in a few seconds.", ephemeral=True)
             return
 
         channel = Channel.get_or_none(channel_id=message.channel.id)
