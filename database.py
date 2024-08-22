@@ -41,7 +41,7 @@ class Profile(peewee.Model):
         locals()[f'cat_{cattype}'] = peewee.IntegerField(default=0)
 
     # aches
-    with open("aches.json", "r") as f:
+    with open("config/aches.json", "r") as f:
         ach_list = json.load(f)
     for ach in ach_list.keys():
         locals()[ach] = peewee.BooleanField(default=False)
