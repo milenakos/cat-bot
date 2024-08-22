@@ -599,14 +599,21 @@ async def on_message(message):
     if (":place_of_worship:" in text or "🛐" in text) and (":cat:" in text or ":staring_cat:" in text or "🐱" in text):
         await achemb(message, "worship", "reply")
     if text.lower() in ["testing testing 1 2 3", "cat!ach"]:
-        await message.reply("test success")
+        try:
+            await message.reply("test success")
+        except Exception:
+            # test failure
+            pass
         await achemb(message, "test_ach", "reply")
 
     if text.lower() == "please do not the cat":
         user = get_profile(message.guild.id, message.author.id)
         user.cat_Fine -= 1
         user.save()
-        await message.reply(f"ok then\n{message.author.name.replace("_", r"\_")} lost 1 fine cat!!!1!\nYou now have {user.cat_Fine} cats of dat type!")
+        try:
+            await message.reply(f"ok then\n{message.author.name.replace("_", r"\_")} lost 1 fine cat!!!1!\nYou now have {user.cat_Fine} cats of dat type!")
+        except Exception:
+            pass
         await achemb(message, "pleasedonotthecat", "reply")
 
     if text.lower() == "please do the cat":
