@@ -1049,7 +1049,7 @@ async def on_guild_join(guild):
 
     # you are free to change/remove this, its just a note for general user letting them know
     unofficial_note = "**NOTE: This is an unofficial Cat Bot instance.**\n\n"
-    if bot.user.id == 966695034340663367:
+    if not bot.user or bot.user.id == 966695034340663367:
         unofficial_note = ""
     try:
         await ch.send(unofficial_note + "Thanks for adding me!\nTo start, use `/help`!\nJoin the support server here: https://discord.gg/staring\nHave a nice day :)")
