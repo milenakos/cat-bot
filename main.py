@@ -1740,6 +1740,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                 pass
         user.save()
         reciever.save()
+        catbot.save()
     else:
         # haha skill issue
         await message.response.send_message("no", ephemeral=True)
