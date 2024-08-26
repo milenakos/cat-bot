@@ -1665,6 +1665,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
         return
 
     user = get_profile(message.guild.id, message.user.id)
+    catbot = get_profile(message.guild.id, 966695034340663367)
     # if we even have enough cats
     if user[f"cat_{cat_type}"] >= amount and amount > 0 and message.user.id != person_id:
         reciever = get_profile(message.guild.id, person_id)
@@ -1695,6 +1696,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     except Exception:
                         pass
                     user.cat_Fine -= tax_amount
+                    catbot.cat_Fine += tax_amount
                     await achemb(message, "good_citizen", "send")
                     await interaction.followup.send(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
                 else:
@@ -1738,6 +1740,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                 pass
         user.save()
         reciever.save()
+        catbot.save()
     else:
         # haha skill issue
         await message.response.send_message("no", ephemeral=True)
