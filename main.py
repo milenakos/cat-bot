@@ -1700,7 +1700,6 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     user.cat_Fine -= tax_amount
                     catbot.cat_Fine += tax_amount
                     user.save()
-                    reciever.save()
                     catbot.save()
                     await achemb(message, "good_citizen", "send")
                     await interaction.followup.send(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
