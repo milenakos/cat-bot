@@ -1671,6 +1671,8 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
         reciever = get_profile(message.guild.id, person_id)
         user[f"cat_{cat_type}"] -= amount
         reciever[f"cat_{cat_type}"] += amount
+        user.save()
+        reciever.save()
         embed = discord.Embed(title="Success!", description=f"Successfully transfered {amount} {cat_type} cats from <@{message.user.id}> to <@{person_id}>!", color=0x6E593C)
         await message.response.send_message(embed=embed)
 
@@ -1697,6 +1699,9 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                         pass
                     user.cat_Fine -= tax_amount
                     catbot.cat_Fine += tax_amount
+                    user.save()
+                    reciever.save()
+                    catbot.save()
                     await achemb(message, "good_citizen", "send")
                     await interaction.followup.send(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
                 else:
@@ -1738,9 +1743,6 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                 await message.channel.send(embed=embed, view=myview)
             except Exception:
                 pass
-        user.save()
-        reciever.save()
-        catbot.save()
     else:
         # haha skill issue
         await message.response.send_message("no", ephemeral=True)
