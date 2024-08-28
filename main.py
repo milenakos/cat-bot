@@ -2316,7 +2316,7 @@ async def light_market(message):
         for i in r:
             deals[i] = cataine_prices[deals[i]]
 
-        random.seed(time.time()) # because we don’t want the most recent time this was opened to influence cat spawn times and rarities
+        random.seed() # because we don’t want the most recent time this was opened to influence cat spawn times and rarities
         if count < len(deals):
             deal = deals[count]
         else:
