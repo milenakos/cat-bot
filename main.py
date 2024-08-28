@@ -1459,6 +1459,12 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
 @bot.tree.command(description="its raining cats")
 async def rain(message: discord.Interaction):
     user, _ = User.get_or_create(user_id=message.user.id)
+
+    if not user.claimed_free_rain:
+        user.shortrain += 1
+        user.claimed_free_rain = True
+        user.save()
+
     embed = discord.Embed(title="Cat Rains", description=f"""Cat Rains are power-ups which spawn cats instantly for a limited amounts of time in channel of your choice.
 
 You can get those by buying them at our [store](<https://hipolink.me/milenakos>) or by winning them in an event.

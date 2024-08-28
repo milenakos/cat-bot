@@ -77,6 +77,7 @@ class User(peewee.Model):
     longrain = peewee.SmallIntegerField(default=0)
 
     premium = peewee.BooleanField(default=False)  # whether the user has premium
+    claimed_free_rain = peewee.BooleanField(default=False)  # whether the user has claimed their free rain
 
     class Meta:
         database = db
