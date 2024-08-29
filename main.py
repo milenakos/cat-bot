@@ -729,7 +729,9 @@ async def on_message(message):
                 try:
                     # some math to make time look cool
                     then = catchtime.timestamp()
-                    time_caught = abs(round(((current_time - then) * 100)) / 100) # cry about it
+                    time_caught = abs(current_time - then) # cry about it
+                    if time_caught > 1:
+                        time_caught = round(time_caught, 2)
                     days = time_caught // 86400
                     time_left = time_caught - (days * 86400)
                     hours = time_left // 3600
@@ -744,11 +746,7 @@ async def on_message(message):
                     if minutes:
                         caught_time = caught_time + str(int(minutes)) + " minutes "
                     if seconds:
-                        if time_caught <= 1:
-                            acc_seconds = round(seconds, 3)
-                        else:
-                            acc_seconds = round(seconds, 2)
-                        caught_time = caught_time + str(acc_seconds) + " seconds "
+                        caught_time = caught_time + str(seconds) + " seconds "
                     do_time = True
                     if time_caught <= 0:
                         do_time = False
@@ -1379,7 +1377,7 @@ async def gen_inventory(message, person_id):
     if catch_time >= 99999999999999:
         catch_time = "never"
     else:
-        catch_time = str(round(float(catch_time) * 100) / 100)
+        catch_time = str(round(catch_time, 3))
 
     slow_time = person.timeslow
 
@@ -1387,7 +1385,7 @@ async def gen_inventory(message, person_id):
         slow_time = "never"
     else:
         slow_time = float(slow_time) / 3600
-        slow_time = str(round(slow_time * 100) / 100)
+        slow_time = str(round(slow_time, 2))
 
     if me:
         your = "Your"
@@ -2744,7 +2742,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                     continue
             if str(value) != default_value:
                 # round the value (for time dislays)
-                thingy = round((float(value) / float(devider)) * 100) / 100
+                thingy = round(float(value) / float(devider), 3)
 
                 # if it perfectly ends on .00, trim it
                 if thingy == int(thingy):
