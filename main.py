@@ -2676,7 +2676,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @bot.tree.command(description="View the leaderboards")
 @discord.app_commands.rename(leaderboard_type="type")
 @discord.app_commands.describe(leaderboard_type="The leaderboard type to view!")
-async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[Literal["Cats", "Value", "Fastest", "Slowest"]]):
+async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[Literal["Cats", "Fastest", "Slowest"]]):
     if not leaderboard_type:
         leaderboard_type = "Cats"
 
@@ -2689,15 +2689,12 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         messager = None
         interactor = None
         main = False
-        rare = False
         fast = False
         slow = False
         if type == "fast":
             fast = True
         elif type == "slow":
             slow = True
-        elif type == "rare":
-            rare = True
         else:
             main = True
         the_dict = {}
@@ -2706,7 +2703,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         rarities = cattypes
 
         if fast:
-            time_type = "fast"
+            time_type = ""
             default_value = "99999999999999"
             title = "Time"
             unit = "sec"
@@ -2717,11 +2714,6 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             title = "Slow"
             unit = "h"
             devider = 3600
-        elif rare:
-            default_value = "0"
-            title = "Rarity"
-            unit = "value"
-            devider = 1
         else:
             default_value = "0"
             title = ""
@@ -2736,20 +2728,6 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 elif time_type == "fast":
                     value = i.time
                     if value == 99999999999999:
-                        continue
-                else:
-                    for a in cattypes:
-                        try:
-                            b = i[f"cat_{a}"]
-                            value += (len(CAT_TYPES) / type_dict[k]) * b
-                            if b > 0 and rarities.index(a) > rarest:
-                                rarest = rarities.index(a)
-                                rarest_holder = {f"<@{i.user_id}>": b}
-                            elif b > 0 and rarities.index(a) == rarest:
-                                rarest_holder[f"<@{i.user_id}>"] = b
-                        except Exception:
-                            pass    
-                    if value == 0:
                         continue
             else:
                 value = 0
@@ -2802,7 +2780,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                     messager_placement += 1
 
         # rarest cat display
-        if main or rare:
+        if main:
             catmoji = get_emoji(rarities[rarest].lower() + "cat")
             if rarest != -1:
                 rarest_holder = list(dict(sorted(rarest_holder.items(), key=lambda item: item[1], reverse=True)).keys())
@@ -2846,31 +2824,24 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         else:
             button1 = Button(label="Refresh", style=ButtonStyle.green)
 
-        if not rare:
-            button2 = Button(label="Value", style=ButtonStyle.blurple)
+        if not fast:
+            button2 = Button(label="Fastest", style=ButtonStyle.blurple)
         else:
             button2 = Button(label="Refresh", style=ButtonStyle.green)
 
-        if not fast:
-            button3 = Button(label="Fastest", style=ButtonStyle.blurple)
+        if not slow:
+            button3 = Button(label="Slowest", style=ButtonStyle.blurple)
         else:
             button3 = Button(label="Refresh", style=ButtonStyle.green)
 
-        if not slow:
-            button4 = Button(label="Slowest", style=ButtonStyle.blurple)
-        else:
-            button4 = Button(label="Refresh", style=ButtonStyle.green)
-
         button1.callback = catlb
-        button2.callback = rarelb
-        button3.callback = fastlb
-        button4.callback = slowlb
+        button2.callback = fastlb
+        button3.callback = slowlb
 
         myview = View(timeout=3600)
         myview.add_item(button1)
         myview.add_item(button2)
         myview.add_item(button3)
-        myview.add_item(button4)
         
         # just send if first time, otherwise edit existing
         try:
@@ -2883,9 +2854,6 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
     # helpers! everybody loves helpers.
     async def slowlb(interaction):
         await lb_handler(interaction, "slow")
-
-    async def rarelb(interaction):
-        await lb_handler(interaction, "rare")
     
     async def fastlb(interaction):
         await lb_handler(interaction, "fast")
