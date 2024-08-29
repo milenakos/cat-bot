@@ -729,7 +729,7 @@ async def on_message(message):
                 try:
                     # some math to make time look cool
                     then = catchtime.timestamp()
-                    time_caught = abs(current_time - then) # cry about it
+                    time_caught = round(abs(current_time - then), 3) # cry about it
                     if time_caught > 1:
                         time_caught = round(time_caught, 2)
                     days = time_caught // 86400
@@ -2703,26 +2703,23 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             default_value = "99999999999999"
             title = "Time"
             unit = "sec"
-            devider = 1
         elif slow:
             time_type = "slow"
             default_value = "0"
             title = "Slow"
             unit = "h"
-            devider = 3600
         else:
             default_value = "0"
             title = ""
             unit = "cats"
-            devider = 1
         for i in Profile.select().where(Profile.guild_id == message.guild.id):
             if not main:
                 if time_type == "slow":
-                    value = i.timeslow
+                    value = round(i.timeslow / 3600, 2)
                     if value == 0:
                         continue
                 else:
-                    value = i.time
+                    value = round(i.time, 3)
                     if value == 99999999999999:
                         continue
             else:
@@ -2741,18 +2738,15 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 if value == 0:
                     continue
             if str(value) != default_value:
-                # round the value (for time dislays)
-                thingy = round(float(value) / float(devider), 3)
-
                 # if it perfectly ends on .00, trim it
-                if thingy == int(thingy):
-                    thingy = int(thingy)
+                if value == int(value):
+                    value = int(value)
 
-                the_dict[f" {unit}: <@{i.user_id}>"] = thingy
+                the_dict[f" {unit}: <@{i.user_id}>"] = value
                 if i == str(interaction.user.id):
-                    interactor = thingy
+                    interactor = value
                 if i == str(message.user.id):
-                    messager = thingy
+                    messager = value
 
         # some weird quick sorting thing (dont you just love when built-in libary you never heard of saves your ass)
         heap = [(value, key) for key, value in the_dict.items()]
