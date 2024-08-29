@@ -746,7 +746,7 @@ async def on_message(message):
                     if minutes:
                         caught_time = caught_time + str(int(minutes)) + " minutes "
                     if seconds:
-                        caught_time = caught_time + str(seconds) + " seconds "
+                        caught_time = caught_time + str(round(seconds, 3)) + " seconds "
                     do_time = True
                     if time_caught <= 0:
                         do_time = False
