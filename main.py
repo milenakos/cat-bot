@@ -1529,6 +1529,7 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
 
         type_mappings = {"shortrain": 120, "mediumrain": 600, "longrain": 1200}
         cat_rains[str(message.channel.id)] = time.time() + type_mappings[rain_type]
+        await spawn_cat(str(message.channel.id))
         if rain_type == "shortrain":
             user.shortrain -= 1
         elif rain_type == "mediumrain":
@@ -1537,7 +1538,6 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
             user.longrain -= 1
         user.save()
         await message.channel.send(f"cat rain was started by <@{interaction.user.id}>!")
-        await spawn_cat(str(message.channel.id))
 
     async def short(interaction):
         await do_rain(interaction, "shortrain")
@@ -2754,12 +2754,12 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                     messager = thingy
 
         # some weird quick sorting thing (dont you just love when built-in libary you never heard of saves your ass)
-        heap = [(-value, key) for key, value in the_dict.items()]
+        heap = [(value, key) for key, value in the_dict.items()]
         if fast:
-            largest = heapq.nlargest(15, heap)
-        else:
             largest = heapq.nsmallest(15, heap)
-        largest = [(key, -value) for value, key in largest]
+        else:
+            largest = heapq.nlargest(15, heap)
+        largest = [(key, value) for value, key in largest]
         string = ""
 
         # find the placement of the person who ran the command and optionally the person who pressed the button
