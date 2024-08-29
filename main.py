@@ -48,6 +48,10 @@ GITHUB_CHANNEL_ID = 1060965767044149249
 # set to False to disable
 DONOR_CHANNEL_ID = 1249343008890028144
 
+# all messages in this channel are allowed to be cat!rain commands
+# set to False to disable
+RAIN_CHANNEL_ID = 1278705994536321157
+
 BANNED_ID = [] # banned from using /tiktok
 
 WHITELISTED_BOTS = [] # bots which are allowed to catch cats
@@ -486,6 +490,17 @@ async def on_message(message):
     if DONOR_CHANNEL_ID and message.channel.id == DONOR_CHANNEL_ID:
         user, _ = User.get_or_create(user_id=message.content)
         user.premium = True
+        user.save()
+
+    if RAIN_CHANNEL_ID and message.channel.id == RAIN_CHANNEL_ID and text.lower().startswith("cat!rain"):
+        things = text.split(" ")
+        user, _ = User.get_or_create(user_id=things[1])
+        if things[2] == "short":
+            user.shortrain += 1
+        elif things[2] == "medium":
+            user.mediumrain += 1
+        elif things[2] == "long":
+            user.longrain += 1
         user.save()
 
     react_count = 0
