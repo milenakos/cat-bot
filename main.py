@@ -2661,7 +2661,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @bot.tree.command(description="View the leaderboards")
 @discord.app_commands.rename(leaderboard_type="type")
 @discord.app_commands.describe(leaderboard_type="The leaderboard type to view!")
-async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[Literal["Cats", "Rarest", "Fastest", "Slowest"]]):
+async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[Literal["Cats", "Value", "Fastest", "Slowest"]]):
     if not leaderboard_type:
         leaderboard_type = "Cats"
 
@@ -2832,7 +2832,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             button1 = Button(label="Refresh", style=ButtonStyle.green)
 
         if not rare:
-            button2 = Button(label="Rarest", style=ButtonStyle.blurple)
+            button2 = Button(label="Value", style=ButtonStyle.blurple)
         else:
             button2 = Button(label="Refresh", style=ButtonStyle.green)
 
