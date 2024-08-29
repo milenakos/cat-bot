@@ -730,7 +730,7 @@ async def on_message(message):
                     # some math to make time look cool
                     then = catchtime.timestamp()
                     time_caught = round(abs(current_time - then), 3) # cry about it
-                    if time_caught > 1:
+                    if time_caught >= 1:
                         time_caught = round(time_caught, 2)
                     days = time_caught // 86400
                     time_left = time_caught - (days * 86400)
