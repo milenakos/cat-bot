@@ -2725,7 +2725,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                     value = i.timeslow
                     if value == 0:
                         continue
-                elif time_type == "fast":
+                else:
                     value = i.time
                     if value == 99999999999999:
                         continue
