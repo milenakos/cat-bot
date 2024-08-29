@@ -1956,12 +1956,14 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             valuenum = 0
             for k, v in persongives.items():
                 valuenum += (len(CAT_TYPES) / type_dict[k]) * v
+                total += v
                 aicon = get_emoji(k.lower() + "cat")
                 valuestr += str(aicon) + " " + k + " " + str(v) + "\n"
             if not valuestr:
                 valuestr = "No cats offered!"
             else:
                 valuestr += f"*Total value: {round(valuenum)}*"
+                valuestr += f"*Total cats: {round(total)}*"
                 if number == 1:
                     person1value = round(valuenum)
                 else:
