@@ -357,7 +357,7 @@ async def spawn_cat(ch_id, localcat=None):
             channel.thread_mappings = False
         else:
             channel.delete_instance()
-            return
+        return
 
     if str(message_is_sus.id)[0] != "1":
         # check for broken ids idk
