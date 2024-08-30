@@ -305,12 +305,16 @@ async def spawn_cat(ch_id, localcat=None):
         icon = get_emoji(localcat.lower() + "cat")
         file = discord.File(f"images/spawn/{localcat.lower()}_cat.png")
         try:
-            if cat_rains.get(str(ch_id), 0) < time.time():
+            if cat_rains.get(str(ch_id), time.time() + 1) < time.time():
                 del cat_rains[str(ch_id)]
 
             if cat_rains.get(str(ch_id), 0) != 0:
+                using_webhook = False
                 channeley = bot.get_channel(int(ch_id))
+                if not isinstance(channeley, Union[discord.TextChannel, discord.VoiceChannel]):
+                    return
             else:
+                using_webhook = True
                 channeley = discord.Webhook.from_url(channel.webhook, client=bot)
             thread_id = channel.thread_mappings
         except Exception:
@@ -332,10 +336,17 @@ async def spawn_cat(ch_id, localcat=None):
         if channel.cat or in_the_past:
             return  # its never too late to return
 
+        kwargs = {}
+        if using_webhook:
+            kwargs['wait'] = True
         if thread_id:
-            message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file, wait=True, thread=discord.Object(int(ch_id)))
-        else:
-            message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file, wait=True)
+            kwargs['thread'] = discord.Object(int(ch_id))
+
+        message_is_sus = await channeley.send(
+            appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat),
+            file=file,
+            **kwargs
+        )
         if str(message_is_sus.id)[0] != "1":
             # check for broken ids idk
             return
@@ -731,7 +742,10 @@ async def on_message(message):
                     else:
                         await channeley.delete_message(cat_temp)
                 except Exception:
-                    pass
+                    try:
+                        await cat_temp.delete()
+                    except Exception:
+                        pass
                 try:
                     # some math to make time look cool
                     then = catchtime.timestamp()
