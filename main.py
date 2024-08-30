@@ -1311,7 +1311,7 @@ async def changemessage(message: discord.Interaction):
                     if i in input_value:
                         await interaction.response.send_message(f"nuh uh! you cant use `{i}`. sorry!", ephemeral=True)
                         return
-                icon = get_emoji("fine_cat")
+                icon = get_emoji("finecat")
                 await interaction.response.send_message("Success! Here is a preview:\n" + \
                     input_value.replace("{emoji}", str(icon)).replace("{type}", "Fine").replace("{username}", "Cat Bot").replace("{count}", "1").replace("{time}", "69 years 420 days"))
             else:
