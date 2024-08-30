@@ -28,8 +28,7 @@ logging.basicConfig(level=logging.INFO)
 
 ### Setup values start
 
-GUILD_ID = 966586000417619998 # for emojis
-CATS_GUILD_ID = False # alternative guild purely for cattype emojis (use for christmas/halloween etc), False to disable
+GUILD_ID = 966586000417619998 # for emojis (deprecated, will auto-move them to app emojis)
 BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely recommended
 
 # top.gg voting key
@@ -216,20 +215,22 @@ def get_profile(guild_id, user_id):
         )
 
 
+async def migrate_emoji(emoji):
+    data = await emoji.read()
+    await bot.create_application_emoji(name=emoji.name, image=data)
+
 def get_emoji(name):
     global emojis
     if name in emojis.keys():
         return emojis[name]
     else:
         try:
-            if name in allowedemojis and CATS_GUILD_ID:
-                result = discord.utils.get(bot.get_guild(CATS_GUILD_ID).emojis, name=name)
-            else:
-                result = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=name)
+            result = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=name)
             if not result:
                 raise Exception
             if do_save_emojis:
                 emojis[name] = str(result)
+                asyncio.run_coroutine_threadsafe(migrate_emoji(result), bot.loop)
             return result
         except Exception:
             return "🔳"
@@ -426,11 +427,12 @@ async def maintaince_loop():
 
 # some code which is run when bot is started
 async def on_ready():
-    global milenakoos, OWNER_ID, do_save_emojis, on_ready_debounce, gen_credits, last_loop_time
+    global milenakoos, OWNER_ID, do_save_emojis, on_ready_debounce, gen_credits, last_loop_time, emojis
     if on_ready_debounce:
         return
     on_ready_debounce = True
     print("cat is now online")
+    emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
     do_save_emojis = True
     await bot.change_presence(
         activity=discord.CustomActivity(name=f"Just restarted! Catting in {len(bot.guilds):,} servers.")
@@ -1590,7 +1592,7 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
 
         missing_perms = list(needed_perms.keys())
         if len(missing_perms) != 0:
-            await message.response.send_message(f":x: Missing Permissions! Please give me the following: - {'\n- '.join(missing_perms)}]\nHint: try setting channel permissions if server ones don't work.")
+            await interaction.response.send_message(f":x: Missing Permissions! Please give me the following: - {'\n- '.join(missing_perms)}]\nHint: try setting channel permissions if server ones don't work.")
             return
 
         if not isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]):
