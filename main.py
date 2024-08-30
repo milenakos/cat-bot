@@ -245,6 +245,8 @@ async def achemb(message, ach_id, send_type, author_string=None):
             author_string = message.user
     else:
         author = author_string.id
+    if not message.guild:
+        return
     profile = get_profile(message.guild.id, author)
     if not profile[ach_id]:
         profile[ach_id] = True
@@ -260,6 +262,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
             embed = discord.Embed(title="Cataine Addict", description="Defeat the dog mafia\nThanks for playing! ✨", color=0xC12929).set_author(name="Demonic achievement unlocked! 🌟", icon_url="https://pomf2.lain.la/f/ez0enx2d.png").set_footer(text=f"Congrats to {author_string.name}!!")
 
         try:
+            result = None
             perms: discord.Permissions = message.channel.permissions_for(message.guild.me)
             if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
                 if send_type == "reply":
@@ -273,7 +276,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
         except Exception:
             pass
 
-        if ach_id == "thanksforplaying":
+        if result and ach_id == "thanksforplaying":
             await asyncio.sleep(2)
             embed2 = discord.Embed(title="Cataine Addict", description="Defeat the dog mafia\nThanks for playing! ✨", color=0xFFFF00).set_author(name="Demonic achievement unlocked! 🌟", icon_url="https://pomf2.lain.la/f/ez0enx2d.png").set_footer(text=f"Congrats to {author_string.name}!!")
             await result.edit(embed=embed2)
@@ -297,7 +300,10 @@ async def ach_autocomplete(interaction: discord.Interaction, current: str) -> li
     return [discord.app_commands.Choice(name=val["title"], value=key) for (key, val) in ach_list.items() if (alnum(current) in alnum(key) or alnum(current) in alnum(val["title"]))][:25]
 
 async def spawn_cat(ch_id, localcat=None):
-    channel = Channel.get(channel_id=ch_id)
+    try:
+        channel = Channel.get(channel_id=ch_id)
+    except Exception:
+        return
     if channel.cat or in_the_past:
         return
 
@@ -341,8 +347,10 @@ async def spawn_cat(ch_id, localcat=None):
             message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file, wait=True)
     except discord.Forbidden:
         channel.delete_instance()
+        return
     except discord.NotFound:
         channel.delete_instance()
+        return
 
     if str(message_is_sus.id)[0] != "1":
         # check for broken ids idk
@@ -459,7 +467,6 @@ async def on_ready():
 async def on_message(message):
     global in_the_past
     text = message.content
-    perms: discord.Permissions = message.channel.permissions_for(message.guild.me)
     if not bot.user or message.author.id == bot.user.id:
         return
 
@@ -472,6 +479,8 @@ async def on_message(message):
     elif message.guild is None:
         await message.channel.send("good job! please send \"lol_i_have_dmed_the_cat_bot_and_got_an_ach\" in server to get your ach!")
         return
+
+    perms: discord.Permissions = message.channel.permissions_for(message.guild.me)
 
     achs = [["cat?", "startswith", "???"],
         ["catn", "exact", "catn"],
@@ -1597,7 +1606,7 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
         elif rain_type == "longrain":
             user.longrain -= 1
         user.save()
-        await message.response.send_message(f"cat rain was started by <@{interaction.user.id}>!")
+        await interaction.response.send_message(f"cat rain was started by <@{interaction.user.id}>!")
 
     async def short(interaction):
         await do_rain(interaction, "shortrain")
