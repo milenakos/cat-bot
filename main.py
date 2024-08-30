@@ -305,7 +305,13 @@ async def spawn_cat(ch_id, localcat=None):
         icon = get_emoji(localcat.lower() + "cat")
         file = discord.File(f"images/spawn/{localcat.lower()}_cat.png")
         try:
-            channeley = discord.Webhook.from_url(channel.webhook, client=bot)
+            if cat_rains.get(str(ch_id), 0) < time.time():
+                del cat_rains[str(ch_id)]
+
+            if cat_rains.get(str(ch_id), 0) != 0:
+                channeley = bot.get_channel(int(ch_id))
+            else:
+                channeley = discord.Webhook.from_url(channel.webhook, client=bot)
             thread_id = channel.thread_mappings
         except Exception:
             channeley = bot.get_channel(int(ch_id))
