@@ -1564,7 +1564,7 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
         # i LOOOOVE checks
         if message.user.id != interaction.user.id:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
-            profile = get_profile(message.guild.id, message.user.id)
+            profile = get_profile(interaction.guild.id, interaction.user.id)
             profile.funny += 1
             profile.save()
             return
