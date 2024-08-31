@@ -375,7 +375,7 @@ async def maintaince_loop():
         activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
     )
 
-    for k, v in cat_rains.items():
+    for k, v in cat_rains.copy().items():
         if v < time.time():
             del cat_rains[k]
 
