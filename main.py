@@ -375,6 +375,10 @@ async def maintaince_loop():
         activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
     )
 
+    for k, v in cat_rains:
+        if v < time.time():
+            del cat_rains[k]
+
     if TOP_GG_TOKEN:
         async with aiohttp.ClientSession() as session:
             # send server count to top.gg
@@ -392,12 +396,18 @@ async def maintaince_loop():
 
     notified_users = []
     errored_users = []
+    processed_users = []
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
     for user in User.select().where((User.vote_remind) & (User.vote_time_topgg + 43200 < time.time()) & (~User.reminder_topgg_exists)):
+        if user.user_id in processed_users:
+            continue  # prevent double notifies
         await asyncio.sleep(0.1)
+        processed_users.append(user.user_id)
 
         channeley = bot.get_channel(user.vote_remind)
         if not isinstance(channeley, discord.TextChannel):
+            user.vote_remind = 0
+            errored_users.append(user)
             continue
 
         view = View(timeout=1)
