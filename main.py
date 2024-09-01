@@ -265,12 +265,12 @@ async def achemb(message, ach_id, send_type, author_string=None):
         try:
             result = None
             perms: discord.Permissions = message.channel.permissions_for(message.guild.me)
-            if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                if send_type == "reply":
-                    result = await message.reply(embed=embed)
-                elif send_type == "send":
-                    result = await message.channel.send(embed=embed)
-            if send_type == "followup":
+            correct_perms = perms.send_messages and (not message.thread or perms.send_messages_in_threads)
+            if send_type == "reply" and correct_perms:
+                result = await message.reply(embed=embed)
+            elif send_type == "send" and correct_perms:
+                result = await message.channel.send(embed=embed)
+            elif send_type == "followup":
                 result = await message.followup.send(embed=embed, ephemeral=True)
             elif send_type == "response":
                 result = await message.response.send_message(embed=embed)
@@ -3078,7 +3078,7 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
     if valid:
         # if it is, do the thing
         reverse = person[ach_id]
-        person[ach_id] = not person[ach_id]
+        person[ach_id] = not reverse
         color, title, icon = 0x007F0E, "Achievement forced!", "https://pomf2.lain.la/f/hbxyiv9l.png"
         if reverse:
             color, title, icon = 0xff0000, "Achievement removed!", "https://pomf2.lain.la/f/b8jxc27g.png"
