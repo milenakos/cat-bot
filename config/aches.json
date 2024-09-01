@@ -15,7 +15,7 @@
   "dark_market": {"title": "What's this?", "description": "enter dark market", "is_hidden": true, "category": "Cat Hunt"},
 
   "randomizer": {"title": "Randomizer", "description": "look at a random cat", "is_hidden": false, "category": "Random"},
-  "pineapple": {"title": "Pineapple", "description": "\"you said \"\"pineapple\"\". i have no idea why\"", "is_hidden": false, "category": "Random"},
+  "pineapple": {"title": "Pineapple", "description": "you said \"pineapple\". i have no idea why", "is_hidden": false, "category": "Random"},
   "daily": {"title": "Daily Catter", "description": "get daily cats", "is_hidden": false, "category": "Random"},
   "dm": {"title": "DM", "description": "dm cat", "is_hidden": true, "category": "Random"},
   "who_ping": {"title": "who ping", "description": "ping cat bot", "is_hidden": true, "category": "Random"},
