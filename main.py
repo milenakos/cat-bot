@@ -3079,6 +3079,7 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
         # if it is, do the thing
         reverse = person[ach_id]
         person[ach_id] = not reverse
+        person.save()
         color, title, icon = 0x007F0E, "Achievement forced!", "https://pomf2.lain.la/f/hbxyiv9l.png"
         if reverse:
             color, title, icon = 0xff0000, "Achievement removed!", "https://pomf2.lain.la/f/b8jxc27g.png"
