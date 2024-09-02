@@ -734,7 +734,7 @@ async def on_message(message):
         channel = Channel.get_or_none(channel_id=message.channel.id)
         if not channel or not channel.cat or channel.cat in temp_catches_storage or (user.timeout) > time.time() or message.webhook_id or (message.author.bot and message.author.id not in WHITELISTED_BOTS):
             # if there is no cat, you are /preventcatch-ed, or you aren't a whitelisted bot
-            if cat_rains.get(str(message.channel.id), 0) < time.time() or not perms.add_reactions:
+            if False and cat_rains.get(str(message.channel.id), 0) < time.time() or perms.add_reactions:
                 icon = get_emoji("pointlaugh")
                 try:
                     await message.add_reaction(icon)
