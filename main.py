@@ -469,7 +469,7 @@ async def on_ready():
 # this is all the code which is ran on every message sent
 # its mostly for easter eggs or achievements
 async def on_message(message):
-    global in_the_past
+    global in_the_past, emojis
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
         return
@@ -1073,6 +1073,7 @@ async def on_message(message):
         else:
             user.custom = stuff[2]
         user.save()
+        emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
         await message.reply("success")
 
 
