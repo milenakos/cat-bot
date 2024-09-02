@@ -371,10 +371,6 @@ async def maintaince_loop():
         activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
     )
 
-    for k, v in cat_rains.copy().items():
-        if v < time.time():
-            del cat_rains[k]
-
     if TOP_GG_TOKEN:
         async with aiohttp.ClientSession() as session:
             # send server count to top.gg
@@ -429,12 +425,6 @@ async def maintaince_loop():
     await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.", file=thing)
 
     loop_count += 1
-    if loop_count >= 12 and not cat_rains:
-        about_to_stop = True
-        os.system("git pull")
-        await vote_server.cleanup()
-        in_the_past = True
-        await bot.cat_bot_reload_hook()  # pyright: ignore
 
 
 # some code which is run when bot is started
