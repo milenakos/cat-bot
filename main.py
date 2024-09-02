@@ -732,15 +732,7 @@ async def on_message(message):
     if text.lower() == "cat":
         user = get_profile(message.guild.id, message.author.id)
         channel = Channel.get_or_none(channel_id=message.channel.id)
-        if not channel or not channel.cat or channel.cat in temp_catches_storage or (user.timeout) > time.time() or message.webhook_id or (message.author.bot and message.author.id not in WHITELISTED_BOTS):
-            # if there is no cat, you are /preventcatch-ed, or you aren't a whitelisted bot
-            if False and cat_rains.get(str(message.channel.id), 0) < time.time() and perms.add_reactions:
-                icon = get_emoji("pointlaugh")
-                try:
-                    await message.add_reaction(icon)
-                except Exception:
-                    pass
-        elif channel.cat:
+        if channel and channel.cat and channel.cat not in temp_catches_storage and user.timeout < time.time() and not message.webhook_id and (not message.author.bot or message.author.id in WHITELISTED_BOTS):
             temp_catches_storage.append(channel.cat)
             times = [channel.spawn_times_min, channel.spawn_times_max]
             if cat_rains.get(str(message.channel.id), 0) != 0:
