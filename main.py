@@ -353,10 +353,6 @@ async def spawn_cat(ch_id, localcat=None):
         channel.delete_instance()
         return
     except Exception:
-        if thread_id:
-            channel.thread_mappings = False
-        else:
-            channel.delete_instance()
         return
 
     if str(message_is_sus.id)[0] != "1":
