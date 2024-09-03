@@ -269,7 +269,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
         try:
             result = None
             perms: discord.Permissions = message.channel.permissions_for(message.guild.me)
-            correct_perms = perms.send_messages and (not message.thread or perms.send_messages_in_threads)
+            correct_perms = perms.send_messages and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads)
             if send_type == "reply" and correct_perms:
                 result = await message.reply(embed=embed)
             elif send_type == "send" and correct_perms:
