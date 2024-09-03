@@ -166,6 +166,10 @@ gen_credits = {}
 # you can do 50 reactions before they stop, limit resets on global cat loop
 reactions_ratelimit = {}
 
+# cooldowns for /fake cat /catch
+catchcooldown = {}
+fakecooldown = {}
+
 # cat bot auto-claims in the channel user last ran /vote in
 # this is a failsafe to store the fact they voted until they ran that atleast once
 pending_votes = []
@@ -2713,14 +2717,13 @@ async def catch(message: discord.Interaction, msg: discord.Message):
     if not message.channel.permissions_for(message.guild.me).attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
-    user = get_profile(message.guild.id, message.user.id)
-    if int(user.catchcooldown) + 6 > time.time():
+    if catchcooldown[message.user.id] + 6 > time.time():
         await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
         return
     await message.response.defer()
     msg2img.msg2img(msg, bot, True)
     file = discord.File("generated.png", filename="generated.png")
-    user.catchcooldown = time.time()
+    catchcooldown[message.user.id] = time.time()
     await message.followup.send("cought in 4k", file=file)
 
     await achemb(message, "4k", "send")
@@ -2994,11 +2997,15 @@ async def forget(message: discord.Interaction):
 
 @bot.tree.command(description="LMAO TROLLED SO HARD :JOY:")
 async def fake(message: discord.Interaction):
+    if fakecooldown[message.user.id] + 6 > time.time():
+        await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
+        return
     file = discord.File("images/australian cat.png", filename="australian cat.png")
     icon = get_emoji("egirlcat")
     perms: discord.Permissions = message.channel.permissions_for(message.guild.me)
     if not isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]):
         return
+    fakecooldown[message.user.id] = time.time()
     try:
         if not perms.send_messages or not perms.attach_files:
             raise Exception

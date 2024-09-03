@@ -17,7 +17,6 @@ class Profile(peewee.Model):
     time = peewee.FloatField(default=99999999999999)  # fastest catch time
     timeslow = peewee.FloatField(default=0)  # slowest catch time
 
-    catchcooldown = peewee.BigIntegerField(default=0)  # catch in 4k slowmode
     timeout = peewee.BigIntegerField(default=0)  # /preventcatch timestamp
     cataine_active = peewee.BigIntegerField(default=0)  # cataine timestamp
 
@@ -33,7 +32,7 @@ class Profile(peewee.Model):
 
     funny = peewee.SmallIntegerField(default=0)  # private embed click amount
     facts = peewee.SmallIntegerField(default=0)  # /fact amount
-    gambles = peewee.SmallIntegerField(default=0)  # casino spins amount=
+    gambles = peewee.SmallIntegerField(default=0)  # casino spins amount
 
     # thanks chatgpt
     # cat types
