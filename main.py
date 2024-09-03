@@ -2717,7 +2717,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
     if not message.channel.permissions_for(message.guild.me).attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
-    if catchcooldown[message.user.id] + 6 > time.time():
+    if message.user.id in catchcooldown and catchcooldown[message.user.id] + 6 > time.time():
         await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
         return
     await message.response.defer()
@@ -2997,7 +2997,7 @@ async def forget(message: discord.Interaction):
 
 @bot.tree.command(description="LMAO TROLLED SO HARD :JOY:")
 async def fake(message: discord.Interaction):
-    if fakecooldown[message.user.id] + 6 > time.time():
+    if message.user.id in fakecooldown and fakecooldown[message.user.id] + 6 > time.time():
         await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
         return
     file = discord.File("images/australian cat.png", filename="australian cat.png")
