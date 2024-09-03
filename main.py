@@ -2994,7 +2994,7 @@ async def forget(message: discord.Interaction):
 
 @bot.tree.command(description="LMAO TROLLED SO HARD :JOY:")
 async def fake(message: discord.Interaction):
-    if message.user.id in fakecooldown and fakecooldown[message.user.id] + 6 > time.time():
+    if message.user.id in fakecooldown and fakecooldown[message.user.id] + 60 > time.time():
         await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
         return
     file = discord.File("images/australian cat.png", filename="australian cat.png")
