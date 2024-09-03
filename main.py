@@ -202,8 +202,8 @@ RAIN_ID = 1270470307102195752
 # we restart every some loops to pull new code and fix stuff it breaks
 loop_count = 0
 
-# loops in dpy can randomly break, i check if is been over 20 minutes since last loop to restart it
-last_loop_time = time.time()
+# loops in dpy can randomly break, i check if is been over X minutes since last loop to restart it
+last_loop_time = 0
 
 
 def get_profile(guild_id, user_id):
@@ -433,18 +433,15 @@ async def maintaince_loop():
 
 # some code which is run when bot is started
 async def on_ready():
-    global milenakoos, OWNER_ID, do_save_emojis, on_ready_debounce, gen_credits, last_loop_time, emojis
+    global milenakoos, OWNER_ID, do_save_emojis, on_ready_debounce, gen_credits, emojis
     if on_ready_debounce:
         return
     on_ready_debounce = True
     print("cat is now online")
     emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
     do_save_emojis = True
-    await bot.change_presence(
-        activity=discord.CustomActivity(name=f"Just restarted! Catting in {len(bot.guilds):,} servers.")
-    )
-    appinfo = await bot.application_info()
     if not OWNER_ID:
+        appinfo = await bot.application_info()
         milenakoos = appinfo.owner
         OWNER_ID = milenakoos.id
     else:
