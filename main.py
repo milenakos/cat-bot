@@ -888,7 +888,9 @@ async def on_message(message):
                 elif WEBHOOK_VERIFY and vote_time_user.vote_time_topgg + 43200 < time.time():
                     button = Button(emoji=get_emoji("topgg"), label=random.choice(vote_button_texts), url="https://top.gg/bot/966695034340663367/vote")
                 elif random.randint(0, 20) == 0:
-                    button = Button(label="Join our Discord!", url="https://discord.gg/staring")
+                    button = Button(label="Join our Discord", url="https://discord.gg/staring")
+                elif random.randint(0, 500) == 0:
+                    button = Button(label="John Discord. 🤠", url="https://discord.gg/staring")
 
                 if button:
                     view = View(timeout=3600)
