@@ -1,13 +1,8 @@
-import os
-
 import discord
 from discord.ext import commands
 
+import config
 from database import db, Profile, User, Channel
-
-# discord bot token, use os.environ for more security
-TOKEN = os.environ['token']
-# TOKEN = "token goes here"
 
 intents = discord.Intents(message_content=True, messages=True, guilds=True, emojis=True)
 bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -33,6 +28,6 @@ if not db.get_tables():
     db.create_tables([Profile, User, Channel])
 
 try:
-    bot.run(TOKEN)
+    bot.run(config.TOKEN)
 finally:
     db.close()

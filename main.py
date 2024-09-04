@@ -21,49 +21,11 @@ from discord import ButtonStyle
 from discord.ext import commands
 from discord.ui import Button, View
 
+import config
 import msg2img
 from database import db, Profile, User, Channel
 
 logging.basicConfig(level=logging.INFO)
-
-### Setup values start
-
-GUILD_ID = 966586000417619998 # for emojis (deprecated, will auto-move them to app emojis)
-BACKUP_ID = 1060545763194707998 # channel id for db backups, private extremely recommended
-
-# top.gg voting key
-# set to False to disable
-WEBHOOK_VERIFY = os.environ["webhook_verify"]
-
-# top.gg api token because they use ancient technology and you need to post server count manually smh
-# set to False to disable
-TOP_GG_TOKEN = os.environ["top_gg_token"]
-
-# this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
-# set to False to disable
-GITHUB_CHANNEL_ID = 1060965767044149249
-
-# all messages in this channel will be interpreted as user ids to give premium access to
-# set to False to disable
-DONOR_CHANNEL_ID = 1249343008890028144
-
-# all messages in this channel are allowed to be cat!rain commands
-# set to False to disable
-RAIN_CHANNEL_ID = 1278705994536321157
-
-BANNED_ID = [] # banned from using /tiktok
-
-WHITELISTED_BOTS = [] # bots which are allowed to catch cats
-
-# use if bot is in a team
-# if you dont know what that is or dont use it,
-# you can remove this line
-OWNER_ID = 553093932012011520
-
-# what to do when there is a crash
-CRASH_MODE = "RAISE"
-
-### Setup values end
 
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode('utf-8') for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
@@ -153,11 +115,6 @@ for e in CAT_TYPES:
 funny = ["why did you click this this arent yours", "absolutely not", "cat bot not responding, try again later", "you cant", "can you please stop", "try again", "403 not allowed", "stop", "get a life", "not for you", "no", "nuh uh"]
 
 milenakoos = None
-try:
-    if not OWNER_ID:
-        OWNER_ID = 0
-except Exception:
-    OWNER_ID = 0
 
 # store credits usernames to prevent excessive api calls
 gen_credits = {}
@@ -229,7 +186,7 @@ def get_emoji(name):
         return emojis[name]
     else:
         try:
-            result = discord.utils.get(bot.get_guild(GUILD_ID).emojis, name=name)
+            result = discord.utils.get(bot.get_guild(config.GUILD_ID).emojis, name=name)
             if not result:
                 raise Exception
             if do_save_emojis:
@@ -375,12 +332,12 @@ async def maintaince_loop():
         activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
     )
 
-    if TOP_GG_TOKEN:
+    if config.TOP_GG_TOKEN:
         async with aiohttp.ClientSession() as session:
             # send server count to top.gg
             try:
                 await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
-                                    headers={"Authorization": TOP_GG_TOKEN},
+                                    headers={"Authorization": config.TOP_GG_TOKEN},
                                     json={"server_count": len(bot.guilds), "shard_count": len(bot.shards)},
                                     timeout=15)
             except Exception:
@@ -422,11 +379,10 @@ async def maintaince_loop():
         User.bulk_update(notified_users, fields=[User.reminder_topgg_exists], batch_size=50)
         User.bulk_update(errored_users, fields=[User.vote_remind], batch_size=50)
 
-    backupchannel = bot.get_channel(BACKUP_ID)
-    thing = discord.File("catbot.db", filename="catbot.db")
+    backupchannel = bot.get_channel(config.BACKUP_ID)
     if not isinstance(backupchannel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]):
         raise ValueError
-    await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.", file=thing)
+    await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.")
 
     loop_count += 1
 
@@ -440,12 +396,12 @@ async def on_ready():
     print("cat is now online")
     emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
     do_save_emojis = True
-    if not OWNER_ID:
-        appinfo = await bot.application_info()
-        milenakoos = appinfo.owner
-        OWNER_ID = milenakoos.id
+    appinfo = await bot.application_info()
+    if appinfo.team and appinfo.team.owner_id:
+        milenakoos = await bot.fetch_user(appinfo.team.owner_id)
     else:
-        milenakoos = await bot.fetch_user(OWNER_ID)
+        milenakoos = appinfo.owner
+    OWNER_ID = milenakoos.id
 
     credits = {
         "author": [553093932012011520],
@@ -515,18 +471,18 @@ async def on_message(message):
         ["https://tenor.com/view/this-cat-i-have-hired-this-cat-to-stare-at-you-hired-cat-cat-stare-gif-26392360", "exact", "https://tenor.com/view/cat-staring-cat-gif-16983064494644320763"]]
 
     # this is auto-update thing
-    if GITHUB_CHANNEL_ID and message.channel.id == GITHUB_CHANNEL_ID:
+    if config.GITHUB_CHANNEL_ID and message.channel.id == config.GITHUB_CHANNEL_ID:
         os.system("git pull")
         await vote_server.cleanup()
         in_the_past = True
         await bot.cat_bot_reload_hook()  # pyright: ignore
 
-    if DONOR_CHANNEL_ID and message.channel.id == DONOR_CHANNEL_ID:
+    if config.DONOR_CHANNEL_ID and message.channel.id == config.DONOR_CHANNEL_ID:
         user, _ = User.get_or_create(user_id=message.content)
         user.premium = True
         user.save()
 
-    if RAIN_CHANNEL_ID and message.channel.id == RAIN_CHANNEL_ID and text.lower().startswith("cat!rain"):
+    if config.RAIN_CHANNEL_ID and message.channel.id == config.RAIN_CHANNEL_ID and text.lower().startswith("cat!rain"):
         things = text.split(" ")
         user, _ = User.get_or_create(user_id=things[1])
         if things[2] == "short":
@@ -707,7 +663,7 @@ async def on_message(message):
             async with aiohttp.ClientSession() as session:
                 try:
                     answer = await session.get(f'https://top.gg/api/bots/{bot.user.id}/check?userId={message.author.id}',
-                                                headers={"Authorization": TOP_GG_TOKEN},
+                                                headers={"Authorization": config.TOP_GG_TOKEN},
                                                 timeout=15)
                     resp = await answer.json()
                     if resp["voted"]:
@@ -719,7 +675,7 @@ async def on_message(message):
     if text.lower() == "cat":
         user = get_profile(message.guild.id, message.author.id)
         channel = Channel.get_or_none(channel_id=message.channel.id)
-        if channel and channel.cat and channel.cat not in temp_catches_storage and user.timeout < time.time() and not message.webhook_id and (not message.author.bot or message.author.id in WHITELISTED_BOTS):
+        if channel and channel.cat and channel.cat not in temp_catches_storage and user.timeout < time.time() and not message.webhook_id and not message.author.bot:
             temp_catches_storage.append(channel.cat)
             times = [channel.spawn_times_min, channel.spawn_times_max]
             if cat_rains.get(str(message.channel.id), 0) != 0:
@@ -885,7 +841,7 @@ async def on_message(message):
                 if random.randint(0, 10) == 0 and user.cat_Fine >= 20 and not user.dark_market_active:
                     button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
                     button.callback = dark_market_cutscene
-                elif WEBHOOK_VERIFY and vote_time_user.vote_time_topgg + 43200 < time.time():
+                elif config.WEBHOOK_VERIFY and vote_time_user.vote_time_topgg + 43200 < time.time():
                     button = Button(emoji=get_emoji("topgg"), label=random.choice(vote_button_texts), url="https://top.gg/bot/966695034340663367/vote")
                 elif random.randint(0, 20) == 0:
                     button = Button(label="Join our Discord!", url="https://discord.gg/staring")
@@ -1162,7 +1118,7 @@ async def info(message: discord.Interaction):
                              f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits['emoji']}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**countik** for TikTok TTS API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**")
 
     # add "last update" to footer if we are using git
-    if GITHUB_CHANNEL_ID:
+    if config.GITHUB_CHANNEL_ID:
         embedVar.timestamp = datetime.datetime.fromtimestamp(int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8")))
         embedVar.set_footer(text="Last code update:")
     await message.followup.send(embed=embedVar)
@@ -1170,9 +1126,6 @@ async def info(message: discord.Interaction):
 @bot.tree.command(description="Read text as TikTok's TTS woman")
 @discord.app_commands.describe(text="The text to be read! (300 characters max)")
 async def tiktok(message: discord.Interaction, text: str):
-    if message.user.id in BANNED_ID:
-        await message.response.send_message("You do not have access to that command.", ephemeral=True)
-        return
 
     if not message.channel.permissions_for(message.guild.me).attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
@@ -1371,7 +1324,7 @@ leave blank to reset.""", color=0x6E593C)
 @bot.tree.command(description="Get Daily cats")
 async def daily(message: discord.Interaction):
     suffix = ""
-    if WEBHOOK_VERIFY:
+    if config.WEBHOOK_VERIFY:
         suffix = "\nthere ARE cats for voting tho, check out `/vote`"
     await message.response.send_message("there is no daily cats why did you even try this" + suffix)
     await achemb(message, "daily", "send")
@@ -1511,7 +1464,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
 
     embedVar = await gen_inventory(message, person_id)
 
-    if DONOR_CHANNEL_ID:
+    if config.DONOR_CHANNEL_ID:
         embedVar.set_footer(text="👑 Make this pretty with /editprofile")
 
     await message.followup.send(embed=embedVar)
@@ -1663,7 +1616,7 @@ async def editprofile(message: discord.Interaction, color: Optional[str], provid
             user.color = match.group(0)
     if image:
         # reupload image
-        channeley = bot.get_channel(DONOR_CHANNEL_ID)
+        channeley = bot.get_channel(config.DONOR_CHANNEL_ID)
         file = await image.to_file()
         if not isinstance(channeley, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]):
             raise ValueError
@@ -2265,7 +2218,7 @@ async def toggle_reminders(interaction):
         await interaction.response.send_message("Vote reminders have been turned on.", ephemeral=True)
     user.save()
 
-if WEBHOOK_VERIFY:
+if config.WEBHOOK_VERIFY:
     @bot.tree.command(description="Vote for Cat Bot for free cats")
     async def vote(message: discord.Interaction):
         await message.response.defer()
@@ -3172,7 +3125,7 @@ async def claim_reward(user, channeley, type):
         pass
 
 async def recieve_vote(request):
-    if request.headers.get('authorization', '') != WEBHOOK_VERIFY:
+    if request.headers.get('authorization', '') != config.WEBHOOK_VERIFY:
         return web.Response(text="bad", status=403)
     request_json = await request.json()
 
@@ -3205,7 +3158,7 @@ async def on_command_error(ctx, error):
 
     # implement your own filtering i give up
 
-    if CRASH_MODE == "DM":
+    if config.CRASH_MODE == "DM":
         try:
             cont = ctx.guild.id
         except Exception:
@@ -3221,7 +3174,7 @@ async def on_command_error(ctx, error):
                 + "\n\nGuild: "
                 + str(cont)
         )
-    elif CRASH_MODE == "RAISE":
+    elif config.CRASH_MODE == "RAISE":
         raise
 
 async def setup(bot2):
@@ -3247,7 +3200,7 @@ async def setup(bot2):
     # copy the error logger
     bot2.tree.error = on_command_error
 
-    if WEBHOOK_VERIFY:
+    if config.WEBHOOK_VERIFY:
         app = web.Application()
         app.add_routes([web.post("/", recieve_vote)])
         vote_server = web.AppRunner(app)
