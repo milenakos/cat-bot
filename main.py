@@ -343,7 +343,7 @@ async def maintaince_loop():
             except Exception:
                 print("Posting failed.")
 
-    for channel in Channel.select().where((Channel.yet_to_spawn < time.time()) & (~Channel.cat)):
+    for channel in Channel.select().where((Channel.yet_to_spawn < time.time()) & (Channel.cat == 0)):
         await spawn_cat(str(channel.channel_id))
         await asyncio.sleep(0.1)
 
