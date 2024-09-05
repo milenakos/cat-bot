@@ -2776,6 +2776,8 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             if messager:
                 messager = round(messager / 3600, 2)
 
+        print("i got here :insane:")
+
         # the little place counter
         current = 1
         for i in result[:15]:
