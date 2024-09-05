@@ -2778,7 +2778,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 
         # the little place counter
         current = 1
-        for i in result:
+        for i in result[:15]:
             num = i.final_value
             if type == "Slowest":
                 num = round(num / 3600, 2)
