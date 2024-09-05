@@ -2703,7 +2703,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         if type == "Cats":
             unit = "cats"
             # dynamically generate sum expression
-            total_sum_expr = peewee.fn.SUM(sum(getattr(Profile, f"cat_{cat_type}") for cat_type in cattypes))
+            total_sum_expr = peewee.fn.SUM(sum(getattr(Profile, f"cat_{cat_type}").cast("BIGINT") for cat_type in cattypes))
 
             # run the query
             result = (Profile
