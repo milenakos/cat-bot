@@ -2708,7 +2708,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         messager = None
         interactor = None
         string = ""
-        if type == "Cat":
+        if type == "Cats":
             unit = "cats"
             # dynamically generate sum expression
             total_sum_expr = peewee.fn.SUM(sum(getattr(Profile, f"cat_{cat_type}") for cat_type in cattypes))
@@ -2721,7 +2721,6 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 .group_by(Profile.user_id)
                 .order_by(total_sum_expr.desc())
             ).execute()
-            print("mrbeast")
 
             # find rarest
             rarest = None
@@ -2776,8 +2775,6 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 interactor = round(interactor / 3600, 2)
             if messager:
                 messager = round(messager / 3600, 2)
-
-        print("i got here :insane:")
 
         # the little place counter
         current = 1
@@ -2846,7 +2843,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 
     # helpers! everybody loves helpers.
     async def slowlb(interaction):
-        await lb_handler(interaction, "Slowst")
+        await lb_handler(interaction, "Slowest")
 
     async def fastlb(interaction):
         await lb_handler(interaction, "Fastest")
