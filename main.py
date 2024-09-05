@@ -2764,7 +2764,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         interactor_placement = 0
         messager_placement = 0
         for index, position in enumerate(result):
-            if position.user_id == interaction.user:
+            if position.user_id == interaction.user.id:
                 interactor_placement = index
                 interactor = position.final_value
             if interaction.user != message.user and position.user_id == message.user.id:
