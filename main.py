@@ -351,7 +351,7 @@ async def maintaince_loop():
     errored_users = []
     processed_users = []
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
-    for user in User.select().where((User.vote_remind) & (User.vote_time_topgg + 43200 < time.time()) & (User.reminder_topgg_exists == 0)):
+    for user in User.select().where((User.vote_remind != 0) & (User.vote_time_topgg + 43200 < time.time()) & (User.reminder_topgg_exists == 0)):
         if user.user_id in processed_users:
             continue  # prevent double notifies
         await asyncio.sleep(0.1)
