@@ -1205,6 +1205,9 @@ async def changetimings(message: discord.Interaction, minimum_time: Optional[int
             await message.response.send_message("Sorry, but minimum time must be less than maximum time.", ephemeral=True)
             return
 
+        if maximum_time > 9223372036854775807:
+            await message.response.send_message(f"pls use values below 9223372036854775807 {get_emoji('staring_cat')}", ephemeral=True)
+
         channel.spawn_times_min = minimum_time
         channel.spawn_times_max = maximum_time
         channel.save()

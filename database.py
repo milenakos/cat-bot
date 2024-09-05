@@ -19,6 +19,18 @@ elif config.DB_TYPE == "POSTGRES":
 
 cattypes = ['Fine', 'Nice', 'Good', 'Rare', 'Wild', 'Baby', 'Epic', 'Sus', 'Brave', 'Rickroll', 'Reverse', 'Superior', 'TheTrashCell', 'Legendary', 'Mythic', '8bit', 'Corrupt', 'Professor', 'Divine', 'Real', 'Ultimate', 'eGirl']
 
+class CappedIntegerField(peewee.IntegerField):
+    MAX_VALUE = 2147483647
+    MIN_VALUE = -2147483648
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def db_value(self, value):
+        if value is not None:
+            return max(self.MIN_VALUE, min(self.MAX_VALUE, value))
+        return value
+
 class Profile(peewee.Model):
     user_id = peewee.BigIntegerField()
     guild_id = peewee.BigIntegerField(index=True)
@@ -46,7 +58,7 @@ class Profile(peewee.Model):
     # thanks chatgpt
     # cat types
     for cattype in cattypes:
-        locals()[f'cat_{cattype}'] = peewee.IntegerField(default=0)
+        locals()[f'cat_{cattype}'] = CappedIntegerField(default=0)
 
     # aches
     with open("config/aches.json", "r") as f:
