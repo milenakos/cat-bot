@@ -259,7 +259,7 @@ async def gift_autocomplete(interaction: discord.Interaction, current: str) -> l
     choices = []
     for choice in cattypes:
         if current.lower() in choice.lower() and user[f"cat_{choice}"] != 0:
-            choices.append(discord.app_commands.Choice(name=f"{choice} (x{user[f'cat_{choice}']}", value=choice))
+            choices.append(discord.app_commands.Choice(name=f"{choice} (x{user[f'cat_{choice}']})", value=choice))
     return choices[:25]
 
 # converts string to lowercase alphanumeric characters only
