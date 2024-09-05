@@ -2721,6 +2721,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 .group_by(Profile.user_id)
                 .order_by(total_sum_expr.desc())
             ).execute()
+            print("mrbeast")
 
             # find rarest
             rarest = None
@@ -2743,7 +2744,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 .select(Profile.user_id, Profile.time.alias("final_value"))
                 .where(Profile.guild_id == message.guild.id)
                 .having(Profile.time < 99999999999999)
-                .group_by(Profile.user_id)
+                .group_by(Profile.user_id, Profile.time)
                 .order_by(Profile.time.asc())
             ).execute()
         elif type == "Slowest":
@@ -2752,7 +2753,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 .select(Profile.user_id, Profile.timeslow.alias("final_value"))
                 .where(Profile.guild_id == message.guild.id)
                 .having(Profile.timeslow > 0)
-                .group_by(Profile.user_id)
+                .group_by(Profile.user_id, Profile.timeslow)
                 .order_by(Profile.timeslow.desc())
             ).execute()
         else:
