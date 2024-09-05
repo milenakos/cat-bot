@@ -2717,7 +2717,6 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             result = (Profile
                 .select(Profile.user_id, total_sum_expr.alias("final_value"))
                 .where(Profile.guild_id == message.guild.id)
-                .having(total_sum_expr > 0)
                 .group_by(Profile.user_id)
                 .order_by(total_sum_expr.desc())
             ).execute()
@@ -2743,7 +2742,6 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             result = (Profile
                 .select(Profile.user_id, Profile.time.alias("final_value"))
                 .where(Profile.guild_id == message.guild.id)
-                .having(Profile.time < 99999999999999)
                 .group_by(Profile.user_id, Profile.time)
                 .order_by(Profile.time.asc())
             ).execute()
@@ -2752,7 +2750,6 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             result = (Profile
                 .select(Profile.user_id, Profile.timeslow.alias("final_value"))
                 .where(Profile.guild_id == message.guild.id)
-                .having(Profile.timeslow > 0)
                 .group_by(Profile.user_id, Profile.timeslow)
                 .order_by(Profile.timeslow.desc())
             ).execute()
@@ -2782,7 +2779,13 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         for i in result[:15]:
             num = i.final_value
             if type == "Slowest":
+                if num == 0:
+                    return
                 num = round(num / 3600, 2)
+            elif type == "Cats" and num == 0:
+                return
+            elif type == "Fastest" and num == 99999999999999:
+                return
             string = string + f"{current}. {num} {unit}: <@{i.user_id}>\n"
             if message.user.id == i.user_id and current <= 5:
                 await achemb(message, "leader", "send")
