@@ -249,9 +249,18 @@ async def achemb(message, ach_id, send_type, author_string=None):
             await asyncio.sleep(2)
             await result.edit(embed=embed)
 
-# function to autocomplete cat_type choices for /gift, /giftcat, and /forcespawn, which also allows more than 25 options
+# function to autocomplete cat_type choices for /givecat, and /forcespawn, which also allows more than 25 options
 async def cat_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     return [discord.app_commands.Choice(name=choice, value=choice) for choice in cattypes if current.lower() in choice.lower()][:25]
+
+# function to autocomplete cat_type choices for /gift, which shows only cats user has and how many of them they have
+async def gift_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
+    user = get_profile(interaction.guild.id, interaction.user.id)
+    choices = []
+    for choice in cattypes:
+        if current.lower() in choice.lower() and user[f"cat_{choice}"] != 0:
+            choices.append(discord.app_commands.Choice(name=f"{choice} (x{user[f'cat_{choice}']}", value=choice))
+    return choices[:25]
 
 # converts string to lowercase alphanumeric characters only
 def alnum(string):
@@ -1689,7 +1698,7 @@ async def ping(message: discord.Interaction):
 @bot.tree.command(description="give cats now")
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(person="Whom to donate?", cat_type="im gonna airstrike your house from orbit", amount="And how much?")
-@discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
+@discord.app_commands.autocomplete(cat_type=gift_autocomplete)
 async def gift(message: discord.Interaction, person: discord.User, cat_type: str, amount: Optional[int]):
     if not amount:
         amount = 1  # default the amount to 1
