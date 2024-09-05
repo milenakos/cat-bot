@@ -21,7 +21,7 @@ cattypes = ['Fine', 'Nice', 'Good', 'Rare', 'Wild', 'Baby', 'Epic', 'Sus', 'Brav
 
 class Profile(peewee.Model):
     user_id = peewee.BigIntegerField()
-    guild_id = peewee.BigIntegerField()
+    guild_id = peewee.BigIntegerField(index=True)
 
     time = peewee.FloatField(default=99999999999999)  # fastest catch time
     timeslow = peewee.FloatField(default=0)  # slowest catch time

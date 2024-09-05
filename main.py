@@ -1,7 +1,6 @@
 import asyncio
 import base64
 import datetime
-import heapq
 import io
 import json
 import logging
@@ -16,6 +15,7 @@ from typing import Literal, Optional, Union
 import aiohttp
 import discord
 import discord_emoji
+import peewee
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
@@ -2704,108 +2704,86 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         if do_edit is None:
             do_edit = True
         await interaction.response.defer()
+
         messager = None
         interactor = None
-        main = False
-        fast = False
-        slow = False
-        if type == "fast":
-            fast = True
-        elif type == "slow":
-            slow = True
-        else:
-            main = True
-        the_dict = {}
-        rarest = -1
-        rarest_holder = {f"<@{bot.user.id}>": 0}
-        rarities = cattypes
-
-        if fast:
-            time_type = ""
-            default_value = "99999999999999"
-            title = "Time"
-            unit = "sec"
-        elif slow:
-            time_type = "slow"
-            default_value = "0"
-            title = "Slow"
-            unit = "h"
-        else:
-            default_value = "0"
-            title = ""
-            unit = "cats"
-        for i in Profile.select().where(Profile.guild_id == message.guild.id):
-            if not main:
-                if time_type == "slow":
-                    value = round(i.timeslow / 3600, 2)
-                    if value == 0:
-                        continue
-                else:
-                    value = round(i.time, 3)
-                    if value == 99999999999999:
-                        continue
-            else:
-                value = 0
-                for a in cattypes:
-                    try:
-                        b = i[f"cat_{a}"]
-                        value += b
-                        if b > 0 and rarities.index(a) > rarest:
-                            rarest = rarities.index(a)
-                            rarest_holder = {f"<@{i.user_id}>": b}
-                        elif b > 0 and rarities.index(a) == rarest:
-                            rarest_holder[f"<@{i.user_id}>"] = b
-                    except Exception:
-                        pass
-                if value == 0:
-                    continue
-            if str(value) != default_value:
-                # if it perfectly ends on .00, trim it
-                if value == int(value):
-                    value = int(value)
-
-                the_dict[f" {unit}: <@{i.user_id}>"] = value
-                if i == str(interaction.user.id):
-                    interactor = value
-                if i == str(message.user.id):
-                    messager = value
-
-        # some weird quick sorting thing (dont you just love when built-in libary you never heard of saves your ass)
-        heap = [(value, key) for key, value in the_dict.items()]
-        if fast:
-            largest = heapq.nsmallest(15, heap)
-        else:
-            largest = heapq.nlargest(15, heap)
-        largest = [(key, value) for value, key in largest]
         string = ""
+        if type == "Cat":
+            unit = "cats"
+            # dynamically generate sum expression
+            total_sum_expr = peewee.fn.SUM(sum(getattr(Profile, f"cat_{cat_type}") for cat_type in cattypes))
 
-        # find the placement of the person who ran the command and optionally the person who pressed the button
-        interactor_placement = 0
-        messager_placement = 0
-        if interactor:
-            for i in the_dict.values():
-                if (fast and interactor >= i) or (not fast and interactor <= i):
-                    interactor_placement += 1
-        if messager and message.user.id != interaction.user.id:
-            for i in the_dict.values():
-                if (fast and messager >= i) or (not fast and messager <= i):
-                    messager_placement += 1
+            # run the query
+            result = (Profile
+                .select(Profile.user_id, total_sum_expr.alias("final_value"))
+                .where(Profile.guild_id == message.guild.id)
+                .having(total_sum_expr > 0)
+                .group_by(Profile.user_id)
+                .order_by(total_sum_expr.desc())
+            ).execute()
 
-        # rarest cat display
-        if main:
-            catmoji = get_emoji(rarities[rarest].lower() + "cat")
-            if rarest != -1:
-                rarest_holder = list(dict(sorted(rarest_holder.items(), key=lambda item: item[1], reverse=True)).keys())
+            # find rarest
+            rarest = None
+            for i in cattypes[::-1]:
+                non_zero_count = Profile.select().where((Profile.guild_id == message.guild.id) & (Profile[f"cat_{i}"] != 0)).execute()
+                if len(non_zero_count) != 0:
+                    rarest = i
+                    rarest_holder = non_zero_count
+
+            if rarest:
+                catmoji = get_emoji(rarest.lower() + "cat")
+                rarest_holder = [f"<@{i.user_id}>" for i in rarest_holder]
                 joined = ", ".join(rarest_holder)
                 if len(rarest_holder) > 10:
                     joined = f"{len(rarest_holder)} people"
                 string = f"Rarest cat: {catmoji} ({joined}'s)\n"
+        elif type == "Fastest":
+            unit = "sec"
+            result = (Profile
+                .select(Profile.user_id, Profile.time.alias("final_value"))
+                .where(Profile.guild_id == message.guild.id)
+                .having(Profile.time < 99999999999999)
+                .group_by(Profile.user_id)
+                .order_by(Profile.time.asc())
+            ).execute()
+        elif type == "Slowest":
+            unit = "h"
+            result = (Profile
+                .select(Profile.user_id, Profile.timeslow.alias("final_value"))
+                .where(Profile.guild_id == message.guild.id)
+                .having(Profile.timeslow > 0)
+                .group_by(Profile.user_id)
+                .order_by(Profile.timeslow.desc())
+            ).execute()
+        else:
+            # qhar
+            return
+
+        # find the placement of the person who ran the command and optionally the person who pressed the button
+        interactor_placement = 0
+        messager_placement = 0
+        for index, position in enumerate(result):
+            if position.user_id == interaction.user:
+                interactor_placement = index
+                interactor = position.final_value
+            if interaction.user != message.user and position.user_id == message.user.id:
+                messager_placement = index
+                messager = position.final_value
+
+        if type == "Slowest":
+            if interactor:
+                interactor = round(interactor / 3600, 2)
+            if messager:
+                messager = round(messager / 3600, 2)
 
         # the little place counter
         current = 1
-        for i, num in largest:
-            string = string + str(current) + ". " + str(num) + i + "\n"
-            if str(message.user.id) in i and current <= 5:
+        for i in result:
+            num = i.final_value
+            if type == "Slowest":
+                num = round(num / 3600, 2)
+            string = string + f"{current}. {num} {unit}: <@{i.user_id}>\n"
+            if message.user.id == i.user_id and current <= 5:
                 await achemb(message, "leader", "send")
             current += 1
 
@@ -2827,24 +2805,24 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                     string = string + f"{interactor_placement}\\. {interactor} {unit}: <@{interaction.user.id}>\n"
 
         embedVar = discord.Embed(
-                title=f"{title} Leaderboards:", description=string, color=0x6E593C
+                title=f"{type} Leaderboards:", description=string.rstrip(), color=0x6E593C
         ).set_footer(text="☔ Get tons of cats /rain")
 
         # handle funny buttons
-        if not main:
-            button1 = Button(label="Cats", style=ButtonStyle.blurple)
-        else:
+        if type == "Cats":
             button1 = Button(label="Refresh", style=ButtonStyle.green)
-
-        if not fast:
-            button2 = Button(label="Fastest", style=ButtonStyle.blurple)
         else:
+            button1 = Button(label="Cats", style=ButtonStyle.blurple)
+
+        if type == "Fastest":
             button2 = Button(label="Refresh", style=ButtonStyle.green)
-
-        if not slow:
-            button3 = Button(label="Slowest", style=ButtonStyle.blurple)
         else:
+            button2 = Button(label="Fastest", style=ButtonStyle.blurple)
+
+        if type == "Slowest":
             button3 = Button(label="Refresh", style=ButtonStyle.green)
+        else:
+            button3 = Button(label="Slowest", style=ButtonStyle.blurple)
 
         button1.callback = catlb
         button2.callback = fastlb
@@ -2865,15 +2843,15 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 
     # helpers! everybody loves helpers.
     async def slowlb(interaction):
-        await lb_handler(interaction, "slow")
+        await lb_handler(interaction, "Slowst")
 
     async def fastlb(interaction):
-        await lb_handler(interaction, "fast")
+        await lb_handler(interaction, "Fastest")
 
     async def catlb(interaction):
-        await lb_handler(interaction, "main")
+        await lb_handler(interaction, "Cats")
 
-    await lb_handler(message, {"Fastest": "fast", "Slowest": "slow", "Cats": "main"}[leaderboard_type], False)
+    await lb_handler(message, leaderboard_type, False)
 
 @bot.tree.command(description="(ADMIN) Give cats to people")
 @discord.app_commands.default_permissions(manage_guild=True)
