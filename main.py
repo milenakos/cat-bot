@@ -2518,9 +2518,6 @@ async def achievements(message: discord.Interaction):
         minus_achs = f" + {minus_achs}"
     else:
         minus_achs = ""
-    embedVar = discord.Embed(
-            title="Your achievements:", description=f"{unlocked}/{total_achs}{minus_achs}", color=0x6E593C
-    )
 
     if unlocked >= 15:
         await achemb(message, "achiever", "send")
@@ -2573,18 +2570,6 @@ async def achievements(message: discord.Interaction):
                         newembed.add_field(name=icon + v["title"], value=v["description"], inline=True)
 
         return newembed
-
-    # handle button presses (either send hidden embed or laugh at user)
-    async def send_full(interaction):
-        nonlocal message
-        if interaction.user.id == message.user.id:
-            await interaction.response.send_message(embed=gen_new("Cat Hunt"), ephemeral=True, view=insane_view_generator("Cat Hunt"))
-        else:
-            await interaction.response.send_message(random.choice(funny), ephemeral=True)
-            clicker = get_profile(interaction.guild.id, interaction.user.id)
-            clicker.funny += 1
-            clicker.save()
-            await achemb(interaction, "curious", "send")
 
     # creates buttons at the bottom of the full view
     def insane_view_generator(category):
@@ -2658,13 +2643,8 @@ async def achievements(message: discord.Interaction):
             myview.add_item(j)
         return myview
 
-    button = Button(label="View all achievements", style=ButtonStyle.blurple)
-    button.callback = send_full
+    await message.response.send_message(embed=gen_new("Cat Hunt"), ephemeral=True, view=insane_view_generator("Cat Hunt"))
 
-    myview = View(timeout=3600)
-    myview.add_item(button)
-
-    await message.response.send_message(embed=embedVar, view=myview)
 
 async def catch(message: discord.Interaction, msg: discord.Message):
     if not message.channel.permissions_for(message.guild.me).attach_files:
