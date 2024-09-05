@@ -2729,6 +2729,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 if len(non_zero_count) != 0:
                     rarest = i
                     rarest_holder = non_zero_count
+                    break
 
             if rarest:
                 catmoji = get_emoji(rarest.lower() + "cat")
