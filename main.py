@@ -1005,7 +1005,7 @@ async def on_message(message):
             spaced += " " + i + "\n"
 
         intro = "async def go(message, bot):\n"
-        ending = "\ntry:\n bot.loop.create_task(go(message, bot))\nexcept Exception:\n await message.reply(traceback.format_exc())"
+        ending = "\ntry:\n bot.loop.create_task(go(message, bot))\nexcept Exception:\n bot.loop.create_task(message.reply(traceback.format_exc()))"
 
         complete = intro + spaced + ending
         exec(complete)
