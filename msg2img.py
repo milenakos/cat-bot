@@ -219,7 +219,8 @@ def msg2img(message, bot, sansgg=False):
         fill=ImageColor.getrgb("#A3A4AA"),
     )  # draw time
     imgByteArr = io.BytesIO()
-    new_img.save(imgByteArr)  # save result
+    new_img.save(imgByteArr, 'PNG')  # save result
+    imgByteArr.seek(0)
     return imgByteArr
 
 
