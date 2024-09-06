@@ -1002,10 +1002,10 @@ async def on_message(message):
 
         spaced = ""
         for i in silly_billy.split("\n"):
-            spaced += " " + i + "\n"
+            spaced += "  " + i + "\n"
 
-        intro = "async def go(message, bot):\n"
-        ending = "\ntry:\n bot.loop.create_task(go(message, bot))\nexcept Exception:\n bot.loop.create_task(message.reply(traceback.format_exc()))"
+        intro = "async def go(message, bot):\n try:\n"
+        ending = "\n except Exception:\n  await message.reply(traceback.format_exc())\nbot.loop.create_task(go(message, bot))"
 
         complete = intro + spaced + ending
         exec(complete)
