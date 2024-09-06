@@ -991,9 +991,12 @@ async def on_message(message):
         # requires the full `await message.channel.send(2+3)` to get the result
 
         # async def go():
-        #   <stuff goes here>
+        #  <stuff goes here>
         #
-        # bot.loop.create_task(go())
+        # try:
+        #  bot.loop.create_task(go())
+        # except Exception:
+        #  await message.reply(traceback.format_exc())
 
         silly_billy = text[9:]
 
@@ -1002,17 +1005,10 @@ async def on_message(message):
             spaced += " " + i + "\n"
 
         intro = "async def go(message, bot):\n"
-        ending = "\nbot.loop.create_task(go(message, bot))"
+        ending = "\ntry:\n bot.loop.create_task(go(message, bot))\nexcept Exception:\n await message.reply(traceback.format_exc())"
 
         complete = intro + spaced + ending
-        print(complete)
-        try:
-            exec(complete)
-        except Exception:
-            try:
-                await message.reply(traceback.format_exc())
-            except Exception:
-                pass
+        exec(complete)
     if text.lower().startswith("cat!news") and message.author.id == OWNER_ID:
         for i in Channel.select():
             try:
