@@ -1037,7 +1037,7 @@ async def on_message(message):
         if stuff[2] == "None":
             user.custom = ""
         else:
-            user.custom = stuff[2]
+            user.custom = " ".join(stuff[2:])
         user.save()
         emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
         await message.reply("success")
