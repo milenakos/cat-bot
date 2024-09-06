@@ -1,4 +1,5 @@
-# Cat Bot [![Discord Server](https://img.shields.io/discord/966586000417619998?label=discord&logo=discord)](https://discord.gg/cat-stand-966586000417619998)
+# ![Cat Bot PFP](https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png&h=25) Cat Bot [![top.gg](https://top.gg/api/widget/servers/966695034340663367.svg?noavatar=true)](https://top.gg/bot/966695034340663367) [![Discord Server](https://img.shields.io/discord/966586000417619998?label=discord&logo=discord)](https://discord.gg/cat-stand-966586000417619998)
+
 Discord Cat Bot Source Code
 
 # Setup
@@ -7,8 +8,9 @@ Discord Cat Bot Source Code
 
 - Python 3
 - Git (optional)
+- PostgreSQL (optional)
 
-----
+## Instructions
 
 1. Clone the repository. You can use green "Code" button at the top or a git command:
 
@@ -20,9 +22,9 @@ Discord Cat Bot Source Code
 
 3. You will need to upload all needed emojis to Discord's App Emoji in the Dev Portal.
 
-If they aren't found there, they will be replaced with a placeholder (this breaks catching).
+   If they aren't found there, they will be replaced with a placeholder (this breaks catching).
 
-All emojis can be downloaded [here](https://github.com/staring-cat/emojis/releases/latest/download/emojis.zip).
+   All emojis can be downloaded [here](https://github.com/staring-cat/emojis/releases/latest/download/emojis.zip).
 
 4. Go inside of the `config.py` file and configure everything for your liking.
 
@@ -30,7 +32,7 @@ All emojis can be downloaded [here](https://github.com/staring-cat/emojis/releas
 
 6. Done!
 
-# Customisation
+# Post-Setup Customization
 Most stuff can be customised by just using CTRL+F in main.py, but im gonna explain some stuff you might be intereted in.
 
 ## How to add cat types
@@ -38,14 +40,14 @@ Add your cat type name to `type_dict` dictionary near the top of the main.py fil
 
 > **Note**
 >
-> Emojis are automatically grub from your guild, you will need to upload the emoji with a name of:
+> You will need to upload an app emoji with the name of:
 >
 > `<your cat name all lowercase> + cat`
 >
 > Example: `supercat`
 
 ## How to give custom cats
-Identical to the last section, you will have to add an emoji to your guild.
+Identical to the last section, you will have to add an emoji.
 
 Then, run:
 
