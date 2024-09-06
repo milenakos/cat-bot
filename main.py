@@ -2771,12 +2771,12 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         for i in result[:15]:
             num = i.final_value
             if type == "Slowest":
-                if num == 0:
+                if num <= 0:
                     return
                 num = round(num / 3600, 2)
-            elif type == "Cats" and num == 0:
+            elif type == "Cats" and num <= 0:
                 return
-            elif type == "Fastest" and num == 99999999999999:
+            elif type == "Fastest" and num >= 99999999999999:
                 return
             string = string + f"{current}. {num} {unit}: <@{i.user_id}>\n"
             if message.user.id == i.user_id and current <= 5:
