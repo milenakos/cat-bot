@@ -2659,9 +2659,13 @@ async def catch(message: discord.Interaction, msg: discord.Message):
     event_loop = asyncio.get_event_loop()
     result = await event_loop.run_in_executor(None, msg2img.msg2img, msg, bot, True)
 
-    file = discord.File(fp=result, filename="generated.png")
+    with io.BytesIO() as f:
+        result.save(f, format="PNG")
+        f.seek(0)
+        file = discord.File(fp=f, filename="generated.png")
+        await message.followup.send("cought in 4k", file=file)
+
     catchcooldown[message.user.id] = time.time()
-    await message.followup.send("cought in 4k", file=file)
 
     await achemb(message, "4k", "send")
 

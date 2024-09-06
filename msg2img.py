@@ -1,4 +1,3 @@
-import io
 import os
 
 import requests
@@ -218,10 +217,7 @@ def msg2img(message, bot, sansgg=False):
         font=font3,
         fill=ImageColor.getrgb("#A3A4AA"),
     )  # draw time
-    imgByteArr = io.BytesIO()
-    new_img.save(imgByteArr, 'PNG')  # save result
-    imgByteArr.seek(0)
-    return imgByteArr
+    return new_img
 
 
 # italic          https://discord.com/assets/7f18f1d5ab6ded7cf71bbc1f907ee3d4.woff2
