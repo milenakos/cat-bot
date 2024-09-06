@@ -176,16 +176,13 @@ def get_profile(guild_id, user_id):
         )
 
 
-async def migrate_emoji(emoji):
-    data = await emoji.read()
-    await bot.create_application_emoji(name=emoji.name, image=data)
-
 def get_emoji(name):
     global emojis
     if name in emojis.keys():
         return emojis[name]
     else:
         return "🔳"
+
 
 # this is some common code which is run whether someone gets an achievement
 async def achemb(message, ach_id, send_type, author_string=None):
