@@ -185,16 +185,7 @@ def get_emoji(name):
     if name in emojis.keys():
         return emojis[name]
     else:
-        try:
-            result = discord.utils.get(bot.get_guild(config.GUILD_ID).emojis, name=name)
-            if not result:
-                raise Exception
-            if do_save_emojis:
-                emojis[name] = str(result)
-                asyncio.run_coroutine_threadsafe(migrate_emoji(result), bot.loop)
-            return result
-        except Exception:
-            return "🔳"
+        return "🔳"
 
 # this is some common code which is run whether someone gets an achievement
 async def achemb(message, ach_id, send_type, author_string=None):

@@ -18,14 +18,17 @@ Discord Cat Bot Source Code
 
    `pip install -r requirements.txt`
 
-3. Go inside of the `config.py` file and configure everything for your liking.
-> **Note**
->
-> You will need to create a guild and upload all emojis to that guild, making sure your bot can view the guild. You can download all the emojis [here]( https://github.com/staring-cat/emojis/releases/latest/download/emojis.zip)
+3. You will need to upload all needed emojis to Discord's App Emoji in the Dev Portal.
 
-4. Run the bot with `python bot.py`
+If they aren't found there, they will be replaced with a placeholder (this breaks catching).
 
-5. Done!
+All emojis can be downloaded [here](https://github.com/staring-cat/emojis/releases/latest/download/emojis.zip).
+
+4. Go inside of the `config.py` file and configure everything for your liking.
+
+5. Run the bot with `python bot.py`
+
+6. Done!
 
 # Customisation
 Most stuff can be customised by just using CTRL+F in main.py, but im gonna explain some stuff you might be intereted in.
