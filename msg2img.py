@@ -1,3 +1,4 @@
+import io
 import os
 
 import requests
@@ -19,7 +20,6 @@ def msg2img(message, bot, sansgg=False):
         text = message.system_content
     if message.mention_everyone:
         is_pinged = True
-    save_to = "generated.png"
     try:
         nick = message.author.nick
     except Exception:
@@ -146,7 +146,7 @@ def msg2img(message, bot, sansgg=False):
         pfp = requests.get(message.author.display_avatar.url, stream=True).raw
         im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
     except Exception: # if the pfp is bit too silly
-        new_url = "https://cdn.discordapp.com/avatars/966695034340663367/d9b60a653cb3c6f95baedf790723ce41.png?size=1024"
+        new_url = "https://cdn.discordapp.com/embed/avatars/0.png"
         pfp = requests.get(new_url, stream=True).raw
         im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
 
@@ -218,7 +218,9 @@ def msg2img(message, bot, sansgg=False):
         font=font3,
         fill=ImageColor.getrgb("#A3A4AA"),
     )  # draw time
-    new_img.save(save_to)  # save result
+    imgByteArr = io.BytesIO()
+    new_img.save(imgByteArr)  # save result
+    return imgByteArr
 
 
 # italic          https://discord.com/assets/7f18f1d5ab6ded7cf71bbc1f907ee3d4.woff2

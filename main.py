@@ -23,7 +23,7 @@ from discord.ui import Button, View
 
 import config
 import msg2img
-from database import db, Profile, User, Channel
+from database import Channel, Profile, User, db
 
 logging.basicConfig(level=logging.INFO)
 
@@ -2655,8 +2655,11 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
         return
     await message.response.defer()
-    msg2img.msg2img(msg, bot, True)
-    file = discord.File("generated.png", filename="generated.png")
+
+    event_loop = asyncio.get_event_loop()
+    result = await event_loop.run_in_executor(None, msg2img.msg2img, msg, bot, True)
+
+    file = discord.File(fp=result, filename="generated.png")
     catchcooldown[message.user.id] = time.time()
     await message.followup.send("cought in 4k", file=file)
 
