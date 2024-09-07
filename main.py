@@ -2757,6 +2757,17 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             if messager:
                 messager = round(messager / 3600, 2)
 
+        # dont show placements if they arent defined
+        if interactor and (type == "Cats" or type == "Slowest") and interactor <= 0:
+            interactor_placement = 0
+        elif interactor and type == "Fastest" and interactor >= 99999999999999:
+            interactor_placement = 0
+
+        if messager and (type == "Cats" or type == "Slowest") and messager <= 0:
+            messager_placement = 0
+        elif messager and type == "Fastest" and messager >= 99999999999999:
+            messager_placement = 0
+
         # the little place counter
         current = 1
         for i in result[:15]:
