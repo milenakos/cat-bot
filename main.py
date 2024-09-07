@@ -1277,6 +1277,7 @@ async def changemessage(message: discord.Interaction):
 
         if interaction.user != caller:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            await achemb(interaction, "curious", "send")
             user = get_profile(interaction.guild.id, interaction.user.id)
             user.funny += 1
             user.save()
@@ -1289,6 +1290,7 @@ async def changemessage(message: discord.Interaction):
 
         if interaction.user != caller:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            await achemb(interaction, "curious", "send")
             user = get_profile(interaction.guild.id, interaction.user.id)
             user.funny += 1
             user.save()
@@ -1497,6 +1499,7 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
         # i LOOOOVE checks
         if message.user.id != interaction.user.id:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            await achemb(interaction, "curious", "send")
             profile = get_profile(interaction.guild.id, interaction.user.id)
             profile.funny += 1
             profile.save()
@@ -1737,6 +1740,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     await interaction.followup.send(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
                 else:
                     await interaction.response.send_message(random.choice(funny), ephemeral=True)
+                    await achemb(interaction, "curious", "send")
                     clicker = get_profile(interaction.guild.id, interaction.user.id)
                     clicker.funny += 1
                     clicker.save()
@@ -1752,6 +1756,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     await interaction.followup.send(f"You evaded the tax of {tax_amount} Fine cats.")
                 else:
                     await interaction.followup.send(random.choice(funny), ephemeral=True)
+                    await achemb(interaction, "curious", "send")
                     clicker = get_profile(interaction.guild.id, interaction.user.id)
                     clicker.funny += 1
                     clicker.save()
@@ -1816,6 +1821,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, blackhole
         if interaction.user != person1 and interaction.user != person2:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            await achemb(interaction, "curious", "send")
             clicker = get_profile(interaction.guild.id, interaction.user.id)
             clicker.funny += 1
             clicker.save()
@@ -1834,6 +1840,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, person1value, person2value
         if interaction.user != person1 and interaction.user != person2:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            await achemb(interaction, "curious", "send")
             clicker = get_profile(interaction.guild.id, interaction.user.id)
             clicker.funny += 1
             clicker.save()
@@ -1920,6 +1927,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
         if interaction.user != person1 and interaction.user != person2:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
+            await achemb(interaction, "curious", "send")
             clicker = get_profile(interaction.guild.id, interaction.user.id)
             clicker.funny += 1
             clicker.save()
@@ -3048,6 +3056,9 @@ async def nuke(message: discord.Interaction):
         else:
             await interaction.response.send_message(random.choice(funny), ephemeral=True)
             await achemb(interaction, "curious", "send")
+            clicker = get_profile(interaction.guild.id, interaction.user.id)
+            clicker.funny += 1
+            clicker.save()
 
     view = await gen(counter)
     await message.response.send_message(warning_text, view=view)
