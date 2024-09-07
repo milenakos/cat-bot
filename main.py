@@ -1108,6 +1108,8 @@ async def info(message: discord.Interaction):
         await message.response.send_message("credits not yet ready! this is a very rare error, congrats.", ephemeral=True)
         return
 
+    await message.response.defer()
+
     embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description="[Join support server](https://discord.gg/staring)\n[GitHub Page](https://github.com/milenakos/cat-bot)\n\n" + \
                              f"Bot made by {gen_credits['author']}\nWith contributions by {gen_credits['contrib']}.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n" + \
                              f"Thanks to:\n**pathologicals** for the cat image\n**{gen_credits['emoji']}** for getting troh to add cat as an emoji\n**thecatapi.com** for random cats API\n**countik** for TikTok TTS API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**")
@@ -1116,11 +1118,12 @@ async def info(message: discord.Interaction):
     if config.GITHUB_CHANNEL_ID:
         embedVar.timestamp = datetime.datetime.fromtimestamp(int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8")))
         embedVar.set_footer(text="Last code update:")
-    await message.response.send_message(embed=embedVar)
+    await message.followup.send(embed=embedVar)
 
 @bot.tree.command(description="Read text as TikTok's TTS woman")
 @discord.app_commands.describe(text="The text to be read! (300 characters max)")
 async def tiktok(message: discord.Interaction, text: str):
+
     if not message.channel.permissions_for(message.guild.me).attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
@@ -1456,12 +1459,15 @@ async def gen_inventory(message, person_id):
 @discord.app_commands.rename(person_id='user')
 @discord.app_commands.describe(person_id="Person to view the inventory of!")
 async def inventory(message: discord.Interaction, person_id: Optional[discord.User]):
+    await message.response.defer()
+
+
     embedVar = await gen_inventory(message, person_id)
 
     if config.DONOR_CHANNEL_ID:
         embedVar.set_footer(text="👑 Make this pretty with /editprofile")
 
-    await message.response.send_message(embed=embedVar)
+    await message.followup.send(embed=embedVar)
 
 
 @bot.tree.command(description="its raining cats")
@@ -1623,6 +1629,8 @@ async def editprofile(message: discord.Interaction, color: Optional[str], provid
 
 @bot.tree.command(description="I like fortnite")
 async def battlepass(message: discord.Interaction):
+    await message.response.defer()
+
     user = get_profile(message.guild.id, message.user.id)
 
     current_level = user.battlepass
@@ -1662,7 +1670,7 @@ async def battlepass(message: discord.Interaction):
     embedVar.add_field(name=f"{current} Level {current_level + 1}", value=battlelevel(battle, current_level, True), inline=False)
     embedVar.add_field(name=f"Level {current_level + 2}", value=battlelevel(battle, current_level + 1), inline=False)
 
-    await message.response.send_message(embed=embedVar)
+    await message.followup.send(embed=embedVar)
 
 @bot.tree.command(description="Pong")
 async def ping(message: discord.Interaction):
@@ -1716,6 +1724,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
 
             async def pay(interaction):
                 if interaction.user.id == message.user.id:
+                    await interaction.response.defer()
                     try:
                         await interaction.edit_original_response(view=None)
                     except Exception:
@@ -1725,7 +1734,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     user.save()
                     catbot.save()
                     await achemb(message, "good_citizen", "send")
-                    await interaction.response.send_message(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
+                    await interaction.followup.send(f"Tax of {tax_amount} Fine cats was withdrawn from your account!")
                 else:
                     await interaction.response.send_message(random.choice(funny), ephemeral=True)
                     clicker = get_profile(interaction.guild.id, interaction.user.id)
@@ -1734,14 +1743,15 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
 
             async def evade(interaction):
                 if interaction.user.id == message.user.id:
+                    await interaction.response.defer()
                     try:
                         await interaction.edit_original_response(view=None)
                     except Exception:
                         pass
                     await achemb(message, "secret", "send")
-                    await interaction.response.send_message(f"You evaded the tax of {tax_amount} Fine cats.")
+                    await interaction.followup.send(f"You evaded the tax of {tax_amount} Fine cats.")
                 else:
-                    await interaction.response.send_message(random.choice(funny), ephemeral=True)
+                    await interaction.followup.send(random.choice(funny), ephemeral=True)
                     clicker = get_profile(interaction.guild.id, interaction.user.id)
                     clicker.funny += 1
                     clicker.save()
@@ -2211,6 +2221,8 @@ async def toggle_reminders(interaction):
 if config.WEBHOOK_VERIFY:
     @bot.tree.command(description="Vote for Cat Bot for free cats")
     async def vote(message: discord.Interaction):
+        await message.response.defer()
+
         current_day = datetime.datetime.utcnow().isoweekday()
         user, _ = User.get_or_create(user_id=message.user.id)
 
@@ -2244,7 +2256,7 @@ if config.WEBHOOK_VERIFY:
         view.add_item(button)
 
         embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg every 12 hours to recieve mystery cats.\nIf bot didn't automatically detect your vote, just say `i voted`.", color=0x6E593C)
-        await message.response.send_message(embed=embedVar, view=view)
+        await message.followup.send(embed=embedVar, view=view)
 
 
 @bot.tree.command(description="get a super accurate rating of something")
@@ -2572,6 +2584,7 @@ async def achievements(message: discord.Interaction):
         #   buttons_list[-1].callback = lambdas_list[-1]
 
         async def callback_hell(interaction, thing):
+            await interaction.response.defer()
             try:
                 await interaction.edit_original_response(embed=gen_new(thing), view=insane_view_generator(thing))
             except Exception:
@@ -2673,6 +2686,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         nonlocal message
         if do_edit is None:
             do_edit = True
+        await interaction.response.defer()
 
         messager = None
         interactor = None
@@ -2823,7 +2837,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 raise Exception
             await interaction.edit_original_response(embed=embedVar, view=myview)
         except Exception:
-            await interaction.response.send_message(embed=embedVar, view=myview)
+            await interaction.followup.send(embed=embedVar, view=myview)
 
     # helpers! everybody loves helpers.
     async def slowlb(interaction):
