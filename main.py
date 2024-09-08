@@ -2333,7 +2333,7 @@ async def cat_fact(message: discord.Interaction):
 
 async def light_market(message):
     cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
-                      [7, "Superior"], [5, "Legendary"], [3, "8bit"], [4, "Professor"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"]]
+                      [7, "Superior"], [5, "Legendary"], [3, "8bit"], [4, "Divine"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"]]
     user = get_profile(message.guild.id, message.user.id)
     if user.cataine_active < int(time.time()):
         count = user.cataine_week
@@ -2398,7 +2398,7 @@ async def light_market(message):
 
 async def dark_market(message):
     cataine_prices = [[10, "Fine"], [30, "Fine"], [20, "Good"], [15, "Rare"], [20, "Wild"], [10, "Epic"], [20, "Sus"], [15, "Rickroll"],
-                      [7, "Superior"], [5, "Legendary"], [3, "8bit"], [4, "Professor"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"], [100, "eGirl"]]
+                      [7, "Superior"], [5, "Legendary"], [3, "8bit"], [4, "Divine"], [3, "Real"], [2, "Ultimate"], [1, "eGirl"], [100, "eGirl"]]
     user = get_profile(message.guild.id, message.user.id)
     if user.cataine_active < int(time.time()):
         level = user.dark_market_level
