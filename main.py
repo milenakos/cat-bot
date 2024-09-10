@@ -789,10 +789,6 @@ async def on_message(message):
                     # shill rains
                     suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
 
-                elif random.randint(0, 7) == 0:
-                    # shill donating
-                    suffix_string += f"\n👑 donate to cat bot and get cool perks: </donate:{DONATE_ID}>"
-
                 if channel.cought:
                     coughstring = channel.cought
                 elif le_emoji == "Corrupt":
@@ -1459,13 +1455,7 @@ async def gen_inventory(message, person_id):
 @discord.app_commands.describe(person_id="Person to view the inventory of!")
 async def inventory(message: discord.Interaction, person_id: Optional[discord.User]):
     await message.response.defer()
-
-
     embedVar = await gen_inventory(message, person_id)
-
-    if config.DONOR_CHANNEL_ID:
-        embedVar.set_footer(text="👑 Make this pretty with /editprofile")
-
     await message.followup.send(embed=embedVar)
 
 
