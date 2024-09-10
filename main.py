@@ -275,7 +275,7 @@ async def spawn_cat(ch_id, localcat=None):
         thread_id = channel.thread_mappings
     except Exception:
         channeley = bot.get_channel(int(ch_id))
-        if not isinstance(channeley, Union[discord.TextChannel, discord.VoiceChannel]):
+        if not isinstance(channeley, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel]):
             return
         with open("images/cat.png", "rb") as f:
             try:
@@ -377,7 +377,7 @@ async def maintaince_loop():
         User.bulk_update(errored_users, fields=[User.vote_remind], batch_size=50)
 
     backupchannel = bot.get_channel(config.BACKUP_ID)
-    if not isinstance(backupchannel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]):
+    if not isinstance(backupchannel, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel, discord.Thread]):
         raise ValueError
     await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.")
 
@@ -1013,7 +1013,7 @@ async def on_message(message):
         for i in Channel.select():
             try:
                 channeley = bot.get_channel(int(i.channel_id))
-                if not isinstance(channeley, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]):
+                if not isinstance(channeley, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel, discord.Thread]):
                     continue
                 if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
                     await channeley.send(text[8:])
@@ -1544,7 +1544,7 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
             await interaction.response.send_message(f":x: Missing Permissions! Please give me the following: - {'\n- '.join(missing_perms)}]\nHint: try setting channel permissions if server ones don't work.")
             return
 
-        if not isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]):
+        if not isinstance(message.channel, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel, discord.Thread]):
             return
 
         type_mappings = {"shortrain": 120, "mediumrain": 600, "longrain": 1200}
@@ -1618,7 +1618,7 @@ async def editprofile(message: discord.Interaction, color: Optional[str], provid
         # reupload image
         channeley = bot.get_channel(config.DONOR_CHANNEL_ID)
         file = await image.to_file()
-        if not isinstance(channeley, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]):
+        if not isinstance(channeley, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel, discord.Thread]):
             raise ValueError
         msg = await channeley.send(file=file)
         user.image = msg.attachments[0].url
@@ -1770,7 +1770,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
 
             myview.add_item(button)
             myview.add_item(button2)
-            if not isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]):
+            if not isinstance(message.channel, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel, discord.Thread]):
                 return
             try:
                 await message.channel.send(embed=embed, view=myview)
@@ -2310,7 +2310,7 @@ async def cat_fact(message: discord.Interaction):
                 else:
                     await message.followup.send("failed to fetch a cat fact.")
 
-    if not isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]):
+    if not isinstance(message.channel, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel, discord.Thread]):
         return
 
     user = get_profile(message.guild.id, message.user.id)
@@ -2908,7 +2908,7 @@ async def setup_channel(message: discord.Interaction):
                     return
                 wh = await parent.create_webhook(name="Cat Bot", avatar=f.read())
                 Channel.create(channel_id=message.channel.id, webhook=wh.url, thread_mappings=True)
-            elif isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel]):
+            elif isinstance(message.channel, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel]):
                 wh = await message.channel.create_webhook(name="Cat Bot", avatar=f.read())
                 Channel.create(channel_id=message.channel.id, webhook=wh.url, thread_mappings=False)
         except Exception:
@@ -2934,7 +2934,7 @@ async def fake(message: discord.Interaction):
     file = discord.File("images/australian cat.png", filename="australian cat.png")
     icon = get_emoji("egirlcat")
     perms: discord.Permissions = message.channel.permissions_for(message.guild.me)
-    if not isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]):
+    if not isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel, discord.StageChannel, discord.Thread]):
         return
     fakecooldown[message.user.id] = time.time()
     try:
@@ -3121,7 +3121,7 @@ async def recieve_vote(request):
 
     try:
         channeley = bot.get_channel(user.vote_channel)
-        if not isinstance(channeley, Union[discord.TextChannel, discord.VoiceChannel, discord.Thread]) or not channeley.guild:
+        if not isinstance(channeley, Union[discord.TextChannel, discord.VoiceChannel, discord.StageChannel, discord.Thread]) or not channeley.guild:
             raise Exception
     except Exception:
         pending_votes.append([user.user_id, type])
