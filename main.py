@@ -2894,15 +2894,15 @@ async def setup_channel(message: discord.Interaction):
 
             if isinstance(message.channel, discord.Thread):
                 parent = bot.get_channel(message.channel.parent_id)
-                if not isinstance(parent, discord.TextChannel):
-                    return
+                if not isinstance(parent, Union[discord.TextChannel, discord.ForumChannel]):
+                    raise Exception
                 wh = await parent.create_webhook(name="Cat Bot", avatar=f.read())
                 Channel.create(channel_id=message.channel.id, webhook=wh.url, thread_mappings=True)
             elif isinstance(message.channel, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel]):
                 wh = await message.channel.create_webhook(name="Cat Bot", avatar=f.read())
                 Channel.create(channel_id=message.channel.id, webhook=wh.url, thread_mappings=False)
         except Exception:
-            pass
+            await message.response.send_message("this channel gives me bad vibes.")
 
     await spawn_cat(str(message.channel.id))
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
