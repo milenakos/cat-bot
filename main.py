@@ -329,8 +329,8 @@ async def maintaince_loop():
         activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
     )
 
-    if config.TOP_GG_TOKEN:
-        async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession() as session:
+        if config.TOP_GG_TOKEN:
             # send server count to top.gg
             try:
                 await session.post(f'https://top.gg/api/bots/{bot.user.id}/stats',
@@ -338,7 +338,17 @@ async def maintaince_loop():
                                     json={"server_count": len(bot.guilds), "shard_count": len(bot.shards)},
                                     timeout=15)
             except Exception:
-                print("Posting failed.")
+                print("Posting to top.gg failed.")
+
+        if config.BOTS_GG_TOKEN:
+            # send server count to bots.gg
+            try:
+                await session.post(f'https://discord.bots.gg/api/v1/bots/{bot.user.id}/stats',
+                                    headers={"Authorization": config.BOTS_GG_TOKEN},
+                                    json={"guildCount": len(bot.guilds), "shardCount": len(bot.shards)},
+                                    timeout=15)
+            except Exception:
+                print("Posting to bots.gg failed.")
 
     for channel in Channel.select().where((Channel.yet_to_spawn < time.time()) & (Channel.cat == 0)):
         await spawn_cat(str(channel.channel_id))
