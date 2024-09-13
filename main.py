@@ -1005,21 +1005,22 @@ async def on_message(message):
                         color=0x007F0E
                     ).set_author(name="Cattlepass level!", icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png")
 
-                battlelevel = battle["levels"][user.battlepass]
-                if battlelevel["req"] == "catch_fast" and do_time and time_caught < battlelevel["req_data"]:
-                    embed = do_reward(battlelevel)
-                if battlelevel["req"] == "catch":
-                    user.progress += 1
-                    if user.progress == battlelevel["req_data"]:
+                if user.battlepass != len(battle["levels"]):
+                    battlelevel = battle["levels"][user.battlepass]
+                    if battlelevel["req"] == "catch_fast" and do_time and time_caught < battlelevel["req_data"]:
                         embed = do_reward(battlelevel)
-                if battlelevel["req"] == "catch_type" and le_emoji == battlelevel["req_data"]:
-                    embed = do_reward(battlelevel)
+                    if battlelevel["req"] == "catch":
+                        user.progress += 1
+                        if user.progress == battlelevel["req_data"]:
+                            embed = do_reward(battlelevel)
+                    if battlelevel["req"] == "catch_type" and le_emoji == battlelevel["req_data"]:
+                        embed = do_reward(battlelevel)
 
-                try:
-                    if embed and perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                        await message.channel.send(embed=embed)
-                except Exception:
-                    pass
+                    try:
+                        if embed and perms.send_messages and (not message.thread or perms.send_messages_in_threads):
+                            await message.channel.send(embed=embed)
+                    except Exception:
+                        pass
             except Exception:
                 raise
             finally:
