@@ -1025,9 +1025,9 @@ async def on_message(message):
             finally:
                 user.save()
                 channel.save()
+                bot.loop.create_task(battlepass_finale(message, user))
                 await asyncio.sleep(decided_time)
                 await spawn_cat(str(message.channel.id))
-                await battlepass_finale(message, user)
 
     # those are "owner" commands which are not really interesting
     if text.lower().startswith("cat!sweep") and message.author.id == OWNER_ID:
