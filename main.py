@@ -859,43 +859,21 @@ async def on_message(message):
 
                 user[f"cat_{le_emoji}"] += silly_amount
                 new_count = user[f"cat_{le_emoji}"]
-                # i love dpy
+
                 if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
                     try:
+                        kwargs = {}
                         if channel.thread_mappings:
-                            if view:
-                                await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
-                                                                .replace("{emoji}", str(icon))
-                                                                .replace("{type}", le_emoji)
-                                                                .replace("{count}", str(new_count))
-                                                                .replace("{time}", caught_time[:-1]) + suffix_string,
-                                                    view=view,
-                                                    thread=discord.Object(message.channel.id),
-                                                    allowed_mentions=discord.AllowedMentions.none())
-                            else:
-                                await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
-                                                                .replace("{emoji}", str(icon))
-                                                                .replace("{type}", le_emoji)
-                                                                .replace("{count}", str(new_count))
-                                                                .replace("{time}", caught_time[:-1]) + suffix_string,
-                                                    thread=discord.Object(message.channel.id),
-                                                    allowed_mentions=discord.AllowedMentions.none())
-                        else:
-                            if view:
-                                await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
-                                                                .replace("{emoji}", str(icon))
-                                                                .replace("{type}", le_emoji)
-                                                                .replace("{count}", str(new_count))
-                                                                .replace("{time}", caught_time[:-1]) + suffix_string,
-                                                    view=view,
-                                                    allowed_mentions=discord.AllowedMentions.none())
-                            else:
-                                await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
-                                                                .replace("{emoji}", str(icon))
-                                                                .replace("{type}", le_emoji)
-                                                                .replace("{count}", str(new_count))
-                                                                .replace("{time}", caught_time[:-1]) + suffix_string,
-                                                    allowed_mentions=discord.AllowedMentions.none())
+                            kwargs["thread"] = discord.Object(message.channel.id)
+                        if view:
+                            kwargs["view"] = view
+
+                        await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
+                                                            .replace("{emoji}", str(icon))
+                                                            .replace("{type}", le_emoji)
+                                                            .replace("{count}", str(new_count))
+                                                            .replace("{time}", caught_time[:-1]) + suffix_string,
+                                                **kwargs)
                     except Exception:
                         pass
 
@@ -1175,10 +1153,8 @@ async def preventcatch(message: discord.Interaction, person: discord.User, timeo
     timestamp = round(time.time()) + timeout
     user.timeout = timestamp
     user.save()
-    if timeout > 0:
-        await message.response.send_message(f"{person.name.replace("_", r"\_")} can't catch cats until <t:{timestamp}:R>")
-    else:
-        await message.response.send_message(f"{person.name.replace("_", r"\_")} can now catch cats again.")
+    await message.response.send_message(person.name.replace("_", r"\_") + (f" can't catch cats until <t:{timestamp}:R>" if timeout > 0 else " can now catch cats again."))
+
 
 @bot.tree.command(description="(ADMIN) Change the cat appear timings")
 @discord.app_commands.default_permissions(manage_guild=True)
@@ -1251,10 +1227,7 @@ async def changemessage(message: discord.Interaction):
             input_value = self.input.value
             # check if all placeholders are there
             if input_value != "":
-                if self.type == "Appear":
-                    check = ["{emoji}", "{type}"]
-                else:
-                    check = ["{emoji}", "{type}", "{username}", "{count}", "{time}"]
+                check = ["{emoji}", "{type}"] + (["{username}", "{count}", "{time}"] if self.type == "Cought" else [])
                 for i in check:
                     if i not in input_value:
                         await interaction.response.send_message(f"nuh uh! you are missing `{i}`.", ephemeral=True)
@@ -1368,19 +1341,13 @@ async def gen_inventory(message, person_id):
             else:
                 unlocked += 1
     total_achs = len(ach_list) - minus_achs_count
-    if minus_achs != 0:
-        minus_achs = f" + {minus_achs}"
-    else:
-        minus_achs = ""
+    minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
 
     # now we count time i think
     catch_time = person.time
     is_empty = True
 
-    if catch_time >= 99999999999999:
-        catch_time = "never"
-    else:
-        catch_time = str(round(catch_time, 3))
+    catch_time = "never" if catch_time >= 99999999999999 else str(round(catch_time, 3))
 
     slow_time = person.timeslow
 
@@ -1390,15 +1357,9 @@ async def gen_inventory(message, person_id):
         slow_time = float(slow_time) / 3600
         slow_time = str(round(slow_time, 2))
 
-    if me:
-        your = "Your"
-    else:
-        your = person_id.name.replace("_", r"\_") + "'s"
+    your = "Your" if me else person_id.name + "'s"
 
-    if user.emoji:
-        emoji_prefix = str(user.emoji) + " "
-    else:
-        emoji_prefix = ""
+    emoji_prefix = str(user.emoji) + " " if user.emoji else ""
 
     if user.color:
         color = user.color
@@ -2235,10 +2196,7 @@ if config.WEBHOOK_VERIFY:
             user.vote_channel = message.channel.id
             user.save()
 
-        if current_day == 6 or current_day == 7:
-            weekend_message = "🌟 **It's weekend! All vote rewards are DOUBLED!**\n\n"
-        else:
-            weekend_message = ""
+        weekend_message = "🌟 **It's weekend! All vote rewards are DOUBLED!**\n\n" if current_day in [6, 7] else ""
 
         if [message.user.id, "topgg"] in pending_votes:
             pending_votes.remove([message.user.id, "topgg"])
@@ -2516,10 +2474,7 @@ async def achievements(message: discord.Interaction):
             else:
                 unlocked += 1
     total_achs = len(ach_list) - minus_achs_count
-    if minus_achs != 0:
-        minus_achs = f" + {minus_achs}"
-    else:
-        minus_achs = ""
+    minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
 
     if unlocked >= 15:
         await achemb(message, "achiever", "send")
@@ -2566,10 +2521,7 @@ async def achievements(message: discord.Interaction):
                 if user[k]:
                     newembed.add_field(name=str(get_emoji("cat_throphy")) + " " + v["title"], value=v["description"], inline=True)
                 elif category != "Hidden":
-                    if v["is_hidden"]:
-                        newembed.add_field(name=icon + v["title"], value="???", inline=True)
-                    else:
-                        newembed.add_field(name=icon + v["title"], value=v["description"], inline=True)
+                    newembed.add_field(name=icon + v["title"], value="???" if v["is_hidden"] else v["description"], inline=True)
 
         return newembed
 
@@ -2975,10 +2927,7 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
 async def giveachievement(message: discord.Interaction, person_id: discord.User, ach_id: str):
     # check if ach is real
     try:
-        if ach_id in ach_names:
-            valid = True
-        else:
-            valid = False
+        valid = ach_id in ach_names
     except KeyError:
         valid = False
 
