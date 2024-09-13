@@ -253,6 +253,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
                 result = await message.followup.send(embed=embed, ephemeral=True)
             elif send_type == "response":
                 result = await message.response.send_message(embed=embed)
+            await battlepass_finale(message, profile)
         except Exception:
             pass
 
@@ -265,6 +266,45 @@ async def achemb(message, ach_id, send_type, author_string=None):
             await result.edit(embed=embed2)
             await asyncio.sleep(2)
             await result.edit(embed=embed)
+
+
+# :eyes:
+async def battlepass_finale(message, user):
+    # check ach req
+    for k in ach_names:
+        if not user[k] and ach_list[k]["category"] != "Hidden":
+            return
+
+    # check battlepass req
+    if user.battlepass != len(battle["levels"]) - 2:
+        return
+
+    user.battlepass += 2
+    user.save()
+    perms: discord.Permissions = message.channel.permissions_for(message.guild.me)
+    if perms.send_messages and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
+        try:
+            author_string = message.author
+        except Exception:
+            author_string = message.user
+        await asyncio.sleep(5)
+        await message.channel.send("...")
+        await asyncio.sleep(3)
+        await message.channel.send("You...")
+        await asyncio.sleep(3)
+        await message.channel.send("...actually did it.")
+        await asyncio.sleep(3)
+        await message.channel.send(embed=discord.Embed(
+                title="True Ending achieved!",
+                description="You are finally free.",
+                color=0xFF81C6
+            ).set_author(
+                name="Cattlepass complete!",
+                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png"
+            ).set_footer(
+                text=f"Congrats to {author_string}"
+            )
+        )
 
 
 # function to autocomplete cat_type choices for /givecat, and /forcespawn, which also allows more than 25 options
@@ -987,6 +1027,7 @@ async def on_message(message):
                 channel.save()
                 await asyncio.sleep(decided_time)
                 await spawn_cat(str(message.channel.id))
+                await battlepass_finale(message, user)
 
     # those are "owner" commands which are not really interesting
     if text.lower().startswith("cat!sweep") and message.author.id == OWNER_ID:
@@ -1683,13 +1724,18 @@ async def battlepass(message: discord.Interaction):
         else:
             return "Complete a battlepass level.\nReward: freedom"
 
-    current = "🟨"
-    if battle["levels"][current_level]["req"] == "nothing":
-        current = "⬛"
-    if current_level != 0:
+    if current_level == len(battle["levels"]):
+        embedVar.add_field(name=f"✅ Level {current_level} (complete)", value=battlelevel(battle, current_level - 2), inline=False)
         embedVar.add_field(name=f"✅ Level {current_level} (complete)", value=battlelevel(battle, current_level - 1), inline=False)
-    embedVar.add_field(name=f"{current} Level {current_level + 1}", value=battlelevel(battle, current_level, True), inline=False)
-    embedVar.add_field(name=f"Level {current_level + 2}", value=battlelevel(battle, current_level + 1), inline=False)
+        embedVar.add_field(name=f"✅ Level {current_level} (complete)", value=battlelevel(battle, current_level), inline=False)
+    else:
+        current = "🟨"
+        if battle["levels"][current_level]["req"] == "nothing":
+            current = "⬛"
+        if current_level != 0:
+            embedVar.add_field(name=f"✅ Level {current_level} (complete)", value=battlelevel(battle, current_level - 1), inline=False)
+        embedVar.add_field(name=f"{current} Level {current_level + 1}", value=battlelevel(battle, current_level, True), inline=False)
+        embedVar.add_field(name=f"Level {current_level + 2}", value=battlelevel(battle, current_level + 1), inline=False)
 
     await message.followup.send(embed=embedVar)
 
