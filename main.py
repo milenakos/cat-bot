@@ -1725,8 +1725,8 @@ async def battlepass(message: discord.Interaction):
             return "Complete a battlepass level.\nReward: freedom"
 
     if current_level == len(battle["levels"]):
-        embedVar.add_field(name=f"✅ Level {current_level} (complete)", value=battlelevel(battle, current_level - 3), inline=False)
-        embedVar.add_field(name=f"✅ Level {current_level} (complete)", value=battlelevel(battle, current_level - 2), inline=False)
+        embedVar.add_field(name=f"✅ Level {current_level - 2} (complete)", value=battlelevel(battle, current_level - 3), inline=False)
+        embedVar.add_field(name=f"✅ Level {current_level - 1} (complete)", value=battlelevel(battle, current_level - 2), inline=False)
         embedVar.add_field(name=f"✅ Level {current_level} (complete)", value=battlelevel(battle, current_level - 1), inline=False)
     else:
         current = "🟨"
