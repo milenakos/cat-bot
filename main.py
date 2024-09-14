@@ -1526,6 +1526,7 @@ async def gen_inventory(message, person_id):
 async def inventory(message: discord.Interaction, person_id: Optional[discord.User]):
     await message.response.defer()
     embedVar = await gen_inventory(message, person_id)
+    embedVar.set_footer(text="☔ Get tons of cats /rain")
     await message.followup.send(embed=embedVar)
 
 
