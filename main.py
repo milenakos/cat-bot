@@ -2966,6 +2966,7 @@ async def setup_channel(message: discord.Interaction):
                 Channel.create(channel_id=message.channel.id, webhook=wh.url, thread_mappings=False)
         except Exception:
             await message.response.send_message("this channel gives me bad vibes.")
+            return
 
     await spawn_cat(str(message.channel.id))
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
