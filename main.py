@@ -1778,7 +1778,6 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
         user.save()
         reciever.save()
         embed = discord.Embed(title="Success!", description=f"Successfully transfered {amount} {cat_type} cats from <@{message.user.id}> to <@{person_id}>!", color=0x6E593C)
-        await message.response.send_message(embed=embed)
 
         # handle aches
         await achemb(message, "donator", "send")
@@ -1830,9 +1829,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     clicker.funny += 1
                     clicker.save()
 
-            embed = discord.Embed(title="HOLD UP!", description="Thats rather large amount of cats! You will need to pay a cat tax of 20% your transaction, do you agree?", color=0x6E593C)
-
-            button = Button(label="Pay!", style=ButtonStyle.green)
+            button = Button(label="Pay 20% tax", style=ButtonStyle.green)
             button.callback = pay
 
             button2 = Button(label="Evade the tax", style=ButtonStyle.red)
@@ -1842,12 +1839,10 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
 
             myview.add_item(button)
             myview.add_item(button2)
-            if not isinstance(message.channel, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel, discord.Thread]):
-                return
-            try:
-                await message.channel.send(embed=embed, view=myview)
-            except Exception:
-                pass
+
+            await message.response.send_message(embed=embed, view=myview)
+        else:
+            await message.response.send_message(embed=embed)
     else:
         # haha skill issue
         await message.response.send_message("no", ephemeral=True)
