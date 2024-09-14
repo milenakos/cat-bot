@@ -1749,6 +1749,7 @@ async def ping(message: discord.Interaction):
     except Exception:
         latency = "infinite"
     await message.response.send_message(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
+    
     if latency == "infinite" or latency >= 100:
         await achemb(message, "infinite", "send")
 
@@ -2672,6 +2673,15 @@ async def achievements(message: discord.Interaction):
             if hidden_counter == 20:
                 await achemb(interaction, "darkest_market", "send")
 
+        # has a very good chance of working but the 1984 supreme dictator lia milenakos won't let me test it
+        # for i in ["Cat Hunt", "Random", "Silly", "Hard", "Hidden"]: 
+        #     if category == i:
+        #         buttons_list.append(Button(label=i, style=ButtonStyle.green))
+        #     else:
+        #         buttons_list.append(Button(label=i, style=ButtonStyle.blurple))
+        #     lambdas_list.append(lambda interaction : (await callback_hell(interaction, i) for _ in '_').__anext__())
+        #     buttons_list[-1].callback = lambdas_list[-1]
+        
         if category == "Cat Hunt":
             buttons_list.append(Button(label="Cat Hunt", style=ButtonStyle.green))
         else:
@@ -2712,6 +2722,7 @@ async def achievements(message: discord.Interaction):
         return myview
 
     await message.response.send_message(embed=gen_new("Cat Hunt"), ephemeral=True, view=insane_view_generator("Cat Hunt"))
+    
     if unlocked >= 15:
         await achemb(message, "achiever", "send")
 
@@ -2745,7 +2756,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         await achemb(message, "not_like_that", "send")
 
 
-# pointLaugh lives on in our memories
+# dementia
 
 
 @bot.tree.command(description="View the leaderboards")
@@ -2916,6 +2927,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 
         if leader:
             await achemb(message, "leader", "send")
+            
     # helpers! everybody loves helpers.
     async def slowlb(interaction):
         await lb_handler(interaction, "Slowest")
