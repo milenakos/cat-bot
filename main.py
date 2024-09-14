@@ -1749,7 +1749,7 @@ async def ping(message: discord.Interaction):
     except Exception:
         latency = "infinite"
     await message.response.send_message(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
-    
+
     if latency == "infinite" or latency >= 100:
         await achemb(message, "infinite", "send")
 
@@ -1833,7 +1833,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
             await message.response.send_message(embed=embed, view=myview)
         else:
             await message.response.send_message(embed=embed)
-            
+
         # handle aches
         await achemb(message, "donator", "send")
         await achemb(message, "anti_donator", "send", person)
@@ -1843,7 +1843,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
             await achemb(message, "sacrifice", "send")
         if cat_type == "Nice" and int(amount) == 69:
             await achemb(message, "nice", "send")
-        
+
     else:
         # haha skill issue
         await message.response.send_message("no", ephemeral=True)
@@ -2072,7 +2072,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         await message.response.send_message(embed=embed)
     else:
         await message.response.send_message(embed=embed, view=view)
-    
+
     if person1 == person2:
         await achemb(message, "introvert", "send")
 
@@ -2653,7 +2653,6 @@ async def achievements(message: discord.Interaction):
     def insane_view_generator(category):
         myview = View(timeout=3600)
         buttons_list = []
-        lambdas_list = []
 
         async def callback_hell(interaction):
             thing = interaction.data["custom_id"]
@@ -2670,23 +2669,23 @@ async def achievements(message: discord.Interaction):
                 else:
                     await light_market(message)
                 await achemb(message, "dark_market", "followup")
-                
+
             if hidden_counter == 20:
                 await achemb(interaction, "darkest_market", "send")
 
-        for i in ["Cat Hunt", "Random", "Silly", "Hard", "Hidden"]: 
+        for i in ["Cat Hunt", "Random", "Silly", "Hard", "Hidden"]:
             if category == i:
                 buttons_list.append(Button(label=i, custom_id=i, style=ButtonStyle.green))
             else:
                 buttons_list.append(Button(label=i, custom_id=i, style=ButtonStyle.blurple))
             buttons_list[-1].callback = callback_hell
-        
+
         for j in buttons_list:
             myview.add_item(j)
         return myview
 
     await message.response.send_message(embed=gen_new("Cat Hunt"), ephemeral=True, view=insane_view_generator("Cat Hunt"))
-    
+
     if unlocked >= 15:
         await achemb(message, "achiever", "send")
 
@@ -2891,7 +2890,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 
         if leader:
             await achemb(message, "leader", "send")
-            
+
     # helpers! everybody loves helpers.
     async def slowlb(interaction):
         await lb_handler(interaction, "Slowest")
