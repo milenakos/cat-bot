@@ -2655,7 +2655,7 @@ async def achievements(message: discord.Interaction):
         buttons_list = []
         lambdas_list = []
 
-        async def callback_hell(interaction, thing):
+        async def callback_hell(interaction):
             await interaction.response.defer()
             try:
                 await interaction.edit_original_response(embed=gen_new(thing), view=insane_view_generator(thing))
@@ -2678,8 +2678,7 @@ async def achievements(message: discord.Interaction):
                 buttons_list.append(Button(label=i, style=ButtonStyle.green))
             else:
                 buttons_list.append(Button(label=i, style=ButtonStyle.blurple))
-            lambdas_list.append(lambda interaction : (await callback_hell(interaction, i) for _ in '_').__anext__())
-            buttons_list[-1].callback = lambdas_list[-1]
+            buttons_list[-1].callback = lambda interaction : callback_hell(interaction, i)
         
         for j in buttons_list:
             myview.add_item(j)
