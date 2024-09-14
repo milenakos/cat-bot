@@ -2656,6 +2656,7 @@ async def achievements(message: discord.Interaction):
         lambdas_list = []
 
         async def callback_hell(interaction):
+            thing = interaction.data["custom_id"]
             await interaction.response.defer()
             try:
                 await interaction.edit_original_response(embed=gen_new(thing), view=insane_view_generator(thing))
@@ -2675,10 +2676,10 @@ async def achievements(message: discord.Interaction):
 
         for i in ["Cat Hunt", "Random", "Silly", "Hard", "Hidden"]: 
             if category == i:
-                buttons_list.append(Button(label=i, style=ButtonStyle.green))
+                buttons_list.append(Button(label=i, custom_id=i, style=ButtonStyle.green))
             else:
-                buttons_list.append(Button(label=i, style=ButtonStyle.blurple))
-            buttons_list[-1].callback = lambda interaction : callback_hell(interaction, i)
+                buttons_list.append(Button(label=i, custom_id=i, style=ButtonStyle.blurple))
+            buttons_list[-1].callback = callback_hell
         
         for j in buttons_list:
             myview.add_item(j)
