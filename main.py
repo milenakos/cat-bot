@@ -1749,11 +1749,7 @@ async def ping(message: discord.Interaction):
     except Exception:
         latency = "infinite"
     await message.response.send_message(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
-    # sorry i made it ugly :(
-    try:
-        if latency >= 100:
-            await achemb(message, "infinite", "send")
-    except Exception:
+    if latency == "infinite" or latency >= 100:
         await achemb(message, "infinite", "send")
 
 @bot.tree.command(description="give cats now")
@@ -2676,13 +2672,40 @@ async def achievements(message: discord.Interaction):
             if hidden_counter == 20:
                 await achemb(interaction, "darkest_market", "send")
 
-        for i in ["Cat Hunt", "Random", "Silly", "Hard", "Hidden"]: # hear me out what if it works :picardia_shrug:
-            if category == i:
-                buttons_list.append(Button(label=i, style=ButtonStyle.green))
-            else:
-                buttons_list.append(Button(label=i, style=ButtonStyle.blurple))
-            lambdas_list.append(lambda interaction : (await callback_hell(interaction, i) for _ in '_').__anext__())
-            buttons_list[-1].callback = lambdas_list[-1]
+        if category == "Cat Hunt":
+            buttons_list.append(Button(label="Cat Hunt", style=ButtonStyle.green))
+        else:
+            buttons_list.append(Button(label="Cat Hunt", style=ButtonStyle.blurple))
+        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Cat Hunt") for _ in '_').__anext__())
+        buttons_list[-1].callback = lambdas_list[-1]
+
+        if category == "Random":
+            buttons_list.append(Button(label="Random", style=ButtonStyle.green))
+        else:
+            buttons_list.append(Button(label="Random", style=ButtonStyle.blurple))
+        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Random") for _ in '_').__anext__())
+        buttons_list[-1].callback = lambdas_list[-1]
+
+        if category == "Silly":
+            buttons_list.append(Button(label="Silly", style=ButtonStyle.green))
+        else:
+            buttons_list.append(Button(label="Silly", style=ButtonStyle.blurple))
+        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Silly") for _ in '_').__anext__())
+        buttons_list[-1].callback = lambdas_list[-1]
+
+        if category == "Hard":
+            buttons_list.append(Button(label="Hard", style=ButtonStyle.green))
+        else:
+            buttons_list.append(Button(label="Hard", style=ButtonStyle.blurple))
+        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Hard") for _ in '_').__anext__())
+        buttons_list[-1].callback = lambdas_list[-1]
+
+        if category == "Hidden":
+            buttons_list.append(Button(label="Hidden", style=ButtonStyle.green))
+        else:
+            buttons_list.append(Button(label="Hidden", style=ButtonStyle.blurple))
+        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Hidden") for _ in '_').__anext__())
+        buttons_list[-1].callback = lambdas_list[-1]
 
         for j in buttons_list:
             myview.add_item(j)
