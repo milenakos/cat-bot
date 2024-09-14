@@ -2689,7 +2689,8 @@ async def achievements(message: discord.Interaction):
         return myview
 
     await message.response.send_message(embed=gen_new("Cat Hunt"), ephemeral=True, view=insane_view_generator("Cat Hunt"))
-
+    if unlocked >= 15:
+        await achemb(message, "achiever", "send")
 
 async def catch(message: discord.Interaction, msg: discord.Message):
     if not message.channel.permissions_for(message.guild.me).attach_files:
