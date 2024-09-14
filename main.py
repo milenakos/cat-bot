@@ -2776,7 +2776,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 string = f"Rarest cat: {catmoji} ({joined}'s)\n"
         elif type == "Value":
             unit = "value"
-            total_sum_expr = peewee.fn.SUM(sum((len(CAT_TYPES) / type_dict[cat_type]) * getattr(Profile, f"cat_{cat_type}").cast("BIGINT")] for cat_type in cattypes))
+            total_sum_expr = peewee.fn.SUM(sum((len(CAT_TYPES) / type_dict[cat_type]) * getattr(Profile, f"cat_{cat_type}").cast("BIGINT") for cat_type in cattypes))
             result = (Profile
                 .select(Profile.user_id, total_sum_expr.alias("final_value"))
                 .where(Profile.guild_id == message.guild.id)
