@@ -938,7 +938,7 @@ async def on_message(message):
                 elif random.randint(0, 20) == 0:
                     button = Button(label="Join our Discord!", url="https://discord.gg/staring")
                 elif random.randint(0, 500) == 0:
-                    button = Button(label="John Discord 🤠", url="https://discord.gg/staring")    
+                    button = Button(label="John Discord 🤠", url="https://discord.gg/staring")
 
                 if button:
                     view = View(timeout=3600)
@@ -2846,9 +2846,10 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 num = round(num / 3600, 2)
             elif type == "Cats" and num <= 0:
                 break
-            elif type == "Value" and num <= 0:
+            elif type == "Value":
+                if num <= 0:
+                    break
                 num = round(num)
-                break
             elif type == "Fastest" and num >= 99999999999999:
                 break
             string = string + f"{current}. {num} {unit}: <@{i.user_id}>\n"
@@ -2926,7 +2927,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 
     async def valuelb(interaction):
         await lb_handler(interaction, "Value")
-    
+
     async def fastlb(interaction):
         await lb_handler(interaction, "Fastest")
 
