@@ -15,7 +15,7 @@
   "dark_market": {"title": "What's this?", "description": "enter dark market", "is_hidden": true, "category": "Cat Hunt"},
 
   "randomizer": {"title": "Randomizer", "description": "look at a random cat", "is_hidden": false, "category": "Random"},
-  "pineapple": {"title": "Pineapple", "description": "\"you said \"\"pineapple\"\". i have no idea why\"", "is_hidden": false, "category": "Random"},
+  "pineapple": {"title": "Pineapple", "description": "you said \"pineapple\". i have no idea why", "is_hidden": false, "category": "Random"},
   "daily": {"title": "Daily Catter", "description": "get daily cats", "is_hidden": false, "category": "Random"},
   "dm": {"title": "DM", "description": "dm cat", "is_hidden": true, "category": "Random"},
   "who_ping": {"title": "who ping", "description": "ping cat bot", "is_hidden": true, "category": "Random"},
@@ -25,7 +25,7 @@
   "worship": {"title": "Cat Worshipper", "description": "have both :place_of_worship: and <:staring_cat:966697804611321908> in your message", "is_hidden": true, "category": "Random"},
   "test_ach": {"title": "Test Achievement", "description": "testing testing 1 2 3", "is_hidden": true, "category": "Random"},
   "4k": {"title": "Cought in 4k", "description": "catch someone in 4k", "is_hidden": true, "category": "Random"},
-  "curious": {"title": "Curious", "description": "try to open a private embed", "is_hidden": true, "category": "Random"},
+  "curious": {"title": "Curious", "description": "try to click a private button", "is_hidden": true, "category": "Random"},
   "car": {"title": "Car", "description": ":red_car::red_car:", "is_hidden": false, "category": "Random"},
   "???": {"title": "???", "description": "???", "is_hidden": false, "category": "Random"},
   "not_quite": {"title": "Not Quite", "description": "wrong animal", "is_hidden": true, "category": "Random"},

@@ -1,23 +1,43 @@
 import json
-
+import config
 import peewee
 import playhouse.sqlite_ext
 
-db = playhouse.sqlite_ext.SqliteExtDatabase("catbot.db", pragmas=(
-    ('cache_size', -1024 * 64),
-    ('journal_mode', 'wal')
-))
+if config.DB_TYPE == "SQLITE":
+    db = playhouse.sqlite_ext.SqliteExtDatabase("catbot.db", pragmas=(
+        ('cache_size', -1024 * 64),
+        ('journal_mode', 'wal')
+    ))
+elif config.DB_TYPE == "POSTGRES":
+    db = peewee.PostgresqlDatabase(
+        'cat_bot',
+        user='cat_bot',
+        password=config.DB_PASS,
+        host='localhost',
+        port=5432
+    )
 
 cattypes = ['Fine', 'Nice', 'Good', 'Rare', 'Wild', 'Baby', 'Epic', 'Sus', 'Brave', 'Rickroll', 'Reverse', 'Superior', 'TheTrashCell', 'Legendary', 'Mythic', '8bit', 'Corrupt', 'Professor', 'Divine', 'Real', 'Ultimate', 'eGirl']
 
+class CappedIntegerField(peewee.IntegerField):
+    MAX_VALUE = 2147483647
+    MIN_VALUE = -2147483648
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def db_value(self, value):
+        if value is not None:
+            return max(self.MIN_VALUE, min(self.MAX_VALUE, value))
+        return value
+
 class Profile(peewee.Model):
     user_id = peewee.BigIntegerField()
-    guild_id = peewee.BigIntegerField()
+    guild_id = peewee.BigIntegerField(index=True)
 
     time = peewee.FloatField(default=99999999999999)  # fastest catch time
     timeslow = peewee.FloatField(default=0)  # slowest catch time
 
-    catchcooldown = peewee.BigIntegerField(default=0)  # catch in 4k slowmode
     timeout = peewee.BigIntegerField(default=0)  # /preventcatch timestamp
     cataine_active = peewee.BigIntegerField(default=0)  # cataine timestamp
 
@@ -33,12 +53,12 @@ class Profile(peewee.Model):
 
     funny = peewee.SmallIntegerField(default=0)  # private embed click amount
     facts = peewee.SmallIntegerField(default=0)  # /fact amount
-    gambles = peewee.SmallIntegerField(default=0)  # casino spins amount=
+    gambles = peewee.SmallIntegerField(default=0)  # casino spins amount
 
     # thanks chatgpt
     # cat types
     for cattype in cattypes:
-        locals()[f'cat_{cattype}'] = peewee.IntegerField(default=0)
+        locals()[f'cat_{cattype}'] = CappedIntegerField(default=0)
 
     # aches
     with open("config/aches.json", "r") as f:
@@ -56,10 +76,13 @@ class Profile(peewee.Model):
         # haha facebook meta reference
         database = db
         only_save_dirty = True
+        indexes = (
+            (('user_id', 'guild_id'), True),
+        )
 
 
 class User(peewee.Model):
-    user_id = peewee.BigIntegerField(unique=True)
+    user_id = peewee.BigIntegerField(unique=True, index=True, primary_key=True)
 
     vote_remind = peewee.BigIntegerField(default=0)  # channel id for vote reminders
     vote_channel = peewee.BigIntegerField(default=0)  # channel id for vote claims
@@ -85,7 +108,7 @@ class User(peewee.Model):
 
 
 class Channel(peewee.Model):
-    channel_id = peewee.BigIntegerField(unique=True)
+    channel_id = peewee.BigIntegerField(unique=True, index=True, primary_key=True)
 
     cat = peewee.BigIntegerField(default=0)  # cat message id
 
@@ -97,8 +120,8 @@ class Channel(peewee.Model):
     lastcatches = peewee.BigIntegerField(default=0)  # timestamp of last catch
     yet_to_spawn = peewee.BigIntegerField(default=0)  # timestamp of the next catch, if any
 
-    appear = peewee.CharField(default="")
-    cought = peewee.CharField(default="")
+    appear = peewee.CharField(default="", max_length=4000)
+    cought = peewee.CharField(default="", max_length=4000)
 
     webhook = peewee.CharField(default="")  # webhook url
 

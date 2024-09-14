@@ -1,5 +1,7 @@
+import io
 import os
 
+import discord
 import requests
 from PIL import Image, ImageColor, ImageDraw, ImageFont
 from pilmoji import Pilmoji
@@ -10,16 +12,13 @@ def getsize(font, token):
     left, top, right, bottom = font.getbbox(token)
     return right - left, bottom - top
 
-def msg2img(message, bot, sansgg=False):
+def msg2img(message):
     move = 0
     is_bot = message.author.bot
-    is_pinged = bot.user in message.mentions
+    is_pinged = message.mention_everyone
     text = message.clean_content
     if not text:
         text = message.system_content
-    if message.mention_everyone:
-        is_pinged = True
-    save_to = "generated.png"
     try:
         nick = message.author.nick
     except Exception:
@@ -108,10 +107,7 @@ def msg2img(message, bot, sansgg=False):
 
     print(os.path.abspath('.'))  # woo debugging
     font = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 32)  # load fonts
-    if sansgg:
-        font2 = ImageFont.truetype(os.path.abspath("./fonts/ggsans-Medium.ttf"), 32)  # load fonts
-    else:
-        font2 = ImageFont.truetype(os.path.abspath("./fonts/whitneymedium.otf"), 32)  # load fonts
+    font2 = ImageFont.truetype(os.path.abspath("./fonts/ggsans-Medium.ttf"), 32)  # load fonts
     font3 = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 23)  # load fonts
 
     text_temp = ""
@@ -135,9 +131,7 @@ def msg2img(message, bot, sansgg=False):
     if isinstance(color, str):
         color = ImageColor.getrgb(color)
 
-    bg_color = (54, 57, 63)
-    if sansgg:
-        bg_color = (49, 51, 56)
+    bg_color = (49, 51, 56)
     if is_pinged:
         bg_color = (73, 68, 60)
     new_img = Image.new("RGBA", (1067, 75 + the_size_and_stuff), bg_color)
@@ -146,7 +140,7 @@ def msg2img(message, bot, sansgg=False):
         pfp = requests.get(message.author.display_avatar.url, stream=True).raw
         im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
     except Exception: # if the pfp is bit too silly
-        new_url = "https://cdn.discordapp.com/avatars/966695034340663367/d9b60a653cb3c6f95baedf790723ce41.png?size=1024"
+        new_url = "https://cdn.discordapp.com/embed/avatars/0.png"
         pfp = requests.get(new_url, stream=True).raw
         im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
 
@@ -218,7 +212,11 @@ def msg2img(message, bot, sansgg=False):
         font=font3,
         fill=ImageColor.getrgb("#A3A4AA"),
     )  # draw time
-    new_img.save(save_to)  # save result
+
+    with io.BytesIO() as image_binary:
+        new_img.save(image_binary, "PNG")
+        image_binary.seek(0)
+        return discord.File(fp=image_binary, filename="catch.png")
 
 
 # italic          https://discord.com/assets/7f18f1d5ab6ded7cf71bbc1f907ee3d4.woff2
