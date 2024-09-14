@@ -780,7 +780,10 @@ async def on_message(message):
                     except Exception:
                         pass
             decided_time = random.uniform(times[0], times[1])
-            channel.yet_to_spawn = time.time() + decided_time + 10
+            if channel.yet_to_spawn < time.time():
+                channel.yet_to_spawn = time.time() + decided_time + 10
+            else:
+                decided_time = 0
             try:
                 current_time = message.created_at.timestamp()
                 channel.lastcatches = current_time
@@ -1027,8 +1030,9 @@ async def on_message(message):
                 user.save()
                 channel.save()
                 bot.loop.create_task(battlepass_finale(message, user))
-                await asyncio.sleep(decided_time)
-                await spawn_cat(str(message.channel.id))
+                if decided_time:
+                    await asyncio.sleep(decided_time)
+                    await spawn_cat(str(message.channel.id))
 
     # those are "owner" commands which are not really interesting
     if text.lower().startswith("cat!sweep") and message.author.id == OWNER_ID:
