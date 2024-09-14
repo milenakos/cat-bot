@@ -1473,7 +1473,7 @@ async def gen_inventory(message, person_id):
     give_collector = True
     total = 0
     valuenum = 0
-    
+
     # for every cat
     for i in cattypes:
         icon = get_emoji(i.lower() + "cat")
@@ -2884,7 +2884,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         myview.add_item(button1)
         myview.add_item(button2)
         myview.add_item(button3)
-        
+
         # just send if first time, otherwise edit existing
         try:
             if not do_edit:
