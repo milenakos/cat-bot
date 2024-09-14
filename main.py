@@ -1746,13 +1746,12 @@ async def battlepass(message: discord.Interaction):
 async def ping(message: discord.Interaction):
     try:
         latency = round(bot.latency * 1000)
-        if latency >= 100:
-            await achemb(message, "infinite", "send")
     except Exception:
         latency = "infinite"
-        await achemb(message, "infinite", "send")
     await message.response.send_message(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
-
+    
+    if latency == "infinite" or latency >= 100:
+        await achemb(message, "infinite", "send")
 
 @bot.tree.command(description="give cats now")
 @discord.app_commands.rename(cat_type="type")
@@ -1780,16 +1779,6 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
         reciever.save()
         embed = discord.Embed(title="Success!", description=f"Successfully transfered {amount} {cat_type} cats from <@{message.user.id}> to <@{person_id}>!", color=0x6E593C)
 
-        # handle aches
-        await achemb(message, "donator", "send")
-        await achemb(message, "anti_donator", "send", person)
-        if person_id == bot.user.id and cat_type == "Ultimate" and int(amount) >= 5:
-            await achemb(message, "rich", "send")
-        if person_id == bot.user.id:
-            await achemb(message, "sacrifice", "send")
-        if cat_type == "Nice" and int(amount) == 69:
-            await achemb(message, "nice", "send")
-
         # handle tax
         if amount >= 5:
             tax_amount = round(amount * 0.2)
@@ -1805,8 +1794,8 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     catbot[f"cat_{cat_type}"] += tax_amount
                     user.save()
                     catbot.save()
-                    await achemb(message, "good_citizen", "send")
                     await interaction.followup.send(f"Tax of {tax_amount} {cat_type} cats was withdrawn from your account!")
+                    await achemb(message, "good_citizen", "send")
                 else:
                     await interaction.response.send_message(random.choice(funny), ephemeral=True)
                     await achemb(interaction, "curious", "send")
@@ -1821,8 +1810,8 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                         await interaction.edit_original_response(view=None)
                     except Exception:
                         pass
-                    await achemb(message, "secret", "send")
                     await interaction.followup.send(f"You evaded the tax of {tax_amount} {cat_type} cats.")
+                    await achemb(message, "secret", "send")
                 else:
                     await interaction.followup.send(random.choice(funny), ephemeral=True)
                     await achemb(interaction, "curious", "send")
@@ -1844,6 +1833,17 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
             await message.response.send_message(embed=embed, view=myview)
         else:
             await message.response.send_message(embed=embed)
+            
+        # handle aches
+        await achemb(message, "donator", "send")
+        await achemb(message, "anti_donator", "send", person)
+        if person_id == bot.user.id and cat_type == "Ultimate" and int(amount) >= 5:
+            await achemb(message, "rich", "send")
+        if person_id == bot.user.id:
+            await achemb(message, "sacrifice", "send")
+        if cat_type == "Nice" and int(amount) == 69:
+            await achemb(message, "nice", "send")
+        
     else:
         # haha skill issue
         await message.response.send_message("no", ephemeral=True)
@@ -1859,9 +1859,6 @@ async def trade(message: discord.Interaction, person_id: discord.User):
     person2 = person_id
 
     blackhole = False
-
-    if person1 == person2:
-        await achemb(message, "introvert", "send")
 
     person1accept = False
     person2accept = False
@@ -2075,6 +2072,9 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         await message.response.send_message(embed=embed)
     else:
         await message.response.send_message(embed=embed, view=view)
+    
+    if person1 == person2:
+        await achemb(message, "introvert", "send")
 
     # this is wrapper around gen_embed() to edit the mesage automatically
     async def update_trade_embed(interaction):
@@ -2602,9 +2602,6 @@ async def achievements(message: discord.Interaction):
     total_achs = len(ach_list) - minus_achs_count
     minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
 
-    if unlocked >= 15:
-        await achemb(message, "achiever", "send")
-
     hidden_counter = 0
 
     # this is a single page of the achievement list
@@ -2658,7 +2655,8 @@ async def achievements(message: discord.Interaction):
         buttons_list = []
         lambdas_list = []
 
-        async def callback_hell(interaction, thing):
+        async def callback_hell(interaction):
+            thing = interaction.data["custom_id"]
             await interaction.response.defer()
             try:
                 await interaction.edit_original_response(embed=gen_new(thing), view=insane_view_generator(thing))
@@ -2666,66 +2664,31 @@ async def achievements(message: discord.Interaction):
                 pass
 
             if hidden_counter == 3 and user.dark_market_active:
-                await achemb(message, "dark_market", "followup")
                 if not user.story_complete:
                     # open the totally not suspicious dark market
                     await dark_market(message)
                 else:
                     await light_market(message)
-
+                await achemb(message, "dark_market", "followup")
+                
             if hidden_counter == 20:
                 await achemb(interaction, "darkest_market", "send")
 
-        # would be much more optimized but i cant get this to work
-        # for i in ["Cat Hunt", "Random", "Unfair"]:
-        #   if category == i:
-        #        buttons_list.append(Button(label=i, style=ButtonStyle.green))
-        #   else:
-        #        buttons_list.append(Button(label=i, style=ButtonStyle.blurple))
-        #   lambdas_list.append(lambda interaction : (await interaction.edit_original_response(embed=gen_new(i), view=insane_view_generator(i)) for _ in '_').__anext__())
-        #   buttons_list[-1].callback = lambdas_list[-1]
-
-        if category == "Cat Hunt":
-            buttons_list.append(Button(label="Cat Hunt", style=ButtonStyle.green))
-        else:
-            buttons_list.append(Button(label="Cat Hunt", style=ButtonStyle.blurple))
-        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Cat Hunt") for _ in '_').__anext__())
-        buttons_list[-1].callback = lambdas_list[-1]
-
-        if category == "Random":
-            buttons_list.append(Button(label="Random", style=ButtonStyle.green))
-        else:
-            buttons_list.append(Button(label="Random", style=ButtonStyle.blurple))
-        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Random") for _ in '_').__anext__())
-        buttons_list[-1].callback = lambdas_list[-1]
-
-        if category == "Silly":
-            buttons_list.append(Button(label="Silly", style=ButtonStyle.green))
-        else:
-            buttons_list.append(Button(label="Silly", style=ButtonStyle.blurple))
-        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Silly") for _ in '_').__anext__())
-        buttons_list[-1].callback = lambdas_list[-1]
-
-        if category == "Hard":
-            buttons_list.append(Button(label="Hard", style=ButtonStyle.green))
-        else:
-            buttons_list.append(Button(label="Hard", style=ButtonStyle.blurple))
-        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Hard") for _ in '_').__anext__())
-        buttons_list[-1].callback = lambdas_list[-1]
-
-        if category == "Hidden":
-            buttons_list.append(Button(label="Hidden", style=ButtonStyle.green))
-        else:
-            buttons_list.append(Button(label="Hidden", style=ButtonStyle.blurple))
-        lambdas_list.append(lambda interaction : (await callback_hell(interaction, "Hidden") for _ in '_').__anext__())
-        buttons_list[-1].callback = lambdas_list[-1]
-
+        for i in ["Cat Hunt", "Random", "Silly", "Hard", "Hidden"]: 
+            if category == i:
+                buttons_list.append(Button(label=i, custom_id=i, style=ButtonStyle.green))
+            else:
+                buttons_list.append(Button(label=i, custom_id=i, style=ButtonStyle.blurple))
+            buttons_list[-1].callback = callback_hell
+        
         for j in buttons_list:
             myview.add_item(j)
         return myview
 
     await message.response.send_message(embed=gen_new("Cat Hunt"), ephemeral=True, view=insane_view_generator("Cat Hunt"))
-
+    
+    if unlocked >= 15:
+        await achemb(message, "achiever", "send")
 
 async def catch(message: discord.Interaction, msg: discord.Message):
     if not message.channel.permissions_for(message.guild.me).attach_files:
@@ -2757,7 +2720,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         await achemb(message, "not_like_that", "send")
 
 
-# pointLaugh lives on in our memories
+# dementia
 
 
 @bot.tree.command(description="View the leaderboards")
@@ -2856,6 +2819,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 
         # the little place counter
         current = 1
+        leader = False
         for i in result[:15]:
             num = i.final_value
             if type == "Slowest":
@@ -2868,7 +2832,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 break
             string = string + f"{current}. {num} {unit}: <@{i.user_id}>\n"
             if message.user.id == i.user_id and current <= 5:
-                await achemb(message, "leader", "send")
+                leader = True
             current += 1
 
         # add the messager and interactor
@@ -2925,6 +2889,9 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         except Exception:
             await interaction.followup.send(embed=embedVar, view=myview)
 
+        if leader:
+            await achemb(message, "leader", "send")
+            
     # helpers! everybody loves helpers.
     async def slowlb(interaction):
         await lb_handler(interaction, "Slowest")
