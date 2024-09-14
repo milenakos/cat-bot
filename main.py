@@ -2050,6 +2050,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 icon = "✅"
             valuestr = ""
             valuenum = 0
+            total = 0
             for k, v in persongives.items():
                 valuenum += (len(CAT_TYPES) / type_dict[k]) * v
                 total += v
