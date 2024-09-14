@@ -1472,6 +1472,7 @@ async def gen_inventory(message, person_id):
 
     give_collector = True
     total = 0
+    valuenum = 0
 
     # for every cat
     for i in cattypes:
@@ -1479,6 +1480,7 @@ async def gen_inventory(message, person_id):
         cat_num = person[f"cat_{i}"]
         if cat_num != 0:
             total += cat_num
+            valuenum += (len(CAT_TYPES) / type_dict[i]) * cat_num
             embedVar.add_field(name=f"{icon} {i}", value=cat_num, inline=True)
             is_empty = False
         else:
@@ -1492,7 +1494,7 @@ async def gen_inventory(message, person_id):
         embedVar.add_field(name="None", value=f"u hav no cats {get_emoji('cat_cry')}", inline=True)
 
     if embedVar.description:
-        embedVar.description += f"\nTotal cats: {total}"
+        embedVar.description += f"\n{total} cats with {round(valuenum)} value"
 
     if user.image.startswith("https://cdn.discordapp.com/attachments/"):
         embedVar.set_thumbnail(url=user.image)
@@ -2048,14 +2050,17 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 icon = "✅"
             valuestr = ""
             valuenum = 0
+            total = 0
             for k, v in persongives.items():
                 valuenum += (len(CAT_TYPES) / type_dict[k]) * v
+                total += v
                 aicon = get_emoji(k.lower() + "cat")
                 valuestr += str(aicon) + " " + k + " " + str(v) + "\n"
             if not valuestr:
                 valuestr = "No cats offered!"
             else:
                 valuestr += f"*Total value: {round(valuenum)}*"
+                valuestr += f"*Total cats: {round(total)}*"
                 if number == 1:
                     person1value = round(valuenum)
                 else:
