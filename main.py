@@ -2059,8 +2059,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             if not valuestr:
                 valuestr = "No cats offered!"
             else:
-                valuestr += f"*Total value: {round(valuenum)}*"
-                valuestr += f"*Total cats: {round(total)}*"
+                valuestr += f"*Total value: {round(valuenum)}\nTotal cats: {round(total)}*"
                 if number == 1:
                     person1value = round(valuenum)
                 else:
