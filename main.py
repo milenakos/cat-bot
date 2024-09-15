@@ -943,7 +943,7 @@ async def on_message(message):
                     button = Button(label="DAVE DISCORD 😀💀⚠️🥺", url="https://discord.gg/staring", style=ButtonStyle.danger)
                 elif random.randint(0, 5000000) == 0:
                     button = Button(label="JOHN AND DAVE HAD A SON 💀🤠😀⚠️🥺", url="https://discord.gg/staring", style=ButtonStyle.green)
-                    
+
                 if button:
                     view = View(timeout=3600)
                     view.add_item(button)
@@ -1764,6 +1764,7 @@ async def ping(message: discord.Interaction):
 
     if latency == "infinite" or latency >= 100:
         await achemb(message, "infinite", "send")
+
 
 @bot.tree.command(description="give cats now")
 @discord.app_commands.rename(cat_type="type")
@@ -2703,6 +2704,7 @@ async def achievements(message: discord.Interaction):
     if unlocked >= 15:
         await achemb(message, "achiever", "send")
 
+
 async def catch(message: discord.Interaction, msg: discord.Message):
     if not message.channel.permissions_for(message.guild.me).attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
@@ -2731,9 +2733,6 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 
     if int(is_cat) == int(msg.id):
         await achemb(message, "not_like_that", "send")
-
-
-# dementia
 
 
 @bot.tree.command(description="View the leaderboards")
