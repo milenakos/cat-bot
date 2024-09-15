@@ -939,6 +939,8 @@ async def on_message(message):
                     button = Button(label="Join our Discord!", url="https://discord.gg/staring")
                 elif random.randint(0, 500) == 0:
                     button = Button(label="John Discord 🤠", url="https://discord.gg/staring")
+                elif random.randint(0, 50000) == 0:
+                    button = Button(label="DAVE DISCORD 😀💀⚠️🥺", url="https://discord.gg/staring", style=ButtonStyle.danger)
 
                 if button:
                     view = View(timeout=3600)
