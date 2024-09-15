@@ -2833,7 +2833,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             interactor_placement = 0
 
         if messager and type in ["Cats", "Slowest", "Value"]:
-            if messenger <= 0:
+            if messager <= 0:
                 messager_placement = 0
             messager = round(messager)
         elif messager and type == "Fastest" and messager >= 99999999999999:
