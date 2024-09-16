@@ -2213,14 +2213,14 @@ async def brew(message: discord.Interaction):
    await achemb(message, "coffee", "send")
 
 
-@bot.tree.command(description="Gamble your life savings away in our totally-not-rigged casino!")
+@bot.tree.command(description="Gamble your life savings away in our totally-not-rigged catsino!")
 async def casino(message: discord.Interaction):
     if message.user.id in casino_lock:
-        await message.response.send_message("you get kicked out of the casino because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
+        await message.response.send_message("you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
         await achemb(message, "paradoxical_gambler", "send")
         return
 
-    embed = discord.Embed(title="The Casino", description=f"One spin costs 5 {get_emoji('epiccat')} Epic cats", color=0x750F0E)
+    embed = discord.Embed(title="The Catsino", description=f"One spin costs 5 {get_emoji('epiccat')} Epic cats", color=0x750F0E)
 
     async def spin(interaction):
         nonlocal message
@@ -2231,7 +2231,7 @@ async def casino(message: discord.Interaction):
             clicker.save()
             return
         if message.user.id in casino_lock:
-            await interaction.response.send_message("you get kicked out of the casino because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
+            await interaction.response.send_message("you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
             return
         user = get_profile(interaction.guild.id, interaction.user.id)
         if user.cat_Epic < 5:
@@ -2260,7 +2260,7 @@ async def casino(message: discord.Interaction):
         random.shuffle(variants)
 
         for i in variants:
-            embed = discord.Embed(title="The Casino", description=f"**{i}**", color=0x750F0E)
+            embed = discord.Embed(title="The Catsino", description=f"**{i}**", color=0x750F0E)
             try:
                 await interaction.edit_original_response(embed=embed, view=None)
             except Exception:
@@ -2269,7 +2269,7 @@ async def casino(message: discord.Interaction):
 
         amount = random.randint(1, 5)
 
-        embed = discord.Embed(title="The Casino", description=f"You won:\n**{get_emoji('finecat')} {amount} Fine cats**", color=0x750F0E)
+        embed = discord.Embed(title="The Catsino", description=f"You won:\n**{get_emoji('finecat')} {amount} Fine cats**", color=0x750F0E)
         user.cat_Fine += amount
 
         button = Button(label="Spin", style=ButtonStyle.blurple)
