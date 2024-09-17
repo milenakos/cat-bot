@@ -1476,7 +1476,7 @@ async def gen_inventory(message, person_id):
 
     embedVar = discord.Embed(
         title=f"{emoji_prefix}{your} cats:",
-        description=f"⏱️ Fastest: {catch_time}, Slowest: {slow_time} h\n{get_emoji('cat_throphy')} Achievements: {unlocked}/{total_achs}{minus_achs}",
+        description=f"⏱️ Fastest: {catch_time}s, Slowest: {slow_time}h\n{get_emoji('cat_throphy')} Achievements: {unlocked}/{total_achs}{minus_achs}",
         color=discord.Colour.from_str(color)
     )
 
