@@ -1476,7 +1476,7 @@ async def gen_inventory(message, person_id):
 
     embedVar = discord.Embed(
         title=f"{emoji_prefix}{your} cats:",
-        description=f"{your} fastest catch is: {catch_time} s\nand {your} slowest catch is: {slow_time} h\nAchievements unlocked: {unlocked}/{total_achs}{minus_achs}",
+        description=f"⏱️ Fastest: {catch_time}, Slowest: {slow_time} h\n{get_emoji('cat_throphy')} Achievements: {unlocked}/{total_achs}{minus_achs}",
         color=discord.Colour.from_str(color)
     )
 
@@ -1504,7 +1504,7 @@ async def gen_inventory(message, person_id):
         embedVar.add_field(name="None", value=f"u hav no cats {get_emoji('cat_cry')}", inline=True)
 
     if embedVar.description:
-        embedVar.description += f"\n{total} cats with {round(valuenum)} value"
+        embedVar.description += f"\n{get_emoji('staring_cat')} Cats: {total}, Value: {round(valuenum)}"
 
     if user.image.startswith("https://cdn.discordapp.com/attachments/"):
         embedVar.set_thumbnail(url=user.image)
