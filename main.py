@@ -1455,12 +1455,12 @@ async def gen_inventory(message, person_id):
     catch_time = person.time
     is_empty = True
 
-    catch_time = "-" if catch_time >= 99999999999999 else str(round(catch_time, 3))
+    catch_time = "---" if catch_time >= 99999999999999 else str(round(catch_time, 3))
 
     slow_time = person.timeslow
 
     if str(int(slow_time)) == "0":
-        slow_time = "-"
+        slow_time = "---"
     else:
         slow_time = float(slow_time) / 3600
         slow_time = str(round(slow_time, 2))
