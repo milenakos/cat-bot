@@ -2746,7 +2746,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @bot.tree.command(description="View the leaderboards")
 @discord.app_commands.rename(leaderboard_type="type")
 @discord.app_commands.describe(leaderboard_type="The leaderboard type to view!")
-async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[Literal["Cats", "Value", "Fastest", "Slowest"]]):
+async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow"]]):
     if not leaderboard_type:
         leaderboard_type = "Cats"
 
@@ -2798,7 +2798,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 .group_by(Profile.user_id)
                 .order_by(total_sum_expr.desc())
             ).execute()
-        elif type == "Fastest":
+        elif type == "Fast":
             unit = "sec"
             result = (Profile
                 .select(Profile.user_id, Profile.time.alias("final_value"))
@@ -2806,7 +2806,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 .group_by(Profile.user_id, Profile.time)
                 .order_by(Profile.time.asc())
             ).execute()
-        elif type == "Slowest":
+        elif type == "Slow":
             unit = "h"
             result = (Profile
                 .select(Profile.user_id, Profile.timeslow.alias("final_value"))
@@ -2829,25 +2829,25 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 messager_placement = index
                 messager = position.final_value
 
-        if type == "Slowest":
+        if type == "Slow":
             if interactor:
                 interactor = round(interactor / 3600, 2)
             if messager:
                 messager = round(messager / 3600, 2)
 
         # dont show placements if they arent defined
-        if interactor and type in ["Cats", "Slowest", "Value"]:
+        if interactor and type in ["Cats", "Slow", "Value"]:
             if interactor <= 0:
                 interactor_placement = 0
             interactor = round(interactor)
-        elif interactor and type == "Fastest" and interactor >= 99999999999999:
+        elif interactor and type == "Fast" and interactor >= 99999999999999:
             interactor_placement = 0
 
-        if messager and type in ["Cats", "Slowest", "Value"]:
+        if messager and type in ["Cats", "Slow", "Value"]:
             if messager <= 0:
                 messager_placement = 0
             messager = round(messager)
-        elif messager and type == "Fastest" and messager >= 99999999999999:
+        elif messager and type == "Fast" and messager >= 99999999999999:
             messager_placement = 0
 
         # the little place counter
@@ -2855,7 +2855,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         leader = False
         for i in result[:15]:
             num = i.final_value
-            if type == "Slowest":
+            if type == "Slow":
                 if num <= 0:
                     break
                 num = round(num / 3600, 2)
@@ -2865,7 +2865,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 if num <= 0:
                     break
                 num = round(num)
-            elif type == "Fastest" and num >= 99999999999999:
+            elif type == "Fast" and num >= 99999999999999:
                 break
             string = string + f"{current}. {num} {unit}: <@{i.user_id}>\n"
             if message.user.id == i.user_id and current <= 5:
@@ -2904,15 +2904,15 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         else:
             button2 = Button(label="Value", style=ButtonStyle.blurple)
 
-        if type == "Fastest":
+        if type == "Fast":
             button3 = Button(label="Refresh", style=ButtonStyle.green)
         else:
-            button3 = Button(label="Fastest", style=ButtonStyle.blurple)
+            button3 = Button(label="Fast", style=ButtonStyle.blurple)
 
-        if type == "Slowest":
+        if type == "Slow":
             button4 = Button(label="Refresh", style=ButtonStyle.green)
         else:
-            button4 = Button(label="Slowest", style=ButtonStyle.blurple)
+            button4 = Button(label="Slow", style=ButtonStyle.blurple)
 
         button1.callback = catlb
         button2.callback = valuelb
@@ -2944,10 +2944,10 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         await lb_handler(interaction, "Value")
 
     async def fastlb(interaction):
-        await lb_handler(interaction, "Fastest")
+        await lb_handler(interaction, "Fast")
 
     async def slowlb(interaction):
-        await lb_handler(interaction, "Slowest")
+        await lb_handler(interaction, "Slow")
 
     await lb_handler(message, leaderboard_type, False)
 
