@@ -276,6 +276,15 @@ async def achemb(message, ach_id, send_type, author_string=None):
             await result.edit(embed=embed)
 
 
+# handle curious people clicking buttons
+async def do_funny(message):
+    await message.response.send_message(random.choice(funny), ephemeral=True)
+    await achemb(message, "curious", "send")
+    user = get_profile(message.guild.id, message.user.id)
+    user.funny += 1
+    user.save()
+
+
 # :eyes:
 async def battlepass_finale(message, user):
     # check ach req
@@ -1367,11 +1376,7 @@ async def changemessage(message: discord.Interaction):
         nonlocal caller
 
         if interaction.user != caller:
-            await interaction.response.send_message(random.choice(funny), ephemeral=True)
-            await achemb(interaction, "curious", "send")
-            user = get_profile(interaction.guild.id, interaction.user.id)
-            user.funny += 1
-            user.save()
+            await do_funny(interaction)
             return
 
         modal = InputModal("Appear")
@@ -1381,11 +1386,7 @@ async def changemessage(message: discord.Interaction):
         nonlocal caller
 
         if interaction.user != caller:
-            await interaction.response.send_message(random.choice(funny), ephemeral=True)
-            await achemb(interaction, "curious", "send")
-            user = get_profile(interaction.guild.id, interaction.user.id)
-            user.funny += 1
-            user.save()
+            await do_funny(interaction)
             return
 
         modal = InputModal("Cought")
@@ -1576,11 +1577,7 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
     async def do_rain(interaction, rain_type):
         # i LOOOOVE checks
         if message.user.id != interaction.user.id:
-            await interaction.response.send_message(random.choice(funny), ephemeral=True)
-            await achemb(interaction, "curious", "send")
-            profile = get_profile(interaction.guild.id, interaction.user.id)
-            profile.funny += 1
-            profile.save()
+            await do_funny(interaction)
             return
 
         if (rain_type == "shortrain" and not user.shortrain) or (rain_type == "mediumrain" and not user.mediumrain) or (rain_type == "longrain" and not user.longrain):
@@ -1818,11 +1815,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     await interaction.followup.send(f"Tax of {tax_amount} {cat_type} cats was withdrawn from your account!")
                     await achemb(message, "good_citizen", "send")
                 else:
-                    await interaction.response.send_message(random.choice(funny), ephemeral=True)
-                    await achemb(interaction, "curious", "send")
-                    clicker = get_profile(interaction.guild.id, interaction.user.id)
-                    clicker.funny += 1
-                    clicker.save()
+                    await do_funny(interaction)
 
             async def evade(interaction):
                 if interaction.user.id == message.user.id:
@@ -1834,11 +1827,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     await interaction.followup.send(f"You evaded the tax of {tax_amount} {cat_type} cats.")
                     await achemb(message, "secret", "send")
                 else:
-                    await interaction.followup.send(random.choice(funny), ephemeral=True)
-                    await achemb(interaction, "curious", "send")
-                    clicker = get_profile(interaction.guild.id, interaction.user.id)
-                    clicker.funny += 1
-                    clicker.save()
+                    await do_funny(interaction)
 
             button = Button(label="Pay 20% tax", style=ButtonStyle.green)
             button.callback = pay
@@ -1904,11 +1893,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
     async def denyb(interaction):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, blackhole
         if interaction.user != person1 and interaction.user != person2:
-            await interaction.response.send_message(random.choice(funny), ephemeral=True)
-            await achemb(interaction, "curious", "send")
-            clicker = get_profile(interaction.guild.id, interaction.user.id)
-            clicker.funny += 1
-            clicker.save()
+            await do_funny(interaction)
             return
 
         blackhole = True
@@ -1923,11 +1908,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
     async def acceptb(interaction):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, person1value, person2value
         if interaction.user != person1 and interaction.user != person2:
-            await interaction.response.send_message(random.choice(funny), ephemeral=True)
-            await achemb(interaction, "curious", "send")
-            clicker = get_profile(interaction.guild.id, interaction.user.id)
-            clicker.funny += 1
-            clicker.save()
+            await do_funny(interaction)
             return
 
         # clicking accept again would make you un-accept
@@ -2011,11 +1992,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
     async def addb(interaction):
         nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
         if interaction.user != person1 and interaction.user != person2:
-            await interaction.response.send_message(random.choice(funny), ephemeral=True)
-            await achemb(interaction, "curious", "send")
-            clicker = get_profile(interaction.guild.id, interaction.user.id)
-            clicker.funny += 1
-            clicker.save()
+            await do_funny(interaction)
             return
 
         if interaction.user == person1:
@@ -2233,10 +2210,7 @@ async def casino(message: discord.Interaction):
     async def spin(interaction):
         nonlocal message
         if interaction.user.id != message.user.id:
-            await interaction.response.send_message(random.choice(funny), ephemeral=True)
-            clicker = get_profile(interaction.guild.id, interaction.user.id)
-            clicker.funny += 1
-            clicker.save()
+            await do_funny(interaction)
             return
         if message.user.id in casino_lock:
             await interaction.response.send_message("you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
@@ -3152,11 +3126,7 @@ async def nuke(message: discord.Interaction):
                 except Exception:
                     pass
         else:
-            await interaction.response.send_message(random.choice(funny), ephemeral=True)
-            await achemb(interaction, "curious", "send")
-            clicker = get_profile(interaction.guild.id, interaction.user.id)
-            clicker.funny += 1
-            clicker.save()
+            await do_funny(interaction)
 
     view = await gen(counter)
     await message.response.send_message(warning_text, view=view)
