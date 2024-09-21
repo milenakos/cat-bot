@@ -283,6 +283,8 @@ async def do_funny(message):
     user = get_profile(message.guild.id, message.user.id)
     user.funny += 1
     user.save()
+    if user.funny >= 50:
+        await achemb(message, "its_not_working", "send")
 
 
 # :eyes:
