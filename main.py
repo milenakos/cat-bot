@@ -120,7 +120,15 @@ funny = [
     "get a life",
     "not for you",
     "no",
-    "nuh uh"
+    "nuh uh",
+    "access denied",
+    "forbidden",
+    "don't do this",
+    "cease",
+    "wrong",
+    "aw dangit",
+    "why don't you press buttons from your commands",
+    "you're only making me angrier"
 ]
 
 milenakoos = None
