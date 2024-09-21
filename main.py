@@ -140,6 +140,9 @@ gen_credits = {}
 # you can do 50 reactions before they stop, limit resets on global cat loop
 reactions_ratelimit = {}
 
+# sort of the same thing but for pointlaughs and per channel instead of peruser
+pointlaugh_ratelimit = {}
+
 # cooldowns for /fake cat /catch
 catchcooldown = {}
 fakecooldown = {}
@@ -414,8 +417,9 @@ async def spawn_cat(ch_id, localcat=None):
 
 # a loop for various maintaince which is ran every 5 minutes
 async def maintaince_loop():
-    global reactions_ratelimit, last_loop_time, loop_count, in_the_past, about_to_stop
+    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, in_the_past, about_to_stop
     last_loop_time = time.time()
+    pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     await bot.change_presence(
         activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
@@ -784,10 +788,12 @@ async def on_message(message):
         user = get_profile(message.guild.id, message.author.id)
         channel = Channel.get_or_none(channel_id=message.channel.id)
         if not channel or not channel.cat or channel.cat in temp_catches_storage or user.timeout > time.time():
-            # laugh at this user (except if rain is active, we dont have perms or channel isnt setupped)
-            if channel and cat_rains.get(str(message.channel.id), 0) < time.time() and perms.add_reactions:
+            # laugh at this user
+            # (except if rain is active, we dont have perms or channel isnt setupped, or we laughed way too much already)
+            if channel and cat_rains.get(str(message.channel.id), 0) < time.time() and perms.add_reactions and pointlaugh_ratelimit.get(message.channel.id, 0) < 10:
                 try:
                     await message.add_reaction(get_emoji("pointlaugh"))
+                    pointlaugh_ratelimit[message.channel.id] = pointlaugh_ratelimit.get(message.channel.id, 0) + 1
                 except Exception:
                     pass
         else:
