@@ -1366,6 +1366,9 @@ async def changemessage(message: discord.Interaction):
                     if i not in input_value:
                         await interaction.response.send_message(f"nuh uh! you are missing `{i}`.", ephemeral=True)
                         return
+                    elif input_value.count(i) > 10:
+                        await interaction.response.send_message(f"nuh uh! you are using too much of `{i}`.", ephemeral=True)
+                        return
 
                 # check there are no emojis as to not break catching
                 for i in allowedemojis:
