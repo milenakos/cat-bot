@@ -1591,7 +1591,12 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
 
     async def do_rain(interaction, rain_type):
         # i LOOOOVE checks
-        user = User.get_or_create(user_id=interaction.user.id)
+        user, _ = User.get_or_create(user_id=interaction.user.id)
+
+        if not user.claimed_free_rain:
+            user.shortrain += 1
+            user.claimed_free_rain = True
+            user.save()
 
         if (rain_type == "shortrain" and not user.shortrain) or (rain_type == "mediumrain" and not user.mediumrain) or (rain_type == "longrain" and not user.longrain):
             await interaction.response.send_message("you dont have a rain of dat type! buy one [here](<https://hipolink.me/milenakos>)", ephemeral=True)
