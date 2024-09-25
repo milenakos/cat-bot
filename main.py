@@ -1531,7 +1531,7 @@ async def gen_inventory(message, person_id):
         embedVar.add_field(name="None", value=f"u hav no cats {get_emoji('cat_cry')}", inline=True)
 
     if embedVar.description:
-        embedVar.description += f"\n{get_emoji('staring_cat')} Cats: {total}, Value: {round(valuenum)}"
+        embedVar.description += f"\n{get_emoji('staring_cat')} Cats: {"{:,}".format(total)}, Value: {"{:,}".format(round(valuenum))}"
 
     if user.image.startswith("https://cdn.discordapp.com/attachments/"):
         embedVar.set_thumbnail(url=user.image)
