@@ -1,3 +1,10 @@
+# Cat Bot
+catbot.db
+catbot.db-shm
+catbot.db-wal
+data/
+app.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

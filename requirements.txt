@@ -1,7 +1,9 @@
 aiohttp[speedups]
-discord
+discord.py @ git+https://github.com/Rapptz/discord.py@master
 Pillow==9.5.0
 Pilmoji
 emoji==1.7
 requests
 discord-emoji
+peewee
+uvloop

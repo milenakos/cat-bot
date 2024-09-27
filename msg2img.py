@@ -1,26 +1,27 @@
-from PIL import Image, ImageFont, ImageDraw, ImageColor
-from datetime import datetime
+import io
+import os
+
+import discord
 import requests
+from PIL import Image, ImageColor, ImageDraw, ImageFont
 from pilmoji import Pilmoji
+
 
 def getsize(font, token):
     # thanks pillow
     left, top, right, bottom = font.getbbox(token)
     return right - left, bottom - top
 
-def msg2img(message, bot, sansgg=False):
+def msg2img(message):
     move = 0
     is_bot = message.author.bot
-    is_pinged = bot.user in message.mentions
+    is_pinged = message.mention_everyone
     text = message.clean_content
     if not text:
         text = message.system_content
-    if message.mention_everyone:
-        is_pinged = True
-    save_to = "generated.png"
     try:
         nick = message.author.nick
-    except:
+    except Exception:
         nick = message.author.global_name
     color = (message.author.color.r, message.author.color.g, message.author.color.b)
     if color == (0, 0, 0):
@@ -33,11 +34,14 @@ def msg2img(message, bot, sansgg=False):
         if "image" not in i.content_type:
             continue
 
-        custom_image = Image.open(requests.get(i.url, stream=True).raw).convert("RGBA")
-        
+        try:
+            custom_image = Image.open(requests.get(i.url, stream=True).raw).convert("RGBA")
+        except Exception:
+            continue
+
         max_width = 930
         width, height = custom_image.size
-        
+
         if max_width >= width:
             # no rescaling needed
             calculated_height = height
@@ -48,7 +52,7 @@ def msg2img(message, bot, sansgg=False):
         calculated_height = int(height / decrease_amount)
 
         custom_image = custom_image.resize((max_width, calculated_height))
-        
+
         break
 
     def break_text(text, font, max_width):
@@ -101,12 +105,10 @@ def msg2img(message, bot, sansgg=False):
             lines.append(line)
         return lines, pings
 
-    font = ImageFont.truetype("whitneysemibold.otf", 32)  # load fonts
-    if sansgg:
-        font2 = ImageFont.truetype("ggsans-Medium.ttf", 32)  # load fonts
-    else:
-        font2 = ImageFont.truetype("whitneymedium.otf", 32)  # load fonts
-    font3 = ImageFont.truetype("whitneysemibold.otf", 23)  # load fonts
+    print(os.path.abspath('.'))  # woo debugging
+    font = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 32)  # load fonts
+    font2 = ImageFont.truetype(os.path.abspath("./fonts/ggsans-Medium.ttf"), 32)  # load fonts
+    font3 = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 23)  # load fonts
 
     text_temp = ""
     lines, pings = break_text(text, font2, 930)
@@ -129,9 +131,7 @@ def msg2img(message, bot, sansgg=False):
     if isinstance(color, str):
         color = ImageColor.getrgb(color)
 
-    bg_color = (54, 57, 63)
-    if sansgg:
-        bg_color = (49, 51, 56)
+    bg_color = (49, 51, 56)
     if is_pinged:
         bg_color = (73, 68, 60)
     new_img = Image.new("RGBA", (1067, 75 + the_size_and_stuff), bg_color)
@@ -140,16 +140,16 @@ def msg2img(message, bot, sansgg=False):
         pfp = requests.get(message.author.display_avatar.url, stream=True).raw
         im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
     except Exception: # if the pfp is bit too silly
-        new_url = "https://cdn.discordapp.com/avatars/966695034340663367/d9b60a653cb3c6f95baedf790723ce41.png?size=1024"
+        new_url = "https://cdn.discordapp.com/embed/avatars/0.png"
         pfp = requests.get(new_url, stream=True).raw
         im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
-    
+
     mask_im = Image.new("L", (800, 800), 0)  # make a mask image for making pfp circle
     draw = ImageDraw.Draw(mask_im)  # enable drawing mode on mask
     draw.ellipse((0, 0, 800, 800), fill=255)  # draw circle on mask
     newer_img = Image.new("RGBA", (800, 800), bg_color)
     newer_img.paste(im2, (0, 0), mask_im)  # apply mask to avatar
-    newer_img = newer_img.resize((80, 80), Image.LANCZOS)
+    newer_img = newer_img.resize((80, 80), Image.Resampling.LANCZOS)
     new_img.paste(newer_img, (10, 10), newer_img)
 
     if custom_image:
@@ -169,13 +169,13 @@ def msg2img(message, bot, sansgg=False):
 
     pencil.text((122, 8), nick, font=font, fill=color)  # draw author name
     if is_bot:
-        botfont = ImageFont.truetype("whitneysemibold.otf", 20)
+        botfont = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 20)
 
         pencil.rounded_rectangle(
             (
                 129 + getsize(font, nick)[0] + 5,
                 8 + 5,
-                129 + getsize(font, nick)[0] + 14 + getsize(botfont, "BOT")[0],
+                129 + getsize(font, nick)[0] + 14 + getsize(botfont, "APP")[0],
                 10 + 6 + 25,
             ),
             fill=(88, 101, 242),
@@ -184,12 +184,12 @@ def msg2img(message, bot, sansgg=False):
 
         pencil.text(
             (131 + getsize(font, nick)[0] + 8, 10 + 4),
-            "BOT",
+            "APP",
             font=botfont,
             fill=(255, 255, 255),
         )
-        move = getsize(botfont, "BOT")[0] + 20
-    
+        move = getsize(botfont, "APP")[0] + 20
+
     with Pilmoji(new_img) as pilmoji2:
         pilmoji2.text((122, 55), text.strip(), (255, 255, 255), font2, emoji_scale_factor=45/33)
 
@@ -212,10 +212,13 @@ def msg2img(message, bot, sansgg=False):
         font=font3,
         fill=ImageColor.getrgb("#A3A4AA"),
     )  # draw time
-    new_img.save(save_to)  # save result
+
+    with io.BytesIO() as image_binary:
+        new_img.save(image_binary, "PNG")
+        image_binary.seek(0)
+        return discord.File(fp=image_binary, filename="catch.png")
 
 
 # italic          https://discord.com/assets/7f18f1d5ab6ded7cf71bbc1f907ee3d4.woff2
 # bold            https://discord.com/assets/f9e7047f6447547781512ec4b977b2ab.woff2
 # bold and italic https://discord.com/assets/21070f52a8a6a61edef9785eaf303fb8.woff2
-
