@@ -2774,7 +2774,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             # find rarest
             rarest = None
             for i in cattypes[::-1]:
-                non_zero_count = Profile.select().where((Profile.guild_id == message.guild.id) & (getattr(Profile, f"cat_{i}") != 0)).execute()
+                non_zero_count = Profile.select().where((Profile.guild_id == message.guild.id) & (getattr(Profile, f"cat_{i}") > 0)).execute()
                 if len(non_zero_count) != 0:
                     rarest = i
                     rarest_holder = non_zero_count
