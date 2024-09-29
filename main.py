@@ -2386,15 +2386,12 @@ async def cat_fact(message: discord.Interaction):
     facts = [
         "you love cats",
         f"cat bot is in {len(bot.guilds):,} servers",
-        "chocolate is bad for cats",
         "cat",
-        "cats land on their feet",
-        "cats bring you mice/birds as a gift",
         "cats are the best"
     ]
 
     # give a fact from the list or the API
-    if random.randint(0, 2) == 0:
+    if random.randint(0, 10) == 0:
         await message.response.send_message(random.choice(facts))
     else:
         await message.response.defer()
