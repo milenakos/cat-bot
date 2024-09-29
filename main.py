@@ -1518,7 +1518,7 @@ async def gen_inventory(message, person_id):
         if cat_num != 0:
             total += cat_num
             valuenum += (len(CAT_TYPES) / type_dict[i]) * cat_num
-            embedVar.add_field(name=f"{icon} {i:,}", value=cat_num, inline=True)
+            embedVar.add_field(name=f"{icon} {i}", value=f"{cat_num:,}", inline=True)
             is_empty = False
         else:
             give_collector = False
