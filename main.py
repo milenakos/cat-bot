@@ -726,7 +726,7 @@ async def on_message(message):
         user.save()
         try:
             if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                await message.reply(f"ok then\n{message.author.name.replace("_", r"\_")} lost 1 fine cat!!!1!\nYou now have {user.cat_Fine} cats of dat type!")
+                await message.reply(f"ok then\n{message.author.name.replace("_", r"\_")} lost 1 fine cat!!!1!\nYou now have {user.cat_Fine:,} cats of dat type!")
         except Exception:
             pass
         await achemb(message, "pleasedonotthecat", "reply")
@@ -994,7 +994,7 @@ async def on_message(message):
                         await send_target.send(coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
                                                             .replace("{emoji}", str(icon))
                                                             .replace("{type}", le_emoji)
-                                                            .replace("{count}", str(new_count))
+                                                            .replace("{count}", f"{new_count:,}")
                                                             .replace("{time}", caught_time[:-1]) + suffix_string,
                                                 **kwargs)
                     except Exception:
@@ -1518,7 +1518,7 @@ async def gen_inventory(message, person_id):
         if cat_num != 0:
             total += cat_num
             valuenum += (len(CAT_TYPES) / type_dict[i]) * cat_num
-            embedVar.add_field(name=f"{icon} {i}", value=cat_num, inline=True)
+            embedVar.add_field(name=f"{icon} {i:,}", value=cat_num, inline=True)
             is_empty = False
         else:
             give_collector = False
@@ -1531,7 +1531,7 @@ async def gen_inventory(message, person_id):
         embedVar.add_field(name="None", value=f"u hav no cats {get_emoji('cat_cry')}", inline=True)
 
     if embedVar.description:
-        embedVar.description += f"\n{get_emoji('staring_cat')} Cats: {total}, Value: {round(valuenum)}"
+        embedVar.description += f"\n{get_emoji('staring_cat')} Cats: {total:,}, Value: {round(valuenum):,}"
 
     if user.image.startswith("https://cdn.discordapp.com/attachments/"):
         embedVar.set_thumbnail(url=user.image)
@@ -1816,7 +1816,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
         reciever[f"cat_{cat_type}"] += amount
         user.save()
         reciever.save()
-        embed = discord.Embed(title="Success!", description=f"Successfully transfered {amount} {cat_type} cats from <@{message.user.id}> to <@{person_id}>!", color=0x6E593C)
+        embed = discord.Embed(title="Success!", description=f"Successfully transfered {amount:,} {cat_type} cats from <@{message.user.id}> to <@{person_id}>!", color=0x6E593C)
 
         # handle tax
         if amount >= 5:
@@ -1833,7 +1833,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     catbot[f"cat_{cat_type}"] += tax_amount
                     user.save()
                     catbot.save()
-                    await interaction.followup.send(f"Tax of {tax_amount} {cat_type} cats was withdrawn from your account!")
+                    await interaction.followup.send(f"Tax of {tax_amount:,} {cat_type} cats was withdrawn from your account!")
                     await achemb(message, "good_citizen", "send")
                 else:
                     await do_funny(interaction)
@@ -1845,7 +1845,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                         await interaction.edit_original_response(view=None)
                     except Exception:
                         pass
-                    await interaction.followup.send(f"You evaded the tax of {tax_amount} {cat_type} cats.")
+                    await interaction.followup.send(f"You evaded the tax of {tax_amount:,} {cat_type} cats.")
                     await achemb(message, "secret", "send")
                 else:
                     await do_funny(interaction)
@@ -2072,11 +2072,11 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 valuenum += (len(CAT_TYPES) / type_dict[k]) * v
                 total += v
                 aicon = get_emoji(k.lower() + "cat")
-                valuestr += str(aicon) + " " + k + " " + str(v) + "\n"
+                valuestr += f"{aicon} {k} {v:,}\n"
             if not valuestr:
                 valuestr = "No cats offered!"
             else:
-                valuestr += f"*Total value: {round(valuenum)}\nTotal cats: {round(total)}*"
+                valuestr += f"*Total value: {round(valuenum):,}\nTotal cats: {round(total):,}*"
                 if number == 1:
                     person1value = round(valuenum)
                 else:
@@ -2862,27 +2862,28 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 num = round(num)
             elif type == "Fast" and num >= 99999999999999:
                 break
-            string = string + f"{current}. {num} {unit}: <@{i.user_id}>\n"
+            string = string + f"{current}. {num:,} {unit}: <@{i.user_id}>\n"
             if message.user.id == i.user_id and current <= 5:
                 leader = True
             current += 1
 
         # add the messager and interactor
+        # todo: refactor this
         if messager_placement > 15 or interactor_placement > 15:
             string = string + "...\n"
             # sort them correctly!
             if messager_placement > interactor_placement:
                 # interactor should go first
                 if interactor_placement > 15 and str(interaction.user.id) not in string:
-                    string = string + f"{interactor_placement}\\. {interactor} {unit}: <@{interaction.user.id}>\n"
+                    string = string + f"{interactor_placement}\\. {interactor:,} {unit}: <@{interaction.user.id}>\n"
                 if messager_placement > 15 and str(message.user.id) not in string:
-                    string = string + f"{messager_placement}\\. {messager} {unit}: <@{message.user.id}>\n"
+                    string = string + f"{messager_placement}\\. {messager:,} {unit}: <@{message.user.id}>\n"
             else:
                 # messager should go first
                 if messager_placement > 15 and str(message.user.id) not in string:
-                    string = string + f"{messager_placement}\\. {messager} {unit}: <@{message.user.id}>\n"
+                    string = string + f"{messager_placement}\\. {messager:,} {unit}: <@{message.user.id}>\n"
                 if interactor_placement > 15 and str(interaction.user.id) not in string:
-                    string = string + f"{interactor_placement}\\. {interactor} {unit}: <@{interaction.user.id}>\n"
+                    string = string + f"{interactor_placement}\\. {interactor:,} {unit}: <@{interaction.user.id}>\n"
 
         embedVar = discord.Embed(
                 title=f"{type} Leaderboards:", description=string.rstrip(), color=0x6E593C
@@ -2960,7 +2961,7 @@ async def givecat(message: discord.Interaction, person_id: discord.User, amount:
     user = get_profile(message.guild.id, person_id.id)
     user[f"cat_{cat_type}"] += amount
     user.save()
-    embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount} {cat_type} cats", color=0x6E593C)
+    embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount:,} {cat_type} cats", color=0x6E593C)
     await message.response.send_message(embed=embed)
 
 
