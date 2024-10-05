@@ -370,25 +370,20 @@ async def spawn_cat(ch_id, localcat=None):
         channeley = discord.Webhook.from_url(channel.webhook, client=bot)
         thread_id = channel.thread_mappings
     except Exception:
-        channeley = bot.get_channel(int(ch_id))
-        if not isinstance(channeley, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel]):
-            return
-        with open("images/cat.png", "rb") as f:
-            try:
-                if not channeley.permissions_for(channeley.guild.me).manage_webhooks:
-                    raise Exception
-                wh = await channeley.create_webhook(name="Cat Bot", avatar=f.read())
+        try:
+            temp_channel = bot.get_channel(int(ch_id))
+            if not temp_channel \
+            or not isinstance(temp_channel, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel]) \
+            or not temp_channel.permissions_for(temp_channel.guild.me).manage_webhooks:
+                raise Exception
+            with open("images/cat.png", "rb") as f:
+                wh = await temp_channel.create_webhook(name="Cat Bot", avatar=f.read())
                 channel.webhook = wh.url
                 channel.save()
                 await spawn_cat(ch_id, localcat) # respawn
-            except Exception:
-                channel.delete_instance()
-                try:
-                    if channeley.permissions_for(channeley.guild.me).send_messages:
-                        await channeley.send("Error spawning the cat - cat moved to new system and failed to automatically migrate this channel. Please make sure the bot has **Manage Webhooks** permission - either give it manually or re-invite the bot, then resetup this channel.")
-                except Exception:
-                    pass
-        return
+        except Exception:
+            channel.delete_instance()
+            return
 
     appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!" if not channel.appear else channel.appear
 
