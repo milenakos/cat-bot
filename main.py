@@ -1794,7 +1794,7 @@ async def ping(message: discord.Interaction):
 
 @bot.tree.command(description="give cats now")
 @discord.app_commands.rename(cat_type="type")
-@discord.app_commands.describe(person="Whom to donate?", cat_type="im gonna airstrike your house from orbit", amount="And how much?")
+@discord.app_commands.describe(person="Whom to gift?", cat_type="im gonna airstrike your house from orbit", amount="And how much?")
 @discord.app_commands.autocomplete(cat_type=gift_autocomplete)
 async def gift(message: discord.Interaction, person: discord.User, cat_type: str, amount: Optional[int]):
     if not amount:
