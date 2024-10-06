@@ -354,6 +354,14 @@ def alnum(string):
     return "".join(item for item in string.lower() if item.isalnum())
 
 
+async def unsetup(channel):
+    try:
+        wh = discord.Webhook.from_url(channel.webhook, client=bot)
+        await wh.delete(prefer_auth=False)
+    except Exception:
+        pass
+    channel.delete_instance()
+
 async def spawn_cat(ch_id, localcat=None):
     try:
         channel = Channel.get(channel_id=ch_id)
@@ -382,7 +390,7 @@ async def spawn_cat(ch_id, localcat=None):
                 channel.save()
                 await spawn_cat(ch_id, localcat) # respawn
         except Exception:
-            channel.delete_instance()
+            await unsetup(channel)
             return
 
     appearstring = "{emoji} {type} cat has appeared! Type \"cat\" to catch it!" if not channel.appear else channel.appear
@@ -397,10 +405,10 @@ async def spawn_cat(ch_id, localcat=None):
         else:
             message_is_sus = await channeley.send(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat), file=file, wait=True)
     except discord.Forbidden:
-        channel.delete_instance()
+        await unsetup(channel)
         return
     except discord.NotFound:
-        channel.delete_instance()
+        await unsetup(channel)
         return
     except Exception:
         return
@@ -408,7 +416,7 @@ async def spawn_cat(ch_id, localcat=None):
     if message_is_sus.channel.id != int(ch_id):
         # user changed the webhook destination, panic mode
         await channeley.send("uh oh spaghettio you changed webhook destination and idk what to do with that so i will now self destruct do /setup to fix it")
-        channel.delete_instance()
+        await unsetup(channel)
         return
 
     channel.cat = message_is_sus.id
@@ -3017,7 +3025,7 @@ async def setup_channel(message: discord.Interaction):
 @discord.app_commands.default_permissions(manage_guild=True)
 async def forget(message: discord.Interaction):
     if channel := Channel.get_or_none(channel_id=message.channel.id):
-        channel.delete_instance()
+        await unsetup(channel)
         await message.response.send_message(f"ok, now i wont send cats in <#{message.channel.id}>")
     else:
         await message.response.send_message("your an idiot there is literally no cat setupped in this channel you stupid")
