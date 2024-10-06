@@ -164,6 +164,9 @@ temp_catches_storage = []
 in_the_past = False
 about_to_stop = False
 
+# manual restarts
+queue_restart = False
+
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
 
@@ -538,7 +541,7 @@ async def on_ready():
 # this is all the code which is ran on every message sent
 # a lot of it is for easter eggs or achievements
 async def on_message(message):
-    global in_the_past, emojis
+    global in_the_past, emojis, queue_restart
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
         return
@@ -820,6 +823,11 @@ async def on_message(message):
                             await message.channel.send("# :bangbang: this concludes the cat rain.")
                     except Exception:
                         pass
+                    if queue_restart and int(max(cat_rains.values())) < time.time():
+                        os.system("git pull")
+                        await vote_server.cleanup()
+                        in_the_past = True
+                        await bot.cat_bot_reload_hook()  # pyright: ignore
             decided_time = random.uniform(times[0], times[1])
             if channel.yet_to_spawn < time.time():
                 channel.yet_to_spawn = time.time() + decided_time + 10
@@ -1101,6 +1109,9 @@ async def on_message(message):
         elif things[2] == "long":
             user.longrain += 1
         user.save()
+    if text.lower().startswith("cat!restart") and message.author.id == OWNER_ID:
+        queue_restart = message
+        await message.reply("restarting soon...")
     if text.lower().startswith("cat!print") and message.author.id == OWNER_ID:
         # just a simple one-line with no async (e.g. 2+3)
         try:
