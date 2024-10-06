@@ -541,7 +541,7 @@ async def on_ready():
 # this is all the code which is ran on every message sent
 # a lot of it is for easter eggs or achievements
 async def on_message(message):
-    global in_the_past, emojis, queue_restart
+    global in_the_past, emojis, queue_restart, about_to_stop
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
         return
@@ -593,6 +593,7 @@ async def on_message(message):
 
     # here are some automation hooks for giving out purchases and autoupdating
     if config.GITHUB_CHANNEL_ID and message.channel.id == config.GITHUB_CHANNEL_ID:
+        about_to_stop = True
         os.system("git pull")
         await vote_server.cleanup()
         in_the_past = True
@@ -824,6 +825,7 @@ async def on_message(message):
                     except Exception:
                         pass
                     if queue_restart and int(max(cat_rains.values())) < time.time():
+                        about_to_stop = True
                         await queue_restart.reply("restarting now!")
                         os.system("git pull")
                         await vote_server.cleanup()
