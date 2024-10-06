@@ -405,6 +405,12 @@ async def spawn_cat(ch_id, localcat=None):
     except Exception:
         return
 
+    if message_is_sus.channel.id != int(ch_id):
+        # user changed the webhook destination, panic mode
+        await channeley.send("uh oh spaghettio you changed webhook destination and idk what to do with that so i will now self destruct do /setup to fix it")
+        channel.delete_instance()
+        return
+
     channel.cat = message_is_sus.id
     channel.yet_to_spawn = 0
     channel.save()
