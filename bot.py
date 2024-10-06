@@ -14,7 +14,9 @@ if os.name != "nt":
 intents = discord.Intents(message_content=True, messages=True, guilds=True, emojis=True)
 bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                               intents=intents,
+                              member_cache_flags=discord.MemberCacheFlags.none(),
                               help_command=None,
+                              max_messages=None,
                               chunk_guilds_at_startup=False)
 
 @bot.event

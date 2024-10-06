@@ -508,7 +508,7 @@ async def on_ready():
     on_ready_debounce = True
     print("cat is now online")
     emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
-    appinfo = await bot.application_info()
+    appinfo = bot.application
     if appinfo.team and appinfo.team.owner_id:
         milenakoos = await bot.fetch_user(appinfo.team.owner_id)
     else:
