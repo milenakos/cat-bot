@@ -165,7 +165,7 @@ in_the_past = False
 about_to_stop = False
 
 # manual restarts
-queue_restart = False
+queue_restart: Optional[discord.Message] = None
 
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
@@ -824,6 +824,7 @@ async def on_message(message):
                     except Exception:
                         pass
                     if queue_restart and int(max(cat_rains.values())) < time.time():
+                        await queue_restart.reply("restarting now!")
                         os.system("git pull")
                         await vote_server.cleanup()
                         in_the_past = True
