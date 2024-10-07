@@ -418,7 +418,10 @@ async def spawn_cat(ch_id, localcat=None):
 
     if message_is_sus.channel.id != int(ch_id):
         # user changed the webhook destination, panic mode
-        await channeley.send("uh oh spaghettio you changed webhook destination and idk what to do with that so i will now self destruct do /setup to fix it")
+        if thread_id:
+            await channeley.send("uh oh spaghettio you changed webhook destination and idk what to do with that so i will now self destruct do /setup to fix it", thread=discord.Object(int(ch_id)))
+        else:
+            await channeley.send("uh oh spaghettio you changed webhook destination and idk what to do with that so i will now self destruct do /setup to fix it")
         await unsetup(channel)
         return
 
@@ -1113,8 +1116,16 @@ async def on_message(message):
             user.longrain += 1
         user.save()
     if text.lower().startswith("cat!restart") and message.author.id == OWNER_ID:
-        queue_restart = message
-        await message.reply("restarting soon...")
+        if int(max(cat_rains.values())) < time.time():
+            about_to_stop = True
+            await queue_restart.reply("restarting now!")
+            os.system("git pull")
+            await vote_server.cleanup()
+            in_the_past = True
+            await bot.cat_bot_reload_hook()  # pyright: ignore
+        else:
+            queue_restart = message
+            await message.reply("restarting soon...")
     if text.lower().startswith("cat!print") and message.author.id == OWNER_ID:
         # just a simple one-line with no async (e.g. 2+3)
         try:
