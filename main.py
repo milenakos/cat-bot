@@ -3235,8 +3235,8 @@ async def claim_reward(user, channeley, type):
             await channeley.send(f"<@{user.user_id}>", embed=embedVar, view=view)
     except Exception:
         pass
-
-
+    if randint(0, 10000) = 236:
+        await channeley.send("you escaped the basement... but at what cost? your profile will be deleted on october 21st, 2043 at 5:36 am. I'm sorry.")
 async def recieve_vote(request):
     if request.headers.get('authorization', '') != config.WEBHOOK_VERIFY:
         return web.Response(text="bad", status=403)
