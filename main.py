@@ -2122,15 +2122,6 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
         return coolembed, view
 
-    embed, view = await gen_embed()
-    if not view:
-        await message.response.send_message(embed=embed)
-    else:
-        await message.response.send_message(embed=embed, view=view)
-
-    if person1 == person2:
-        await achemb(message, "introvert", "send")
-
     # this is wrapper around gen_embed() to edit the mesage automatically
     async def update_trade_embed(interaction):
         embed, view = await gen_embed()
@@ -2208,6 +2199,15 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
             await interaction.response.defer()
             await update_trade_embed(interaction)
+
+    embed, view = await gen_embed()
+    if not view:
+        await message.response.send_message(embed=embed)
+    else:
+        await message.response.send_message(embed=embed, view=view)
+
+    if person1 == person2:
+        await achemb(message, "introvert", "send")
 
 
 @bot.tree.command(description="Get Cat Image, does not add a cat to your inventory")
