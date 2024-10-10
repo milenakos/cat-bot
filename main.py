@@ -1118,7 +1118,7 @@ async def on_message(message):
     if text.lower().startswith("cat!restart") and message.author.id == OWNER_ID:
         if int(max(cat_rains.values())) < time.time():
             about_to_stop = True
-            await queue_restart.reply("restarting now!")
+            await message.reply("restarting now!")
             os.system("git pull")
             await vote_server.cleanup()
             in_the_past = True
