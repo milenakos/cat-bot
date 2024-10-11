@@ -1961,7 +1961,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
     # this is the accept button code
     async def acceptb(interaction):
-        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, person1value, person2value
+        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, person1value, person2value, user1, user2
         if interaction.user != person1 and interaction.user != person2:
             await do_funny(interaction)
             return
@@ -1979,6 +1979,9 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             await achemb(message, "desperate", "send")
 
         if person1accept and person2accept:
+            user1 = get_profile(message.guild.id, person1.id)
+            user2 = get_profile(message.guild.id, person2.id)
+
             error = False
             # check if we have enough cats (person could have moved them during the trade)
             for k, v in person1gives.items():
