@@ -1614,7 +1614,7 @@ async def rain(message: discord.Interaction):
 
     embed = discord.Embed(title="Cat Rains", description=f"""Cat Rains are power-ups which spawn cats instantly for a limited amounts of time in channel of your choice.
 
-You can get those by buying them at our [store](<https://hipolink.me/milenakos>) or by winning them in an event.
+You can get those by buying them at our [store](<https://catbot.minkos.lol/store>) or by winning them in an event.
 This bot is developed by a single person so buying one would be very appreciated.
 
 You currently have:
@@ -1636,7 +1636,7 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
             user.save()
 
         if (rain_type == "shortrain" and not user.shortrain) or (rain_type == "mediumrain" and not user.mediumrain) or (rain_type == "longrain" and not user.longrain):
-            await interaction.response.send_message("you dont have a rain of dat type! buy one [here](<https://hipolink.me/milenakos>)", ephemeral=True)
+            await interaction.response.send_message("you dont have a rain of dat type! buy one [here](<https://catbot.minkos.lol/store>)", ephemeral=True)
             return
 
         if about_to_stop:
@@ -1729,7 +1729,7 @@ async def donate(message: discord.Interaction):
 
 @bot.tree.command(description="Buy Cat Rains!")
 async def store(message: discord.Interaction):
-    await message.response.send_message("☔ Cat rains make cats spawn instantly! Make your server active, get more cats and have fun!\n<https://hipolink.me/milenakos>")
+    await message.response.send_message("☔ Cat rains make cats spawn instantly! Make your server active, get more cats and have fun!\n<https://catbot.minkos.lol/store>")
 
 
 @bot.tree.command(description="[SUPPORTER] Customize your profile!")
