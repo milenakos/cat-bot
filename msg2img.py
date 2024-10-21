@@ -31,7 +31,7 @@ def msg2img(message):
 
     custom_image = None
     for i in message.attachments:
-        if "image" not in i.content_type:
+        if not i.content_type or "image" not in i.content_type:
             continue
 
         try:
