@@ -1477,14 +1477,21 @@ async def daily(message: discord.Interaction):
     await achemb(message, "daily", "send")
 
 
-@bot.tree.command(description="View when the last cat was caught in this channel")
+@bot.tree.command(description="View when the last cat was caught in this channel, and when the next one might spawn")
 async def last(message: discord.Interaction):
+    channel = Channel.get_or_none(channel_id=message.channel.id)
+    nextpossible = ""
+
     try:
-        lasttime = Channel.get_or_none(channel_id=message.channel.id).lastcatches
+        lasttime = channel.lastcatches
         displayedtime = f"<t:{int(lasttime)}:R>"
     except Exception:
-        displayedtime = "forever ago"
-    await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.")
+        displayedtime = "never"
+    
+    if channel and not channel.cat:
+        nextpossible = "\nthe next cat will spawn <t:" + {int(lasttime)+channel.spawn_times_min} + "R:> to <t:" + {int(lasttime)+channel.spawn_times_max} + ":R>"
+        
+    await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.{nextpossible}")
 
 
 async def gen_inventory(message, person_id):
