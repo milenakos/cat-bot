@@ -796,7 +796,7 @@ async def on_message(message):
                                                 headers={"Authorization": config.TOP_GG_TOKEN},
                                                 timeout=15)
                     resp = await answer.json()
-                    if resp["voted"]:
+                    if resp["voted"] and user.vote_time_topgg + 43200 < time.time(): # vroom vroom i love race conditions
                         await claim_reward(user, message.channel, "topgg")
                 except Exception:
                     pass
