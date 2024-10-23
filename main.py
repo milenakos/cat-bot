@@ -990,16 +990,16 @@ async def on_message(message):
                 if random.randint(0, 10) == 0 and user.cat_Fine >= 20 and not user.dark_market_active:
                     button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
                     button.callback = dark_market_cutscene
-                elif config.WEBHOOK_VERIFY and vote_time_user.vote_time_topgg + 43200 < time.time():
-                    button = Button(emoji=get_emoji("topgg"), label=random.choice(vote_button_texts), url="https://top.gg/bot/966695034340663367/vote")
                 elif random.randint(0, 20) == 0:
-                    button = Button(label="Join our Discord!", url="https://discord.gg/staring")
+                    button = Button(label="Join our Discord!", url="https://discord.gg/staring", style=ButtonStyle.blurple)
                 elif random.randint(0, 500) == 0:
-                    button = Button(label="John Discord 🤠", url="https://discord.gg/staring")
+                    button = Button(label="John Discord 🤠", url="https://discord.gg/staring", style=ButtonStyle.blurple)
                 elif random.randint(0, 50000) == 0:
                     button = Button(label="DAVE DISCORD 😀💀⚠️🥺", url="https://discord.gg/staring", style=ButtonStyle.danger)
                 elif random.randint(0, 5000000) == 0:
                     button = Button(label="JOHN AND DAVE HAD A SON 💀🤠😀⚠️🥺", url="https://discord.gg/staring", style=ButtonStyle.green)
+                elif config.WEBHOOK_VERIFY and vote_time_user.vote_time_topgg + 43200 < time.time():
+                    button = Button(emoji=get_emoji("topgg"), label=random.choice(vote_button_texts), url="https://top.gg/bot/966695034340663367/vote")
 
                 if button:
                     view = View(timeout=3600)
