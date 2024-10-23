@@ -1118,7 +1118,7 @@ async def on_message(message):
             user.longrain += 1
         user.save()
     if text.lower().startswith("cat!restart") and message.author.id == OWNER_ID:
-        if int(max(cat_rains.values())) < time.time():
+        if not cat_rains or int(max(cat_rains.values())) < time.time():
             about_to_stop = True
             await message.reply("restarting now!")
             os.system("git pull")
