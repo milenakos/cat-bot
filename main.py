@@ -199,6 +199,8 @@ def get_profile(guild_id, user_id):
 
 def get_emoji(name):
     global emojis
+    if name in allowedemojis:
+        return emojis["p_" + name]
     if name in emojis.keys():
         return emojis[name]
     else:
@@ -937,7 +939,7 @@ async def on_message(message):
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
+                    suffix_string += f"\n🎃 halloween sale! -30% </rain:{RAIN_ID}>"
 
                 if channel.cought:
                     coughstring = channel.cought
