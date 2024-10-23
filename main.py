@@ -1676,7 +1676,7 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
 
         missing_perms = list(needed_perms.keys())
         if len(missing_perms) != 0:
-            await interaction.response.send_message(f":x: Missing Permissions! Please give me the following: - {'\n- '.join(missing_perms)}]\nHint: try setting channel permissions if server ones don't work.")
+            await interaction.response.send_message(f":x: Missing Permissions! Please give me the following:\n- {'\n- '.join(missing_perms)}\nHint: try setting channel permissions if server ones don't work.")
             return
 
         if not isinstance(message.channel, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel, discord.Thread]):
@@ -3034,7 +3034,7 @@ async def setup_channel(message: discord.Interaction):
 
             missing_perms = list(needed_perms.keys())
             if len(missing_perms) != 0:
-                await message.response.send_message(f":x: Missing Permissions! Please give me the following: - {'\n- '.join(missing_perms)}]\nHint: try setting channel permissions if server ones don't work.")
+                await message.response.send_message(f":x: Missing Permissions! Please give me the following:\n- {'\n- '.join(missing_perms)}\nHint: try setting channel permissions if server ones don't work.")
                 return
 
             if isinstance(message.channel, discord.Thread):
