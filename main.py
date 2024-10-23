@@ -1712,10 +1712,13 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
     button3 = Button(label="Long", style=ButtonStyle.blurple)
     button3.callback = long
 
+    shopbutton = Button(emoji="🛒", label="Store", style=ButtonStyle.gray, url="https://catbot.minkos.lol/store")
+
     view = View(timeout=3600)
     view.add_item(button1)
     view.add_item(button2)
     view.add_item(button3)
+    view.add_item(shopbutton)
 
     await message.response.send_message(embed=embed, view=view)
 
