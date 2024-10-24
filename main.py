@@ -786,21 +786,6 @@ async def on_message(message):
     except Exception:
         pass
 
-    if text.lower() == "i voted":
-        # recheck votes
-        user, _ = User.get_or_create(user_id=message.author.id)
-        if user.vote_time_topgg + 43200 < time.time():
-            async with aiohttp.ClientSession() as session:
-                try:
-                    answer = await session.get(f'https://top.gg/api/bots/{bot.user.id}/check?userId={message.author.id}',
-                                                headers={"Authorization": config.TOP_GG_TOKEN},
-                                                timeout=15)
-                    resp = await answer.json()
-                    if resp["voted"] and user.vote_time_topgg + 43200 < time.time(): # vroom vroom i love race conditions
-                        await claim_reward(user, message.channel, "topgg")
-                except Exception:
-                    pass
-
     # this is run whether someone says "cat" (very complex)
     if text.lower() == "cat":
         user = get_profile(message.guild.id, message.author.id)
@@ -2397,7 +2382,7 @@ if config.WEBHOOK_VERIFY:
         button.callback = toggle_reminders
         view.add_item(button)
 
-        embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg every 12 hours to recieve mystery cats.\nIf bot didn't automatically detect your vote, just say `i voted`.", color=0x6E593C)
+        embedVar = discord.Embed(title="Vote for Cat Bot", description=f"{weekend_message}Vote for Cat Bot on top.gg every 12 hours to recieve mystery cats.", color=0x6E593C)
         await message.followup.send(embed=embedVar, view=view)
 
 
