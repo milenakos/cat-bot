@@ -1486,7 +1486,7 @@ async def last(message: discord.Interaction):
         lasttime = channel.lastcatches
         displayedtime = f"<t:{int(lasttime)}:R>"
     except Exception:
-        displayedtime = "never"
+        displayedtime = "forever ago"
     
     if channel and not channel.cat:
         nextpossible = f"\nthe next cat will spawn <t:{int(lasttime) + channel.spawn_times_min}R:> to <t:{int(lasttime) + channel.spawn_times_max}:R>"
