@@ -597,6 +597,27 @@ async def on_message(message):
     ]
 
     # here are some automation hooks for giving out purchases and autoupdating
+    if config.NEWS_CHANNEL_ID and message.channel.id == config.NEWS_CHANNEL_ID:
+        for i in Channel.select():
+            try:
+                channeley = discord.Webhook.from_url(i.webhook, client=bot)
+                if i.thread_mappings:
+                    await channeley.send(
+                        message.content,
+                        files=[await thing.to_file() for thing in message.attachments],
+                        allowed_mentions=discord.AllowedMentions.none(),
+                        thread=discord.Object(int(i.channel_id))
+                    )
+                else:
+                    await channeley.send(
+                        message.content,
+                        files=[await thing.to_file() for thing in message.attachments],
+                        allowed_mentions=discord.AllowedMentions.none()
+                    )
+                await asyncio.sleep(0.03)
+            except Exception:
+                pass
+
     if config.GITHUB_CHANNEL_ID and message.channel.id == config.GITHUB_CHANNEL_ID:
         about_to_stop = True
         os.system("git pull")
