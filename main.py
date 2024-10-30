@@ -1698,7 +1698,7 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
         if not isinstance(message.channel, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel, discord.Thread]):
             return
 
-        cat_rains[str(message.channel.id)] = time.time() + rain_length
+        cat_rains[str(message.channel.id)] = time.time() + (rain_length * 60)
         await spawn_cat(str(message.channel.id))
         user.rain_minutes -= rain_length
         user.save()
