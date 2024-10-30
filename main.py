@@ -1662,12 +1662,9 @@ async def rain(message: discord.Interaction):
 
 You can get those by buying them at our [store](<https://catbot.minkos.lol/store>) or by winning them in an event.
 This bot is developed by a single person so buying one would be very appreciated.
+Fastest times are not saved during rains.
 
-You currently have **{user.rain_minutes}** minutes of rains.
-
-Note: fastest times are not saved during rains.
-
-Click buttons below to start a rain in the current channel.""", color=0x6E593C)
+You currently have **{user.rain_minutes}** minutes of rains.""", color=0x6E593C)
 
     async def do_rain(interaction, rain_length):
         # i LOOOOVE checks
