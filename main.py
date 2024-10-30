@@ -1661,6 +1661,10 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
             user.claimed_free_rain = True
             user.save()
 
+        if rain_length < 1:
+            await interaction.response.send_message("NUH UH", ephemeral=True)
+            return
+
         if rain_length > user.rain_minutes:
             await interaction.response.send_message("you dont have enough rain! buy some more [here](<https://catbot.minkos.lol/store>)", ephemeral=True)
             return
