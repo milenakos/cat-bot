@@ -1619,8 +1619,8 @@ async def rain(message: discord.Interaction):
             )
 
             self.input = discord.ui.TextInput(
-                min_length=0,
-                max_length=4,
+                min_length=1,
+                max_length=2,
                 label="Duration in minutes",
                 style=discord.TextStyle.short,
                 required=True,
@@ -1661,8 +1661,8 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
             user.claimed_free_rain = True
             user.save()
 
-        if rain_length < 1:
-            await interaction.response.send_message("NUH UH", ephemeral=True)
+        if rain_length < 1 or rain_length > 60:
+            await interaction.response.send_message("pls input a number 1-60", ephemeral=True)
             return
 
         if rain_length > user.rain_minutes:
