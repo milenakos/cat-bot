@@ -94,13 +94,7 @@ class User(peewee.Model):
     color = peewee.CharField(default="")  # /editprofile color
     image = peewee.CharField(default="")  # /editprofile image
 
-    # rains
-    rain_minutes = peewee.SmallIntegerField(default=0)
-    # below are deprecated
-    shortrain = peewee.SmallIntegerField(default=0)
-    mediumrain = peewee.SmallIntegerField(default=0)
-    longrain = peewee.SmallIntegerField(default=0)
-
+    rain_minutes = peewee.SmallIntegerField(default=0) # rain minute balance
     premium = peewee.BooleanField(default=False)  # whether the user has premium
     claimed_free_rain = peewee.BooleanField(default=False)  # whether the user has claimed their free rain
 
