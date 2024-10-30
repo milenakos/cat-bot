@@ -613,11 +613,11 @@ async def on_message(message):
         things = text.split(" ")
         user, _ = User.get_or_create(user_id=things[1])
         if things[2] == "short":
-            user.shortrain += 1
+            user.rain_minutes += 2
         elif things[2] == "medium":
-            user.mediumrain += 1
+            user.rain_minutes += 10
         elif things[2] == "long":
-            user.longrain += 1
+            user.rain_minutes += 20
         user.save()
 
     react_count = 0
@@ -1096,11 +1096,11 @@ async def on_message(message):
         things = text.split(" ")
         user, _ = User.get_or_create(user_id=things[1])
         if things[2] == "short":
-            user.shortrain += 1
+            user.rain_minutes += 2
         elif things[2] == "medium":
-            user.mediumrain += 1
+            user.rain_minutes += 10
         elif things[2] == "long":
-            user.longrain += 1
+            user.rain_minutes += 20
         user.save()
     if text.lower().startswith("cat!restart") and message.author.id == OWNER_ID:
         if not cat_rains or int(max(cat_rains.values())) < time.time():
@@ -1602,35 +1602,59 @@ async def rain(message: discord.Interaction):
     user, _ = User.get_or_create(user_id=message.user.id)
 
     if not user.claimed_free_rain:
-        user.shortrain += 1
+        user.rain_minutes += 2
         user.claimed_free_rain = True
         user.save()
+
+    # this is the silly popup when you click the button
+    class RainModal(discord.ui.Modal):
+        def __init__(self, type):
+            super().__init__(
+                title="Start a Cat Rain!",
+                timeout=3600,
+            )
+
+            self.input = discord.ui.TextInput(
+                min_length=0,
+                max_length=4,
+                label="Duration in minutes",
+                style=discord.TextStyle.short,
+                required=True,
+                placeholder="2"
+            )
+            self.add_item(self.input)
+
+        async def on_submit(self, interaction: discord.Interaction):
+            try:
+                duration = int(self.input.value)
+            except Exception:
+                await interaction.response.send_message("number pls", ephemeral=True)
+                return
+            await do_rain(interaction, duration)
+
 
     embed = discord.Embed(title="Cat Rains", description=f"""Cat Rains are power-ups which spawn cats instantly for a limited amounts of time in channel of your choice.
 
 You can get those by buying them at our [store](<https://catbot.minkos.lol/store>) or by winning them in an event.
 This bot is developed by a single person so buying one would be very appreciated.
 
-You currently have:
-2-minute long rains **{user.shortrain}**
-10-minute long rains **{user.mediumrain}**
-20-minute long rains **{user.longrain}**
+You currently have **{user.rain_minutes}** minutes of rains.
 
 Note: fastest times are not saved during rains.
 
 Click buttons below to start a rain in the current channel.""", color=0x6E593C)
 
-    async def do_rain(interaction, rain_type):
+    async def do_rain(interaction, rain_length):
         # i LOOOOVE checks
         user, _ = User.get_or_create(user_id=interaction.user.id)
 
         if not user.claimed_free_rain:
-            user.shortrain += 1
+            user.rain_minutes += 2
             user.claimed_free_rain = True
             user.save()
 
-        if (rain_type == "shortrain" and not user.shortrain) or (rain_type == "mediumrain" and not user.mediumrain) or (rain_type == "longrain" and not user.longrain):
-            await interaction.response.send_message("you dont have a rain of dat type! buy one [here](<https://catbot.minkos.lol/store>)", ephemeral=True)
+        if rain_length > user.rain_minutes:
+            await interaction.response.send_message("you dont have enough rain! buy some more [here](<https://catbot.minkos.lol/store>)", ephemeral=True)
             return
 
         if about_to_stop:
@@ -1674,42 +1698,23 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
         if not isinstance(message.channel, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel, discord.Thread]):
             return
 
-        type_mappings = {"shortrain": 120, "mediumrain": 600, "longrain": 1200}
-        cat_rains[str(message.channel.id)] = time.time() + type_mappings[rain_type]
+        cat_rains[str(message.channel.id)] = time.time() + rain_length
         await spawn_cat(str(message.channel.id))
-        if rain_type == "shortrain":
-            user.shortrain -= 1
-        elif rain_type == "mediumrain":
-            user.mediumrain -= 1
-        elif rain_type == "longrain":
-            user.longrain -= 1
+        user.rain_minutes -= rain_length
         user.save()
-        await interaction.response.send_message(f"cat rain was started by <@{interaction.user.id}>!")
+        await interaction.response.send_message(f"{rain_length}m cat rain was started by <@{interaction.user.id}>!")
 
-    async def short(interaction):
-        await do_rain(interaction, "shortrain")
+    async def rain_modal(interaction):
+        modal = RainModal(interaction.user)
+        await interaction.response.send_modal(modal)
 
-    async def medium(interaction):
-        await do_rain(interaction, "mediumrain")
-
-    async def long(interaction):
-        await do_rain(interaction, "longrain")
-
-    button1 = Button(label="Short", style=ButtonStyle.blurple)
-    button1.callback = short
-
-    button2 = Button(label="Medium", style=ButtonStyle.blurple)
-    button2.callback = medium
-
-    button3 = Button(label="Long", style=ButtonStyle.blurple)
-    button3.callback = long
+    button = Button(label="Rain!", style=ButtonStyle.blurple)
+    button.callback = rain_modal
 
     shopbutton = Button(emoji="🛒", label="Store", style=ButtonStyle.gray, url="https://catbot.minkos.lol/store")
 
     view = View(timeout=3600)
-    view.add_item(button1)
-    view.add_item(button2)
-    view.add_item(button3)
+    view.add_item(button)
     view.add_item(shopbutton)
 
     await message.response.send_message(embed=embed, view=view)
