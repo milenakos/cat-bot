@@ -1601,6 +1601,10 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
 async def rain(message: discord.Interaction):
     user, _ = User.get_or_create(user_id=message.user.id)
 
+    if not user.rain_minutes:
+        user.rain_minutes = 0
+        user.save()
+
     if not user.claimed_free_rain:
         user.rain_minutes += 2
         user.claimed_free_rain = True
@@ -1647,6 +1651,10 @@ Click buttons below to start a rain in the current channel.""", color=0x6E593C)
     async def do_rain(interaction, rain_length):
         # i LOOOOVE checks
         user, _ = User.get_or_create(user_id=interaction.user.id)
+
+        if not user.rain_minutes:
+            user.rain_minutes = 0
+            user.save()
 
         if not user.claimed_free_rain:
             user.rain_minutes += 2
