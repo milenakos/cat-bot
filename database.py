@@ -95,6 +95,8 @@ class User(peewee.Model):
     image = peewee.CharField(default="")  # /editprofile image
 
     # rains
+    rain_minutes = peewee.SmallIntegerField(default=0)
+    # below are deprecated
     shortrain = peewee.SmallIntegerField(default=0)
     mediumrain = peewee.SmallIntegerField(default=0)
     longrain = peewee.SmallIntegerField(default=0)
