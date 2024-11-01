@@ -633,6 +633,9 @@ async def on_message(message):
     if config.RAIN_CHANNEL_ID and message.channel.id == config.RAIN_CHANNEL_ID and text.lower().startswith("cat!rain"):
         things = text.split(" ")
         user, _ = User.get_or_create(user_id=things[1])
+        if not user.rain_minutes:
+            user.rain_minutes = 0
+
         if things[2] == "short":
             user.rain_minutes += 2
         elif things[2] == "medium":
