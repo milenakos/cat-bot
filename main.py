@@ -1327,7 +1327,7 @@ async def preventcatch(message: discord.Interaction, person: discord.User, timeo
     if timeout < 0:
         await message.response.send_message("uhh i think time is supposed to be a number", ephemeral=True)
         return
-    user = get_profile(message.channel.id, person.id)
+    user = get_profile(message.guild.id, person.id)
     timestamp = round(time.time()) + timeout
     user.timeout = timestamp
     user.save()
