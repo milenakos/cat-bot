@@ -2043,7 +2043,7 @@ async def prism(message: discord.Interaction):
         craft_button.callback = craft_prism
     else:
         view = View(timeout=1)
-        craft_button = Button(label="Recipe undiscovered!", style=ButtonStyle.blurple, disabled=True)
+        craft_button = Button(label="Battlepass level 30 required!", style=ButtonStyle.blurple, disabled=True)
 
     view.add_item(craft_button)
     await message.response.send_message(embed=embed, view=view)
