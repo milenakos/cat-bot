@@ -55,6 +55,8 @@ class Profile(peewee.Model):
     facts = peewee.SmallIntegerField(default=0)  # /fact amount
     gambles = peewee.SmallIntegerField(default=0)  # casino spins amount
 
+    prisms_unlocked = peewee.BooleanField(default=False)  # whether prism crafting is unlocked
+
     # thanks chatgpt
     # cat types
     for cattype in cattypes:
@@ -124,3 +126,19 @@ class Channel(peewee.Model):
     class Meta:
         database = db
         only_save_dirty = True
+
+
+class Prism(peewee.Model):
+    user_id = peewee.BigIntegerField()
+    guild_id = peewee.BigIntegerField(index=True)
+
+    time = peewee.BigIntegerField()  # creation time
+    creator = peewee.BigIntegerField()  # original crafter
+    name = peewee.CharField(max_length=20)  # name (duh)
+
+    class Meta:
+        database = db
+        only_save_dirty = True
+        indexes = (
+            (('user_id', 'guild_id'), False),
+        )

@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 
 import config
-from database import db, Profile, User, Channel
+from database import db, Profile, User, Channel, Prism
 
 if os.name != "nt":
     import uvloop
@@ -34,7 +34,9 @@ bot.cat_bot_reload_hook = reload  # pyright: ignore
 
 db.connect()
 if not db.get_tables():
-    db.create_tables([Profile, User, Channel])
+    db.create_tables([Profile, User, Channel, Prism])
+if "prism" not in db.get_tables():
+    db.create_tables([Prism])
 
 try:
     bot.run(config.TOKEN)

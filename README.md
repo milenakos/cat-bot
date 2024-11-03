@@ -66,7 +66,7 @@ For each line there is 4 parameters:
 
 > **Note**
 >
-> ALWAYS leave 2 empty levels at the end of your battlepass.
+> ALWAYS leave 2 empty levels at the end of your battlepass. Also, prisms unlock must always be on `catch_fast` task.
 
 ## How to add achievement
 Go inside `aches.json`, and add an achievement.

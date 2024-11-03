@@ -23,7 +23,7 @@ from discord.ui import Button, View
 
 import config
 import msg2img
-from database import Channel, Profile, User, db
+from database import Channel, Profile, Prism, User, db
 
 logging.basicConfig(level=logging.INFO)
 
@@ -66,6 +66,11 @@ cattypes = list(type_dict.keys())
 allowedemojis = []
 for i in type_dict.keys():
     allowedemojis.append(i.lower() + "cat")
+
+prism_names = [
+    "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliett", "Kilo", "Lima", "Mike", "November",
+    "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-ray", "Yankee"
+]
 
 vote_button_texts = [
     "You havent voted today!",
@@ -199,8 +204,6 @@ def get_profile(guild_id, user_id):
 
 def get_emoji(name):
     global emojis
-    if name in allowedemojis:
-        return emojis["p_" + name]
     if name in emojis.keys():
         return emojis[name]
     else:
@@ -914,7 +917,7 @@ async def on_message(message):
                     do_time = False
                     caught_time = "undefined amounts of time "
 
-                if cat_rains.get(str(message.channel.id), 0) > time.time():
+                if cat_rains.get(str(message.channel.id), 0) + 10 > time.time():
                     do_time = False
 
                 icon = None
@@ -932,14 +935,55 @@ async def on_message(message):
                         le_emoji = i
                         break
 
-                icon = get_emoji(partial_type)
-
                 suffix_string = ""
+
+                # calculate prism boost
+                boost_chance = 0
+                boost_prisms = []
+                for prism in Prism.select().where(Prism.guild_id == message.guild.id):
+                    if prism.user_id == message.author.id:
+                        boost_chance += 5
+                        boost_prisms.extend([["Your", prism.name]] * 5)
+                    else:
+                        boost_chance += 1
+                        boost_prisms.append([prism.user_id, prism.name])
+
+                # apply prism boost
+                if random.randint(1, 100) <= boost_chance:
+                    try:
+                        le_old_emoji = le_emoji
+                        le_emoji = cattypes[cattypes.index(le_emoji) + 1]
+                        normal_bump = True
+                    except IndexError:
+                        # :SILENCE:
+                        if cat_rains.get(str(message.channel.id), 0) > time.time():
+                            await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                            await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                            await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                        cat_rains[str(message.channel.id)] = cat_rains.get(str(message.channel.id), time.time()) + 606
+                        decided_time = 6
+                        normal_bump = False
+                        pass
+
+                    boost_prism = random.choice(boost_prisms)
+                    if boost_prism[0] != "Your":
+                        prism_user = await bot.fetch_user(boost_prism[0])
+                        boost_applied_prism = str(prism_user) + "'s prism " + boost_prism[1]
+                    else:
+                        boost_applied_prism = "Your prism " + boost_prism[1]
+
+                    if normal_bump:
+                        suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
+                    else:
+                        suffix_string = f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
+
+                icon = get_emoji(le_emoji.lower() + "cat")
+
                 silly_amount = 1
                 if user.cataine_active > time.time():
                     # cataine is active
                     silly_amount = 2
-                    suffix_string = "\n🧂 cataine worked! you got 2 cats instead!"
+                    suffix_string += "\n🧂 cataine worked! you got 2 cats instead!"
 
                 elif user.cataine_active != 0:
                     # cataine ran out
@@ -1070,13 +1114,21 @@ async def on_message(message):
                 def do_reward(level):
                     user.progress = 0
                     reward = level["reward"]
-                    reward_amount = level["reward_amount"]
-                    user[f"cat_{reward}"] += reward_amount
-                    icon = get_emoji(reward.lower() + "cat")
-                    user.battlepass += 1
+                    if reward == "Prisms":
+                        user.battlepass += 1
+                        user.prisms_unlocked = True
+                        icon = get_emoji("prism")
+                        reward_text = f"You have unlocked {icon} Prism Crafting Recipe!\nCheck out `/prism`!"
+                    else:
+                        user.battlepass += 1
+                        reward_amount = level["reward_amount"]
+                        user[f"cat_{reward}"] += reward_amount
+                        icon = get_emoji(reward.lower() + "cat")
+                        reward_text = f"You have recieved {icon} {reward_amount} {reward} cats!"
+
                     return discord.Embed(
                         title=f"Level {user.battlepass} complete!",
-                        description=f"You have recieved {icon} {reward_amount} {reward} cats!",
+                        description=reward_text,
                         color=0x007F0E
                     ).set_author(name="Cattlepass level!", icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png")
 
@@ -1544,7 +1596,21 @@ async def gen_inventory(message, person_id):
         slow_time = float(slow_time) / 3600
         slow_time = str(round(slow_time, 2))
 
-    your = "Your" if me else person_id.name + "'s"
+    # count prism stuff
+    prisms = []
+    prism_boost = 0
+    for prism in Prism.select().where(Prism.guild_id == message.guild.id):
+        if prism.user_id == person_id.id:
+            prisms.append(prism.name)
+            prism_boost += 5
+        else:
+            prism_boost += 1
+    if len(prisms) == 0:
+        prism_list = "None"
+    elif len(prisms) <= 3:
+        prism_list = ", ".join(prisms)
+    else:
+        prism_list = f"{prisms[0]}, {prisms[1]}, {len(prisms) - 2} more..."
 
     emoji_prefix = str(user.emoji) + " " if user.emoji else ""
 
@@ -1554,7 +1620,7 @@ async def gen_inventory(message, person_id):
         color = "#6E593C"
 
     embedVar = discord.Embed(
-        title=f"{emoji_prefix}{your} cats:",
+        title=f"{emoji_prefix} {person_id.name}",
         description=f"⏱️ Fastest: {catch_time}s, Slowest: {slow_time}h\n{get_emoji('cat_throphy')} Achievements: {unlocked}/{total_achs}{minus_achs}",
         color=discord.Colour.from_str(color)
     )
@@ -1583,7 +1649,7 @@ async def gen_inventory(message, person_id):
         embedVar.add_field(name="None", value=f"u hav no cats {get_emoji('cat_cry')}", inline=True)
 
     if embedVar.description:
-        embedVar.description += f"\n{get_emoji('staring_cat')} Cats: {total:,}, Value: {round(valuenum):,}"
+        embedVar.description += f"\n{get_emoji('staring_cat')} Cats: {total:,}, Value: {round(valuenum):,}\n{get_emoji('prism')} Prisms: {prism_list} ({prism_boost}%)"
 
     if user.image.startswith("https://cdn.discordapp.com/attachments/"):
         embedVar.set_thumbnail(url=user.image)
@@ -1767,35 +1833,39 @@ async def store(message: discord.Interaction):
     await message.response.send_message("☔ Cat rains make cats spawn instantly! Make your server active, get more cats and have fun!\n<https://catbot.minkos.lol/store>")
 
 
-@bot.tree.command(description="[SUPPORTER] Customize your profile!")
-@discord.app_commands.rename(provided_emoji='emoji')
-@discord.app_commands.describe(color="Color for your profile in hex form (e.g. #6E593C)",
-                               provided_emoji="A default Discord emoji to show near your username.",
-                               image="A square image to show in top-right corner of your profile.")
-async def editprofile(message: discord.Interaction, color: Optional[str], provided_emoji: Optional[str], image: Optional[discord.Attachment]):
-    user, _ = User.get_or_create(user_id=message.user.id)
-    if not user.premium:
-        await message.response.send_message("👑 This feature is supporter-only!\nFor as little as $3 you can support Cat Bot and unlock profile customization!\n<https://catbot.minkos.lol/donate>")
-        return
+if config.DONOR_CHANNEL_ID:
+    @bot.tree.command(description="[SUPPORTER] Customize your profile!")
+    @discord.app_commands.rename(provided_emoji='emoji')
+    @discord.app_commands.describe(color="Color for your profile in hex form (e.g. #6E593C)",
+                                provided_emoji="A default Discord emoji to show near your username.",
+                                image="A square image to show in top-right corner of your profile.")
+    async def editprofile(message: discord.Interaction, color: Optional[str], provided_emoji: Optional[str], image: Optional[discord.Attachment]):
+        if not config.DONOR_CHANNEL_ID:
+            return
 
-    if provided_emoji and discord_emoji.to_discord(provided_emoji.strip(), get_all=False, put_colons=False):
-        user.emoji = provided_emoji.strip()
+        user, _ = User.get_or_create(user_id=message.user.id)
+        if not user.premium:
+            await message.response.send_message("👑 This feature is supporter-only!\nFor as little as $3 you can support Cat Bot and unlock profile customization!\n<https://catbot.minkos.lol/donate>")
+            return
 
-    if color:
-        match = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', color)
-        if match:
-            user.color = match.group(0)
-    if image:
-        # reupload image
-        channeley = bot.get_channel(config.DONOR_CHANNEL_ID)
-        file = await image.to_file()
-        if not isinstance(channeley, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel, discord.Thread]):
-            raise ValueError
-        msg = await channeley.send(file=file)
-        user.image = msg.attachments[0].url
-    user.save()
-    embedVar = await gen_inventory(message, message.user)
-    await message.response.send_message("Success! Here is a preview:", embed=embedVar)
+        if provided_emoji and discord_emoji.to_discord(provided_emoji.strip(), get_all=False, put_colons=False):
+            user.emoji = provided_emoji.strip()
+
+        if color:
+            match = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', color)
+            if match:
+                user.color = match.group(0)
+        if image:
+            # reupload image
+            channeley = bot.get_channel(config.DONOR_CHANNEL_ID)
+            file = await image.to_file()
+            if not isinstance(channeley, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel, discord.Thread]):
+                raise ValueError
+            msg = await channeley.send(file=file)
+            user.image = msg.attachments[0].url
+        user.save()
+        embedVar = await gen_inventory(message, message.user)
+        await message.response.send_message("Success! Here is a preview:", embed=embedVar)
 
 
 @bot.tree.command(description="I like fortnite")
@@ -1815,23 +1885,32 @@ async def battlepass(message: discord.Interaction):
         num = searching["req_data"]
         thetype = searching["reward"]
         amount = searching["reward_amount"]
+
+        if thetype == "Prisms":
+            icon = get_emoji("prism")
+        else:
+            icon = get_emoji(thetype.lower() + "cat")
+
         if req == "catch":
             num_str = num
             if home:
                 progress = int(user.progress)
                 num_str = f"{num - progress} more"
-            return f"Catch {num_str} cats. \nReward: {amount} {thetype} cats."
+            return f"Catch {num_str} cats\nReward: {amount} {icon} {thetype} cats"
         elif req == "catch_fast":
-            return f"Catch a cat in under {num} seconds.\nReward: {amount} {thetype} cats."
+            if thetype == "Prisms":
+                return f"Catch a cat in under {num} seconds\nReward: {icon} Prism Crafting Recipe"
+            else:
+                return f"Catch a cat in under {num} seconds\nReward: {amount} {icon} {thetype} cats"
         elif req == "catch_type":
             an = ""
             if num[0].lower() in "aieuo":
                 an = "n"
-            return f"Catch a{an} {num} cat.\nReward: {amount} {thetype} cats."
+            return f"Catch a{an} {num} cat\nReward: {amount} {icon} {thetype} cats"
         elif req == "nothing":
-            return "Touch grass.\nReward: 1 ~~e~~Girl~~cats~~friend."
+            return "Touch grass\nReward: 1 ~~e~~Girl~~cats~~friend"
         else:
-            return "Complete a battlepass level.\nReward: freedom"
+            return "Complete a battlepass level\nReward: freedom"
 
     if current_level == len(battle["levels"]):
         embedVar.add_field(name=f"✅ Level {current_level - 2} (complete)", value=battlelevel(battle, current_level - 3), inline=False)
@@ -1847,6 +1926,127 @@ async def battlepass(message: discord.Interaction):
         embedVar.add_field(name=f"Level {current_level + 2}", value=battlelevel(battle, current_level + 1), inline=False)
 
     await message.followup.send(embed=embedVar)
+
+
+@bot.tree.command(description="cat prisms are a special power up")
+async def prism(message: discord.Interaction):
+    user = get_profile(message.guild.id, message.user.id)
+    if user.battlepass >= 30 and not user.prisms_unlocked:
+        user.prisms_unlocked = True
+        user.save()
+
+    icon = get_emoji("prism")
+
+    embed = discord.Embed(
+        title=f"{icon} Cat Prisms",
+        color=0x6E593C,
+        description="are a tradeable power-up which occasionally bumps cat rarity up by one. For each prism in the server you get 1% chance of activation, or 5% if you are the owner of that prism. There is a limit of 25 prisms per server and 5 per person."
+    )
+
+    global_boost = 0
+    user_boost = 0
+    user_count = 0
+
+    for prism in Prism.select().where(Prism.guild_id == message.guild.id):
+        global_boost += 1
+        if prism.user_id == message.user.id:
+            user_boost += 5
+            user_count += 1
+        else:
+            user_boost += 1
+        embed.add_field(
+            name=f"{icon} {prism.name}",
+            value=f"Owner: <@{prism.user_id}>\nCrafted by <@{prism.creator}>\non <t:{prism.time}:D>",
+            inline=True
+        )
+
+    embed.set_footer(text=f"Boost for everyone: {global_boost}% | {message.user}'s total boost: {user_boost}%")
+
+    async def confirm_craft(interaction: discord.Interaction):
+        await interaction.response.defer()
+        user = get_profile(message.guild.id, message.user.id)
+
+        # check we still can craft
+        for i in cattypes:
+            if user["cat_" + i] < 1:
+                await interaction.followup.send("You don't have enough cats. Nice try though.", ephemeral=True)
+                return
+
+        # couunt how many prisms we have
+        prism_count = 0
+        for prism in Prism.select().where(Prism.guild_id == message.guild.id):
+            prism_count += 1
+        if prism_count >= 5:
+            await interaction.followup.send("You already have 5 prisms. Nice try though.", ephemeral=True)
+            return
+
+        if not isinstance(message.channel, Union[discord.TextChannel, discord.VoiceChannel, discord.StageChannel, discord.Thread]):
+            return
+
+        # determine the next name
+        youngest_prism = Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.time.desc()).limit(1)
+        if youngest_prism.exists():
+            try:
+                selected_name = prism_names[prism_names.index(youngest_prism.get().name) + 1]
+            except IndexError:
+                await interaction.followup.send("This server has reached the prism limit.", ephemeral=True)
+                return
+        else:
+            selected_name = prism_names[0]
+
+        # actually take away cats
+        for i in cattypes:
+            user["cat_" + i] -= 1
+        user.save()
+
+        # create the prism
+        Prism.create(
+            guild_id=message.guild.id,
+            user_id=message.user.id,
+            creator=message.user.id,
+            time=round(time.time()),
+            name=selected_name
+        )
+        await message.channel.send(f"{icon} <@{message.user.id}> has created prism {selected_name}!")
+
+
+    async def craft_prism(interaction: discord.Interaction):
+        if interaction.user.id == message.user.id:
+            user = get_profile(message.guild.id, message.user.id)
+
+            missing_cats = []
+            for i in cattypes:
+                if user["cat_" + i] < 1:
+                    missing_cats.append(get_emoji(i.lower() + "cat"))
+
+            if len(missing_cats) == 0:
+                view = View(timeout=3600)
+                confirm_button = Button(label="Craft!", style=ButtonStyle.green, emoji=icon)
+                confirm_button.callback = confirm_craft
+                description = "The crafting recipe is __ONE of EVERY cat type__.\nContinue crafting?"
+            else:
+                view = View(timeout=1)
+                confirm_button = Button(label="Not enough cats!", style=ButtonStyle.red, disabled=True)
+                description = "The crafting recipe is __ONE of EVERY cat type__.\nYou are missing " + "".join(missing_cats)
+
+            view.add_item(confirm_button)
+            await interaction.response.send_message(description, view=view, ephemeral=True)
+        else:
+            await do_funny(interaction)
+
+    if global_boost >= 25 or user_count >= 5:
+        view = View(timeout=1)
+        craft_button = Button(label="Prism limit reached!", style=ButtonStyle.gray, disabled=True)
+    elif user.prisms_unlocked:
+        view = View(timeout=3600)
+        craft_button = Button(label="Craft!", style=ButtonStyle.blurple, emoji=icon)
+        craft_button.callback = craft_prism
+    else:
+        view = View(timeout=1)
+        craft_button = Button(label="Recipe undiscovered!", style=ButtonStyle.blurple, disabled=True)
+
+    view.add_item(craft_button)
+    await message.response.send_message(embed=embed, view=view)
 
 
 @bot.tree.command(description="Pong")
@@ -2017,33 +2217,65 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             user1 = get_profile(message.guild.id, person1.id)
             user2 = get_profile(message.guild.id, person2.id)
 
-            error = False
             # check if we have enough cats (person could have moved them during the trade)
+            error = False
+            person1prismgive = 0
+            person2prismgive = 0
             for k, v in person1gives.items():
+                if k in prism_names:
+                    person1prismgive += 1
+                    prism = Prism.get(guild_id=interaction.guild.id, name=k)
+                    if prism.user_id != person1.id:
+                        error = True
+                        break
+                    continue
                 if user1[f"cat_{k}"] < v:
                     error = True
                     break
 
             for k, v in person2gives.items():
+                if k in prism_names:
+                    person2prismgive += 1
+                    prism = Prism.get(guild_id=interaction.guild.id, name=k)
+                    if prism.user_id != person2.id:
+                        error = True
+                        break
+                    continue
                 if user2[f"cat_{k}"] < v:
                     error = True
                     break
 
+            person1prismcount = len(Prism.select().where(Prism.guild_id == message.guild.id, Prism.user_id == person1.id))
+            person2prismcount = len(Prism.select().where(Prism.guild_id == message.guild.id, Prism.user_id == person2.id))
+
+            if person1prismcount + person2prismgive > 5:
+                await interaction.edit_original_response(f"<@{person1.id}> reached the prism limit. trade cancelled.", embed=None, view=None)
+                return
+            if person2prismcount + person1prismgive > 5:
+                await interaction.edit_original_response(f"<@{person2.id}> reached the prism limit. trade cancelled.", embed=None, view=None)
+                return
+
             if error:
                 try:
-                    await interaction.edit_original_response(content="Not enough cats - some of the cats disappeared while trade was happening", embed=None, view=None)
+                    await interaction.edit_original_response(content="Uh oh - some of the cats/prisms disappeared while trade was happening", embed=None, view=None)
                 except Exception:
-                    await interaction.followup.send("Not enough cats - some of the cats disappeared while trade was happening")
+                    await interaction.followup.send("Uh oh - some of the cats/prisms disappeared while trade was happening")
                 return
 
             # exchange cats
             cat_count = 0
             for k, v in person1gives.items():
+                if k in prism_names:
+                    Prism.update(user_id=person2.id).where(Prism.guild_id == message.guild.id, Prism.name == k).execute()
+                    continue
                 cat_count += v
                 user1[f"cat_{k}"] -= v
                 user2[f"cat_{k}"] += v
 
             for k, v in person2gives.items():
+                if k in prism_names:
+                    Prism.update(user_id=person1.id).where(Prism.guild_id == message.guild.id, Prism.name == k).execute()
+                    continue
                 cat_count += v
                 user1[f"cat_{k}"] += v
                 user2[f"cat_{k}"] -= v
@@ -2122,7 +2354,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         deny = Button(label="Deny", style=ButtonStyle.red)
         deny.callback = denyb
 
-        add = Button(label="Offer cats", style=ButtonStyle.blurple)
+        add = Button(label="Offer...", style=ButtonStyle.blurple)
         add.callback = addb
 
         view.add_item(accept)
@@ -2141,6 +2373,11 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             valuenum = 0
             total = 0
             for k, v in persongives.items():
+                if k in prism_names:
+                    valuestr += f"{get_emoji('prism')} {k}\n"
+                    for v2 in type_dict.values():
+                        valuenum += len(CAT_TYPES) / v2
+                    continue
                 valuenum += (len(CAT_TYPES) / type_dict[k]) * v
                 total += v
                 aicon = get_emoji(k.lower() + "cat")
@@ -2179,35 +2416,58 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             self.currentuser = currentuser
 
             self.cattype = discord.ui.TextInput(
-                min_length=1,
-                max_length=50,
-                label="Cat type",
-                placeholder="Fine"
+                label="Cat Type or Prism Name",
+                placeholder="Fine / Alpha"
             )
             self.add_item(self.cattype)
 
             self.amount = discord.ui.TextInput(
                 label="Amount of cats to offer",
-                min_length=1,
-                max_length=50,
-                placeholder="1"
+                placeholder="1",
+                required=False
             )
             self.add_item(self.amount)
 
         # this is ran when user submits
         async def on_submit(self, interaction: discord.Interaction):
             nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
+            value = self.amount.value if self.amount.value else 1
+            user1 = get_profile(message.guild.id, person1.id)
+            user2 = get_profile(message.guild.id, person2.id)
+
+            # handle prisms
+            if self.cattype.value in prism_names:
+                try:
+                    prism = Prism.get(guild_id=interaction.guild.id, name=self.cattype.value)
+                except Exception:
+                    await interaction.response.send_message("this prism doesnt exist", ephemeral=True)
+                    return
+                if prism.user_id != interaction.user.id:
+                    await interaction.response.send_message("this is not your prism", ephemeral=True)
+                    return
+                if (self.currentuser == 1 and self.cattype.value in person1gives.keys()) or \
+                    (self.currentuser == 2 and self.cattype.value in person2gives.keys()):
+                    await interaction.response.send_message("you already added this prism", ephemeral=True)
+                    return
+
+                if self.currentuser == 1:
+                    person1gives[self.cattype.value] = 1
+                else:
+                    person2gives[self.cattype.value] = 1
+                await interaction.response.defer()
+                await update_trade_embed(interaction)
+                return
 
             # hella ton of checks
             try:
-                if int(self.amount.value) <= 0:
+                if int(value) <= 0:
                     raise Exception
             except Exception:
                 await interaction.response.send_message("plz number?", ephemeral=True)
                 return
 
             if self.cattype.value not in cattypes:
-                await interaction.response.send_message("add a valid cat type 💀💀💀", ephemeral=True)
+                await interaction.response.send_message("add a valid cat type/prism name 💀💀💀", ephemeral=True)
                 return
 
             try:
@@ -2218,22 +2478,22 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             except Exception:
                 currset = 0
 
-            if (self.currentuser == 1 and user1[f"cat_{self.cattype.value}"] < int(self.amount.value) + currset) or \
-                (self.currentuser == 2 and user2[f"cat_{self.cattype.value}"] < int(self.amount.value) + currset):
+            if (self.currentuser == 1 and user1[f"cat_{self.cattype.value}"] < int(value) + currset) or \
+                (self.currentuser == 2 and user2[f"cat_{self.cattype.value}"] < int(value) + currset):
                 await interaction.response.send_message("hell naww dude you dont even have that many cats 💀💀💀", ephemeral=True)
                 return
 
             # OKE SEEMS GOOD LETS ADD CATS TO THE TRADE
             if self.currentuser == 1:
                 try:
-                    person1gives[self.cattype.value] += int(self.amount.value)
+                    person1gives[self.cattype.value] += int(value)
                 except Exception:
-                    person1gives[self.cattype.value] = int(self.amount.value)
+                    person1gives[self.cattype.value] = int(value)
             else:
                 try:
-                    person2gives[self.cattype.value] += int(self.amount.value)
+                    person2gives[self.cattype.value] += int(value)
                 except Exception:
-                    person2gives[self.cattype.value] = int(self.amount.value)
+                    person2gives[self.cattype.value] = int(value)
 
             await interaction.response.defer()
             await update_trade_embed(interaction)
@@ -3209,6 +3469,7 @@ async def nuke(message: discord.Interaction):
             if counter <= 0:
                 # Scary!
                 Profile.delete().where(Profile.guild_id == message.guild.id).execute()
+                Prism.delete().where(Prism.guild_id == message.guild.id).execute()
                 try:
                     await interaction.edit_original_response(content="Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.", view=None)
                 except Exception:
