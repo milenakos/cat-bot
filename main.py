@@ -1947,7 +1947,7 @@ async def prism(message: discord.Interaction):
     user_boost = 0
     user_count = 0
 
-    for prism in Prism.select().where(Prism.guild_id == message.guild.id):
+    for prism in Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.name):
         global_boost += 1
         if prism.user_id == message.user.id:
             user_boost += 5
@@ -1974,7 +1974,7 @@ async def prism(message: discord.Interaction):
 
         # couunt how many prisms we have
         prism_count = 0
-        for prism in Prism.select().where((Prism.guild_id == message.guild.id) && (Prism.user_id == message.user.id)):
+        for prism in Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.user.id)):
             prism_count += 1
         if prism_count >= 5:
             await interaction.followup.send("You already have 5 prisms. Nice try though.", ephemeral=True)
