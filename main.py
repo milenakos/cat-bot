@@ -841,7 +841,7 @@ async def on_message(message):
                             await message.channel.send("# :bangbang: this concludes the cat rain.")
                     except Exception:
                         pass
-                    if queue_restart and int(max(cat_rains.values())) < time.time():
+                    if queue_restart and (len(cat_rains) == 0 or int(max(cat_rains.values())) < time.time()):
                         about_to_stop = True
                         await queue_restart.reply("restarting now!")
                         os.system("git pull")
@@ -2007,7 +2007,7 @@ async def prism(message: discord.Interaction):
             time=round(time.time()),
             name=selected_name
         )
-        await message.channel.send(f"{icon} <@{message.user.id}> has created prism {selected_name}!")
+        await message.followup.send(f"{icon} <@{message.user.id}> has created prism {selected_name}!")
 
 
     async def craft_prism(interaction: discord.Interaction):
