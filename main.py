@@ -2267,6 +2267,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             for k, v in person1gives.items():
                 if k in prism_names:
                     Prism.update(user_id=person2.id).where(Prism.guild_id == message.guild.id, Prism.name == k).execute()
+                    cat_count += 1
                     continue
                 cat_count += v
                 user1[f"cat_{k}"] -= v
@@ -2275,6 +2276,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             for k, v in person2gives.items():
                 if k in prism_names:
                     Prism.update(user_id=person1.id).where(Prism.guild_id == message.guild.id, Prism.name == k).execute()
+                    cat_count += 1
                     continue
                 cat_count += v
                 user1[f"cat_{k}"] += v
