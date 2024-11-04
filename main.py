@@ -1620,7 +1620,7 @@ async def gen_inventory(message, person_id):
         color = "#6E593C"
 
     embedVar = discord.Embed(
-        title=f"{emoji_prefix} {person_id.name}",
+        title=f"{emoji_prefix}{person_id.name}",
         description=f"⏱️ Fastest: {catch_time}s, Slowest: {slow_time}h\n{get_emoji('cat_throphy')} Achievements: {unlocked}/{total_achs}{minus_achs}",
         color=discord.Colour.from_str(color)
     )
