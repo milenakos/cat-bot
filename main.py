@@ -1946,10 +1946,12 @@ async def prism(message: discord.Interaction):
     global_boost = 0
     user_boost = 0
     user_count = 0
+    owned_prisms = {}
 
     for prism in Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.name):
         global_boost += 1
         if prism.user_id == message.user.id:
+            owned_prisms.append(prism.name)
             user_boost += 5
             user_count += 1
         else:
@@ -2034,6 +2036,36 @@ async def prism(message: discord.Interaction):
         else:
             await do_funny(interaction)
 
+    async def configb(interaction):
+        if interaction.user.id == message.user.id:
+            modal = PrismModal()
+            await interaction.response.send_modal(modal)
+        else:
+            await do_funny(interaction)
+
+    class PrismModal(discord.ui.Modal):
+        def __init__(self):
+            super().__init__(
+                title="Configure a Prism",
+                timeout=3600,
+            )
+
+            self.prismname = discord.ui.TextInput(
+                label="Prism to configure:",
+                placeholder="Alpha"
+            )
+            self.add_item(self.prismname)
+
+        async def on_submit(self, interaction: discord.Interaction):
+            nonlocal owned_prisms
+            if self.prismname not in owned_prisms:
+                await interaction.response.send_message("you dont even have that prism what", ephemeral=True)
+                return
+            # oh god i have to make a thing actually do a thing now please i ask for forgiveness
+            embedVar = discord.Embed(title=f"Configure {self.prismname}", description="Turn off any boosts from your prism that you don't want", color=0x6E593C)
+                
+
+
     if global_boost >= 25 or user_count >= 5:
         view = View(timeout=1)
         craft_button = Button(label="Prism limit reached!", style=ButtonStyle.gray, disabled=True)
@@ -2045,7 +2077,14 @@ async def prism(message: discord.Interaction):
         view = View(timeout=1)
         craft_button = Button(label="Battlepass 30 needed to craft!", style=ButtonStyle.blurple, disabled=True)
 
+    if len(owned_prisms) == 0:
+        config_button = Button(label="No prisms to configure!", style=ButtonStyle.gray, disabled=True)
+    else:
+        config_button = Button(label="Configure", style=ButtonStyle.blurple)
+        config_button.callback = configb
+
     view.add_item(craft_button)
+    view.add_item(config_button)
     await message.response.send_message(embed=embed, view=view)
 
 
