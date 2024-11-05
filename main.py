@@ -73,31 +73,7 @@ prism_names = [
 ]
 
 vote_button_texts = [
-    "You havent voted today!",
-    "I know you havent voted ;)",
-    "If vote cat will you friend :)",
-    "Vote cat for president",
-    "vote = 0.01% to escape basement",
-    "vote vote vote vote vote",
-    "mrrp mrrow go and vote now",
-    "if you vote you'll be free (no)",
-    "Like gambling? Vote!",
-    "vote. btw, i have a pipebomb",
-    "No votes? :megamind:",
-    "Cat says you should vote",
-    "vote = random cats. lets gamble?",
-    "cat will be happy if you vote",
-    "VOTE NOW!!!!!",
-    "Vote on top.gg for free cats",
-    "Vote for free cats",
-    "No vote = no free cats :(",
-    "0.04% to get egirl on voting",
-    "I voted and got 1000000$",
-    "I voted and found a gf",
-    "lebron james forgot to vote",
-    "vote if you like cats",
-    "vote if cats > dogs",
-    "you should vote for cat NOW!"
+    "Vote cat for president"
 ]
 
 # laod the jsons
