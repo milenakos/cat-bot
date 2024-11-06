@@ -2080,7 +2080,7 @@ async def prism(message: discord.Interaction):
             embedVar = discord.Embed(title=f"Configure {self.prismname}", description="Turn off any boosts from your prism that you don't want", color=0x6E593C)
             count = 1
             for prism in owned_prisms:
-                if prism.name = self.prismname:
+                if prism.name == self.prismname:
                     selected_prism = prism
 
             for i in cattypes:
