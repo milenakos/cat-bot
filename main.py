@@ -939,43 +939,55 @@ async def on_message(message):
 
                 # calculate prism boost
                 boost_chance = 0
+                disabled_chance = 0
                 boost_prisms = []
                 for prism in Prism.select().where(Prism.guild_id == message.guild.id):
                     if prism.user_id == message.author.id:
-                        boost_chance += 5
-                        boost_prisms.extend([["Your", prism.name]] * 5)
+                        if prism[f"{le_emoji}_enabled"]:
+                            boost_chance += 5
+                            boost_prisms.extend([["Your", prism.name]] * 5)
+                        else:
+                            disabled_chance += 5
+                            disabled_prisms.extend([["Your", prism.name]] * 5)
                     else:
-                        boost_chance += 1
-                        boost_prisms.append([prism.user_id, prism.name])
+                        if prism[f"{le_emoji}_enabled"]:
+                            boost_chance += 1
+                            boost_prisms.append([prism.user_id, prism.name])
+                        else:
+                            disabled_chance += 1
+                            disabled_prisms.append([prism.user_id, prism.name])
+                all_prisms = boost_prisms + disabled_prisms
 
                 # apply prism boost
-                if random.randint(1, 100) <= boost_chance:
-                    try:
-                        le_old_emoji = le_emoji
-                        le_emoji = cattypes[cattypes.index(le_emoji) + 1]
-                        normal_bump = True
-                    except IndexError:
-                        # :SILENCE:
-                        if cat_rains.get(str(message.channel.id), 0) > time.time():
-                            await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                            await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                            await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                        cat_rains[str(message.channel.id)] = cat_rains.get(str(message.channel.id), time.time()) + 606
-                        decided_time = 6
-                        normal_bump = False
-                        pass
-
-                    boost_prism = random.choice(boost_prisms)
+                if random.randint(1, 100) <= boost_chance + disabled_chance:
+                    boost_prism = random.choice(all_prisms)
                     if boost_prism[0] != "Your":
                         prism_user = await bot.fetch_user(boost_prism[0])
                         boost_applied_prism = str(prism_user) + "'s prism " + boost_prism[1]
                     else:
                         boost_applied_prism = "Your prism " + boost_prism[1]
 
-                    if normal_bump:
-                        suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
-                    else:
-                        suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
+                    if boost_prism in boost_prisms:
+                        try:
+                            le_old_emoji = le_emoji
+                            le_emoji = cattypes[cattypes.index(le_emoji) + 1]
+                            normal_bump = True
+                        except IndexError:
+                            # :SILENCE:
+                            if cat_rains.get(str(message.channel.id), 0) > time.time():
+                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                            cat_rains[str(message.channel.id)] = cat_rains.get(str(message.channel.id), time.time()) + 606
+                            decided_time = 6
+                            normal_bump = False
+                            pass
+
+                        if normal_bump:
+                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
+                        else:
+                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
+                    else: suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} would have boosted this catch, but this boost was disabled by its owner."
 
                 icon = get_emoji(le_emoji.lower() + "cat")
 
@@ -1946,12 +1958,15 @@ async def prism(message: discord.Interaction):
     global_boost = 0
     user_boost = 0
     user_count = 0
-    owned_prisms = {}
+    owned_prisms = []
+    owned_prisms_name = [] # i sleepy and dunno any better
+    selected_prism = None
 
     for prism in Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.name):
         global_boost += 1
         if prism.user_id == message.user.id:
-            owned_prisms.append(prism.name)
+            owned_prisms.append(prism)
+            owned_prisms_name.append(prism.name)
             user_boost += 5
             user_count += 1
         else:
@@ -2057,15 +2072,69 @@ async def prism(message: discord.Interaction):
             self.add_item(self.prismname)
 
         async def on_submit(self, interaction: discord.Interaction):
-            nonlocal owned_prisms
-            if self.prismname not in owned_prisms:
+            nonlocal owned_prisms, owned_prisms_name, selected_prism
+            if self.prismname not in owned_prisms_name:
                 await interaction.response.send_message("you dont even have that prism what", ephemeral=True)
                 return
-            # oh god i have to make a thing actually do a thing now please i ask for forgiveness
+            # i ask for forgiveness
             embedVar = discord.Embed(title=f"Configure {self.prismname}", description="Turn off any boosts from your prism that you don't want", color=0x6E593C)
-                
+            count = 1
+            for prism in owned_prisms:
+                if prism.name = self.prismname:
+                    selected_prism = prism
 
+            for i in cattypes:
+                j = cattypes[count]
+                icon1 = get_emoji(i.lower() + "cat")
+                icon2 = get_emoji(j.lower() + "cat")
+                enabled = "Enabled" if selected_prism[f"{i}_enabled"] else "Disabled"
+                embedVar.add_field(name=f"{icon1} {i} to {icon2} {j}", value=f"{enabled}")
+                count += 1
 
+            view = View(timeout=3600)
+            edit_button = Button(label="Edit", style=ButtonStyle.blurple)
+            edit_button.callback = editb
+            view.add_item(edit_button)
+            await interaction.edit_original_response(embed=embedVar, view=view)
+
+    async def editb(interaction):
+        if interaction.user.id == message.user.id:
+            modal = EditModal()
+            await interaction.response.send_modal(modal)
+        else:
+            await do_funny(interaction)
+
+    class EditModal(discord.ui.Modal):
+        def __init__(self):
+            super().__init__(
+                title="Toggle a Boost",
+                timeout=3600,
+            )
+
+            self.toggletype = discord.ui.TextInput(
+                label="Boost to toggle:",
+                placeholder="Fine"
+            )
+            self.add_item(self.toggletype)
+
+        async def on_submit(self, interaction: discord.Interaction):
+            nonlocal owned_prisms, owned_prisms_name, selected_prism
+            selected_prism[f"{self.toggletype}_enabled"] = not selected_prism[f"{self.toggletype}_enabled"]
+
+            for i in cattypes:
+                j = cattypes[count]
+                icon1 = get_emoji(i.lower() + "cat")
+                icon2 = get_emoji(j.lower() + "cat")
+                enabled = "Enabled" if selected_prism[f"{i}_enabled"] else "Disabled"
+                embedVar.add_field(name=f"{icon1} {i} to {icon2} {j}", value=f"{enabled}", inline=True)
+                count += 1
+
+            view = View(timeout=3600)
+            edit_button = Button(label="Edit", style=ButtonStyle.blurple)
+            edit_button.callback = editb
+            view.add_item(edit_button)
+            await interaction.edit_original_response(embed=embedVar, view=view)
+            
     if global_boost >= 25 or user_count >= 5:
         view = View(timeout=1)
         craft_button = Button(label="Prism limit reached!", style=ButtonStyle.gray, disabled=True)
