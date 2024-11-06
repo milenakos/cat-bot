@@ -975,7 +975,7 @@ async def on_message(message):
                     if normal_bump:
                         suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
                     else:
-                        suffix_string = f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
+                        suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
 
                 icon = get_emoji(le_emoji.lower() + "cat")
 
@@ -988,11 +988,11 @@ async def on_message(message):
                 elif user.cataine_active != 0:
                     # cataine ran out
                     user.cataine_active = 0
-                    suffix_string = "\nyour cataine buff has expired. you know where to get a new one 😏"
+                    suffix_string += "\nyour cataine buff has expired. you know where to get a new one 😏"
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n🎃 halloween sale! -30% </rain:{RAIN_ID}>"
+                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
 
                 if channel.cought:
                     coughstring = channel.cought
