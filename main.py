@@ -1,4 +1,4 @@
-import asyncio
+ import asyncio
 import base64
 import datetime
 import io
@@ -964,7 +964,7 @@ async def on_message(message):
                 elif user.cataine_active != 0:
                     # cataine ran out
                     user.cataine_active = 0
-                    suffix_string = "\nyour cataine buff has expired. you know where to get a new one 😏"
+                    suffix_string += "\nyour cataine buff has expired. you know where to get a new one 😏"
 
                 if random.randint(0, 7) == 0:
                     # shill rains
