@@ -136,6 +136,9 @@ class Prism(peewee.Model):
     creator = peewee.BigIntegerField()  # original crafter
     name = peewee.CharField(max_length=20)  # name (duh)
 
+    for cattype in cattypes: # enabled boosts
+        locals()[f'{cattype}_enabled'] = peewee.BooleanField(default=True)
+
     class Meta:
         database = db
         only_save_dirty = True
