@@ -55,6 +55,8 @@ class Profile(peewee.Model):
     facts = peewee.SmallIntegerField(default=0)  # /fact amount
     gambles = peewee.SmallIntegerField(default=0)  # casino spins amount
 
+    prisms_unlocked = peewee.BooleanField(default=False)  # whether prism crafting is unlocked
+
     # thanks chatgpt
     # cat types
     for cattype in cattypes:
@@ -94,11 +96,7 @@ class User(peewee.Model):
     color = peewee.CharField(default="")  # /editprofile color
     image = peewee.CharField(default="")  # /editprofile image
 
-    # rains
-    shortrain = peewee.SmallIntegerField(default=0)
-    mediumrain = peewee.SmallIntegerField(default=0)
-    longrain = peewee.SmallIntegerField(default=0)
-
+    rain_minutes = peewee.SmallIntegerField(default=0) # rain minute balance
     premium = peewee.BooleanField(default=False)  # whether the user has premium
     claimed_free_rain = peewee.BooleanField(default=False)  # whether the user has claimed their free rain
 
@@ -128,3 +126,22 @@ class Channel(peewee.Model):
     class Meta:
         database = db
         only_save_dirty = True
+
+
+class Prism(peewee.Model):
+    user_id = peewee.BigIntegerField()
+    guild_id = peewee.BigIntegerField(index=True)
+
+    time = peewee.BigIntegerField()  # creation time
+    creator = peewee.BigIntegerField()  # original crafter
+    name = peewee.CharField(max_length=20)  # name (duh)
+
+    for cattype in cattypes: # enabled boosts
+        locals()[f'{cattype}_enabled'] = peewee.BooleanField(default=True)
+
+    class Meta:
+        database = db
+        only_save_dirty = True
+        indexes = (
+            (('user_id', 'guild_id'), False),
+        )
