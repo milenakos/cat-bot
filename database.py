@@ -139,6 +139,12 @@ class Prism(peewee.Model):
     for cattype in cattypes: # enabled boosts
         locals()[f'{cattype}_enabled'] = peewee.BooleanField(default=True)
 
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+    def __setitem__(self, item, value):
+        setattr(self, item, value)
+
     class Meta:
         database = db
         only_save_dirty = True
