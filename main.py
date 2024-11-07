@@ -941,6 +941,7 @@ async def on_message(message):
                 boost_chance = 0
                 disabled_chance = 0
                 boost_prisms = []
+                disabled_prisms = []
                 for prism in Prism.select().where(Prism.guild_id == message.guild.id):
                     if prism.user_id == message.author.id:
                         if prism[f"{le_emoji}_enabled"]:
@@ -987,7 +988,8 @@ async def on_message(message):
                             suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
                         else:
                             suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
-                    else: suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} would have boosted this catch, but this boost was disabled by its owner."
+                    else:
+                        suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} would have boosted this catch, but this boost was disabled by its owner."
 
                 icon = get_emoji(le_emoji.lower() + "cat")
 
@@ -2047,6 +2049,21 @@ async def prism(message: discord.Interaction):
         else:
             await do_funny(interaction)
 
+
+    def prism_config_embed(selected_prism):
+        embedVar = discord.Embed(title=f"Configure {selected_prism.name}", color=0x6E593C)
+        embedVar.description = "Turn off any boosts from your prism that you don't want\n\n__Upgrades from:__\n"
+        for i in cattypes:
+            icon1 = get_emoji(i.lower() + "cat")
+            enabled = "✅" if selected_prism[f"{i}_enabled"] else "❌"
+            embedVar.description += f"{enabled} {icon1} {i}\n"
+
+        view = View(timeout=3600)
+        edit_button = Button(label="Edit", style=ButtonStyle.blurple)
+        edit_button.callback = editb
+        view.add_item(edit_button)
+        return embedVar, view
+
     async def configb(interaction):
         if interaction.user.id == message.user.id:
             modal = PrismModal()
@@ -2069,29 +2086,21 @@ async def prism(message: discord.Interaction):
 
         async def on_submit(self, interaction: discord.Interaction):
             nonlocal owned_prisms, owned_prisms_name, selected_prism
-            if self.prismname not in owned_prisms_name:
+            if self.prismname.value not in owned_prisms_name:
                 await interaction.response.send_message("you dont even have that prism what", ephemeral=True)
                 return
+
             # i ask for forgiveness
-            embedVar = discord.Embed(title=f"Configure {self.prismname}", description="Turn off any boosts from your prism that you don't want", color=0x6E593C)
-            count = 1
             for prism in owned_prisms:
-                if prism.name == self.prismname:
+                if prism.name == self.prismname.value:
                     selected_prism = prism
 
-            for i in cattypes:
-                j = cattypes[count]
-                icon1 = get_emoji(i.lower() + "cat")
-                icon2 = get_emoji(j.lower() + "cat")
-                enabled = "Enabled" if selected_prism[f"{i}_enabled"] else "Disabled"
-                embedVar.add_field(name=f"{icon1} {i} to {icon2} {j}", value=f"{enabled}")
-                count += 1
+            if not selected_prism:
+                await interaction.response.send_message("you dont even have that prism what", ephemeral=True)
+                return
 
-            view = View(timeout=3600)
-            edit_button = Button(label="Edit", style=ButtonStyle.blurple)
-            edit_button.callback = editb
-            view.add_item(edit_button)
-            await interaction.edit_original_response(embed=embedVar, view=view)
+            embedVar, view = prism_config_embed(selected_prism)
+            await interaction.response.send_message(embed=embedVar, view=view)
 
     async def editb(interaction):
         if interaction.user.id == message.user.id:
@@ -2115,22 +2124,19 @@ async def prism(message: discord.Interaction):
 
         async def on_submit(self, interaction: discord.Interaction):
             nonlocal owned_prisms, owned_prisms_name, selected_prism
-            selected_prism[f"{self.toggletype}_enabled"] = not selected_prism[f"{self.toggletype}_enabled"]
+            await interaction.response.defer(ephemeral=True)
+            if not selected_prism or selected_prism.user_id != interaction.user.id:
+                await interaction.followup.send("you dont even have that prism what", ephemeral=True)
+                return
+            if self.toggletype.value not in cattypes:
+                await interaction.followup.send("you cant toggle that", ephemeral=True)
+                return
+            selected_prism[f"{self.toggletype.value}_enabled"] = not selected_prism[f"{self.toggletype.value}_enabled"]
+            selected_prism.save()
 
-            for i in cattypes:
-                j = cattypes[count]
-                icon1 = get_emoji(i.lower() + "cat")
-                icon2 = get_emoji(j.lower() + "cat")
-                enabled = "Enabled" if selected_prism[f"{i}_enabled"] else "Disabled"
-                embedVar.add_field(name=f"{icon1} {i} to {icon2} {j}", value=f"{enabled}", inline=True)
-                count += 1
+            embedVar, view = prism_config_embed(selected_prism)
+            await interaction.message.edit(embed=embedVar, view=view)
 
-            view = View(timeout=3600)
-            edit_button = Button(label="Edit", style=ButtonStyle.blurple)
-            edit_button.callback = editb
-            view.add_item(edit_button)
-            await interaction.edit_original_response(embed=embedVar, view=view)
-            
     if global_boost >= 25 or user_count >= 5:
         view = View(timeout=1)
         craft_button = Button(label="Prism limit reached!", style=ButtonStyle.gray, disabled=True)
