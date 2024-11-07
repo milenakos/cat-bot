@@ -1164,6 +1164,10 @@ async def on_message(message):
             except Exception:
                 raise
             finally:
+                try:
+                    temp_catches_storage.remove(channel.cat)
+                except Exception:
+                    pass
                 user.save()
                 channel.save()
                 bot.loop.create_task(battlepass_finale(message, user))
