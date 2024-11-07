@@ -137,7 +137,7 @@ class Prism(peewee.Model):
     name = peewee.CharField(max_length=20)  # name (duh)
 
     for cattype in cattypes: # enabled boosts
-        locals()[f'enabled_{cattype}'] = peewee.BooleanField(default=True)
+        locals()[f'enabled_{cattype.lower()}'] = peewee.BooleanField(default=True)
 
     def __getitem__(self, item):
         return getattr(self, item)
