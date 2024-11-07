@@ -944,14 +944,14 @@ async def on_message(message):
                 disabled_prisms = []
                 for prism in Prism.select().where(Prism.guild_id == message.guild.id):
                     if prism.user_id == message.author.id:
-                        if prism[f"{le_emoji}_enabled"]:
+                        if prism[f"enabled_{le_emoji}"]:
                             boost_chance += 5
                             boost_prisms.extend([["Your", prism.name]] * 5)
                         else:
                             disabled_chance += 5
                             disabled_prisms.extend([["Your", prism.name]] * 5)
                     else:
-                        if prism[f"{le_emoji}_enabled"]:
+                        if prism[f"enabled_{le_emoji}"]:
                             boost_chance += 1
                             boost_prisms.append([prism.user_id, prism.name])
                         else:
@@ -2055,7 +2055,7 @@ async def prism(message: discord.Interaction):
         embedVar.description = "Turn off any boosts from your prism that you don't want\n\n__Upgrades from:__\n"
         for i in cattypes:
             icon1 = get_emoji(i.lower() + "cat")
-            enabled = "✅" if selected_prism[f"{i}_enabled"] else "❌"
+            enabled = "✅" if selected_prism[f"enabled_{i}"] else "❌"
             embedVar.description += f"{enabled} {icon1} {i}\n"
 
         view = View(timeout=3600)
@@ -2131,7 +2131,7 @@ async def prism(message: discord.Interaction):
             if self.toggletype.value not in cattypes:
                 await interaction.followup.send("you cant toggle that", ephemeral=True)
                 return
-            selected_prism[f"{self.toggletype.value}_enabled"] = not selected_prism[f"{self.toggletype.value}_enabled"]
+            selected_prism[f"enabled_{self.toggletype.value}"] = not selected_prism[f"enabled_{self.toggletype.value}"]
             selected_prism.save()
 
             embedVar, view = prism_config_embed(selected_prism)
