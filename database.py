@@ -55,8 +55,6 @@ class Profile(peewee.Model):
     facts = peewee.SmallIntegerField(default=0)  # /fact amount
     gambles = peewee.SmallIntegerField(default=0)  # casino spins amount
 
-    prisms_unlocked = peewee.BooleanField(default=False)  # whether prism crafting is unlocked
-
     # thanks chatgpt
     # cat types
     for cattype in cattypes:
