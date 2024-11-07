@@ -1116,7 +1116,6 @@ async def on_message(message):
                     reward = level["reward"]
                     if reward == "Prisms":
                         user.battlepass += 1
-                        user.prisms_unlocked = True
                         icon = get_emoji("prism")
                         reward_text = f"You have unlocked {icon} Prism Crafting Recipe!\nCheck out `/prism`!"
                     else:
@@ -1931,9 +1930,6 @@ async def battlepass(message: discord.Interaction):
 @bot.tree.command(description="cat prisms are a special power up")
 async def prism(message: discord.Interaction):
     user = get_profile(message.guild.id, message.user.id)
-    if user.battlepass >= 30 and not user.prisms_unlocked:
-        user.prisms_unlocked = True
-        user.save()
 
     icon = get_emoji("prism")
 
@@ -2037,7 +2033,7 @@ async def prism(message: discord.Interaction):
     if global_boost >= 25 or user_count >= 5:
         view = View(timeout=1)
         craft_button = Button(label="Prism limit reached!", style=ButtonStyle.gray, disabled=True)
-    elif user.prisms_unlocked:
+    elif user.battlepass >= 30:
         view = View(timeout=3600)
         craft_button = Button(label="Craft!", style=ButtonStyle.blurple, emoji=icon)
         craft_button.callback = craft_prism
