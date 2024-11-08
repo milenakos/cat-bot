@@ -827,6 +827,7 @@ async def on_message(message):
                 except Exception:
                     pass
         else:
+            pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
             times = [channel.spawn_times_min, channel.spawn_times_max]
             if cat_rains.get(str(message.channel.id), 0) != 0:
@@ -1165,7 +1166,7 @@ async def on_message(message):
                 raise
             finally:
                 try:
-                    temp_catches_storage.remove(channel.cat)
+                    temp_catches_storage.remove(pls_remove_me_later_k_thanks)
                 except Exception:
                     pass
                 user.save()
