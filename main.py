@@ -1375,7 +1375,7 @@ async def news(message: discord.Interaction):
             have_read_this = False if current_state[num] == "0" else True
         except Exception:
             have_read_this = False
-        button = Button(label=article["title"], emoji=article["emoji"], custom_id=f"{num} {message.user.id}", style=ButtonStyle.blurple if not have_read_this else ButtonStyle.gray)
+        button = Button(label=article["title"], emoji=article["emoji"], custom_id=f"{num} {message.user.id}", style=ButtonStyle.green if not have_read_this else ButtonStyle.gray)
         button.callback = send_news
         buttons.append(button)
 
@@ -1748,6 +1748,10 @@ async def gen_inventory(message, person_id):
 
     if me:
         # give some aches if we are vieweing our own inventory
+        global_user, _ = User.get_or_create(user_id=message.user.id)
+        if len(news_list) > global_user.news_state.strip():
+            embedVar.set_author(name="You have unread news! /news")
+
         if give_collector:
             await achemb(message, "collecter", "send")
 
@@ -3148,9 +3152,11 @@ async def achievements(message: discord.Interaction):
     # this is a single page of the achievement list
     def gen_new(category):
         nonlocal message, unlocked, total_achs, hidden_counter
+
         unlocked = 0
         minus_achs = 0
         minus_achs_count = 0
+
         for k in ach_names:
             if ach_list[k]["category"] == "Hidden":
                 minus_achs_count += 1
@@ -3159,20 +3165,30 @@ async def achievements(message: discord.Interaction):
                     minus_achs += 1
                 else:
                     unlocked += 1
+
         total_achs = len(ach_list) - minus_achs_count
+
         if minus_achs != 0:
             minus_achs = f" + {minus_achs}"
         else:
             minus_achs = ""
+
         hidden_suffix = ""
+
         if category == "Hidden":
             hidden_suffix = "\n\nThis is a \"Hidden\" category. Achievements here only show up after you complete them."
             hidden_counter += 1
         else:
             hidden_counter = 0
+
         newembed = discord.Embed(
                 title=category, description=f"Achievements unlocked (total): {unlocked}/{total_achs}{minus_achs}{hidden_suffix}", color=0x6E593C
         ).set_footer(text="☔ Get tons of cats /rain")
+
+        global_user, _ = User.get_or_create(user_id=message.user.id)
+        if len(news_list) > global_user.news_state.strip():
+            newembed.set_author(name="You have unread news! /news")
+
         for k, v in ach_list.items():
             if v["category"] == category:
                 if k == "thanksforplaying":
@@ -3411,6 +3427,10 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         embedVar = discord.Embed(
                 title=f"{type} Leaderboards:", description=string.rstrip(), color=0x6E593C
         ).set_footer(text="☔ Get tons of cats /rain")
+
+        global_user, _ = User.get_or_create(user_id=message.user.id)
+        if len(news_list) > global_user.news_state.strip():
+            embedVar.set_author(name=f"{message.user} has unread news! /news")
 
         # handle funny buttons
         if type == "Cats":
