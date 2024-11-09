@@ -1749,7 +1749,7 @@ async def gen_inventory(message, person_id):
     if me:
         # give some aches if we are vieweing our own inventory
         global_user, _ = User.get_or_create(user_id=message.user.id)
-        if len(news_list) > len(global_user.news_state.strip()):
+        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state:
             embedVar.set_author(name="You have unread news! /news")
 
         if give_collector:
@@ -3186,7 +3186,7 @@ async def achievements(message: discord.Interaction):
         ).set_footer(text="☔ Get tons of cats /rain")
 
         global_user, _ = User.get_or_create(user_id=message.user.id)
-        if len(news_list) > len(global_user.news_state.strip()):
+        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state:
             newembed.set_author(name="You have unread news! /news")
 
         for k, v in ach_list.items():
@@ -3429,7 +3429,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
         ).set_footer(text="☔ Get tons of cats /rain")
 
         global_user, _ = User.get_or_create(user_id=message.user.id)
-        if len(news_list) > len(global_user.news_state.strip()):
+        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state:
             embedVar.set_author(name=f"{message.user} has unread news! /news")
 
         # handle funny buttons
