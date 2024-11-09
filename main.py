@@ -220,13 +220,13 @@ async def send_news(interaction: discord.Interaction):
         await do_funny(interaction)
         return
 
+    news_id = int(news_id)
+
     user = User.get(interaction.user.id)
-    news_state = user.news_state
-    news_state[int(news_id)] = "1"
-    user.news_state = news_state
+    user.news_state = user.news_state[:news_id] + "1" + user.news_state[news_id + 1:]
     user.save()
 
-    if news_id == "0":
+    if news_id == 0:
         embed = discord.Embed(
             title="🌟 Cat Bot Survey",
             description="Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nFill out here:\nhttps://forms.gle/JzZ2bwB7BddZSCJBA",
@@ -1403,18 +1403,19 @@ async def news(message: discord.Interaction):
         view = View(timeout=3600)
 
         # article buttons
-        for button in buttons[number * 4:(number + 1) * 4]:
+        for num, button in enumerate(buttons[number * 4:(number + 1) * 4]):
+            button.row = num
             view.add_item(button)
 
         # pages buttons
-        button = Button(label="<-", style=ButtonStyle.gray, disabled=bool(current_page == 0))
+        button = Button(label="<-", style=ButtonStyle.gray, disabled=bool(current_page == 0), row=4)
         button.callback = prev_page
         view.add_item(button)
 
-        button = Button(label=f"Page {current_page + 1}", style=ButtonStyle.gray, disabled=True)
+        button = Button(label=f"Page {current_page + 1}", style=ButtonStyle.gray, disabled=True, row=4)
         view.add_item(button)
 
-        button = Button(label="->", style=ButtonStyle.blurple, disabled=bool(current_page * 4 + 4 >= len(buttons)))
+        button = Button(label="->", style=ButtonStyle.gray, disabled=bool(current_page * 4 + 4 >= len(buttons)), row=4)
         button.callback = next_page
         view.add_item(button)
 
