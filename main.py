@@ -225,7 +225,8 @@ async def send_news(interaction: discord.Interaction):
     news_id = int(news_id)
 
     user = User.get(interaction.user.id)
-    user.news_state = user.news_state[:news_id] + "1" + user.news_state[news_id + 1:]
+    current_state = user.news_state.strip()
+    user.news_state = current_state[:news_id] + "1" + current_state[news_id + 1:]
     user.save()
 
     if news_id == 0:
@@ -1367,10 +1368,11 @@ async def info(message: discord.Interaction):
 async def news(message: discord.Interaction):
     user, _ = User.get_or_create(user_id=message.user.id)
     buttons = []
+    current_state = user.news_state.strip()
 
     for num, article in enumerate(news_list):
         try:
-            have_read_this = False if user.news_state[num] == "0" else True
+            have_read_this = False if current_state[num] == "0" else True
         except Exception:
             have_read_this = False
         button = Button(label=article["title"], emoji=article["emoji"], custom_id=f"{num} {message.user.id}", style=ButtonStyle.blurple if not have_read_this else ButtonStyle.gray)
@@ -1379,8 +1381,8 @@ async def news(message: discord.Interaction):
 
     buttons = buttons[::-1]  # reverse the list so the first button is the most recent article
 
-    if len(news_list) > len(user.news_state):
-        user.news_state = user.news_state + "0" * (len(news_list) - len(user.news_state))
+    if len(news_list) > len(current_state):
+        user.news_state = current_state + "0" * (len(news_list) - len(current_state))
         user.save()
 
     current_page = 0
