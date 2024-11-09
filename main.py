@@ -210,6 +210,33 @@ def get_emoji(name):
         return "🔳"
 
 
+# news stuff
+news_list = [
+    {"title": "Cat Bot Survey - win rains!", "emoji": "🌟"}
+]
+async def send_news(interaction: discord.Interaction):
+    news_id, original_caller = interaction.data["custom_id"].split(" ")  # pyright: ignore
+    if str(interaction.user.id) != original_caller:
+        await do_funny(interaction)
+        return
+
+    user = User.get(interaction.user.id)
+    news_state = user.news_state
+    news_state[int(news_id)] = "1"
+    user.news_state = news_state
+    user.save()
+
+    if news_id == "0":
+        embed = discord.Embed(
+            title="🌟 Cat Bot Survey",
+            description="Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nFill out here:\nhttps://forms.gle/JzZ2bwB7BddZSCJBA",
+            color=0x6E593C
+        )
+        view = View(timeout=3600)
+        button = Button(label="Fill out survey", url="https://forms.gle/JzZ2bwB7BddZSCJBA")
+        view.add_item(button)
+        await interaction.edit_original_response(content=None, view=view, embed=embed)
+
 # this is some common code which is run whether someone gets an achievement
 async def achemb(message, ach_id, send_type, author_string=None):
     if not author_string:
@@ -600,27 +627,6 @@ async def on_message(message):
     ]
 
     # here are some automation hooks for giving out purchases and autoupdating
-    if config.NEWS_CHANNEL_ID and message.channel.id == config.NEWS_CHANNEL_ID:
-        for i in Channel.select():
-            try:
-                channeley = discord.Webhook.from_url(i.webhook, client=bot)
-                if i.thread_mappings:
-                    await channeley.send(
-                        message.content,
-                        files=[await thing.to_file() for thing in message.attachments],
-                        allowed_mentions=discord.AllowedMentions.none(),
-                        thread=discord.Object(int(i.channel_id))
-                    )
-                else:
-                    await channeley.send(
-                        message.content,
-                        files=[await thing.to_file() for thing in message.attachments],
-                        allowed_mentions=discord.AllowedMentions.none()
-                    )
-                await asyncio.sleep(0.03)
-            except Exception:
-                pass
-
     if config.GITHUB_CHANNEL_ID and message.channel.id == config.GITHUB_CHANNEL_ID:
         about_to_stop = True
         os.system("git pull")
@@ -1353,6 +1359,69 @@ async def info(message: discord.Interaction):
         embedVar.timestamp = datetime.datetime.fromtimestamp(int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8")))
         embedVar.set_footer(text="Last code update:")
     await message.followup.send(embed=embedVar)
+
+
+@bot.tree.command(description="Read The Cat Bot Times™️")
+async def news(message: discord.Interaction):
+    user, _ = User.get_or_create(user_id=message.user.id)
+    buttons = []
+
+    for num, article in enumerate(news_list):
+        try:
+            have_read_this = False if user.news_state[num] == "0" else True
+        except Exception:
+            have_read_this = False
+        button = Button(label=article["title"], emoji=article["emoji"], custom_id=f"{num} {message.user.id}", style=ButtonStyle.blurple if not have_read_this else ButtonStyle.gray)
+        button.callback = send_news
+        buttons.append(button)
+
+    buttons = buttons[::-1]  # reverse the list so the first button is the most recent article
+
+    if len(news_list) > len(user.news_state):
+        user.news_state = user.news_state + "0" * (len(news_list) - len(user.news_state))
+        user.save()
+
+    current_page = 0
+
+    async def prev_page(interaction):
+        nonlocal current_page
+        if interaction.user.id == message.user.id:
+            current_page -= 1
+            await interaction.response.edit_message(view=generate_page(current_page))
+        else:
+            await do_funny(interaction)
+
+    async def next_page(interaction):
+        nonlocal current_page
+        if interaction.user.id == message.user.id:
+            current_page += 1
+            await interaction.response.edit_message(view=generate_page(current_page))
+        else:
+            await do_funny(interaction)
+
+    def generate_page(number):
+        view = View(timeout=3600)
+
+        # article buttons
+        for button in buttons[number * 4:(number + 1) * 4]:
+            view.add_item(button)
+
+        # pages buttons
+        button = Button(label="<-", style=ButtonStyle.gray, disabled=bool(current_page == 0))
+        button.callback = prev_page
+        view.add_item(button)
+
+        button = Button(label=f"Page {current_page + 1}", style=ButtonStyle.gray, disabled=True)
+        view.add_item(button)
+
+        button = Button(label="->", style=ButtonStyle.blurple, disabled=bool(current_page * 4 + 4 >= len(buttons)))
+        button.callback = next_page
+        view.add_item(button)
+
+        return view
+
+
+    await message.response.send_message("Choose an article:", view=generate_page(current_page))
 
 
 @bot.tree.command(description="Read text as TikTok's TTS woman")

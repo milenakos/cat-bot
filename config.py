@@ -30,9 +30,6 @@ TOP_GG_TOKEN = os.environ["top_gg_token"]
 # bots.gg api token for the same reason
 BOTS_GG_TOKEN = os.environ["bots_gg_token"]
 
-# all messages in this channel will be sent to all setupped channels, use wisely
-NEWS_CHANNEL_ID = 1301220787352764457
-
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 GITHUB_CHANNEL_ID = 1060965767044149249
 
