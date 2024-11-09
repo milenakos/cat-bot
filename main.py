@@ -220,6 +220,8 @@ async def send_news(interaction: discord.Interaction):
         await do_funny(interaction)
         return
 
+    await interaction.response.defer()
+
     news_id = int(news_id)
 
     user = User.get(interaction.user.id)
