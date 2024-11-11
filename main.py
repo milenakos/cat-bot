@@ -1753,7 +1753,7 @@ async def gen_inventory(message, person_id):
             embedVar.set_author(name="You have unread news! /news")
 
         if give_collector:
-            await achemb(message, "collecter", "send")
+            await achemb(message, "collector", "send")
 
         if person.time <= 5:
             await achemb(message, "fast_catcher", "send")
