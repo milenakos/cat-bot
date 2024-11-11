@@ -2217,15 +2217,13 @@ async def prism(message: discord.Interaction):
             embedVar, view = prism_config_embed(selected_prism)
             await interaction.message.edit(embed=embedVar, view=view)
 
+    view = View(timeout=3600)
     if global_boost >= 25 or user_count >= 5:
-        view = View(timeout=1)
         craft_button = Button(label="Prism limit reached!", style=ButtonStyle.gray, disabled=True)
     elif user.battlepass >= 30:
-        view = View(timeout=3600)
         craft_button = Button(label="Craft!", style=ButtonStyle.blurple, emoji=icon)
         craft_button.callback = craft_prism
     else:
-        view = View(timeout=1)
         craft_button = Button(label="Battlepass 30 needed to craft!", style=ButtonStyle.blurple, disabled=True)
 
     if len(owned_prisms) == 0:
