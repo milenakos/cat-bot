@@ -8,7 +8,7 @@
   "extrovert": {"title": "Extrovert", "description": "finish a trade with someone", "is_hidden": false, "category": "Cat Hunt"},
   "fast_catcher": {"title": "Fast Catcher", "description": "catch a cat in under 5 seconds", "is_hidden": false, "category": "Cat Hunt"},
   "slow_catcher": {"title": "Slow Catcher", "description": "catch a cat in over a hour", "is_hidden": false, "category": "Cat Hunt"},
-  "collecter": {"title": "Collecter", "description": "get all cat types", "is_hidden": true, "category": "Cat Hunt"},
+  "collecter": {"title": "Collector", "description": "get all cat types", "is_hidden": true, "category": "Cat Hunt"},
   "trolled": {"title": "Trolled", "description": "TROLLED SO HARD LMAOOO :joy:", "is_hidden": false, "category": "Cat Hunt"},
   "achiever": {"title": "Achiever", "description": "get 15 achievements", "is_hidden": false, "category": "Cat Hunt"},
   "leader": {"title": "Leader", "description": "reach top 5 in any leaderboard", "is_hidden": false, "category": "Cat Hunt"},
