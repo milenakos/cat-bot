@@ -232,13 +232,10 @@ async def send_news(interaction: discord.Interaction):
     if news_id == 0:
         embed = discord.Embed(
             title="🌟 Cat Bot Survey",
-            description="Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nFill out here:\nhttps://forms.gle/JzZ2bwB7BddZSCJBA",
+            description="Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nSurvey is closed!",
             color=0x6E593C
         )
-        view = View(timeout=3600)
-        button = Button(label="Fill out survey", url="https://forms.gle/JzZ2bwB7BddZSCJBA")
-        view.add_item(button)
-        await interaction.edit_original_response(content=None, view=view, embed=embed)
+        await interaction.edit_original_response(content=None, view=None, embed=embed)
 
 # this is some common code which is run whether someone gets an achievement
 async def achemb(message, ach_id, send_type, author_string=None):
