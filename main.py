@@ -833,7 +833,6 @@ async def on_message(message):
                 if cat_rains.get(str(message.channel.id), 0) > time.time():
                     times = [1, 2]
                 else:
-                    del cat_rains[str(message.channel.id)]
                     try:
                         if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
                             await message.channel.send("# :bangbang: this concludes the cat rain.")
@@ -1096,7 +1095,7 @@ async def on_message(message):
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT":
                     await achemb(message, "loud_cat", "send")
-                if cat_rains.get(str(message.channel.id), 0) != 0:
+                if cat_rains.get(str(message.channel.id), 0) > time.time():
                     await achemb(message, "cat_rain", "send")
 
                 # handle fastest and slowest catches
@@ -1855,7 +1854,7 @@ You currently have **{user.rain_minutes}** minutes of rains.""", color=0x6E593C)
             await interaction.response.send_message("please catch the cat in this channel first.", ephemeral=True)
             return
 
-        if cat_rains.get(str(message.channel.id), 0) != 0:
+        if cat_rains.get(str(message.channel.id), 0) > time.time():
             await interaction.response.send_message("there is already a rain running!", ephemeral=True)
             return
 
