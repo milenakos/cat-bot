@@ -3645,16 +3645,26 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="who")
 async def reset(message: discord.Interaction, person_id: discord.User):
-    try:
-        user = get_profile(message.guild.id, person_id.id)
-        user.delete_instance()
-        await message.response.send_message(embed=discord.Embed(color=0x6E593C, description=f'Done! rip <@{person_id.id}>. f\'s in chat.'))
-    except Exception:
-        await message.response.send_message("ummm? this person isnt even registered in cat bot wtf are you wiping?????", ephemeral=True)
+    async def confirmed(interaction):
+        if interaction.user.id == message.user.id:
+            try:
+                get_profile(message.guild.id, person_id.id).delete_instance()
+                await interaction.message.edit(content=f"Done! rip <@{person_id.id}>. f's in chat.", view=None)
+            except Exception:
+                await interaction.message.edit(content="ummm? this person isnt even registered in cat bot wtf are you wiping?????", view=None)
+        else:
+            await do_funny(interaction)
 
 
-@bot.tree.command(description="(ADMIN) [VERY DANGEROUS] Reset all Cat Bot data of this server")
-@discord.app_commands.default_permissions(manage_guild=True)
+    view = View(timeout=3600)
+    button = Button(style=ButtonStyle.red, label="Confirm")
+    button.callback = confirmed
+    view.add_item(button)
+    await message.response.send_message(f"Are you sure you want to reset <@{person_id.id}>?", view=view)
+
+
+@bot.tree.command(description="(HIGH ADMIN) [VERY DANGEROUS] Reset all Cat Bot data of this server")
+@discord.app_commands.default_permissions(administrator=True)
 async def nuke(message: discord.Interaction):
     warning_text = "⚠️ This will completely reset **all** Cat Bot progress of **everyone** in this server. Spawn channels and their settings *will not be affected*.\nPress the button 5 times to continue."
     counter = 5
@@ -3667,15 +3677,33 @@ async def nuke(message: discord.Interaction):
         view.add_item(button)
         return view
 
-    async def count(interaction):
+    async def count(interaction: discord.Interaction):
         nonlocal message, counter
         if interaction.user.id == message.user.id:
             await interaction.response.defer()
             counter -= 1
             if counter <= 0:
-                # Scary!
-                Profile.delete().where(Profile.guild_id == message.guild.id).execute()
-                Prism.delete().where(Prism.guild_id == message.guild.id).execute()
+                # ~~Scary!~~ Not anymore!
+                # how this works is we basically change the server id to the message id and then add user with id of 0 to mark it as deleted
+                # this can be rolled back decently easily by asking user for the id of nuking message
+
+                changed_profiles = []
+                changed_prisms = []
+
+                for i in Profile.select().where(Profile.guild_id == message.guild.id):
+                    i.guild_id = interaction.message.id
+                    changed_profiles.append(i)
+
+                for i in Prism.select().where(Prism.guild_id == message.guild.id):
+                    i.guild_id = interaction.message.id
+                    changed_prisms.append(i)
+
+                with db.atomic():
+                    Profile.bulk_update(changed_profiles, fields=[Profile.guild_id], batch_size=50)
+                    Prism.bulk_update(changed_prisms, fields=[Prism.guild_id], batch_size=50)
+
+                Profile.create(guild_id=interaction.message.id, user_id=0)
+
                 try:
                     await interaction.edit_original_response(content="Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.", view=None)
                 except Exception:
