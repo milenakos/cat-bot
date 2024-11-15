@@ -27,9 +27,6 @@ WEBHOOK_VERIFY = os.environ["webhook_verify"]
 # top.gg api token because they use ancient technology and you need to post server count manually smh
 TOP_GG_TOKEN = os.environ["top_gg_token"]
 
-# bots.gg api token for the same reason
-BOTS_GG_TOKEN = os.environ["bots_gg_token"]
-
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 GITHUB_CHANNEL_ID = 1060965767044149249
 

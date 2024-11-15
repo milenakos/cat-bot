@@ -486,16 +486,6 @@ async def maintaince_loop():
             except Exception:
                 print("Posting to top.gg failed.")
 
-        if config.BOTS_GG_TOKEN:
-            # send server count to bots.gg
-            try:
-                await session.post(f'https://discord.bots.gg/api/v1/bots/{bot.user.id}/stats',
-                                    headers={"Authorization": config.BOTS_GG_TOKEN},
-                                    json={"guildCount": len(bot.guilds), "shardCount": len(bot.shards)},
-                                    timeout=15)
-            except Exception:
-                print("Posting to bots.gg failed.")
-
     for channel in Channel.select().where((Channel.yet_to_spawn < time.time()) & (Channel.cat == 0)):
         await spawn_cat(str(channel.channel_id))
         await asyncio.sleep(0.1)
