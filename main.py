@@ -3575,7 +3575,6 @@ async def fake(message: discord.Interaction):
         if not perms.send_messages or not perms.attach_files:
             raise Exception
         await message.response.send_message(str(icon) + " eGirl cat hasn't appeared! Type \"cat\" to catch ratio!", file=file)
-        await message.response.send_message("OMG TROLLED SO HARD LMAOOOO 😂", ephemeral=True)
     except Exception:
         await message.response.send_message("i dont have perms lmao here is the ach anyways", ephemeral=True)
         pass
