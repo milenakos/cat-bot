@@ -3649,9 +3649,9 @@ async def reset(message: discord.Interaction, person_id: discord.User):
         if interaction.user.id == message.user.id:
             try:
                 get_profile(message.guild.id, person_id.id).delete_instance()
-                await interaction.edit_original_response(content=f"Done! rip <@{person_id.id}>. f's in chat.", view=None)
+                await interaction.messsage.edit(content=f"Done! rip <@{person_id.id}>. f's in chat.", view=None)
             except Exception:
-                await interaction.edit_original_response(content="ummm? this person isnt even registered in cat bot wtf are you wiping?????", view=None)
+                await interaction.messsage.edit(content="ummm? this person isnt even registered in cat bot wtf are you wiping?????", view=None)
         else:
             await do_funny(interaction)
 
@@ -3660,7 +3660,7 @@ async def reset(message: discord.Interaction, person_id: discord.User):
     button = Button(style=ButtonStyle.red, label="Confirm")
     button.callback = confirmed
     view.add_item(button)
-    await message.response.send_message("Are you sure you want to reset <@{person_id.id}>?", view=view)
+    await message.response.send_message(f"Are you sure you want to reset <@{person_id.id}>?", view=view)
 
 
 @bot.tree.command(description="(HIGH ADMIN) [VERY DANGEROUS] Reset all Cat Bot data of this server")
