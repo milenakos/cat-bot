@@ -3649,9 +3649,9 @@ async def reset(message: discord.Interaction, person_id: discord.User):
         if interaction.user.id == message.user.id:
             try:
                 get_profile(message.guild.id, person_id.id).delete_instance()
-                await interaction.messsage.edit(content=f"Done! rip <@{person_id.id}>. f's in chat.", view=None)
+                await interaction.message.edit(content=f"Done! rip <@{person_id.id}>. f's in chat.", view=None)
             except Exception:
-                await interaction.messsage.edit(content="ummm? this person isnt even registered in cat bot wtf are you wiping?????", view=None)
+                await interaction.message.edit(content="ummm? this person isnt even registered in cat bot wtf are you wiping?????", view=None)
         else:
             await do_funny(interaction)
 
