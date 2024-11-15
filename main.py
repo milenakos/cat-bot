@@ -165,6 +165,9 @@ cat_rains = {}
 # to prevent double catches
 temp_catches_storage = []
 
+# to prevent double spawns
+temp_spawns_storage = []
+
 # prevent timetravel
 in_the_past = False
 about_to_stop = False
@@ -1168,8 +1171,6 @@ async def on_message(message):
                             await message.channel.send(embed=embed)
                     except Exception:
                         pass
-            except Exception:
-                raise
             finally:
                 try:
                     temp_catches_storage.remove(pls_remove_me_later_k_thanks)
@@ -1178,8 +1179,10 @@ async def on_message(message):
                 user.save()
                 channel.save()
                 bot.loop.create_task(battlepass_finale(message, user))
-                if decided_time:
+                if decided_time and message.channel.id not in temp_spawns_storage:
+                    temp_spawns_storage.append(message.channel.id)
                     await asyncio.sleep(decided_time)
+                    temp_spawns_storage.remove(message.channel.id)
                     await spawn_cat(str(message.channel.id))
 
     # those are "owner" commands which are not really interesting
