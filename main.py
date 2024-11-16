@@ -165,9 +165,6 @@ cat_rains = {}
 # to prevent double catches
 temp_catches_storage = []
 
-# to prevent double spawns
-temp_spawns_storage = []
-
 # to prevent weird behaviour shortly after a rain
 temp_rains_storage = []
 
@@ -1109,8 +1106,8 @@ async def on_message(message):
                 if do_time and time_caught > user.timeslow:
                     user.timeslow = time_caught
 
-                if message.channel.id in temp_catches_storage:
-                    temp_catches_storage.remove(message.channel.id)
+                if message.channel.id in temp_rains_storage:
+                    temp_rains_storage.remove(message.channel.id)
 
                 await achemb(message, "first", "send")
 
@@ -1176,10 +1173,8 @@ async def on_message(message):
                 user.save()
                 channel.save()
                 bot.loop.create_task(battlepass_finale(message, user))
-                if decided_time and message.channel.id not in temp_spawns_storage:
-                    temp_spawns_storage.append(message.channel.id)
+                if decided_time:
                     await asyncio.sleep(decided_time)
-                    temp_spawns_storage.remove(message.channel.id)
                     await spawn_cat(str(message.channel.id))
 
     # those are "owner" commands which are not really interesting
