@@ -1,11 +1,12 @@
 import asyncio
 import os
+import importlib
 
 import discord
 from discord.ext import commands
 
 import config
-from database import db, Profile, User, Channel, Prism
+import database
 
 if os.name != "nt":
     import uvloop
@@ -28,17 +29,20 @@ async def reload():
         await bot.unload_extension("main")
     except commands.ExtensionNotLoaded:
         pass
+    database.db.close()
+    importlib.reload(database)
+    database.db.connect()
     await bot.load_extension("main")
 
 bot.cat_bot_reload_hook = reload  # pyright: ignore
 
-db.connect()
-if not db.get_tables():
-    db.create_tables([Profile, User, Channel, Prism])
-if "prism" not in db.get_tables():
-    db.create_tables([Prism])
+database.db.connect()
+if not database.db.get_tables():
+    database.db.create_tables([database.Profile, database.User, database.Channel, database.Prism])
+if "prism" not in database.db.get_tables():
+    database.db.create_tables([database.Prism])
 
 try:
     bot.run(config.TOKEN)
 finally:
-    db.close()
+    database.db.close()
