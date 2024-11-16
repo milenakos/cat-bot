@@ -1,5 +1,5 @@
 {
-  "first": {"title": "First cat!", "description": "The journey begins...", "is_hidden": false, "category": "Cat Hunt"},
+  "first": {"title": "First cat!", "description": "The journey begins...", "is_hidden": false, "category": "Cat Hunt"}, 
   "second": {"title": "Pro Catcher", "description": "Get 100 cats", "is_hidden": false, "category": "Cat Hunt"},
   "third": {"title": "Overpopulated", "description": "Get 1000 cats", "is_hidden": false, "category": "Cat Hunt"},
   "fourth": {"title": "And they don't stop coming", "description": "Get 10000 cats", "is_hidden": false, "category": "Cat Hunt"},
