@@ -168,6 +168,9 @@ temp_catches_storage = []
 # to prevent double spawns
 temp_spawns_storage = []
 
+# to prevent weird behaviour shortly after a rain
+temp_rains_storage = []
+
 # prevent timetravel
 in_the_past = False
 about_to_stop = False
@@ -833,6 +836,7 @@ async def on_message(message):
                 if cat_rains.get(str(message.channel.id), 0) > time.time():
                     times = [1, 2]
                 else:
+                    temp_rains_storage.append(message.channel.id)
                     del cat_rains[str(message.channel.id)]
                     try:
                         if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
@@ -917,7 +921,7 @@ async def on_message(message):
                     do_time = False
                     caught_time = "undefined amounts of time "
 
-                if cat_rains.get(str(message.channel.id), 0) + 10 > time.time():
+                if cat_rains.get(str(message.channel.id), 0) + 10 > time.time() or message.channel.id in temp_rains_storage:
                     do_time = False
 
                 icon = None
@@ -1104,6 +1108,9 @@ async def on_message(message):
                     user.time = time_caught
                 if do_time and time_caught > user.timeslow:
                     user.timeslow = time_caught
+
+                if message.channel.id in temp_catches_storage:
+                    temp_catches_storage.remove(message.channel.id)
 
                 await achemb(message, "first", "send")
 
@@ -1855,7 +1862,7 @@ You currently have **{user.rain_minutes}** minutes of rains.""", color=0x6E593C)
             await interaction.response.send_message("please catch the cat in this channel first.", ephemeral=True)
             return
 
-        if cat_rains.get(str(message.channel.id), 0) != 0:
+        if cat_rains.get(str(message.channel.id), 0) != 0 or message.channel.id in temp_rains_storage:
             await interaction.response.send_message("there is already a rain running!", ephemeral=True)
             return
 
