@@ -151,3 +151,13 @@ class Prism(peewee.Model):
         indexes = (
             (('user_id', 'guild_id'), False),
         )
+
+
+class Reminder(peewee.Model):
+    user_id = peewee.BigIntegerField()
+    time = peewee.BigIntegerField(index=True)
+    text = peewee.CharField(max_length=2000)
+
+    class Meta:
+        database = db
+        only_save_dirty = True

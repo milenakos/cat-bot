@@ -23,7 +23,7 @@ from discord.ui import Button, View
 
 import config
 import msg2img
-from database import Channel, Profile, Prism, User, db
+from database import Channel, Profile, Prism, User, Reminder, db
 
 logging.basicConfig(level=logging.INFO)
 
@@ -523,6 +523,15 @@ async def maintaince_loop():
         User.bulk_update(notified_users, fields=[User.reminder_topgg_exists], batch_size=50)
         User.bulk_update(errored_users, fields=[User.vote_remind], batch_size=50)
 
+    for reminder in Reminder.select().where(Reminder.time < time.time()):
+        try:
+            await bot.get_user(reminder.user_id).send(reminder.text)
+            await asyncio.sleep(0.5)
+        except Exception:
+            pass
+        reminder.delete_instance()
+
+
     backupchannel = bot.get_channel(config.BACKUP_ID)
     if not isinstance(backupchannel, Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel, discord.Thread]):
         raise ValueError
@@ -970,6 +979,7 @@ async def on_message(message):
                         boost_applied_prism = "Your prism " + boost_prism[1]
 
                     if boost_prism in boost_prisms:
+                        await achemb(message, "boosted", "send")
                         try:
                             le_old_emoji = le_emoji
                             le_emoji = cattypes[cattypes.index(le_emoji) + 1]
@@ -1424,6 +1434,7 @@ async def news(message: discord.Interaction):
 
 
     await message.response.send_message("Choose an article:", view=generate_page(current_page))
+    await achemb(message, "news", "send")
 
 
 @bot.tree.command(description="Read text as TikTok's TTS woman")
@@ -2103,6 +2114,7 @@ async def prism(message: discord.Interaction):
             name=selected_name
         )
         await message.followup.send(f"{icon} <@{message.user.id}> has created prism {selected_name}!")
+        await achemb(message, "prism", "send")
 
 
     async def craft_prism(interaction: discord.Interaction):
@@ -2229,6 +2241,7 @@ async def prism(message: discord.Interaction):
     if len(owned_prisms) == 0:
         config_button = Button(label="No prisms to configure!", style=ButtonStyle.gray, disabled=True)
     else:
+        await achemb(message, "prism", "send")
         config_button = Button(label="Configure", style=ButtonStyle.blurple)
         config_button.callback = configb
 
@@ -2888,6 +2901,29 @@ async def rate(message: discord.Interaction, thing: str, stat: str):
         await message.response.send_message("thats kinda long", ephemeral=True)
         return
     await message.response.send_message(f"{thing} is {random.randint(0, 100)}% {stat}")
+
+
+@bot.tree.command(description="get a reminder in the future (+- 5 minutes)")
+@discord.app_commands.describe(days="in how many days", hours="in how many hours", minutes="in how many minutes (+- 5 minutes)", text="what to remind")
+async def remind(message: discord.Interaction, days: Optional[int], hours: Optional[int], minutes: Optional[int], text: Optional[str]):
+    if not days:
+        days = 0
+    if not hours:
+        hours = 0
+    if not minutes:
+        minutes = 0
+    if not text:
+        text = "Reminder!"
+
+    goal_time = int(time.time() + (days * 86400) + (hours * 3600) + (minutes * 60))
+    msg = await message.response.send_message(f"ok, <t:{goal_time}:R> ill remind you of:\n{text}")
+    if not msg:
+        # i lied
+        return
+    message_link = msg.jump_url
+    text += f"\n\n*This is a [reminder](<{message_link}>) you set.*"
+    Reminder.create(user_id=message.user.id, text=text, time=goal_time)
+    await achemb(message, "reminder", "send")  # the ai autocomplete thing suggested this and its actually a cool ach
 
 
 @bot.tree.command(name="random", description="Get a random cat")
