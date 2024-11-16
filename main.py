@@ -171,6 +171,9 @@ temp_spawns_storage = []
 # to prevent weird behaviour shortly after a rain
 temp_rains_storage = []
 
+# to prevent double doubling
+temp_temp_temp_temp_temp_temp = [temp_catches_storage, temp_spawns_storage, temp_rains_storage]
+
 # prevent timetravel
 in_the_past = False
 about_to_stop = False
