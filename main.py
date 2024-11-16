@@ -525,7 +525,8 @@ async def maintaince_loop():
 
     for reminder in Reminder.select().where(Reminder.time < time.time()):
         try:
-            await bot.get_user(reminder.user_id).send(reminder.text)
+            user = await bot.fetch_user(reminder.user_id)
+            await user.send(reminder.text)
             await asyncio.sleep(0.5)
         except Exception:
             pass
