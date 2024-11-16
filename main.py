@@ -2917,7 +2917,7 @@ async def remind(message: discord.Interaction, days: Optional[int], hours: Optio
         text = "Reminder!"
 
     goal_time = int(time.time() + (days * 86400) + (hours * 3600) + (minutes * 60))
-    await message.response.send_message(f"ok, <t:{goal_time}:R> ill remind you of:\n{text}")
+    await message.response.send_message(f"ok, <t:{goal_time}:R> (+- 5 min) ill remind you of:\n{text}")
     msg = await message.original_response()
     message_link = msg.jump_url
     text += f"\n\n*This is a [reminder](<{message_link}>) you set.*"
