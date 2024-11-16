@@ -1166,16 +1166,21 @@ async def on_message(message):
                     except Exception:
                         pass
             finally:
-                try:
-                    temp_catches_storage.remove(pls_remove_me_later_k_thanks)
-                except Exception:
-                    pass
                 user.save()
                 channel.save()
                 bot.loop.create_task(battlepass_finale(message, user))
                 if decided_time:
                     await asyncio.sleep(decided_time)
+                    try:
+                        temp_catches_storage.remove(pls_remove_me_later_k_thanks)
+                    except Exception:
+                        pass
                     await spawn_cat(str(message.channel.id))
+                else:
+                    try:
+                        temp_catches_storage.remove(pls_remove_me_later_k_thanks)
+                    except Exception:
+                        pass
 
     # those are "owner" commands which are not really interesting
     if text.lower().startswith("cat!sweep") and message.author.id == OWNER_ID:
