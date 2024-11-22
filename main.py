@@ -2640,24 +2640,24 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             user2 = get_profile(message.guild.id, person2.id)
 
             # handle prisms
-            if self.cattype.value in prism_names:
+            if self.cattype.value.lower() in [x.lower() for x in prism_names]:
                 try:
-                    prism = Prism.get(guild_id=interaction.guild.id, name=self.cattype.value)
+                    prism = Prism.get(guild_id=interaction.guild.id, name=prism_names[[x.lower() for x in prism_names].index(self.cattype.value.lower())])
                 except Exception:
                     await interaction.response.send_message("this prism doesnt exist", ephemeral=True)
                     return
                 if prism.user_id != interaction.user.id:
                     await interaction.response.send_message("this is not your prism", ephemeral=True)
                     return
-                if (self.currentuser == 1 and self.cattype.value in person1gives.keys()) or \
-                    (self.currentuser == 2 and self.cattype.value in person2gives.keys()):
+                if (self.currentuser == 1 and prism_names[[x.lower() for x in prism_names].index(self.cattype.value.lower())] in person1gives.keys()) or \
+                    (self.currentuser == 2 and prism_names[[x.lower() for x in prism_names].index(self.cattype.value.lower())] in person2gives.keys()):
                     await interaction.response.send_message("you already added this prism", ephemeral=True)
                     return
 
                 if self.currentuser == 1:
-                    person1gives[self.cattype.value] = 1
+                    person1gives[prism_names[[x.lower() for x in prism_names].index(self.cattype.value.lower())]] = 1
                 else:
-                    person2gives[self.cattype.value] = 1
+                    person2gives[prism_names[[x.lower() for x in prism_names].index(self.cattype.value.lower())]] = 1
                 await interaction.response.defer()
                 await update_trade_embed(interaction)
                 return
@@ -2670,34 +2670,34 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 await interaction.response.send_message("plz number?", ephemeral=True)
                 return
 
-            if self.cattype.value not in cattypes:
+            if self.cattype.value.lower() not in [x.lower() for x in cattypes]:
                 await interaction.response.send_message("add a valid cat type/prism name 💀💀💀", ephemeral=True)
                 return
 
             try:
                 if self.currentuser == 1:
-                    currset = person1gives[self.cattype.value]
+                    currset = person1gives[cattypes[[x.lower() for x in cattypes].index(self.cattype.value.lower())]]
                 else:
-                    currset = person2gives[self.cattype.value]
+                    currset = person2gives[cattypes[[x.lower() for x in cattypes].index(self.cattype.value.lower())]]
             except Exception:
                 currset = 0
 
-            if (self.currentuser == 1 and user1[f"cat_{self.cattype.value}"] < int(value) + currset) or \
-                (self.currentuser == 2 and user2[f"cat_{self.cattype.value}"] < int(value) + currset):
+            if (self.currentuser == 1 and user1[f"cat_{cattypes[[x.lower() for x in cattypes].index(self.cattype.value.lower())]}"] < int(value) + currset) or \
+                (self.currentuser == 2 and user2[f"cat_{cattypes[[x.lower() for x in cattypes].index(self.cattype.value.lower())]}"] < int(value) + currset):
                 await interaction.response.send_message("hell naww dude you dont even have that many cats 💀💀💀", ephemeral=True)
                 return
 
             # OKE SEEMS GOOD LETS ADD CATS TO THE TRADE
             if self.currentuser == 1:
                 try:
-                    person1gives[self.cattype.value] += int(value)
+                    person1gives[cattypes[[x.lower() for x in cattypes].index(self.cattype.value.lower())]] += int(value)
                 except Exception:
-                    person1gives[self.cattype.value] = int(value)
+                    person1gives[cattypes[[x.lower() for x in cattypes].index(self.cattype.value.lower())]] = int(value)
             else:
                 try:
-                    person2gives[self.cattype.value] += int(value)
+                    person2gives[cattypes[[x.lower() for x in cattypes].index(self.cattype.value.lower())]] += int(value)
                 except Exception:
-                    person2gives[self.cattype.value] = int(value)
+                    person2gives[cattypes[[x.lower() for x in cattypes].index(self.cattype.value.lower())]] = int(value)
 
             await interaction.response.defer()
             await update_trade_embed(interaction)
