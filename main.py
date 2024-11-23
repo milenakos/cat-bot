@@ -2610,7 +2610,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     continue
                 if k == "rains":
                     valuestr += f"☔ {v:,}m of Cat Rains\n"
-                    valuenum += 22 * v
+                    valuenum += 22 * 50 * v
                     continue
                 valuenum += (len(CAT_TYPES) / type_dict[k]) * v
                 total += v
