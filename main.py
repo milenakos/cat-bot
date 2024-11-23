@@ -2385,7 +2385,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
     # do the funny
     if person2.id == bot.user.id:
-        person2gives = {"eGirl": 9999999}
+        person2gives["eGirl"] = 9999999
 
     # this is the deny button code
     async def denyb(interaction):
@@ -2424,8 +2424,10 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         if person1accept and person2accept:
             user1 = get_profile(message.guild.id, person1.id)
             user2 = get_profile(message.guild.id, person2.id)
+            actual_user1 = User.get(user_id=person1.id)
+            actual_user2 = User.get(user_id=person2.id)
 
-            # check if we have enough cats (person could have moved them during the trade)
+            # check if we have enough things (person could have moved them during the trade)
             error = False
             person1prismgive = 0
             person2prismgive = 0
@@ -2437,7 +2439,11 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                         error = True
                         break
                     continue
-                if user1[f"cat_{k}"] < v:
+                elif k == "rains":
+                    if actual_user1.rain_minutes < v:
+                        error = True
+                        break
+                elif user1[f"cat_{k}"] < v:
                     error = True
                     break
 
@@ -2449,7 +2455,11 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                         error = True
                         break
                     continue
-                if user2[f"cat_{k}"] < v:
+                elif k == "rains":
+                    if actual_user2.rain_minutes < v:
+                        error = True
+                        break
+                elif user2[f"cat_{k}"] < v:
                     error = True
                     break
 
@@ -2465,17 +2475,21 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
             if error:
                 try:
-                    await interaction.edit_original_response(content="Uh oh - some of the cats/prisms disappeared while trade was happening", embed=None, view=None)
+                    await interaction.edit_original_response(content="Uh oh - some of the cats/prisms/rains disappeared while trade was happening", embed=None, view=None)
                 except Exception:
-                    await interaction.followup.send("Uh oh - some of the cats/prisms disappeared while trade was happening")
+                    await interaction.followup.send("Uh oh - some of the cats/prisms/rains disappeared while trade was happening")
                 return
 
-            # exchange cats
+            # exchange
             cat_count = 0
             for k, v in person1gives.items():
                 if k in prism_names:
                     Prism.update(user_id=person2.id).where(Prism.guild_id == message.guild.id, Prism.name == k).execute()
                     cat_count += 1
+                    continue
+                if k == "rains":
+                    actual_user1.rain_minutes -= v
+                    actual_user2.rain_minutes += v
                     continue
                 cat_count += v
                 user1[f"cat_{k}"] -= v
@@ -2486,12 +2500,18 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     Prism.update(user_id=person1.id).where(Prism.guild_id == message.guild.id, Prism.name == k).execute()
                     cat_count += 1
                     continue
+                if k == "rains":
+                    actual_user2.rain_minutes -= v
+                    actual_user1.rain_minutes += v
+                    continue
                 cat_count += v
                 user1[f"cat_{k}"] += v
                 user2[f"cat_{k}"] -= v
 
             user1.save()
             user2.save()
+            actual_user1.save()
+            actual_user2.save()
 
             try:
                 await interaction.edit_original_response(content="Trade finished!", view=None)
@@ -2588,6 +2608,10 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     for v2 in type_dict.values():
                         valuenum += len(CAT_TYPES) / v2
                     continue
+                if k == "rains":
+                    valuestr += f"☔ {v:,}m of Cat Rains\n"
+                    valuenum += 22 * v
+                    continue
                 valuenum += (len(CAT_TYPES) / type_dict[k]) * v
                 total += v
                 aicon = get_emoji(k.lower() + "cat")
@@ -2626,8 +2650,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             self.currentuser = currentuser
 
             self.cattype = discord.ui.TextInput(
-                label="Cat Type or Prism Name",
-                placeholder="Fine / Alpha"
+                label="Cat Type, Prism Name or \"Rain\"",
+                placeholder="Fine / Alpha / Rain"
             )
             self.add_item(self.cattype)
 
@@ -2674,6 +2698,27 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     raise Exception
             except Exception:
                 await interaction.response.send_message("plz number?", ephemeral=True)
+                return
+
+            # handle rains
+            if "rain" in self.cattype.value.lower():
+                user = User.get(user_id=interaction.user.id)
+                if user.rains < value:
+                    await interaction.response.send_message("you dont have enough rains", ephemeral=True)
+                    return
+
+                if self.currentuser == 1:
+                    try:
+                        person1gives["rains"] += value
+                    except Exception:
+                        person1gives["rains"] = value
+                else:
+                    try:
+                        person2gives["rains"] += value
+                    except Exception:
+                        person2gives["rains"] = value
+                await interaction.response.defer()
+                await update_trade_embed(interaction)
                 return
 
             if self.cattype.value not in cattypes:
