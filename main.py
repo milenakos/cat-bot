@@ -2703,20 +2703,20 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             # handle rains
             if "rain" in self.cattype.value.lower():
                 user = User.get(user_id=interaction.user.id)
-                if user.rain_minutes < value:
+                if user.rain_minutes < int(value):
                     await interaction.response.send_message("you dont have enough rains", ephemeral=True)
                     return
 
                 if self.currentuser == 1:
                     try:
-                        person1gives["rains"] += value
+                        person1gives["rains"] += int(value)
                     except Exception:
-                        person1gives["rains"] = value
+                        person1gives["rains"] = int(value)
                 else:
                     try:
-                        person2gives["rains"] += value
+                        person2gives["rains"] += int(value)
                     except Exception:
-                        person2gives["rains"] = value
+                        person2gives["rains"] = int(value)
                 await interaction.response.defer()
                 await update_trade_embed(interaction)
                 return
