@@ -2234,7 +2234,7 @@ async def prism(message: discord.Interaction):
             selected_prism.save()
 
             embedVar, view = prism_config_embed(selected_prism)
-            await interaction.message.edit(embed=embedVar, view=view)
+            await interaction.edit_original_response(embed=embedVar, view=view)
 
     view = View(timeout=3600)
     if global_boost >= 25 or user_count >= 5:
@@ -3740,9 +3740,9 @@ async def reset(message: discord.Interaction, person_id: discord.User):
         if interaction.user.id == message.user.id:
             try:
                 get_profile(message.guild.id, person_id.id).delete_instance()
-                await interaction.message.edit(content=f"Done! rip <@{person_id.id}>. f's in chat.", view=None)
+                await interaction.edit_original_response(content=f"Done! rip <@{person_id.id}>. f's in chat.", view=None)
             except Exception:
-                await interaction.message.edit(content="ummm? this person isnt even registered in cat bot wtf are you wiping?????", view=None)
+                await interaction.edit_original_response(content="ummm? this person isnt even registered in cat bot wtf are you wiping?????", view=None)
         else:
             await do_funny(interaction)
 
