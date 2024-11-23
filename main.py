@@ -243,7 +243,7 @@ async def send_news(interaction: discord.Interaction):
     elif news_id == 1:
         embed = discord.Embed(
             title="✨ New Cat Rains perks!",
-            description="Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).\nEveryone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have recieved 10 minutes of Rains as compensation.\n\nThis is a really cool perk and I hope you like it!",
+            description="Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).\nEveryone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have received 10 minutes of Rains as compensation.\n\nThis is a really cool perk and I hope you like it!",
             color=0x6E593C
         )
         await interaction.edit_original_response(content=None, view=None, embed=embed)
@@ -1163,7 +1163,7 @@ async def on_message(message):
                         reward_amount = level["reward_amount"]
                         user[f"cat_{reward}"] += reward_amount
                         icon = get_emoji(reward.lower() + "cat")
-                        reward_text = f"You have recieved {icon} {reward_amount} {reward} cats!"
+                        reward_text = f"You have received {icon} {reward_amount} {reward} cats!"
 
                     return discord.Embed(
                         title=f"Level {user.battlepass} complete!",
@@ -3802,7 +3802,7 @@ async def claim_reward(user, channeley, type):
         button.callback = toggle_reminders
         view.add_item(button)
 
-    embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have recieved {icon} {amount} {cattype} cats for voting on {cool_name}.\nVote again in 12 hours.", color=0x007F0E)
+    embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have received {icon} {amount} {cattype} cats for voting on {cool_name}.\nVote again in 12 hours.", color=0x007F0E)
     try:
         if channeley.permissions_for(channeley.guild.me).send_messages:
             await channeley.send(f"<@{user.user_id}>", embed=embedVar, view=view)

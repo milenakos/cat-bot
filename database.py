@@ -98,7 +98,7 @@ class User(peewee.Model):
     premium = peewee.BooleanField(default=False)  # whether the user has premium
     claimed_free_rain = peewee.BooleanField(default=False)  # whether the user has claimed their free rain
 
-    news_state = peewee.CharField(default="")
+    news_state = peewee.CharField(default="", max_length=2000)
 
     class Meta:
         database = db
