@@ -654,6 +654,9 @@ async def on_message(message):
             user.rain_minutes += 10
         elif things[2] == "long":
             user.rain_minutes += 20
+        else:
+            user.rain_minutes += int(things[2])
+        user.premium = True
         user.save()
 
     react_count = 0
@@ -1212,6 +1215,9 @@ async def on_message(message):
             user.rain_minutes += 10
         elif things[2] == "long":
             user.rain_minutes += 20
+        else:
+            user.rain_minutes += int(things[2])
+        user.premium = True
         user.save()
     if text.lower().startswith("cat!restart") and message.author.id == OWNER_ID:
         if not cat_rains or int(max(cat_rains.values())) < time.time():
@@ -1836,6 +1842,7 @@ async def rain(message: discord.Interaction):
 
 You can get those by buying them at our [store](<https://catbot.minkos.lol/store>) or by winning them in an event.
 This bot is developed by a single person so buying one would be very appreciated.
+As a bonus, you will get access to /editprofile command!
 Fastest times are not saved during rains.
 
 You currently have **{user.rain_minutes}** minutes of rains.""", color=0x6E593C)
@@ -1924,15 +1931,6 @@ You currently have **{user.rain_minutes}** minutes of rains.""", color=0x6E593C)
     await message.response.send_message(embed=embed, view=view)
 
 
-@bot.tree.command(description="Support Cat Bot!")
-async def donate(message: discord.Interaction):
-    thing = discord.File("images/supporter.png", filename="supporter.png")
-    kwargs = {}
-    if message.channel.permissions_for(message.guild.me).attach_files:
-        kwargs["file"] = thing
-    await message.response.send_message("👑 For as little as $3 you can support Cat Bot and unlock profile customization!\n<https://catbot.minkos.lol/donate>", **kwargs)
-
-
 @bot.tree.command(description="Buy Cat Rains!")
 async def store(message: discord.Interaction):
     await message.response.send_message("☔ Cat rains make cats spawn instantly! Make your server active, get more cats and have fun!\n<https://catbot.minkos.lol/store>")
@@ -1950,7 +1948,7 @@ if config.DONOR_CHANNEL_ID:
 
         user, _ = User.get_or_create(user_id=message.user.id)
         if not user.premium:
-            await message.response.send_message("👑 This feature is supporter-only!\nFor as little as $3 you can support Cat Bot and unlock profile customization!\n<https://catbot.minkos.lol/donate>")
+            await message.response.send_message("👑 This feature is supporter-only!\nBuy anything from Cat Bot Store to unlock profile customization!\n<https://catbot.minkos.lol/store>")
             return
 
         if provided_emoji and discord_emoji.to_discord(provided_emoji.strip(), get_all=False, put_colons=False):

@@ -31,6 +31,7 @@ TOP_GG_TOKEN = os.environ["top_gg_token"]
 GITHUB_CHANNEL_ID = 1060965767044149249
 
 # all messages in this channel will be interpreted as user ids to give premium access to
+# (deprecated, all rain buyes get premium for free now)
 DONOR_CHANNEL_ID = 1249343008890028144
 
 # all messages in this channel are allowed to be cat!rain commands
