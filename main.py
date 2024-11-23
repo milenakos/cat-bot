@@ -1286,7 +1286,7 @@ async def on_message(message: discord.Message):
         user, _ = User.get_or_create(user_id=stuff[1])
         if stuff[2] != "None" and message.reference and message.reference.message_id:
             emoji_name = "".join(stuff[2:]).lower() + "cat"
-            if get_emoji(emoji_name):
+            if emoji_name in emojis.keys():
                 await message.reply("emoji already exists")
                 return
             og_msg = await message.channel.fetch_message(message.reference.message_id)
