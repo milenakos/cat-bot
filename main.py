@@ -384,7 +384,7 @@ async def cat_type_autocomplete(interaction: discord.Interaction, current: str) 
 # function to autocomplete cat_type choices for /gift, which shows only cats user has and how many of them they have
 async def gift_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     user = get_profile(interaction.guild.id, interaction.user.id)
-    actual_user = User.get_or_create(user_id=interaction.user.id)
+    actual_user, _ = User.get_or_create(user_id=interaction.user.id)
     choices = []
     for choice in cattypes:
         if current.lower() in choice.lower() and user[f"cat_{choice}"] != 0:
@@ -2383,8 +2383,8 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
             await message.response.send_message("you can't sacrifice rains", ephemeral=True)
             return
 
-        actual_user = User.get_or_create(user_id=message.user.id)
-        actual_receiver = User.get_or_create(user_id=person_id)
+        actual_user, _ = User.get_or_create(user_id=message.user.id)
+        actual_receiver, _ = User.get_or_create(user_id=person_id)
         if actual_user.rain_minutes >= amount:
             actual_user.rain_minutes -= amount
             actual_receiver.rain_minutes += amount
@@ -2526,8 +2526,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         if person1accept and person2accept:
             user1 = get_profile(message.guild.id, person1.id)
             user2 = get_profile(message.guild.id, person2.id)
-            actual_user1 = User.get_or_create(user_id=person1.id)
-            actual_user2 = User.get_or_create(user_id=person2.id)
+            actual_user1, _ = User.get_or_create(user_id=person1.id)
+            actual_user2, _ = User.get_or_create(user_id=person2.id)
 
             # check if we have enough things (person could have moved them during the trade)
             error = False
@@ -2804,7 +2804,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
             # handle rains
             if "rain" in self.cattype.value.lower():
-                user = User.get_or_create(user_id=interaction.user.id)
+                user, _ = User.get_or_create(user_id=interaction.user.id)
                 if user.rain_minutes < int(value):
                     await interaction.response.send_message("you dont have enough rains", ephemeral=True)
                     return
