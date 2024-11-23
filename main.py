@@ -384,10 +384,13 @@ async def cat_type_autocomplete(interaction: discord.Interaction, current: str) 
 # function to autocomplete cat_type choices for /gift, which shows only cats user has and how many of them they have
 async def gift_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     user = get_profile(interaction.guild.id, interaction.user.id)
+    actual_user = User.get_or_create(user_id=interaction.user.id)
     choices = []
     for choice in cattypes:
         if current.lower() in choice.lower() and user[f"cat_{choice}"] != 0:
             choices.append(discord.app_commands.Choice(name=f"{choice} (x{user[f'cat_{choice}']})", value=choice))
+    if current.lower() in "rain" and actual_user.rain_minutes != 0:
+        choices.append(discord.app_commands.Choice(name=f"Rain ({actual_user.rain_minutes} minutes)", value="rain"))
     return choices[:25]
 
 
@@ -2293,89 +2296,168 @@ async def ping(message: discord.Interaction):
 @discord.app_commands.describe(person="Whom to gift?", cat_type="im gonna airstrike your house from orbit", amount="And how much?")
 @discord.app_commands.autocomplete(cat_type=gift_autocomplete)
 async def gift(message: discord.Interaction, person: discord.User, cat_type: str, amount: Optional[int]):
-    if not amount:
+    if amount is None:
         # default the amount to 1
         amount = 1
     person_id = person.id
 
-    if cat_type not in cattypes:
-        await message.response.send_message("bro what", ephemeral=True)
-        return
-
-    user = get_profile(message.guild.id, message.user.id)
-    catbot = get_profile(message.guild.id, bot.user.id)
-
-    # if we even have enough cats
-    if user[f"cat_{cat_type}"] >= amount and amount > 0 and message.user.id != person_id:
-        reciever = get_profile(message.guild.id, person_id)
-        user[f"cat_{cat_type}"] -= amount
-        reciever[f"cat_{cat_type}"] += amount
-        user.save()
-        reciever.save()
-        embed = discord.Embed(title="Success!", description=f"Successfully transfered {amount:,} {cat_type} cats from <@{message.user.id}> to <@{person_id}>!", color=0x6E593C)
-
-        # handle tax
-        if amount >= 5:
-            tax_amount = round(amount * 0.2)
-
-            async def pay(interaction):
-                if interaction.user.id == message.user.id:
-                    await interaction.response.defer()
-                    try:
-                        await interaction.edit_original_response(view=None)
-                    except Exception:
-                        pass
-                    user[f"cat_{cat_type}"] -= tax_amount
-                    catbot[f"cat_{cat_type}"] += tax_amount
-                    user.save()
-                    catbot.save()
-                    await interaction.followup.send(f"Tax of {tax_amount:,} {cat_type} cats was withdrawn from your account!")
-                    await achemb(message, "good_citizen", "send")
-                else:
-                    await do_funny(interaction)
-
-            async def evade(interaction):
-                if interaction.user.id == message.user.id:
-                    await interaction.response.defer()
-                    try:
-                        await interaction.edit_original_response(view=None)
-                    except Exception:
-                        pass
-                    await interaction.followup.send(f"You evaded the tax of {tax_amount:,} {cat_type} cats.")
-                    await achemb(message, "secret", "send")
-                else:
-                    await do_funny(interaction)
-
-            button = Button(label="Pay 20% tax", style=ButtonStyle.green)
-            button.callback = pay
-
-            button2 = Button(label="Evade the tax", style=ButtonStyle.red)
-            button2.callback = evade
-
-            myview = View(timeout=3600)
-
-            myview.add_item(button)
-            myview.add_item(button2)
-
-            await message.response.send_message(embed=embed, view=myview)
-        else:
-            await message.response.send_message(embed=embed)
-
-        # handle aches
-        await achemb(message, "donator", "send")
-        await achemb(message, "anti_donator", "send", person)
-        if person_id == bot.user.id and cat_type == "Ultimate" and int(amount) >= 5:
-            await achemb(message, "rich", "send")
-        if person_id == bot.user.id:
-            await achemb(message, "sacrifice", "send")
-        if cat_type == "Nice" and int(amount) == 69:
-            await achemb(message, "nice", "send")
-
-    else:
+    if amount <= 0 or message.user.id == person_id:
         # haha skill issue
         await message.response.send_message("no", ephemeral=True)
         if message.user.id == person_id:
             await achemb(message, "lonely", "send")
+        return
+
+    if cat_type in cattypes:
+        user = get_profile(message.guild.id, message.user.id)
+        catbot = get_profile(message.guild.id, bot.user.id)
+        # if we even have enough cats
+        if user[f"cat_{cat_type}"] >= amount:
+            reciever = get_profile(message.guild.id, person_id)
+            user[f"cat_{cat_type}"] -= amount
+            reciever[f"cat_{cat_type}"] += amount
+            user.save()
+            reciever.save()
+            embed = discord.Embed(title="Success!", description=f"Successfully transfered {amount:,} {cat_type} cats from <@{message.user.id}> to <@{person_id}>!", color=0x6E593C)
+    
+            # handle tax
+            if amount >= 5:
+                tax_amount = round(amount * 0.2)
+    
+                async def pay(interaction):
+                    if interaction.user.id == message.user.id:
+                        await interaction.response.defer()
+                        try:
+                            await interaction.edit_original_response(view=None)
+                        except Exception:
+                            pass
+                        user[f"cat_{cat_type}"] -= tax_amount
+                        catbot[f"cat_{cat_type}"] += tax_amount
+                        user.save()
+                        catbot.save()
+                        await interaction.followup.send(f"Tax of {tax_amount:,} {cat_type} cats was withdrawn from your account!")
+                        await achemb(message, "good_citizen", "send")
+                    else:
+                        await do_funny(interaction)
+    
+                async def evade(interaction):
+                    if interaction.user.id == message.user.id:
+                        await interaction.response.defer()
+                        try:
+                            await interaction.edit_original_response(view=None)
+                        except Exception:
+                            pass
+                        await interaction.followup.send(f"You evaded the tax of {tax_amount:,} {cat_type} cats.")
+                        await achemb(message, "secret", "send")
+                    else:
+                        await do_funny(interaction)
+    
+                button = Button(label="Pay 20% tax", style=ButtonStyle.green)
+                button.callback = pay
+    
+                button2 = Button(label="Evade the tax", style=ButtonStyle.red)
+                button2.callback = evade
+    
+                myview = View(timeout=3600)
+    
+                myview.add_item(button)
+                myview.add_item(button2)
+    
+                await message.response.send_message(embed=embed, view=myview)
+            else:
+                await message.response.send_message(embed=embed)
+    
+            # handle aches
+            await achemb(message, "donator", "send")
+            await achemb(message, "anti_donator", "send", person)
+            if person_id == bot.user.id and cat_type == "Ultimate" and int(amount) >= 5:
+                await achemb(message, "rich", "send")
+            if person_id == bot.user.id:
+                await achemb(message, "sacrifice", "send")
+            if cat_type == "Nice" and int(amount) == 69:
+                await achemb(message, "nice", "send")
+        else:
+            await message.response.send_message("no", ephemeral=True)
+    elif cat_type.lower() == "rain":
+        if person_id == bot.user.id:
+            await message.response.send_message("you can't sacrifice rains", ephemeral=True)
+            return
+
+        actual_user = User.get_or_create(user_id=message.user.id)
+        actual_receiver = User.get_or_create(user_id=person_id)
+        if actual_user.rain_minutes >= amount:
+            actual_user.rain_minutes -= amount
+            actual_receiver.rain_minutes += amount
+            actual_user.save()
+            actual_receiver.save()
+            embed = discord.Embed(title="Success!", description=f"Successfully transfered {amount:,} minutes of rain from <@{message.user.id}> to <@{person_id}>!", color=0x6E593C)
+
+            # handle tax
+            if amount >= 5:
+                tax_amount = round(amount * 0.2)
+
+                async def confirm_pay(interaction):
+                    if interaction.user.id == message.user.id:
+                        await interaction.response.defer()
+                        confirm = Button(label="Yes, pay the tax")
+                        confirm.callback = pay
+                        confirm_view = View(timeout=3600)
+                        confirm_view.add_item(confirm)
+                        await interaction.followup.send(f"Are you really sure you want to pay the tax? {tax_amount:,} minutes of rain will be lost forever...", view=confirm_view)
+                    else:
+                        await do_funny(interaction)
+
+                async def pay(interaction):
+                    if interaction.user.id == message.user.id:
+                        await interaction.response.defer()
+                        try:
+                            await interaction.edit_original_response(view=None)
+                        except Exception:
+                            pass
+                        actual_user.rain_minutes -= tax_amount
+                        if actual_user.rain_minutes < 0:
+                            # negative rain could cause other bugs
+                            actual_user.rain_minutes = 0
+                        actual_user.save()
+                        await interaction.followup.send(f"Tax of {tax_amount:,} rain minutes was withdrawn from your account!")
+                        await achemb(message, "good_citizen", "send")
+                    else:
+                        await do_funny(interaction)
+    
+                async def evade(interaction):
+                    if interaction.user.id == message.user.id:
+                        await interaction.response.defer()
+                        try:
+                            await interaction.edit_original_response(view=None)
+                        except Exception:
+                            pass
+                        await interaction.followup.send(f"You evaded the tax of {tax_amount:,} rain minutes.")
+                        await achemb(message, "secret", "send")
+                    else:
+                        await do_funny(interaction)
+    
+                button = Button(label="Pay 20% tax", style=ButtonStyle.green)
+                button.callback = confirm_pay
+    
+                button2 = Button(label="Evade the tax", style=ButtonStyle.red)
+                button2.callback = evade
+    
+                myview = View(timeout=3600)
+    
+                myview.add_item(button)
+                myview.add_item(button2)
+    
+                await message.response.send_message(embed=embed, view=myview)
+            else:
+                await message.response.send_message(embed=embed)
+
+            # handle aches
+            await achemb(message, "donator", "send")
+            await achemb(message, "anti_donator", "send", person)
+        else:
+            await message.response.send_message("no", ephemeral=True)
+    else:
+        await message.response.send_message("bro what", ephemeral=True)
 
 
 @bot.tree.command(description="Trade cats!")
@@ -2444,8 +2526,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         if person1accept and person2accept:
             user1 = get_profile(message.guild.id, person1.id)
             user2 = get_profile(message.guild.id, person2.id)
-            actual_user1 = User.get(user_id=person1.id)
-            actual_user2 = User.get(user_id=person2.id)
+            actual_user1 = User.get_or_create(user_id=person1.id)
+            actual_user2 = User.get_or_create(user_id=person2.id)
 
             # check if we have enough things (person could have moved them during the trade)
             error = False
@@ -2722,7 +2804,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
             # handle rains
             if "rain" in self.cattype.value.lower():
-                user = User.get(user_id=interaction.user.id)
+                user = User.get_or_create(user_id=interaction.user.id)
                 if user.rain_minutes < int(value):
                     await interaction.response.send_message("you dont have enough rains", ephemeral=True)
                     return
