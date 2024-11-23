@@ -215,7 +215,8 @@ def get_emoji(name):
 
 # news stuff
 news_list = [
-    {"title": "Cat Bot Survey - win rains!", "emoji": "🌟"}
+    {"title": "Cat Bot Survey - win rains!", "emoji": "📜"},
+    {"title": "New Cat Rains perks!", "emoji": "✨"}
 ]
 async def send_news(interaction: discord.Interaction):
     news_id, original_caller = interaction.data["custom_id"].split(" ")  # pyright: ignore
@@ -234,8 +235,15 @@ async def send_news(interaction: discord.Interaction):
 
     if news_id == 0:
         embed = discord.Embed(
-            title="🌟 Cat Bot Survey",
+            title="📜🌟 Cat Bot Survey",
             description="Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nSurvey is closed!",
+            color=0x6E593C
+        )
+        await interaction.edit_original_response(content=None, view=None, embed=embed)
+    elif news_id == 1:
+        embed = discord.Embed(
+            title="✨ New Cat Rains perks!",
+            description="Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).\nEveryone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have recieved 10 minutes of Rains as compensation.\n\nThis is a really cool perk and I hope you like it!",
             color=0x6E593C
         )
         await interaction.edit_original_response(content=None, view=None, embed=embed)
