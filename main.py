@@ -20,10 +20,11 @@ from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
 from discord.ui import Button, View
+from PIL import Image
 
 import config
 import msg2img
-from database import Channel, Profile, Prism, User, Reminder, db
+from database import Channel, Prism, Profile, Reminder, User, db
 
 logging.basicConfig(level=logging.INFO)
 
@@ -586,7 +587,7 @@ async def on_ready():
 
 # this is all the code which is ran on every message sent
 # a lot of it is for easter eggs or achievements
-async def on_message(message):
+async def on_message(message: discord.Message):
     global in_the_past, emojis, queue_restart, about_to_stop
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
@@ -1283,9 +1284,27 @@ async def on_message(message):
     if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
         stuff = text.split(" ")
         user, _ = User.get_or_create(user_id=stuff[1])
-        user.custom = " ".join(stuff[2:]) if stuff[2] != "None" else ""
-        user.save()
+        if stuff[2] != "None" and message.reference and message.reference.message_id:
+            emoji_name = "".join(stuff[2:]).lower() + "cat"
+            if get_emoji(emoji_name):
+                await message.reply("emoji already exists")
+                return
+            og_msg = await message.channel.fetch_message(message.reference.message_id)
+            if not og_msg or len(og_msg.attachments) == 0:
+                await message.reply("no image found")
+                return
+            img_data = await og_msg.attachments[0].read()
+
+            img = Image.open(io.BytesIO(img_data))
+            img.thumbnail((128, 128))
+            with io.BytesIO() as image_binary:
+                img.save(image_binary, format="PNG")
+                image_binary.seek(0)
+                await bot.create_application_emoji(name=emoji_name, image=image_binary.getvalue())
+
+        user.custom = " ".join(stuff[2:]) if stuff[3] != "None" else ""
         emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
+        user.save()
         await message.reply("success")
 
 
