@@ -2413,6 +2413,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             await do_funny(interaction)
             return
 
+        await interaction.response.defer()
         blackhole = True
         person1gives = {}
         person2gives = {}
