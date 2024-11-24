@@ -3102,7 +3102,7 @@ async def eightball(message: discord.Interaction, question: str):
         "outlook not so good",
         "very doubtful",
         "most likely not",
-        "not likely",
+        "unlikely",
         "no definitely",
         "no",
         "signs point to no",
