@@ -3075,6 +3075,49 @@ async def rate(message: discord.Interaction, thing: str, stat: str):
     await message.response.send_message(f"{thing} is {random.randint(0, 100)}% {stat}")
 
 
+@bot.tree.command(name="8ball", description="ask the magic catball")
+@discord.app_commands.describe(question="your question to the catball")
+async def eightball(message: discord.Interaction, question: str):
+    if len(question) > 300:
+        await message.response.send_message("thats kinda long", ephemeral=True)
+        return
+
+    catball_responses = [
+        # positive
+        "it is certain",
+        "it is decidedly so",
+        "without a doubt",
+        "yes definitely",
+        "you may rely on it",
+        "as i see it, yes",
+        "most likely",
+        "outlook good",
+        "yes",
+        "signs point to yes",
+
+        # negative
+        "dont count on it",
+        "my reply is no",
+        "my sources say no",
+        "outlook not so good",
+        "very doubtful",
+        "most likely not",
+        "not likely",
+        "no definitely",
+        "no",
+        "signs point to no",
+
+        # neutral
+        "reply hazy, try again",
+        "ask again later",
+        "better not tell you now",
+        "cannot predict now",
+        "concetrate and ask again"
+    ]
+
+    await message.response.send_message(f"{question}\n:8ball: **{random.choice(catball_responses)}**")
+
+
 @bot.tree.command(description="get a reminder in the future (+- 5 minutes)")
 @discord.app_commands.describe(days="in how many days", hours="in how many hours", minutes="in how many minutes (+- 5 minutes)", text="what to remind")
 async def remind(message: discord.Interaction, days: Optional[int], hours: Optional[int], minutes: Optional[int], text: Optional[str]):
