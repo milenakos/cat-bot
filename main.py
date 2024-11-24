@@ -229,7 +229,7 @@ async def send_news(interaction: discord.Interaction):
 
     news_id = int(news_id)
 
-    user = User.get(interaction.user.id)
+    user, _ = User.get_or_create(user_id=interaction.user.id)
     current_state = user.news_state.strip()
     user.news_state = current_state[:news_id] + "1" + current_state[news_id + 1:]
     user.save()
@@ -1221,6 +1221,8 @@ async def on_message(message: discord.Message):
         # syntax: cat!rain 553093932012011520 short
         things = text.split(" ")
         user, _ = User.get_or_create(user_id=things[1])
+        if not user.rain_minutes:
+            user.rain_minutes = 0
         if things[2] == "short":
             user.rain_minutes += 2
         elif things[2] == "medium":
