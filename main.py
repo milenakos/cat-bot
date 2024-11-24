@@ -2320,11 +2320,11 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
             user.save()
             reciever.save()
             embed = discord.Embed(title="Success!", description=f"Successfully transfered {amount:,} {cat_type} cats from <@{message.user.id}> to <@{person_id}>!", color=0x6E593C)
-    
+
             # handle tax
             if amount >= 5:
                 tax_amount = round(amount * 0.2)
-    
+
                 async def pay(interaction):
                     if interaction.user.id == message.user.id:
                         try:
@@ -2348,7 +2348,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                             catbot.save()
                     else:
                         await do_funny(interaction)
-    
+
                 async def evade(interaction):
                     if interaction.user.id == message.user.id:
                         await interaction.response.defer()
@@ -2360,22 +2360,22 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                         await achemb(message, "secret", "send")
                     else:
                         await do_funny(interaction)
-    
+
                 button = Button(label="Pay 20% tax", style=ButtonStyle.green)
                 button.callback = pay
-    
+
                 button2 = Button(label="Evade the tax", style=ButtonStyle.red)
                 button2.callback = evade
-    
+
                 myview = View(timeout=3600)
-    
+
                 myview.add_item(button)
                 myview.add_item(button2)
-    
+
                 await message.response.send_message(embed=embed, view=myview)
             else:
                 await message.response.send_message(embed=embed)
-    
+
             # handle aches
             await achemb(message, "donator", "send")
             await achemb(message, "anti_donator", "send", person)
@@ -2408,13 +2408,12 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                 async def confirm_pay(interaction):
                     if interaction.user.id == message.user.id:
                         await interaction.response.defer()
-                        actual_user = User.get(user_id=message.user.id)
 
                         confirm = Button(label="Yes, pay the tax")
                         confirm.callback = pay
                         confirm_view = View(timeout=3600)
                         confirm_view.add_item(confirm)
-    
+
                         await interaction.followup.send(f"Are you really sure you want to pay the tax? {tax_amount:,} minutes of rain will be lost forever...", view=confirm_view)
                     else:
                         await do_funny(interaction)
@@ -2442,7 +2441,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                             actual_user.save()
                     else:
                         await do_funny(interaction)
-    
+
                 async def evade(interaction):
                     if interaction.user.id == message.user.id:
                         await interaction.response.defer()
@@ -2454,18 +2453,18 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                         await achemb(message, "secret", "send")
                     else:
                         await do_funny(interaction)
-    
+
                 button = Button(label="Pay 20% tax", style=ButtonStyle.green)
                 button.callback = confirm_pay
-    
+
                 button2 = Button(label="Evade the tax", style=ButtonStyle.red)
                 button2.callback = evade
-    
+
                 myview = View(timeout=3600)
-    
+
                 myview.add_item(button)
                 myview.add_item(button2)
-    
+
                 await message.response.send_message(embed=embed, view=myview)
             else:
                 await message.response.send_message(embed=embed)
