@@ -236,7 +236,7 @@ async def send_news(interaction: discord.Interaction):
 
     if news_id == 0:
         embed = discord.Embed(
-            title="📜🌟 Cat Bot Survey",
+            title="📜 Cat Bot Survey",
             description="Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nSurvey is closed!",
             color=0x6E593C
         )
@@ -1302,7 +1302,7 @@ async def on_message(message: discord.Message):
                 image_binary.seek(0)
                 await bot.create_application_emoji(name=emoji_name, image=image_binary.getvalue())
 
-        user.custom = " ".join(stuff[2:]) if stuff[3] != "None" else ""
+        user.custom = " ".join(stuff[2:]) if stuff[2] != "None" else ""
         emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
         user.save()
         await message.reply("success")
