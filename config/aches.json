@@ -36,7 +36,6 @@
   "sussy": {"title": "Sussy", "description": "call out sus cat for being AMOGUS", "is_hidden": false, "category": "Random"},
   "egril": {"title": "Electronic Grill", "description": "what can this possibly mean", "is_hidden": false, "category": "Random"},
   "bwomp": {"title": "Bwomp", "description": "is that a geometry dash reference???", "is_hidden": false, "category": "Random"},
-  "reminder": {"title": "Reminder", "description": "set a reminder", "is_hidden": false, "category": "Random"},
 
   "silly": {"title": "Silly", "description": "triple-react!", "is_hidden": false, "category": "Silly"},
   "nice": {"title": "Nice!", "description": "gift 69 nice cats", "is_hidden": false, "category": "Silly"},
@@ -59,6 +58,8 @@
   "perfectly_balanced": {"title": "Perfectly Balanced", "description": "as all things should be", "is_hidden": true, "category": "Silly"},
   "fact_enjoyer": {"title": "Fact Enjoyer", "description": "hmm yes those are some quality facts", "is_hidden": true, "category": "Silly"},
   "morse_cat": {"title": "Morse Cat", "description": "beep boop", "is_hidden": false, "category": "Silly"},
+  "reminder": {"title": "Reminder", "description": "set a reminder", "is_hidden": false, "category": "Silly"},
+  "balling": {"title": "Balling", "description": "BALLER", "is_hidden": false, "category": "Silly"},
 
   "lucky": {"title": "Lucky", "description": "0.1% chance you get it each time you catch a cat", "is_hidden": true, "category": "Hard"},
   "gambling_two": {"title": "GOD DANGIT", "description": "Gamble 50 times", "is_hidden": true, "category": "Hard"},

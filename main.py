@@ -3115,6 +3115,7 @@ async def eightball(message: discord.Interaction, question: str):
         "concetrate and ask again"
     ]
 
+    await achemb(message, "balling", "send")
     await message.response.send_message(f"{question}\n:8ball: **{random.choice(catball_responses)}**")
 
 
