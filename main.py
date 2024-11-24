@@ -2310,7 +2310,6 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
 
     if cat_type in cattypes:
         user = get_profile(message.guild.id, message.user.id)
-        catbot = get_profile(message.guild.id, bot.user.id)
         # if we even have enough cats
         if user[f"cat_{cat_type}"] >= amount:
             reciever = get_profile(message.guild.id, person_id)
@@ -2326,17 +2325,25 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
     
                 async def pay(interaction):
                     if interaction.user.id == message.user.id:
-                        await interaction.response.defer()
                         try:
-                            await interaction.edit_original_response(view=None)
-                        except Exception:
-                            pass
-                        user[f"cat_{cat_type}"] -= tax_amount
-                        catbot[f"cat_{cat_type}"] += tax_amount
-                        user.save()
-                        catbot.save()
-                        await interaction.followup.send(f"Tax of {tax_amount:,} {cat_type} cats was withdrawn from your account!")
-                        await achemb(message, "good_citizen", "send")
+                            await interaction.response.defer()
+                            user = get_profile(message.guild.id, message.user.id)
+                            catbot = get_profile(message.guild.id, bot.user.id)
+
+                            # transfer tax
+                            user[f"cat_{cat_type}"] -= tax_amount
+                            catbot[f"cat_{cat_type}"] += tax_amount
+
+                            try:
+                                await interaction.edit_original_response(view=None)
+                            except Exception:
+                                pass
+                            await interaction.followup.send(f"Tax of {tax_amount:,} {cat_type} cats was withdrawn from your account!")
+                            await achemb(message, "good_citizen", "send")
+                        finally:
+                            # always save to prevent issue with exceptions leaving bugged state
+                            user.save()
+                            catbot.save()
                     else:
                         await do_funny(interaction)
     
@@ -2399,28 +2406,38 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                 async def confirm_pay(interaction):
                     if interaction.user.id == message.user.id:
                         await interaction.response.defer()
+                        actual_user = User.get(user_id=message.user.id)
+
                         confirm = Button(label="Yes, pay the tax")
                         confirm.callback = pay
                         confirm_view = View(timeout=3600)
                         confirm_view.add_item(confirm)
+    
                         await interaction.followup.send(f"Are you really sure you want to pay the tax? {tax_amount:,} minutes of rain will be lost forever...", view=confirm_view)
                     else:
                         await do_funny(interaction)
 
                 async def pay(interaction):
                     if interaction.user.id == message.user.id:
-                        await interaction.response.defer()
                         try:
-                            await interaction.edit_original_response(view=None)
-                        except Exception:
-                            pass
-                        actual_user.rain_minutes -= tax_amount
-                        if actual_user.rain_minutes < 0:
-                            # negative rain could cause other bugs
-                            actual_user.rain_minutes = 0
-                        actual_user.save()
-                        await interaction.followup.send(f"Tax of {tax_amount:,} rain minutes was withdrawn from your account!")
-                        await achemb(message, "good_citizen", "send")
+                            await interaction.response.defer()
+                            actual_user = User.get(user_id=message.user.id)
+
+                            # remove tax, don't transfer rain to cat bot because it makes no sense
+                            actual_user.rain_minutes -= tax_amount
+                            if actual_user.rain_minutes < 0:
+                                # negative rain could cause other bugs
+                                actual_user.rain_minutes = 0
+
+                            try:
+                                await interaction.edit_original_response(view=None)
+                            except Exception:
+                                pass
+                            await interaction.followup.send(f"Tax of {tax_amount:,} rain minutes was withdrawn from your account!")
+                            await achemb(message, "good_citizen", "send")
+                        finally:
+                            # always save to prevent issue with exceptions leaving bugged state
+                            actual_user.save()
                     else:
                         await do_funny(interaction)
     
