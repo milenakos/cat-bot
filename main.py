@@ -159,6 +159,7 @@ pending_votes = []
 
 # prevent ratelimits
 casino_lock = []
+slots_lock = []
 
 # cat rains
 cat_rains = {}
@@ -2978,7 +2979,7 @@ async def casino(message: discord.Interaction):
                 await interaction.edit_original_response(embed=embed, view=None)
             except Exception:
                 pass
-            await asyncio.sleep(1.5)
+            await asyncio.sleep(1)
 
         amount = random.randint(1, 5)
 
@@ -3012,6 +3013,94 @@ async def casino(message: discord.Interaction):
     myview.add_item(button)
 
     await message.response.send_message(embed=embed, view=myview)
+
+
+
+@bot.tree.command(description="oh no")
+async def slots(message: discord.Interaction):
+    if message.user.id in slots_lock:
+        await message.response.send_message("you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
+        await achemb(message, "paradoxical_gambler", "send")
+        return
+
+    profile = get_profile(message.guild.id, message.user.id)
+    total_spins = Profile.select(peewee.fn.SUM(Profile.slot_spins)).scalar()
+    total_wins = Profile.select(peewee.fn.SUM(Profile.slot_wins)).scalar()
+    total_big_wins = Profile.select(peewee.fn.SUM(Profile.slot_big_wins)).scalar()
+    embed = discord.Embed(title="The Slot Machine", description=f"__Your stats__\n{profile.total_spins} spins\n{profile.total_wins} wins\n{profile.total_big_wins} big wins\n\n__Global stats__\n{total_spins} spins\n{total_wins} wins\n{total_big_wins} big wins", color=0x750F0E)
+
+    async def spin(interaction):
+        nonlocal message
+        if interaction.user.id != message.user.id:
+            await do_funny(interaction)
+            return
+        if message.user.id in slots_lock:
+            await interaction.response.send_message("you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
+            return
+        user = get_profile(interaction.guild.id, interaction.user.id)
+
+        await interaction.response.defer()
+        await achemb(interaction, "slots", "send")
+        slots_lock.append(message.user.id)
+        user.slot_spins += 1
+
+        variants = ['🍒', '🍋', '🍇', '🔔', '⭐', ':seven:']
+
+        # the k number is much cycles it will go before stopping + 1
+        col1 = random.choices(variants, k=11)
+        col2 = random.choices(variants, k=16)
+        col3 = random.choices(variants, k=25)
+
+        for current3 in range(1, len(col3)):
+            current1 = min(len(col1) - 2, current3)
+            current2 = min(len(col2) - 2, current3)
+            desc = ""
+            for offset in [-1, 0, 1]:
+                desc += f"{col1[current1 + offset]} {col2[current2 + offset]} {col3[current3 + offset]}\n"
+            embed = discord.Embed(title="The Slot Machine", description=desc, color=0x750F0E)
+            try:
+                await interaction.edit_original_response(embed=embed, view=None)
+            except Exception:
+                pass
+            await asyncio.sleep(0.5)
+
+        if col1[current1] == col2[current2] == col3[current3]:
+            user.slot_wins += 1
+            await achemb(interaction, "win_slots", "send")
+            if col1[current1] == ":seven:":
+                desc = "**BIG WIN!**\n\n" + desc
+                user.slot_big_wins += 1
+                await achemb(interaction, "big_win_slots", "send")
+            else:
+                desc = "**You win!**\n\n" + desc
+        else:
+            desc = "**You lose!**\n\n" + desc
+
+        embed = discord.Embed(title="The Slot Machine", description=desc, color=0x750F0E)
+
+        button = Button(label="Spin", style=ButtonStyle.blurple)
+        button.callback = spin
+
+        myview = View(timeout=3600)
+        myview.add_item(button)
+
+        slots_lock.remove(message.user.id)
+        user.save()
+
+        try:
+            await interaction.edit_original_response(embed=embed, view=myview)
+        except Exception:
+            await interaction.followup.send(embed=embed, view=myview)
+
+
+    button = Button(label="Spin", style=ButtonStyle.blurple)
+    button.callback = spin
+
+    myview = View(timeout=3600)
+    myview.add_item(button)
+
+    await message.response.send_message(embed=embed, view=myview)
+
 
 
 async def toggle_reminders(interaction):

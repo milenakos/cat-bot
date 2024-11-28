@@ -60,6 +60,8 @@
   "morse_cat": {"title": "Morse Cat", "description": "beep boop", "is_hidden": false, "category": "Silly"},
   "reminder": {"title": "Reminder", "description": "set a reminder", "is_hidden": false, "category": "Silly"},
   "balling": {"title": "Balling", "description": "BALLER", "is_hidden": false, "category": "Silly"},
+  "slots": {"title": "more gambling??", "description": "spin the /slots machine", "is_hidden": false, "category": "Silly"},
+  "win_slots": {"title": "pro gambler", "description": "win at the /slots machine", "is_hidden": false, "category": "Silly"},
 
   "lucky": {"title": "Lucky", "description": "0.1% chance you get it each time you catch a cat", "is_hidden": true, "category": "Hard"},
   "gambling_two": {"title": "GOD DANGIT", "description": "Gamble 50 times", "is_hidden": true, "category": "Hard"},
@@ -75,6 +77,7 @@
   "capitalism": {"title": "Capitalism", "description": "trade over 1k cats", "is_hidden": false, "category": "Hard"},
   "profit": {"title": "Profit", "description": "Get 100+ more value in a trade", "is_hidden": true, "category": "Hard"},
   "prism": {"title": "oooh shiny", "description": "get a prism", "is_hidden": false, "category": "Hard"},
+  "big_win_slots": {"title": "Hyper Lucky", "description": "Get 777 at the /slots machine", "is_hidden": false, "category": "Hard"},
 
   "catn": {"title": "Cat'n", "description": "no cat??? :megamind:", "is_hidden": true, "category": "Hidden"},
   "coupon_user": {"title": "Coupon User", "description": "use a coupon for a 10% discount on all cats!!!", "is_hidden": true, "category": "Hidden"},

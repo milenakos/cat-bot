@@ -55,6 +55,10 @@ class Profile(peewee.Model):
     facts = peewee.SmallIntegerField(default=0)  # /fact amount
     gambles = peewee.SmallIntegerField(default=0)  # casino spins amount
 
+    slot_spins = peewee.IntegerField(default=0)
+    slot_wins = peewee.IntegerField(default=0)
+    slot_big_wins = peewee.SmallIntegerField(default=0)
+
     # thanks chatgpt
     # cat types
     for cattype in cattypes:
