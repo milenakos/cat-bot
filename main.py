@@ -3027,7 +3027,7 @@ async def slots(message: discord.Interaction):
     total_spins = Profile.select(peewee.fn.SUM(Profile.slot_spins)).scalar()
     total_wins = Profile.select(peewee.fn.SUM(Profile.slot_wins)).scalar()
     total_big_wins = Profile.select(peewee.fn.SUM(Profile.slot_big_wins)).scalar()
-    embed = discord.Embed(title="The Slot Machine", description=f"__Your stats__\n{profile.total_spins} spins\n{profile.total_wins} wins\n{profile.total_big_wins} big wins\n\n__Global stats__\n{total_spins} spins\n{total_wins} wins\n{total_big_wins} big wins", color=0x750F0E)
+    embed = discord.Embed(title="The Slot Machine", description=f"__Your stats__\n{profile.slot_spins} spins\n{profile.slot_wins} wins\n{profile.slot_big_wins} big wins\n\n__Global stats__\n{total_spins} spins\n{total_wins} wins\n{total_big_wins} big wins", color=0x750F0E)
 
     async def spin(interaction):
         nonlocal message
