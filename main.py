@@ -3054,6 +3054,8 @@ async def slots(message: discord.Interaction):
         for current3 in range(1, len(col3) - 1):
             current1 = min(len(col1) - 2, current3)
             current2 = min(len(col2) - 2, current3)
+            if current3 == current2 + 5 and col1[current1] != col2[current2]:
+                break
             desc = ""
             for offset in [-1, 0, 1]:
                 desc += f"{col1[current1 + offset]} {col2[current2 + offset]} {col3[current3 + offset]}\n"
