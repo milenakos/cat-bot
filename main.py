@@ -3055,9 +3055,9 @@ async def slots(message: discord.Interaction):
         col3 = random.choices(variants, k=26)
 
         if message.user.id in rigged_users:
-            col1[len(col1) - 1] = ":seven:"
-            col2[len(col2) - 1] = ":seven:"
-            col3[len(col3) - 1] = ":seven:"
+            col1[len(col1) - 2] = ":seven:"
+            col2[len(col2) - 2] = ":seven:"
+            col3[len(col3) - 2] = ":seven:"
 
         for current3 in range(1, len(col3) - 1):
             current1 = min(len(col1) - 2, current3)
