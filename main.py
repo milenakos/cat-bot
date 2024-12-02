@@ -2817,8 +2817,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 return
 
             # hella ton of checks
+            print(int(value), currset)
             try:
-                print(int(value), currset)
                 if (int(value) + currset) < 0:
                     raise Exception
             except Exception:
