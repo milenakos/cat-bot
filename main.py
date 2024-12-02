@@ -3315,7 +3315,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
             # hella ton of checks
             try:
-                if int(value) <= 0:
+                if int(value) + currset < 0:
                     raise Exception
             except Exception:
                 await interaction.response.send_message("plz number?", ephemeral=True)
