@@ -8,9 +8,8 @@ from discord.ext import commands
 import config
 import database
 
-if os.name != "nt":
-    import uvloop
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+import winuvloop
+asyncio.set_event_loop_policy(winuvloop.EventLoopPolicy())
 
 intents = discord.Intents(message_content=True, messages=True, guilds=True, emojis=True)
 bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
