@@ -3038,7 +3038,7 @@ async def slots(message: discord.Interaction):
             await do_funny(interaction)
             return
         if message.user.id in slots_lock:
-            await interaction.response.send_message("you get kicked out of the the slot machine because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
+            await interaction.response.send_message("you get kicked out of the slot machine because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
             return
         user = get_profile(interaction.guild.id, interaction.user.id)
 
