@@ -169,18 +169,23 @@ def msg2img(message):
 
     pencil.text((122, 8), nick, font=font, fill=color)  # draw author name
     if is_bot:
+        is_verified = message.author.public_flags.verified_bot
+    
         botfont = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 20)
 
         pencil.rounded_rectangle(
             (
                 129 + getsize(font, nick)[0] + 5,
                 8 + 5,
-                129 + getsize(font, nick)[0] + 14 + getsize(botfont, "APP")[0],
+                129 + getsize(font, nick)[0] + 14 + 24 * is_verified + getsize(botfont, "APP")[0],
                 10 + 6 + 25,
             ),
             fill=(88, 101, 242),
             radius=3,
         )
+        
+        if is_verified:
+            pass # idk how to use PIL but uh insert the image here
 
         pencil.text(
             (131 + getsize(font, nick)[0] + 8, 10 + 4),
