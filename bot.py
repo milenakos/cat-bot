@@ -9,7 +9,7 @@ import config
 import database
 
 import winuvloop
-asyncio.set_event_loop_policy(winuvloop.EventLoopPolicy())
+winuvloop.install()
 
 intents = discord.Intents(message_content=True, messages=True, guilds=True, emojis=True)
 bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
