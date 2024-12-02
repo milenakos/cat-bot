@@ -7,7 +7,7 @@ TOKEN = os.environ['token']
 # either SQLITE or POSTGRES
 DB_TYPE = "POSTGRES"
 
-# db pass if postgres (user is cat_bot)
+# db pass if postgres (user is cat_bot), otherwise set to None
 DB_PASS = os.environ["psql_password"]
 
 # channel id for db backups, private extremely recommended
