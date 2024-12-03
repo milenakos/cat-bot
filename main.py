@@ -3854,10 +3854,20 @@ async def givecat(message: discord.Interaction, person_id: discord.User, amount:
         user[f"cat_{cat_type}"] += amount
     else:
         cat_type = "Random"
-        for i in amount:
-            user[f"cat_{random.choice(CAT_TYPES)}"] += 1
+        result = dict.fromkeys(cattypes, 0)
+        for i in range(amount):
+            choice = random.choice(CAT_TYPES)
+            user[f"cat_{choice}"] += 1
+            result[choice] += 1
+        output = []
+        for k, v in result.items():
+            if v:
+                output.append(f"{k} Cat: {v}")
+
     user.save()
     embed = discord.Embed(title="Success!", description=f"gave <@{person_id.id}> {amount:,} {cat_type} cats", color=0x6E593C)
+    if cat_type == "Random":
+        embed.add_field(name="Given cats:", value=", ".join(output))
     await message.response.send_message(embed=embed)
 
 
