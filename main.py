@@ -3364,11 +3364,15 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             if self.currentuser == 1:
                 try:
                     person1gives[self.cattype.value] += int(value)
+                    if person1gives[self.cattype.value] == 0:
+                        person1gives.pop(self.cattype.value)
                 except Exception:
                     person1gives[self.cattype.value] = int(value)
             else:
                 try:
                     person2gives[self.cattype.value] += int(value)
+                    if person2gives[self.cattype.value] == 0:
+                        person2gives.pop(self.cattype.value)
                 except Exception:
                     person2gives[self.cattype.value] = int(value)
 
