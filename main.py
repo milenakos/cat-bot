@@ -3314,12 +3314,6 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 return
 
             # hella ton of checks
-            try:
-                if int(value) + (currset if currset else 0) < 0:
-                    raise Exception
-            except Exception:
-                await interaction.response.send_message("plz number?", ephemeral=True)
-                return
 
             # handle rains
             if "rain" in self.cattype.value.lower():
@@ -3353,6 +3347,13 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     currset = person2gives[self.cattype.value]
             except Exception:
                 currset = 0
+
+            try:
+                if int(value) + currset < 0:
+                    raise Exception
+            except Exception:
+                await interaction.response.send_message("plz number?", ephemeral=True)
+                return
 
             if (self.currentuser == 1 and user1[f"cat_{self.cattype.value}"] < int(value) + currset) or \
                 (self.currentuser == 2 and user2[f"cat_{self.cattype.value}"] < int(value) + currset):
