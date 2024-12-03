@@ -3844,15 +3844,16 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="who", amount="how many", cat_type="what")
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
-async def givecat(message: discord.Interaction, person_id: discord.User, amount: int, cat_type: Optional[str] = "Random"):
-    if cat_type not in cattypes:
+async def givecat(message: discord.Interaction, person_id: discord.User, amount: int, cat_type: Optional[str]):
+    if cat_type and cat_type not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
         return
 
     user = get_profile(message.guild.id, person_id.id)
-    if cat_type != "Random":
+    if cat_type:
         user[f"cat_{cat_type}"] += amount
     else:
+        cat_type = "Random"
         for i in amount:
             user[f"cat_{random.choice(CAT_TYPES)}"] += 1
     user.save()
