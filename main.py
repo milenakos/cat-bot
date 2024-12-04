@@ -2881,7 +2881,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
     if not view:
         await message.response.send_message(embed=embed)
     else:
-        await message.response.send_message(user2.mention, embed=embed, view=view)
+        await message.response.send_message(person2.mention, embed=embed, view=view)
 
     if person1 == person2:
         await achemb(message, "introvert", "send")
