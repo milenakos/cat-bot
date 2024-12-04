@@ -2940,7 +2940,7 @@ async def casino(message: discord.Interaction):
     profile = get_profile(message.guild.id, message.user.id)
     # funny global gamble counter cus funny
     total_sum = Profile.select(peewee.fn.SUM(Profile.gambles)).scalar()
-    embed = discord.Embed(title="The Catsino", description=f"One spin costs 5 {get_emoji('epiccat')} Epic cats\nSo far you gambled {profile.gambles} times.\nAll Cat Bot users gambled {total_sum:,} times.", color=0x750F0E)
+    embed = discord.Embed(title="The Catsino", description=f"One spin costs 5 {get_emoji('epiccat')} Epic cats\nSo far you've gambled {profile.gambles} times.\nAll Cat Bot users gambled {total_sum:,} times.", color=0x750F0E)
 
     async def spin(interaction):
         nonlocal message
