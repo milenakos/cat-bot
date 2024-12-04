@@ -4034,7 +4034,7 @@ async def nuke(message: discord.Interaction):
         if interaction.user.id == message.user.id:
             await interaction.response.defer()
             counter -= 1
-            if counter <= 0:
+            if counter == 0:
                 # ~~Scary!~~ Not anymore!
                 # how this works is we basically change the server id to the message id and then add user with id of 0 to mark it as deleted
                 # this can be rolled back decently easily by asking user for the id of nuking message
