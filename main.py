@@ -3030,7 +3030,7 @@ async def slots(message: discord.Interaction):
     total_spins = Profile.select(peewee.fn.SUM(Profile.slot_spins)).scalar()
     total_wins = Profile.select(peewee.fn.SUM(Profile.slot_wins)).scalar()
     total_big_wins = Profile.select(peewee.fn.SUM(Profile.slot_big_wins)).scalar()
-    embed = discord.Embed(title=":slot_machine: The Slot Machine", description=f"__Your stats__\n{profile.slot_spins} spins\n{profile.slot_wins} wins\n{profile.slot_big_wins} big wins\n\n__Global stats__\n{total_spins} spins\n{total_wins} wins\n{total_big_wins} big wins", color=0x750F0E)
+    embed = discord.Embed(title=":slot_machine: The Slot Machine", description=f"__Your stats__\n{profile.slot_spins} spins\n{profile.slot_wins} wins\n{profile.slot_big_wins} big wins\n\n__Global stats__\n{total_spins} spins\n{total_wins} wins\n{total_big_wins} big wins\n\nOne paid spin costs 1 {get_emoji('epiccat')} Epic cat", color=0x750F0E)
 
     async def spin(interaction):
         nonlocal message
@@ -3083,17 +3083,72 @@ async def slots(message: discord.Interaction):
                 desc = "**You win!**\n\n" + desc
         else:
             desc = "**You lose!**\n\n" + desc
+        
 
         embed = discord.Embed(title=":slot_machine: The Slot Machine", description=desc, color=0x750F0E)
 
         button = Button(label="Spin", style=ButtonStyle.blurple)
         button.callback = spin
 
+        button2 = Button(label="Paid spin", style=ButtonStyle.blurple)
+        button2.callback = paid_spin
+
         myview = View(timeout=3600)
         myview.add_item(button)
+        myview.add_item(button2)
 
         slots_lock.remove(message.user.id)
         user.save()
+
+        try:
+            await interaction.edit_original_response(embed=embed, view=myview)
+        except Exception:
+            await interaction.followup.send(embed=embed, view=myview)
+
+        return desc  # for paid_spin
+
+    async def paid_spin(interaction):
+        nonlocal message
+        if interaction.user.id != message.user.id:
+            await do_funny(interaction)
+            return
+        user = get_profile(interaction.guild.id, interaction.user.id)
+
+        if user.cat_Epic < 1:
+            await interaction.response.send_message("BROKE ALERT ‼️", ephemeral=True)
+            await achemb(interaction, "broke", "send")
+            return
+
+        desc = spin(interaction)
+        if desc is None:
+            return
+
+        if "**BIG WIN!**\n\n" in desc:
+            user.cat_Epic += 10
+            user.save()
+            desc += f"\nYou win 10 {get_emoji('epiccat')} epic cats."
+        elif "**You win!**\n\n" in desc:
+            user.cat_Epic += 3
+            user.save()
+            desc += f"\nYou win 3 {get_emoji('epiccat')} epic cats."
+        elif "**You lose!**\n\n" in desc:
+            user.cat_Epic -= 1  # i just realized that playing slots and catsino at same time would cause you to have negative cats
+            user.save()
+            desc += f"\nYou gambled 1 {get_emoji('epiccat')} epic cat away."
+        else:
+            desc += "\nseems like something \nmessed up,\nyour epic cat count \nwas left unaffected."
+
+        embed = discord.Embed(title=":slot_machine: The Slot Machine", description=desc, color=0x750F0E)
+
+        button = Button(label="Spin", style=ButtonStyle.blurple)
+        button.callback = spin
+
+        button2 = Button(label="Paid spin", style=ButtonStyle.blurple)
+        button2.callback = paid_spin
+
+        myview = View(timeout=3600)
+        myview.add_item(button)
+        myview.add_item(button2)
 
         try:
             await interaction.edit_original_response(embed=embed, view=myview)
@@ -3104,8 +3159,12 @@ async def slots(message: discord.Interaction):
     button = Button(label="Spin", style=ButtonStyle.blurple)
     button.callback = spin
 
+    button2 = Button(label="Paid spin", style=ButtonStyle.blurple)
+    button2.callback = paid_spin
+
     myview = View(timeout=3600)
     myview.add_item(button)
+    myview.add_item(button2)
 
     await message.response.send_message(embed=embed, view=myview)
 
