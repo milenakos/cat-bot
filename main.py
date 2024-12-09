@@ -945,7 +945,8 @@ async def on_message(message: discord.Message):
                 except Exception:
                     # if some of the above explodes just give up
                     do_time = False
-                    caught_time = "undefined amounts of time "
+                    caught_time = "undefined amounts of time"
+                caught_time = caught_time.strip()
 
                 if cat_rains.get(str(message.channel.id), 0) + 10 > time.time() or message.channel.id in temp_rains_storage:
                     do_time = False
@@ -1055,6 +1056,7 @@ async def on_message(message: discord.Message):
                     coughstring = "{username} c0ught {emoji} {type} cat!!!!1!\nY0u n0w h0ve {count} cats 0f dat type!!!\nth1s fe11a was c0ught 1n {time}!!!!"
                 elif le_emoji == "Reverse":
                     coughstring = "!!!!{time} in cought was fella this\n!!!type dat of cats {count} have now You\n!1!!!!cat {type} {emoji} cought {username}"
+                    caught_time = " ".join(caught_time.split(" ")[::-1])
                 else:
                     coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
                 view = None
@@ -1118,7 +1120,7 @@ async def on_message(message: discord.Message):
                                                             .replace("{emoji}", str(icon))
                                                             .replace("{type}", le_emoji)
                                                             .replace("{count}", f"{new_count:,}")
-                                                            .replace("{time}", caught_time[:-1]) + suffix_string,
+                                                            .replace("{time}", caught_time) + suffix_string,
                                                 **kwargs)
                     except Exception:
                         pass
