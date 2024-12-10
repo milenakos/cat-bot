@@ -1876,7 +1876,7 @@ async def rain(message: discord.Interaction):
 
     embed = discord.Embed(title="Cat Rains", description=f"""Cat Rains are power-ups which spawn cats instantly for a limited amounts of time in channel of your choice.
 
-You can get those by buying them at our [store](<https://catbot.minkos.lol/store>) or by winning them in an event.
+You can get those by buying them at our [store](<https://store.minkos.lol>) or by winning them in an event.
 This bot is developed by a single person so buying one would be very appreciated.
 As a bonus, you will get access to /editprofile command!
 Fastest times are not saved during rains.
@@ -1901,7 +1901,7 @@ You currently have **{user.rain_minutes}** minutes of rains.""", color=0x6E593C)
             return
 
         if rain_length > user.rain_minutes:
-            await interaction.response.send_message("you dont have enough rain! buy some more [here](<https://catbot.minkos.lol/store>)", ephemeral=True)
+            await interaction.response.send_message("you dont have enough rain! buy some more [here](<https://store.minkos.lol>)", ephemeral=True)
             return
 
         if about_to_stop:
@@ -1958,7 +1958,7 @@ You currently have **{user.rain_minutes}** minutes of rains.""", color=0x6E593C)
     button = Button(label="Rain!", style=ButtonStyle.blurple)
     button.callback = rain_modal
 
-    shopbutton = Button(emoji="🛒", label="Store", style=ButtonStyle.gray, url="https://catbot.minkos.lol/store")
+    shopbutton = Button(emoji="🛒", label="Store", style=ButtonStyle.gray, url="https://store.minkos.lol")
 
     view = View(timeout=3600)
     view.add_item(button)
@@ -1969,7 +1969,7 @@ You currently have **{user.rain_minutes}** minutes of rains.""", color=0x6E593C)
 
 @bot.tree.command(description="Buy Cat Rains!")
 async def store(message: discord.Interaction):
-    await message.response.send_message("☔ Cat rains make cats spawn instantly! Make your server active, get more cats and have fun!\n<https://catbot.minkos.lol/store>")
+    await message.response.send_message("☔ Cat rains make cats spawn instantly! Make your server active, get more cats and have fun!\n<https://store.minkos.lol>")
 
 
 if config.DONOR_CHANNEL_ID:
@@ -1984,7 +1984,7 @@ if config.DONOR_CHANNEL_ID:
 
         user, _ = User.get_or_create(user_id=message.user.id)
         if not user.premium:
-            await message.response.send_message("👑 This feature is supporter-only!\nBuy anything from Cat Bot Store to unlock profile customization!\n<https://catbot.minkos.lol/store>")
+            await message.response.send_message("👑 This feature is supporter-only!\nBuy anything from Cat Bot Store to unlock profile customization!\n<https://store.minkos.lol>")
             return
 
         if provided_emoji and discord_emoji.to_discord(provided_emoji.strip(), get_all=False, put_colons=False):
