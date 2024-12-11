@@ -416,7 +416,7 @@ async def unsetup(channel):
         pass
     channel.delete_instance()
 
-async def spawn_cat(ch_id, localcat=None):
+async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     try:
         channel = Channel.get(channel_id=ch_id)
     except Exception:
@@ -427,7 +427,7 @@ async def spawn_cat(ch_id, localcat=None):
     if not localcat:
         localcat = random.choice(CAT_TYPES)
     icon = get_emoji(localcat.lower() + "cat")
-    file = discord.File(f"images/spawn/{localcat.lower()}_cat.png")
+    file = discord.File(f"images/spawn/{localcat.lower()}_cat.png", description="forcespawned" if force_spawn else None)
     try:
         channeley = discord.Webhook.from_url(channel.webhook, client=bot)
         thread_id = channel.thread_mappings
@@ -1006,15 +1006,16 @@ async def on_message(message: discord.Message):
                             normal_bump = True
                         except IndexError:
                             # :SILENCE:
-                            if cat_rains.get(str(message.channel.id), 0) > time.time():
-                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                            rn = time.time()
-                            cat_rains[str(message.channel.id)] = min(rn + 3600, cat_rains.get(str(message.channel.id), rn) + 606)
-                            decided_time = 6
-                            normal_bump = False
-                            pass
+                            if var.attachments[0].description != "forcespawned":
+                                if cat_rains.get(str(message.channel.id), 0) > time.time():
+                                    await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                                    await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                                    await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                                rn = time.time()
+                                cat_rains[str(message.channel.id)] = min(rn + 3600, cat_rains.get(str(message.channel.id), rn) + 606)
+                                decided_time = 6
+                                normal_bump = False
+                                pass
 
                         if normal_bump:
                             suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
@@ -3931,7 +3932,7 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
     except Exception:
         await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
         return
-    await spawn_cat(str(message.channel.id), cat_type)
+    await spawn_cat(str(message.channel.id), cat_type, True)
     await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this")
 
 
