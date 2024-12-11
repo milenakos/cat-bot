@@ -1162,16 +1162,11 @@ async def on_message(message: discord.Message):
                 def do_reward(level):
                     user.progress = 0
                     reward = level["reward"]
-                    if reward == "Prisms":
-                        user.battlepass += 1
-                        icon = get_emoji("prism")
-                        reward_text = f"You have unlocked {icon} Prism Crafting Recipe!\nCheck out `/prism`!"
-                    else:
-                        user.battlepass += 1
-                        reward_amount = level["reward_amount"]
-                        user[f"cat_{reward}"] += reward_amount
-                        icon = get_emoji(reward.lower() + "cat")
-                        reward_text = f"You have received {icon} {reward_amount} {reward} cats!"
+                    user.battlepass += 1
+                    reward_amount = level["reward_amount"]
+                    user[f"cat_{reward}"] += reward_amount
+                    icon = get_emoji(reward.lower() + "cat")
+                    reward_text = f"You have received {icon} {reward_amount} {reward} cats!"
 
                     return discord.Embed(
                         title=f"Level {user.battlepass} complete!",
@@ -2025,10 +2020,7 @@ async def battlepass(message: discord.Interaction):
         thetype = searching["reward"]
         amount = searching["reward_amount"]
 
-        if thetype == "Prisms":
-            icon = get_emoji("prism")
-        else:
-            icon = get_emoji(thetype.lower() + "cat")
+        icon = get_emoji(thetype.lower() + "cat")
 
         if req == "catch":
             num_str = num
@@ -2037,10 +2029,7 @@ async def battlepass(message: discord.Interaction):
                 num_str = f"{num - progress} more"
             return f"Catch {num_str} cats\nReward: {amount} {icon} {thetype} cats"
         elif req == "catch_fast":
-            if thetype == "Prisms":
-                return f"Catch a cat in under {num} seconds\nReward: {icon} Prism Crafting Recipe"
-            else:
-                return f"Catch a cat in under {num} seconds\nReward: {amount} {icon} {thetype} cats"
+            return f"Catch a cat in under {num} seconds\nReward: {amount} {icon} {thetype} cats"
         elif req == "catch_type":
             an = ""
             if num[0].lower() in "aieuo":
@@ -2267,11 +2256,9 @@ async def prism(message: discord.Interaction):
     view = View(timeout=3600)
     if global_boost >= 25 or user_count >= 5:
         craft_button = Button(label="Prism limit reached!", style=ButtonStyle.gray, disabled=True)
-    elif user.battlepass >= 30:
+    else:
         craft_button = Button(label="Craft!", style=ButtonStyle.blurple, emoji=icon)
         craft_button.callback = craft_prism
-    else:
-        craft_button = Button(label="Battlepass 30 needed to craft!", style=ButtonStyle.blurple, disabled=True)
 
     if len(owned_prisms) == 0:
         config_button = Button(label="No prisms to configure!", style=ButtonStyle.gray, disabled=True)
