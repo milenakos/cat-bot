@@ -2316,11 +2316,9 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                         try:
                             await interaction.response.defer()
                             user = get_profile(message.guild.id, message.user.id)
-                            catbot = get_profile(message.guild.id, bot.user.id)
 
                             # transfer tax
                             user[f"cat_{cat_type}"] -= tax_amount
-                            catbot[f"cat_{cat_type}"] += tax_amount
 
                             try:
                                 await interaction.edit_original_response(view=None)
@@ -2331,7 +2329,6 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                         finally:
                             # always save to prevent issue with exceptions leaving bugged state
                             user.save()
-                            catbot.save()
                     else:
                         await do_funny(interaction)
 
