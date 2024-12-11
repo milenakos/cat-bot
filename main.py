@@ -1010,7 +1010,8 @@ async def on_message(message: discord.Message):
                                 await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                                 await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                                 await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                            cat_rains[str(message.channel.id)] = cat_rains.get(str(message.channel.id), time.time()) + 606
+                            rn = time.time()
+                            cat_rains[str(message.channel.id)] = min(rn + 3600, cat_rains.get(str(message.channel.id), rn) + 606)
                             decided_time = 6
                             normal_bump = False
                             pass
