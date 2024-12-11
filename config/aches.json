@@ -69,7 +69,6 @@
   "its_not_working": {"title": "its not working", "description": "click private button 50 times", "is_hidden": false, "category": "Hard"},
   "rich": {"title": "R I C H", "description": "gift 5 ultimates to cat bot", "is_hidden": false, "category": "Hard"},
   "pie": {"title": "Pie Catcher", "description": "catch a cat in exactly 3.14 seconds", "is_hidden": false, "category": "Hard"},
-  "infinite": {"title": "bad wifi", "description": "get over 100ms in /ping", "is_hidden": false, "category": "Hard"},
   "perfection": {"title": "Purrfection!!", "description": "dot zero zero", "is_hidden": false, "category": "Hard"},
   "all_the_same": {"title": "All the same", "description": "get all digits repeating in the time", "is_hidden": false, "category": "Hard"},
   "paradoxical_gambler": {"title": "Paradoxical Gambler", "description": "qhar", "is_hidden": true, "category": "Hard"},

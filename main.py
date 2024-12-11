@@ -2278,9 +2278,6 @@ async def ping(message: discord.Interaction):
         latency = "infinite"
     await message.response.send_message(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
 
-    if latency == "infinite" or latency >= 100:
-        await achemb(message, "infinite", "send")
-
 
 @bot.tree.command(description="give cats now")
 @discord.app_commands.rename(cat_type="type")
