@@ -1161,17 +1161,15 @@ async def on_message(message: discord.Message):
                 # handle battlepass
                 def do_reward(level):
                     user.progress = 0
+                    user.battlepass += 1
                     reward = level["reward"]
-                    if reward == "Prisms":
-                        user.battlepass += 1
-                        icon = get_emoji("prism")
-                        reward_text = f"You have unlocked {icon} Prism Crafting Recipe!\nCheck out `/prism`!"
-                    else:
-                        user.battlepass += 1
-                        reward_amount = level["reward_amount"]
-                        user[f"cat_{reward}"] += reward_amount
-                        icon = get_emoji(reward.lower() + "cat")
-                        reward_text = f"You have received {icon} {reward_amount} {reward} cats!"
+                    reward_amount = level["reward_amount"]
+                    user[f"cat_{reward}"] += reward_amount
+                    icon = get_emoji(reward.lower() + "cat")
+                    reward_text = f"You have received {icon} {reward_amount} {reward} cats!"
+
+                    if level["unlocks_prism"]:
+                        reward_text = f"\nYou have unlocked {icon} Prism Crafting Recipe!\nCheck out `/prism`!"
 
                     return discord.Embed(
                         title=f"Level {user.battlepass} complete!",
