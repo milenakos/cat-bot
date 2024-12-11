@@ -2024,11 +2024,9 @@ async def battlepass(message: discord.Interaction):
         num = searching["req_data"]
         thetype = searching["reward"]
         amount = searching["reward_amount"]
+        unlocks_prism = searching["unlocks_prism"]
 
-        if thetype == "Prisms":
-            icon = get_emoji("prism")
-        else:
-            icon = get_emoji(thetype.lower() + "cat")
+        icon = get_emoji(thetype.lower() + "cat")
 
         if req == "catch":
             num_str = num
@@ -2037,10 +2035,11 @@ async def battlepass(message: discord.Interaction):
                 num_str = f"{num - progress} more"
             return f"Catch {num_str} cats\nReward: {amount} {icon} {thetype} cats"
         elif req == "catch_fast":
-            if thetype == "Prisms":
-                return f"Catch a cat in under {num} seconds\nReward: {icon} Prism Crafting Recipe"
-            else:
-                return f"Catch a cat in under {num} seconds\nReward: {amount} {icon} {thetype} cats"
+            s = "s" if num != 1 else ""
+            str = f"Catch a cat in under {num} second{s}\nReward: {amount} {icon} {thetype} cats"
+            if unlocks_prism:
+                str += f"\nUnlocks {get_emoji("prism")} Prism Crafting Recipe"
+            return str
         elif req == "catch_type":
             an = ""
             if num[0].lower() in "aieuo":
