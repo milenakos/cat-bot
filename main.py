@@ -2058,8 +2058,6 @@ async def battlepass(message: discord.Interaction):
 
 @bot.tree.command(description="cat prisms are a special power up")
 async def prism(message: discord.Interaction):
-    user = get_profile(message.guild.id, message.user.id)
-
     icon = get_emoji("prism")
 
     embed = discord.Embed(
