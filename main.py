@@ -1169,7 +1169,7 @@ async def on_message(message: discord.Message):
                     reward_text = f"You have received {icon} {reward_amount} {reward} cats!"
 
                     if level["unlocks_prism"]:
-                        reward_text = f"\nYou have unlocked {icon} Prism Crafting Recipe!\nCheck out `/prism`!"
+                        reward_text = f"\nYou have unlocked {get_emoji("prism")} Prism Crafting Recipe!\nCheck out `/prism`!"
 
                     return discord.Embed(
                         title=f"Level {user.battlepass} complete!",
