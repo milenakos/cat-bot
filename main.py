@@ -2463,7 +2463,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
         await message.response.send_message("bro what", ephemeral=True)
 
 
-@bot.tree.command(description="Trade cats!")
+@bot.tree.command(description="Trade stuff!")
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="why would you need description")
 async def trade(message: discord.Interaction, person_id: discord.User):
@@ -2722,7 +2722,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 aicon = get_emoji(k.lower() + "cat")
                 valuestr += f"{aicon} {k} {v:,}\n"
             if not valuestr:
-                valuestr = "No cats offered!"
+                valuestr = "Nothing offered!"
             else:
                 valuestr += f"*Total value: {round(valuenum):,}\nTotal cats: {round(total):,}*"
                 if number == 1:
@@ -2749,7 +2749,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
     class TradeModal(discord.ui.Modal):
         def __init__(self, currentuser):
             super().__init__(
-                title="Add cats to the trade",
+                title="Add to the trade",
                 timeout=3600,
             )
             self.currentuser = currentuser
@@ -2761,7 +2761,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             self.add_item(self.cattype)
 
             self.amount = discord.ui.TextInput(
-                label="Amount of cats to offer",
+                label="Amount to offer",
                 placeholder="1",
                 required=False
             )
