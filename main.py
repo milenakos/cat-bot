@@ -3849,6 +3849,18 @@ async def givecat(message: discord.Interaction, person_id: discord.User, amount:
     await message.response.send_message(embed=embed)
 
 
+@bot.tree.command(description="(ADMIN) Edit someone's cattlepass")
+@discord.app_commands.default_permissions(manage_guild=True)
+@discord.app_commands.rename(person_id="user")
+@app_commands.choices(type=[
+    app_commands.Choice(name="Set", value="set"),
+    app_commands.Choice(name="Reset", value="reset"),
+    app_commands.Choice(name="Add", value="add")
+])
+@discord.app_commands.describe(person_id="who", type="what", amount="which one")
+async def editbattle(message: discord.Interaction, person_id: discord.User, type: str, amount: Optional[app_commands.Range[int, 0, 32]])
+
+
 @bot.tree.command(name="setup", description="(ADMIN) Setup cat in current channel")
 @discord.app_commands.default_permissions(manage_guild=True)
 async def setup_channel(message: discord.Interaction):
