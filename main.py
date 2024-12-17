@@ -221,7 +221,8 @@ def get_emoji(name):
 # news stuff
 news_list = [
     {"title": "Cat Bot Survey - win rains!", "emoji": "📜"},
-    {"title": "New Cat Rains perks!", "emoji": "✨"}
+    {"title": "New Cat Rains perks!", "emoji": "✨"},
+    {"title": "Cat Bot Christmas 2024", "emoji": "🎅"}
 ]
 async def send_news(interaction: discord.Interaction):
     news_id, original_caller = interaction.data["custom_id"].split(" ")  # pyright: ignore
@@ -252,6 +253,17 @@ async def send_news(interaction: discord.Interaction):
             color=0x6E593C
         )
         await interaction.edit_original_response(content=None, view=None, embed=embed)
+    elif news_id == 2:
+        embed = discord.Embed(
+            title="☃️ Cat Bot Christmas",
+            description="🎅 **Christmas Sale**\nFor the next 15 days (until January 1st) all items on [the Cat Bot Store](<https://store.minkos.lol/>) will be **-20%** off! Go buy something <:insane:1160651290192384092>\n\n⚡ **Cat Bot Wrapped 2024**\nIn 2024 Cat Bot got...\n- 🖥️ *45777* new servers!\n- <a:hibro:1178361546125099099> *286607* new profiles!\n- <:staring_cat:966697804611321908> okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though\n- <:cat_throphy:972486253914239076> *1518096* achievements get!\nSee last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).\n❓ **New Year Update**\nSomething is coming...",
+            color=0x6E593C
+        )
+        view = discord.ui.View(timeout=1)
+        button = discord.ui.Button(label="Cat Bot Store", url="https://store.minkos.lol")
+        view.add_item(button)
+        await interaction.edit_original_response(content=None, embed=embed, view=view)
+
 
 # this is some common code which is run whether someone gets an achievement
 async def achemb(message, ach_id, send_type, author_string=None):
@@ -1039,7 +1051,7 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
+                    suffix_string += f"\n🎅 christmas sale! -20% </rain:{RAIN_ID}>"
 
                 if channel.cought:
                     coughstring = channel.cought

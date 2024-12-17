@@ -2,6 +2,7 @@ import json
 import config
 import peewee
 import playhouse.sqlite_ext
+import playhouse.postgres_ext
 
 if config.DB_TYPE == "SQLITE":
     db = playhouse.sqlite_ext.SqliteExtDatabase("catbot.db", pragmas=(
@@ -9,7 +10,7 @@ if config.DB_TYPE == "SQLITE":
         ('journal_mode', 'wal')
     ))
 elif config.DB_TYPE == "POSTGRES":
-    db = peewee.PostgresqlDatabase(
+    db = playhouse.postgres_ext.PostgresqlExtDatabase(
         'cat_bot',
         user='cat_bot',
         password=config.DB_PASS,
