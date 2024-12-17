@@ -4095,7 +4095,7 @@ async def claim_reward(user, channeley, type):
         button.callback = toggle_reminders
         view.add_item(button)
 
-    embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have received {icon} {amount} {cattype} cats for voting on {cool_name}.\nYou now have {user[f'cat_{cattype}']:,} cats of dat type\nVote again in 12 hours.", color=0x007F0E)
+    embedVar = discord.Embed(title="Vote redeemed!", description=f"{weekend_message}You have received {icon} {amount} {cattype} cats for voting on {cool_name}.\nYou now have {profile[f'cat_{cattype}']:,} cats of dat type\nVote again in 12 hours.", color=0x007F0E)
     try:
         if channeley.permissions_for(channeley.guild.me).send_messages:
             await channeley.send(f"<@{user.user_id}>", embed=embedVar, view=view)
