@@ -3852,14 +3852,34 @@ async def givecat(message: discord.Interaction, person_id: discord.User, amount:
 @bot.tree.command(description="(ADMIN) Edit someone's cattlepass")
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(person_id="user")
-@app_commands.choices(type=[
-    app_commands.Choice(name="Set", value="set"),
-    app_commands.Choice(name="Reset", value="reset"),
-    app_commands.Choice(name="Add", value="add")
-])
-@discord.app_commands.describe(person_id="who", type="what", amount="which one")
-async def editbattle(message: discord.Interaction, person_id: discord.User, type: str, amount: Optional[app_commands.Range[int, 0, 32]])
-
+@discord.app_commands.describe(person_id="who", action="what", amount="which one")
+async def editbattle(message: discord.Interaction, person_id: discord.User, action: Literal["Set", "Reset", "Add"], amount: Optional[int]):
+    user = get_profile(message.guild.id, person_id.id)
+    current = user.battlepass
+    if action == "Reset":
+        user.battlepass=0
+    else:
+        if action == "Add":
+            if amount:
+                amount += user.battlepass
+            else:
+                amount = user.battlepass + 1
+        if action == "Set":
+            if amount:
+                amount -= 1
+            else:
+                await message.response.send_message("why would you you set it and then not provide a value", ephemeral=True)
+                return
+        if amount < 0 or amount > 33 or amount == 32 or amount == 31 and (not user[k] and ach_list[k]["category"] != "Hidden" for k in ach_names):
+            await message.response.send_message("lol no", ephemeral = True)
+            return
+        user.battlepass = amount
+    if current == user.battlepass:
+        await message.response.send_message("that is the same amount why would you run this command", ephemeral = True)
+        return
+    user.save()
+    embed = discord.Embed(title="Cattlepass™ Edited", description=f"{person_id.mention}'s battlepass level had been changed from {current} to {user.battlepass}!")
+    await message.response.send_message(embed=embed)
 
 @bot.tree.command(name="setup", description="(ADMIN) Setup cat in current channel")
 @discord.app_commands.default_permissions(manage_guild=True)
