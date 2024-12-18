@@ -2668,10 +2668,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             return
 
         currentuser = 1 if interaction.user == person1 else 2
-
-        person1accept = False
-        person2accept = False
-
+        
         # all we really do is spawn the modal
         modal = TradeModal(currentuser)
         await interaction.response.send_modal(modal)
@@ -2866,6 +2863,9 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 except Exception:
                     person2gives[self.cattype.value] = int(value)
 
+            person1accept = False
+            person2accept = False
+            
             await interaction.response.defer()
             await update_trade_embed(interaction)
 
