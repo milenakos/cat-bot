@@ -2667,12 +2667,10 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             await do_funny(interaction)
             return
 
-        if interaction.user == person1:
-            currentuser = 1
-            person1accept = False
-        elif interaction.user == person2:
-            currentuser = 2
-            person2accept = False
+        currentuser = 1 if interaction.user == person1 else 2
+
+        person1accept = False
+        person2accept = False
 
         # all we really do is spawn the modal
         modal = TradeModal(currentuser)
