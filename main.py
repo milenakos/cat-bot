@@ -2667,13 +2667,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             await do_funny(interaction)
             return
 
-        if interaction.user == person1:
-            currentuser = 1
-            person1accept = False
-        elif interaction.user == person2:
-            currentuser = 2
-            person2accept = False
-
+        currentuser = 1 if interaction.user == person1 else 2
+        
         # all we really do is spawn the modal
         modal = TradeModal(currentuser)
         await interaction.response.send_modal(modal)
@@ -2806,12 +2801,6 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 return
 
             # hella ton of checks
-            try:
-                if int(value) <= 0:
-                    raise Exception
-            except Exception:
-                await interaction.response.send_message("plz number?", ephemeral=True)
-                return
 
             # handle rains
             if "rain" in self.cattype.value.lower():
@@ -2846,6 +2835,13 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             except Exception:
                 currset = 0
 
+            try:
+                if int(value) + currset < 0 or int(value) == 0:
+                    raise Exception
+            except Exception:
+                await interaction.response.send_message("plz number?", ephemeral=True)
+                return
+
             if (self.currentuser == 1 and user1[f"cat_{self.cattype.value}"] < int(value) + currset) or \
                 (self.currentuser == 2 and user2[f"cat_{self.cattype.value}"] < int(value) + currset):
                 await interaction.response.send_message("hell naww dude you dont even have that many cats 💀💀💀", ephemeral=True)
@@ -2855,14 +2851,21 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             if self.currentuser == 1:
                 try:
                     person1gives[self.cattype.value] += int(value)
+                    if person1gives[self.cattype.value] == 0:
+                        person1gives.pop(self.cattype.value)
                 except Exception:
                     person1gives[self.cattype.value] = int(value)
             else:
                 try:
                     person2gives[self.cattype.value] += int(value)
+                    if person2gives[self.cattype.value] == 0:
+                        person2gives.pop(self.cattype.value)
                 except Exception:
                     person2gives[self.cattype.value] = int(value)
 
+            person1accept = False
+            person2accept = False
+            
             await interaction.response.defer()
             await update_trade_embed(interaction)
 
