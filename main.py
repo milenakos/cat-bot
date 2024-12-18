@@ -2669,14 +2669,10 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
         if interaction.user == person1:
             currentuser = 1
-            if person1accept:
-                person1accept = False
-                await update_trade_embed(interaction)
+            person1accept = False
         elif interaction.user == person2:
             currentuser = 2
-            if person2accept:
-                person2accept = False
-                await update_trade_embed(interaction)
+            person2accept = False
 
         # all we really do is spawn the modal
         modal = TradeModal(currentuser)
