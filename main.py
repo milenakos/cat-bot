@@ -500,7 +500,7 @@ async def maintaince_loop():
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     await bot.change_presence(
-        activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
+        activity=discord.CustomActivity(name=f"Feeling JOLLY in {len(bot.guilds):,} servers")
     )
 
     async with aiohttp.ClientSession() as session:
