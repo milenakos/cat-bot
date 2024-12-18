@@ -3864,12 +3864,9 @@ async def editbattle(message: discord.Interaction, person_id: discord.User, acti
                 amount += user.battlepass
             else:
                 amount = user.battlepass + 1
-        if action == "Set":
-            if amount:
-                amount -= 1
-            else:
-                await message.response.send_message("why would you you set it and then not provide a value", ephemeral=True)
-                return
+        if action == "Set" and not amount:
+            await message.response.send_message("why would you you set it and then not provide a value", ephemeral=True)
+            return
         if amount < 0 or amount > 33 or amount == 32 or amount == 31 and (not user[k] and ach_list[k]["category"] != "Hidden" for k in ach_names):
             await message.response.send_message("lol no", ephemeral = True)
             return
