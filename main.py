@@ -3616,10 +3616,12 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 
 @bot.tree.command(description="View the leaderboards")
 @discord.app_commands.rename(leaderboard_type="type")
-@discord.app_commands.describe(leaderboard_type="The leaderboard type to view!")
-async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow"]]):
+@discord.app_commands.describe(leaderboard_type="The leaderboard type to view!", locked="Whether to remove page switch buttons to prevent tampering")
+async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow"]], locked: Optional[bool]):
     if not leaderboard_type:
         leaderboard_type = "Cats"
+    if not locked:
+        locked = False
 
     # this fat function handles a single page
     async def lb_handler(interaction, type, do_edit=None):
@@ -3770,36 +3772,42 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
             embedVar.set_author(name=f"{message.user} has unread news! /news")
 
         # handle funny buttons
+        myview = View(timeout=3600)
+        buttons = []
+
         if type == "Cats":
-            button1 = Button(label="Refresh", style=ButtonStyle.green)
+            button = Button(label="Refresh", style=ButtonStyle.green)
         else:
-            button1 = Button(label="Cats", style=ButtonStyle.blurple)
+            button = Button(label="Cats", style=ButtonStyle.blurple)
+        button.callback = catlb
+        buttons.append(button)
 
         if type == "Value":
-            button2 = Button(label="Refresh", style=ButtonStyle.green)
+            button = Button(label="Refresh", style=ButtonStyle.green)
         else:
-            button2 = Button(label="Value", style=ButtonStyle.blurple)
+            button = Button(label="Value", style=ButtonStyle.blurple)
+        button.callback = valuelb
+        buttons.append(button)
 
         if type == "Fast":
-            button3 = Button(label="Refresh", style=ButtonStyle.green)
+            button = Button(label="Refresh", style=ButtonStyle.green)
         else:
-            button3 = Button(label="Fast", style=ButtonStyle.blurple)
+            button = Button(label="Fast", style=ButtonStyle.blurple)
+        button.callback = fastlb
+        buttons.append(button)
 
         if type == "Slow":
-            button4 = Button(label="Refresh", style=ButtonStyle.green)
+            button = Button(label="Refresh", style=ButtonStyle.green)
         else:
-            button4 = Button(label="Slow", style=ButtonStyle.blurple)
+            button = Button(label="Slow", style=ButtonStyle.blurple)
+        button.callback = slowlb
+        buttons.append(button)
 
-        button1.callback = catlb
-        button2.callback = valuelb
-        button3.callback = fastlb
-        button4.callback = slowlb
-
-        myview = View(timeout=3600)
-        myview.add_item(button1)
-        myview.add_item(button2)
-        myview.add_item(button3)
-        myview.add_item(button4)
+        if not locked:
+            for i in buttons:
+                myview.add_item(i)
+        else:
+            myview.add_item(buttons[["Cats", "Value", "Fast", "Slow"].index(type)])
 
         # just send if first time, otherwise edit existing
         try:
