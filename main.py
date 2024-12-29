@@ -1000,7 +1000,7 @@ async def on_message(message: discord.Message):
                             disabled_chance += 1
                             disabled_prisms.append([prism.user_id, prism.name])
                 all_prisms = boost_prisms + disabled_prisms
-
+                has_boosted = False
                 # apply prism boost
                 if random.randint(1, 100) <= boost_chance + disabled_chance:
                     boost_prism = random.choice(all_prisms)
@@ -1011,7 +1011,7 @@ async def on_message(message: discord.Message):
                         boost_applied_prism = "Your prism " + boost_prism[1]
 
                     if boost_prism in boost_prisms:
-                        await achemb(message, "boosted", "send")
+                        has_boosted = True
                         try:
                             le_old_emoji = le_emoji
                             le_emoji = cattypes[cattypes.index(le_emoji) + 1]
@@ -1171,6 +1171,9 @@ async def on_message(message: discord.Message):
                     raw_digits = ''.join(char for char in caught_time[:-1] if char.isdigit())
                     if len(set(raw_digits)) == 1:
                         await achemb(message, "all_the_same", "send")
+
+                if has_boosted:
+                    await achemb(message, "boosted", "send")
 
                 # handle battlepass
                 def do_reward(level):
