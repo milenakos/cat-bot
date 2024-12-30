@@ -2023,7 +2023,7 @@ async def battlepass(message: discord.Interaction):
     user = get_profile(message.guild.id, message.user.id)
 
     current_level = user.battlepass
-    embedVar = discord.Embed(title="Cattlepass™", description="who thought this was a good idea", color=0x6E593C)
+    embedVar = discord.Embed(title="Cattlepass Season 0", description="Season ends <t:1735689600:R>", color=0x6E593C)
 
     # this basically generates a single level text (we have 3 of these)
     def battlelevel(levels, id, home=False):
