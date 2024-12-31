@@ -42,12 +42,10 @@ class Profile(peewee.Model):
     timeout = peewee.BigIntegerField(default=0)  # /preventcatch timestamp
     cataine_active = peewee.BigIntegerField(default=0)  # cataine timestamp
 
-    battlepass = peewee.SmallIntegerField(default=0)  # battlepass level
-    progress = peewee.SmallIntegerField(default=0)  # battlepass progress (for do X times levels)
-
     dark_market_level = peewee.SmallIntegerField(default=0)  # dark market level
     dark_market_active = peewee.BooleanField(default=False)  # dark market unlocked bool
     story_complete = peewee.BooleanField(default=False)  # whether story is complete
+    finale_seen = peewee.BooleanField(default=False)  # whether the finale cutscene was seen
 
     cataine_week = peewee.SmallIntegerField(default=0)  # light market purcashes this week
     recent_week = peewee.SmallIntegerField(default=0)  # the week
@@ -56,9 +54,35 @@ class Profile(peewee.Model):
     facts = peewee.SmallIntegerField(default=0)  # /fact amount
     gambles = peewee.SmallIntegerField(default=0)  # casino spins amount
 
+    rain_minutes = peewee.SmallIntegerField(default=0)  # server-locked rains amount
+
     slot_spins = peewee.IntegerField(default=0)
     slot_wins = peewee.IntegerField(default=0)
     slot_big_wins = peewee.SmallIntegerField(default=0)
+
+    battlepass = peewee.SmallIntegerField(default=0)  # battlepass level
+    progress = peewee.SmallIntegerField(default=0)  # battlepass progress (in xp)
+    season = peewee.SmallIntegerField(default=0)  # if this doesnt match current season it will reset everything
+
+    # battelpass quests fields
+    vote_reward = peewee.SmallIntegerField(default=0)
+    vote_cooldown = peewee.BigIntegerField(default=1)
+
+    catch_quest = peewee.CharField(default="", max_length=30)
+    catch_progress = peewee.SmallIntegerField(default=0)
+    catch_cooldown = peewee.BigIntegerField(default=1)
+    catch_reward = peewee.SmallIntegerField(default=0)
+
+    misc_quest = peewee.CharField(default="", max_length=30)
+    misc_progress = peewee.SmallIntegerField(default=0)
+    misc_cooldown = peewee.BigIntegerField(default=1)
+    misc_reward = peewee.SmallIntegerField(default=0)
+
+    reminder_catch = peewee.BigIntegerField(default=0)  # timestamp of last catch reminder
+    reminder_misc = peewee.BigIntegerField(default=0)  # timestamp of last misc reminder
+    # vote timestamp is in the User model
+
+    reminders_enabled = peewee.BooleanField(default=False)
 
     # thanks chatgpt
     # cat types
@@ -89,10 +113,8 @@ class Profile(peewee.Model):
 class User(peewee.Model):
     user_id = peewee.BigIntegerField(unique=True, index=True, primary_key=True)
 
-    vote_remind = peewee.BigIntegerField(default=0)  # channel id for vote reminders
-    vote_channel = peewee.BigIntegerField(default=0)  # channel id for vote claims
     vote_time_topgg = peewee.BigIntegerField(default=0)  # timestamp of last vote
-    reminder_topgg_exists = peewee.BigIntegerField(default=0)  # timestamp of last reminder
+    reminder_vote = peewee.BigIntegerField(default=0)  # timestamp of last vote reminder
 
     custom = peewee.CharField(default="")  # custom cat name
     emoji = peewee.CharField(default="")  # /editprofile emoji
@@ -100,7 +122,7 @@ class User(peewee.Model):
     image = peewee.CharField(default="")  # /editprofile image
 
     rain_minutes = peewee.SmallIntegerField(default=0) # rain minute balance
-    premium = peewee.BooleanField(default=False)  # whether the user has premium
+    premium = peewee.BooleanField(default=False)  # whether the user has supporter
     claimed_free_rain = peewee.BooleanField(default=False)  # whether the user has claimed their free rain
 
     news_state = peewee.CharField(default="", max_length=2000)
