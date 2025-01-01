@@ -516,12 +516,12 @@ async def level_up(message, user, level_data, current_xp, old_xp, quest_data, ca
     await asyncio.sleep(7)
     if not cat_emojis:
         if level_data['reward'] == "Rain":
-            description = f"You got ☔ {level_data['amount']} rain minutes!"
+            description = f"You got ☔ {level_data['amount']} rain minutes!\n<@{user.user_id}>"
         else:
-            description = f"You got {get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']}!"
+            description = f"You got {get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']}!\n<@{user.user_id}>"
         title = f"Level {user.battlepass} Complete!"
     else:
-        description = f"You got {cat_emojis}!"
+        description = f"You got {cat_emojis}!\n<@{user.user_id}>"
         title = "Bonus Complete!"
     await msg.edit(embed=discord.Embed(
         title=title,
@@ -557,7 +557,7 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
 
     embed = discord.Embed(
         title=f"✅ {title}",
-        description=f"{progress_line}\n{current_xp}/{level_data['xp']} XP (+{diff})\nReward: {reward_emoji} {level_data['amount']} {level_data['reward']}",
+        description=f"{progress_line}\n{current_xp}/{level_data['xp']} XP (+{diff})\nReward: {reward_emoji} {level_data['amount']} {level_data['reward']}\n<@{user.user_id}>",
         color=0x007F0E
     ).set_author(name=level_text).set_footer(text="/battlepass")
 
