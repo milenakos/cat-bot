@@ -734,7 +734,7 @@ async def maintaince_loop():
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     await bot.change_presence(
-        activity=discord.CustomActivity(name=f"Feeling JOLLY in {len(bot.guilds):,} servers")
+        activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
     )
 
     if config.TOP_GG_TOKEN:
@@ -1373,7 +1373,7 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n🎅 christmas sale! -20% </rain:{RAIN_ID}>"
+                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
 
                 if channel.cought:
                     coughstring = channel.cought
