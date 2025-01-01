@@ -2542,6 +2542,19 @@ async def battlepass(message: discord.Interaction):
     await gen_main(message, True)
 
 
+@bot.tree.command(description="vote for cat bot")
+async def vote(message: discord.Interaction):
+    embed = discord.Embed(
+        title="Vote for Cat Bot",
+        color=0x6E593C,
+        description="Vote for Cat Bot on top.gg!"
+    )
+    view = View(timeout=1)
+    button = Button(label="Vote!", url="https://top.gg/bot/966695034340663367/vote")
+    view.add_item(button)
+    await message.response.send_message(embed=embed, view=view)
+
+
 @bot.tree.command(description="cat prisms are a special power up")
 async def prism(message: discord.Interaction):
     icon = get_emoji("prism")
