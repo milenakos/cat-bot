@@ -2350,10 +2350,10 @@ async def battlepass(message: discord.Interaction):
 
     async def toggle_reminders(interaction: discord.Interaction):
         nonlocal current_mode
-        await interaction.response.defer()
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
+        await interaction.response.defer()
         user = get_profile(message.guild.id, message.user.id)
         if not user.reminders_enabled:
             try:
@@ -2386,6 +2386,9 @@ async def battlepass(message: discord.Interaction):
 
     async def gen_main(interaction, first=False):
         nonlocal current_mode
+        if interaction.user.id != message.user.id:
+            await do_funny(interaction)
+            return
         await interaction.response.defer()
         current_mode = "Main"
         user = get_profile(message.guild.id, message.user.id)
@@ -2487,6 +2490,9 @@ async def battlepass(message: discord.Interaction):
 
     async def gen_rewards(interaction):
         nonlocal current_mode
+        if interaction.user.id != message.user.id:
+            await do_funny(interaction)
+            return
         await interaction.response.defer()
         current_mode = "Rewards"
         user = get_profile(message.guild.id, message.user.id)
