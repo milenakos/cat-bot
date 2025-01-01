@@ -6,4 +6,4 @@ emoji==1.7
 requests
 discord-emoji
 peewee
-uvloop ; os_name != 'nt'
+winuvloop

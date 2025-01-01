@@ -1,16 +1,13 @@
-import asyncio
-import os
 import importlib
 
 import discord
+import winuvloop
 from discord.ext import commands
 
 import config
 import database
 
-if os.name != "nt":
-    import uvloop
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+winuvloop.install()
 
 intents = discord.Intents(message_content=True, messages=True, guilds=True, emojis=True)
 bot = commands.AutoShardedBot(command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -41,6 +38,8 @@ if not database.db.get_tables():
     database.db.create_tables([database.Profile, database.User, database.Channel, database.Prism])
 if "prism" not in database.db.get_tables():
     database.db.create_tables([database.Prism])
+if "reminder" not in database.db.get_tables():
+    database.db.create_tables([database.Reminder])
 
 try:
     bot.run(config.TOKEN)
