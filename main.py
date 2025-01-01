@@ -761,9 +761,12 @@ async def maintaince_loop():
     # vote reminders
     for user in User.select().where((User.reminder_vote != 0) & ((43200 < User.vote_time_topgg + 43200 < time.time()) | (1 < User.reminder_vote < time.time()))):
         select = Profile.select().where((Profile.user_id == user.user_id) & Profile.reminders_enabled)
-        if not select.exists() or random.randint(0, 15) != 0:
+        if not select.exists() or random.randint(0, 5) != 0:
             continue
         await asyncio.sleep(0.1)
+
+        if not ((user.reminder_vote != 0) and ((43200 < user.vote_time_topgg + 43200 < time.time()) or (1 < user.reminder_vote < time.time()))):
+            continue
 
         view = View(timeout=86400)
         button = Button(emoji=get_emoji("topgg"), label=random.choice(vote_button_texts), style=ButtonStyle.gray, url="https://top.gg/bot/966695034340663367/vote")
@@ -789,7 +792,10 @@ async def maintaince_loop():
     proccessed_users = []
     for user in Profile.select().where((Profile.reminders_enabled) & (Profile.reminder_catch != 0) & ((43200 < Profile.catch_cooldown + 43200 < time.time()) | (1 < Profile.reminder_catch < time.time()))):
         await asyncio.sleep(0.1)
-        if random.randint(0, 15) != 0:
+        if random.randint(0, 5) != 0:
+            continue
+
+        if not (user.reminders_enabled and (user.reminder_catch != 0) and ((43200 < user.catch_cooldown + 43200 < time.time()) or (1 < user.reminder_catch < time.time()))):
             continue
 
         refresh_quests(user)
@@ -825,7 +831,10 @@ async def maintaince_loop():
     proccessed_users = []
     for user in Profile.select().where((Profile.reminders_enabled) & (Profile.reminder_misc != 0) & ((43200 < Profile.misc_cooldown + 43200 < time.time()) | (1 < Profile.reminder_misc < time.time()))):
         await asyncio.sleep(0.1)
-        if random.randint(0, 15) != 0:
+        if random.randint(0, 5) != 0:
+            continue
+
+        if not (user.reminders_enabled and (user.reminder_misc != 0) and ((43200 < user.misc_cooldown + 43200 < time.time()) or (1 < user.reminder_misc < time.time()))):
             continue
 
         refresh_quests(user)
