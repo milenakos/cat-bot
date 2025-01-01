@@ -758,7 +758,7 @@ async def maintaince_loop():
     #
     # vote reminders
     for user in User.select().where((User.reminder_vote != 0) & ((43200 < User.vote_time_topgg + 43200 < time.time()) | (1 < User.reminder_vote < time.time()))):
-        select = Profile.select().where(Profile.user_id == user.user_id & Profile.reminders_enabled)
+        select = Profile.select().where((Profile.user_id == user.user_id) & Profile.reminders_enabled)
         if not select.exists():
             continue
         await asyncio.sleep(0.1)
