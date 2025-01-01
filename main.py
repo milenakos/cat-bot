@@ -83,17 +83,11 @@ vote_button_texts = [
     "vote vote vote vote vote",
     "mrrp mrrow go and vote now",
     "if you vote you'll be free (no)",
-    "Like gambling? Vote!",
     "vote. btw, i have a pipebomb",
     "No votes? :megamind:",
     "Cat says you should vote",
-    "vote = random cats. lets gamble?",
     "cat will be happy if you vote",
     "VOTE NOW!!!!!",
-    "Vote on top.gg for free cats",
-    "Vote for free cats",
-    "No vote = no free cats :(",
-    "0.04% to get egirl on voting",
     "I voted and got 1000000$",
     "I voted and found a gf",
     "lebron james forgot to vote",
@@ -1998,8 +1992,7 @@ leave blank to reset.""", color=0x6E593C)
 
 @bot.tree.command(description="Get Daily cats")
 async def daily(message: discord.Interaction):
-    suffix = "\nthere ARE cats for voting tho, check out `/vote`" if config.WEBHOOK_VERIFY else ""
-    await message.response.send_message("there is no daily cats why did you even try this" + suffix)
+    await message.response.send_message("there is no daily cats why did you even try this")
     await achemb(message, "daily", "send")
 
 
