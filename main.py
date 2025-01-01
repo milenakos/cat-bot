@@ -383,7 +383,7 @@ def generate_quest(user: Profile, quest_type: str):
                     prism_boost += 5
                 else:
                     prism_boost += 1
-            if prism_boost == 15:
+            if prism_boost < 15:
                 continue
         elif quest == "news":
             global_user = User.get(user_id=user.user_id)
