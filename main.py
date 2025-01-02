@@ -1822,6 +1822,7 @@ async def tiktok(message: discord.Interaction, text: str):
         file = discord.File("bwomp.mp3", filename="bwomp.mp3")
         await message.followup.send(file=file)
         await achemb(message, "bwomp", "send")
+        await progress(message, get_profile(message.guild.id, message.user.id), "tiktok")
         return
 
     async with aiohttp.ClientSession() as session:
