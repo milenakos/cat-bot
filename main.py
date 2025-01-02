@@ -761,7 +761,7 @@ async def maintaince_loop():
     # vote reminders
     for user in User.select().where((User.reminder_vote != 0) & ((43200 < User.vote_time_topgg + 43200 < time.time()) | (1 < User.reminder_vote < time.time()))):
         select = Profile.select().where((Profile.user_id == user.user_id) & Profile.reminders_enabled)
-        if not select.exists() or random.randint(0, 2) != 0:
+        if not select.exists():
             continue
         await asyncio.sleep(0.1)
 
@@ -792,8 +792,6 @@ async def maintaince_loop():
     proccessed_users = []
     for user in Profile.select().where((Profile.reminders_enabled) & (Profile.reminder_catch != 0) & ((43200 < Profile.catch_cooldown + 43200 < time.time()) | (1 < Profile.reminder_catch < time.time()))):
         await asyncio.sleep(0.1)
-        if random.randint(0, 2) != 0:
-            continue
 
         if not (user.reminders_enabled and (user.reminder_catch != 0) and ((43200 < user.catch_cooldown + 43200 < time.time()) or (1 < user.reminder_catch < time.time()))):
             continue
@@ -831,8 +829,6 @@ async def maintaince_loop():
     proccessed_users = []
     for user in Profile.select().where((Profile.reminders_enabled) & (Profile.reminder_misc != 0) & ((43200 < Profile.misc_cooldown + 43200 < time.time()) | (1 < Profile.reminder_misc < time.time()))):
         await asyncio.sleep(0.1)
-        if random.randint(0, 2) != 0:
-            continue
 
         if not (user.reminders_enabled and (user.reminder_misc != 0) and ((43200 < user.misc_cooldown + 43200 < time.time()) or (1 < user.reminder_misc < time.time()))):
             continue
@@ -4547,7 +4543,7 @@ async def recieve_vote(request):
     user.save()
 
     try:
-        channeley = bot.get_user(int(request_json["user"]))
+        channeley = await bot.fetch_user(int(request_json["user"]))
         await channeley.send("Thanks for voting!\nTo claim your XP, run `/battlepass` in every server you want.\nYou can vote again in 12 hours.")
     except Exception:
         pass
