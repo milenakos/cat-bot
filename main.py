@@ -380,7 +380,7 @@ def generate_quest(user: Profile, quest_type: str):
             if prism_boost < 15:
                 continue
         elif quest == "news":
-            global_user = User.get(user_id=user.user_id)
+            global_user, _ = User.get_or_create(user_id=user.user_id)
             if len(news_list) <= len(global_user.news_state.strip()) and "0" not in global_user.news_state:
                 continue
         elif quest == "achievement":
@@ -2921,7 +2921,7 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                     if interaction.user.id == message.user.id:
                         try:
                             await interaction.response.defer()
-                            actual_user = User.get(user_id=message.user.id)
+                            actual_user, _ = User.get_or_create(user_id=message.user.id)
 
                             # remove tax, don't transfer rain to cat bot because it makes no sense
                             actual_user.rain_minutes -= tax_amount
@@ -3053,8 +3053,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             for k, v in person1gives.items():
                 if k in prism_names:
                     person1prismgive += 1
-                    prism = Prism.get(guild_id=interaction.guild.id, name=k)
-                    if prism.user_id != person1.id:
+                    prism = Prism.get_or_none(guild_id=interaction.guild.id, name=k)
+                    if not prism or prism.user_id != person1.id:
                         error = True
                         break
                     continue
@@ -3069,8 +3069,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             for k, v in person2gives.items():
                 if k in prism_names:
                     person2prismgive += 1
-                    prism = Prism.get(guild_id=interaction.guild.id, name=k)
-                    if prism.user_id != person2.id:
+                    prism = Prism.get_or_none(guild_id=interaction.guild.id, name=k)
+                    if not prism or prism.user_id != person2.id:
                         error = True
                         break
                     continue
