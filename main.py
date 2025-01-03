@@ -1076,6 +1076,13 @@ async def on_message(message: discord.Message):
         (ach[1] == "in" and ach[0] in text.lower()):
             await achemb(message, ach[2], "reply")
 
+    # cat in french is "chat" but that will lead to accidential triggers
+    cat_texts = ["gato", "katze", "gatto", "kot", "koshka", "neko", "goyangi", "billi", "kedi", "kat", "katt", "gata"]
+    for cat_text in cat_texts:
+        if cat_text in text.lower():
+            await achemb(message, "multilingual", "reply")
+            break
+
     if perms.add_reactions:
         for r in reactions:
             if r[0] in text.lower() and reactions_ratelimit.get(message.author.id, 0) < 20:
@@ -3173,7 +3180,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             return
 
         currentuser = 1 if interaction.user == person1 else 2
-        
+
         # all we really do is spawn the modal
         modal = TradeModal(currentuser)
         await interaction.response.send_modal(modal)
@@ -3373,7 +3380,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
             person1accept = False
             person2accept = False
-            
+
             await interaction.response.defer()
             await update_trade_embed(interaction)
 

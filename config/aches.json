@@ -36,6 +36,7 @@
   "sussy": {"title": "Sussy", "description": "call out sus cat for being AMOGUS", "is_hidden": false, "category": "Random"},
   "egril": {"title": "Electronic Grill", "description": "what can this possibly mean", "is_hidden": false, "category": "Random"},
   "bwomp": {"title": "Bwomp", "description": "is that a geometry dash reference???", "is_hidden": false, "category": "Random"},
+  "multilingual": {"title": "Multilingual", "description": "cat in french is \"chat\"", "is_hidden": true, "category": "Random"},
 
   "silly": {"title": "Silly", "description": "triple-react!", "is_hidden": false, "category": "Silly"},
   "nice": {"title": "Nice!", "description": "gift 69 nice cats", "is_hidden": false, "category": "Silly"},
