@@ -498,11 +498,13 @@ async def progress(message: discord.Message, user: Profile, quest: str):
         else:
             user.rain_minutes += level_data['amount']
         user.save()
-        bot.loop.create_task(level_up(message, user, level_data, current_xp, old_xp, quest_data, cat_emojis))
+        if message.channel.permissions_for(message.guild.me).send_messages:
+            bot.loop.create_task(level_up(message, user, level_data, current_xp, old_xp, quest_data, cat_emojis))
     else:
         user.progress = current_xp
         user.save()
-        await progress_embed(message, user, level_data, current_xp, old_xp, quest_data, current_xp - old_xp, level_text)
+        if message.channel.permissions_for(message.guild.me).send_messages:
+            await progress_embed(message, user, level_data, current_xp, old_xp, quest_data, current_xp - old_xp, level_text)
 
 
 async def level_up(message, user, level_data, current_xp, old_xp, quest_data, cat_emojis=None):
