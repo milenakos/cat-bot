@@ -477,6 +477,7 @@ async def progress(message: discord.Message, user: Profile, quest: str):
         return
 
     old_xp = user.progress
+    perms = message.channel.permissions_for(message.guild.me)
     if user.battlepass >= len(battle["seasons"][str(user.season)]):
         level_data = {"xp": 1500, "reward": "random cats", "amount": 5}
         level_text = "Extra Rewards"
@@ -498,12 +499,12 @@ async def progress(message: discord.Message, user: Profile, quest: str):
         else:
             user.rain_minutes += level_data['amount']
         user.save()
-        if message.channel.permissions_for(message.guild.me).send_messages:
+        if perms.send_messages and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
             bot.loop.create_task(level_up(message, user, level_data, current_xp, old_xp, quest_data, cat_emojis))
     else:
         user.progress = current_xp
         user.save()
-        if message.channel.permissions_for(message.guild.me).send_messages:
+        if perms.send_messages and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
             await progress_embed(message, user, level_data, current_xp, old_xp, quest_data, current_xp - old_xp, level_text)
 
 
