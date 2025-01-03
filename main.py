@@ -3681,7 +3681,7 @@ async def remind(message: discord.Interaction, days: Optional[int], hours: Optio
     if len(text) > 1900:
         await message.response.send_message("thats too long", ephemeral=True)
         return
-    await message.response.send_message(f"ok, <t:{goal_time}:R> (+- 5 min) ill remind you of that")
+    await message.response.send_message(f"ok, <t:{goal_time}:R> (+- 5 min) ill remind you of:\n{text}")
     msg = await message.original_response()
     message_link = msg.jump_url
     text += f"\n\n*This is a [reminder](<{message_link}>) you set.*"
