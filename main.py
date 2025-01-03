@@ -100,7 +100,7 @@ vote_button_texts = [
 with open("config/aches.json", "r") as f:
     ach_list = json.load(f)
 
-with open("config/battlepass.json", "r") as f:
+with open("config/battlepass.json", "r", encoding='utf-8') as f:
     battle = json.load(f)
 
 # convert achievement json to a few other things
