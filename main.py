@@ -499,12 +499,12 @@ async def progress(message: discord.Message, user: Profile, quest: str):
         else:
             user.rain_minutes += level_data['amount']
         user.save()
-        if perms.send_messages and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
+        if perms.send_messages and perms.embed_links and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
             bot.loop.create_task(level_up(message, user, level_data, current_xp, old_xp, quest_data, cat_emojis))
     else:
         user.progress = current_xp
         user.save()
-        if perms.send_messages and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
+        if perms.send_messages and perms.embed_links and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
             await progress_embed(message, user, level_data, current_xp, old_xp, quest_data, current_xp - old_xp, level_text)
 
 
