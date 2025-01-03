@@ -740,7 +740,7 @@ async def maintaince_loop():
         activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers")
     )
 
-    if config.TOP_GG_TOKEN:
+    if config.TOP_GG_TOKEN and len(bot.guilds) > config.MIN_SERVER_SEND:
         async with aiohttp.ClientSession() as session:
             # send server count to top.gg
             try:

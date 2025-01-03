@@ -17,6 +17,9 @@ BACKUP_ID = 1060545763194707998
 # what to do when there is a crash
 CRASH_MODE = "RAISE"
 
+# only send stats if server count is above this, to prevent wrong stats
+MIN_SERVER_SEND = 50000
+
 #
 # all the following are optional (setting them to None will disable the feature)
 #
