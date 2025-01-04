@@ -2363,16 +2363,14 @@ async def battlepass(message: discord.Interaction):
 
     async def toggle_reminders(interaction: discord.Interaction):
         nonlocal current_mode
-        if interaction.user.id != message.user.id:
-            await do_funny(interaction)
-            return
-        await interaction.response.defer()
+
+        await interaction.response.defer(ephemeral=True)
         user = get_profile(message.guild.id, message.user.id)
         if not user.reminders_enabled:
             try:
                 await interaction.user.send(f"You have enabled reminders in {interaction.guild.name}. You can disable them in the /battlepass command in that server or by saying `disable {interaction.guild.id}` here any time.")
             except Exception:
-                await interaction.followup.send("Failed. Ensure you have DMs open by going to Server > Privacy Settings > Allow direct messages from server members.")
+                await interaction.followup.send("Failed. Ensure you have DMs open by going to Server > Privacy Settings > Allow direct messages from server members.", ephemeral=True)
                 return
 
         user.reminders_enabled = not user.reminders_enabled
@@ -2399,10 +2397,8 @@ async def battlepass(message: discord.Interaction):
 
     async def gen_main(interaction, first=False):
         nonlocal current_mode
-        if interaction.user.id != message.user.id:
-            await do_funny(interaction)
-            return
-        await interaction.response.defer()
+        
+        await interaction.response.defer(ephemeral=True)
         current_mode = "Main"
         user = get_profile(message.guild.id, message.user.id)
         refresh_quests(user)
@@ -2497,16 +2493,14 @@ async def battlepass(message: discord.Interaction):
             embedVar.set_author(name="You have unread news! /news")
 
         if first:
-            await interaction.followup.send(embed=embedVar, view=view)
+            await interaction.followup.send(embed=embedVar, view=view, ephemeral=True)
         else:
             await interaction.edit_original_response(embed=embedVar, view=view)
 
     async def gen_rewards(interaction):
         nonlocal current_mode
-        if interaction.user.id != message.user.id:
-            await do_funny(interaction)
-            return
-        await interaction.response.defer()
+
+        await interaction.response.defer(ephemeral=True)
         current_mode = "Rewards"
         user = get_profile(message.guild.id, message.user.id)
         description = "**Rewards this season**\n"
