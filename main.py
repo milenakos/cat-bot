@@ -558,7 +558,7 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
         color=0x007F0E
     ).set_author(name=level_text).set_footer(text="/battlepass")
 
-    return await message.channel.send(embed=embed)
+    return await message.channel.send(embed=embed, ephemeral=True)
 
 
 # handle curious people clicking buttons
