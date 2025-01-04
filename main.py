@@ -931,7 +931,11 @@ async def on_message(message: discord.Message):
     if message.guild is None:
         if text.startswith("disable"):
             # disable reminders
-            user = get_profile(int(text.split(" ")[1]), message.author.id)
+            try:
+                user = get_profile(int(text.split(" ")[1]), message.author.id)
+            except Exception:
+                await message.channel.send("failed. check if your guild id is correct")
+                return
             user.reminders_enabled = False
             user.save()
             await message.channel.send("reminders disabled")
