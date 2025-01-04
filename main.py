@@ -931,7 +931,11 @@ async def on_message(message: discord.Message):
     if message.guild is None:
         if text.startswith("disable"):
             # disable reminders
-            user = get_profile(int(text.split(" ")[1]), message.author.id)
+            try:
+                user = get_profile(int(text.split(" ")[1]), message.author.id)
+            except Exception:
+                await message.channel.send("failed. check if your guild id is correct")
+                return
             user.reminders_enabled = False
             user.save()
             await message.channel.send("reminders disabled")
@@ -1343,6 +1347,7 @@ async def on_message(message: discord.Message):
                             normal_bump = True
                         except IndexError:
                             # :SILENCE:
+                            normal_bump = False
                             if var.attachments[0].description != "forcespawned":
                                 if cat_rains.get(str(message.channel.id), 0) > time.time():
                                     await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
@@ -1351,8 +1356,6 @@ async def on_message(message: discord.Message):
                                 rn = time.time()
                                 cat_rains[str(message.channel.id)] = min(rn + 3600, cat_rains.get(str(message.channel.id), rn) + 606)
                                 decided_time = 6
-                                normal_bump = False
-                                pass
 
                         if normal_bump:
                             suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
