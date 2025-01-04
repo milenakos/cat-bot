@@ -3532,6 +3532,13 @@ async def slots(message: discord.Interaction):
         await message.response.send_message("you get kicked from the slot machine because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
         await achemb(message, "paradoxical_gambler", "send")
         return
+    user = get_profile(interaction.guild.id, interaction.user.id)
+    debt = []
+
+    for i in cattypes:
+        cat_num = user[f"cat_{i}"]
+        if cat_num < 0:
+            debt.append(i)
 
     profile = get_profile(message.guild.id, message.user.id)
     total_spins = Profile.select(peewee.fn.SUM(Profile.slot_spins)).scalar()
@@ -3548,7 +3555,7 @@ async def slots(message: discord.Interaction):
             await interaction.response.send_message("you get kicked from the slot machine because you are already there, and two of you playing at once would cause a glitch in the universe", ephemeral=True)
             return
         user = get_profile(interaction.guild.id, interaction.user.id)
-
+        
         await interaction.response.defer()
         await achemb(interaction, "slots", "send")
         slots_lock.append(message.user.id)
@@ -3579,12 +3586,14 @@ async def slots(message: discord.Interaction):
                 pass
             await asyncio.sleep(0.5)
 
+        bigwin = False
         if col1[current1] == col2[current2] == col3[current3]:
             user.slot_wins += 1
             await achemb(interaction, "win_slots", "send")
             if col1[current1] == ":seven:":
                 desc = "**BIG WIN!**\n\n" + desc
                 user.slot_big_wins += 1
+                bigwin = True
                 await achemb(interaction, "big_win_slots", "send")
             else:
                 desc = "**You win!**\n\n" + desc
@@ -3608,16 +3617,32 @@ async def slots(message: discord.Interaction):
             await interaction.followup.send(embed=embed, view=myview)
 
         await progress(message, user, "slots")
+        return bigwin
 
+    async def nodebt(interaction):
+        await spin(interaction)
+
+    async def debt(interaction):
+        nonlocal debt, user
+        if spin(interatcion):
+            for i in debt:
+                user[f"cat_{i}"] = 0
+            await interaction.response.send_message("You gambled your debt away!\nGo give this trick a try in real life, too!")
 
     button = Button(label="Spin", style=ButtonStyle.blurple)
     button.callback = spin
 
+    if debt:
+        button1 = Button(label="Gamble Debt Away", style=ButtonStyle.blurple)
+        button1.callback = spin
+    else:
+        button1 = Button(label="Gamble Debt Away", style=ButtonStyle.gray, disabled=True)
+
     myview = View(timeout=3600)
     myview.add_item(button)
+    myview.add_item(button1)
 
     await message.response.send_message(embed=embed, view=myview)
-
 
 
 @bot.tree.command(description="get a super accurate rating of something")
