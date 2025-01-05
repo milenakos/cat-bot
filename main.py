@@ -1069,8 +1069,7 @@ async def on_message(message: discord.Message):
         (ach[1] == "in" and ach[0] in text.lower()):
             await achemb(message, ach[2], "reply")
 
-    # cat in french is "chat" but that will lead to accidential triggers
-    if text.lower() in ["gato", "katze", "gatto", "kot", "koshka", "neko", "goyangi", "billi", "kedi", "kat", "katt", "gata"]:
+    if text.lower() in ["chat", "gato", "katze", "gatto", "kot", "koshka", "neko", "goyangi", "billi", "kedi", "kat", "katt", "gata", "mao", "qat"]:
         await achemb(message, "multilingual", "reply")
 
     if perms.add_reactions:
