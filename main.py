@@ -2371,7 +2371,7 @@ async def battlepass(message: discord.Interaction):
         user.save()
 
         view = View(timeout=3600)
-        button = Button(label="Refresh" if current_mode == "Main" else "Main", style=ButtonStyle.green if current_mode == "Main" else ButtonStyle.blurple)
+        button = Button(label="Main", style=ButtonStyle.green if current_mode == "Main" else ButtonStyle.blurple)
         button.callback = gen_main
         view.add_item(button)
 
@@ -2470,7 +2470,7 @@ async def battlepass(message: discord.Interaction):
         embedVar = discord.Embed(title=f"Cattlepass Season {user.season}", description=description, color=0x6E593C).set_footer(text="☔ Get tons of cats /rain")
         view = View(timeout=3600)
 
-        button = Button(label="Refresh", style=ButtonStyle.green)
+        button = Button(label="Main", style=ButtonStyle.green)
         button.callback = gen_main
         view.add_item(button)
 
