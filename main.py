@@ -584,7 +584,7 @@ async def debt_cutscene(message, user):
     ]
 
     for debt_msg in debt_msgs:
-        await message.followup.send(random.choice(debt_msg), ephemeral=True)
+        await message.followup.send(debt_msg, ephemeral=True)
         await asyncio.sleep(4)
 
 
