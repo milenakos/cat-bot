@@ -561,6 +561,33 @@ async def do_funny(message):
         await achemb(message, "its_not_working", "send")
 
 
+# not :eyes:
+async def debt_cutscene(message, user):
+    if user.debt_seen:
+        return
+
+    user.debt_seen = True
+    user.save()
+
+    await asyncio.sleep(5)
+    debt_msgs = [
+        "**\*BANG\***",
+        "Your door gets slammed open and multiple man in black suits enter your room.",
+        "???: Hello, you have unpaid debts. You owe us money. We are here to liquidate all your assets.",
+        "(oh for fu)",
+        "You: pls dont",
+        "???: oh okay then we will come back to you later.",
+        "They leave the room.",
+        "You: Oh god this is bad",
+        "You: I know of a solution though!",
+        "You: I heard you can gamble your debts away in the slots machine!"
+    ]
+
+    for debt_msg in debt_msgs:
+        await message.followup.send(random.choice(debt_msg), ephemeral=True)
+        await asyncio.sleep(4)
+
+
 # :eyes:
 async def finale(message, user):
     if user.finale_seen:
@@ -2091,6 +2118,7 @@ async def gen_inventory(message, person_id):
         color=discord.Colour.from_str(color)
     )
 
+    debt = False
     give_collector = True
     total = 0
     valuenum = 0
@@ -2099,6 +2127,8 @@ async def gen_inventory(message, person_id):
     for i in cattypes:
         icon = get_emoji(i.lower() + "cat")
         cat_num = person[f"cat_{i}"]
+        if cat_num < 0:
+            debt = True
         if cat_num != 0:
             total += cat_num
             valuenum += (len(CAT_TYPES) / type_dict[i]) * cat_num
@@ -2143,6 +2173,9 @@ async def gen_inventory(message, person_id):
 
         if unlocked >= 15:
             await achemb(message, "achiever", "send")
+
+        if debt:
+            bot.loop.create_task(debt_cutscene(message, person))
 
     return embedVar
 
@@ -2840,6 +2873,8 @@ async def gift(message: discord.Interaction, person: discord.User, cat_type: str
                         finally:
                             # always save to prevent issue with exceptions leaving bugged state
                             user.save()
+                        if user[f"cat_{cat_type}"] < 0:
+                            bot.loop.create_task(debt_cutscene(interaction, user))
                     else:
                         await do_funny(interaction)
 
@@ -3529,6 +3564,22 @@ async def slots(message: discord.Interaction):
     total_big_wins = Profile.select(peewee.fn.SUM(Profile.slot_big_wins)).scalar()
     embed = discord.Embed(title=":slot_machine: The Slot Machine", description=f"__Your stats__\n{profile.slot_spins} spins\n{profile.slot_wins} wins\n{profile.slot_big_wins} big wins\n\n__Global stats__\n{total_spins} spins\n{total_wins} wins\n{total_big_wins} big wins", color=0x750F0E)
 
+    async def remove_debt(interaction):
+        nonlocal message
+        if interaction.user.id != message.user.id:
+            await do_funny(interaction)
+            return
+        user = get_profile(interaction.guild.id, interaction.user.id)
+
+        # remove debt
+        for i in cattypes:
+            user[f"cat_{i}"] = max(0, user[f"cat_{i}"])
+
+        user.save()
+        await interaction.response.send_message("You removed your debts!", ephemeral=True)
+        await achemb(interaction, "debt", "send")
+
+
     async def spin(interaction):
         nonlocal message
         if interaction.user.id != message.user.id:
@@ -3569,6 +3620,7 @@ async def slots(message: discord.Interaction):
                 pass
             await asyncio.sleep(0.5)
 
+        big_win = False
         if col1[current1] == col2[current2] == col3[current3]:
             user.slot_wins += 1
             await achemb(interaction, "win_slots", "send")
@@ -3576,6 +3628,7 @@ async def slots(message: discord.Interaction):
                 desc = "**BIG WIN!**\n\n" + desc
                 user.slot_big_wins += 1
                 await achemb(interaction, "big_win_slots", "send")
+                big_win = True
             else:
                 desc = "**You win!**\n\n" + desc
         else:
@@ -3588,6 +3641,19 @@ async def slots(message: discord.Interaction):
 
         myview = View(timeout=3600)
         myview.add_item(button)
+
+        if big_win:
+            # check if user has debt in any cat type
+            has_debt = False
+            for i in cattypes:
+                if user[f"cat_{i}"] < 0:
+                    has_debt = True
+                    break
+            if has_debt:
+                embed.description += "\n\n**You can remove your debt!**"
+                button = Button(label="Remove Debt", style=ButtonStyle.blurple)
+                button.callback = remove_debt
+                myview.add_item(button)
 
         slots_lock.remove(message.user.id)
         user.save()

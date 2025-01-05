@@ -45,7 +45,9 @@ class Profile(peewee.Model):
     dark_market_level = peewee.SmallIntegerField(default=0)  # dark market level
     dark_market_active = peewee.BooleanField(default=False)  # dark market unlocked bool
     story_complete = peewee.BooleanField(default=False)  # whether story is complete
+
     finale_seen = peewee.BooleanField(default=False)  # whether the finale cutscene was seen
+    debt_seen = peewee.BooleanField(default=False)  # whether the debt cutscene was seen
 
     cataine_week = peewee.SmallIntegerField(default=0)  # light market purcashes this week
     recent_week = peewee.SmallIntegerField(default=0)  # the week
