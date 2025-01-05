@@ -11,6 +11,7 @@ import subprocess
 import time
 import traceback
 from typing import Literal, Optional, Union
+from functools import partial
 
 import aiohttp
 import discord
@@ -4308,7 +4309,7 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
                 button = Button(label="Refresh", style=ButtonStyle.green)
             else:
                 button = Button(label=t, style=ButtonStyle.blurple)
-            button.callback = lambda: lb(type)
+            button.callback = partial(lb_handler, type=t)
             buttons.append(button)
 
         if not locked:
@@ -4327,10 +4328,6 @@ async def leaderboards(message: discord.Interaction, leaderboard_type: Optional[
 
         if leader:
             await achemb(message, "leader", "send")
-
-    # helper! everybody loves helpers.
-    async def lb(interaction, type):
-        await lb_handler(interaction, type)
 
     await lb_handler(message, leaderboard_type, False)
 
