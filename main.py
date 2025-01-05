@@ -500,43 +500,34 @@ async def progress(message: discord.Message, user: Profile, quest: str):
             user.rain_minutes += level_data['amount']
         user.save()
         if perms.send_messages and perms.embed_links and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
-            bot.loop.create_task(level_up(message, user, level_data, current_xp, old_xp, quest_data, cat_emojis))
+            if not cat_emojis:
+                if level_data['reward'] == "Rain":
+                    description = f"You got ☔ {level_data['amount']} rain minutes!\n<@{user.user_id}>"
+                else:
+                    description = f"You got {get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']}!\n<@{user.user_id}>"
+                title = f"Level {user.battlepass} Complete!"
+            else:
+                description = f"You got {cat_emojis}!\n<@{user.user_id}>"
+                title = "Bonus Complete!"
+            embed_level_up = discord.Embed(title=title, description=description, color=0xFFF000)
+
+            if user.battlepass >= len(battle["seasons"][str(user.season)]):
+                new_level_data = {"xp": 1500, "reward": "random cats", "amount": 5}
+                new_level_text = "Extra Rewards"
+            else:
+                new_level_data = battle["seasons"][str(user.season)][user.battlepass]
+                new_level_text = f"Level {user.battlepass + 1}"
+            embed_progress = progress_embed(message, user, new_level_data, current_xp - level_data["xp"], 0, quest_data, current_xp - old_xp, new_level_text)
+
+            await message.channel.send(f"<@{user.user_id}>", allowed_mentions=discord.AllowedMentions.none(), embeds=[embed_level_up, embed_progress])
     else:
         user.progress = current_xp
         user.save()
         if perms.send_messages and perms.embed_links and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
-            await progress_embed(message, user, level_data, current_xp, old_xp, quest_data, current_xp - old_xp, level_text)
+            await message.channel.send(f"<@{user.user_id}>", allowed_mentions=discord.AllowedMentions.none(), embed=progress_embed(message, user, level_data, current_xp, old_xp, quest_data, current_xp - old_xp, level_text))
 
 
-async def level_up(message, user, level_data, current_xp, old_xp, quest_data, cat_emojis=None):
-    msg = await progress_embed(message, user, level_data, level_data["xp"], old_xp, quest_data, current_xp - old_xp, f"Level {user.battlepass}")
-    await asyncio.sleep(7)
-    if not cat_emojis:
-        if level_data['reward'] == "Rain":
-            description = f"You got ☔ {level_data['amount']} rain minutes!\n<@{user.user_id}>"
-        else:
-            description = f"You got {get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']}!\n<@{user.user_id}>"
-        title = f"Level {user.battlepass} Complete!"
-    else:
-        description = f"You got {cat_emojis}!\n<@{user.user_id}>"
-        title = "Bonus Complete!"
-    await msg.edit(embed=discord.Embed(
-        title=title,
-        description=description,
-        color=0xFFF000
-    ).set_footer(text="/battlepass"))
-
-    await asyncio.sleep(3)
-    if user.battlepass >= len(battle["seasons"][str(user.season)]):
-        new_level_data = {"xp": 1500, "reward": "random cats", "amount": 5}
-        new_level_text = "Extra Rewards"
-    else:
-        new_level_data = battle["seasons"][str(user.season)][user.battlepass]
-        new_level_text = f"Level {user.battlepass + 1}"
-    await progress_embed(message, user, new_level_data, current_xp - level_data["xp"], 0, quest_data, current_xp - old_xp, new_level_text)
-
-
-async def progress_embed(message, user, level_data, current_xp, old_xp, quest_data, diff, level_text):
+def progress_embed(message, user, level_data, current_xp, old_xp, quest_data, diff, level_text):
     percentage_before = int(old_xp / level_data["xp"] * 10)
     percentage_after = int(current_xp / level_data["xp"] * 10)
     percenteage_left = 10 - percentage_after
@@ -552,13 +543,11 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
     else:
         reward_emoji = get_emoji(level_data["reward"].lower() + "cat")
 
-    embed = discord.Embed(
+    return discord.Embed(
         title=f"✅ {title}",
-        description=f"{progress_line}\n{current_xp}/{level_data['xp']} XP (+{diff})\nReward: {reward_emoji} {level_data['amount']} {level_data['reward']}\n<@{user.user_id}>",
+        description=f"{progress_line}\n{current_xp}/{level_data['xp']} XP (+{diff})\nReward: {reward_emoji} {level_data['amount']} {level_data['reward']}",
         color=0x007F0E
-    ).set_author(name=level_text).set_footer(text="/battlepass")
-
-    return await message.channel.send(embed=embed)
+    ).set_author(name="/battlepass " + level_text)
 
 
 # handle curious people clicking buttons
@@ -2382,7 +2371,7 @@ async def battlepass(message: discord.Interaction):
         user.save()
 
         view = View(timeout=3600)
-        button = Button(label="Main", style=ButtonStyle.green if current_mode == "Main" else ButtonStyle.blurple)
+        button = Button(label="Refresh" if current_mode == "Main" else "Main", style=ButtonStyle.green if current_mode == "Main" else ButtonStyle.blurple)
         button.callback = gen_main
         view.add_item(button)
 
@@ -2480,7 +2469,8 @@ async def battlepass(message: discord.Interaction):
 
         embedVar = discord.Embed(title=f"Cattlepass Season {user.season}", description=description, color=0x6E593C).set_footer(text="☔ Get tons of cats /rain")
         view = View(timeout=3600)
-        button = Button(label="Main", style=ButtonStyle.green)
+
+        button = Button(label="Refresh", style=ButtonStyle.green)
         button.callback = gen_main
         view.add_item(button)
 
@@ -2543,6 +2533,7 @@ async def battlepass(message: discord.Interaction):
 
         embedVar = discord.Embed(title=f"Cattlepass Season {user.season}", description=description, color=0x6E593C)
         view = View(timeout=3600)
+
         button = Button(label="Main", style=ButtonStyle.blurple)
         button.callback = gen_main
         view.add_item(button)
