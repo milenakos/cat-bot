@@ -502,12 +502,12 @@ async def progress(message: discord.Message, user: Profile, quest: str):
         if perms.send_messages and perms.embed_links and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
             if not cat_emojis:
                 if level_data['reward'] == "Rain":
-                    description = f"You got ☔ {level_data['amount']} rain minutes!\n<@{user.user_id}>"
+                    description = f"You got ☔ {level_data['amount']} rain minutes!"
                 else:
-                    description = f"You got {get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']}!\n<@{user.user_id}>"
+                    description = f"You got {get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']}!"
                 title = f"Level {user.battlepass} Complete!"
             else:
-                description = f"You got {cat_emojis}!\n<@{user.user_id}>"
+                description = f"You got {cat_emojis}!"
                 title = "Bonus Complete!"
             embed_level_up = discord.Embed(title=title, description=description, color=0xFFF000)
 
