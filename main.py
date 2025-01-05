@@ -573,14 +573,14 @@ async def debt_cutscene(message, user):
     debt_msgs = [
         "**\*BANG\***",
         "Your door gets slammed open and multiple man in black suits enter your room.",
-        "???: Hello, you have unpaid debts. You owe us money. We are here to liquidate all your assets.",
+        "**???**: Hello, you have unpaid debts. You owe us money. We are here to liquidate all your assets.",
         "(oh for fu)",
-        "You: pls dont",
-        "???: oh okay then we will come back to you later.",
+        "**You**: pls dont",
+        "**???**: oh okay then we will come back to you later.",
         "They leave the room.",
-        "You: Oh god this is bad",
-        "You: I know of a solution though!",
-        "You: I heard you can gamble your debts away in the slots machine!"
+        "**You**: Oh god this is bad",
+        "**You**: I know of a solution though!",
+        "**You**: I heard you can gamble your debts away in the slots machine!"
     ]
 
     for debt_msg in debt_msgs:
