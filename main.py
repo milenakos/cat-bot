@@ -3576,7 +3576,7 @@ async def slots(message: discord.Interaction):
             user[f"cat_{i}"] = max(0, user[f"cat_{i}"])
 
         user.save()
-        await interaction.response.send_message("You removed your debts!", ephemeral=True)
+        await interaction.response.send_message("You have removed your debts! Life is wonderful!", ephemeral=True)
         await achemb(interaction, "debt", "send")
 
 
