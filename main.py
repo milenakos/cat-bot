@@ -569,12 +569,11 @@ async def debt_cutscene(message, user):
     user.debt_seen = True
     user.save()
 
-    await asyncio.sleep(5)
     debt_msgs = [
         "**\*BANG\***",
         "Your door gets slammed open and multiple man in black suits enter your room.",
         "**???**: Hello, you have unpaid debts. You owe us money. We are here to liquidate all your assets.",
-        "(oh for fu)",
+        "*(oh for fu)*",
         "**You**: pls dont",
         "**???**: oh okay then we will come back to you later.",
         "They leave the room.",
@@ -584,8 +583,8 @@ async def debt_cutscene(message, user):
     ]
 
     for debt_msg in debt_msgs:
-        await message.followup.send(debt_msg, ephemeral=True)
         await asyncio.sleep(4)
+        await message.followup.send(debt_msg, ephemeral=True)
 
 
 # :eyes:
