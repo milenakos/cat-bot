@@ -133,6 +133,7 @@ class User(peewee.Model):
     reminder_vote = peewee.BigIntegerField(default=0)  # timestamp of last vote reminder
 
     custom = peewee.CharField(default="")  # custom cat name
+    custom_num = peewee.SmallIntegerField(default=1)  # custom cat amount
     emoji = peewee.CharField(default="")  # /editprofile emoji
     color = peewee.CharField(default="")  # /editprofile color
     image = peewee.CharField(default="")  # /editprofile image
