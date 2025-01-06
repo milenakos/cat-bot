@@ -11,6 +11,7 @@ import subprocess
 import time
 import traceback
 from typing import Literal, Optional, Union
+from functools import partial
 
 import aiohttp
 import discord
@@ -129,6 +130,8 @@ with open("config/battlepass.json", "r", encoding="utf-8") as f:
 # convert achievement json to a few other things
 ach_names = ach_list.keys()
 ach_titles = {value["title"].lower(): key for (key, value) in ach_list.items()}
+
+leaderboard_types = ["Cats", "Value", "Fast", "Slow"]
 
 bot = commands.AutoShardedBot(
     command_prefix="this is a placebo bot which will be replaced when this will get loaded",
@@ -4778,7 +4781,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 )
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow"]],
+    leaderboard_type: Optional[Literal[*leaderboard_types]],
     locked: Optional[bool],
 ):
     if not leaderboard_type:
@@ -4938,39 +4941,19 @@ async def leaderboards(
         myview = View(timeout=3600)
         buttons = []
 
-        if type == "Cats":
-            button = Button(label="Refresh", style=ButtonStyle.green)
-        else:
-            button = Button(label="Cats", style=ButtonStyle.blurple)
-        button.callback = catlb
-        buttons.append(button)
-
-        if type == "Value":
-            button = Button(label="Refresh", style=ButtonStyle.green)
-        else:
-            button = Button(label="Value", style=ButtonStyle.blurple)
-        button.callback = valuelb
-        buttons.append(button)
-
-        if type == "Fast":
-            button = Button(label="Refresh", style=ButtonStyle.green)
-        else:
-            button = Button(label="Fast", style=ButtonStyle.blurple)
-        button.callback = fastlb
-        buttons.append(button)
-
-        if type == "Slow":
-            button = Button(label="Refresh", style=ButtonStyle.green)
-        else:
-            button = Button(label="Slow", style=ButtonStyle.blurple)
-        button.callback = slowlb
-        buttons.append(button)
+        for t in leaderboard_types:
+            if type == t:
+                button = Button(label="Refresh", style=ButtonStyle.green)
+            else:
+                button = Button(label=t, style=ButtonStyle.blurple)
+            button.callback = partial(lb_handler, type=t)
+            buttons.append(button)
 
         if not locked:
             for i in buttons:
                 myview.add_item(i)
         else:
-            myview.add_item(buttons[["Cats", "Value", "Fast", "Slow"].index(type)])
+            myview.add_item(buttons[leaderboard_types.index(type)])
 
         # just send if first time, otherwise edit existing
         try:
@@ -4982,19 +4965,6 @@ async def leaderboards(
 
         if leader:
             await achemb(message, "leader", "send")
-
-    # helpers! everybody loves helpers.
-    async def catlb(interaction):
-        await lb_handler(interaction, "Cats")
-
-    async def valuelb(interaction):
-        await lb_handler(interaction, "Value")
-
-    async def fastlb(interaction):
-        await lb_handler(interaction, "Fast")
-
-    async def slowlb(interaction):
-        await lb_handler(interaction, "Slow")
 
     await lb_handler(message, leaderboard_type, False)
 
