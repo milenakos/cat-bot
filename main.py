@@ -1883,6 +1883,14 @@ async def on_message(message: discord.Message):
                     except Exception:
                         pass
 
+    if text.lower().startswith("cat!amount"):
+        user, _ = User.get_or_create(user_id=message.author.id)
+        try:
+            user.custom_num = int(text.split(" ")[1])
+            user.save()
+            await message.reply("success")
+        except Exception:
+            await message.reply("invalid number")
     # those are "owner" commands which are not really interesting
     if text.lower().startswith("cat!sweep") and message.author.id == OWNER_ID:
         try:
