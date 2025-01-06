@@ -1990,6 +1990,10 @@ async def on_message(message: discord.Message):
                 image_binary.seek(0)
                 await bot.create_application_emoji(name=emoji_name, image=image_binary.getvalue())
 
+        user.custom_num = stuff[3]
+        except Exception:
+            pass
+
         user.custom = " ".join(stuff[2:]) if stuff[2] != "None" else ""
         emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
         user.save()
@@ -2517,8 +2521,11 @@ async def gen_inventory(message, person_id):
             give_collector = False
 
     if user.custom:
+        custom_num = 1
+        if user.custom_num:
+            custom_num = user.custom_num
         icon = get_emoji(user.custom.lower().replace(" ", "") + "cat")
-        embedVar.add_field(name=f"{icon} {user.custom}", value=1, inline=True)
+        embedVar.add_field(name=f"{icon} {user.custom}", value=custom_num, inline=True)
 
     if is_empty and not user.custom:
         embedVar.add_field(name="None", value=f"u hav no cats {get_emoji('cat_cry')}", inline=True)
