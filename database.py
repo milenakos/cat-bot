@@ -5,20 +5,35 @@ import playhouse.sqlite_ext
 import playhouse.postgres_ext
 
 if config.DB_TYPE == "SQLITE":
-    db = playhouse.sqlite_ext.SqliteExtDatabase("catbot.db", pragmas=(
-        ('cache_size', -1024 * 64),
-        ('journal_mode', 'wal')
-    ))
+    db = playhouse.sqlite_ext.SqliteExtDatabase("catbot.db", pragmas=(("cache_size", -1024 * 64), ("journal_mode", "wal")))
 elif config.DB_TYPE == "POSTGRES":
-    db = playhouse.postgres_ext.PostgresqlExtDatabase(
-        'cat_bot',
-        user='cat_bot',
-        password=config.DB_PASS,
-        host='localhost',
-        port=5432
-    )
+    db = playhouse.postgres_ext.PostgresqlExtDatabase("cat_bot", user="cat_bot", password=config.DB_PASS, host="localhost", port=5432)
 
-cattypes = ['Fine', 'Nice', 'Good', 'Rare', 'Wild', 'Baby', 'Epic', 'Sus', 'Brave', 'Rickroll', 'Reverse', 'Superior', 'TheTrashCell', 'Legendary', 'Mythic', '8bit', 'Corrupt', 'Professor', 'Divine', 'Real', 'Ultimate', 'eGirl']
+cattypes = [
+    "Fine",
+    "Nice",
+    "Good",
+    "Rare",
+    "Wild",
+    "Baby",
+    "Epic",
+    "Sus",
+    "Brave",
+    "Rickroll",
+    "Reverse",
+    "Superior",
+    "TheTrashCell",
+    "Legendary",
+    "Mythic",
+    "8bit",
+    "Corrupt",
+    "Professor",
+    "Divine",
+    "Real",
+    "Ultimate",
+    "eGirl",
+]
+
 
 class CappedIntegerField(peewee.IntegerField):
     MAX_VALUE = 2147483647
@@ -31,6 +46,7 @@ class CappedIntegerField(peewee.IntegerField):
         if value is not None:
             return max(self.MIN_VALUE, min(self.MAX_VALUE, value))
         return value
+
 
 class Profile(peewee.Model):
     user_id = peewee.BigIntegerField()
@@ -89,7 +105,7 @@ class Profile(peewee.Model):
     # thanks chatgpt
     # cat types
     for cattype in cattypes:
-        locals()[f'cat_{cattype}'] = CappedIntegerField(default=0)
+        locals()[f"cat_{cattype}"] = CappedIntegerField(default=0)
 
     # aches
     with open("config/aches.json", "r") as f:
@@ -107,9 +123,7 @@ class Profile(peewee.Model):
         # haha facebook meta reference
         database = db
         only_save_dirty = True
-        indexes = (
-            (('user_id', 'guild_id'), True),
-        )
+        indexes = ((("user_id", "guild_id"), True),)
 
 
 class User(peewee.Model):
@@ -123,7 +137,7 @@ class User(peewee.Model):
     color = peewee.CharField(default="")  # /editprofile color
     image = peewee.CharField(default="")  # /editprofile image
 
-    rain_minutes = peewee.SmallIntegerField(default=0) # rain minute balance
+    rain_minutes = peewee.SmallIntegerField(default=0)  # rain minute balance
     premium = peewee.BooleanField(default=False)  # whether the user has supporter
     claimed_free_rain = peewee.BooleanField(default=False)  # whether the user has claimed their free rain
 
@@ -165,8 +179,8 @@ class Prism(peewee.Model):
     creator = peewee.BigIntegerField()  # original crafter
     name = peewee.CharField(max_length=20)  # name (duh)
 
-    for cattype in cattypes: # enabled boosts
-        locals()[f'enabled_{cattype.lower()}'] = peewee.BooleanField(default=True)
+    for cattype in cattypes:  # enabled boosts
+        locals()[f"enabled_{cattype.lower()}"] = peewee.BooleanField(default=True)
 
     def __getitem__(self, item):
         return getattr(self, item)
@@ -177,9 +191,7 @@ class Prism(peewee.Model):
     class Meta:
         database = db
         only_save_dirty = True
-        indexes = (
-            (('user_id', 'guild_id'), False),
-        )
+        indexes = ((("user_id", "guild_id"), False),)
 
 
 class Reminder(peewee.Model):
