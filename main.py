@@ -2531,7 +2531,7 @@ async def gen_inventory(message, person_id):
 
     if user.custom:
         icon = get_emoji(user.custom.lower().replace(" ", "") + "cat")
-        embedVar.add_field(name=f"{icon} {user.custom}", value=user.custom_num, inline=True)
+        embedVar.add_field(name=f"{icon} {user.custom}", value=f"{user.custom_num:,}", inline=True)
 
     if is_empty and not user.custom:
         embedVar.add_field(name="None", value=f"u hav no cats {get_emoji('cat_cry')}", inline=True)
