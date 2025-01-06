@@ -104,7 +104,6 @@ def msg2img(message):
             lines.append(line)
         return lines, pings
 
-    print(os.path.abspath("."))  # woo debugging
     font = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 32)  # load fonts
     font2 = ImageFont.truetype(os.path.abspath("./fonts/ggsans-Medium.ttf"), 32)  # load fonts
     font3 = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 23)  # load fonts
