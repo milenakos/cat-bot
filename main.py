@@ -4766,6 +4766,14 @@ async def achievements(message: discord.Interaction):
         await achemb(message, "achiever", "send")
 
 
+@bot.tree.command(name="catch", description="Catch someone in 4k")
+async def catch_tip(message: discord.Interaction):
+    await message.response.send_message(
+        f'Nope, that\'s the wrong way to do this.\nRight Click/Long Hold a message you want to catch > Select `Apps` in the popup > "{get_emoji("staring_cat")} catch"',
+        ephemeral=True,
+    )
+
+
 async def catch(message: discord.Interaction, msg: discord.Message):
     if not message.channel.permissions_for(message.guild.me).attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
