@@ -468,7 +468,7 @@ def refresh_quests(user):
         generate_quest(user, "misc")
 
 
-async def progress(message: discord.Message, user: Profile, quest: str):
+async def progress(message: discord.Message | discord.Interaction, user: Profile, quest: str):
     refresh_quests(user)
 
     # progress
@@ -571,7 +571,12 @@ async def progress(message: discord.Message, user: Profile, quest: str):
     else:
         user.progress = current_xp
         user.save()
-        if perms.send_messages and perms.embed_links and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
+        if (
+            perms.view_channel
+            and perms.send_messages
+            and perms.embed_links
+            and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads)
+        ):
             await message.channel.send(
                 f"<@{user.user_id}>",
                 allowed_mentions=discord.AllowedMentions.none(),
@@ -631,7 +636,7 @@ async def debt_cutscene(message, user):
     user.save()
 
     debt_msgs = [
-        "**\*BANG\***",
+        "**\\*BANG\\***",
         "Your door gets slammed open and multiple man in black suits enter your room.",
         "**???**: Hello, you have unpaid debts. You owe us money. We are here to liquidate all your assets.",
         "*(oh for fu)*",
@@ -4798,7 +4803,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 )
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Optional[Literal[*leaderboard_types]],
+    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow"]],
     locked: Optional[bool],
 ):
     if not leaderboard_type:
