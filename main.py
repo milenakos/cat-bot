@@ -593,7 +593,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
             )
 
 
-def progress_embed(message, user, level_data, current_xp, old_xp, quest_data, diff, level_text):
+def progress_embed(message, user, level_data, current_xp, old_xp, quest_data, diff, level_text) -> discord.Embed:
     percentage_before = int(old_xp / level_data["xp"] * 10)
     percentage_after = int(current_xp / level_data["xp"] * 10)
     percenteage_left = 10 - percentage_after
@@ -857,7 +857,6 @@ async def maintaince_loop():
                         "server_count": len(bot.guilds),
                         "shard_count": len(bot.shards),
                     },
-                    timeout=15,
                 )
             except Exception:
                 print("Posting to top.gg failed.")
@@ -2298,7 +2297,9 @@ async def changetimings(
         channel.spawn_times_max = maximum_time
         channel.save()
 
-        await message.response.send_message(f"Success! The next spawn will be {minimum_time} to {maximum_time} seconds from now.")
+        await message.response.send_message(
+            f"Success! The spawn times are now {minimum_time} to {maximum_time} seconds. Please note the changes will only apply after the next spawn."
+        )
     else:
         await message.response.send_message("Please input all times.", ephemeral=True)
 
@@ -4170,8 +4171,6 @@ async def slots(message: discord.Interaction):
         else:
             desc = "**You lose!**\n\n" + desc
 
-        embed = discord.Embed(title=":slot_machine: The Slot Machine", description=desc, color=0x750F0E)
-
         button = Button(label="Spin", style=ButtonStyle.blurple)
         button.callback = spin
 
@@ -4186,13 +4185,15 @@ async def slots(message: discord.Interaction):
                     has_debt = True
                     break
             if has_debt:
-                embed.description += "\n\n**You can remove your debt!**"
+                desc += "\n\n**You can remove your debt!**"
                 button = Button(label="Remove Debt", style=ButtonStyle.blurple)
                 button.callback = remove_debt
                 myview.add_item(button)
 
         slots_lock.remove(message.user.id)
         user.save()
+
+        embed = discord.Embed(title=":slot_machine: The Slot Machine", description=desc, color=0x750F0E)
 
         try:
             await interaction.edit_original_response(embed=embed, view=myview)
@@ -4309,7 +4310,7 @@ async def random_cat(message: discord.Interaction):
     await message.response.defer()
     async with aiohttp.ClientSession() as session:
         try:
-            async with session.get("https://api.thecatapi.com/v1/images/search", timeout=15) as response:
+            async with session.get("https://api.thecatapi.com/v1/images/search") as response:
                 data = await response.json()
                 await message.followup.send(data[0]["url"])
                 await achemb(message, "randomizer", "send")
@@ -4332,7 +4333,7 @@ async def cat_fact(message: discord.Interaction):
     else:
         await message.response.defer()
         async with aiohttp.ClientSession() as session:
-            async with session.get("https://catfact.ninja/fact", timeout=10) as response:
+            async with session.get("https://catfact.ninja/fact") as response:
                 if response.status == 200:
                     data = await response.json()
                     await message.followup.send(data["fact"])
