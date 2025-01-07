@@ -3374,9 +3374,9 @@ async def gift(
                 myview.add_item(button)
                 myview.add_item(button2)
 
-                await message.response.send_message(embed=embed, view=myview)
+                await message.response.send_message(person.mention, embed=embed, view=myview)
             else:
-                await message.response.send_message(embed=embed)
+                await message.response.send_message(person.mention, embed=embed)
 
             # handle aches
             await achemb(message, "donator", "send")
@@ -3476,9 +3476,9 @@ async def gift(
                 myview.add_item(button)
                 myview.add_item(button2)
 
-                await message.response.send_message(embed=embed, view=myview)
+                await message.response.send_message(person.mention, embed=embed, view=myview)
             else:
-                await message.response.send_message(embed=embed)
+                await message.response.send_message(person.mention, embed=embed)
 
             # handle aches
             await achemb(message, "donator", "send")
@@ -5000,7 +5000,7 @@ async def givecat(message: discord.Interaction, person_id: discord.User, amount:
         description=f"gave <@{person_id.id}> {amount:,} {cat_type} cats",
         color=0x6E593C,
     )
-    await message.response.send_message(embed=embed)
+    await message.response.send_message(person_id.mention, embed=embed)
 
 
 @bot.tree.command(name="setup", description="(ADMIN) Setup cat in current channel")
@@ -5169,7 +5169,7 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
             .set_author(name=title, icon_url=icon)
             .set_footer(text=f"for {person_id.name}")
         )
-        await message.response.send_message(embed=embed)
+        await message.response.send_message(person_id.mention, embed=embed)
     else:
         await message.response.send_message("i cant find that achievement! try harder next time.", ephemeral=True)
 
