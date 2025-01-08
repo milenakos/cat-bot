@@ -2002,12 +2002,7 @@ async def on_message(message: discord.Message):
                 image_binary.seek(0)
                 await bot.create_application_emoji(name=emoji_name, image=image_binary.getvalue())
 
-        try:
-            user.custom_num = stuff[-1]
-        except Exception:
-            pass
-
-        user.custom = " ".join(stuff[2:-1]) if stuff[2] != "None" else ""
+        user.custom = " ".join(stuff[2]) if stuff[2] != "None" else ""
         emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
         user.save()
         await message.reply("success")
