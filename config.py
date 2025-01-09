@@ -18,7 +18,7 @@ BACKUP_ID = 1060545763194707998
 CRASH_MODE = "RAISE"
 
 # only send stats if server count is above this, to prevent wrong stats
-MIN_SERVER_SEND = 50000
+MIN_SERVER_SEND = nan
 
 #
 # all the following are optional (setting them to None will disable the feature)
@@ -31,11 +31,11 @@ WEBHOOK_VERIFY = os.environ["webhook_verify"]
 TOP_GG_TOKEN = os.environ["top_gg_token"]
 
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
-GITHUB_CHANNEL_ID = 1060965767044149249
+GITHUB_CHANNEL_ID = nan
 
 # all messages in this channel will be interpreted as user ids to give premium access to
 # (deprecated, all rain buyes get premium for free now)
-DONOR_CHANNEL_ID = 1249343008890028144
+DONOR_CHANNEL_ID = nan
 
 # all messages in this channel are allowed to be cat!rain commands
-RAIN_CHANNEL_ID = 1278705994536321157
+RAIN_CHANNEL_ID = nan
