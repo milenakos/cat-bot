@@ -5304,9 +5304,9 @@ async def restart(ctx: commands.Context):
     else:
         queue_restart = message
         await ctx.reply("restarting soon...")
-@bot.command()
+@bot.command(name="print")
 @commands.is_owner()
-async def print(ctx: commands.Context, *, text: str):
+async def _print(ctx: commands.Context, *, text: str):
     # just a simple one-line with no async (e.g. 2+3)
     try:
         await ctx.reply(eval(text))
@@ -5315,9 +5315,9 @@ async def print(ctx: commands.Context, *, text: str):
             await ctx.reply(traceback.format_exc())
         except Exception:
             pass
-@bot.command()
+@bot.command(name="eval")
 @commands.is_owner()
-async def eval(ctx: commands.Context, *, silly_billy: str):
+async def _eval(ctx: commands.Context, *, silly_billy: str):
     # complex eval, multi-line + async support
     # requires the full `await message.channel.send(2+3)` to get the result
 
