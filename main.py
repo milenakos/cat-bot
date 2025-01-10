@@ -1887,6 +1887,8 @@ async def on_message(message: discord.Message):
                     except Exception:
                         pass
 
+    await bot.process_commands(message)
+
 
 # the message when cat gets added to a new server
 async def on_guild_join(guild):
@@ -5159,6 +5161,140 @@ async def nuke(message: discord.Interaction):
     view = await gen(counter)
     await message.response.send_message(warning_text, view=view)
 
+@bot.command()
+async def amount(ctx: commands.Context, number: int = 1):
+    user, _ = User.get_or_create(user_id=ctx.author.id)
+    try:
+        user.custom_num = number
+        user.save()
+        await ctx.reply("success")
+    except Exception:
+        await ctx.reply("invalid number")
+# those are "owner" commands which are not really interesting
+@bot.command()
+@commands.is_owner()
+async def sweep(ctx: commands.Context):
+    try:
+        channel = Channel.get(channel_id=ctx.channel.id)
+        channel.cat = 0
+        channel.save()
+        await ctx.reply("success")
+    except Exception:
+        pass
+@bot.command()
+@commands.is_owner()
+async def rain(ctx: commands.Context, person: discord.User, dur: Union[Literal["short", "medium", "long"], int]):
+    # syntax: cat!rain 553093932012011520 short
+    user, _ = User.get_or_create(user_id=person.id)
+    if not user.rain_minutes:
+        user.rain_minutes = 0
+    match dur:
+        case "short":
+            user.rain_minutes += 2
+        case "medium":
+            user.rain_minutes += 10
+        case "long":
+            user.rain_minutes += 20
+        case _:
+            user.rain_minutes += dur
+    user.premium = True
+    user.save()
+@bot.command()
+@commands.is_owner()
+async def restart(ctx: commands.Context):
+    global in_the_past, queue_restart, about_to_stop
+    if not cat_rains or int(max(cat_rains.values())) < time.time():
+        about_to_stop = True
+        await ctx.reply("restarting now!")
+        os.system("git pull")
+        await vote_server.cleanup()
+        in_the_past = True
+        await bot.cat_bot_reload_hook()  # pyright: ignore
+    else:
+        queue_restart = ctx.message
+        await ctx.reply("restarting soon...")
+@bot.command(name="print")
+@commands.is_owner()
+async def _print(ctx: commands.Context, *, text: str):
+    # just a simple one-line with no async (e.g. 2+3)
+    try:
+        await ctx.reply(eval(text))
+    except Exception:
+        try:
+            await ctx.reply(traceback.format_exc())
+        except Exception:
+            pass
+@bot.command(name="eval")
+@commands.is_owner()
+async def _eval(ctx: commands.Context, *, silly_billy: str):
+    # complex eval, multi-line + async support
+    # requires the full `await message.channel.send(2+3)` to get the result
+
+    # async def go():
+    #  <stuff goes here>
+    #
+    # try:
+    #  bot.loop.create_task(go())
+    # except Exception:
+    #  await message.reply(traceback.format_exc())
+
+    spaced = ""
+    for i in silly_billy.split("\n"):
+        spaced += "  " + i + "\n"
+
+    intro = "async def go(message, bot):\n try:\n"
+    ending = "\n except Exception:\n  await ctx.reply(traceback.format_exc())\nbot.loop.create_task(go(message, bot))"
+
+    complete = intro + spaced + ending
+    exec(complete)
+@bot.command()
+@commands.is_owner()
+async def news(ctx: commands.Context, *, text):
+    perms: discord.Permissions = ctx.channel.permissions_for(ctx.guild.me)
+    for i in Channel.select():
+        try:
+            channeley = bot.get_channel(int(i.channel_id))
+            if not isinstance(
+                channeley,
+                Union[
+                    discord.TextChannel,
+                    discord.StageChannel,
+                    discord.VoiceChannel,
+                    discord.Thread,
+                ],
+            ):
+                continue
+            if perms.send_messages and (not ctx.thread or perms.send_messages_in_threads):
+                await channeley.send(text)
+        except Exception:
+            pass
+@bot.command()
+@commands.is_owner()
+async def custom(ctx: commands.Context, person: discord.User, type: str, ):
+    global emojis
+    user, _ = User.get_or_create(user_id=person.id)
+    if type != "None" and ctx.message.reference and ctx.message.reference.message_id:
+        emoji_name = "".join(type).lower() + "cat"
+        if emoji_name in emojis.keys():
+            await ctx.reply("emoji already exists")
+            return
+        og_msg = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+        if not og_msg or len(og_msg.attachments) == 0:
+            await ctx.reply("no image found")
+            return
+        img_data = await og_msg.attachments[0].read()
+
+        img = Image.open(io.BytesIO(img_data))
+        img.thumbnail((128, 128))
+        with io.BytesIO() as image_binary:
+            img.save(image_binary, format="PNG")
+            image_binary.seek(0)
+            await bot.create_application_emoji(name=emoji_name, image=image_binary.getvalue())
+
+    user.custom = type if type != "None" else ""
+    emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
+    user.save()
+    await ctx.reply("success")
 
 async def recieve_vote(request):
     if request.headers.get("authorization", "") != config.WEBHOOK_VERIFY:
@@ -5218,6 +5354,10 @@ async def setup(bot2):
         # copy all the commands
         command.guild_only = True
         bot2.tree.add_command(command)
+    for command in bot.walk_commands():
+        # copy all the commands
+        command.guild_only = True
+        bot2.add_command(command)
 
     context_menu_command = discord.app_commands.ContextMenu(name="catch", callback=catch)
     context_menu_command.guild_only = True
@@ -5251,140 +5391,7 @@ async def setup(bot2):
         await on_ready()
 
 
-@bot.command()
-async def amount(ctx: commands.Context, number: int = 1):
-    user, _ = User.get_or_create(user_id=ctx.author.id)
-    try:
-        user.custom_num = number
-        user.save()
-        await ctx.reply("success")
-    except Exception:
-        await ctx.reply("invalid number")
-# those are "owner" commands which are not really interesting
-@bot.command()
-@commands.is_owner()
-async def sweep(ctx: commands.Context):
-    try:
-        channel = Channel.get(channel_id=ctx.channel.id)
-        channel.cat = 0
-        channel.save()
-        await ctx.reply("success")
-    except Exception:
-        pass
-@bot.command()
-@commands.is_owner()
-async def rain(ctx: commands.Context, person: discord.User, dur: Union[Literal["short", "medium", "long"], int]):
-    # syntax: cat!rain 553093932012011520 short
-    things = text.split(" ")
-    user, _ = User.get_or_create(user_id=person.id)
-    if not user.rain_minutes:
-        user.rain_minutes = 0
-    match dur:
-        case "short":
-            user.rain_minutes += 2
-        case "medium":
-            user.rain_minutes += 10
-        case "long":
-            user.rain_minutes += 20
-        case _:
-            user.rain_minutes += dur
-    user.premium = True
-    user.save()
-@bot.command()
-@commands.is_owner()
-async def restart(ctx: commands.Context):
-    global in_the_past, queue_restart, about_to_stop
-    if not cat_rains or int(max(cat_rains.values())) < time.time():
-        about_to_stop = True
-        await ctx.reply("restarting now!")
-        os.system("git pull")
-        await vote_server.cleanup()
-        in_the_past = True
-        await bot.cat_bot_reload_hook()  # pyright: ignore
-    else:
-        queue_restart = message
-        await ctx.reply("restarting soon...")
-@bot.command(name="print")
-@commands.is_owner()
-async def _print(ctx: commands.Context, *, text: str):
-    # just a simple one-line with no async (e.g. 2+3)
-    try:
-        await ctx.reply(eval(text))
-    except Exception:
-        try:
-            await ctx.reply(traceback.format_exc())
-        except Exception:
-            pass
-@bot.command(name="eval")
-@commands.is_owner()
-async def _eval(ctx: commands.Context, *, silly_billy: str):
-    # complex eval, multi-line + async support
-    # requires the full `await message.channel.send(2+3)` to get the result
 
-    # async def go():
-    #  <stuff goes here>
-    #
-    # try:
-    #  bot.loop.create_task(go())
-    # except Exception:
-    #  await message.reply(traceback.format_exc())
-
-    spaced = ""
-    for i in silly_billy.split("\n"):
-        spaced += "  " + i + "\n"
-
-    intro = "async def go(message, bot):\n try:\n"
-    ending = "\n except Exception:\n  await ctx.reply(traceback.format_exc())\nbot.loop.create_task(go(message, bot))"
-
-    complete = intro + spaced + ending
-    exec(complete)
-@bot.command()
-@commands.is_owner()
-async def news(ctx: commands.Context, *, text):
-    for i in Channel.select():
-        try:
-            channeley = bot.get_channel(int(i.channel_id))
-            if not isinstance(
-                channeley,
-                Union[
-                    discord.TextChannel,
-                    discord.StageChannel,
-                    discord.VoiceChannel,
-                    discord.Thread,
-                ],
-            ):
-                continue
-            if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                await channeley.send(text)
-        except Exception:
-            pass
-@bot.command()
-@commands.is_owner()
-async def custom(ctx: commands.Context, person: discord.User, type: str, ):
-    global emojis
-    user, _ = User.get_or_create(user_id=person.id)
-    if type != "None" and message.reference and message.reference.message_id:
-        emoji_name = "".join(type).lower() + "cat"
-        if emoji_name in emojis.keys():
-            await message.reply("emoji already exists")
-            return
-        og_msg = await message.channel.fetch_message(ctx.message.reference.message_id)
-        if not og_msg or len(og_msg.attachments) == 0:
-            await ctx.reply("no image found")
-            return
-        img_data = await og_msg.attachments[0].read()
-
-        img = Image.open(io.BytesIO(img_data))
-        img.thumbnail((128, 128))
-        with io.BytesIO() as image_binary:
-            img.save(image_binary, format="PNG")
-            image_binary.seek(0)
-            await bot.create_application_emoji(name=emoji_name, image=image_binary.getvalue())
-
-    user.custom = type if type != "None" else ""
-    emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
-    user.save()
-    await ctx.reply("success")
 
 
 async def teardown(bot):
