@@ -5160,6 +5160,7 @@ async def nuke(message: discord.Interaction):
     view = await gen(counter)
     await message.response.send_message(warning_text, view=view)
 
+
 @bot.command()
 async def amount(ctx: commands.Context, number: int = 1):
     user, _ = User.get_or_create(user_id=ctx.author.id)
@@ -5169,7 +5170,10 @@ async def amount(ctx: commands.Context, number: int = 1):
         await ctx.reply("success")
     except Exception:
         await ctx.reply("invalid number")
+
+
 # those are "owner" commands which are not really interesting
+
 @bot.command()
 @commands.is_owner()
 async def sweep(ctx: commands.Context):
@@ -5180,6 +5184,8 @@ async def sweep(ctx: commands.Context):
         await ctx.reply("success")
     except Exception:
         pass
+
+
 @bot.command()
 @commands.is_owner()
 async def rain(ctx: commands.Context, person: discord.User, dur: Union[Literal["short", "medium", "long"], int]):
@@ -5198,6 +5204,8 @@ async def rain(ctx: commands.Context, person: discord.User, dur: Union[Literal["
             user.rain_minutes += dur
     user.premium = True
     user.save()
+
+
 @bot.command()
 @commands.is_owner()
 async def restart(ctx: commands.Context):
@@ -5206,12 +5214,15 @@ async def restart(ctx: commands.Context):
         about_to_stop = True
         await ctx.reply("restarting now!")
         os.system("git pull")
-        await vote_server.cleanup()
+        if config.WEBHOOK_VERIFY:
+            await vote_server.cleanup()
         in_the_past = True
         await bot.cat_bot_reload_hook()  # pyright: ignore
     else:
         queue_restart = ctx.message
         await ctx.reply("restarting soon...")
+
+
 @bot.command(name="print")
 @commands.is_owner()
 async def _print(ctx: commands.Context, *, text: str):
@@ -5223,6 +5234,8 @@ async def _print(ctx: commands.Context, *, text: str):
             await ctx.reply(traceback.format_exc())
         except Exception:
             pass
+
+
 @bot.command(name="eval")
 @commands.is_owner()
 async def _eval(ctx: commands.Context, *, silly_billy: str):
@@ -5246,6 +5259,8 @@ async def _eval(ctx: commands.Context, *, silly_billy: str):
 
     complete = intro + spaced + ending
     exec(complete)
+
+
 @bot.command()
 @commands.is_owner()
 async def news(ctx: commands.Context, *, text):
@@ -5267,6 +5282,8 @@ async def news(ctx: commands.Context, *, text):
                 await channeley.send(text)
         except Exception:
             pass
+
+
 @bot.command()
 @commands.is_owner()
 async def custom(ctx: commands.Context, person: discord.User, type: str, ):
@@ -5294,6 +5311,7 @@ async def custom(ctx: commands.Context, person: discord.User, type: str, ):
     emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
     user.save()
     await ctx.reply("success")
+
 
 async def recieve_vote(request):
     if request.headers.get("authorization", "") != config.WEBHOOK_VERIFY:
@@ -5388,9 +5406,6 @@ async def setup(bot2):
 
     if bot.is_ready() and not on_ready_debounce:
         await on_ready()
-
-
-
 
 
 async def teardown(bot):
