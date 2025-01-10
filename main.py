@@ -3213,10 +3213,9 @@ async def gift(
 
                 async def pay(interaction):
                     if interaction.user.id == message.user.id:
+                        await interaction.response.defer()
+                        user = get_profile(message.guild.id, message.user.id)
                         try:
-                            await interaction.response.defer()
-                            user = get_profile(message.guild.id, message.user.id)
-
                             # transfer tax
                             user[f"cat_{cat_type}"] -= tax_amount
 
