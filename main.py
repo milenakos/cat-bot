@@ -3872,11 +3872,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             lc_input = self.cattype.value.lower()
 
             # loop through the cat types and find the correct one using lowercased user input.
-            for lc_cat, ctype in cattype_lc_dict:
-                if lc_input == lc_cat:
-                    # assign formatted type string if found and break the loop
-                    cname = ctype
-                    break
+            cname = cattype_lc_dict.get(lc_input, None)
 
             # if no cat type was found, the user input was invalid. as cname is still `None`
             if cname == None:
