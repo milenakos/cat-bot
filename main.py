@@ -496,7 +496,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
 
         # Weekdays 0 Mon - 6 Sun
         # double vote xp rewards if Friday, Saturday or Sunday
-        voted_at = datetime.datetime.fromtimestamp(user.vote_time_topgg)
+        voted_at = datetime.datetime.fromtimestamp(global_user.vote_time_topgg)
         if voted_at.weekday() >= 4:
             user.vote_reward *= 2
 
