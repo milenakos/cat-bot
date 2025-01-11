@@ -66,6 +66,9 @@ for k, v in type_dict.items():
 # this list stores unique non-duplicate cattypes
 cattypes = list(type_dict.keys())
 
+#generate a dict with lowercase'd keys
+cattype_lc_dict = {i.lower(): i for i in cattypes}
+
 allowedemojis = []
 for i in type_dict.keys():
     allowedemojis.append(i.lower() + "cat")
@@ -3833,25 +3836,26 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             user2 = get_profile(message.guild.id, person2.id)
 
             # handle prisms
-            if self.cattype.value in prism_names:
+            if self.cattype.value.title() in prism_names:
+                pname = self.cattype.value.title()
                 try:
-                    prism = Prism.get(guild_id=interaction.guild.id, name=self.cattype.value)
+                    prism = Prism.get(guild_id=interaction.guild.id, name=pname)
                 except Exception:
                     await interaction.response.send_message("this prism doesnt exist", ephemeral=True)
                     return
                 if prism.user_id != interaction.user.id:
                     await interaction.response.send_message("this is not your prism", ephemeral=True)
                     return
-                if (self.currentuser == 1 and self.cattype.value in person1gives.keys()) or (
-                    self.currentuser == 2 and self.cattype.value in person2gives.keys()
+                if (self.currentuser == 1 and pname in person1gives.keys()) or (
+                    self.currentuser == 2 and pname in person2gives.keys()
                 ):
                     await interaction.response.send_message("you already added this prism", ephemeral=True)
                     return
 
                 if self.currentuser == 1:
-                    person1gives[self.cattype.value] = 1
+                    person1gives[pname] = 1
                 else:
-                    person2gives[self.cattype.value] = 1
+                    person2gives[pname] = 1
                 await interaction.response.defer()
                 await update_trade_embed(interaction)
                 return
@@ -3883,15 +3887,21 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 await update_trade_embed(interaction)
                 return
 
-            if self.cattype.value not in cattypes:
+            lc_input = self.cattype.value.lower()
+
+            # loop through the cat types and find the correct one using lowercased user input.
+            cname = cattype_lc_dict.get(lc_input, None)
+
+            # if no cat type was found, the user input was invalid. as cname is still `None`
+            if cname == None:
                 await interaction.response.send_message("add a valid cat type/prism name 💀💀💀", ephemeral=True)
                 return
 
             try:
                 if self.currentuser == 1:
-                    currset = person1gives[self.cattype.value]
+                    currset = person1gives[cname]
                 else:
-                    currset = person2gives[self.cattype.value]
+                    currset = person2gives[cname]
             except Exception:
                 currset = 0
 
@@ -3902,8 +3912,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 await interaction.response.send_message("plz number?", ephemeral=True)
                 return
 
-            if (self.currentuser == 1 and user1[f"cat_{self.cattype.value}"] < int(value) + currset) or (
-                self.currentuser == 2 and user2[f"cat_{self.cattype.value}"] < int(value) + currset
+            if (self.currentuser == 1 and user1[f"cat_{cname}"] < int(value) + currset) or (
+                self.currentuser == 2 and user2[f"cat_{cname}"] < int(value) + currset
             ):
                 await interaction.response.send_message(
                     "hell naww dude you dont even have that many cats 💀💀💀",
@@ -3914,18 +3924,18 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             # OKE SEEMS GOOD LETS ADD CATS TO THE TRADE
             if self.currentuser == 1:
                 try:
-                    person1gives[self.cattype.value] += int(value)
-                    if person1gives[self.cattype.value] == 0:
-                        person1gives.pop(self.cattype.value)
+                    person1gives[cname] += int(value)
+                    if person1gives[cname] == 0:
+                        person1gives.pop(cname)
                 except Exception:
-                    person1gives[self.cattype.value] = int(value)
+                    person1gives[cname] = int(value)
             else:
                 try:
-                    person2gives[self.cattype.value] += int(value)
-                    if person2gives[self.cattype.value] == 0:
-                        person2gives.pop(self.cattype.value)
+                    person2gives[cname] += int(value)
+                    if person2gives[cname] == 0:
+                        person2gives.pop(cname)
                 except Exception:
-                    person2gives[self.cattype.value] = int(value)
+                    person2gives[cname] = int(value)
 
             person1accept = False
             person2accept = False
