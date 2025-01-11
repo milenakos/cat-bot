@@ -490,6 +490,13 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         quest_data = battle["quests"]["vote"][quest]
         global_user, _ = User.get_or_create(user_id=user.user_id)
         user.vote_cooldown = global_user.vote_time_topgg
+
+        # Weekdays 0 Mon - 6 Sun
+        # double vote xp rewards if Friday, Saturday or Sunday
+        today = datetime.datetime.today()
+        if today.weekday() >= 4:
+            user.vote_reward *= 2
+
         current_xp = user.progress + user.vote_reward
         quest_complete = True
     elif user.misc_quest == quest:
@@ -2900,7 +2907,19 @@ async def battlepass(message: discord.Interaction):
         if user.vote_cooldown != 0:
             description += f"✅ ~~Vote on Top.gg~~\n - Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>\n"
         else:
-            description += f"{get_emoji('topgg')} [Vote on Top.gg](https://top.gg/bot/966695034340663367/vote)\n - Reward: {user.vote_reward} XP\n"
+            
+            # inform double vote xp during weekends
+            isWeedend = now.weekday() >= 4
+
+            if isWeedend:
+                description += f"-# *Double Vote XP During Weekends*\n"
+
+            description += f"{get_emoji('topgg')} [Vote on Top.gg](https://top.gg/bot/966695034340663367/vote)\n"
+
+            if isWeedend:
+                description += f" - Reward: ~~{user.vote_reward} **{user.vote_reward * 2}** XP\n"
+            else:
+                description += f" - Reward: {user.vote_reward} XP\n"
 
         # catch
         catch_quest = battle["quests"]["catch"][user.catch_quest]
