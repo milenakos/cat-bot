@@ -3866,14 +3866,14 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 return
 
             # lowercase input to normalise
-            lcInput = self.cattype.value.lower()
+            lc_input = self.cattype.value.lower()
 
             # check for edge case cat names and normalise where necessary
-            if lcInput == "egirl":
+            if lc_input == "egirl":
                 cname = "eGirl"
-            elif lcInput == "8bit":
+            elif lc_input == "8bit":
                 cname = "8bit"
-            elif lcInput == "thetrashcell":
+            elif lc_input == "thetrashcell":
                 cname = "TheTrashCell"
             else:
                 # normalise input to title case
