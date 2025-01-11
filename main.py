@@ -66,6 +66,9 @@ for k, v in type_dict.items():
 # this list stores unique non-duplicate cattypes
 cattypes = list(type_dict.keys())
 
+#generate a dict with lowercase'd keys
+cattype_lc_dict = {i.lower(): i for i in cattypes}
+
 allowedemojis = []
 for i in type_dict.keys():
     allowedemojis.append(i.lower() + "cat")
@@ -3865,22 +3868,18 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 await update_trade_embed(interaction)
                 return
 
-            # lowercase input to normalise
+            cname = None
             lc_input = self.cattype.value.lower()
 
-            # check for edge case cat names and normalise where necessary
-            if lc_input == "egirl":
-                cname = "eGirl"
-            elif lc_input == "8bit":
-                cname = "8bit"
-            elif lc_input == "thetrashcell":
-                cname = "TheTrashCell"
-            else:
-                # normalise input to title case
-                cname = self.cattype.value.title()            
+            # loop through the cat types and find the correct one using lowercased user input.
+            for lc_cat, ctype in cattype_lc_dict:
+                if lc_input == lc_cat:
+                    # assign formatted type string if found and break the loop
+                    cname = ctype
+                    break
 
-
-            if cname not in cattypes:
+            # if no cat type was found, the user input was invalid. as cname is still `None`
+            if cname == None:
                 await interaction.response.send_message("add a valid cat type/prism name 💀💀💀", ephemeral=True)
                 return
 
