@@ -5176,9 +5176,9 @@ async def amount(ctx: commands.Context, number: int = 1):
 
 @bot.command()
 @commands.is_owner()
-async def sweep(ctx: commands.Context):
+async def sweep(ctx: commands.Context, where: Optional[discord.AppCommandOptionType.channel] = None):
     try:
-        channel = Channel.get(channel_id=ctx.channel.id)
+        channel = Channel.get(channel_id=where.id if where else ctx.channel.id)
         channel.cat = 0
         channel.save()
         await ctx.reply("success")
