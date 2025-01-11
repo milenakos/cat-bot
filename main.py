@@ -3868,7 +3868,6 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 await update_trade_embed(interaction)
                 return
 
-            cname = None
             lc_input = self.cattype.value.lower()
 
             # loop through the cat types and find the correct one using lowercased user input.
