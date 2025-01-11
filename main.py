@@ -5240,22 +5240,22 @@ async def _print(ctx: commands.Context, *, text: str):
 @commands.is_owner()
 async def _eval(ctx: commands.Context, *, silly_billy: str):
     # complex eval, multi-line + async support
-    # requires the full `await message.channel.send(2+3)` to get the result
+    # requires the full `ctx.reply(2+3)` to get the result
 
-    # async def go():
-    #  <stuff goes here>
-    #
-    # try:
-    #  bot.loop.create_task(go())
-    # except Exception:
-    #  await message.reply(traceback.format_exc())
+    # async def go(ctx, bot):
+    #  try:
+    #   <stuff goes here>
+    #   
+    #  except Exception:
+    #   await ctx.reply(traceback.format_exc())
+    # bot.loop.create_task(go(ctx, bot))
 
     spaced = ""
     for i in silly_billy.split("\n"):
         spaced += "  " + i + "\n"
 
-    intro = "async def go(message, bot):\n try:\n"
-    ending = "\n except Exception:\n  await ctx.reply(traceback.format_exc())\nbot.loop.create_task(go(message, bot))"
+    intro = "async def go(ctx, bot):\n try:\n"
+    ending = "\n except Exception:\n  await ctx.reply(traceback.format_exc())\nbot.loop.create_task(go(ctx, bot))"
 
     complete = intro + spaced + ending
     exec(complete)
