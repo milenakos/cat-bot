@@ -2909,15 +2909,15 @@ async def battlepass(message: discord.Interaction):
         else:
             
             # inform double vote xp during weekends
-            isWeedend = now.weekday() >= 4
+            is_weekend = now.weekday() >= 4
 
-            if isWeedend:
+            if is_weekend:
                 description += f"-# *Double Vote XP During Weekends*\n"
 
             description += f"{get_emoji('topgg')} [Vote on Top.gg](https://top.gg/bot/966695034340663367/vote)\n"
 
-            if isWeedend:
-                description += f" - Reward: ~~{user.vote_reward} **{user.vote_reward * 2}** XP\n"
+            if is_weekend:
+                description += f" - Reward: ~~{user.vote_reward}~~ **{user.vote_reward * 2}** XP\n"
             else:
                 description += f" - Reward: {user.vote_reward} XP\n"
 
