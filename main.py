@@ -66,7 +66,7 @@ for k, v in type_dict.items():
 # this list stores unique non-duplicate cattypes
 cattypes = list(type_dict.keys())
 
-#generate a dict with lowercase'd keys
+# generate a dict with lowercase'd keys
 cattype_lc_dict = {i.lower(): i for i in cattypes}
 
 allowedemojis = []
@@ -2910,12 +2910,11 @@ async def battlepass(message: discord.Interaction):
         if user.vote_cooldown != 0:
             description += f"✅ ~~Vote on Top.gg~~\n - Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>\n"
         else:
-            
             # inform double vote xp during weekends
             is_weekend = now.weekday() >= 4
 
             if is_weekend:
-                description += f"-# *Double Vote XP During Weekends*\n"
+                description += "-# *Double Vote XP During Weekends*\n"
 
             description += f"{get_emoji('topgg')} [Vote on Top.gg](https://top.gg/bot/966695034340663367/vote)\n"
 
@@ -3846,9 +3845,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 if prism.user_id != interaction.user.id:
                     await interaction.response.send_message("this is not your prism", ephemeral=True)
                     return
-                if (self.currentuser == 1 and pname in person1gives.keys()) or (
-                    self.currentuser == 2 and pname in person2gives.keys()
-                ):
+                if (self.currentuser == 1 and pname in person1gives.keys()) or (self.currentuser == 2 and pname in person2gives.keys()):
                     await interaction.response.send_message("you already added this prism", ephemeral=True)
                     return
 
@@ -3893,7 +3890,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             cname = cattype_lc_dict.get(lc_input, None)
 
             # if no cat type was found, the user input was invalid. as cname is still `None`
-            if cname == None:
+            if cname is None:
                 await interaction.response.send_message("add a valid cat type/prism name 💀💀💀", ephemeral=True)
                 return
 
