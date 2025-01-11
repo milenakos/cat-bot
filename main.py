@@ -1165,22 +1165,9 @@ async def on_message(message: discord.Message):
         user.premium = True
         user.save()
 
-    if config.RAIN_CHANNEL_ID and message.channel.id == config.RAIN_CHANNEL_ID and text.lower().startswith("cat!rain"):
+    if config.RAIN_CHANNEL_ID and message.channel.id == config.RAIN_CHANNEL_ID and text.lower().startswith("cat!rain") and message.author.id != OWNER_ID:
         things = text.split(" ")
-        user, _ = User.get_or_create(user_id=things[1])
-        if not user.rain_minutes:
-            user.rain_minutes = 0
-
-        if things[2] == "short":
-            user.rain_minutes += 2
-        elif things[2] == "medium":
-            user.rain_minutes += 10
-        elif things[2] == "long":
-            user.rain_minutes += 20
-        else:
-            user.rain_minutes += int(things[2])
-        user.premium = True
-        user.save()
+        await rain(await bot.get_context(message), *things[1:])
 
     react_count = 0
 
@@ -5188,9 +5175,9 @@ async def sweep(ctx: commands.Context, where: Optional[discord.AppCommandOptionT
 
 @bot.command()
 @commands.is_owner()
-async def rain(ctx: commands.Context, person: discord.User, dur: Union[Literal["short", "medium", "long"], int]):
+async def rain(ctx: commands.Context, person: int, dur: Union[Literal["short", "medium", "long"], int]):
     # syntax: cat!rain 553093932012011520 short
-    user, _ = User.get_or_create(user_id=person.id)
+    user, _ = User.get_or_create(user_id=person)
     if not user.rain_minutes:
         user.rain_minutes = 0
     match dur:
