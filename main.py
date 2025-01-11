@@ -3865,15 +3865,30 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 await update_trade_embed(interaction)
                 return
 
-            if self.cattype.value not in cattypes:
+            # lowercase input to normalise
+            lcInput = self.cattype.value.lower()
+
+            # check for edge case cat names and normalise where necessary
+            if lcInput == "egirl":
+                cname = "eGirl"
+            elif lcInput == "8bit":
+                cname = "8bit"
+            elif lcInput == "thetrashcell":
+                cname = "TheTrashCell"
+            else:
+                # normalise input to title case
+                cname = self.cattype.value.title()            
+
+
+            if cname not in cattypes:
                 await interaction.response.send_message("add a valid cat type/prism name 💀💀💀", ephemeral=True)
                 return
 
             try:
                 if self.currentuser == 1:
-                    currset = person1gives[self.cattype.value]
+                    currset = person1gives[cname]
                 else:
-                    currset = person2gives[self.cattype.value]
+                    currset = person2gives[cname]
             except Exception:
                 currset = 0
 
@@ -3884,8 +3899,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 await interaction.response.send_message("plz number?", ephemeral=True)
                 return
 
-            if (self.currentuser == 1 and user1[f"cat_{self.cattype.value}"] < int(value) + currset) or (
-                self.currentuser == 2 and user2[f"cat_{self.cattype.value}"] < int(value) + currset
+            if (self.currentuser == 1 and user1[f"cat_{cname}"] < int(value) + currset) or (
+                self.currentuser == 2 and user2[f"cat_{cname}"] < int(value) + currset
             ):
                 await interaction.response.send_message(
                     "hell naww dude you dont even have that many cats 💀💀💀",
@@ -3896,18 +3911,18 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             # OKE SEEMS GOOD LETS ADD CATS TO THE TRADE
             if self.currentuser == 1:
                 try:
-                    person1gives[self.cattype.value] += int(value)
-                    if person1gives[self.cattype.value] == 0:
-                        person1gives.pop(self.cattype.value)
+                    person1gives[cname] += int(value)
+                    if person1gives[cname] == 0:
+                        person1gives.pop(cname)
                 except Exception:
-                    person1gives[self.cattype.value] = int(value)
+                    person1gives[cname] = int(value)
             else:
                 try:
-                    person2gives[self.cattype.value] += int(value)
-                    if person2gives[self.cattype.value] == 0:
-                        person2gives.pop(self.cattype.value)
+                    person2gives[cname] += int(value)
+                    if person2gives[cname] == 0:
+                        person2gives.pop(cname)
                 except Exception:
-                    person2gives[self.cattype.value] = int(value)
+                    person2gives[cname] = int(value)
 
             person1accept = False
             person2accept = False
