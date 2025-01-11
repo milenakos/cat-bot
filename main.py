@@ -5346,6 +5346,11 @@ async def on_command_error(ctx, error):
         return
 
     # implement your own filtering i give up
+    if isinstance(error, commands.CommandNotFound):
+        return
+
+    if isinstance(error, commands.NotOwner):
+        return
 
     if config.CRASH_MODE == "DM":
         try:
@@ -5387,6 +5392,7 @@ async def setup(bot2):
 
     # copy the error logger
     bot2.tree.error = on_command_error
+    bot2.on_command_error = on_command_error
 
     if config.WEBHOOK_VERIFY:
         app = web.Application()
