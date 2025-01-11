@@ -3814,25 +3814,26 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             user2 = get_profile(message.guild.id, person2.id)
 
             # handle prisms
-            if self.cattype.value in prism_names:
+            if self.cattype.value.title() in prism_names:
+                pname = self.cattype.value.title()
                 try:
-                    prism = Prism.get(guild_id=interaction.guild.id, name=self.cattype.value)
+                    prism = Prism.get(guild_id=interaction.guild.id, name=pname)
                 except Exception:
                     await interaction.response.send_message("this prism doesnt exist", ephemeral=True)
                     return
                 if prism.user_id != interaction.user.id:
                     await interaction.response.send_message("this is not your prism", ephemeral=True)
                     return
-                if (self.currentuser == 1 and self.cattype.value in person1gives.keys()) or (
-                    self.currentuser == 2 and self.cattype.value in person2gives.keys()
+                if (self.currentuser == 1 and pname in person1gives.keys()) or (
+                    self.currentuser == 2 and pname in person2gives.keys()
                 ):
                     await interaction.response.send_message("you already added this prism", ephemeral=True)
                     return
 
                 if self.currentuser == 1:
-                    person1gives[self.cattype.value] = 1
+                    person1gives[pname] = 1
                 else:
-                    person2gives[self.cattype.value] = 1
+                    person2gives[pname] = 1
                 await interaction.response.defer()
                 await update_trade_embed(interaction)
                 return
