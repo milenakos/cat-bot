@@ -49,7 +49,7 @@
       "3cats": {"emoji": "nicecat", "title": "Catch 3 cats", "xp_min": 260, "xp_max": 320, "progress": 3},
       "rare+": {"emoji": "rarecat", "title": "Catch a Rare or better cat", "xp_min": 250, "xp_max": 290, "progress": 1},
       "odd": {"emoji": "🤔", "title": "Catch on an odd second", "xp_min": 230, "xp_max": 290, "progress": 1},
-      "even": {"emoji": "🤔", "title": "Catch on an even seconds", "xp_min": 230, "xp_max": 290, "progress": 1},
+      "even": {"emoji": "🤔", "title": "Catch on an even second", "xp_min": 230, "xp_max": 290, "progress": 1},
       "prism": {"emoji": "prism", "title": "Trigger a prism boost", "xp_min": 330, "xp_max": 370, "progress": 1},
       "finenice": {"emoji": "finecat", "title": "Catch a Fine and a Nice cat", "xp_min": 340, "xp_max": 400, "progress": 3}
     },
