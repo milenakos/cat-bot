@@ -18,6 +18,7 @@ import discord
 import discord_emoji
 import emoji
 import peewee
+from concurrent.futures import ProcessPoolExecutor
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
@@ -1037,6 +1038,22 @@ async def maintaince_loop():
     await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.")
 
     loop_count += 1
+
+    if loop_count % 10 == 0:
+        with ProcessPoolExecutor() as executor:
+            executor.submit(backup_database)
+
+
+def backup_database():
+    if config.DB_TYPE != "POSTGRES":
+        return
+    try:
+        command = f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -h localhost -p 5432 cat_bot"
+
+        with open(f"backups/backup-{int(time.time())}.sql", "w") as f:
+            subprocess.run(command, stdout=f, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error during backup: {e}")
 
 
 # some code which is run when bot is started
