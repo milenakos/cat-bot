@@ -4166,13 +4166,13 @@ async def slots(message: discord.Interaction):
         user.slot_spins += 1
 
         variants = ["🍒", "🍋", "🍇", "🔔", "⭐", ":seven:"]
-        reelDurations = [11,16,26]
-        random.shuffle(reelDurations)
+        reel_durations = [11,16,26]
+        random.shuffle(reel_durations)
 
         # the k number is much cycles it will go before stopping + 1
-        col1 = random.choices(variants, k=reelDurations[0])
-        col2 = random.choices(variants, k=reelDurations[1])
-        col3 = random.choices(variants, k=reelDurations[2])
+        col1 = random.choices(variants, k=reel_durations[0])
+        col2 = random.choices(variants, k=reel_durations[1])
+        col3 = random.choices(variants, k=reel_durations[2])
 
         if message.user.id in rigged_users:
             col1[len(col1) - 2] = ":seven:"
