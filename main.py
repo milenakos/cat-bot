@@ -4179,9 +4179,10 @@ async def slots(message: discord.Interaction):
             col2[len(col2) - 2] = ":seven:"
             col3[len(col3) - 2] = ":seven:"
 
-        for current3 in range(1, len(col3) - 1):
-            current1 = min(len(col1) - 2, current3)
-            current2 = min(len(col2) - 2, current3)
+        for slotLoopNum in range(1, max(reel_durations) - 1):
+            current1 = min(len(col1) - 2, slotLoopNum)
+            current2 = min(len(col2) - 2, slotLoopNum)
+            current3 = min(len(col3) - 2, slotLoopNum)
             desc = ""
             for offset in [-1, 0, 1]:
                 desc += f"{col1[current1 + offset]} {col2[current2 + offset]} {col3[current3 + offset]}\n"
