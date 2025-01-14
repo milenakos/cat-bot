@@ -4184,7 +4184,7 @@ async def slots(message: discord.Interaction):
             current2 = min(len(col2) - 2, slot_loop_ind)
             current3 = min(len(col3) - 2, slot_loop_ind)
             desc = ""
-            blank_emoji = "" # i don't know how to get the blank emoji but that's what this is for
+            blank_emoji = get_emoji("empty")
             for offset in [-1, 0, 1]:
                 if (slot_loop_ind % 2 == 1 or slot_loop_ind == max(reel_durations) - 1) and offset == 0:
                     desc += f"➡️ {col1[current1 + offset]} {col2[current2 + offset]} {col3[current3 + offset]} ⬅️\n"
