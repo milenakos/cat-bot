@@ -4542,6 +4542,7 @@ async def dark_market(message):
 
         async def buy_cataine(interaction):
             nonlocal message, type, amount
+            user = get_profile(interaction.guild.id, interaction.user.id)
             if user[f"cat_{type}"] < amount or user.cataine_active > time.time():
                 return
             user[f"cat_{type}"] -= amount
