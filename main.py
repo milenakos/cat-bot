@@ -4166,20 +4166,23 @@ async def slots(message: discord.Interaction):
         user.slot_spins += 1
 
         variants = ["🍒", "🍋", "🍇", "🔔", "⭐", ":seven:"]
+        reel_durations = [11,16,26]
+        random.shuffle(reel_durations)
 
         # the k number is much cycles it will go before stopping + 1
-        col1 = random.choices(variants, k=11)
-        col2 = random.choices(variants, k=16)
-        col3 = random.choices(variants, k=26)
+        col1 = random.choices(variants, k=reel_durations[0])
+        col2 = random.choices(variants, k=reel_durations[1])
+        col3 = random.choices(variants, k=reel_durations[2])
 
         if message.user.id in rigged_users:
             col1[len(col1) - 2] = ":seven:"
             col2[len(col2) - 2] = ":seven:"
             col3[len(col3) - 2] = ":seven:"
 
-        for current3 in range(1, len(col3) - 1):
-            current1 = min(len(col1) - 2, current3)
-            current2 = min(len(col2) - 2, current3)
+        for slot_loop_ind in range(1, max(reel_durations) - 1):
+            current1 = min(len(col1) - 2, slot_loop_ind)
+            current2 = min(len(col2) - 2, slot_loop_ind)
+            current3 = min(len(col3) - 2, slot_loop_ind)
             desc = ""
             for offset in [-1, 0, 1]:
                 desc += f"{col1[current1 + offset]} {col2[current2 + offset]} {col3[current3 + offset]}\n"
