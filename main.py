@@ -3853,7 +3853,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
             # handle prisms
             if self.cattype.value.title() in prism_names:
-                pname = self.cattype.value.title()
+                pname = self.cattype.value.capitalize()
                 try:
                     prism = Prism.get(guild_id=interaction.guild.id, name=pname)
                 except Exception:
