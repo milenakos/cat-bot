@@ -529,7 +529,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
     else:
         level_data = battle["seasons"][str(user.season)][user.battlepass]
         level_text = f"Level {user.battlepass + 1}"
-    if current_xp > level_data["xp"]:
+    if current_xp >= level_data["xp"]:
         user.battlepass += 1
         user.progress = current_xp - level_data["xp"]
         cat_emojis = None
@@ -4166,7 +4166,7 @@ async def slots(message: discord.Interaction):
         user.slot_spins += 1
 
         variants = ["🍒", "🍋", "🍇", "🔔", "⭐", ":seven:"]
-        reel_durations = [11,16,26]
+        reel_durations = [11, 16, 26]
         random.shuffle(reel_durations)
 
         # the k number is much cycles it will go before stopping + 1
