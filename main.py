@@ -3790,8 +3790,11 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             for k, v in persongives.items():
                 if k in prism_names:
                     valuestr += f"{get_emoji('prism')} {k}\n"
+                    prismvalue = 0
                     for v2 in type_dict.values():
-                        valuenum += round(len(CAT_TYPES) / v2)
+                        prismvalue += len(CAT_TYPES) / v2
+                        
+                    valuenum += round(prismvalue)
                     continue
                 if k == "rains":
                     valuestr += f"☔ {v:,}m of Cat Rains\n"
