@@ -2566,7 +2566,7 @@ async def gen_inventory(message, person_id):
 
     if embedVar.description:
         embedVar.description += (
-            f"\n{get_emoji('staring_cat')} Cats: {total:,}, Value: {round(valuenum):,}\n{get_emoji('prism')} Prisms: {prism_list} ({prism_boost}%)"
+            f"\n{get_emoji('staring_cat')} Cats: {total:,}, Value: {round(valuenum):,}\n{get_emoji('prism')} Prisms: {prism_list} ({prism_boost}%)\n{get_emoji('sillycat')} Cattlepass Season {person.season}: Level {person.battlepass}\n"
         )
 
     if user.image.startswith("https://cdn.discordapp.com/attachments/"):
