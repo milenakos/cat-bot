@@ -3804,11 +3804,12 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             if not valuestr:
                 valuestr = "Nothing offered!"
             else:
-                valuestr += f"*Total value: {round(valuenum):,}\nTotal cats: {round(total):,}*"
+                rounded = round(valuenum, 2)
+                valuestr += f"*Total value: {rounded:,}\nTotal cats: {total:,}*"
                 if number == 1:
-                    person1value = round(valuenum)
+                    person1value = rounded
                 else:
-                    person2value = round(valuenum)
+                    person2value = rounded
             personname = person.name.replace("_", "\\_")
             coolembed.add_field(name=f"{icon} {personname}", inline=True, value=valuestr)
 
