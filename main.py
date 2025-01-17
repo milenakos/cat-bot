@@ -5,7 +5,6 @@ import io
 import json
 import logging
 import os
-import pprint
 import random
 import re
 import subprocess
