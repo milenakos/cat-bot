@@ -4952,6 +4952,7 @@ async def topcats(
 
         myview.add_item(
             Select(
+                "cat_type_dd",
                 placeholder="Select a cat type",  
                 opts=[
                     Option(label=i, emoji=get_emoji(i.lower() + "cat")) for i in cattypes
@@ -4964,7 +4965,7 @@ async def topcats(
         
         button = Button(label="Refresh", style=ButtonStyle.green)
         button.callback = lambda interaction: lb_handler(interaction, cat_type, True)
-        myview.add_item(Button(label="Refresh", style=ButtonStyle.green))
+        myview.add_item(button)
         
         # just send if first time, otherwise edit existing
         try:
