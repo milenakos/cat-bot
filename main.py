@@ -5,6 +5,7 @@ import io
 import json
 import logging
 import os
+import pprint
 import random
 import re
 import subprocess
@@ -28,6 +29,10 @@ from PIL import Image
 import config
 import msg2img
 from database import Channel, Prism, Profile, Reminder, User, db
+
+# custom classes
+
+from modules.dropdown import Option, Select
 
 logging.basicConfig(level=logging.INFO)
 
@@ -4844,6 +4849,132 @@ async def catch(message: discord.Interaction, msg: discord.Message):
     if int(is_cat) == int(msg.id):
         await achemb(message, "not_like_that", "send")
 
+@bot.tree.command(description="View the top 15 users by cat types owned")
+@discord.app_commands.rename(cat_type="type")
+@discord.app_commands.describe(
+    cat_type="The cat type to view!",
+    locked="Whether to remove page switch buttons to prevent tampering",
+)
+@discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
+async def topcats(
+    message: discord.Interaction,
+    cat_type: Optional[str],
+    locked: Optional[bool],
+):
+    if not cat_type:
+        cat_type = "Fine"  # Replace with a default cat type if needed
+        
+    if not locked:
+        locked = False
+
+    # this fat function handles a single page
+    async def lb_handler(interaction, cat_type, do_edit=None):
+        nonlocal message
+        if do_edit is None:
+            do_edit = True
+        await interaction.response.defer()
+        
+        if cat_type not in cattypes:
+            await message.response.send_message("bro what", ephemeral=True)
+            return
+
+        top_count = 15
+        
+        messager = None
+        interactor = None
+        string = ""
+        
+        unit = "cats"
+        # dynamically generate sum expression
+        total_sum_expr = peewee.fn.SUM(getattr(Profile, f"cat_{cat_type}").cast("BIGINT"))
+
+        # run the query
+        result = (
+            Profile.select(Profile.user_id, total_sum_expr.alias("final_value"))
+            .where(Profile.guild_id == message.guild.id)
+            .group_by(Profile.user_id)
+            .order_by(total_sum_expr.desc())
+        ).execute()
+
+        # find the placement of the person who ran the command and optionally the person who pressed the button
+        interactor_placement = 0
+        messager_placement = 0
+        for index, position in enumerate(result):
+            if position.user_id == interaction.user.id:
+                interactor_placement = index
+                interactor = position.final_value
+            if interaction.user != message.user and position.user_id == message.user.id:
+                messager_placement = index
+                messager = position.final_value
+
+        # dont show placements if they arent defined
+        if interactor:
+            if interactor <= 0:
+                interactor_placement = 0
+            interactor = round(interactor)
+        if messager:
+            if messager <= 0:
+                messager_placement = 0
+            messager = round(messager)
+
+        # the little place counter
+        current = 1
+        leader = False
+        for i in result[:top_count]:
+            num = i.final_value
+            if num <= 0:
+                break
+            string = string + f"{current}. {num:,} {get_emoji(cat_type.lower() + "cat")}: <@{i.user_id}>\n"
+            current += 1
+
+        # add the messager and interactor
+        if messager_placement > top_count or interactor_placement > top_count:
+            string = string + "...\n"
+            # sort them correctly!
+            if messager_placement > interactor_placement:
+                # interactor should go first
+                if interactor_placement > top_count and str(interaction.user.id) not in string:
+                    string = string + f"{interactor_placement}\\. {interactor:,} {unit}: <@{interaction.user.id}>\n"
+                if messager_placement > top_count and str(message.user.id) not in string:
+                    string = string + f"{messager_placement}\\. {messager:,} {unit}: <@{message.user.id}>\n"
+            else:
+                # messager should go first
+                if messager_placement > top_count and str(message.user.id) not in string:
+                    string = string + f"{messager_placement}\\. {messager:,} {unit}: <@{message.user.id}>\n"
+                if interactor_placement > top_count and str(interaction.user.id) not in string:
+                    string = string + f"{interactor_placement}\\. {interactor:,} {unit}: <@{interaction.user.id}>\n"
+
+        embedVar = discord.Embed(title=f"Top {top_count} Users by {get_emoji(cat_type.lower() + "cat")} {cat_type} Cats:", description=string.rstrip(), color=0x6E593C).set_footer(text="☔ Get tons of cats /rain")
+
+        global_user, _ = User.get_or_create(user_id=message.user.id)
+    
+        myview = View(timeout=3600)
+
+        myview.add_item(
+            Select(
+                placeholder="Select a cat type",  
+                opts=[
+                    Option(label=i, emoji=get_emoji(i.lower() + "cat")) for i in cattypes
+                ],
+                selected=cat_type,
+                on_select=lambda interaction, option: lb_handler(interaction, option, True),
+                disabled=locked,
+            )
+        )
+        
+        button = Button(label="Refresh", style=ButtonStyle.green)
+        button.callback = lambda interaction: lb_handler(interaction, cat_type, True)
+        myview.add_item(Button(label="Refresh", style=ButtonStyle.green))
+        
+        # just send if first time, otherwise edit existing
+        try:
+            if not do_edit:
+                raise Exception
+            await interaction.edit_original_response(embed=embedVar, view=myview)
+        except Exception:
+            await interaction.followup.send(embed=embedVar, view=myview)
+
+    await lb_handler(message, cat_type, False)
 
 @bot.tree.command(description="View the leaderboards")
 @discord.app_commands.rename(leaderboard_type="type")
