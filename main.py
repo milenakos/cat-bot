@@ -2566,7 +2566,10 @@ async def gen_inventory(message, person_id):
         cat_desc = f"u hav no cats {get_emoji('cat_cry')}"
 
     if embedVar.description:
-        embedVar.description += f"\n{get_emoji('staring_cat')} Cats: {total:,}, Value: {round(valuenum):,}\n{get_emoji('prism')} Prisms: {prism_list} ({prism_boost}%)\n\n{cat_desc}"
+        server_minutes = ""
+        if person.rain_minutes:
+            server_minutes = f" (+{person.rain_minutes} bonus minutes)"
+        embedVar.description += f"\n{get_emoji('staring_cat')} Cats: {total:,}, Value: {round(valuenum):,}\n{get_emoji('prism')} Prisms: {prism_list} ({prism_boost}%)\n☔ Rain Minutes: {user.rain_minutes}{server_minutes}\n\n{cat_desc}"
 
     if user.image.startswith("https://cdn.discordapp.com/attachments/"):
         embedVar.set_thumbnail(url=user.image)
