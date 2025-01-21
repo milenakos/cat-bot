@@ -4183,14 +4183,20 @@ async def slots(message: discord.Interaction):
             current1 = min(len(col1) - 2, slot_loop_ind)
             current2 = min(len(col2) - 2, slot_loop_ind)
             current3 = min(len(col3) - 2, slot_loop_ind)
-            desc = ""
-            for offset in [-1, 0, 1]:
-                desc += f"{col1[current1 + offset]} {col2[current2 + offset]} {col3[current3 + offset]}\n"
+            
+            # Constructing the slot display with arrows and padding
+            top_row = f"⬛ {col1[current1 - 1]} {col2[current2 - 1]} {col3[current3 - 1]} ⬛\n"
+            middle_row = f":arrow_forward: {col1[current1]} {col2[current2]} {col3[current3]} :arrow_backward:\n"
+            bottom_row = f"⬛ {col1[current1 + 1]} {col2[current2 + 1]} {col3[current3 + 1]} ⬛\n"
+            
+            desc = top_row + middle_row + bottom_row
+            
             embed = discord.Embed(
                 title=":slot_machine: The Slot Machine",
                 description=desc,
                 color=0x750F0E,
             )
+            
             try:
                 await interaction.edit_original_response(embed=embed, view=None)
             except Exception:
