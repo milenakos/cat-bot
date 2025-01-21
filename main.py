@@ -3880,7 +3880,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             if "rain" in self.cattype.value.lower():
                 user, _ = User.get_or_create(user_id=interaction.user.id)
                 try:
-                    if user.rain_minutes < int(value):
+                    if user.rain_minutes < int(value) or int(value) < 1:
                         await interaction.response.send_message("you dont have enough rains", ephemeral=True)
                         return
                 except Exception:
