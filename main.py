@@ -4178,15 +4178,15 @@ async def slots(message: discord.Interaction):
             col1[len(col1) - 2] = ":seven:"
             col2[len(col2) - 2] = ":seven:"
             col3[len(col3) - 2] = ":seven:"
-
+        
+        blank_emoji = get_emoji("empty")
         for slot_loop_ind in range(1, max(reel_durations) - 1):
             current1 = min(len(col1) - 2, slot_loop_ind)
             current2 = min(len(col2) - 2, slot_loop_ind)
             current3 = min(len(col3) - 2, slot_loop_ind)
             desc = ""
-            blank_emoji = get_emoji("empty")
             for offset in [-1, 0, 1]:
-                if (slot_loop_ind % 2 == 1 or slot_loop_ind == max(reel_durations) - 1) and offset == 0:
+                if offset == 0:
                     desc += f"➡️ {col1[current1 + offset]} {col2[current2 + offset]} {col3[current3 + offset]} ⬅️\n"
                 else:
                     desc += f"{blank_emoji} {col1[current1 + offset]} {col2[current2 + offset]} {col3[current3 + offset]} {blank_emoji}\n"
