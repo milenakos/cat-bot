@@ -529,7 +529,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
     else:
         level_data = battle["seasons"][str(user.season)][user.battlepass]
         level_text = f"Level {user.battlepass + 1}"
-    if current_xp > level_data["xp"]:
+    if current_xp >= level_data["xp"]:
         user.battlepass += 1
         user.progress = current_xp - level_data["xp"]
         cat_emojis = None
@@ -2029,7 +2029,7 @@ async def on_message(message: discord.Message):
                 image_binary.seek(0)
                 await bot.create_application_emoji(name=emoji_name, image=image_binary.getvalue())
 
-        user.custom = stuff[2] if stuff[2] != "None" else ""
+        user.custom = " ".join(stuff[2:]) if stuff[2] != "None" else ""
         emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
         user.save()
         await message.reply("success")
@@ -3880,7 +3880,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             if "rain" in self.cattype.value.lower():
                 user, _ = User.get_or_create(user_id=interaction.user.id)
                 try:
-                    if user.rain_minutes < int(value):
+                    if user.rain_minutes < int(value) or int(value) < 1:
                         await interaction.response.send_message("you dont have enough rains", ephemeral=True)
                         return
                 except Exception:
