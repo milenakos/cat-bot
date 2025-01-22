@@ -2532,17 +2532,16 @@ async def gen_inventory(message, person_id):
     else:
         color = "#6E593C"
 
+    refresh_quests(person)
     try:
         needed_xp = battle["seasons"][str(person.season)][person.battlepass]["xp"]
+        bp_line = f"\n⬆️ Battlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)"
     except Exception:
-        if person.battlepass != 0:
-            needed_xp = 1500
-        else:
-            needed_xp = 0
+        needed_xp = 1500
 
     embedVar = discord.Embed(
         title=f"{emoji_prefix}{person_id.name}",
-        description=f"⏱️ Fastest: {catch_time}s, Slowest: {slow_time}h\n{get_emoji('cat_throphy')} Achievements: {unlocked}/{total_achs}{minus_achs}\n⬆️ Battlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)",
+        description=f"⏱️ Fastest: {catch_time}s, Slowest: {slow_time}h\n{get_emoji('cat_throphy')} Achievements: {unlocked}/{total_achs}{minus_achs}{bp_line}",
         color=discord.Colour.from_str(color),
     )
 
