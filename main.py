@@ -346,7 +346,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
                     name="Achievement get!",
                     icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/cat_throphy.png",
                 )
-                .set_footer(text=f"Unlocked by {author_string.name}")
+                .set_footer(text=f"Unlocked by {author_string.mention}")
             )
         else:
             embed = (
@@ -359,7 +359,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
                     name="Demonic achievement unlocked! 🌟",
                     icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/demonic.png",
                 )
-                .set_footer(text=f"Congrats to {author_string.name}!!")
+                .set_footer(text=f"Congrats to {author_string.mention}!!")
             )
 
             embed2 = (
@@ -372,7 +372,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
                     name="Demonic achievement unlocked! 🌟",
                     icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/demonic.png",
                 )
-                .set_footer(text=f"Congrats to {author_string.name}!!")
+                .set_footer(text=f"Congrats to {author_string.mention}!!")
             )
 
         try:
@@ -1101,7 +1101,7 @@ async def on_ready():
         try:
             for i in credits[key]:
                 user = await bot.fetch_user(i)
-                peoples.append(user.name.replace("_", r"\_"))
+                peoples.append(user.mention)
         except Exception:
             # death
             pass
@@ -1469,8 +1469,7 @@ async def on_message(message: discord.Message):
         user.save()
         try:
             if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                personname = message.author.name.replace("_", "\\_")
-                await message.reply(f"ok then\n{personname} lost 1 fine cat!!!1!\nYou now have {user.cat_Fine:,} cats of dat type!")
+                await message.reply(f"ok then\n{message.author.mention} lost 1 fine cat!!!1!\nYou now have {user.cat_Fine:,} cats of dat type!")
         except Exception:
             pass
         await achemb(message, "pleasedonotthecat", "reply")
@@ -1823,7 +1822,7 @@ async def on_message(message: discord.Message):
                             kwargs["view"] = view
 
                         await send_target.send(
-                            coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
+                            coughstring.replace("{username}", message.author.mention)
                             .replace("{emoji}", str(icon))
                             .replace("{type}", le_emoji)
                             .replace("{count}", f"{new_count:,}")
@@ -2278,7 +2277,7 @@ async def preventcatch(message: discord.Interaction, person: discord.User, timeo
     user.timeout = timestamp
     user.save()
     await message.response.send_message(
-        person.name.replace("_", r"\_") + (f" can't catch cats until <t:{timestamp}:R>" if timeout > 0 else " can now catch cats again.")
+        person.mention + (f" can't catch cats until <t:{timestamp}:R>" if timeout > 0 else " can now catch cats again.")
     )
 
 
@@ -2539,7 +2538,7 @@ async def gen_inventory(message, person_id):
         needed_xp = 1500
 
     embedVar = discord.Embed(
-        title=f"{emoji_prefix}{person_id.name}",
+        title=f"{emoji_prefix}{person_id.mention}",
         description=f"⏱️ Fastest: {catch_time}s, Slowest: {slow_time}h\n{get_emoji('cat_throphy')} Achievements: {unlocked}/{total_achs}{minus_achs}\n⬆️ Battlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)",
         color=discord.Colour.from_str(color),
     )
@@ -3775,11 +3774,9 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         view.add_item(deny)
         view.add_item(add)
 
-        person1name = person1.name.replace("_", "\\_")
-        person2name = person2.name.replace("_", "\\_")
         coolembed = discord.Embed(
             color=0x6E593C,
-            title=f"{person1name} and {person2name} trade",
+            title=f"{person1.mention} and {person2.mention} trade",
             description="no way",
         )
 
@@ -3814,8 +3811,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     person1value = round(valuenum)
                 else:
                     person2value = round(valuenum)
-            personname = person.name.replace("_", "\\_")
-            coolembed.add_field(name=f"{icon} {personname}", inline=True, value=valuestr)
+            coolembed.add_field(name=f"{icon} {person.mention}", inline=True, value=valuestr)
 
         field(person1accept, person1gives, person1, 1)
         field(person2accept, person2gives, person2, 2)
@@ -5231,7 +5227,7 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
                 color=color,
             )
             .set_author(name=title, icon_url=icon)
-            .set_footer(text=f"for {person_id.name}")
+            .set_footer(text=f"for {person_id.mention}")
         )
         await message.response.send_message(person_id.mention, embed=embed)
     else:
