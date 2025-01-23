@@ -1950,7 +1950,7 @@ async def on_message(message: discord.Message):
                     except Exception:
                         pass
 
-    if text.lower().startswith("cat!amount"):
+    if text.lower().startswith("cat!amount") and perms.send_messages and (not message.thread or perms.send_messages_in_threads):
         user, _ = User.get_or_create(user_id=message.author.id)
         try:
             user.custom_num = int(text.split(" ")[1])
