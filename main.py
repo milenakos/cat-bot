@@ -505,7 +505,7 @@ def refresh_quests(user):
 
 async def progress(message: discord.Message | discord.Interaction, user: Profile, quest: str):
     # oh you passed me a user? thanks bro i'll do it on my own though
-    user = get_profile(user.user_id, user.guild_id)
+    user = get_profile(user.guild_id, user.user_id)
     refresh_quests(user)
 
     # progress
