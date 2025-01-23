@@ -2578,7 +2578,7 @@ async def gen_inventory(message, person_id):
         if cat_num != 0:
             total += cat_num
             valuenum += (len(CAT_TYPES) / type_dict[i]) * cat_num
-            cat_desc += f"{icon} **{i}** {cat_num:,}"
+            cat_desc += f"{icon} **{i}** {cat_num:,}\n"
         else:
             give_collector = False
 
