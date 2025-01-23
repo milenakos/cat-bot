@@ -2470,6 +2470,28 @@ async def last(message: discord.Interaction):
     await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.{nextpossible}")
 
 
+@bot.tree.command(description="View all the juicy numbers behind cat types")
+async def catalogue(message: discord.Interaction):
+    embed = discord.Embed(title="The Catalogue", color=0x6E593C)
+    for cat_type in cattypes:
+        in_server = (
+            Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{cat_type}")))
+            .where(Profile.guild_id == message.guild.id)
+            .where(getattr(Profile, f"cat_{cat_type}") >= 0)
+            .scalar()
+        )
+        title = f"{get_emoji(f'cat_{cat_type}')} {cat_type}"
+        if in_server == 0:
+            title = f"{get_emoji('mystery_cat')} ???"
+
+        embed.add_field(
+            name=title,
+            value=f"{round((type_dict[cat_type] / len(CAT_TYPES)) * 100, 2)}% spawn chance\n{round(len(CAT_TYPES) / type_dict[cat_type], 2)} value\n{in_server} in this server",
+        )
+
+    await message.response.send_message(embed=embed)
+
+
 async def gen_inventory(message, person_id):
     # check if we are viewing our own inv or some other person
     if person_id is None:
