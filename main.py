@@ -2482,7 +2482,7 @@ async def catalogue(message: discord.Interaction):
 
         embed.add_field(
             name=title,
-            value=f"{round((type_dict[cat_type] / len(CAT_TYPES)) * 100, 2)}% spawn chance\n{round(len(CAT_TYPES) / type_dict[cat_type], 2)} value\n{in_server} in this server",
+            value=f"{round((type_dict[cat_type] / len(CAT_TYPES)) * 100, 2)}% spawn chance\n{round(len(CAT_TYPES) / type_dict[cat_type], 2)} value\n{in_server:,} in this server",
         )
 
     await message.response.send_message(embed=embed)
