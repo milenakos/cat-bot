@@ -2143,6 +2143,11 @@ async def info(message: discord.Interaction):
     await message.followup.send(embed=embedVar)
 
 
+@bot.tree.command(description="Confused? Check out the Cat Bot Wiki!")
+async def wiki(message: discord.Interaction):
+    await message.response.send_message("https://wiki.minkos.lol/")
+
+
 @bot.tree.command(description="Read The Cat Bot Times™️")
 async def news(message: discord.Interaction):
     user, _ = User.get_or_create(user_id=message.user.id)
@@ -2487,6 +2492,8 @@ async def catalogue(message: discord.Interaction):
             value=f"{round(len(CAT_TYPES) / type_dict[cat_type], 2)} value\n{in_server:,} in this server",
         )
 
+    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/cat-types")
+
     await message.response.send_message(embed=embed)
 
 
@@ -2691,6 +2698,7 @@ Fastest times are not saved during rains.
 You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         color=0x6E593C,
     )
+    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/cat-bot#cat-rains")
 
     async def do_rain(interaction, rain_length):
         # i LOOOOVE checks
@@ -3038,6 +3046,8 @@ async def battlepass(message: discord.Interaction):
         global_user, _ = User.get_or_create(user_id=message.user.id)
         if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state:
             embedVar.set_author(name="You have unread news! /news")
+        else:
+            embedVar.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/cattlepass")
 
         if first:
             await interaction.followup.send(embed=embedVar, view=view)
@@ -3130,6 +3140,8 @@ async def prism(message: discord.Interaction):
         color=0x6E593C,
         description="are a tradeable power-up which occasionally bumps cat rarity up by one. For each prism in the server you get 1% chance of activation, or 5% if you are the owner of that prism. There is a limit of 25 prisms per server and 5 per person.",
     )
+
+    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/prisms")
 
     global_boost = 0
     user_boost = 0
@@ -3800,6 +3812,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             title=f"{person1name} and {person2name} trade",
             description="no way",
         )
+        embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/trading")
 
         # a single field for one person
         def field(personaccept, persongives, person, number):
@@ -4051,6 +4064,7 @@ async def casino(message: discord.Interaction):
         description=f"One spin costs 5 {get_emoji('epiccat')} Epic cats\nSo far you gambled {profile.gambles} times.\nAll Cat Bot users gambled {total_sum:,} times.",
         color=0x750F0E,
     )
+    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/gambling")
 
     async def spin(interaction):
         nonlocal message
@@ -4270,6 +4284,8 @@ async def slots(message: discord.Interaction):
 
     myview = View(timeout=3600)
     myview.add_item(button)
+
+    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/gambling")
 
     await message.response.send_message(embed=embed, view=myview)
 
@@ -4558,6 +4574,7 @@ async def dark_market(message):
             title="The Dark Market",
             description="after entering the secret code, they let you in. today's deal is:",
         )
+        embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/dark-market")
         deal = cataine_prices[level] if level < len(cataine_prices) else cataine_prices[-1]
         type = deal[1]
         amount = deal[0]
