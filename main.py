@@ -1758,7 +1758,7 @@ async def on_message(message: discord.Message):
                 if random.randint(0, 7) == 0:
                     # shill rains
                     suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
-                elif random.randint(0, 19) == 0:
+                if random.randint(0, 19) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "💡 " + random.choice(hints)
 
