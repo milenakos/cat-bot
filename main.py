@@ -2569,7 +2569,7 @@ async def gen_inventory(message, person_id):
     valuenum = 0
 
     # for every cat
-    lines = []
+    cat_desc = ""
     for i in cattypes:
         icon = get_emoji(i.lower() + "cat")
         cat_num = person[f"cat_{i}"]
@@ -2578,25 +2578,19 @@ async def gen_inventory(message, person_id):
         if cat_num != 0:
             total += cat_num
             valuenum += (len(CAT_TYPES) / type_dict[i]) * cat_num
-            lines.append(f"{icon} **{i}** {cat_num:,}")
+            cat_desc += f"{icon} **{i}** {cat_num:,}"
         else:
             give_collector = False
 
     if user.custom:
         icon = get_emoji(user.custom.lower().replace(" ", "") + "cat")
-        lines.append(f"{icon} **{user.custom}** {user.custom_num:,}")
+        cat_desc += f"{icon} **{user.custom}** {user.custom_num:,}"
 
-    if len(lines) == 0:
-        embedVar.add_field(name="u hav no cats", value=get_emoji("cat_cry"))
-    else:
-        mid_index = (len(lines) + 1) // 2
-        embedVar.add_field(name="\t", value="\n".join(lines[:mid_index]))
-        embedVar.add_field(name="\t", value="\n".join(lines[mid_index:]))
+    if len(cat_desc) == 0:
+        cat_desc = f"u hav no cats {get_emoji('cat_cry')}"
 
     if embedVar.description:
-        embedVar.description += (
-            f"\n{get_emoji('staring_cat')} Cats: {total:,}, Value: {round(valuenum):,}\n{get_emoji('prism')} Prisms: {prism_list} ({prism_boost}%)"
-        )
+        embedVar.description += f"\n{get_emoji('staring_cat')} Cats: {total:,}, Value: {round(valuenum):,}\n{get_emoji('prism')} Prisms: {prism_list} ({prism_boost}%)\n\n{cat_desc}"
 
     if user.image.startswith("https://cdn.discordapp.com/attachments/"):
         embedVar.set_thumbnail(url=user.image)
