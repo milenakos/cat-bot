@@ -2480,9 +2480,11 @@ async def catalogue(message: discord.Interaction):
             in_server = 0
             title = f"{get_emoji('mysterycat')} ???"
 
+        title += f" ({round((type_dict[cat_type] / len(CAT_TYPES)) * 100, 2)}%)"
+
         embed.add_field(
             name=title,
-            value=f"{round((type_dict[cat_type] / len(CAT_TYPES)) * 100, 2)}% chance, {round(len(CAT_TYPES) / type_dict[cat_type], 2)} value\n{in_server:,} in this server",
+            value=f"{round(len(CAT_TYPES) / type_dict[cat_type], 2)} value\n{in_server:,} in this server",
         )
 
     await message.response.send_message(embed=embed)
@@ -2588,8 +2590,8 @@ async def gen_inventory(message, person_id):
         embedVar.add_field(name="u hav no cats", value=get_emoji("cat_cry"))
     else:
         mid_index = (len(lines) + 1) // 2
-        embedVar.append(name="\t", value="\n".join(lines[:mid_index]))
-        embedVar.append(name="\t", value="\n".join(lines[mid_index:]))
+        embedVar.add_field(name="\t", value="\n".join(lines[:mid_index]))
+        embedVar.add_field(name="\t", value="\n".join(lines[mid_index:]))
 
     if embedVar.description:
         embedVar.description += (
