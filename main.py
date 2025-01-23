@@ -2480,7 +2480,7 @@ async def catalogue(message: discord.Interaction):
             .where(getattr(Profile, f"cat_{cat_type}") >= 0)
             .scalar()
         )
-        title = f"{get_emoji(f'cat_{cat_type}')} {cat_type}"
+        title = f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}"
         if in_server == 0:
             title = f"{get_emoji('mystery_cat')} ???"
 
