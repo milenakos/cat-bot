@@ -3812,7 +3812,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             title=f"{person1name} and {person2name} trade",
             description="no way",
         )
-        embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/trading")
+        coolembed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/trading")
 
         # a single field for one person
         def field(personaccept, persongives, person, number):
