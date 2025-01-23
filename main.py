@@ -2481,7 +2481,8 @@ async def catalogue(message: discord.Interaction):
             .scalar()
         )
         title = f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}"
-        if in_server == 0:
+        if in_server == 0 or not in_server:
+            in_server = 0
             title = f"{get_emoji('mystery_cat')} ???"
 
         embed.add_field(
