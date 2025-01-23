@@ -124,6 +124,37 @@ vote_button_texts = [
     "you should vote for cat NOW!",
 ]
 
+# various hints/fun facts
+hints = [
+    "Cat Bot has a wiki! <https://wiki.minkos.lol>",
+    "Cat Bot is open source! <https://github.com/milenakos/cat-bot>",
+    "View all cats and rarities with /catalogue",
+    "Cat Bot's birthday is on the 21st of April",
+    "Unlike the normal one, Cat's /8ball isn't rigged",
+    "/rate is 100% correct",
+    "/casino is not rigged",
+    "You probably shouldn't use a Discord bot for /remind-ers",
+    "/nuke is un-doable, /reset is not",
+    "Cat /Rain is an excellent way to support development!",
+    "Cat Bot was made later than it's support server",
+    "Cat Bot reached 100 servers 3 days after release",
+    "Cat died for 2+ weeks bc the servers were flooded with water",
+    "One of Cat's servers was seized by authorities",
+    "Cat Bot's top.gg page was deleted at one point",
+    "Cat Bot has an official soundtrack! <https://youtu.be/Ww1opmRwYF0>",
+    "4 with 832 zeros cats were deleted on September 5th, 2024",
+    "Cat Bot reached top #19 on top.gg in January 2025",
+    "Most Cat Bot features were made within 2 weeks",
+    "Cat Bot was initially made for 1 server",
+    "Cat Bot is made in Python with discord.py",
+    "Discord didn't verify Cat properly the first time",
+    "Cat Bot's code won't make you regret your life choices!",
+    "Cats aren't shared between servers to make it more fun",
+    "Cat Bot can go offline! Don't panic if it does",
+    "By default, cats spawn 2-20 minutes apart",
+    "View the last catch as well as the next one with /last",
+]
+
 # laod the jsons
 with open("config/aches.json", "r") as f:
     ach_list = json.load(f)
@@ -473,6 +504,8 @@ def refresh_quests(user):
 
 
 async def progress(message: discord.Message | discord.Interaction, user: Profile, quest: str):
+    # oh you passed me a user? thanks bro i'll do it on my own though
+    user = get_profile(user.user_id, user.guild_id)
     refresh_quests(user)
 
     # progress
@@ -1725,6 +1758,9 @@ async def on_message(message: discord.Message):
                 if random.randint(0, 7) == 0:
                     # shill rains
                     suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
+                elif random.randint(0, 19) == 0:
+                    # diplay a hint/fun fact
+                    suffix_string += "💡 " + random.choice(hints)
 
                 if channel.cought:
                     coughstring = channel.cought
