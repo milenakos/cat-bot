@@ -2507,7 +2507,10 @@ async def last(message: discord.Interaction):
     if channel and not channel.cat:
         nextpossible = f"\nthe next cat will spawn between <t:{int(lasttime) + channel.spawn_times_min}:R> and <t:{int(lasttime) + channel.spawn_times_max}:R>"
 
-    await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.{nextpossible}")
+    embed = discord.Embed(description=f"the last cat in this channel was caught {displayedtime}.{nextpossible}", color=0x6E593C)
+    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/spawning")
+
+    await message.response.send_message(embed=embed)
 
 
 @bot.tree.command(description="View all the juicy numbers behind cat types")
