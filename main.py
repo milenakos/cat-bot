@@ -128,6 +128,36 @@ vote_button_texts = [
     "you should vote for cat NOW!",
 ]
 
+# various hints/fun facts
+hints = [
+    "Cat Bot has a wiki! <https://wiki.minkos.lol>",
+    "Cat Bot is open source! <https://github.com/milenakos/cat-bot>",
+    "View all cats and rarities with /catalogue",
+    "Cat Bot's birthday is on the 21st of April",
+    "Unlike the normal one, Cat's /8ball isn't rigged",
+    "/rate says /rate is 100% correct",
+    "/casino is surely not rigged",
+    "You probably shouldn't use a Discord bot for /remind-ers",
+    "/nuke is un-doable, /reset is not",
+    "Cat /Rain is an excellent way to support development!",
+    "Cat Bot was made later than it's support server",
+    "Cat Bot reached 100 servers 3 days after release",
+    "Cat died for 2+ weeks bc the servers were flooded with water",
+    "Cat Bot's top.gg page was deleted at one point",
+    "Cat Bot has an official soundtrack! <https://youtu.be/Ww1opmRwYF0>",
+    "4 with 832 zeros cats were deleted on September 5th, 2024",
+    "Cat Bot reached top #19 on top.gg in January 2025",
+    "Most Cat Bot features were made within 2 weeks",
+    "Cat Bot was initially made for only one server",
+    "Cat Bot is made in Python with discord.py",
+    "Discord didn't verify Cat properly the first time",
+    "Looking at Cat's code won't make you regret your life choices!",
+    "Cats aren't shared between servers to make it more fair and fun",
+    "Cat Bot can go offline! Don't panic if it does",
+    "By default, cats spawn 2-20 minutes apart",
+    "View the last catch as well as the next one with /last",
+]
+
 # laod the jsons
 with open("config/aches.json", "r") as f:
     ach_list = json.load(f)
@@ -477,6 +507,8 @@ def refresh_quests(user):
 
 
 async def progress(message: discord.Message | discord.Interaction, user: Profile, quest: str):
+    # oh you passed me a user? thanks bro i'll do it on my own though
+    user = get_profile(user.guild_id, user.user_id)
     refresh_quests(user)
 
     # progress
@@ -1729,6 +1761,9 @@ async def on_message(message: discord.Message):
                 if random.randint(0, 7) == 0:
                     # shill rains
                     suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
+                if random.randint(0, 19) == 0:
+                    # diplay a hint/fun fact
+                    suffix_string += "\n💡 " + random.choice(hints)
 
                 if channel.cought:
                     coughstring = channel.cought
@@ -1918,7 +1953,7 @@ async def on_message(message: discord.Message):
                     except Exception:
                         pass
 
-    if text.lower().startswith("cat!amount"):
+    if text.lower().startswith("cat!amount") and perms.send_messages and (not message.thread or perms.send_messages_in_threads):
         user, _ = User.get_or_create(user_id=message.author.id)
         try:
             user.custom_num = int(text.split(" ")[1])
@@ -2033,7 +2068,7 @@ async def on_message(message: discord.Message):
                 image_binary.seek(0)
                 await bot.create_application_emoji(name=emoji_name, image=image_binary.getvalue())
 
-        user.custom = stuff[2] if stuff[2] != "None" else ""
+        user.custom = " ".join(stuff[2:]) if stuff[2] != "None" else ""
         emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
         user.save()
         await message.reply("success")
@@ -2107,7 +2142,7 @@ async def help(message):
         )
         .add_field(
             name="Other features",
-            value="Cat Bot has extra fun commands which you will discover along the way.\nAnything unclear? Drop us a line at our [Discord server](https://discord.gg/staring).",
+            value="Cat Bot has extra fun commands which you will discover along the way.\nAnything unclear? Check out [our wiki](https://wiki.minkos.lol) or drop us a line at our [Discord server](https://discord.gg/staring).",
             inline=False,
         )
         .set_footer(
@@ -2145,6 +2180,11 @@ async def info(message: discord.Interaction):
         embedVar.timestamp = datetime.datetime.fromtimestamp(int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8")))
         embedVar.set_footer(text="Last code update:")
     await message.followup.send(embed=embedVar)
+
+
+@bot.tree.command(description="Confused? Check out the Cat Bot Wiki!")
+async def wiki(message: discord.Interaction):
+    await message.response.send_message("https://wiki.minkos.lol/")
 
 
 @bot.tree.command(description="Read The Cat Bot Times™️")
@@ -2471,7 +2511,37 @@ async def last(message: discord.Interaction):
     if channel and not channel.cat:
         nextpossible = f"\nthe next cat will spawn between <t:{int(lasttime) + channel.spawn_times_min}:R> and <t:{int(lasttime) + channel.spawn_times_max}:R>"
 
-    await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.{nextpossible}")
+    embed = discord.Embed(description=f"the last cat in this channel was caught {displayedtime}.{nextpossible}", color=0x6E593C)
+    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/spawning")
+
+    await message.response.send_message(embed=embed)
+
+
+@bot.tree.command(description="View all the juicy numbers behind cat types")
+async def catalogue(message: discord.Interaction):
+    embed = discord.Embed(title="The Catalogue", color=0x6E593C)
+    for cat_type in cattypes:
+        in_server = (
+            Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{cat_type}")))
+            .where(Profile.guild_id == message.guild.id)
+            .where(getattr(Profile, f"cat_{cat_type}") > 0)
+            .scalar()
+        )
+        title = f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}"
+        if in_server == 0 or not in_server:
+            in_server = 0
+            title = f"{get_emoji('mysterycat')} ???"
+
+        title += f" ({round((type_dict[cat_type] / len(CAT_TYPES)) * 100, 2)}%)"
+
+        embed.add_field(
+            name=title,
+            value=f"{round(len(CAT_TYPES) / type_dict[cat_type], 2)} value\n{in_server:,} in this server",
+        )
+
+    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/cat-types")
+
+    await message.response.send_message(embed=embed)
 
 
 async def gen_inventory(message, person_id):
@@ -2501,7 +2571,6 @@ async def gen_inventory(message, person_id):
 
     # now we count time i think
     catch_time = person.time
-    is_empty = True
 
     catch_time = "---" if catch_time >= 99999999999999 else str(round(catch_time, 3))
 
@@ -2536,9 +2605,15 @@ async def gen_inventory(message, person_id):
     else:
         color = "#6E593C"
 
+    refresh_quests(person)
+    try:
+        needed_xp = battle["seasons"][str(person.season)][person.battlepass]["xp"]
+    except Exception:
+        needed_xp = 1500
+
     embedVar = discord.Embed(
         title=f"{emoji_prefix}{person_id.name}",
-        description=f"⏱️ Fastest: {catch_time}s, Slowest: {slow_time}h\n{get_emoji('cat_throphy')} Achievements: {unlocked}/{total_achs}{minus_achs}",
+        description=f"⏱️ Fastest: {catch_time}s, Slowest: {slow_time}h\n{get_emoji('cat_throphy')} Achievements: {unlocked}/{total_achs}{minus_achs}\n⬆️ Battlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)",
         color=discord.Colour.from_str(color),
     )
 
@@ -2548,6 +2623,7 @@ async def gen_inventory(message, person_id):
     valuenum = 0
 
     # for every cat
+    cat_desc = ""
     for i in cattypes:
         icon = get_emoji(i.lower() + "cat")
         cat_num = person[f"cat_{i}"]
@@ -2556,22 +2632,19 @@ async def gen_inventory(message, person_id):
         if cat_num != 0:
             total += cat_num
             valuenum += (len(CAT_TYPES) / type_dict[i]) * cat_num
-            embedVar.add_field(name=f"{icon} {i}", value=f"{cat_num:,}", inline=True)
-            is_empty = False
+            cat_desc += f"{icon} **{i}** {cat_num:,}\n"
         else:
             give_collector = False
 
     if user.custom:
         icon = get_emoji(user.custom.lower().replace(" ", "") + "cat")
-        embedVar.add_field(name=f"{icon} {user.custom}", value=f"{user.custom_num:,}", inline=True)
+        cat_desc += f"{icon} **{user.custom}** {user.custom_num:,}"
 
-    if is_empty and not user.custom:
-        embedVar.add_field(name="None", value=f"u hav no cats {get_emoji('cat_cry')}", inline=True)
+    if len(cat_desc) == 0:
+        cat_desc = f"u hav no cats {get_emoji('cat_cry')}"
 
     if embedVar.description:
-        embedVar.description += (
-            f"\n{get_emoji('staring_cat')} Cats: {total:,}, Value: {round(valuenum):,}\n{get_emoji('prism')} Prisms: {prism_list} ({prism_boost}%)"
-        )
+        embedVar.description += f"\n{get_emoji('staring_cat')} Cats: {total:,}, Value: {round(valuenum):,}\n{get_emoji('prism')} Prisms: {prism_list} ({prism_boost}%)\n\n{cat_desc}"
 
     if user.image.startswith("https://cdn.discordapp.com/attachments/"):
         embedVar.set_thumbnail(url=user.image)
@@ -2672,6 +2745,7 @@ Fastest times are not saved during rains.
 You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         color=0x6E593C,
     )
+    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/cat-bot#cat-rains")
 
     async def do_rain(interaction, rain_length):
         # i LOOOOVE checks
@@ -3019,6 +3093,8 @@ async def battlepass(message: discord.Interaction):
         global_user, _ = User.get_or_create(user_id=message.user.id)
         if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state:
             embedVar.set_author(name="You have unread news! /news")
+        else:
+            embedVar.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/cattlepass")
 
         if first:
             await interaction.followup.send(embed=embedVar, view=view)
@@ -3111,6 +3187,8 @@ async def prism(message: discord.Interaction):
         color=0x6E593C,
         description="are a tradeable power-up which occasionally bumps cat rarity up by one. For each prism in the server you get 1% chance of activation, or 5% if you are the owner of that prism. There is a limit of 25 prisms per server and 5 per person.",
     )
+
+    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/prisms")
 
     global_boost = 0
     user_boost = 0
@@ -3781,6 +3859,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             title=f"{person1name} and {person2name} trade",
             description="no way",
         )
+        coolembed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/trading")
 
         # a single field for one person
         def field(personaccept, persongives, person, number):
@@ -3884,7 +3963,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             if "rain" in self.cattype.value.lower():
                 user, _ = User.get_or_create(user_id=interaction.user.id)
                 try:
-                    if user.rain_minutes < int(value):
+                    if user.rain_minutes < int(value) or int(value) < 1:
                         await interaction.response.send_message("you dont have enough rains", ephemeral=True)
                         return
                 except Exception:
@@ -4032,6 +4111,7 @@ async def casino(message: discord.Interaction):
         description=f"One spin costs 5 {get_emoji('epiccat')} Epic cats\nSo far you gambled {profile.gambles} times.\nAll Cat Bot users gambled {total_sum:,} times.",
         color=0x750F0E,
     )
+    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/gambling")
 
     async def spin(interaction):
         nonlocal message
@@ -4251,6 +4331,8 @@ async def slots(message: discord.Interaction):
 
     myview = View(timeout=3600)
     myview.add_item(button)
+
+    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/gambling")
 
     await message.response.send_message(embed=embed, view=myview)
 
@@ -4539,6 +4621,7 @@ async def dark_market(message):
             title="The Dark Market",
             description="after entering the secret code, they let you in. today's deal is:",
         )
+        embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/dark-market")
         deal = cataine_prices[level] if level < len(cataine_prices) else cataine_prices[-1]
         type = deal[1]
         amount = deal[0]
