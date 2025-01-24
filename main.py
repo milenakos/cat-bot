@@ -2515,7 +2515,7 @@ async def last(message: discord.Interaction):
 async def catalogue(message: discord.Interaction):
     embed = discord.Embed(title="The Catalogue", color=0x6E593C)
     for cat_type in cattypes:
-        in_server = Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{cat_type}"))).where(Profile.guild_id == message.guild.id).scalar()
+        in_server = Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{cat_type}"))).where(Profile.guild_id == message.guild.id).where(getattr(Profile, f"cat{cat_type}")>0).scalar()
         title = f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}"
         if in_server == 0 or not in_server:
             in_server = 0
