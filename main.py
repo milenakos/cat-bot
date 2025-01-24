@@ -2517,7 +2517,7 @@ async def catalogue(message: discord.Interaction):
         in_server = (
             Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{cat_type}")))
             .where(Profile.guild_id == message.guild.id)
-            .where(getattr(Profile, f"cat{cat_type}") > 0)
+            .where(getattr(Profile, f"cat_{cat_type}") > 0)
             .scalar()
         )
         title = f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}"
