@@ -131,25 +131,24 @@ hints = [
     "View all cats and rarities with /catalogue",
     "Cat Bot's birthday is on the 21st of April",
     "Unlike the normal one, Cat's /8ball isn't rigged",
-    "/rate is 100% correct",
-    "/casino is not rigged",
+    "/rate says /rate is 100% correct",
+    "/casino is surely not rigged",
     "You probably shouldn't use a Discord bot for /remind-ers",
     "/nuke is un-doable, /reset is not",
     "Cat /Rain is an excellent way to support development!",
     "Cat Bot was made later than it's support server",
     "Cat Bot reached 100 servers 3 days after release",
     "Cat died for 2+ weeks bc the servers were flooded with water",
-    "One of Cat's servers was seized by authorities",
     "Cat Bot's top.gg page was deleted at one point",
     "Cat Bot has an official soundtrack! <https://youtu.be/Ww1opmRwYF0>",
     "4 with 832 zeros cats were deleted on September 5th, 2024",
     "Cat Bot reached top #19 on top.gg in January 2025",
     "Most Cat Bot features were made within 2 weeks",
-    "Cat Bot was initially made for 1 server",
+    "Cat Bot was initially made for only one server",
     "Cat Bot is made in Python with discord.py",
     "Discord didn't verify Cat properly the first time",
-    "Cat Bot's code won't make you regret your life choices!",
-    "Cats aren't shared between servers to make it more fun",
+    "Looking at Cat's code won't make you regret your life choices!",
+    "Cats aren't shared between servers to make it more fair and fun",
     "Cat Bot can go offline! Don't panic if it does",
     "By default, cats spawn 2-20 minutes apart",
     "View the last catch as well as the next one with /last",
@@ -2515,7 +2514,12 @@ async def last(message: discord.Interaction):
 async def catalogue(message: discord.Interaction):
     embed = discord.Embed(title="The Catalogue", color=0x6E593C)
     for cat_type in cattypes:
-        in_server = Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{cat_type}"))).where(Profile.guild_id == message.guild.id).where(getattr(Profile, f"cat{cat_type}")>0).scalar()
+        in_server = (
+            Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{cat_type}")))
+            .where(Profile.guild_id == message.guild.id)
+            .where(getattr(Profile, f"cat{cat_type}") > 0)
+            .scalar()
+        )
         title = f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}"
         if in_server == 0 or not in_server:
             in_server = 0
