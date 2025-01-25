@@ -5507,6 +5507,18 @@ async def recieve_vote(request):
     return web.Response(text="ok", status=200)
 
 
+async def check_supporter(request):
+    if request.headers.get("authorization", "") != config.WEBHOOK_VERIFY:
+        return web.Response(text="bad", status=403)
+    request_json = await request.json()
+
+    user, _ = User.get_or_create(user_id=int(request_json["user"]))
+    if user.supporter:
+        return web.Response(text="1", status=200)
+    else:
+        return web.Response(text="0", status=200)
+
+
 # this is the crash handler
 async def on_command_error(ctx, error):
     if ctx.guild is None:
@@ -5557,7 +5569,7 @@ async def setup(bot2):
 
     if config.WEBHOOK_VERIFY:
         app = web.Application()
-        app.add_routes([web.post("/", recieve_vote)])
+        app.add_routes([web.post("/", recieve_vote), web.get("/supporter", check_supporter)])
         vote_server = web.AppRunner(app)
         await vote_server.setup()
         site = web.TCPSite(vote_server, "0.0.0.0", 8069)
