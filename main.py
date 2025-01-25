@@ -5513,7 +5513,7 @@ async def check_supporter(request):
     request_json = await request.json()
 
     user, _ = User.get_or_create(user_id=int(request_json["user"]))
-    if user.supporter:
+    if user.premium:
         return web.Response(text="1", status=200)
     else:
         return web.Response(text="0", status=200)
