@@ -22,7 +22,7 @@ cattypes = [
     "Rickroll",
     "Reverse",
     "Superior",
-    "TheTrashCell",
+    "Trash",
     "Legendary",
     "Mythic",
     "8bit",

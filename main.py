@@ -47,7 +47,7 @@ type_dict = {
     "Rickroll": 125,
     "Reverse": 100,
     "Superior": 80,
-    "TheTrashCell": 50,
+    "Trash": 50,
     "Legendary": 35,
     "Mythic": 25,
     "8bit": 20,
@@ -739,15 +739,25 @@ async def finale(message, user):
 async def cat_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     return [discord.app_commands.Choice(name=choice, value=choice) for choice in cattypes if current.lower() in choice.lower()][:25]
 
+
 async def lb_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
-    return [discord.app_commands.Choice(name=choice, value=choice) for choice in ["All"] + cats_in_server(interaction.guild_id) if current.lower() in choice.lower()][:25]
+    return [
+        discord.app_commands.Choice(name=choice, value=choice) for choice in ["All"] + cats_in_server(interaction.guild_id) if current.lower() in choice.lower()
+    ][:25]
+
 
 def cats_in_server(guild_id):
-    return [cat_type for cat_type in cattypes if (Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{cat_type}")))
+    return [
+        cat_type
+        for cat_type in cattypes
+        if (
+            Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{cat_type}")))
             .where(Profile.guild_id == guild_id)
             .where(getattr(Profile, f"cat_{cat_type}") > 0)
-            .scalar())]
-    
+            .scalar()
+        )
+    ]
+
 
 # function to autocomplete cat_type choices for /gift, which shows only cats user has and how many of them they have
 async def gift_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
@@ -1678,13 +1688,17 @@ async def on_message(message: discord.Message):
                         partial_type = v
                         break
 
-                if not partial_type:
-                    return
+                if not partial_type and "thetrashcellcat" in catchcontents:
+                    partial_type = "trashcat"
+                    le_emoji = "Trash"
+                else:
+                    if not partial_type:
+                        return
 
-                for i in cattypes:
-                    if i.lower() in partial_type:
-                        le_emoji = i
-                        break
+                    for i in cattypes:
+                        if i.lower() in partial_type:
+                            le_emoji = i
+                            break
 
                 suffix_string = ""
 
@@ -4255,7 +4269,7 @@ async def slots(message: discord.Interaction):
         user.slot_spins += 1
 
         variants = ["🍒", "🍋", "🍇", "🔔", "⭐", ":seven:"]
-        reel_durations = [random.randint(9,12), random.randint(15,22), random.randint(25,28)]
+        reel_durations = [random.randint(9, 12), random.randint(15, 22), random.randint(25, 28)]
         random.shuffle(reel_durations)
 
         # the k number is much cycles it will go before stopping + 1
@@ -4267,7 +4281,7 @@ async def slots(message: discord.Interaction):
             col1[len(col1) - 2] = ":seven:"
             col2[len(col2) - 2] = ":seven:"
             col3[len(col3) - 2] = ":seven:"
-        
+
         blank_emoji = get_emoji("empty")
         for slot_loop_ind in range(1, max(reel_durations) - 1):
             current1 = min(len(col1) - 2, slot_loop_ind)
@@ -4962,10 +4976,9 @@ async def leaderboards(
 
     # this fat function handles a single page
     async def lb_handler(interaction, type, do_edit=None, specific_cat="All"):
-        
         if specific_cat is None:
             specific_cat = "All"
-        
+
         nonlocal message
         if do_edit is None:
             do_edit = True
@@ -4973,20 +4986,20 @@ async def leaderboards(
 
         messager = None
         interactor = None
-        
+
         # leaderboard top amount
         show_amount = 15
-        
+
         string = ""
         if type == "Cats":
             unit = "cats"
             # dynamically generate sum expression
-            
+
             if specific_cat == "All":
                 total_sum_expr = peewee.fn.SUM(sum(getattr(Profile, f"cat_{cat_type}").cast("BIGINT") for cat_type in cattypes))
             else:
                 total_sum_expr = peewee.fn.SUM(getattr(Profile, f"cat_{specific_cat}").cast("BIGINT"))
-            
+
             # run the query
             result = (
                 Profile.select(Profile.user_id, total_sum_expr.alias("final_value"))
@@ -5012,7 +5025,7 @@ async def leaderboards(
                     if len(rarest_holder) > 10:
                         joined = f"{len(rarest_holder)} people"
                     string = f"Rarest cat: {catmoji} ({joined}'s)\n\n"
-                    
+
         elif type == "Value":
             unit = "value"
             total_sum_expr = peewee.fn.SUM(
@@ -5075,7 +5088,7 @@ async def leaderboards(
             messager = round(messager)
         elif messager and type == "Fast" and messager >= 99999999999999:
             messager_placement = 0
-            
+
         emoji = ""
         if type == "Cats" and specific_cat != "All":
             emoji = get_emoji(specific_cat.lower() + "cat")
@@ -5119,32 +5132,37 @@ async def leaderboards(
                 if interactor_placement > show_amount and str(interaction.user.id) not in string:
                     string = string + f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: <@{interaction.user.id}>\n"
 
-        title = type + " Leaderboard" 
+        title = type + " Leaderboard"
         if type == "Cats":
             title = f"{specific_cat} {title}"
-        
+
         embedVar = discord.Embed(title=title, description=string.rstrip(), color=0x6E593C).set_footer(text="☔ Get tons of cats /rain")
 
         global_user, _ = User.get_or_create(user_id=message.user.id)
-        
+
         if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state:
             embedVar.set_author(name=f"{message.user} has unread news! /news")
 
         # handle funny buttons
         myview = View(timeout=3600)
         buttons = []
-        
+
         if type == "Cats":
             dd_opts = [Option(label="All", emoji=get_emoji("staring_cat"), value="All")]
-        
+
             for i in cattypes:
-                in_server = Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{i}"))).where(Profile.guild_id == message.guild.id).where(getattr(Profile, f"cat_{i}") > 0).scalar()
+                in_server = (
+                    Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{i}")))
+                    .where(Profile.guild_id == message.guild.id)
+                    .where(getattr(Profile, f"cat_{i}") > 0)
+                    .scalar()
+                )
                 if in_server:
                     dd_opts.append(Option(label=i, emoji=get_emoji(i.lower() + "cat"), value=i))
-            
+
             dropdown = Select(
                 "cat_type_dd",
-                placeholder="Select a cat type",  
+                placeholder="Select a cat type",
                 opts=dd_opts,
                 selected=specific_cat,
                 on_select=lambda interaction, option: lb_handler(interaction, type, True, option),
@@ -5163,7 +5181,7 @@ async def leaderboards(
             for i in buttons:
                 myview.add_item(i)
             if type == "Cats":
-                myview.add_item(dropdown)    
+                myview.add_item(dropdown)
         else:
             myview.add_item(buttons[leaderboard_types.index(type)])
 
@@ -5559,12 +5577,11 @@ async def setup(bot2):
 
 async def teardown(bot):
     await vote_server.cleanup()
-    
-    
-    
+
+
 # Reusable UI components
 class Option:
-    def __init__(self, label, emoji, value = None):
+    def __init__(self, label, emoji, value=None):
         self.label = label
         self.emoji = emoji
         self.value = value if value is not None else label
@@ -5587,11 +5604,7 @@ class Select(discord.ui.Select):
             self.on_select = on_select
 
         for opt in opts:
-            options.append(
-                discord.SelectOption(
-                    label=opt.label, value=opt.value, emoji=opt.emoji, default=opt.value == selected
-                )
-            )
+            options.append(discord.SelectOption(label=opt.label, value=opt.value, emoji=opt.emoji, default=opt.value == selected))
 
         super().__init__(
             placeholder=placeholder,
@@ -5605,4 +5618,3 @@ class Select(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         if self.on_select is not None and callable(self.on_select):
             await self.on_select(interaction, self.values[0])
-
