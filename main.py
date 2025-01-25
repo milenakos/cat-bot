@@ -29,10 +29,6 @@ import config
 import msg2img
 from database import Channel, Prism, Profile, Reminder, User, db
 
-# custom classes
-
-from modules.dropdown import Option, Select
-
 logging.basicConfig(level=logging.INFO)
 
 # trigger warning, base64 encoded for your convinience
@@ -743,6 +739,15 @@ async def finale(message, user):
 async def cat_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     return [discord.app_commands.Choice(name=choice, value=choice) for choice in cattypes if current.lower() in choice.lower()][:25]
 
+async def lb_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
+    return [discord.app_commands.Choice(name=choice, value=choice) for choice in ["All"] + cats_in_server(interaction.guild_id) if current.lower() in choice.lower()][:25]
+
+def cats_in_server(guild_id):
+    return [cat_type for cat_type in cattypes if (Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{cat_type}")))
+            .where(Profile.guild_id == guild_id)
+            .where(getattr(Profile, f"cat_{cat_type}") > 0)
+            .scalar())]
+    
 
 # function to autocomplete cat_type choices for /gift, which shows only cats user has and how many of them they have
 async def gift_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
@@ -4931,143 +4936,19 @@ async def catch(message: discord.Interaction, msg: discord.Message):
     if int(is_cat) == int(msg.id):
         await achemb(message, "not_like_that", "send")
 
-@bot.tree.command(description="View the top 15 users by cat types owned")
-@discord.app_commands.rename(cat_type="type")
-@discord.app_commands.describe(
-    cat_type="The cat type to view!",
-    locked="Whether to remove page switch buttons to prevent tampering",
-)
-@discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
-async def topcats(
-    message: discord.Interaction,
-    cat_type: Optional[str],
-    locked: Optional[bool],
-):
-    if not cat_type:
-        cat_type = "Fine"  # Replace with a default cat type if needed
-        
-    if not locked:
-        locked = False
-
-    # this fat function handles a single page
-    async def lb_handler(interaction, cat_type, do_edit=None):
-        nonlocal message
-        if do_edit is None:
-            do_edit = True
-        await interaction.response.defer()
-        
-        if cat_type not in cattypes:
-            await message.response.send_message("bro what", ephemeral=True)
-            return
-
-        top_count = 15
-        
-        messager = None
-        interactor = None
-        string = ""
-        
-        unit = "cats"
-        # dynamically generate sum expression
-        total_sum_expr = peewee.fn.SUM(getattr(Profile, f"cat_{cat_type}").cast("BIGINT"))
-
-        # run the query
-        result = (
-            Profile.select(Profile.user_id, total_sum_expr.alias("final_value"))
-            .where(Profile.guild_id == message.guild.id)
-            .group_by(Profile.user_id)
-            .order_by(total_sum_expr.desc())
-        ).execute()
-
-        # find the placement of the person who ran the command and optionally the person who pressed the button
-        interactor_placement = 0
-        messager_placement = 0
-        for index, position in enumerate(result):
-            if position.user_id == interaction.user.id:
-                interactor_placement = index
-                interactor = position.final_value
-            if interaction.user != message.user and position.user_id == message.user.id:
-                messager_placement = index
-                messager = position.final_value
-
-        # dont show placements if they arent defined
-        if interactor:
-            if interactor <= 0:
-                interactor_placement = 0
-            interactor = round(interactor)
-        if messager:
-            if messager <= 0:
-                messager_placement = 0
-            messager = round(messager)
-
-        # the little place counter
-        current = 1
-        leader = False
-        for i in result[:top_count]:
-            num = i.final_value
-            if num <= 0:
-                break
-            string = string + f"{current}. {num:,} {get_emoji(cat_type.lower() + "cat")}: <@{i.user_id}>\n"
-            current += 1
-
-        # add the messager and interactor
-        if messager_placement > top_count or interactor_placement > top_count:
-            string = string + "...\n"
-            # sort them correctly!
-            if messager_placement > interactor_placement:
-                # interactor should go first
-                if interactor_placement > top_count and str(interaction.user.id) not in string:
-                    string = string + f"{interactor_placement}\\. {interactor:,} {unit}: <@{interaction.user.id}>\n"
-                if messager_placement > top_count and str(message.user.id) not in string:
-                    string = string + f"{messager_placement}\\. {messager:,} {unit}: <@{message.user.id}>\n"
-            else:
-                # messager should go first
-                if messager_placement > top_count and str(message.user.id) not in string:
-                    string = string + f"{messager_placement}\\. {messager:,} {unit}: <@{message.user.id}>\n"
-                if interactor_placement > top_count and str(interaction.user.id) not in string:
-                    string = string + f"{interactor_placement}\\. {interactor:,} {unit}: <@{interaction.user.id}>\n"
-
-        embedVar = discord.Embed(title=f"Top {top_count} Users by {get_emoji(cat_type.lower() + "cat")} {cat_type} Cats:", description=string.rstrip(), color=0x6E593C).set_footer(text="☔ Get tons of cats /rain")
-
-        global_user, _ = User.get_or_create(user_id=message.user.id)
-    
-        myview = View(timeout=3600)
-
-        myview.add_item(
-            Select(
-                "cat_type_dd",
-                placeholder="Select a cat type",  
-                opts=[
-                    Option(label=i, emoji=get_emoji(i.lower() + "cat")) for i in cattypes
-                ],
-                selected=cat_type,
-                on_select=lambda interaction, option: lb_handler(interaction, option, True),
-                disabled=locked,
-            )
-        )
-        
-        button = Button(label="Refresh", style=ButtonStyle.green)
-        button.callback = lambda interaction: lb_handler(interaction, cat_type, True)
-        myview.add_item(button)
-        
-        # just send if first time, otherwise edit existing
-        try:
-            if not do_edit:
-                raise Exception
-            await interaction.edit_original_response(embed=embedVar, view=myview)
-        except Exception:
-            await interaction.followup.send(embed=embedVar, view=myview)
-
-    await lb_handler(message, cat_type, False)
 
 @bot.tree.command(description="View the leaderboards")
 @discord.app_commands.rename(leaderboard_type="type")
 @discord.app_commands.describe(
     leaderboard_type="The leaderboard type to view!",
+    cat_type="The cat type to view (only for the Cats leaderboard)",
     locked="Whether to remove page switch buttons to prevent tampering",
 )
+@discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
     leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow"]],
+    cat_type: Optional[str],
     locked: Optional[bool],
 ):
     if not leaderboard_type:
@@ -5076,7 +4957,11 @@ async def leaderboards(
         locked = False
 
     # this fat function handles a single page
-    async def lb_handler(interaction, type, do_edit=None):
+    async def lb_handler(interaction, type, do_edit=None, specific_cat="All"):
+        
+        if specific_cat is None:
+            specific_cat = "All"
+        
         nonlocal message
         if do_edit is None:
             do_edit = True
@@ -5084,12 +4969,20 @@ async def leaderboards(
 
         messager = None
         interactor = None
+        
+        # leaderboard top amount
+        show_amount = 15
+        
         string = ""
         if type == "Cats":
             unit = "cats"
             # dynamically generate sum expression
-            total_sum_expr = peewee.fn.SUM(sum(getattr(Profile, f"cat_{cat_type}").cast("BIGINT") for cat_type in cattypes))
-
+            
+            if specific_cat == "All":
+                total_sum_expr = peewee.fn.SUM(sum(getattr(Profile, f"cat_{cat_type}").cast("BIGINT") for cat_type in cattypes))
+            else:
+                total_sum_expr = peewee.fn.SUM(getattr(Profile, f"cat_{specific_cat}").cast("BIGINT"))
+            
             # run the query
             result = (
                 Profile.select(Profile.user_id, total_sum_expr.alias("final_value"))
@@ -5098,22 +4991,24 @@ async def leaderboards(
                 .order_by(total_sum_expr.desc())
             ).execute()
 
-            # find rarest
-            rarest = None
-            for i in cattypes[::-1]:
-                non_zero_count = Profile.select().where((Profile.guild_id == message.guild.id) & (getattr(Profile, f"cat_{i}") > 0)).execute()
-                if len(non_zero_count) != 0:
-                    rarest = i
-                    rarest_holder = non_zero_count
-                    break
+            if specific_cat == "All":
+                # find rarest
+                rarest = None
+                for i in cattypes[::-1]:
+                    non_zero_count = Profile.select().where((Profile.guild_id == message.guild.id) & (getattr(Profile, f"cat_{i}") > 0)).execute()
+                    if len(non_zero_count) != 0:
+                        rarest = i
+                        rarest_holder = non_zero_count
+                        break
 
-            if rarest:
-                catmoji = get_emoji(rarest.lower() + "cat")
-                rarest_holder = [f"<@{i.user_id}>" for i in rarest_holder]
-                joined = ", ".join(rarest_holder)
-                if len(rarest_holder) > 10:
-                    joined = f"{len(rarest_holder)} people"
-                string = f"Rarest cat: {catmoji} ({joined}'s)\n"
+                if rarest and specific_cat != rarest:
+                    catmoji = get_emoji(rarest.lower() + "cat")
+                    rarest_holder = [f"<@{i.user_id}>" for i in rarest_holder]
+                    joined = ", ".join(rarest_holder)
+                    if len(rarest_holder) > 10:
+                        joined = f"{len(rarest_holder)} people"
+                    string = f"Rarest cat: {catmoji} ({joined}'s)\n\n"
+                    
         elif type == "Value":
             unit = "value"
             total_sum_expr = peewee.fn.SUM(
@@ -5176,11 +5071,14 @@ async def leaderboards(
             messager = round(messager)
         elif messager and type == "Fast" and messager >= 99999999999999:
             messager_placement = 0
-
+            
+        emoji = ""
+        if type == "Cats" and specific_cat != "All":
+            emoji = get_emoji(specific_cat.lower() + "cat")
         # the little place counter
         current = 1
         leader = False
-        for i in result[:15]:
+        for i in result[:show_amount]:
             num = i.final_value
             if type == "Slow":
                 if num <= 0:
@@ -5194,50 +5092,74 @@ async def leaderboards(
                 num = round(num)
             elif type == "Fast" and num >= 99999999999999:
                 break
-            string = string + f"{current}. {num:,} {unit}: <@{i.user_id}>\n"
+            string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i.user_id}>\n"
             if message.user.id == i.user_id and current <= 5:
                 leader = True
             current += 1
 
         # add the messager and interactor
         # todo: refactor this
-        if messager_placement > 15 or interactor_placement > 15:
+        if messager_placement > show_amount or interactor_placement > show_amount:
             string = string + "...\n"
             # sort them correctly!
             if messager_placement > interactor_placement:
                 # interactor should go first
-                if interactor_placement > 15 and str(interaction.user.id) not in string:
-                    string = string + f"{interactor_placement}\\. {interactor:,} {unit}: <@{interaction.user.id}>\n"
-                if messager_placement > 15 and str(message.user.id) not in string:
-                    string = string + f"{messager_placement}\\. {messager:,} {unit}: <@{message.user.id}>\n"
+                if interactor_placement > show_amount and str(interaction.user.id) not in string:
+                    string = string + f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: <@{interaction.user.id}>\n"
+                if messager_placement > show_amount and str(message.user.id) not in string:
+                    string = string + f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: <@{message.user.id}>\n"
             else:
                 # messager should go first
-                if messager_placement > 15 and str(message.user.id) not in string:
-                    string = string + f"{messager_placement}\\. {messager:,} {unit}: <@{message.user.id}>\n"
-                if interactor_placement > 15 and str(interaction.user.id) not in string:
-                    string = string + f"{interactor_placement}\\. {interactor:,} {unit}: <@{interaction.user.id}>\n"
+                if messager_placement > show_amount and str(message.user.id) not in string:
+                    string = string + f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: <@{message.user.id}>\n"
+                if interactor_placement > show_amount and str(interaction.user.id) not in string:
+                    string = string + f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: <@{interaction.user.id}>\n"
 
-        embedVar = discord.Embed(title=f"{type} Leaderboards:", description=string.rstrip(), color=0x6E593C).set_footer(text="☔ Get tons of cats /rain")
+        title = type + " Leaderboard" 
+        if type == "Cats":
+            title = f"{specific_cat} {title}"
+        
+        embedVar = discord.Embed(title=title, description=string.rstrip(), color=0x6E593C).set_footer(text="☔ Get tons of cats /rain")
 
         global_user, _ = User.get_or_create(user_id=message.user.id)
+        
         if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state:
             embedVar.set_author(name=f"{message.user} has unread news! /news")
 
         # handle funny buttons
         myview = View(timeout=3600)
         buttons = []
+        
+        if type == "Cats":
+            dd_opts = [Option(label="All", emoji=get_emoji("staring_cat"), value="All")]
+        
+            for i in cattypes:
+                in_server = Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{i}"))).where(Profile.guild_id == message.guild.id).where(getattr(Profile, f"cat_{i}") > 0).scalar()
+                if in_server:
+                    dd_opts.append(Option(label=i, emoji=get_emoji(i.lower() + "cat"), value=i))
+            
+            dropdown = Select(
+                "cat_type_dd",
+                placeholder="Select a cat type",  
+                opts=dd_opts,
+                selected=specific_cat,
+                on_select=lambda interaction, option: lb_handler(interaction, type, True, option),
+                disabled=locked,
+            )
 
         for t in leaderboard_types:
             if type == t:
                 button = Button(label="Refresh", style=ButtonStyle.green)
             else:
                 button = Button(label=t, style=ButtonStyle.blurple)
-            button.callback = partial(lb_handler, type=t)
+            button.callback = partial(lb_handler, type=t, do_edit=True, specific_cat=specific_cat)
             buttons.append(button)
 
         if not locked:
             for i in buttons:
                 myview.add_item(i)
+            if type == "Cats":
+                myview.add_item(dropdown)    
         else:
             myview.add_item(buttons[leaderboard_types.index(type)])
 
@@ -5252,7 +5174,7 @@ async def leaderboards(
         if leader:
             await achemb(message, "leader", "send")
 
-    await lb_handler(message, leaderboard_type, False)
+    await lb_handler(message, leaderboard_type, False, cat_type)
 
 
 @bot.tree.command(description="(ADMIN) Give cats to people")
@@ -5633,3 +5555,50 @@ async def setup(bot2):
 
 async def teardown(bot):
     await vote_server.cleanup()
+    
+    
+    
+# Reusable UI components
+class Option:
+    def __init__(self, label, emoji, value = None):
+        self.label = label
+        self.emoji = emoji
+        self.value = value if value is not None else label
+
+
+class Select(discord.ui.Select):
+    on_select = None
+
+    def __init__(
+        self,
+        id: str,
+        placeholder: str,
+        opts: list[Option],
+        selected: str = None,
+        on_select: callable = None,
+        disabled: bool = False,
+    ):
+        options = []
+        if on_select is not None:
+            self.on_select = on_select
+
+        for opt in opts:
+            options.append(
+                discord.SelectOption(
+                    label=opt.label, value=opt.value, emoji=opt.emoji, default=opt.value == selected
+                )
+            )
+
+        super().__init__(
+            placeholder=placeholder,
+            options=options,
+            custom_id=id,
+            max_values=1,
+            min_values=1,
+            disabled=disabled,
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        if self.on_select is not None and callable(self.on_select):
+            await self.on_select(interaction, self.values[0])
+
