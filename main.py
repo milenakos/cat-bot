@@ -4287,36 +4287,45 @@ async def slots(message: discord.Interaction):
             current1 = min(len(col1) - 2, slot_loop_ind)
             current2 = min(len(col2) - 2, slot_loop_ind)
             current3 = min(len(col3) - 2, slot_loop_ind)
-            desc = ""
+            desc = "**Spinning...**\n\n"
+
             for offset in [-1, 0, 1]:
                 if offset == 0:
                     desc += f"➡️ {col1[current1 + offset]} {col2[current2 + offset]} {col3[current3 + offset]} ⬅️\n"
                 else:
                     desc += f"{blank_emoji} {col1[current1 + offset]} {col2[current2 + offset]} {col3[current3 + offset]} {blank_emoji}\n"
+
             embed = discord.Embed(
                 title=":slot_machine: The Slot Machine",
                 description=desc,
                 color=0x750F0E,
             )
+
+            button = Button(label="Spin", style=ButtonStyle.blurple, disabled=True)
+            button.callback = spin
+            myview = View(timeout=100)
+            myview.add_item(button)
+
             try:
-                await interaction.edit_original_response(embed=embed, view=None)
+                await interaction.edit_original_response(embed=embed, view=myview)
             except Exception:
                 pass
             await asyncio.sleep(0.5)
 
         big_win = False
+        desc = desc[15:]  # removes "**Spinning...**", but keeps the newlines
         if col1[current1] == col2[current2] == col3[current3]:
             user.slot_wins += 1
             await achemb(interaction, "win_slots", "send")
             if col1[current1] == ":seven:":
-                desc = "**BIG WIN!**\n\n" + desc
+                desc = "**BIG WIN!**" + desc
                 user.slot_big_wins += 1
                 await achemb(interaction, "big_win_slots", "send")
                 big_win = True
             else:
-                desc = "**You win!**\n\n" + desc
+                desc = "**You win!**" + desc
         else:
-            desc = "**You lose!**\n\n" + desc
+            desc = "**You lose!**" + desc
 
         button = Button(label="Spin", style=ButtonStyle.blurple)
         button.callback = spin
