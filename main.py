@@ -4184,6 +4184,7 @@ async def casino(message: discord.Interaction):
             description=f"You won:\n**{get_emoji('finecat')} {amount} Fine cats**",
             color=0x750F0E,
         )
+        user = get_profile(message.guild.id, message.user.id)
         user.cat_Fine += amount
 
         button = Button(label="Spin", style=ButtonStyle.blurple)
@@ -4304,6 +4305,7 @@ async def slots(message: discord.Interaction):
                 pass
             await asyncio.sleep(0.5)
 
+        user = get_profile(message.guild.id, message.user.id)
         big_win = False
         if col1[current1] == col2[current2] == col3[current3]:
             user.slot_wins += 1
