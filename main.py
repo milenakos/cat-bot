@@ -4151,6 +4151,7 @@ async def casino(message: discord.Interaction):
 
         await interaction.response.defer()
         casino_lock.append(message.user.id)
+        user = get_profile(interaction.guild.id, interaction.user.id)
         user.cat_Epic -= 5
         user.save()
 
