@@ -3687,7 +3687,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
     # this is the accept button code
     async def acceptb(interaction):
-        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, person1value, person2value, user1, user2
+        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, person1value, person2value, user1, user2, blackhole
         if interaction.user != person1 and interaction.user != person2:
             await do_funny(interaction)
             return
@@ -3704,7 +3704,11 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         if person1accept and person2 == bot.user:
             await achemb(message, "desperate", "send")
 
+        if blackhole:
+            await update_trade_embed(interaction)
+
         if person1accept and person2accept:
+            blackhole = True
             user1 = get_profile(message.guild.id, person1.id)
             user2 = get_profile(message.guild.id, person2.id)
             actual_user1, _ = User.get_or_create(user_id=person1.id)
@@ -4062,8 +4066,9 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 except Exception:
                     person2gives[cname] = int(value)
 
-            person1accept = False
-            person2accept = False
+            if int(value) < 0:
+                person1accept = False
+                person2accept = False
 
             await interaction.response.defer()
             await update_trade_embed(interaction)
