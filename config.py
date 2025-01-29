@@ -12,7 +12,7 @@ DB_PASS = os.environ["psql_password"]
 
 # channel id for db backups, private extremely recommended
 # temporarily doesnt actually backup, just sends stats.
-BACKUP_ID = 1060545763194707998
+BACKUP_ID = None
 
 # what to do when there is a crash
 CRASH_MODE = "RAISE"
@@ -31,11 +31,11 @@ WEBHOOK_VERIFY = os.environ["webhook_verify"]
 TOP_GG_TOKEN = os.environ["top_gg_token"]
 
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
-GITHUB_CHANNEL_ID = 1060965767044149249
+GITHUB_CHANNEL_ID = None
 
 # all messages in this channel will be interpreted as user ids to give premium access to
 # (deprecated, all rain buyes get premium for free now)
-DONOR_CHANNEL_ID = 1249343008890028144
+DONOR_CHANNEL_ID = None
 
 # all messages in this channel are allowed to be cat!rain commands
-RAIN_CHANNEL_ID = 1278705994536321157
+RAIN_CHANNEL_ID = None
