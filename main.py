@@ -1260,6 +1260,15 @@ async def on_message(message: discord.Message):
         user.premium = True
         user.save()
 
+        # try to dm the user the thanks msg
+        try:
+            user = bot.get_user(user.user_id)
+            await user.send(
+                f"**You have recieved {things[2]} minutes of Cat Rain!** ☔\n\nThanks for your support!\nYou can start a rain with `/rain`. By buying you also get access to `/editprofile` command as well as a role in [our Discord server](<https://discord.gg/staring>), where you can also get a decorative custom cat!\n\nEnjoy your goods!"
+            )
+        except Exception:
+            pass
+
     react_count = 0
 
     # :staring_cat: reaction on "bullshit"
