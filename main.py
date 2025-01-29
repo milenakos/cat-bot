@@ -1262,7 +1262,7 @@ async def on_message(message: discord.Message):
 
         # try to dm the user the thanks msg
         try:
-            person = bot.get_user(int(things[1]))
+            person = await bot.fetch_user(int(things[1]))
             await person.send(
                 f"**You have recieved {things[2]} minutes of Cat Rain!** ☔\n\nThanks for your support!\nYou can start a rain with `/rain`. By buying you also get access to `/editprofile` command as well as a role in [our Discord server](<https://discord.gg/staring>), where you can also get a decorative custom cat!\n\nEnjoy your goods!"
             )
