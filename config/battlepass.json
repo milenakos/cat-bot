@@ -36,6 +36,43 @@
       {"xp": 1000, "reward": "Epic", "amount": 5},
       {"xp": 1000, "reward": "Nice", "amount": 25},
       {"xp": 1000, "reward": "Rain", "amount": 2}
+    ],
+    "2": [
+      {"xp": 550, "reward": "Wild", "amount": 4},
+      {"xp": 550, "reward": "Rickroll", "amount": 2},
+      {"xp": 550, "reward": "Sus", "amount": 3},
+      {"xp": 600, "reward": "Baby", "amount": 4},
+      {"xp": 600, "reward": "Sus", "amount": 6},
+
+      {"xp": 600, "reward": "Rickroll", "amount": 2},
+      {"xp": 650, "reward": "Wild", "amount": 5},
+      {"xp": 650, "reward": "Sus", "amount": 3},
+      {"xp": 650, "reward": "Rickroll", "amount": 2},
+      {"xp": 700, "reward": "Baby", "amount": 8},
+
+      {"xp": 700, "reward": "Rickroll", "amount": 2},
+      {"xp": 700, "reward": "Wild", "amount": 5},
+      {"xp": 750, "reward": "Baby", "amount": 4},
+      {"xp": 750, "reward": "Sus", "amount": 3},
+      {"xp": 750, "reward": "Superior", "amount": 4},
+
+      {"xp": 800, "reward": "Rickroll", "amount": 2},
+      {"xp": 800, "reward": "Baby", "amount": 4},
+      {"xp": 800, "reward": "Wild", "amount": 5},
+      {"xp": 850, "reward": "Rickroll", "amount": 2},
+      {"xp": 850, "reward": "Rickroll", "amount": 15},
+
+      {"xp": 850, "reward": "Wild", "amount": 5},
+      {"xp": 900, "reward": "Baby", "amount": 5},
+      {"xp": 900, "reward": "Reverse", "amount": 2},
+      {"xp": 900, "reward": "Wild", "amount": 6},
+      {"xp": 950, "reward": "eGirl", "amount": 1},
+
+      {"xp": 950, "reward": "Rickroll", "amount": 3},
+      {"xp": 950, "reward": "Legendary", "amount": 1},
+      {"xp": 1000, "reward": "Reverse", "amount": 3},
+      {"xp": 1000, "reward": "Legendary", "amount": 1},
+      {"xp": 1000, "reward": "Rain", "amount": 2}
     ]
   },
   "quests": {
@@ -55,6 +92,7 @@
     },
     "misc": {
       "slots": {"emoji": "🎰", "title": "Spin the slots machine 10 times", "xp_min": 150, "xp_max": 250, "progress": 10},
+      "slots2": {"emoji": "🎰", "title": "Spin the slots machine 5 times", "xp_min": 150, "xp_max": 250, "progress": 5},
       "achievement": {"emoji": "cat_throphy", "title": "Get an achievement", "xp_min": 180, "xp_max": 260, "progress": 1},
       "trade": {"emoji": "💱", "title": "Complete a trade", "xp_min": 180, "xp_max": 220, "progress": 1},
       "news": {"emoji": "📰", "title": "Read a news article", "xp_min": 150, "xp_max": 210, "progress": 1},

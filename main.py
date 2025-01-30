@@ -436,7 +436,9 @@ async def achemb(message, ach_id, send_type, author_string=None):
 def generate_quest(user: Profile, quest_type: str):
     while True:
         quest = random.choice(list(battle["quests"][quest_type].keys()))
-        if quest == "prism":
+        if quest == "slots":
+            continue
+        elif quest == "prism":
             prism_boost = 0
             for prism in Prism.select().where(Prism.guild_id == user.guild_id):
                 if prism.user_id == user.user_id:
@@ -480,7 +482,9 @@ def refresh_quests(user):
     if current_date.day < start_date.day:
         full_months_passed -= 1
     if user.season != full_months_passed:
+        user.bp_history = user.bp_history + f"{user.season},{user.battlepass},{user.progress};"
         user.battlepass = 0
+        user.progress = 0
 
         user.catch_quest = ""
         user.catch_progress = 0

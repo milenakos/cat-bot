@@ -96,6 +96,8 @@ class Profile(peewee.Model):
     misc_cooldown = peewee.BigIntegerField(default=1)
     misc_reward = peewee.SmallIntegerField(default=0)
 
+    bp_history = peewee.CharField(default="")
+
     reminder_catch = peewee.BigIntegerField(default=0)  # timestamp of last catch reminder
     reminder_misc = peewee.BigIntegerField(default=0)  # timestamp of last misc reminder
     # vote timestamp is in the User model
