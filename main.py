@@ -18,7 +18,6 @@ import discord
 import discord_emoji
 import emoji
 import peewee
-from concurrent.futures import ProcessPoolExecutor
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
@@ -4362,6 +4361,7 @@ async def slots(message: discord.Interaction):
             await interaction.followup.send(embed=embed, view=myview)
 
         await progress(message, user, "slots")
+        await progress(message, user, "slots2")
 
     button = Button(label="Spin", style=ButtonStyle.blurple)
     button.callback = spin
