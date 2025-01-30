@@ -2,7 +2,9 @@
 
 Discord Cat Bot Source Code
 
-# Setup
+# Development
+
+Please note self-hosting is hacky and isn't supported, instructions below are for testing/development/messing around. I won't stop you, but YOU will have to mess around with the code a bunch for it to work good, so be warned.
 
 ## Prerequisites
 
@@ -20,9 +22,9 @@ Discord Cat Bot Source Code
 
    `pip install -r requirements.txt`
 
-3. You will need to upload all needed emojis to Discord's App Emoji in the Dev Portal.
+3. You will need to all emojis you want to Discord's App Emoji in the Dev Portal.
 
-   If they aren't found there, they will be replaced with a placeholder (this breaks catching).
+   If they aren't found there, they will be replaced with a placeholder.
 
    All emojis can be downloaded [here](https://github.com/staring-cat/emojis/releases/latest/download/emojis.zip).
 
