@@ -1103,10 +1103,8 @@ def backup_database():
     if config.DB_TYPE != "POSTGRES":
         return
     try:
-        command = f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -h localhost -p 5432 cat_bot"
-
-        with open(f"backups/backup-{int(time.time())}.sql", "w") as f:
-            subprocess.run(command, stdout=f, check=True)
+        command = f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -Fc -f /root/backups/backup-{int(time.time())}.dump cat_bot"
+        subprocess.run(command, check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error during backup: {e}")
 
