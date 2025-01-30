@@ -4284,6 +4284,7 @@ async def slots(message: discord.Interaction):
         await achemb(interaction, "slots", "send")
         slots_lock.append(message.user.id)
         user.slot_spins += 1
+        user.save()
 
         variants = ["🍒", "🍋", "🍇", "🔔", "⭐", ":seven:"]
         reel_durations = [random.randint(9, 12), random.randint(15, 22), random.randint(25, 28)]
@@ -4321,7 +4322,7 @@ async def slots(message: discord.Interaction):
                 pass
             await asyncio.sleep(0.5)
 
-        user = get_profile(message.guild.id, message.user.id)
+        user = get_profile(interaction.guild.id, interaction.user.id)
         big_win = False
         if col1[current1] == col2[current2] == col3[current3]:
             user.slot_wins += 1
