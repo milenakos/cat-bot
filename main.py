@@ -1094,19 +1094,12 @@ async def maintaince_loop():
 
     loop_count += 1
 
-    if loop_count % 10 == 0:
-        with ProcessPoolExecutor() as executor:
-            executor.submit(backup_database)
-
-
-def backup_database():
-    if config.DB_TYPE != "POSTGRES":
-        return
-    try:
-        command = f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -Fc -f /root/backups/backup-{int(time.time())}.dump cat_bot"
-        subprocess.run(command, check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Error during backup: {e}")
+    if loop_count % 10 == 0 and config.DB_TYPE == "POSTGRES":
+        try:
+            command = f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -Fc -f /root/backups/backup-{int(time.time())}.dump cat_bot"
+            subprocess.run(command, shell=True, check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error during backup: {e}")
 
 
 # some code which is run when bot is started
