@@ -556,6 +556,8 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
     if not quest_complete:
         return
 
+    user.quests_completed += 1
+
     old_xp = user.progress
     perms = message.channel.permissions_for(message.guild.me)
     if user.battlepass >= len(battle["seasons"][str(user.season)]):
@@ -1739,6 +1741,10 @@ async def on_message(message: discord.Message):
 
                     if boost_prism in boost_prisms:
                         did_boost = True
+                        user.boosted_catches += 1
+                        prism_which_boosted = Prism.get(guild_id=message.guild.id, name=boost_prism[1])
+                        prism_which_boosted.catches_boosted += 1
+                        prism_which_boosted.save()
                         try:
                             le_old_emoji = le_emoji
                             le_emoji = cattypes[cattypes.index(le_emoji) + 1]
@@ -1774,6 +1780,7 @@ async def on_message(message: discord.Message):
                     # cataine is active
                     silly_amount = 2
                     suffix_string += "\n🧂 cataine worked! you got 2 cats instead!"
+                    user.cataine_activations += 1
 
                 elif user.cataine_active != 0:
                     # cataine ran out
@@ -1895,11 +1902,16 @@ async def on_message(message: discord.Message):
                     except Exception:
                         pass
 
+                user.total_catches += 1
+                if do_time:
+                    user.total_catch_time += time_caught
+
                 if random.randint(0, 1000) == 69:
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT":
                     await achemb(message, "loud_cat", "send")
                 if cat_rains.get(str(message.channel.id), 0) != 0:
+                    user.rain_participations += 1
                     await achemb(message, "cat_rain", "send")
 
                 # handle fastest and slowest catches
@@ -1923,6 +1935,7 @@ async def on_message(message: discord.Message):
                     await achemb(message, "pie", "send")
 
                 if do_time and time_caught == int(time_caught):
+                    user.perfection_count += 1
                     await achemb(message, "perfection", "send")
 
                 if did_boost:
@@ -2849,6 +2862,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         ):
             return
 
+        profile.rain_minutes_started += rain_length
         cat_rains[str(message.channel.id)] = time.time() + (rain_length * 60)
         await spawn_cat(str(message.channel.id))
         if profile.rain_minutes:
@@ -3459,6 +3473,8 @@ async def gift(
             reciever = get_profile(message.guild.id, person_id)
             user[f"cat_{cat_type}"] -= amount
             reciever[f"cat_{cat_type}"] += amount
+            user.cats_gifted += amount
+            reciever.cat_gifts_recieved += amount
             user.save()
             reciever.save()
             embed = discord.Embed(
@@ -3778,7 +3794,6 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             for k, v in person1gives.items():
                 if k in prism_names:
                     Prism.update(user_id=person2.id).where(Prism.guild_id == message.guild.id, Prism.name == k).execute()
-                    cat_count += 1
                     continue
                 if k == "rains":
                     actual_user1.rain_minutes -= v
@@ -3791,7 +3806,6 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             for k, v in person2gives.items():
                 if k in prism_names:
                     Prism.update(user_id=person1.id).where(Prism.guild_id == message.guild.id, Prism.name == k).execute()
-                    cat_count += 1
                     continue
                 if k == "rains":
                     actual_user2.rain_minutes -= v
@@ -3800,6 +3814,11 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 cat_count += v
                 user1[f"cat_{k}"] += v
                 user2[f"cat_{k}"] -= v
+
+            user1.cats_traded += cat_count
+            user2.cats_traded += cat_count
+            user1.trades_completed += 1
+            user2.trades_completed += 1
 
             user1.save()
             user2.save()
@@ -4462,6 +4481,9 @@ async def remind(
     message_link = msg.jump_url
     text += f"\n\n*This is a [reminder](<{message_link}>) you set.*"
     Reminder.create(user_id=message.user.id, text=text, time=goal_time)
+    profile = get_profile(message.guild.id, message.user.id)
+    profile.reminders_set += 1
+    profile.save()
     await achemb(message, "reminder", "send")  # the ai autocomplete thing suggested this and its actually a cool ach
     await progress(
         message, get_profile(message.guild.id, message.user.id), "reminder"
@@ -4603,6 +4625,7 @@ async def light_market(message):
             user[f"cat_{type}"] -= amount
             user.cataine_active = int(time.time()) + 43200
             user.cataine_week += 1
+            user.cataine_bought += 1
             user.save()
             await interaction.response.send_message(
                 "The machine spools down. Your cat catches will be doubled for the next 12 hours.",
@@ -4675,6 +4698,7 @@ async def dark_market(message):
             user[f"cat_{type}"] -= amount
             user.cataine_active = int(time.time()) + 43200
             user.dark_market_level += 1
+            user.cataine_bought += 1
             user.save()
             await interaction.response.send_message(
                 "Thanks for buying! Your cat catches will be doubled for the next 12 hours.",
@@ -5508,8 +5532,16 @@ async def recieve_vote(request):
         # top.gg is NOT realiable with their webhooks, but we politely pretend they are
         return web.Response(text="you fucking dumb idiot", status=200)
 
-    user.vote_time_topgg = time.time()
     user.reminder_vote = 1
+    user.total_votes += 1
+    if user.vote_time_topgg + 86400 > time.time():
+        # streak end
+        if user.max_vote_streak < user.vote_streak:
+            user.max_vote_streak = user.vote_streak
+        user.vote_streak = 0
+    else:
+        user.vote_streak += 1
+    user.vote_time_topgg = time.time()
     user.save()
 
     try:

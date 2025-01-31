@@ -104,6 +104,23 @@ class Profile(peewee.Model):
 
     reminders_enabled = peewee.BooleanField(default=False)
 
+    # advanced stats
+    boosted_catches = peewee.IntegerField(default=0)  # amount of catches boosted by prism
+    cataine_activations = peewee.IntegerField(default=0)  # amount of cataine activations
+    cataine_bought = peewee.IntegerField(default=0)  # amount of cataine bought
+    quests_completed = peewee.IntegerField(default=0)  # amount of quests completed
+    total_catches = peewee.IntegerField(default=0)  # total amount of catches
+    total_catch_time = peewee.BigIntegerField(default=0)  # total amount of time spent catching
+    perfection_count = peewee.IntegerField(default=0)  # amount of perfection achievements
+    rain_participations = peewee.IntegerField(default=0)  # amount of catches during rains
+    rain_minutes_started = peewee.IntegerField(default=0)  # amount of rain minutes started
+    reminders_set = peewee.IntegerField(default=0)  # amount of reminders set
+    cats_gifted = peewee.IntegerField(default=0)  # amount of cats gifted
+    cat_gifts_recieved = peewee.IntegerField(default=0)  # amount of cat gifts recieved
+    trades_completed = peewee.IntegerField(default=0)  # amount of trades completed
+    cats_traded = peewee.IntegerField(default=0)  # amount of cats traded
+    new_user = peewee.BooleanField(default=True)  # whether the user is new
+
     # thanks chatgpt
     # cat types
     for cattype in cattypes:
@@ -146,6 +163,11 @@ class User(peewee.Model):
 
     news_state = peewee.CharField(default="", max_length=2000)
 
+    # advanced stats
+    total_votes = peewee.IntegerField(default=0)  # total amount of votes
+    max_vote_streak = peewee.IntegerField(default=0)  # max vote streak
+    vote_streak = peewee.IntegerField(default=0)  # current vote streak
+
     class Meta:
         database = db
         only_save_dirty = True
@@ -181,6 +203,8 @@ class Prism(peewee.Model):
     time = peewee.BigIntegerField()  # creation time
     creator = peewee.BigIntegerField()  # original crafter
     name = peewee.CharField(max_length=20)  # name (duh)
+
+    catches_boosted = peewee.IntegerField(default=0)  # amount of boosts from catches
 
     for cattype in cattypes:  # enabled boosts
         locals()[f"enabled_{cattype.lower()}"] = peewee.BooleanField(default=True)
