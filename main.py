@@ -476,7 +476,7 @@ def generate_quest(user: Profile, quest_type: str):
 
 def refresh_quests(user):
     start_date = datetime.datetime(2024, 12, 1)
-    current_date = datetime.datetime.now()
+    current_date = datetime.datetime.utcnow()
     full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
     if current_date.day < start_date.day:
         full_months_passed -= 1
@@ -532,7 +532,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
 
         # Weekdays 0 Mon - 6 Sun
         # double vote xp rewards if Friday, Saturday or Sunday
-        voted_at = datetime.datetime.fromtimestamp(global_user.vote_time_topgg)
+        voted_at = datetime.datetime.utcfromtimestamp(global_user.vote_time_topgg)
         if voted_at.weekday() >= 4:
             user.vote_reward *= 2
 
@@ -2181,7 +2181,7 @@ async def help(message):
             inline=False,
         )
         .set_footer(
-            text=f"Cat Bot by Milenakos, {datetime.datetime.now().year}",
+            text=f"Cat Bot by Milenakos, {datetime.datetime.utcnow().year}",
             icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png",
         )
     )
@@ -2212,7 +2212,7 @@ async def info(message: discord.Interaction):
 
     # add "last update" to footer if we are using git
     if config.GITHUB_CHANNEL_ID:
-        embedVar.timestamp = datetime.datetime.fromtimestamp(int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8")))
+        embedVar.timestamp = datetime.datetime.utcfromtimestamp(int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8")))
         embedVar.set_footer(text="Last code update:")
     await message.followup.send(embed=embedVar)
 
@@ -3026,7 +3026,7 @@ async def battlepass(message: discord.Interaction):
         refresh_quests(user)
 
         # season end
-        now = datetime.datetime.now()
+        now = datetime.datetime.utcnow()
 
         if now.month == 12:
             next_month = datetime.datetime(now.year + 1, 1, 1)
