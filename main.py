@@ -3443,14 +3443,19 @@ async def ping(message: discord.Interaction):
 @bot.tree.command(description="play a relaxing game of tic tac toe")
 @discord.app_commands.describe(person="who do you want to play with?")
 async def tictactoe(message: discord.Interaction, person: discord.Member):
+    if person == message.user:
+        await message.response.send_message("you can't play tic tac toe with yourself idiot", ephemeral=True)
+        return
     current_turn = random.choice([message.user, person])
     board_state = ["", "", "", "", "", "", "", "", ""]
 
     def gen_board():
         view = View(timeout=3600)
+        locked_count = 0
         for num, i in enumerate(board_state):
             if i == "":
                 button = Button(emoji=get_emoji("empty"), custom_id=str(num))
+                locked_count += 1
             elif i == "X":
                 button = Button(emoji="🇽", disabled=True)
             elif i == "O":
@@ -3460,7 +3465,10 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
             button.row = num // 3
 
             view.add_item(button)
-        text = f"<@{message.user.id}> (X) vs <@{person.id}> (O)\ncurrent turn: <@{current_turn.id}>"
+        if locked_count == 9:
+            text = f"<@{message.user.id}> (X) vs <@{person.id}> (O)\nits a tie!"
+        else:
+            text = f"<@{message.user.id}> (X) vs <@{person.id}> (O)\ncurrent turn: <@{current_turn.id}>"
         return text, view
 
     async def do_turn(interaction):
@@ -3490,7 +3498,21 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
             for check in checks:
                 if board_state[check[0]] == board_state[check[1]] == board_state[check[2]] != "":
-                    await interaction.edit_original_response(content=f"<@{current_turn.id}> wins!", view=None)
+                    view = View(timeout=1)
+                    for num, i in enumerate(board_state):
+                        if i == "":
+                            button = Button(emoji=get_emoji("empty"), disabled=True)
+                        elif i == "X":
+                            button = Button(emoji="🇽", disabled=True)
+                        elif i == "O":
+                            button = Button(emoji="🇴", disabled=True)
+
+                        if num in check:
+                            button.style = ButtonStyle.green
+                        button.row = num // 3
+
+                        view.add_item(button)
+                    await interaction.edit_original_response(content=f"<@{current_turn.id}> wins!", view=view)
                     return
 
             current_turn = message.user if current_turn == person else person
