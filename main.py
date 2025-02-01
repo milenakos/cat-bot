@@ -3468,7 +3468,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         if interaction.user.id == current_turn.id:
             await interaction.response.defer()
 
-            turn_spot = interaction.data["custom_id"]
+            turn_spot = int(interaction.data["custom_id"])
 
             if board_state[turn_spot] != "":
                 await interaction.followup.send("this cell is occupied", ephemeral=True)
