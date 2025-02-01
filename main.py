@@ -3450,7 +3450,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         view = View(timeout=3600)
         for num, i in enumerate(board_state):
             if i == "":
-                button = Button(emoji=get_emoji("empty"), custom_id=num)
+                button = Button(emoji=get_emoji("empty"), custom_id=str(num))
             elif i == "X":
                 button = Button(emoji="�", disabled=True)
             elif i == "O":
