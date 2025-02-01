@@ -3440,6 +3440,70 @@ async def ping(message: discord.Interaction):
     await progress(message, get_profile(message.guild.id, message.user.id), "ping")
 
 
+@bot.tree.command(description="play a relaxing game of tic tac toe")
+@discord.app_commands.describe(person="who do you want to play with?")
+async def tictactoe(message: discord.Interaction, person: discord.Member):
+    current_turn = random.choice([message.user, person])
+    board_state = ["", "", "", "", "", "", "", "", ""]
+
+    def gen_board():
+        view = View(timeout=3600)
+        for num, i in enumerate(board_state):
+            if i == "":
+                button = Button(emoji=get_emoji("empty"), custom_id=num)
+            elif i == "X":
+                button = Button(emoji="�", disabled=True)
+            elif i == "O":
+                button = Button(emoji="�", disabled=True)
+
+            button.callback = do_turn
+            button.row = num // 3
+
+            view.add_item(button)
+        text = f"<@{message.user.id}> (X) vs <@{person.id}> (O)\ncurrent turn: <@{current_turn.id}>"
+        return text, view
+
+    async def do_turn(interaction):
+        nonlocal current_turn
+        if interaction.user.id == current_turn.id:
+            await interaction.response.defer()
+
+            turn_spot = interaction.data["custom_id"]
+
+            if board_state[turn_spot] != "":
+                await interaction.followup.send("this cell is occupied", ephemeral=True)
+                return
+
+            board_state[turn_spot] = "X" if current_turn == message.user else "O"
+
+            # check if someone won
+            checks = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6],
+            ]
+
+            for check in checks:
+                if board_state[check[0]] == board_state[check[1]] == board_state[check[2]]:
+                    await interaction.edit_original_response(content=f"<@{current_turn.id}> wins!", view=None)
+                    return
+
+            current_turn = message.user if current_turn == person else person
+
+            text, view = gen_board()
+            await interaction.edit_original_response(content=text, view=view)
+        else:
+            await do_funny(interaction)
+
+    text, view = gen_board()
+    await message.response.send_message(text, view=view)
+
+
 @bot.tree.command(description="give cats now")
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(
