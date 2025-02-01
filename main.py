@@ -3451,21 +3451,21 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
     def gen_board():
         view = View(timeout=3600)
-        locked_count = 0
+        has_unlocked_tiles = False
         for num, i in enumerate(board_state):
             if i == "":
                 button = Button(emoji=get_emoji("empty"), custom_id=str(num))
-                locked_count += 1
+                has_unlocked_tiles = True
             elif i == "X":
                 button = Button(emoji="🇽", disabled=True)
             elif i == "O":
-                button = Button(emoji="🇴", disabled=True)
+                button = Button(emoji="🅾️", disabled=True)
 
             button.callback = do_turn
             button.row = num // 3
 
             view.add_item(button)
-        if locked_count == 9:
+        if not has_unlocked_tiles:
             text = f"<@{message.user.id}> (X) vs <@{person.id}> (O)\nits a tie!"
         else:
             text = f"<@{message.user.id}> (X) vs <@{person.id}> (O)\ncurrent turn: <@{current_turn.id}>"
@@ -3505,14 +3505,14 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
                         elif i == "X":
                             button = Button(emoji="🇽", disabled=True)
                         elif i == "O":
-                            button = Button(emoji="🇴", disabled=True)
+                            button = Button(emoji="🅾️", disabled=True)
 
                         if num in check:
                             button.style = ButtonStyle.green
                         button.row = num // 3
 
                         view.add_item(button)
-                    await interaction.edit_original_response(content=f"<@{current_turn.id}> wins!", view=view)
+                    await interaction.edit_original_response(content=f"<@{message.user.id}> (X) vs <@{person.id}> (O)\n<@{current_turn.id}> wins!", view=view)
                     return
 
             current_turn = message.user if current_turn == person else person
