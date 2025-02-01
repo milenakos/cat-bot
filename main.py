@@ -3467,6 +3467,14 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
             view.add_item(button)
         if not has_unlocked_tiles:
             text = f"<@{message.user.id}> (X) vs <@{person.id}> (O)\nits a tie!"
+            user1 = get_profile(message.guild.id, message.user.id)
+            user2 = get_profile(message.guild.id, person.id)
+            user1.ttt_played += 1
+            user2.ttt_played += 1
+            user1.ttt_draws += 1
+            user2.ttt_draws += 1
+            user1.save()
+            user2.save()
         else:
             text = f"<@{message.user.id}> (X) vs <@{person.id}> (O)\ncurrent turn: <@{current_turn.id}>"
         return text, view
@@ -3513,6 +3521,17 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
                         view.add_item(button)
                     await interaction.edit_original_response(content=f"<@{message.user.id}> (X) vs <@{person.id}> (O)\n<@{current_turn.id}> wins!", view=view)
+                    await achemb(message, "ttt_win", "send", current_turn)
+                    user1 = get_profile(message.guild.id, message.user.id)
+                    user2 = get_profile(message.guild.id, person.id)
+                    user1.ttt_played += 1
+                    user2.ttt_played += 1
+                    if current_turn == message.user:
+                        user1.ttt_won += 1
+                    else:
+                        user2.ttt_won += 1
+                    user1.save()
+                    user2.save()
                     return
 
             current_turn = message.user if current_turn == person else person
@@ -5020,7 +5039,7 @@ async def achievements(message: discord.Interaction):
             if hidden_counter == 20:
                 await achemb(interaction, "darkest_market", "send")
 
-        for i in ["Cat Hunt", "Random", "Silly", "Hard", "Hidden"]:
+        for i in ["Cat Hunt", "Commands", "Random", "Silly", "Hard", "Hidden"]:
             if category == i:
                 buttons_list.append(Button(label=i, custom_id=i, style=ButtonStyle.green))
             else:

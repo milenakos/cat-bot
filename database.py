@@ -119,6 +119,9 @@ class Profile(peewee.Model):
     cat_gifts_recieved = peewee.IntegerField(default=0)  # amount of cat gifts recieved
     trades_completed = peewee.IntegerField(default=0)  # amount of trades completed
     cats_traded = peewee.IntegerField(default=0)  # amount of cats traded
+    ttt_played = peewee.IntegerField(default=0)  # amount of times played the TTT
+    ttt_won = peewee.IntegerField(default=0)  # amount of TTT wins
+    ttt_draws = peewee.IntegerField(default=0)  # amount of TTT draws
     new_user = peewee.BooleanField(default=True)  # whether the user is new
 
     # thanks chatgpt
