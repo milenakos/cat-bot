@@ -3452,9 +3452,9 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
             if i == "":
                 button = Button(emoji=get_emoji("empty"), custom_id=str(num))
             elif i == "X":
-                button = Button(emoji="�", disabled=True)
+                button = Button(emoji="🇽", disabled=True)
             elif i == "O":
-                button = Button(emoji="�", disabled=True)
+                button = Button(emoji="🇴", disabled=True)
 
             button.callback = do_turn
             button.row = num // 3
