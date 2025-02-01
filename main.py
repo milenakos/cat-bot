@@ -3489,7 +3489,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
             ]
 
             for check in checks:
-                if board_state[check[0]] == board_state[check[1]] == board_state[check[2]]:
+                if board_state[check[0]] == board_state[check[1]] == board_state[check[2]] != "":
                     await interaction.edit_original_response(content=f"<@{current_turn.id}> wins!", view=None)
                     return
 
