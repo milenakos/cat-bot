@@ -3457,9 +3457,9 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
                 button = Button(emoji=get_emoji("empty"), custom_id=str(num))
                 has_unlocked_tiles = True
             elif i == "X":
-                button = Button(emoji="🇽", disabled=True)
+                button = Button(emoji="❌", disabled=True)
             elif i == "O":
-                button = Button(emoji="🅾️", disabled=True)
+                button = Button(emoji="⭕", disabled=True)
 
             button.callback = do_turn
             button.row = num // 3
@@ -3511,9 +3511,9 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
                         if i == "":
                             button = Button(emoji=get_emoji("empty"), disabled=True)
                         elif i == "X":
-                            button = Button(emoji="🇽", disabled=True)
+                            button = Button(emoji="❌", disabled=True)
                         elif i == "O":
-                            button = Button(emoji="🅾️", disabled=True)
+                            button = Button(emoji="⭕", disabled=True)
 
                         if num in check:
                             button.style = ButtonStyle.green
