@@ -3609,7 +3609,7 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
                 description += f"**{i}** ({result[num]})\n{peoples}\n\n"
         else:
             description = f"{clean_name} picked: __{vs_picks[clean_name]}__\n\n{clean_name_2} picked: __{vs_picks[clean_name_2]}__\n\n"
-            result = mappings[vs_picks[0]].index(vs_picks[1])
+            result = mappings[vs_picks[clean_name]].index(vs_picks[clean_name_2])
             if result == 0:
                 description += f"**Winner**: {clean_name_2}!"
             elif result == 1:
