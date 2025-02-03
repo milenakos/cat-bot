@@ -3574,18 +3574,17 @@ async def rps(message: discord.Interaction):
 
     async def pick(interaction):
         nonlocal players
+        await interaction.response.defer()
+
         thing = interaction.data["custom_id"]
         if interaction.user != message.user:
             if interaction.user.id in players:
-                await interaction.response.defer()
                 return
             picks[thing].append(interaction.user.name.replace("_", "\\_"))
             players.append(interaction.user.id)
             await interaction.edit_original_response(content=f"Players: {len(players)}")
-            await interaction.response.send_message(f"You picked {thing}", ephemeral=True)
+            await interaction.followup.send(f"You picked {thing}", ephemeral=True)
             return
-
-        await interaction.response.defer()
 
         mappings = {"Rock": ["Paper", "Rock", "Scissors"], "Paper": ["Scissors", "Paper", "Rock"], "Scissors": ["Rock", "Scissors", "Paper"]}
         result = mappings[thing]
