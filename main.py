@@ -2042,7 +2042,7 @@ async def on_message(message: discord.Message):
             await bot.cat_bot_reload_hook()  # pyright: ignore
         else:
             queue_restart = message
-            await message.reply("restarting soon...")
+            await message.reply(f"restarting <t:{int(max(cat_rains.values()))}:R>")
     if text.lower().startswith("cat!print") and message.author.id == OWNER_ID:
         # just a simple one-line with no async (e.g. 2+3)
         try:
@@ -3581,8 +3581,8 @@ async def rps(message: discord.Interaction):
                 return
             picks[thing].append(interaction.user.name.replace("_", "\\_"))
             players.append(interaction.user.id)
-            await interaction.response.send_message(f"You picked {thing}", ephemeral=True)
             await interaction.edit_original_response(content=f"Players: {len(players)}")
+            await interaction.response.send_message(f"You picked {thing}", ephemeral=True)
             return
 
         await interaction.response.defer()
