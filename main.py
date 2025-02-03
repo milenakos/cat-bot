@@ -3571,6 +3571,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 async def rps(message: discord.Interaction, person: Optional[discord.Member]):
     clean_name = message.user.name.replace("_", "\\_")
     picks = {"Rock": [], "Paper": [], "Scissors": []}
+    mappings = {"Rock": ["Paper", "Rock", "Scissors"], "Paper": ["Scissors", "Paper", "Rock"], "Scissors": ["Rock", "Scissors", "Paper"]}
     vs_picks = {}
     players = []
 
@@ -3591,11 +3592,13 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
             else:
                 picks[thing].append(interaction.user.name.replace("_", "\\_"))
             players.append(interaction.user.id)
+            if person and person.id == bot.user.id:
+                players.append(bot.user.id)
+                vs_picks[bot.user.name.replace("_", "\\_")] = mappings[thing][0]
             if not person or len(players) == 1:
                 await interaction.edit_original_response(content=f"Players picked: {len(players)}")
                 return
 
-        mappings = {"Rock": ["Paper", "Rock", "Scissors"], "Paper": ["Scissors", "Paper", "Rock"], "Scissors": ["Rock", "Scissors", "Paper"]}
         result = mappings[thing]
 
         if not person:
