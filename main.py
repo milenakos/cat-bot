@@ -3593,7 +3593,6 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
             players.append(interaction.user.id)
             if not person or len(players) == 1:
                 await interaction.edit_original_response(content=f"Players picked: {len(players)}")
-                await interaction.followup.send(f"You picked {thing}", ephemeral=True)
                 return
 
         mappings = {"Rock": ["Paper", "Rock", "Scissors"], "Paper": ["Scissors", "Paper", "Rock"], "Scissors": ["Rock", "Scissors", "Paper"]}
@@ -3622,7 +3621,7 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
             description=description,
             color=0x6E593C,
         )
-        await interaction.edit_original_response(embed=embed, view=None)
+        await interaction.edit_original_response(content=None, embed=embed, view=None)
 
     if person:
         clean_name_2 = person.name.replace("_", "\\_")
