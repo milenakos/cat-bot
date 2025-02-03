@@ -1597,6 +1597,7 @@ async def on_message(message: discord.Message):
         if almost or actually:
             current_time = message.created_at.timestamp()
             channel.lastcatches = current_time
+            channel.lastcatcher = message.author.id
             cat_temp = channel.cat
             channel.cat = 0
             try:
@@ -1678,27 +1679,7 @@ async def on_message(message: discord.Message):
                 for i in cattypes:
                     if i.lower() in partial_type:
                         le_emoji = i
-                        break
-
-            if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                try:
-                    kwargs = {}
-                    if channel.thread_mappings:
-                        kwargs["thread"] = discord.Object(message.channel.id)
-                    if view:
-                        kwargs["view"] = view
-
-                    await send_target.send(
-                        coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
-                        .replace("{emoji}", str(icon))
-                        .replace("{type}", le_emoji)
-                        .replace("{count}", f"{new_count:,}")
-                        .replace("{time}", caught_time[:-1])
-                        + suffix_string,
-                        **kwargs,
-                    )
-                except Exception:
-                    pass
+                        break            
         if actually:
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
@@ -1929,6 +1910,26 @@ async def on_message(message: discord.Message):
             coughstring = "{username} *almost* cought {emoji} {type} cat!!!!1!\nYou have {count} cats of dat type!!!\nthis fella was *almost* caught in {time}!!!!"
         
         if almost or actually:
+            if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
+                try:
+                    kwargs = {}
+                    if channel.thread_mappings:
+                        kwargs["thread"] = discord.Object(message.channel.id)
+                    if view:
+                        kwargs["view"] = view
+
+                    await send_target.send(
+                        coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
+                        .replace("{emoji}", str(icon))
+                        .replace("{type}", le_emoji)
+                        .replace("{count}", f"{new_count:,}")
+                        .replace("{time}", caught_time[:-1])
+                        + suffix_string,
+                        **kwargs,
+                    )
+                except Exception:
+                    pass
+            
             if random.randint(0, 1000) == 69:
                 await achemb(message, "lucky", "send")
             if message.content == "CAT":
