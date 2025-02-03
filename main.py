@@ -3576,10 +3576,11 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
 
     async def pick(interaction):
         nonlocal players
-        await interaction.response.defer()
-        if person and interaction.user not in [message.user, person]:
+        if person and interaction.user.id not in [message.user.id, person.id]:
             await do_funny(interaction)
             return
+
+        await interaction.response.defer()
 
         thing = interaction.data["custom_id"]
         if interaction.user != message.user:
