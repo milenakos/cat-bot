@@ -1596,10 +1596,6 @@ async def on_message(message: discord.Message):
             actually = True
         if almost or actually:
             current_time = message.created_at.timestamp()
-            channel.lastcatches = current_time
-            channel.lastcatcher = message.author.id
-            cat_temp = channel.cat
-            channel.cat = 0
             try:
                 if perms.read_message_history:
                     var = await message.channel.fetch_message(cat_temp)
@@ -1608,7 +1604,7 @@ async def on_message(message: discord.Message):
             except Exception:
                 try:
                     if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                        await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
+                        await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* {"almost " if almost else None}catch a cat rn")
                 except Exception:
                     pass
                 return
@@ -1710,6 +1706,12 @@ async def on_message(message: discord.Message):
             else:
                 decided_time = 0
             try:
+                current_time = message.created_at.timestamp()
+                channel.lastcatches = current_time
+                channel.lastcatcher = message.author.id
+                cat_temp = channel.cat
+                channel.cat = 0
+
                 suffix_string = ""
 
                 # calculate prism boost
