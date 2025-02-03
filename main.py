@@ -3585,14 +3585,14 @@ async def rps(message: discord.Interaction):
 
         result = mappings[thing]
         embed = discord.Embed(
-            title=f"Rock Paper Scissors vs {message.user.name.replace('_', '\\_')}",
-            description=f"{message.user.name.replace('_', '\\_')} picked: __{pick}__\n\n**Winners** ({result[0]})\n{'\n'.join(picks[result[0]])}\n\n**Tie** ({result[1]})\n{'\n'.join(picks[result[1]])}\n\n**Losers** ({result[2]})\n{'\n'.join(picks[result[2]])}",
+            title=f"Rock Paper Scissors vs {message.user.name.replace('_', r'\_')}",
+            description=f"{message.user.name.replace('_', r'\_')} picked: __{pick}__\n\n**Winners** ({result[0]})\n{'\n'.join(picks[result[0]])}\n\n**Tie** ({result[1]})\n{'\n'.join(picks[result[1]])}\n\n**Losers** ({result[2]})\n{'\n'.join(picks[result[2]])}",
             color=0x6E593C,
         )
         await interaction.edit_original_response(embed=embed, view=None)
 
     embed = discord.Embed(
-        title=f"Rock Paper Scissors vs {message.user.name.replace('_', '\\_')}",
+        title=f"Rock Paper Scissors vs {message.user.name.replace('_', r'\_')}",
         description="Any amount of users can play. The game ends when the person who ran the command picks. Max time is 24 hours.",
         color=0x6E593C,
     )
