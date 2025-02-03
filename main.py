@@ -3570,16 +3570,19 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 async def rps(message: discord.Interaction):
     clean_name = message.user.name.replace("_", "\\_")
     picks = {"Rock": [], "Paper": [], "Scissors": []}
-    players = 0
+    players = []
 
     async def pick(interaction):
         nonlocal players
         thing = interaction.data["custom_id"]
         if interaction.user != message.user:
+            if interaction.user.id in players:
+                await interaction.response.defer()
+                return
             picks[thing].append(interaction.user.name.replace("_", "\\_"))
-            players += 1
+            players.append(interaction.user.id)
             await interaction.response.send_message(f"You picked {thing}", ephemeral=True)
-            await interaction.edit_original_response(content=f"Players: {players}")
+            await interaction.edit_original_response(content=f"Players: {len(players)}")
             return
 
         await interaction.response.defer()
