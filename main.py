@@ -1091,16 +1091,19 @@ async def maintaince_loop():
         ],
     ):
         raise ValueError
-    await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.")
-
-    loop_count += 1
 
     if loop_count % 10 == 0 and config.DB_TYPE == "POSTGRES":
+        backup_file = f"/root/backups/backup-{int(time.time())}.dump"
         try:
-            command = f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -Fc -f /root/backups/backup-{int(time.time())}.dump cat_bot"
-            subprocess.run(command, shell=True, check=True)
-        except subprocess.CalledProcessError as e:
+            process = await asyncio.create_subprocess_shell(f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -Fc -Z 9 -f {backup_file} cat_bot")
+            await process.wait()
+            await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.", file=discord.File(backup_file))
+        except Exception as e:
             print(f"Error during backup: {e}")
+    else:
+        await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.")
+
+    loop_count += 1
 
 
 # some code which is run when bot is started

@@ -11,7 +11,6 @@ DB_TYPE = "POSTGRES"
 DB_PASS = os.environ["psql_password"]
 
 # channel id for db backups, private extremely recommended
-# temporarily doesnt actually backup, just sends stats.
 BACKUP_ID = 1060545763194707998
 
 # what to do when there is a crash
