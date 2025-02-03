@@ -3583,11 +3583,15 @@ async def rps(message: discord.Interaction):
         await interaction.response.defer()
 
         mappings = {"Rock": ["Paper", "Rock", "Scissors"], "Paper": ["Scissors", "Paper", "Rock"], "Scissors": ["Rock", "Scissors", "Paper"]}
-
         result = mappings[thing]
+
+        description = f"{clean_name} picked: __{pick}__\n\n"
+        for num, i in enumerate("Winners", "Tie", "Losers"):
+            description += f"**{i}** ({result[num]})\n" + "\n".join(picks[result[num]]) + "\n\n"
+
         embed = discord.Embed(
             title=f"Rock Paper Scissors vs {clean_name}",
-            description=f"{clean_name} picked: __{pick}__\n\n**Winners** ({result[0]})\n{'\n'.join(picks[result[0]])}\n\n**Tie** ({result[1]})\n{'\n'.join(picks[result[1]])}\n\n**Losers** ({result[2]})\n{'\n'.join(picks[result[2]])}",
+            description=description,
             color=0x6E593C,
         )
         await interaction.edit_original_response(embed=embed, view=None)
