@@ -613,7 +613,6 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
 
             await message.channel.send(
                 f"<@{user.user_id}>",
-                allowed_mentions=discord.AllowedMentions.none(),
                 embeds=[embed_level_up, embed_progress],
             )
     else:
@@ -627,7 +626,6 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         ):
             await message.channel.send(
                 f"<@{user.user_id}>",
-                allowed_mentions=discord.AllowedMentions.none(),
                 embed=progress_embed(
                     message,
                     user,
@@ -2884,7 +2882,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             user.rain_minutes -= rain_length
         user.save()
         profile.save()
-        await interaction.response.send_message(f"{rain_length}m cat rain was started by <@{interaction.user.id}>!")
+        await interaction.response.send_message(f"{rain_length}m cat rain was started by {interaction.user.mention}!")
 
     async def rain_modal(interaction):
         modal = RainModal(interaction.user)
@@ -3312,7 +3310,7 @@ async def prism(message: discord.Interaction):
             time=round(time.time()),
             name=selected_name,
         )
-        await message.followup.send(f"{icon} <@{message.user.id}> has created prism {selected_name}!")
+        await message.followup.send(f"{icon} {message.user.mention} has created prism {selected_name}!")
         await achemb(message, "prism", "send")
 
     async def craft_prism(interaction: discord.Interaction):
@@ -3475,7 +3473,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
             view.add_item(button)
         if not has_unlocked_tiles:
-            text = f"<@{message.user.id}> (X) vs <@{person.id}> (O)\nits a tie!"
+            text = f"{message.user.mention} (X) vs {person.mention} (O)\nits a tie!"
             user1 = get_profile(message.guild.id, message.user.id)
             user2 = get_profile(message.guild.id, person.id)
             user1.ttt_played += 1
@@ -3485,7 +3483,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
             user1.save()
             user2.save()
         else:
-            text = f"<@{message.user.id}> (X) vs <@{person.id}> (O)\ncurrent turn: <@{current_turn.id}>"
+            text = f"{message.user.mention} (X) vs {person.mention} (O)\ncurrent turn: {current_turn.mention}"
         return text, view
 
     async def do_turn(interaction):
@@ -3529,7 +3527,9 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
                         button.row = num // 3
 
                         view.add_item(button)
-                    await interaction.edit_original_response(content=f"<@{message.user.id}> (X) vs <@{person.id}> (O)\n<@{current_turn.id}> wins!", view=view)
+                    await interaction.edit_original_response(
+                        content=f"{message.user.mention} (X) vs {person.mention} (O)\n{current_turn.mention} wins!", view=view
+                    )
                     await achemb(message, "ttt_win", "send", current_turn)
                     user1 = get_profile(message.guild.id, message.user.id)
                     user2 = get_profile(message.guild.id, person.id)
@@ -3551,7 +3551,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
             await do_funny(interaction)
 
     text, view = gen_board()
-    await message.response.send_message(text, view=view)
+    await message.response.send_message(text, view=view, allowed_mentions=discord.AllowedMentions(users=True))
 
 
 @bot.tree.command(description="give cats now")
@@ -3593,7 +3593,7 @@ async def gift(
             reciever.save()
             embed = discord.Embed(
                 title="Success!",
-                description=f"Successfully transfered {amount:,} {cat_type} cats from <@{message.user.id}> to <@{person_id}>!",
+                description=f"Successfully transfered {amount:,} {cat_type} cats from {message.user.mention} to <@{person_id}>!",
                 color=0x6E593C,
             )
 
@@ -3646,9 +3646,9 @@ async def gift(
                 myview.add_item(button)
                 myview.add_item(button2)
 
-                await message.response.send_message(person.mention, embed=embed, view=myview)
+                await message.response.send_message(person.mention, embed=embed, view=myview, allowed_mentions=discord.AllowedMentions(users=True))
             else:
-                await message.response.send_message(person.mention, embed=embed)
+                await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
 
             # handle aches
             await achemb(message, "donator", "send")
@@ -3677,7 +3677,7 @@ async def gift(
             actual_receiver.save()
             embed = discord.Embed(
                 title="Success!",
-                description=f"Successfully transfered {amount:,} minutes of rain from <@{message.user.id}> to <@{person_id}>!",
+                description=f"Successfully transfered {amount:,} minutes of rain from {message.user.mention} to <@{person_id}>!",
                 color=0x6E593C,
             )
 
@@ -3748,9 +3748,9 @@ async def gift(
                 myview.add_item(button)
                 myview.add_item(button2)
 
-                await message.response.send_message(person.mention, embed=embed, view=myview)
+                await message.response.send_message(person.mention, embed=embed, view=myview, allowed_mentions=discord.AllowedMentions(users=True))
             else:
-                await message.response.send_message(person.mention, embed=embed)
+                await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
 
             # handle aches
             await achemb(message, "donator", "send")
@@ -3802,7 +3802,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         person2gives = {}
         try:
             await interaction.edit_original_response(
-                content=f"<@{interaction.user.id}> has cancelled the trade.",
+                content=f"{interaction.user.mention} has cancelled the trade.",
                 embed=None,
                 view=None,
             )
@@ -3879,14 +3879,14 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
             if person1prismcount + person2prismgive > 5:
                 await interaction.edit_original_response(
-                    content=f"<@{person1.id}> reached the prism limit. trade cancelled.",
+                    content=f"{person1.mention} reached the prism limit. trade cancelled.",
                     embed=None,
                     view=None,
                 )
                 return
             if person2prismcount + person1prismgive > 5:
                 await interaction.edit_original_response(
-                    content=f"<@{person2.id}> reached the prism limit. trade cancelled.",
+                    content=f"{person2.mention} reached the prism limit. trade cancelled.",
                     embed=None,
                     view=None,
                 )
@@ -4204,7 +4204,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
     if not view:
         await message.response.send_message(embed=embed)
     else:
-        await message.response.send_message(person2.mention, embed=embed, view=view)
+        await message.response.send_message(person2.mention, embed=embed, view=view, allowed_mentions=discord.AllowedMentions(users=True))
 
     if person1 == person2:
         await achemb(message, "introvert", "send")
@@ -5274,15 +5274,15 @@ async def leaderboards(
             if messager_placement > interactor_placement:
                 # interactor should go first
                 if interactor_placement > show_amount and str(interaction.user.id) not in string:
-                    string = string + f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: <@{interaction.user.id}>\n"
+                    string = string + f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
                 if messager_placement > show_amount and str(message.user.id) not in string:
-                    string = string + f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: <@{message.user.id}>\n"
+                    string = string + f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: {message.user.mention}\n"
             else:
                 # messager should go first
                 if messager_placement > show_amount and str(message.user.id) not in string:
-                    string = string + f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: <@{message.user.id}>\n"
+                    string = string + f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: {message.user.mention}\n"
                 if interactor_placement > show_amount and str(interaction.user.id) not in string:
-                    string = string + f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: <@{interaction.user.id}>\n"
+                    string = string + f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
 
         title = type + " Leaderboard"
         if type == "Cats":
@@ -5366,10 +5366,10 @@ async def givecat(message: discord.Interaction, person_id: discord.User, amount:
     user.save()
     embed = discord.Embed(
         title="Success!",
-        description=f"gave <@{person_id.id}> {amount:,} {cat_type} cats",
+        description=f"gave {person_id.mention} {amount:,} {cat_type} cats",
         color=0x6E593C,
     )
-    await message.response.send_message(person_id.mention, embed=embed)
+    await message.response.send_message(person_id.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
 
 
 @bot.tree.command(name="setup", description="(ADMIN) Setup cat in current channel")
@@ -5538,7 +5538,7 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
             .set_author(name=title, icon_url=icon)
             .set_footer(text=f"for {person_id.name}")
         )
-        await message.response.send_message(person_id.mention, embed=embed)
+        await message.response.send_message(person_id.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
     else:
         await message.response.send_message("i cant find that achievement! try harder next time.", ephemeral=True)
 
@@ -5552,7 +5552,7 @@ async def reset(message: discord.Interaction, person_id: discord.User):
         if interaction.user.id == message.user.id:
             try:
                 get_profile(message.guild.id, person_id.id).delete_instance()
-                await interaction.edit_original_response(content=f"Done! rip <@{person_id.id}>. f's in chat.", view=None)
+                await interaction.edit_original_response(content=f"Done! rip {person_id.mention}. f's in chat.", view=None)
             except Exception:
                 await interaction.edit_original_response(
                     content="ummm? this person isnt even registered in cat bot wtf are you wiping?????",
@@ -5565,7 +5565,7 @@ async def reset(message: discord.Interaction, person_id: discord.User):
     button = Button(style=ButtonStyle.red, label="Confirm")
     button.callback = confirmed
     view.add_item(button)
-    await message.response.send_message(f"Are you sure you want to reset <@{person_id.id}>?", view=view)
+    await message.response.send_message(f"Are you sure you want to reset {person_id.mention}?", view=view, allowed_mentions=discord.AllowedMentions(users=True))
 
 
 @bot.tree.command(description="(HIGH ADMIN) [VERY DANGEROUS] Reset all Cat Bot data of this server")

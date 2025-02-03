@@ -15,8 +15,8 @@ bot = commands.AutoShardedBot(
     intents=intents,
     member_cache_flags=discord.MemberCacheFlags.none(),
     help_command=None,
-    max_messages=None,
     chunk_guilds_at_startup=False,
+    allowed_mentions=discord.AllowedMentions.none(),
 )
 
 
