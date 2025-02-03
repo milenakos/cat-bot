@@ -852,12 +852,14 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
                 file=file,
                 wait=True,
                 thread=discord.Object(int(ch_id)),
+                allowed_mentions=discord.AllowedMentions.all(),
             )
         else:
             message_is_sus = await channeley.send(
                 appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat),
                 file=file,
                 wait=True,
+                allowed_mentions=discord.AllowedMentions.all(),
             )
     except discord.Forbidden:
         await unsetup(channel)
