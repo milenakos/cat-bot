@@ -2540,8 +2540,7 @@ leave blank to reset.""",
 
 
 @bot.tree.command(description="Get ID of a thing")
-async def getid(message: discord.Interaction, thing: discord.app_commands.Transform[discord.Object, discord.app_commands.AppCommandOptionType.mentionable]):
-    # chatgpt wrote that type
+async def getid(message: discord.Interaction, thing: discord.User | discord.Role):
     await message.response.send_message(f"The ID of {thing.mention} is {thing.id}\nyou can use it in /changemessage like this: `{thing.mention}`")
 
 
