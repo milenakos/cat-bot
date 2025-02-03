@@ -3583,7 +3583,7 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
         await interaction.response.defer()
 
         thing = interaction.data["custom_id"]
-        if interaction.user != message.user:
+        if person or interaction.user != message.user:
             if interaction.user.id in players:
                 return
             if person:
