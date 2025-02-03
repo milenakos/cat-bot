@@ -3568,8 +3568,6 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
 @bot.tree.command(description="cat cater catssors")
 async def rps(message: discord.Interaction):
-    await message.response.defer()
-
     clean_name = message.user.name.replace("_", "\\_")
     picks = {"Rock": [], "Paper": [], "Scissors": []}
 
