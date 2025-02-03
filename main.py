@@ -1,5 +1,6 @@
 import asyncio
 import base64
+
 import datetime
 import io
 import json
@@ -3563,6 +3564,44 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
     text, view = gen_board()
     await message.response.send_message(text, view=view, allowed_mentions=discord.AllowedMentions(users=True))
+
+
+@bot.tree.command(description="cat cater catssors")
+async def rps(message: discord.Interaction):
+    await message.response.defer()
+
+    picks = {"Rock": [], "Paper": [], "Scissors": []}
+
+    async def pick(interaction):
+        thing = interaction.data["custom_id"]
+        if interaction.user != message.user:
+            picks[thing].append(interaction.user.name.replace("_", "\\_"))
+            await interaction.response.send_message(f"You picked {thing}", ephemeral=True)
+            return
+
+        await interaction.response.defer()
+
+        mappings = {"Rock": ["Paper", "Rock", "Scissors"], "Paper": ["Scissors", "Paper", "Rock"], "Scissors": ["Rock", "Scissors", "Paper"]}
+
+        result = mappings[thing]
+        embed = discord.Embed(
+            title=f"Rock Paper Scissors vs {message.user.name.replace('_', '\\_')}",
+            description=f"{message.user.name.replace('_', '\\_')} picked: __{pick}__\n\n**Winners** ({result[0]})\n{'\n'.join(picks[result[0]])}\n\n**Tie** ({result[1]})\n{'\n'.join(picks[result[1]])}\n\n**Losers** ({result[2]})\n{'\n'.join(picks[result[2]])}",
+            color=0x6E593C,
+        )
+        await interaction.edit_original_response(embed=embed, view=None)
+
+    embed = discord.Embed(
+        title=f"Rock Paper Scissors vs {message.user.name.replace('_', '\\_')}",
+        description="Any amount of users can play. The game ends when the person who ran the command picks. Max time is 24 hours.",
+        color=0x6E593C,
+    )
+    view = View(timeout=3600 * 24)
+    for i in ["Rock", "Paper", "Scissors"]:
+        button = Button(label=i, custom_id=i)
+        button.callback = pick
+        view.add_item(button)
+    await message.response.send_message(embed=embed, view=view)
 
 
 @bot.tree.command(description="give cats now")
