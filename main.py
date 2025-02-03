@@ -1590,7 +1590,116 @@ async def on_message(message: discord.Message):
                     pointlaugh_ratelimit[message.channel.id] = pointlaugh_ratelimit.get(message.channel.id, 0) + 1
                 except Exception:
                     pass
+                if channel and time.time() <= channel.lastcatches and message.author.id != channel.lastcatcher:
+                    almost = True
         else:
+            actually = True
+        if almost or actually:
+            current_time = message.created_at.timestamp()
+            channel.lastcatches = current_time
+            cat_temp = channel.cat
+            channel.cat = 0
+            try:
+                if perms.read_message_history:
+                    var = await message.channel.fetch_message(cat_temp)
+                else:
+                    raise Exception
+            except Exception:
+                try:
+                    if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
+                        await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
+                except Exception:
+                    pass
+                return
+            catchtime = var.created_at
+            catchcontents = var.content
+            try:
+                send_target = discord.Webhook.from_url(channel.webhook, client=bot)
+                try:
+                    if channel.thread_mappings:
+                        await send_target.delete_message(cat_temp, thread=discord.Object(int(message.channel.id)))
+                    else:
+                        await send_target.delete_message(cat_temp)
+                except Exception:
+                    if perms.manage_messages:
+                        await cat_temp.delete()
+            except Exception:
+                send_target = message.channel
+            try:
+                # some math to make time look cool
+                then = catchtime.timestamp()
+                time_caught = round(abs(current_time - then), 3)  # cry about it
+                if time_caught >= 1:
+                    time_caught = round(time_caught, 2)
+                days = time_caught // 86400
+                time_left = time_caught - (days * 86400)
+                hours = time_left // 3600
+                time_left = time_left - (hours * 3600)
+                minutes = time_left // 60
+                seconds = time_left - (minutes * 60)
+                caught_time = ""
+                if days:
+                    caught_time = caught_time + str(int(days)) + " days "
+                if hours:
+                    caught_time = caught_time + str(int(hours)) + " hours "
+                if minutes:
+                    caught_time = caught_time + str(int(minutes)) + " minutes "
+                if seconds:
+                    pre_time = round(seconds, 3)
+                    if int(pre_time) == float(pre_time):
+                        # replace .0 with .00 basically
+                        pre_time = str(int(pre_time)) + ".00"
+                    caught_time = caught_time + str(pre_time) + " seconds "
+                do_time = True
+                if time_caught <= 0:
+                    do_time = False
+            except Exception:
+                # if some of the above explodes just give up
+                do_time = False
+                caught_time = "undefined amounts of time "
+
+            if cat_rains.get(str(message.channel.id), 0) + 10 > time.time() or message.channel.id in temp_rains_storage:
+                do_time = False
+
+            icon = None
+            partial_type = None
+            for v in allowedemojis:
+                if v in catchcontents:
+                    partial_type = v
+                    break
+
+            if not partial_type and "thetrashcellcat" in catchcontents:
+                partial_type = "trashcat"
+                le_emoji = "Trash"
+            else:
+                if not partial_type:
+                    return
+
+                for i in cattypes:
+                    if i.lower() in partial_type:
+                        le_emoji = i
+                        break
+
+            if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
+                try:
+                    kwargs = {}
+                    if channel.thread_mappings:
+                        kwargs["thread"] = discord.Object(message.channel.id)
+                    if view:
+                        kwargs["view"] = view
+
+                    await send_target.send(
+                        coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
+                        .replace("{emoji}", str(icon))
+                        .replace("{type}", le_emoji)
+                        .replace("{count}", f"{new_count:,}")
+                        .replace("{time}", caught_time[:-1])
+                        + suffix_string,
+                        **kwargs,
+                    )
+                except Exception:
+                    pass
+        if actually:
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
             times = [channel.spawn_times_min, channel.spawn_times_max]
@@ -1620,91 +1729,6 @@ async def on_message(message: discord.Message):
             else:
                 decided_time = 0
             try:
-                current_time = message.created_at.timestamp()
-                channel.lastcatches = current_time
-                cat_temp = channel.cat
-                channel.cat = 0
-                try:
-                    if perms.read_message_history:
-                        var = await message.channel.fetch_message(cat_temp)
-                    else:
-                        raise Exception
-                except Exception:
-                    try:
-                        if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                            await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
-                    except Exception:
-                        pass
-                    return
-                catchtime = var.created_at
-                catchcontents = var.content
-                try:
-                    send_target = discord.Webhook.from_url(channel.webhook, client=bot)
-                    try:
-                        if channel.thread_mappings:
-                            await send_target.delete_message(cat_temp, thread=discord.Object(int(message.channel.id)))
-                        else:
-                            await send_target.delete_message(cat_temp)
-                    except Exception:
-                        if perms.manage_messages:
-                            await cat_temp.delete()
-                except Exception:
-                    send_target = message.channel
-                try:
-                    # some math to make time look cool
-                    then = catchtime.timestamp()
-                    time_caught = round(abs(current_time - then), 3)  # cry about it
-                    if time_caught >= 1:
-                        time_caught = round(time_caught, 2)
-                    days = time_caught // 86400
-                    time_left = time_caught - (days * 86400)
-                    hours = time_left // 3600
-                    time_left = time_left - (hours * 3600)
-                    minutes = time_left // 60
-                    seconds = time_left - (minutes * 60)
-                    caught_time = ""
-                    if days:
-                        caught_time = caught_time + str(int(days)) + " days "
-                    if hours:
-                        caught_time = caught_time + str(int(hours)) + " hours "
-                    if minutes:
-                        caught_time = caught_time + str(int(minutes)) + " minutes "
-                    if seconds:
-                        pre_time = round(seconds, 3)
-                        if int(pre_time) == float(pre_time):
-                            # replace .0 with .00 basically
-                            pre_time = str(int(pre_time)) + ".00"
-                        caught_time = caught_time + str(pre_time) + " seconds "
-                    do_time = True
-                    if time_caught <= 0:
-                        do_time = False
-                except Exception:
-                    # if some of the above explodes just give up
-                    do_time = False
-                    caught_time = "undefined amounts of time "
-
-                if cat_rains.get(str(message.channel.id), 0) + 10 > time.time() or message.channel.id in temp_rains_storage:
-                    do_time = False
-
-                icon = None
-                partial_type = None
-                for v in allowedemojis:
-                    if v in catchcontents:
-                        partial_type = v
-                        break
-
-                if not partial_type and "thetrashcellcat" in catchcontents:
-                    partial_type = "trashcat"
-                    le_emoji = "Trash"
-                else:
-                    if not partial_type:
-                        return
-
-                    for i in cattypes:
-                        if i.lower() in partial_type:
-                            le_emoji = i
-                            break
-
                 suffix_string = ""
 
                 # calculate prism boost
@@ -1882,98 +1906,10 @@ async def on_message(message: discord.Message):
                 user[f"cat_{le_emoji}"] += silly_amount
                 new_count = user[f"cat_{le_emoji}"]
 
-                if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                    try:
-                        kwargs = {}
-                        if channel.thread_mappings:
-                            kwargs["thread"] = discord.Object(message.channel.id)
-                        if view:
-                            kwargs["view"] = view
-
-                        await send_target.send(
-                            coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
-                            .replace("{emoji}", str(icon))
-                            .replace("{type}", le_emoji)
-                            .replace("{count}", f"{new_count:,}")
-                            .replace("{time}", caught_time[:-1])
-                            + suffix_string,
-                            **kwargs,
-                        )
-                    except Exception:
-                        pass
-
                 user.total_catches += 1
                 if do_time:
                     user.total_catch_time += time_caught
-
-                if random.randint(0, 1000) == 69:
-                    await achemb(message, "lucky", "send")
-                if message.content == "CAT":
-                    await achemb(message, "loud_cat", "send")
-                if cat_rains.get(str(message.channel.id), 0) != 0:
-                    user.rain_participations += 1
-                    await achemb(message, "cat_rain", "send")
-
-                # handle fastest and slowest catches
-                if do_time and time_caught < user.time:
-                    user.time = time_caught
-                if do_time and time_caught > user.timeslow:
-                    user.timeslow = time_caught
-
-                if message.channel.id in temp_rains_storage:
-                    temp_rains_storage.remove(message.channel.id)
-
-                await achemb(message, "first", "send")
-
-                if user.time <= 5:
-                    await achemb(message, "fast_catcher", "send")
-
-                if user.timeslow >= 3600:
-                    await achemb(message, "slow_catcher", "send")
-
-                if do_time and time_caught == 3.14:
-                    await achemb(message, "pie", "send")
-
-                if do_time and time_caught == int(time_caught):
-                    user.perfection_count += 1
-                    await achemb(message, "perfection", "send")
-
-                if did_boost:
-                    await achemb(message, "boosted", "send")
-
-                if do_time:
-                    raw_digits = "".join(char for char in caught_time[:-1] if char.isdigit())
-                    if len(set(raw_digits)) == 1:
-                        await achemb(message, "all_the_same", "send")
-
-                # handle battlepass
-                await progress(message, user, "3cats")
-                if le_emoji == "Fine":
-                    await progress(message, user, "2fine")
-                if le_emoji == "Good":
-                    await progress(message, user, "good")
-                if do_time and time_caught < 10:
-                    await progress(message, user, "under10")
-                if do_time and int(time_caught) % 2 == 0:
-                    await progress(message, user, "even")
-                if do_time and int(time_caught) % 2 == 1:
-                    await progress(message, user, "odd")
-                if le_emoji not in ["Fine", "Nice", "Good"]:
-                    await progress(message, user, "rare+")
-                if did_boost:
-                    await progress(message, user, "prism")
-                if user.catch_quest == "finenice":
-                    # 0 none
-                    # 1 fine
-                    # 2 nice
-                    # 3 both
-                    if le_emoji == "Fine" and user.catch_progress in [0, 2]:
-                        await progress(message, user, "finenice")
-                    elif le_emoji == "Nice" and user.catch_progress in [0, 1]:
-                        await progress(message, user, "finenice")
-                        await progress(message, user, "finenice")
             finally:
-                user.save()
                 channel.save()
                 if decided_time:
                     await asyncio.sleep(decided_time)
@@ -1987,6 +1923,80 @@ async def on_message(message: discord.Message):
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
                     except Exception:
                         pass
+
+        if almost:
+            suffix_string = ""
+            coughstring = "{username} *almost* cought {emoji} {type} cat!!!!1!\nYou have {count} cats of dat type!!!\nthis fella was *almost* caught in {time}!!!!"
+        
+        if almost or actually:
+            if random.randint(0, 1000) == 69:
+                await achemb(message, "lucky", "send")
+            if message.content == "CAT":
+                await achemb(message, "loud_cat", "send")
+            if cat_rains.get(str(message.channel.id), 0) != 0:
+                user.rain_participations += 1
+                await achemb(message, "cat_rain", "send")
+
+            # handle fastest and slowest catches
+            if do_time and time_caught < user.time:
+                user.time = time_caught
+            if do_time and time_caught > user.timeslow:
+                user.timeslow = time_caught
+
+            if message.channel.id in temp_rains_storage:
+                temp_rains_storage.remove(message.channel.id)
+
+            await achemb(message, "first", "send")
+
+            if user.time <= 5:
+                await achemb(message, "fast_catcher", "send")
+
+            if user.timeslow >= 3600:
+                await achemb(message, "slow_catcher", "send")
+
+            if do_time and time_caught == 3.14:
+                await achemb(message, "pie", "send")
+
+            if do_time and time_caught == int(time_caught):
+                user.perfection_count += 1
+                await achemb(message, "perfection", "send")
+
+            if did_boost:
+                await achemb(message, "boosted", "send")
+
+            if do_time:
+                raw_digits = "".join(char for char in caught_time[:-1] if char.isdigit())
+                if len(set(raw_digits)) == 1:
+                    await achemb(message, "all_the_same", "send")
+
+            # handle battlepass
+            await progress(message, user, "3cats")
+            if le_emoji == "Fine":
+                await progress(message, user, "2fine")
+            if le_emoji == "Good":
+                await progress(message, user, "good")
+            if do_time and time_caught < 10:
+                await progress(message, user, "under10")
+            if do_time and int(time_caught) % 2 == 0:
+                await progress(message, user, "even")
+            if do_time and int(time_caught) % 2 == 1:
+                await progress(message, user, "odd")
+            if le_emoji not in ["Fine", "Nice", "Good"]:
+                await progress(message, user, "rare+")
+            if did_boost:
+                await progress(message, user, "prism")
+            if user.catch_quest == "finenice":
+                # 0 none
+                # 1 fine
+                # 2 nice
+                # 3 both
+                if le_emoji == "Fine" and user.catch_progress in [0, 2]:
+                    await progress(message, user, "finenice")
+                elif le_emoji == "Nice" and user.catch_progress in [0, 1]:
+                    await progress(message, user, "finenice")
+                    await progress(message, user, "finenice")
+
+            user.save()
 
     if text.lower().startswith("cat!amount") and perms.send_messages and (not message.thread or perms.send_messages_in_threads):
         user, _ = User.get_or_create(user_id=message.author.id)
