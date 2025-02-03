@@ -2509,6 +2509,7 @@ async def changemessage(message: discord.Interaction):
         title="Change appear and cought messages",
         description="""below are buttons to change them.
 they are required to have all placeholders somewhere in them.
+you must include the placeholders exactly like they are shown below, the values will be replaced by cat bot when it uses them.
 that being:
 
 for appear:
@@ -2518,6 +2519,9 @@ for cought:
 `{emoji}`, `{type}`, `{username}`, `{count}`, `{time}`
 
 missing any of these will result in a failure.
+how to do mentions: `@everyone`, `@here`, `<@userid>`, `<@&roleid>`
+to get ids, run `/getid` with the thing you want to mention.
+if it doesnt work make sure the bot has mention permissions.
 leave blank to reset.""",
         color=0x6E593C,
     )
@@ -2533,6 +2537,12 @@ leave blank to reset.""",
     view.add_item(button2)
 
     await message.response.send_message(embed=embed, view=view)
+
+
+@bot.tree.command(descrption="Get ID of a thing")
+async def getid(message: discord.Interaction, thing: discord.app_commands.Transform[discord.Object, discord.app_commands.AppCommandOptionType.mentionable]):
+    # chatgpt wrote that type
+    await message.response.send_message(f"The ID of {thing.mention} is {thing.id}\nyou can use it in /changemessage like this: `{thing.mention}`")
 
 
 @bot.tree.command(description="Get Daily cats")
