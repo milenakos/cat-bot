@@ -3566,47 +3566,75 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
     await message.response.send_message(text, view=view, allowed_mentions=discord.AllowedMentions(users=True))
 
 
-@bot.tree.command(description="cat cater catssors")
-async def rps(message: discord.Interaction):
+@bot.tree.command(description="dont select a person to make an everyone vs you game")
+@discord.app_commands.describe(person="Who do you want to play with?")
+async def rps(message: discord.Interaction, person: Optional[discord.Member]):
     clean_name = message.user.name.replace("_", "\\_")
     picks = {"Rock": [], "Paper": [], "Scissors": []}
+    vs_picks = {}
     players = []
 
     async def pick(interaction):
         nonlocal players
         await interaction.response.defer()
+        if person and interaction.user not in [message.user, person]:
+            await do_funny(interaction)
+            return
 
         thing = interaction.data["custom_id"]
         if interaction.user != message.user:
             if interaction.user.id in players:
                 return
-            picks[thing].append(interaction.user.name.replace("_", "\\_"))
+            if person:
+                vs_picks[interaction.user.name.replace("_", "\\_")] = thing
+            else:
+                picks[thing].append(interaction.user.name.replace("_", "\\_"))
             players.append(interaction.user.id)
-            await interaction.edit_original_response(content=f"Players: {len(players)}")
-            await interaction.followup.send(f"You picked {thing}", ephemeral=True)
-            return
+            if not person or len(players) == 1:
+                await interaction.edit_original_response(content=f"Players picked: {len(players)}")
+                await interaction.followup.send(f"You picked {thing}", ephemeral=True)
+                return
 
         mappings = {"Rock": ["Paper", "Rock", "Scissors"], "Paper": ["Scissors", "Paper", "Rock"], "Scissors": ["Rock", "Scissors", "Paper"]}
         result = mappings[thing]
 
-        description = f"{clean_name} picked: __{thing}__\n\n"
-        for num, i in enumerate(["Winners", "Tie", "Losers"]):
-            if picks[result[num]]:
-                peoples = "\n".join(picks[result[num]])
+        if not person:
+            description = f"{clean_name} picked: __{thing}__\n\n"
+            for num, i in enumerate(["Winners", "Tie", "Losers"]):
+                if picks[result[num]]:
+                    peoples = "\n".join(picks[result[num]])
+                else:
+                    peoples = "No one"
+                description += f"**{i}** ({result[num]})\n{peoples}\n\n"
+        else:
+            description = f"{clean_name} picked: __{vs_picks[clean_name]}__\n\n{clean_name_2} picked: __{vs_picks[clean_name_2]}__\n\n"
+            result = mappings[vs_picks[0]].index(vs_picks[1])
+            if result == 0:
+                description += f"**Winner**: {clean_name_2}!"
+            elif result == 1:
+                description += "It's a **Tie**!"
             else:
-                peoples = "No one"
-            description += f"**{i}** ({result[num]})\n{peoples}\n\n"
+                description += f"**Winner**: {clean_name}!"
 
         embed = discord.Embed(
-            title=f"Rock Paper Scissors vs {clean_name}",
+            title=f"{clean_name_2} vs {clean_name}",
             description=description,
             color=0x6E593C,
         )
         await interaction.edit_original_response(embed=embed, view=None)
 
+    if person:
+        clean_name_2 = person.name.replace("_", "\\_")
+    else:
+        clean_name_2 = "Rock Paper Scissors"
+
+    if person:
+        description = "Pick what to play!"
+    else:
+        description = "Any amount of users can play. The game ends when the person who ran the command picks. Max time is 24 hours."
     embed = discord.Embed(
-        title=f"Rock Paper Scissors vs {clean_name}",
-        description="Any amount of users can play. The game ends when the person who ran the command picks. Max time is 24 hours.",
+        title=f"{clean_name_2} vs {clean_name}",
+        description=description,
         color=0x6E593C,
     )
     view = View(timeout=3600 * 24)
@@ -3614,7 +3642,7 @@ async def rps(message: discord.Interaction):
         button = Button(label=i, custom_id=i)
         button.callback = pick
         view.add_item(button)
-    await message.response.send_message("Players: 0", embed=embed, view=view)
+    await message.response.send_message("Players picked: 0", embed=embed, view=view)
 
 
 @bot.tree.command(description="give cats now")
