@@ -3584,8 +3584,12 @@ async def rps(message: discord.Interaction):
         result = mappings[thing]
 
         description = f"{clean_name} picked: __{pick}__\n\n"
-        for num, i in enumerate("Winners", "Tie", "Losers"):
-            description += f"**{i}** ({result[num]})\n" + "\n".join(picks[result[num]]) + "\n\n"
+        for num, i in enumerate(["Winners", "Tie", "Losers"]):
+            if picks[result[num]]:
+                peoples = "\n".join(picks[result[num]])
+            else:
+                peoples = "No one"
+            description += f"**{i}** ({result[num]})\n{peoples}\n\n"
 
         embed = discord.Embed(
             title=f"Rock Paper Scissors vs {clean_name}",
