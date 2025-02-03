@@ -1123,16 +1123,6 @@ async def on_ready():
 
     credits = {
         "author": [553093932012011520],
-        "contrib": [
-            576065759185338371,
-            819980535639572500,
-            432966085025857536,
-            646401965596868628,
-            696806601771974707,
-            804762486946660353,
-            931342092121280543,
-            695359046928171118,
-        ],
         "tester": [
             712639066373619754,
             902862104971849769,
@@ -1144,6 +1134,23 @@ async def on_ready():
         ],
         "trash": [520293520418930690],
     }
+
+    # fetch github contributors
+    url = "https://api.github.com/repos/milenakos/cat-bot/contributors"
+    contributors = []
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                data = await response.json()
+                for contributor in data:
+                    login = contributor["login"].replace("_", r"\_")
+                    if login not in ["milenakos", "ImgBotApp"]:
+                        contributors.append(login)
+            else:
+                print(f"Error: {response.status} - {await response.text()}")
+
+    gen_credits["contrib"] = ", ".join(contributors)
 
     # fetch discord usernames by user ids
     for key in credits.keys():
