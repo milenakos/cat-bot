@@ -3570,12 +3570,16 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 async def rps(message: discord.Interaction):
     clean_name = message.user.name.replace("_", "\\_")
     picks = {"Rock": [], "Paper": [], "Scissors": []}
+    players = 0
 
     async def pick(interaction):
+        nonlocal players
         thing = interaction.data["custom_id"]
         if interaction.user != message.user:
             picks[thing].append(interaction.user.name.replace("_", "\\_"))
+            players += 1
             await interaction.response.send_message(f"You picked {thing}", ephemeral=True)
+            await interaction.edit_original_response(content=f"Players: {players}")
             return
 
         await interaction.response.defer()
@@ -3583,7 +3587,7 @@ async def rps(message: discord.Interaction):
         mappings = {"Rock": ["Paper", "Rock", "Scissors"], "Paper": ["Scissors", "Paper", "Rock"], "Scissors": ["Rock", "Scissors", "Paper"]}
         result = mappings[thing]
 
-        description = f"{clean_name} picked: __{pick}__\n\n"
+        description = f"{clean_name} picked: __{thing}__\n\n"
         for num, i in enumerate(["Winners", "Tie", "Losers"]):
             if picks[result[num]]:
                 peoples = "\n".join(picks[result[num]])
@@ -3608,7 +3612,7 @@ async def rps(message: discord.Interaction):
         button = Button(label=i, custom_id=i)
         button.callback = pick
         view.add_item(button)
-    await message.response.send_message(embed=embed, view=view)
+    await message.response.send_message("Players: 0", embed=embed, view=view)
 
 
 @bot.tree.command(description="give cats now")
