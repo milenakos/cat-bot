@@ -2539,7 +2539,7 @@ leave blank to reset.""",
     await message.response.send_message(embed=embed, view=view)
 
 
-@bot.tree.command(descrption="Get ID of a thing")
+@bot.tree.command(description="Get ID of a thing")
 async def getid(message: discord.Interaction, thing: discord.app_commands.Transform[discord.Object, discord.app_commands.AppCommandOptionType.mentionable]):
     # chatgpt wrote that type
     await message.response.send_message(f"The ID of {thing.mention} is {thing.id}\nyou can use it in /changemessage like this: `{thing.mention}`")
