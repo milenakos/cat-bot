@@ -187,6 +187,7 @@ class Channel(peewee.Model):
     spawn_times_max = peewee.BigIntegerField(default=1200)  # spawn times maximum
 
     lastcatches = peewee.BigIntegerField(default=0)  # timestamp of last catch
+    lastcatcher = peewee.BigIntegerField(default=0)  # last person to catch
     yet_to_spawn = peewee.BigIntegerField(default=0)  # timestamp of the next catch, if any
 
     appear = peewee.CharField(default="", max_length=4000)
