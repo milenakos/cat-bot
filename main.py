@@ -1107,6 +1107,12 @@ async def maintaince_loop():
     loop_count += 1
 
 
+# fetch app emojis early
+async def on_connect():
+    global emojis
+    emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
+
+
 # some code which is run when bot is started
 async def on_ready():
     global milenakoos, OWNER_ID, on_ready_debounce, gen_credits, emojis
@@ -2107,12 +2113,15 @@ async def on_message(message: discord.Message):
                 return
             img_data = await og_msg.attachments[0].read()
 
-            img = Image.open(io.BytesIO(img_data))
-            img.thumbnail((128, 128))
-            with io.BytesIO() as image_binary:
-                img.save(image_binary, format="PNG")
-                image_binary.seek(0)
-                await bot.create_application_emoji(name=emoji_name, image=image_binary.getvalue())
+            if og_msg.attachments[0].content_type.startswith("image/gif"):
+                await bot.create_application_emoji(name=emoji_name, image=img_data)
+            else:
+                img = Image.open(io.BytesIO(img_data))
+                img.thumbnail((128, 128))
+                with io.BytesIO() as image_binary:
+                    img.save(image_binary, format="PNG")
+                    image_binary.seek(0)
+                    await bot.create_application_emoji(name=emoji_name, image=image_binary.getvalue())
 
         user.custom = " ".join(stuff[2:]) if stuff[2] != "None" else ""
         emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
@@ -5817,6 +5826,7 @@ async def setup(bot2):
     bot2.on_ready = on_ready
     bot2.on_guild_join = on_guild_join
     bot2.on_message = on_message
+    bot2.on_connect = on_connect
 
     # copy the error logger
     bot2.tree.error = on_command_error
