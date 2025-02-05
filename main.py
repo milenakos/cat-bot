@@ -29,6 +29,9 @@ import config
 import msg2img
 from database import Channel, Prism, Profile, Reminder, User, db
 
+if config.COLLECT_STATS:
+    import stats
+
 logging.basicConfig(level=logging.INFO)
 
 # trigger warning, base64 encoded for your convinience
@@ -361,76 +364,81 @@ async def achemb(message, ach_id, send_type, author_string=None):
 
     profile = get_profile(message.guild.id, author)
 
-    if not profile[ach_id]:
-        profile[ach_id] = True
-        profile.save()
-        ach_data = ach_list[ach_id]
-        desc = ach_data["description"]
-        if ach_id == "dataminer":
-            desc = "Your head hurts -- you seem to have forgotten what you just did to get this."
+    if profile[ach_id]:
+        return
 
-        if ach_id != "thanksforplaying":
-            embed = (
-                discord.Embed(title=ach_data["title"], description=desc, color=0x007F0E)
-                .set_author(
-                    name="Achievement get!",
-                    icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/cat_throphy.png",
-                )
-                .set_footer(text=f"Unlocked by {author_string.name}")
+    profile[ach_id] = True
+    profile.save()
+    ach_data = ach_list[ach_id]
+    desc = ach_data["description"]
+    if ach_id == "dataminer":
+        desc = "Your head hurts -- you seem to have forgotten what you just did to get this."
+
+    if ach_id != "thanksforplaying":
+        embed = (
+            discord.Embed(title=ach_data["title"], description=desc, color=0x007F0E)
+            .set_author(
+                name="Achievement get!",
+                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/cat_throphy.png",
             )
-        else:
-            embed = (
-                discord.Embed(
-                    title="Cataine Addict",
-                    description="Defeat the dog mafia\nThanks for playing! ✨",
-                    color=0xC12929,
-                )
-                .set_author(
-                    name="Demonic achievement unlocked! 🌟",
-                    icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/demonic.png",
-                )
-                .set_footer(text=f"Congrats to {author_string.name}!!")
+            .set_footer(text=f"Unlocked by {author_string.name}")
+        )
+    else:
+        embed = (
+            discord.Embed(
+                title="Cataine Addict",
+                description="Defeat the dog mafia\nThanks for playing! ✨",
+                color=0xC12929,
             )
-
-            embed2 = (
-                discord.Embed(
-                    title="Cataine Addict",
-                    description="Defeat the dog mafia\nThanks for playing! ✨",
-                    color=0xFFFF00,
-                )
-                .set_author(
-                    name="Demonic achievement unlocked! 🌟",
-                    icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/demonic.png",
-                )
-                .set_footer(text=f"Congrats to {author_string.name}!!")
+            .set_author(
+                name="Demonic achievement unlocked! 🌟",
+                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/demonic.png",
             )
+            .set_footer(text=f"Congrats to {author_string.name}!!")
+        )
 
-        try:
-            result = None
-            perms: discord.Permissions = message.channel.permissions_for(message.guild.me)
-            correct_perms = perms.send_messages and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads)
-            if send_type == "reply" and correct_perms:
-                result = await message.reply(embed=embed)
-            elif send_type == "send" and correct_perms:
-                result = await message.channel.send(embed=embed)
-            elif send_type == "followup":
-                result = await message.followup.send(embed=embed, ephemeral=True)
-            elif send_type == "response":
-                result = await message.response.send_message(embed=embed)
-            await progress(message, profile, "achievement")
-            await finale(message, profile)
-        except Exception:
-            pass
+        embed2 = (
+            discord.Embed(
+                title="Cataine Addict",
+                description="Defeat the dog mafia\nThanks for playing! ✨",
+                color=0xFFFF00,
+            )
+            .set_author(
+                name="Demonic achievement unlocked! 🌟",
+                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/demonic.png",
+            )
+            .set_footer(text=f"Congrats to {author_string.name}!!")
+        )
 
-        if result and ach_id == "thanksforplaying":
-            await asyncio.sleep(2)
-            await result.edit(embed=embed2)
-            await asyncio.sleep(2)
-            await result.edit(embed=embed)
-            await asyncio.sleep(2)
-            await result.edit(embed=embed2)
-            await asyncio.sleep(2)
-            await result.edit(embed=embed)
+    try:
+        result = None
+        perms: discord.Permissions = message.channel.permissions_for(message.guild.me)
+        correct_perms = perms.send_messages and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads)
+        if send_type == "reply" and correct_perms:
+            result = await message.reply(embed=embed)
+        elif send_type == "send" and correct_perms:
+            result = await message.channel.send(embed=embed)
+        elif send_type == "followup":
+            result = await message.followup.send(embed=embed, ephemeral=True)
+        elif send_type == "response":
+            result = await message.response.send_message(embed=embed)
+        await progress(message, profile, "achievement")
+        await finale(message, profile)
+    except Exception:
+        pass
+
+    if config.COLLECT_STATS:
+        await stats.bump("achievements", ach_id)
+
+    if result and ach_id == "thanksforplaying":
+        await asyncio.sleep(2)
+        await result.edit(embed=embed2)
+        await asyncio.sleep(2)
+        await result.edit(embed=embed)
+        await asyncio.sleep(2)
+        await result.edit(embed=embed2)
+        await asyncio.sleep(2)
+        await result.edit(embed=embed)
 
 
 def generate_quest(user: Profile, quest_type: str):
@@ -558,6 +566,8 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         return
 
     user.quests_completed += 1
+    if config.COLLECT_STATS:
+        await stats.bump("quests", quest)
 
     old_xp = user.progress
     perms = message.channel.permissions_for(message.guild.me)
@@ -616,6 +626,9 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
                 f"<@{user.user_id}>",
                 embeds=[embed_level_up, embed_progress],
             )
+
+        if config.COLLECT_STATS:
+            await stats.bump("battlepass", "level_up")
     else:
         user.progress = current_xp
         user.save()
@@ -889,6 +902,9 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     channel.yet_to_spawn = 0
     channel.save()
 
+    if config.COLLECT_STATS:
+        await stats.bump("catching", "spawn")
+
 
 async def postpone_reminder(interaction):
     reminder_type = interaction.data["custom_id"]
@@ -975,6 +991,9 @@ async def maintaince_loop():
     with db.atomic():
         User.bulk_update(proccessed_users, fields=[User.reminder_vote], batch_size=50)
 
+    if config.COLLECT_STATS:
+        await stats.bump("reminders", "vote", len(proccessed_users))
+
     # i know the next two are similiar enough to be merged but its currently dec 30 and i cant be bothered
     # catch reminders
     proccessed_users = []
@@ -1024,6 +1043,9 @@ async def maintaince_loop():
     with db.atomic():
         Profile.bulk_update(proccessed_users, fields=[Profile.reminder_catch], batch_size=50)
 
+    if config.COLLECT_STATS:
+        await stats.bump("reminders", "catch", len(proccessed_users))
+
     # misc reminders
     proccessed_users = []
     for user in Profile.select().where(
@@ -1072,6 +1094,9 @@ async def maintaince_loop():
     with db.atomic():
         Profile.bulk_update(proccessed_users, fields=[Profile.reminder_misc], batch_size=50)
 
+    if config.COLLECT_STATS:
+        await stats.bump("reminders", "misc", len(proccessed_users))
+
     for reminder in Reminder.select().where(Reminder.time < time.time()):
         try:
             user = await bot.fetch_user(reminder.user_id)
@@ -1080,6 +1105,9 @@ async def maintaince_loop():
         except Exception:
             pass
         reminder.delete_instance()
+
+        if config.COLLECT_STATS:
+            await stats.bump("reminders", "manual")
 
     backupchannel = bot.get_channel(config.BACKUP_ID)
     if not isinstance(
@@ -1989,6 +2017,9 @@ async def on_message(message: discord.Message):
                     elif le_emoji == "Nice" and user.catch_progress in [0, 1]:
                         await progress(message, user, "finenice")
                         await progress(message, user, "finenice")
+
+                if config.COLLECT_STATS:
+                    await stats.bump("catching", "catch")
             finally:
                 user.save()
                 channel.save()
@@ -5767,6 +5798,9 @@ async def recieve_vote(request):
     except Exception:
         pass
 
+    if config.COLLECT_STATS:
+        await stats.bump("votes", "vote")
+
     return web.Response(text="ok", status=200)
 
 
@@ -5790,6 +5824,9 @@ async def on_command_error(ctx, error):
         except Exception:
             pass
         return
+
+    if config.COLLECT_STATS:
+        await stats.bump("errors", "error")
 
     # implement your own filtering i give up
 
