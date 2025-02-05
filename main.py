@@ -29,9 +29,10 @@ import config
 import msg2img
 from database import Channel, Prism, Profile, Reminder, User, db
 
-logging.basicConfig(level=logging.INFO)
+if config.COLLECT_STATS:
+    import stats
 
-stats_cog = None
+logging.basicConfig(level=logging.INFO)
 
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
@@ -427,7 +428,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
         pass
 
     if config.COLLECT_STATS:
-        await stats_cog.bump("achievements", ach_id)
+        await stats.bump("achievements", ach_id)
 
     if result and ach_id == "thanksforplaying":
         await asyncio.sleep(2)
@@ -566,7 +567,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
 
     user.quests_completed += 1
     if config.COLLECT_STATS:
-        await stats_cog.bump("quests", quest)
+        await stats.bump("quests", quest)
 
     old_xp = user.progress
     perms = message.channel.permissions_for(message.guild.me)
@@ -627,7 +628,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
             )
 
         if config.COLLECT_STATS:
-            await stats_cog.bump("battlepass", "level_up")
+            await stats.bump("battlepass", "level_up")
     else:
         user.progress = current_xp
         user.save()
@@ -902,7 +903,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     channel.save()
 
     if config.COLLECT_STATS:
-        await stats_cog.bump("catching", "spawn")
+        await stats.bump("catching", "spawn")
 
 
 async def postpone_reminder(interaction):
@@ -991,7 +992,7 @@ async def maintaince_loop():
         User.bulk_update(proccessed_users, fields=[User.reminder_vote], batch_size=50)
 
     if config.COLLECT_STATS:
-        await stats_cog.bump("reminders", "vote", len(proccessed_users))
+        await stats.bump("reminders", "vote", len(proccessed_users))
 
     # i know the next two are similiar enough to be merged but its currently dec 30 and i cant be bothered
     # catch reminders
@@ -1043,7 +1044,7 @@ async def maintaince_loop():
         Profile.bulk_update(proccessed_users, fields=[Profile.reminder_catch], batch_size=50)
 
     if config.COLLECT_STATS:
-        await stats_cog.bump("reminders", "catch", len(proccessed_users))
+        await stats.bump("reminders", "catch", len(proccessed_users))
 
     # misc reminders
     proccessed_users = []
@@ -1094,7 +1095,7 @@ async def maintaince_loop():
         Profile.bulk_update(proccessed_users, fields=[Profile.reminder_misc], batch_size=50)
 
     if config.COLLECT_STATS:
-        await stats_cog.bump("reminders", "misc", len(proccessed_users))
+        await stats.bump("reminders", "misc", len(proccessed_users))
 
     for reminder in Reminder.select().where(Reminder.time < time.time()):
         try:
@@ -1106,7 +1107,7 @@ async def maintaince_loop():
         reminder.delete_instance()
 
         if config.COLLECT_STATS:
-            await stats_cog.bump("reminders", "manual")
+            await stats.bump("reminders", "manual")
 
     backupchannel = bot.get_channel(config.BACKUP_ID)
     if not isinstance(
@@ -2018,7 +2019,7 @@ async def on_message(message: discord.Message):
                         await progress(message, user, "finenice")
 
                 if config.COLLECT_STATS:
-                    await stats_cog.bump("catching", "catch")
+                    await stats.bump("catching", "catch")
             finally:
                 user.save()
                 channel.save()
@@ -5798,7 +5799,7 @@ async def recieve_vote(request):
         pass
 
     if config.COLLECT_STATS:
-        await stats_cog.bump("votes", "vote")
+        await stats.bump("votes", "vote")
 
     return web.Response(text="ok", status=200)
 
@@ -5825,7 +5826,7 @@ async def on_command_error(ctx, error):
         return
 
     if config.COLLECT_STATS:
-        await stats_cog.bump("errors", "error")
+        await stats.bump("errors", "error")
 
     # implement your own filtering i give up
 
@@ -5847,7 +5848,7 @@ async def on_command_error(ctx, error):
 
 
 async def setup(bot2):
-    global bot, RAIN_ID, vote_server, stats
+    global bot, RAIN_ID, vote_server
 
     for command in bot.tree.walk_commands():
         # copy all the commands
@@ -5866,9 +5867,6 @@ async def setup(bot2):
 
     # copy the error logger
     bot2.tree.error = on_command_error
-
-    if config.COLLECT_STATS:
-        stats_cog = bot2.get_cog("StatsCog")
 
     if config.WEBHOOK_VERIFY:
         app = web.Application()
