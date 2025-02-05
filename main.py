@@ -428,7 +428,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
         pass
 
     if config.COLLECT_STATS:
-        await stats.bump("achievements", ach_id)
+        await bot.get_cog("StatsCog").bump("achievements", ach_id)
 
     if result and ach_id == "thanksforplaying":
         await asyncio.sleep(2)
@@ -567,7 +567,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
 
     user.quests_completed += 1
     if config.COLLECT_STATS:
-        await stats.bump("quests", quest)
+        await bot.get_cog("StatsCog").bump("quests", quest)
 
     old_xp = user.progress
     perms = message.channel.permissions_for(message.guild.me)
@@ -628,7 +628,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
             )
 
         if config.COLLECT_STATS:
-            await stats.bump("battlepass", "level_up")
+            await bot.get_cog("StatsCog").bump("battlepass", "level_up")
     else:
         user.progress = current_xp
         user.save()
@@ -903,7 +903,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     channel.save()
 
     if config.COLLECT_STATS:
-        await stats.bump("catching", "spawn")
+        await bot.get_cog("StatsCog").bump("catching", "spawn")
 
 
 async def postpone_reminder(interaction):
@@ -992,7 +992,7 @@ async def maintaince_loop():
         User.bulk_update(proccessed_users, fields=[User.reminder_vote], batch_size=50)
 
     if config.COLLECT_STATS:
-        await stats.bump("reminders", "vote", len(proccessed_users))
+        await bot.get_cog("StatsCog").bump("reminders", "vote", len(proccessed_users))
 
     # i know the next two are similiar enough to be merged but its currently dec 30 and i cant be bothered
     # catch reminders
@@ -1044,7 +1044,7 @@ async def maintaince_loop():
         Profile.bulk_update(proccessed_users, fields=[Profile.reminder_catch], batch_size=50)
 
     if config.COLLECT_STATS:
-        await stats.bump("reminders", "catch", len(proccessed_users))
+        await bot.get_cog("StatsCog").bump("reminders", "catch", len(proccessed_users))
 
     # misc reminders
     proccessed_users = []
@@ -1095,7 +1095,7 @@ async def maintaince_loop():
         Profile.bulk_update(proccessed_users, fields=[Profile.reminder_misc], batch_size=50)
 
     if config.COLLECT_STATS:
-        await stats.bump("reminders", "misc", len(proccessed_users))
+        await bot.get_cog("StatsCog").bump("reminders", "misc", len(proccessed_users))
 
     for reminder in Reminder.select().where(Reminder.time < time.time()):
         try:
@@ -1107,7 +1107,7 @@ async def maintaince_loop():
         reminder.delete_instance()
 
         if config.COLLECT_STATS:
-            await stats.bump("reminders", "manual")
+            await bot.get_cog("StatsCog").bump("reminders", "manual")
 
     backupchannel = bot.get_channel(config.BACKUP_ID)
     if not isinstance(
@@ -2019,7 +2019,7 @@ async def on_message(message: discord.Message):
                         await progress(message, user, "finenice")
 
                 if config.COLLECT_STATS:
-                    await stats.bump("catching", "catch")
+                    await bot.get_cog("StatsCog").bump("catching", "catch")
             finally:
                 user.save()
                 channel.save()
@@ -5799,7 +5799,7 @@ async def recieve_vote(request):
         pass
 
     if config.COLLECT_STATS:
-        await stats.bump("votes", "vote")
+        await bot.get_cog("StatsCog").bump("votes", "vote")
 
     return web.Response(text="ok", status=200)
 
@@ -5826,7 +5826,7 @@ async def on_command_error(ctx, error):
         return
 
     if config.COLLECT_STATS:
-        await stats.bump("errors", "error")
+        await bot.get_cog("StatsCog").bump("errors", "error")
 
     # implement your own filtering i give up
 
