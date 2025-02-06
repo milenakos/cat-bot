@@ -32,9 +32,8 @@ TOP_GG_TOKEN = os.environ["top_gg_token"]
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 GITHUB_CHANNEL_ID = 1060965767044149249
 
-# all messages in this channel will be interpreted as user ids to give premium access to
-# (deprecated, all rain buyes get premium for free now)
+# channel to store supporter images
 DONOR_CHANNEL_ID = 1249343008890028144
 
-# all messages in this channel are allowed to be cat!rain commands
+# all messages in this channel are allowed to be cat!rain commands, cat bot will also log all rain uses/movements there
 RAIN_CHANNEL_ID = 1278705994536321157
