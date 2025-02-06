@@ -1576,7 +1576,9 @@ async def on_message(message: discord.Message):
     if text.lower() == "cat":
         user = get_profile(message.guild.id, message.author.id)
         channel = Channel.get_or_none(channel_id=message.channel.id)
+        almost = False
         if not channel or not channel.cat or channel.cat in temp_catches_storage or user.timeout > time.time():
+            actually = False
             # laugh at this user
             # (except if rain is active, we dont have perms or channel isnt setupped, or we laughed way too much already)
             if (
@@ -1595,6 +1597,7 @@ async def on_message(message: discord.Message):
         else:
             actually = True
         if almost or actually:
+            cat_temp = channel.cat
             current_time = message.created_at.timestamp()
             try:
                 if perms.read_message_history:
@@ -1602,9 +1605,10 @@ async def on_message(message: discord.Message):
                 else:
                     raise Exception
             except Exception:
+                print(Exception)
                 try:
                     if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                        await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* {"almost " if almost else None}catch a cat rn")
+                        await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* {"almost " if almost else ""}catch a cat rn")
                 except Exception:
                     pass
                 return
@@ -1709,7 +1713,6 @@ async def on_message(message: discord.Message):
                 current_time = message.created_at.timestamp()
                 channel.lastcatches = current_time
                 channel.lastcatcher = message.author.id
-                cat_temp = channel.cat
                 channel.cat = 0
 
                 suffix_string = ""
@@ -1912,6 +1915,7 @@ async def on_message(message: discord.Message):
             coughstring = "{username} *almost* cought {emoji} {type} cat!!!!1!\nYou have {count} cats of dat type!!!\nthis fella was *almost* caught in {time}!!!!"
         
         if almost or actually:
+            print(almost)
             if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
                 try:
                     kwargs = {}
@@ -1930,6 +1934,7 @@ async def on_message(message: discord.Message):
                         **kwargs,
                     )
                 except Exception:
+                    raise Exception
                     pass
             
             if random.randint(0, 1000) == 69:
