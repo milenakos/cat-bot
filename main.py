@@ -2586,8 +2586,8 @@ leave blank to reset.""",
 
 
 @bot.tree.command(description="Get ID of a thing")
-async def getid(message: discord.Interaction, thing: discord.User | discord.Role | discord.Thread | discord.abc.GuildChannel):
-    await message.response.send_message(f"The ID of {thing.mention} is {thing.id}" + "\nyou can use it in /changemessage like this: `{thing.mention}`" if thing.mention[1] == "@" else "")
+async def getid(message: discord.Interaction, thing: discord.User | discord.Role ):
+    await message.response.send_message(f"The ID of {thing.mention} is {thing.id}\nyou can use it in /changemessage like this: `{thing.mention}`")
 
 
 @bot.tree.command(description="Get Daily cats")
