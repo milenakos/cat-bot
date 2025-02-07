@@ -2278,19 +2278,24 @@ async def news(message: discord.Interaction):
     buttons = []
     current_state = user.news_state.strip()
 
-    for num, article in enumerate(news_list):
-        try:
-            have_read_this = False if current_state[num] == "0" else True
-        except Exception:
-            have_read_this = False
-        button = Button(
-            label=article["title"],
-            emoji=article["emoji"],
-            custom_id=f"{num} {message.user.id}",
-            style=ButtonStyle.green if not have_read_this else ButtonStyle.gray,
-        )
-        button.callback = send_news
-        buttons.append(button)
+    def regen_buttons():
+        nonlocal buttons
+        user, _ = User.get_or_create(user_id=message.user.id)
+        buttons = []
+        current_state = user.news_state.strip()
+        for num, article in enumerate(news_list):
+            try:
+                have_read_this = False if current_state[num] == "0" else True
+            except Exception:
+                have_read_this = False
+            button = Button(
+                label=article["title"],
+                emoji=article["emoji"],
+                custom_id=f"{num} {message.user.id}",
+                style=ButtonStyle.green if not have_read_this else ButtonStyle.gray,
+            )
+            button.callback = send_news
+            buttons.append(button)
 
     buttons = buttons[::-1]  # reverse the list so the first button is the most recent article
 
@@ -2319,6 +2324,7 @@ async def news(message: discord.Interaction):
     async def mark_all_as_read(interaction):
         user.news_state = "1" * len(news_list)
         user.save()
+        regen_buttons()
         await interaction.response.edit_message(view=generate_page(current_page))
 
     def generate_page(number):
