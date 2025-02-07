@@ -2296,9 +2296,9 @@ async def news(message: discord.Interaction):
             )
             button.callback = send_news
             buttons.append(button)
+        buttons = buttons[::-1]  # reverse the list so the first button is the most recent article
 
     regen_buttons()
-    buttons = buttons[::-1]  # reverse the list so the first button is the most recent article
 
     if len(news_list) > len(current_state):
         user.news_state = current_state + "0" * (len(news_list) - len(current_state))
