@@ -5378,7 +5378,7 @@ async def leaderboards(
                 Profile.select(Profile.user_id, Profile.battlepass.alias("final_value"), Profile.progress, Profile.season)
                 .where(Profile.guild_id == message.guild.id)
                 .where(Profile.battlepass > 0)
-                .group_by(Profile.user_id, Profile.battlepass)
+                .group_by(Profile.user_id, Profile.battlepass, Profile.progress)
                 .order_by(Profile.battlepass.desc(), Profile.progress.desc())
             ).execute()
         else:
@@ -5425,19 +5425,19 @@ async def leaderboards(
         leader = False
         for i in result[:show_amount]:
             num = i.final_value
-            
+
             if type == "Battlepass":
                 bp_season = battle["seasons"][f"{i.season}"]
                 if i.final_value > len(bp_season):
                     lv_xp_req = 1500
                 else:
                     lv_xp_req = bp_season[int(i.final_value)]["xp"]
-                    
+
                 prog_perc = math.floor((100 / lv_xp_req) * i.progress)
-                
+
                 string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i.user_id}>\n"
             else:
-            
+
                 if type == "Slow":
                     if num <= 0:
                         break
@@ -5451,7 +5451,7 @@ async def leaderboards(
                 elif type == "Fast" and num >= 99999999999999:
                     break
                 string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i.user_id}>\n"
-                
+
             if message.user.id == i.user_id and current <= 5:
                 leader = True
             current += 1
