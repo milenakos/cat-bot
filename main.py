@@ -5208,11 +5208,11 @@ async def achievements(message: discord.Interaction):
             if hidden_counter == 20:
                 await achemb(interaction, "darkest_market", "send")
 
-        for i in ["Cat Hunt", "Commands", "Random", "Silly", "Hard", "Hidden"]:
+        for num, i in enumerate(["Cat Hunt", "Commands", "Random", "Silly", "Hard", "Hidden"]):
             if category == i:
-                buttons_list.append(Button(label=i, custom_id=i, style=ButtonStyle.green))
+                buttons_list.append(Button(label=i, custom_id=i, style=ButtonStyle.green, row=num // 3))
             else:
-                buttons_list.append(Button(label=i, custom_id=i, style=ButtonStyle.blurple))
+                buttons_list.append(Button(label=i, custom_id=i, style=ButtonStyle.blurple, row=num // 3))
             buttons_list[-1].callback = callback_hell
 
         for j in buttons_list:
