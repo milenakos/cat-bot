@@ -5374,10 +5374,16 @@ async def leaderboards(
                 .order_by(Profile.timeslow.desc())
             ).execute()
         elif type == "Battlepass":
+            start_date = datetime.datetime(2024, 12, 1)
+            current_date = datetime.datetime.utcnow()
+            full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
+            if current_date.day < start_date.day:
+                full_months_passed -= 1
             result = (
                 Profile.select(Profile.user_id, Profile.battlepass.alias("final_value"), Profile.progress, Profile.season)
                 .where(Profile.guild_id == message.guild.id)
                 .where(Profile.battlepass > 0)
+                .where(Profile.season == full_months_passed)
                 .group_by(Profile.user_id, Profile.battlepass, Profile.progress, Profile.season)
                 .order_by(Profile.battlepass.desc(), Profile.progress.desc())
             ).execute()
@@ -5437,7 +5443,6 @@ async def leaderboards(
 
                 string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i.user_id}>\n"
             else:
-
                 if type == "Slow":
                     if num <= 0:
                         break
