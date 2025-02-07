@@ -2316,6 +2316,11 @@ async def news(message: discord.Interaction):
         else:
             await do_funny(interaction)
 
+    async def mark_all_as_read(interaction):
+        user.news_state = "1" * len(news_list)
+        user.save()
+        await interaction.response.edit_message(view=generate_page(current_page))
+
     def generate_page(number):
         view = View(timeout=3600)
 
@@ -2330,11 +2335,11 @@ async def news(message: discord.Interaction):
         view.add_item(button)
 
         button = Button(
-            label=f"Page {current_page + 1}",
+            label=f"Mark all as read",
             style=ButtonStyle.gray,
-            disabled=True,
             row=4,
         )
+        button.callback = mark_all_as_read
         view.add_item(button)
 
         button = Button(
