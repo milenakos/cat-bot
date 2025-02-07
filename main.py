@@ -5378,7 +5378,7 @@ async def leaderboards(
                 Profile.select(Profile.user_id, Profile.battlepass.alias("final_value"), Profile.progress, Profile.season)
                 .where(Profile.guild_id == message.guild.id)
                 .where(Profile.battlepass > 0)
-                .group_by(Profile.user_id, Profile.battlepass, Profile.progress)
+                .group_by(Profile.user_id, Profile.battlepass, Profile.progress, Profile.season)
                 .order_by(Profile.battlepass.desc(), Profile.progress.desc())
             ).execute()
         else:
