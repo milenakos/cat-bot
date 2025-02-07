@@ -6,6 +6,7 @@ import io
 import json
 import logging
 import os
+import math
 import random
 import re
 import subprocess
@@ -168,7 +169,7 @@ with open("config/battlepass.json", "r", encoding="utf-8") as f:
 ach_names = ach_list.keys()
 ach_titles = {value["title"].lower(): key for (key, value) in ach_list.items()}
 
-leaderboard_types = ["Cats", "Value", "Fast", "Slow"]
+leaderboard_types = ["Cats", "Value", "Fast", "Slow", "Battlepass"]
 
 bot = commands.AutoShardedBot(
     command_prefix="this is a placebo bot which will be replaced when this will get loaded",
@@ -5284,7 +5285,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow"]],
+    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass"]],
     cat_type: Optional[str],
     locked: Optional[bool],
 ):
@@ -5372,6 +5373,14 @@ async def leaderboards(
                 .group_by(Profile.user_id, Profile.timeslow)
                 .order_by(Profile.timeslow.desc())
             ).execute()
+        elif type == "Battlepass":
+            result = (
+                Profile.select(Profile.user_id, Profile.battlepass.alias("final_value"), Profile.progress, Profile.season)
+                .where(Profile.guild_id == message.guild.id)
+                .where(Profile.battlepass > 0)
+                .group_by(Profile.user_id, Profile.battlepass)
+                .order_by(Profile.battlepass.desc(), Profile.progress.desc())
+            ).execute()
         else:
             # qhar
             return
@@ -5416,19 +5425,33 @@ async def leaderboards(
         leader = False
         for i in result[:show_amount]:
             num = i.final_value
-            if type == "Slow":
-                if num <= 0:
+            
+            if type == "Battlepass":
+                bp_season = battle["seasons"][f"{i.season}"]
+                if i.final_value > len(bp_season):
+                    lv_xp_req = 1500
+                else:
+                    lv_xp_req = bp_season[int(i.final_value)]["xp"]
+                    
+                prog_perc = math.floor((100 / lv_xp_req) * i.progress)
+                
+                string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i.user_id}>\n"
+            else:
+            
+                if type == "Slow":
+                    if num <= 0:
+                        break
+                    num = round(num / 3600, 2)
+                elif type == "Cats" and num <= 0:
                     break
-                num = round(num / 3600, 2)
-            elif type == "Cats" and num <= 0:
-                break
-            elif type == "Value":
-                if num <= 0:
+                elif type == "Value":
+                    if num <= 0:
+                        break
+                    num = round(num)
+                elif type == "Fast" and num >= 99999999999999:
                     break
-                num = round(num)
-            elif type == "Fast" and num >= 99999999999999:
-                break
-            string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i.user_id}>\n"
+                string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i.user_id}>\n"
+                
             if message.user.id == i.user_id and current <= 5:
                 leader = True
             current += 1
