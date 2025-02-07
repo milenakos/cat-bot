@@ -5463,7 +5463,7 @@ async def leaderboards(
 
         # add the messager and interactor
         # todo: refactor this
-        if messager_placement > show_amount or interactor_placement > show_amount:
+        if type != "Battlepass" and (messager_placement > show_amount or interactor_placement > show_amount):
             string = string + "...\n"
             # sort them correctly!
             if messager_placement > interactor_placement:
