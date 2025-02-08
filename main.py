@@ -5549,7 +5549,7 @@ async def leaderboards(
 @bot.tree.command(description="(ADMIN) Give cats to people")
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(person_id="user")
-@discord.app_commands.describe(person_id="who", amount="how many", cat_type="what")
+@discord.app_commands.describe(person_id="who", amount="how many (negatives to remove)", cat_type="what")
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
 async def givecat(message: discord.Interaction, person_id: discord.User, amount: int, cat_type: str):
     if cat_type not in cattypes:
