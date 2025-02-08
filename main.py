@@ -5745,8 +5745,12 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
 async def reset(message: discord.Interaction, person_id: discord.User):
     async def confirmed(interaction):
         if interaction.user.id == message.user.id:
+            await interaction.response.defer()
             try:
-                get_profile(message.guild.id, person_id.id).delete_instance()
+                og = await interaction.original_response()
+                profile = get_profile(message.guild.id, person_id.id)
+                profile.user_id = og.id
+                profile.save()
                 await interaction.edit_original_response(content=f"Done! rip {person_id.mention}. f's in chat.", view=None)
             except Exception:
                 await interaction.edit_original_response(
