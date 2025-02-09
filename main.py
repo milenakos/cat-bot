@@ -138,7 +138,6 @@ hints = [
     "/rate says /rate is 100% correct",
     "/casino is surely not rigged",
     "You probably shouldn't use a Discord bot for /remind-ers",
-    "/nuke is un-doable, /reset is not",
     "Cat /Rain is an excellent way to support development!",
     "Cat Bot was made later than it's support server",
     "Cat Bot reached 100 servers 3 days after release",
