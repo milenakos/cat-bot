@@ -1792,7 +1792,7 @@ async def on_message(message: discord.Message):
                         except IndexError:
                             # :SILENCE:
                             normal_bump = False
-                            if channel.forcespawned:
+                            if not channel.forcespawned:
                                 if cat_rains.get(str(message.channel.id), 0) > time.time():
                                     await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                                     await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
