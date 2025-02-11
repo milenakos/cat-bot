@@ -180,6 +180,8 @@ class Channel(peewee.Model):
     channel_id = peewee.BigIntegerField(unique=True, index=True, primary_key=True)
 
     cat = peewee.BigIntegerField(default=0)  # cat message id
+    cattype = peewee.CharField(default="", max_length=20)  # curently spawned cat type (parsed from msg if none)
+    forcespawned = peewee.BooleanField(default=False)  # whether the current cat is forcespawned
 
     thread_mappings = peewee.BooleanField(default=False)  # whether the channel is a thread
 

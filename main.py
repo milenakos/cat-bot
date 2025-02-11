@@ -827,7 +827,6 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         icon = localcat.lower() + "cat"
     file = discord.File(
         f"images/spawn/{localcat.lower()}_cat.png",
-        description="forcespawned" if force_spawn else None,
     )
     try:
         channeley = discord.Webhook.from_url(channel.webhook, client=bot)
@@ -900,6 +899,8 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
 
     channel.cat = message_is_sus.id
     channel.yet_to_spawn = 0
+    channel.forcespawned = force_spawn
+    channel.cattype = localcat
     channel.save()
 
     if config.COLLECT_STATS:
@@ -1670,8 +1671,31 @@ async def on_message(message: discord.Message):
                 cat_temp = channel.cat
                 channel.cat = 0
                 try:
+                    if channel.cattype != "":
+                        catchtime = discord.utils.snowflate_time(cat_temp).timestamp()
+                        le_emoji = channel.cattype
                     if perms.read_message_history:
                         var = await message.channel.fetch_message(cat_temp)
+                        catchtime = var.created_at
+                        catchcontents = var.content
+
+                        partial_type = None
+                        for v in allowedemojis:
+                            if v in catchcontents:
+                                partial_type = v
+                                break
+
+                        if not partial_type and "thetrashcellcat" in catchcontents:
+                            partial_type = "trashcat"
+                            le_emoji = "Trash"
+                        else:
+                            if not partial_type:
+                                return
+
+                            for i in cattypes:
+                                if i.lower() in partial_type:
+                                    le_emoji = i
+                                    break
                     else:
                         raise Exception
                 except Exception:
@@ -1681,18 +1705,9 @@ async def on_message(message: discord.Message):
                     except Exception:
                         pass
                     return
-                catchtime = var.created_at
-                catchcontents = var.content
+
                 try:
                     send_target = discord.Webhook.from_url(channel.webhook, client=bot)
-                    try:
-                        if channel.thread_mappings:
-                            await send_target.delete_message(cat_temp, thread=discord.Object(int(message.channel.id)))
-                        else:
-                            await send_target.delete_message(cat_temp)
-                    except Exception:
-                        if perms.manage_messages:
-                            await cat_temp.delete()
                 except Exception:
                     send_target = message.channel
                 try:
@@ -1731,25 +1746,6 @@ async def on_message(message: discord.Message):
                 if cat_rains.get(str(message.channel.id), 0) + 10 > time.time() or message.channel.id in temp_rains_storage:
                     do_time = False
 
-                icon = None
-                partial_type = None
-                for v in allowedemojis:
-                    if v in catchcontents:
-                        partial_type = v
-                        break
-
-                if not partial_type and "thetrashcellcat" in catchcontents:
-                    partial_type = "trashcat"
-                    le_emoji = "Trash"
-                else:
-                    if not partial_type:
-                        return
-
-                    for i in cattypes:
-                        if i.lower() in partial_type:
-                            le_emoji = i
-                            break
-
                 suffix_string = ""
 
                 # calculate prism boost
@@ -1779,8 +1775,7 @@ async def on_message(message: discord.Message):
                 if random.randint(1, 100) <= boost_chance + disabled_chance:
                     boost_prism = random.choice(all_prisms)
                     if boost_prism[0] != "Your":
-                        prism_user = await bot.fetch_user(boost_prism[0])
-                        boost_applied_prism = str(prism_user) + "'s prism " + boost_prism[1]
+                        boost_applied_prism = f"<@{boost_prism[0]}>'s prism " + boost_prism[1]
                     else:
                         boost_applied_prism = "Your prism " + boost_prism[1]
 
@@ -1797,7 +1792,7 @@ async def on_message(message: discord.Message):
                         except IndexError:
                             # :SILENCE:
                             normal_bump = False
-                            if var.attachments[0].description != "forcespawned":
+                            if channel.forcespawned:
                                 if cat_rains.get(str(message.channel.id), 0) > time.time():
                                     await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                                     await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
@@ -1927,25 +1922,38 @@ async def on_message(message: discord.Message):
                 user[f"cat_{le_emoji}"] += silly_amount
                 new_count = user[f"cat_{le_emoji}"]
 
-                if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
+                async def delete_cat():
                     try:
-                        kwargs = {}
                         if channel.thread_mappings:
-                            kwargs["thread"] = discord.Object(message.channel.id)
-                        if view:
-                            kwargs["view"] = view
-
-                        await send_target.send(
-                            coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
-                            .replace("{emoji}", str(icon))
-                            .replace("{type}", le_emoji)
-                            .replace("{count}", f"{new_count:,}")
-                            .replace("{time}", caught_time[:-1])
-                            + suffix_string,
-                            **kwargs,
-                        )
+                            await send_target.delete_message(cat_temp, thread=discord.Object(int(message.channel.id)))
+                        else:
+                            await send_target.delete_message(cat_temp)
                     except Exception:
-                        pass
+                        if perms.manage_messages:
+                            await cat_temp.delete()
+
+                async def send_confirm():
+                    if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
+                        try:
+                            kwargs = {}
+                            if channel.thread_mappings:
+                                kwargs["thread"] = discord.Object(message.channel.id)
+                            if view:
+                                kwargs["view"] = view
+
+                            await send_target.send(
+                                coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
+                                .replace("{emoji}", str(icon))
+                                .replace("{type}", le_emoji)
+                                .replace("{count}", f"{new_count:,}")
+                                .replace("{time}", caught_time[:-1])
+                                + suffix_string,
+                                **kwargs,
+                            )
+                        except Exception:
+                            pass
+
+                await asyncio.gather(delete_cat(), send_confirm())
 
                 user.total_catches += 1
                 if do_time:
