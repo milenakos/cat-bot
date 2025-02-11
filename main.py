@@ -899,7 +899,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
 
     channel.cat = message_is_sus.id
     channel.yet_to_spawn = 0
-    channel.forcespawned = force_spawn
+    channel.forcespawned = bool(force_spawn)
     channel.cattype = localcat
     channel.save()
 
