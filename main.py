@@ -1672,7 +1672,7 @@ async def on_message(message: discord.Message):
                 channel.cat = 0
                 try:
                     if channel.cattype != "":
-                        catchtime = discord.utils.snowflake_time(cat_temp).timestamp()
+                        catchtime = discord.utils.snowflake_time(cat_temp)
                         le_emoji = channel.cattype
                     elif perms.read_message_history:
                         var = await message.channel.fetch_message(cat_temp)
