@@ -2680,7 +2680,10 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     # catching
     stats.append(f"{get_emoji('staring_cat')} __Catching__")
     stats.append(f"Catches: {profile.total_catches:,}{star}")
-    stats.append(f"Average catch time: {profile.total_catch_time / (profile.total_catches - profile.rain_participations):,.2f}s{star}")
+    if profile.total_catches - profile.rain_participations != 0:
+        stats.append(f"Average catch time: {profile.total_catch_time / (profile.total_catches - profile.rain_participations):,.2f}s{star}")
+    else:
+        stats.append(f"Average catch time: N/A{star}")
     stats.append(f"Purrfect catches: {profile.perfection_count:,}{star}")
     stats.append("")
 
