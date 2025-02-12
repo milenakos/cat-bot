@@ -145,7 +145,8 @@ hints = [
     "Cat Bot's top.gg page was deleted at one point",
     "Cat Bot has an official soundtrack! <https://youtu.be/Ww1opmRwYF0>",
     "4 with 832 zeros cats were deleted on September 5th, 2024",
-    "Cat Bot reached top #19 on top.gg in January 2025",
+    "Cat Bot has reached top #19 on top.gg in January 2025",
+    "Cat Bot has reached top #17 on top.gg in February 2025",
     "Most Cat Bot features were made within 2 weeks",
     "Cat Bot was initially made for only one server",
     "Cat Bot is made in Python with discord.py",
@@ -2707,7 +2708,10 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     stats.append(f"{get_emoji('topgg')} __Voting__")
     stats.append(f"Total Votes: {user.total_votes:,}{star}")
     stats.append(f"Current Vote Streak: {user.vote_streak} (max {max(user.vote_streak, user.max_vote_streak):,}){star}")
-    stats.append(f"Can vote <t:{user.vote_time_topgg + 43200}:R>")
+    if user.vote_time_topgg + 43200 > time.time():
+        stats.append(f"Can vote <t:{user.vote_time_topgg + 43200}:R>")
+    else:
+        stats.append("Can vote!")
     stats.append("")
 
     # battlepass
