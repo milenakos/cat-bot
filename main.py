@@ -2772,7 +2772,7 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     stats.append(f"Tic Tac Toe wins: {profile.ttt_won:,}")
     stats.append(f"Tic Tac Toe draws: {profile.ttt_draws:,}")
     if profile.ttt_won + profile.ttt_draws != 0:
-        stats.append(f"Tic Tac Toe win rate: {profile.ttt_played / (profile.ttt_won + profile.ttt_draws) * 100:.2f}%")
+        stats.append(f"Tic Tac Toe win rate: {(profile.ttt_won + profile.ttt_draws) / profile.ttt_played * 100:.2f}%")
     else:
         stats.append("Tic Tac Toe win rate: 0%")
     stats.append("")
@@ -2780,7 +2780,7 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     # misc
     stats.append(":question:  __Misc__")
     stats.append(f"Facts read: {profile.facts:,}")
-    stats.append(f"Privte embed clicks: {profile.funny:,}")
+    stats.append(f"Private embed clicks: {profile.funny:,}")
     stats.append(f"Reminders set: {profile.reminders_set:,}{star}")
     stats.append(f"Cats gifted: {profile.cats_gifted:,}{star}")
     stats.append(f"Cats received as gift: {profile.cat_gifts_recieved:,}{star}")
@@ -2789,7 +2789,7 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     stats.append("")
 
     if star:
-        stats.append("\*this stat is only tracked since Feb 1, 2025")
+        stats.append("\*this stat is only tracked since February 2025")
 
     embedVar = discord.Embed(title=f"{person_id.name}'s Stats", color=0x6E593C, description="\n".join(stats))
     await message.followup.send(embed=embedVar)
@@ -5993,7 +5993,7 @@ async def recieve_vote(request):
 
     user.reminder_vote = 1
     user.total_votes += 1
-    if user.vote_time_topgg + 86400 > time.time():
+    if user.vote_time_topgg + 86400 <= time.time():
         # streak end
         if user.max_vote_streak < user.vote_streak:
             user.max_vote_streak = user.vote_streak
