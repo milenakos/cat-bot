@@ -965,6 +965,8 @@ async def maintaince_loop():
             continue
         await asyncio.sleep(0.1)
 
+        user = User.get(user.user_id)
+
         if not ((user.reminder_vote != 0) and ((43200 < user.vote_time_topgg + 43200 < time.time()) or (1 < user.reminder_vote < time.time()))):
             continue
 
@@ -1004,6 +1006,8 @@ async def maintaince_loop():
         & ((43200 < Profile.catch_cooldown + 43200 < time.time()) | (1 < Profile.reminder_catch < time.time()))
     ):
         await asyncio.sleep(0.1)
+
+        user = get_profile(user.user_id, user.guild_id)
 
         if not (
             user.reminders_enabled
@@ -1055,6 +1059,8 @@ async def maintaince_loop():
         & ((43200 < Profile.misc_cooldown + 43200 < time.time()) | (1 < Profile.reminder_misc < time.time()))
     ):
         await asyncio.sleep(0.1)
+
+        user = get_profile(user.user_id, user.guild_id)
 
         if not (
             user.reminders_enabled
