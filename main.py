@@ -2689,9 +2689,11 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     prisms_owned = Prism.select().where(Prism.guild_id == message.guild.id, Prism.user_id == person_id.id).count()
     prisms_crafted = Prism.select().where(Prism.guild_id == message.guild.id, Prism.creator == person_id.id).count()
     boosts_done = Prism.select(peewee.fn.SUM(Prism.catches_boosted)).where(Prism.guild_id == message.guild.id, Prism.user_id == person_id.id).scalar()
+    if not boosts_done:
+        boosts_done = 0
     stats.append(f"Prisms Owned: {prisms_owned:,}")
     stats.append(f"Prisms Crafted: {prisms_crafted:,}")
-    stats.append(f"Boosts done by your prisms: {int(boosts_done)}{star}")
+    stats.append(f"Boosts done by your prisms: {boosts_done:,}{star}")
     stats.append(f"Your boosted catches from any prism: {profile.boosted_catches:,}{star}")
     stats.append(f"Cataine Activations: {profile.cataine_activations:,}")
     stats.append(f"Cataine Bought: {profile.cataine_bought:,}")
