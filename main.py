@@ -2664,10 +2664,10 @@ async def catalogue(message: discord.Interaction):
     await message.response.send_message(embed=embed)
 
 
-@bot.tree.command(description="View some advanced stats")
+@bot.tree.command(name="stats", description="View some advanced stats")
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="Person to view the stats of!")
-async def stats(message: discord.Interaction, person_id: Optional[discord.User]):
+async def stats_command(message: discord.Interaction, person_id: Optional[discord.User]):
     await message.response.defer()
     profile = get_profile(message.guild.id, person_id.id)
 
