@@ -2691,7 +2691,7 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     boosts_done = Prism.select(peewee.fn.SUM(Prism.catches_boosted)).where(Prism.guild_id == message.guild.id, Prism.user_id == person_id.id).scalar()
     stats.append(f"Prisms Owned: {prisms_owned:,}")
     stats.append(f"Prisms Crafted: {prisms_crafted:,}")
-    stats.append(f"Boosts done by your prisms: {boosts_done}{star}")
+    stats.append(f"Boosts done by your prisms: {int(boosts_done)}{star}")
     stats.append(f"Your boosted catches from any prism: {profile.boosted_catches:,}{star}")
     stats.append(f"Cataine Activations: {profile.cataine_activations:,}")
     stats.append(f"Cataine Bought: {profile.cataine_bought:,}")
@@ -2711,6 +2711,7 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     levels_complete = 0
     max_level = 0
     total_xp = 0
+    # past seasons
     for season in profile.bp_history.split(";"):
         if not season:
             break
@@ -2727,6 +2728,19 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
             if num >= season_lvl:
                 break
             total_xp += level["xp"]
+    # current season
+    levels_complete += profile.battlepass
+    total_xp += profile.progress
+    if profile.battlepass > 30:
+        seasons_complete += 1
+        total_xp += 1500 * (profile.battlepass - 31)
+    if profile.battlepass > max_level:
+        max_level = profile.battlepass
+
+    for num, level in enumerate(battle["seasons"][str(profile.season)]):
+        if num >= profile.battlepass:
+            break
+        total_xp += level["xp"]
     stats.append(f"Quests Completed: {profile.quests_completed:,}{star}")
     stats.append(f"Seasons Completed: {seasons_complete:,}")
     stats.append(f"Levels Completed: {levels_complete:,}")
@@ -2751,11 +2765,14 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     stats.append("")
 
     # tic tac toe
-    stats.append(f"{random.choice([':x:', ':o:'])} __Tic Tac Toe__")
+    stats.append(":o: __Tic Tac Toe__")
     stats.append(f"Tic Tac Toe games played: {profile.ttt_played:,}")
     stats.append(f"Tic Tac Toe wins: {profile.ttt_won:,}")
     stats.append(f"Tic Tac Toe draws: {profile.ttt_draws:,}")
-    stats.append(f"Tic Tac Toe win rate: {profile.ttt_won / (profile.ttt_won + profile.ttt_draws) * 100:.2f}%")
+    if profile.ttt_won + profile.ttt_draws != 0:
+        stats.append(f"Tic Tac Toe win rate: {profile.ttt_played / (profile.ttt_won + profile.ttt_draws) * 100:.2f}%")
+    else:
+        stats.append("Tic Tac Toe win rate: 0%")
     stats.append("")
 
     # misc
@@ -2768,6 +2785,9 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     stats.append(f"Trades completed: {profile.trades_completed}{star}")
     stats.append(f"Cats traded: {profile.cats_traded:,}{star}")
     stats.append("")
+
+    if star:
+        stats.append("\*this stat is only tracked since Feb 1, 2025")
 
     embedVar = discord.Embed(title=f"{person_id.name}'s Stats", color=0x6E593C, description="\n".join(stats))
     await message.followup.send(embed=embedVar)
