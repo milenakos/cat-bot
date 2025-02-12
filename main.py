@@ -2718,6 +2718,8 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
         if not season:
             break
         season_num, season_lvl, season_progress = map(int, season.split(","))
+        if season_num == 0:
+            continue
         levels_complete += season_lvl
         total_xp += season_progress
         if season_lvl > 30:
@@ -2731,18 +2733,19 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
                 break
             total_xp += level["xp"]
     # current season
-    levels_complete += profile.battlepass
-    total_xp += profile.progress
-    if profile.battlepass > 30:
-        seasons_complete += 1
-        total_xp += 1500 * (profile.battlepass - 31)
-    if profile.battlepass > max_level:
-        max_level = profile.battlepass
+    if profile.season != 0:
+        levels_complete += profile.battlepass
+        total_xp += profile.progress
+        if profile.battlepass > 30:
+            seasons_complete += 1
+            total_xp += 1500 * (profile.battlepass - 31)
+        if profile.battlepass > max_level:
+            max_level = profile.battlepass
 
-    for num, level in enumerate(battle["seasons"][str(profile.season)]):
-        if num >= profile.battlepass:
-            break
-        total_xp += level["xp"]
+        for num, level in enumerate(battle["seasons"][str(profile.season)]):
+            if num >= profile.battlepass:
+                break
+            total_xp += level["xp"]
     stats.append(f"Quests Completed: {profile.quests_completed:,}{star}")
     stats.append(f"Seasons Completed: {seasons_complete:,}")
     stats.append(f"Levels Completed: {levels_complete:,}")
