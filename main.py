@@ -4603,7 +4603,7 @@ async def slots(message: discord.Interaction):
         col2 = random.choices(variants, k=reel_durations[1])
         col3 = random.choices(variants, k=reel_durations[2])
 
-        if message.user.id in rigged_users:
+        if message.user.id in rigged_users or (user.slot_spins == 777 and user.slot_big_wins == 0):
             col1[len(col1) - 2] = ":seven:"
             col2[len(col2) - 2] = ":seven:"
             col3[len(col3) - 2] = ":seven:"
