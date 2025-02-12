@@ -2669,6 +2669,8 @@ async def catalogue(message: discord.Interaction):
 @discord.app_commands.describe(person_id="Person to view the stats of!")
 async def stats_command(message: discord.Interaction, person_id: Optional[discord.User]):
     await message.response.defer()
+    if not person_id:
+        person_id = message.user
     profile = get_profile(message.guild.id, person_id.id)
 
     star = "*" if not profile.new_user else ""
@@ -2710,6 +2712,8 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     max_level = 0
     total_xp = 0
     for season in profile.bp_history.split(";"):
+        if not season:
+            break
         season_num, season_lvl, season_progress = map(int, season.split(","))
         levels_complete += season_lvl
         total_xp += season_progress
