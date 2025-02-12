@@ -2664,6 +2664,111 @@ async def catalogue(message: discord.Interaction):
     await message.response.send_message(embed=embed)
 
 
+@bot.tree.command(description="View some advanced stats")
+@discord.app_commands.rename(person_id="user")
+@discord.app_commands.describe(person_id="Person to view the stats of!")
+async def stats(message: discord.Interaction, person_id: Optional[discord.User]):
+    await message.response.defer()
+    profile = get_profile(message.guild.id, person_id.id)
+
+    star = "*" if not profile.new_user else ""
+
+    stats = []
+
+    # catching
+    stats.append(f"{get_emoji('staring_cat')} __Catching__")
+    stats.append(f"Catches: {profile.total_catches:,}{star}")
+    stats.append(f"Average catch time: {profile.total_catch_time / (profile.total_catches - profile.rain_participations):,.2f}s{star}")
+    stats.append(f"Purrfect catches: {profile.perfection_count:,}{star}")
+    stats.append("")
+
+    # catching boosts
+    stats.append(f"{get_emoji('prism')} __Boosts__")
+    prisms_owned = Prism.select().where(Prism.guild_id == message.guild.id, Prism.user_id == person_id.id).count()
+    prisms_crafted = Prism.select().where(Prism.guild_id == message.guild.id, Prism.creator == person_id.id).count()
+    boosts_done = Prism.select(peewee.fn.SUM(Prism.catches_boosted)).where(Prism.guild_id == message.guild.id, Prism.user_id == person_id.id).scalar()
+    stats.append(f"Prisms Owned: {prisms_owned:,}")
+    stats.append(f"Prisms Crafted: {prisms_crafted:,}")
+    stats.append(f"Boosts done by your prisms: {boosts_done}{star}")
+    stats.append(f"Your boosted catches from any prism: {profile.boosted_catches:,}{star}")
+    stats.append(f"Cataine Activations: {profile.cataine_activations:,}")
+    stats.append(f"Cataine Bought: {profile.cataine_bought:,}")
+    stats.append("")
+
+    user = User.get(user_id=person_id.id)
+    # voting
+    stats.append(f"{get_emoji('topgg')} __Voting__")
+    stats.append(f"Total Votes: {user.total_votes:,}{star}")
+    stats.append(f"Current Vote Streak: {user.vote_streak} (max {max(user.vote_streak, user.max_vote_streak):,}){star}")
+    stats.append(f"Can vote <t:{user.vote_time_topgg + 43200}:R>")
+    stats.append("")
+
+    # battlepass
+    stats.append(":arrow_up: __Battlepass__")
+    seasons_complete = 0
+    levels_complete = 0
+    max_level = 0
+    total_xp = 0
+    for season in profile.bp_history.split(";"):
+        season_num, season_lvl, season_progress = map(int, season.split(","))
+        levels_complete += season_lvl
+        total_xp += season_progress
+        if season_lvl > 30:
+            seasons_complete += 1
+            total_xp += 1500 * (season_lvl - 31)
+        if season_lvl > max_level:
+            max_level = season_lvl
+
+        for num, level in enumerate(battle["seasons"][str(season_num)]):
+            if num >= season_lvl:
+                break
+            total_xp += level["xp"]
+    stats.append(f"Quests Completed: {profile.quests_completed:,}{star}")
+    stats.append(f"Seasons Completed: {seasons_complete:,}")
+    stats.append(f"Levels Completed: {levels_complete:,}")
+    stats.append(f"Highest Ever Level: {max_level:,}")
+    stats.append(f"Total XP Earned: {total_xp:,}")
+    stats.append("")
+
+    # rains & supporter
+    stats.append(":umbrella:  __Rains__")
+    stats.append(f"Current Rain Minutes: {user.rain_minutes:,}")
+    stats.append("Ever bought rains: " + ("Yes" if user.premium else "No"))
+    stats.append(f"Cats caught during rains: {profile.rain_participations:,}{star}")
+    stats.append(f"Rain Minutes started: {profile.rain_minutes_started:,}{star}")
+    stats.append("")
+
+    # gambling
+    stats.append(":slot_machine: __Gambling__")
+    stats.append(f"Casino Spins: {profile.gambles:,}")
+    stats.append(f"Slot Spins: {profile.slot_spins:,}")
+    stats.append(f"Slot Wins: {profile.slot_wins:,}")
+    stats.append(f"Slot Big Wins: {profile.slot_big_wins:,}")
+    stats.append("")
+
+    # tic tac toe
+    stats.append(f"{random.choice([':x:', ':o:'])} __Tic Tac Toe__")
+    stats.append(f"Tic Tac Toe games played: {profile.ttt_played:,}")
+    stats.append(f"Tic Tac Toe wins: {profile.ttt_won:,}")
+    stats.append(f"Tic Tac Toe draws: {profile.ttt_draws:,}")
+    stats.append(f"Tic Tac Toe win rate: {profile.ttt_won / (profile.ttt_won + profile.ttt_draws) * 100:.2f}%")
+    stats.append("")
+
+    # misc
+    stats.append(":question:  __Misc__")
+    stats.append(f"Facts read: {profile.facts:,}")
+    stats.append(f"Privte embed clicks: {profile.funny:,}")
+    stats.append(f"Reminders set: {profile.reminders_set:,}{star}")
+    stats.append(f"Cats gifted: {profile.cats_gifted:,}{star}")
+    stats.append(f"Cats received as gift: {profile.cat_gifts_recieved:,}{star}")
+    stats.append(f"Trades completed: {profile.trades_completed}{star}")
+    stats.append(f"Cats traded: {profile.cats_traded:,}{star}")
+    stats.append("")
+
+    embedVar = discord.Embed(title=f"{person_id.name}'s Stats", color=0x6E593C, description="\n".join(stats))
+    await message.followup.send(embed=embedVar)
+
+
 async def gen_inventory(message, person_id):
     # check if we are viewing our own inv or some other person
     if person_id is None:
