@@ -3299,7 +3299,7 @@ async def vote(message: discord.Interaction):
         description="Vote for Cat Bot on top.gg!",
     )
     view = View(timeout=1)
-    button = Button(label="Vote!", url="https://top.gg/bot/966695034340663367/vote")
+    button = Button(label="Vote!", url="https://top.gg/bot/966695034340663367/vote", emoji=get_emoji("topgg"))
     view.add_item(button)
     await message.response.send_message(embed=embed, view=view)
 
