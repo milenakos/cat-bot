@@ -1936,7 +1936,7 @@ async def on_message(message: discord.Message):
                             await send_target.delete_message(cat_temp)
                     except Exception:
                         if perms.manage_messages:
-                            await cat_temp.delete()
+                            await message.channel.delete_messages([discord.Object(cat_temp)])
 
                 async def send_confirm():
                     if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
