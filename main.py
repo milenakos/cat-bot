@@ -6015,7 +6015,9 @@ async def recieve_vote(request):
 
     try:
         channeley = await bot.fetch_user(int(request_json["user"]))
-        await channeley.send("Thanks for voting!\nTo claim your XP, run `/battlepass` in every server you want.\nYou can vote again in 12 hours.")
+        await channeley.send(
+            f"Thanks for voting! Streak: {user.vote_streak:,}\nTo claim your XP, run `/battlepass` in every server you want.\nYou can vote again in 12 hours.\nVote within the next 24 hours to not lose your streak."
+        )
     except Exception:
         pass
 
