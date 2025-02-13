@@ -5591,7 +5591,7 @@ async def leaderboards(
                 if i.final_value > len(bp_season):
                     lv_xp_req = 1500
                 else:
-                    lv_xp_req = bp_season[int(i.final_value)]["xp"]
+                    lv_xp_req = bp_season[int(i.final_value) - 1]["xp"]
 
                 prog_perc = math.floor((100 / lv_xp_req) * i.progress)
 
