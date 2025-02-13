@@ -5588,7 +5588,7 @@ async def leaderboards(
 
             if type == "Battlepass":
                 bp_season = battle["seasons"][f"{i.season}"]
-                if i.final_value > len(bp_season):
+                if i.final_value > (len(bp_season) - 1):
                     lv_xp_req = 1500
                 else:
                     lv_xp_req = bp_season[int(i.final_value) - 1]["xp"]
