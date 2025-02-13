@@ -2151,8 +2151,9 @@ async def on_message(message: discord.Message):
     if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
         stuff = text.split(" ")
         user, _ = User.get_or_create(user_id=stuff[1])
+        cat_name = " ".join(stuff[2:])
         if stuff[2] != "None" and message.reference and message.reference.message_id:
-            emoji_name = "".join(stuff[2:]).lower() + "cat"
+            emoji_name = re.sub(r"[^a-zA-Z0-9]", "", cat_name).lower() + "cat"
             if emoji_name in emojis.keys():
                 await message.reply("emoji already exists")
                 return
@@ -2172,7 +2173,7 @@ async def on_message(message: discord.Message):
                     image_binary.seek(0)
                     await bot.create_application_emoji(name=emoji_name, image=image_binary.getvalue())
 
-        user.custom = " ".join(stuff[2:]) if stuff[2] != "None" else ""
+        user.custom = cat_name if cat_name != "None" else ""
         emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
         user.save()
         await message.reply("success")
@@ -2901,7 +2902,7 @@ async def gen_inventory(message, person_id):
             give_collector = False
 
     if user.custom:
-        icon = get_emoji(user.custom.lower().replace(" ", "") + "cat")
+        icon = get_emoji(re.sub(r"[^a-zA-Z0-9]", "", user.custom).lower() + "cat")
         cat_desc += f"{icon} **{user.custom}** {user.custom_num:,}"
 
     if len(cat_desc) == 0:
