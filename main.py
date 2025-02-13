@@ -2695,19 +2695,19 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     boosts_done = Prism.select(peewee.fn.SUM(Prism.catches_boosted)).where(Prism.guild_id == message.guild.id, Prism.user_id == person_id.id).scalar()
     if not boosts_done:
         boosts_done = 0
-    stats.append(f"Prisms Owned: {prisms_owned:,}")
-    stats.append(f"Prisms Crafted: {prisms_crafted:,}")
+    stats.append(f"Prisms owned: {prisms_owned:,}")
+    stats.append(f"Prisms crafted: {prisms_crafted:,}")
     stats.append(f"Boosts done by your prisms: {boosts_done:,}{star}")
     stats.append(f"Your boosted catches from any prism: {profile.boosted_catches:,}{star}")
-    stats.append(f"Cataine Activations: {profile.cataine_activations:,}")
-    stats.append(f"Cataine Bought: {profile.cataine_bought:,}")
+    stats.append(f"Cataine activations: {profile.cataine_activations:,}")
+    stats.append(f"Cataine bought: {profile.cataine_bought:,}")
     stats.append("")
 
     user = User.get(user_id=person_id.id)
     # voting
     stats.append(f"{get_emoji('topgg')} __Voting__")
-    stats.append(f"Total Votes: {user.total_votes:,}{star}")
-    stats.append(f"Current Vote Streak: {user.vote_streak} (max {max(user.vote_streak, user.max_vote_streak):,}){star}")
+    stats.append(f"Total votes: {user.total_votes:,}{star}")
+    stats.append(f"Current vote streak: {user.vote_streak} (max {max(user.vote_streak, user.max_vote_streak):,}){star}")
     if user.vote_time_topgg + 43200 > time.time():
         stats.append(f"Can vote <t:{user.vote_time_topgg + 43200}:R>")
     else:
@@ -2753,27 +2753,27 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
             if num >= profile.battlepass:
                 break
             total_xp += level["xp"]
-    stats.append(f"Quests Completed: {profile.quests_completed:,}{star}")
-    stats.append(f"Seasons Completed: {seasons_complete:,}")
-    stats.append(f"Levels Completed: {levels_complete:,}")
-    stats.append(f"Highest Ever Level: {max_level:,}")
-    stats.append(f"Total XP Earned: {total_xp:,}")
+    stats.append(f"Quests completed: {profile.quests_completed:,}{star}")
+    stats.append(f"Seasons completed: {seasons_complete:,}")
+    stats.append(f"Levels completed: {levels_complete:,}")
+    stats.append(f"Highest ever level: {max_level:,}")
+    stats.append(f"Total XP earned: {total_xp:,}")
     stats.append("")
 
     # rains & supporter
     stats.append(":umbrella:  __Rains__")
-    stats.append(f"Current Rain Minutes: {user.rain_minutes:,}")
+    stats.append(f"Current rain minutes: {user.rain_minutes:,}")
     stats.append("Ever bought rains: " + ("Yes" if user.premium else "No"))
     stats.append(f"Cats caught during rains: {profile.rain_participations:,}{star}")
-    stats.append(f"Rain Minutes started: {profile.rain_minutes_started:,}{star}")
+    stats.append(f"Rain minutes started: {profile.rain_minutes_started:,}{star}")
     stats.append("")
 
     # gambling
     stats.append(":slot_machine: __Gambling__")
-    stats.append(f"Casino Spins: {profile.gambles:,}")
-    stats.append(f"Slot Spins: {profile.slot_spins:,}")
-    stats.append(f"Slot Wins: {profile.slot_wins:,}")
-    stats.append(f"Slot Big Wins: {profile.slot_big_wins:,}")
+    stats.append(f"Casino spins: {profile.gambles:,}")
+    stats.append(f"Slot spins: {profile.slot_spins:,}")
+    stats.append(f"Slot wins: {profile.slot_wins:,}")
+    stats.append(f"Slot big wins: {profile.slot_big_wins:,}")
     stats.append("")
 
     # tic tac toe
