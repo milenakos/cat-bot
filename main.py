@@ -199,6 +199,9 @@ funny = [
     "you're only making me angrier",
 ]
 
+# rain shill message for footers
+rain_shill = "💞 valentines sale! -20% /rain"
+
 milenakoos = None
 
 # store credits usernames to prevent excessive api calls
@@ -1836,7 +1839,7 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
+                    suffix_string += f"\n:revolving_hearts: valentines sale! -20% </rain:{RAIN_ID}>"
                 if random.randint(0, 19) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
@@ -2946,7 +2949,7 @@ async def gen_inventory(message, person_id):
 async def inventory(message: discord.Interaction, person_id: Optional[discord.User]):
     await message.response.defer()
     embedVar = await gen_inventory(message, person_id)
-    embedVar.set_footer(text="☔ Get tons of cats /rain")
+    embedVar.set_footer(text=rain_shill)
     await message.followup.send(embed=embedVar)
 
 
@@ -3339,7 +3342,7 @@ async def battlepass(message: discord.Interaction):
             title=f"Cattlepass Season {user.season}",
             description=description,
             color=0x6E593C,
-        ).set_footer(text="☔ Get tons of cats /rain")
+        ).set_footer(text=rain_shill)
         view = View(timeout=3600)
 
         button = Button(label="Main", style=ButtonStyle.green)
@@ -5307,7 +5310,7 @@ async def achievements(message: discord.Interaction):
             title=category,
             description=f"Achievements unlocked (total): {unlocked}/{total_achs}{minus_achs}{hidden_suffix}",
             color=0x6E593C,
-        ).set_footer(text="☔ Get tons of cats /rain")
+        ).set_footer(text=rain_shill)
 
         global_user, _ = User.get_or_create(user_id=message.user.id)
         if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state:
@@ -5637,7 +5640,7 @@ async def leaderboards(
         if type == "Cats":
             title = f"{specific_cat} {title}"
 
-        embedVar = discord.Embed(title=title, description=string.rstrip(), color=0x6E593C).set_footer(text="☔ Get tons of cats /rain")
+        embedVar = discord.Embed(title=title, description=string.rstrip(), color=0x6E593C).set_footer(text=rain_shill)
 
         global_user, _ = User.get_or_create(user_id=message.user.id)
 
