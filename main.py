@@ -1011,7 +1011,7 @@ async def maintaince_loop():
     ):
         await asyncio.sleep(0.1)
 
-        user = get_profile(user.user_id, user.guild_id)
+        user = get_profile(user.guild_id, user.user_id)
 
         if not (
             user.reminders_enabled
@@ -1064,7 +1064,7 @@ async def maintaince_loop():
     ):
         await asyncio.sleep(0.1)
 
-        user = get_profile(user.user_id, user.guild_id)
+        user = get_profile(user.guild_id, user.user_id)
 
         if not (
             user.reminders_enabled
