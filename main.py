@@ -1489,13 +1489,7 @@ async def on_message(message: discord.Message):
         return
 
     if "cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6" in text:
-        msg = message
-        try:
-            if perms.manage_messages:
-                await message.delete()
-        except Exception:
-            pass
-        await achemb(msg, "dataminer", "send")
+        await achemb(message, "dataminer", "send")
 
     for ach in achs:
         if (
@@ -1620,11 +1614,9 @@ async def on_message(message: discord.Message):
             ("sus" in text.lower() or "amog" in text.lower() or "among" in text.lower() or "impost" in text.lower() or "report" in text.lower())
             and (channel := Channel.get_or_none(channel_id=message.channel.id))
             and channel.cat
-            and perms.read_message_history
+            and channel.cattype == "Sus"
         ):
-            catchmsg = await message.channel.fetch_message(channel.cat)
-            if get_emoji("suscat") in catchmsg.content:
-                await achemb(message, "sussy", "send")
+            await achemb(message, "sussy", "send")
     except Exception:
         pass
 
@@ -3064,7 +3056,6 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             "Send Messages": channel_permissions.send_messages,
             "Attach Files": channel_permissions.attach_files,
             "Use External Emojis": channel_permissions.use_external_emojis,
-            "Read Message History": channel_permissions.read_message_history,
         }
         if isinstance(message.channel, discord.Thread):
             needed_perms["Send Messages in Threads"] = channel_permissions.send_messages_in_threads
@@ -4984,10 +4975,8 @@ async def cat_fact(message: discord.Interaction):
 
     try:
         channel = Channel.get_or_none(channel_id=message.channel.id)
-        if channel and channel.cat and message.channel.permissions_for(message.guild.me).read_message_history:
-            catchmsg = await message.channel.fetch_message(channel.cat)
-            if str(get_emoji("professorcat")) in catchmsg.content:
-                await achemb(message, "nerd_battle", "send")
+        if channel and channel.cat and channel.cattype == "Professor":
+            await achemb(message, "nerd_battle", "send")
     except Exception:
         pass
 
@@ -5743,7 +5732,6 @@ async def setup_channel(message: discord.Interaction):
                 "Send Messages": channel_permissions.send_messages,
                 "Attach Files": channel_permissions.attach_files,
                 "Use External Emojis": channel_permissions.use_external_emojis,
-                "Read Message History": channel_permissions.read_message_history,
             }
             if isinstance(message.channel, discord.Thread):
                 needed_perms["Send Messages in Threads"] = channel_permissions.send_messages_in_threads
