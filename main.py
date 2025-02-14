@@ -1256,6 +1256,7 @@ async def on_message(message: discord.Message):
         ["egril", "exact", "egril"],
         ["-.-. .- -", "exact", "morse_cat"],
         ["tac", "exact", "reverse"],
+        ["cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6", "exact", "dataminer"],
     ]
 
     reactions = [
@@ -1487,9 +1488,6 @@ async def on_message(message: discord.Message):
 
     if message.author.bot or message.webhook_id is not None:
         return
-
-    if "cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6" in text:
-        await achemb(message, "dataminer", "send")
 
     for ach in achs:
         if (
