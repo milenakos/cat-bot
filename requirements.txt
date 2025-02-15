@@ -7,4 +7,3 @@ requests
 discord-emoji
 peewee
 winuvloop
-pynacl
