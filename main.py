@@ -2339,10 +2339,13 @@ async def news(message: discord.Interaction):
             await do_funny(interaction)
 
     async def mark_all_as_read(interaction):
-        user.news_state = "1" * len(news_list)
-        user.save()
-        regen_buttons()
-        await interaction.response.edit_message(view=generate_page(current_page))
+        if interaction.user.id == message.user.id:
+            user.news_state = "1" * len(news_list)
+            user.save()
+            regen_buttons()
+            await interaction.response.edit_message(view=generate_page(current_page))
+        else:
+            await do_funny(interaction)
 
     def generate_page(number):
         view = View(timeout=3600)
