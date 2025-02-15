@@ -9,13 +9,12 @@ import database
 
 winuvloop.install()
 
-intents = discord.Intents(message_content=True, messages=True, guilds=True, emojis=True)
 bot = commands.AutoShardedBot(
     command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    intents=intents,
-    member_cache_flags=discord.MemberCacheFlags.none(),
     help_command=None,
     chunk_guilds_at_startup=False,
+    intents=discord.Intents(message_content=True, messages=True, guilds=True),
+    member_cache_flags=discord.MemberCacheFlags.none(),
     allowed_mentions=discord.AllowedMentions.none(),
 )
 
