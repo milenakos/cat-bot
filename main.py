@@ -1,19 +1,18 @@
 import asyncio
 import base64
-
 import datetime
 import io
 import json
 import logging
-import os
 import math
+import os
 import random
 import re
 import subprocess
 import time
 import traceback
-from typing import Literal, Optional, Union
 from functools import partial
+from typing import Literal, Optional, Union
 
 import aiohttp
 import discord
@@ -2204,10 +2203,18 @@ async def on_guild_join(guild):
     try:
         if ch.permissions_for(guild.me).send_messages:
             await ch.send(
-                unofficial_note + "Thanks for adding me!\nTo start, use `/help`!\nJoin the support server here: https://discord.gg/staring\nHave a nice day :)"
+                unofficial_note
+                + "Thanks for adding me!\nTo start, use `/setup` and `/help` to learn more!\nJoin the support server here: https://discord.gg/staring\nHave a nice day :)"
             )
     except Exception:
         pass
+
+    if guild.self_role and config.COLLECT_STATS:
+        if guild.self_role.permissions.read_message_history:
+            source = "top.gg"
+        else:
+            source = "direct"
+        await stats.bump("invite", source)
 
 
 @bot.tree.command(description="Learn to use the bot")
