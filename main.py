@@ -1255,7 +1255,7 @@ async def on_message(message: discord.Message):
         ["egril", "exact", "egril"],
         ["-.-. .- -", "exact", "morse_cat"],
         ["tac", "exact", "reverse"],
-        ["cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6", "exact", "dataminer"],
+        ["cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6", "veryexact", "dataminer"],
     ]
 
     reactions = [
@@ -1493,6 +1493,7 @@ async def on_message(message: discord.Message):
             (ach[1] == "startswith" and text.lower().startswith(ach[0]))
             or (ach[1] == "re" and re.search(ach[0], text.lower()))
             or (ach[1] == "exact" and ach[0] == text.lower())
+            or (ach[1] == "veryexact" and ach[0] == text)
             or (ach[1] == "in" and ach[0] in text.lower())
         ):
             await achemb(message, ach[2], "reply")
