@@ -5904,7 +5904,7 @@ async def reset(message: discord.Interaction, person_id: discord.User):
             try:
                 og = await interaction.original_response()
                 profile = get_profile(message.guild.id, person_id.id)
-                profile.user_id = og.id
+                profile.guild_id = og.id
                 profile.save()
                 await interaction.edit_original_response(
                     content=f"Done! rip {person_id.mention}. f's in chat.\njoin our discord to rollback: <https://discord.gg/staring>", view=None
