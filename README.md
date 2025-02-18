@@ -22,7 +22,7 @@ Please note self-hosting is hacky and isn't supported, instructions below are fo
 
    `pip install -r requirements.txt`
 
-3. You will need to all emojis you want to Discord's App Emoji in the Dev Portal.
+3. You will need to add all emojis you want to Discord's App Emoji in the Dev Portal.
 
    If they aren't found there, they will be replaced with a placeholder.
 
