@@ -13,6 +13,7 @@ bot = commands.AutoShardedBot(
     command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     help_command=None,
     chunk_guilds_at_startup=False,
+    allowed_contexts=discord.app_commands.AppCommandContext(guild=True, dm_channel=False, private_channel=False),
     intents=discord.Intents(message_content=True, messages=True, guilds=True),
     member_cache_flags=discord.MemberCacheFlags.none(),
     allowed_mentions=discord.AllowedMentions.none(),

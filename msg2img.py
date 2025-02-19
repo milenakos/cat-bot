@@ -189,22 +189,11 @@ def msg2img(message):
     with Pilmoji(new_img) as pilmoji2:
         pilmoji2.text((122, 55), text.strip(), (255, 255, 255), font2, emoji_scale_factor=45 / 33)
 
-    now = message.created_at
-    # there is probably easier way than this but ehhh
-    twelvehour = now.strftime("%I:%M")
-    twentyfourhour = now.strftime("%H:%M")
-    if twelvehour == twentyfourhour:
-        suffix = "AM"
-    else:
-        suffix = "PM"
-
-    # 09:34 -> 9:34
-    if twelvehour[0] == "0" and twelvehour[1] != ":":
-        twelvehour = twelvehour[1:]
+    twentyfourhour = message.created_at.strftime("%H:%M")
 
     pencil.text(
         (13 + 122 + getsize(font, nick)[0] + move, 17),
-        f"Today at {twelvehour} {suffix}",
+        f"Today at {twentyfourhour}",
         font=font3,
         fill=ImageColor.getrgb("#A3A4AA"),
     )  # draw time
