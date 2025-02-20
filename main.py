@@ -943,7 +943,6 @@ async def maintaince_loop():
                     headers={"Authorization": config.TOP_GG_TOKEN},
                     json={
                         "server_count": len(bot.guilds),
-                        "shard_count": len(bot.shards),
                     },
                 )
             except Exception:
