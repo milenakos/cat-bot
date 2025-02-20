@@ -3681,7 +3681,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
     if person == message.user:
         await message.response.send_message("you can't play tic tac toe with yourself idiot", ephemeral=True)
         return
-    playing_bot = person.id == bot.user.id:
+    playing_bot = person.id == bot.user.id
     current_turn = random.choice([message.user, person])
 
     if playing_bot and current_turn == person:
