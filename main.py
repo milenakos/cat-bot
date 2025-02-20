@@ -6008,7 +6008,7 @@ async def recieve_vote(request):
         # streak end
         if user.max_vote_streak < user.vote_streak:
             user.max_vote_streak = user.vote_streak
-        user.vote_streak = 0
+        user.vote_streak = 1
     else:
         user.vote_streak += 1
     user.vote_time_topgg = time.time()
