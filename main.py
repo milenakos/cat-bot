@@ -3780,7 +3780,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
                         best_move = spot
             return best_move
     
-    def update_board(turn_spot):
+    def async update_board(turn_spot):
         board_state[turn_spot] = "X" if current_turn == message.user else "O"
         winner = check_winner()[1]
         if winner:
