@@ -3764,9 +3764,8 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
             return best
     
     def bot_move():
-         if random.randint(1, 100) == 1:
-             empty_squares = [index for index, value in enumerate(board_state) if value == ""]
-             return random.choice(empty_squares)
+        if random.randint(1, 100) == 1:
+            return random.choice([index for index, value in enumerate(board_state) if value == ""])
         else:
             best_val = math.inf
             best_move = -1
