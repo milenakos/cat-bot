@@ -3824,7 +3824,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
             current_turn = message.user if current_turn == person else person
 
-            if person == bot.user and current_turn == person:
+            if person == bot.user and current_turn == person and "" in board_state:
                 best_move = get_best_move(board_state)
                 board_state[best_move] = "O"
                 current_turn = message.user
