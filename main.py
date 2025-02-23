@@ -3701,12 +3701,12 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
         for a, b, c in winning_combinations:
             if board[a] == board[b] == board[c] and board[a] != "":
-                return board[a], True  # Return the winner and a flag indicating a win
+                return board[a], True, [a, b, c]  # Return the winner and a flag indicating a win
 
-        return None, False  # No winner
+        return None, False, []  # No winner
 
     def minimax(board, depth, is_maximizing):
-        winner, has_winner = check_winner(board)
+        winner, has_winner, _ = check_winner(board)
 
         if has_winner:
             return (10 - depth) if winner == "O" else (depth - 10)
@@ -3790,7 +3790,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
             board_state[turn_spot] = "X" if current_turn == message.user else "O"
 
-            winner, check = check_winner(board_state)
+            winner, has_winner, check = check_winner(board_state)
             if winner:
                 view = View(timeout=1)
                 for num, i in enumerate(board_state):
@@ -3829,7 +3829,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
                 board_state[best_move] = "O"
                 current_turn = message.user
 
-                winner, check = check_winner(board_state)
+                winner, has_winner, check = check_winner(board_state)
                 if winner:
                     view = View(timeout=1)
                     for num, i in enumerate(board_state):
