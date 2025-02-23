@@ -3709,7 +3709,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         winner, has_winner = check_winner(board)
 
         if has_winner:
-            return 1 if winner == "O" else -1
+            return (10 - depth) if winner == "O" else (depth - 10)
         elif "" not in board:
             return 0
 
