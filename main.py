@@ -3680,31 +3680,36 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
     if person == message.user:
         await message.response.send_message("you can't play tic tac toe with yourself idiot", ephemeral=True)
         return
-    current_turn = random.choice([message.user, person])
+    if person != bot.user:
+        current_turn = random.choice([message.user, person])
+    else:
+        current_turn = message.user
     board_state = ["", "", "", "", "", "", "", "", ""]
 
     def check_winner(board):
-        checks = [
-            [0, 1, 2],
-            [3, 4, 5],
-            [6, 7, 8],  # Rows
-            [0, 3, 6],
-            [1, 4, 7],
-            [2, 5, 8],  # Columns
-            [0, 4, 8],
-            [2, 4, 6],  # Diagonals
+        # Check rows, columns, and diagonals for a winner
+        winning_combinations = [
+            (0, 1, 2),
+            (3, 4, 5),
+            (6, 7, 8),
+            (0, 3, 6),
+            (1, 4, 7),
+            (2, 5, 8),
+            (0, 4, 8),
+            (2, 4, 6),
         ]
-        for check in checks:
-            if board[check[0]] == board[check[1]] == board[check[2]] != "":
-                return True, check
-        return False, None
+
+        for a, b, c in winning_combinations:
+            if board[a] == board[b] == board[c] and board[a] != "":
+                return board[a], True  # Return the winner and a flag indicating a win
+
+        return None, False  # No winner
 
     def minimax(board, depth, is_maximizing):
-        scores = {"X": -1, "O": 1}
-        winner, _ = check_winner(board)
+        winner, has_winner = check_winner(board)
 
-        if winner:
-            return scores["O" if board.count("O") > board.count("X") else "X"]
+        if has_winner:
+            return 1 if winner == "O" else -1
         elif "" not in board:
             return 0
 
@@ -3729,7 +3734,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
     def get_best_move(board):
         best_score = float("-inf")
-        best_move = 0
+        best_move = -1
         for i in range(9):
             if board[i] == "":
                 board[i] = "O"
