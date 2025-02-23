@@ -3859,6 +3859,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
                     return
 
             text, view = await gen_board()
+            await asyncio.sleep(random.random()*2+1)
             await interaction.edit_original_response(content=text, view=view)
         else:
             await do_funny(interaction)
