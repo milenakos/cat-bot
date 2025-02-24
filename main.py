@@ -3296,8 +3296,11 @@ async def battlepass(message: discord.Interaction):
             progress = ""
             if catch_quest["progress"] != 1:
                 if user.catch_quest == "finenice":
-                    real_progress = user.catch_progress if user.catch_progress < 2 else user.catch_progress - 1
-                    progress = f" ({real_progress}/2)"
+                    try:
+                        real_progress = ["none", "fine", "nice", "both"][user.catch_progress]
+                    except:
+                        real_progress = "error"
+                    progress = f" ({real_progress}/both)"
                 else:
                     progress = f" ({user.catch_progress}/{catch_quest['progress']})"
             description += f"{get_emoji(catch_quest['emoji'])} {catch_quest['title']}{progress}\n - Reward: {user.catch_reward} XP\n"
