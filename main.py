@@ -3298,7 +3298,7 @@ async def battlepass(message: discord.Interaction):
                 if user.catch_quest == "finenice":
                     try:
                         real_progress = ["need both", "need Nice", "need Fine", "done"][user.catch_progress]
-                    except:
+                    except IndexError:
                         real_progress = "error"
                     progress = f" ({real_progress})"
                 else:
@@ -3678,7 +3678,7 @@ async def ping(message: discord.Interaction):
 
 
 @bot.tree.command(description="play a relaxing game of tic tac toe")
-@discord.app_commands.describe(person="who do you want to play with?")
+@discord.app_commands.describe(person="who do you want to play with? (choose Cat Bot for ai)")
 async def tictactoe(message: discord.Interaction, person: discord.Member):
     if person == message.user:
         await message.response.send_message("you can't play tic tac toe with yourself idiot", ephemeral=True)
