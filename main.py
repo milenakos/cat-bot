@@ -27,6 +27,7 @@ from PIL import Image
 
 import config
 import msg2img
+import minigame
 from database import Channel, Prism, Profile, Reminder, User, db
 
 if config.COLLECT_STATS:
@@ -177,12 +178,14 @@ bot = commands.AutoShardedBot(
 
 funny = [
     "why did you click this this arent yours",
+    "why",
     "absolutely not",
     "cat bot not responding, try again later",
     "you cant",
     "can you please stop",
     "try again",
     "403 not allowed",
+    "an unexpected error occured",
     "stop",
     "get a life",
     "not for you",
@@ -1513,6 +1516,7 @@ async def on_message(message: discord.Message):
         "gata",
         "mao",
         "qat",
+        "кот",
     ]:
         await achemb(message, "multilingual", "reply")
 
@@ -3676,6 +3680,22 @@ async def ping(message: discord.Interaction):
     await message.response.send_message(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
     await progress(message, get_profile(message.guild.id, message.user.id), "ping")
 
+@bot.tree.command(description="(INDEV) play tetris or smth idk")
+async def tetris(message: discord.Interaction, gamestate: str = "default"):
+    await message.response.send_message("starting Tetris...")
+    tetriss=minigame.Tetris()
+    def display_tetris(gamestate):
+        pass #TODO: finish the display function
+    async def game_loop():
+        if gamestate == "default":
+            gamestate=minigame.tetris_default
+        while True:
+            gamestate = tetriss.gamelogic()
+            if gamestate["gameover"]:
+                await message.followup.send("Game over!")
+            await display_tetris(gamestate)
+            await asyncio.sleep(1)
+    await game_loop()
 
 @bot.tree.command(description="play a relaxing game of tic tac toe")
 @discord.app_commands.describe(person="who do you want to play with? (choose Cat Bot for ai)")
