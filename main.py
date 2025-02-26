@@ -5498,10 +5498,13 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         return
     await message.response.defer()
 
+    """
     event_loop = asyncio.get_event_loop()
     result = await event_loop.run_in_executor(None, msg2img.msg2img, msg)
 
     await message.followup.send("cought in 4k", file=result)
+    """
+    await message.followup.send("cought in 4k (this is broken rn sry)")
 
     catchcooldown[message.user.id] = time.time()
 
