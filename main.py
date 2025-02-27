@@ -3765,7 +3765,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
             view.add_item(button)
         if not has_unlocked_tiles:
-            text = f"{message.user.mention} (X) vs {person.mention} (O)\nits a tie!"
+            text = f"{message.user.mention} (X) vs {person.mention} (O)\nit's a tie!"
             user1 = get_profile(message.guild.id, message.user.id)
             user2 = get_profile(message.guild.id, person.id)
             await progress(message, user1, "ttc")
