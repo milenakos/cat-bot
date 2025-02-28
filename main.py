@@ -368,9 +368,9 @@ That's not a question, but it does end in less than 24 hours so don't [miss your
             title="Packs!",
             description=f"""⬆️ __season 2 has concluded!__
 some fun stats:
-- 210k levels complete
+- 214k levels complete
 - 43k people completed atleast a single level
-- 553k quests complete
+- 543k quests complete
 - 73k people completed atleast a single quest
 
 changes:
