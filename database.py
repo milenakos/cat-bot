@@ -122,6 +122,8 @@ class Profile(peewee.Model):
     ttt_played = peewee.IntegerField(default=0)  # amount of times played the TTT
     ttt_won = peewee.IntegerField(default=0)  # amount of TTT wins
     ttt_draws = peewee.IntegerField(default=0)  # amount of TTT draws
+    packs_opened = peewee.IntegerField(default=0)  # amount of packs opened
+    pack_upgrades = peewee.IntegerField(default=0)  # amount of pack upgrades
     new_user = peewee.BooleanField(default=True)  # whether the user is new
 
     # thanks chatgpt

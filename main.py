@@ -77,6 +77,17 @@ allowedemojis = []
 for i in type_dict.keys():
     allowedemojis.append(i.lower() + "cat")
 
+pack_data = [
+    {"name": "Wooden", "value": 65, "upgrade": 30},
+    {"name": "Stone", "value": 90, "upgrade": 30},
+    {"name": "Bronze", "value": 100, "upgrade": 30},
+    {"name": "Silver", "value": 115, "upgrade": 30},
+    {"name": "Gold", "value": 230, "upgrade": 30},
+    {"name": "Platinum", "value": 630, "upgrade": 30},
+    {"name": "Diamond", "value": 860, "upgrade": 30},
+    {"name": "Celestial", "value": 2000, "upgrade": 0},  # is that a madeline celeste reference????
+]
+
 prism_names = [
     "Alpha",
     "Bravo",
@@ -135,7 +146,7 @@ hints = [
     "Cat Bot's birthday is on the 21st of April",
     "Unlike the normal one, Cat's /8ball isn't rigged",
     "/rate says /rate is 100% correct",
-    "/casino is surely not rigged",
+    "/casino is *surely* not rigged",
     "You probably shouldn't use a Discord bot for /remind-ers",
     "Cat /Rain is an excellent way to support development!",
     "Cat Bot was made later than it's support server",
@@ -144,8 +155,8 @@ hints = [
     "Cat Bot's top.gg page was deleted at one point",
     "Cat Bot has an official soundtrack! <https://youtu.be/Ww1opmRwYF0>",
     "4 with 832 zeros cats were deleted on September 5th, 2024",
-    "Cat Bot has reached top #19 on top.gg in January 2025",
-    "Cat Bot has reached top #17 on top.gg in February 2025",
+    "Cat Bot reached top #19 on top.gg in January 2025",
+    "Cat Bot reached top #17 on top.gg in February 2025",
     "Most Cat Bot features were made within 2 weeks",
     "Cat Bot was initially made for only one server",
     "Cat Bot is made in Python with discord.py",
@@ -283,6 +294,7 @@ news_list = [
     {"title": "New Cat Rains perks!", "emoji": "✨"},
     {"title": "Cat Bot Christmas 2024", "emoji": "🎅"},
     {"title": "Battlepass Update", "emoji": "⬆️"},
+#    {"title": "Packs!", "emoji": get_emoji("goldpack")}
 ]
 
 
@@ -348,6 +360,30 @@ There are currently no plans to sell a paid battlepass.
 
 ## christmas sale
 That's not a question, but it does end in less than 24 hours so don't [miss your opportunity](<https://store.minkos.lol>).""",
+            color=0x6E593C,
+        )
+        await interaction.edit_original_response(content=None, view=None, embed=embed)
+    elif news_id == 4:
+        embed = discord.Embed(
+            title="Packs!",
+            description=f"""⬆️ __season 2 has concluded!__
+some fun stats:
+- 210k levels complete
+- 43k people completed atleast a single level
+- 553k quests complete
+- 73k people completed atleast a single quest
+
+changes:
+- reminder quest is replaced for play tictactoe quest with the same xp rewards
+- added some slashes to misc quest titles to clarify which commands to run
+- and the biggest...
+
+{get_emoji('goldpack')} __**The Pack Update**__
+you want more gambling? we heard you!
+instead of predetermined cat rewards you now unlock Packs! packs have different rarities and have a 30% chance to upgrade a rarity when opening, then 30% for one more upgrade and so on. this means even the most common packs have a small chance to upgrade to the rarest one!
+the rarities are - Wooden {get_emoji('woodenpack')}, Stone {get_emoji('stonepack')}, Bronze {get_emoji('bronzepack')}, Silver {get_emoji('silverpack')}, Gold {get_emoji('goldpack')}, Platinum {get_emoji('platinumpack')}, Diamond {get_emoji('diamondpack')} and Celestial {get_emoji('celestialpack')}!
+the extra reward is now a stone pack instead of 5 random cats too!
+*LETS GO GAMBLING*""",
             color=0x6E593C,
         )
         await interaction.edit_original_response(content=None, view=None, embed=embed)
@@ -575,7 +611,10 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
     old_xp = user.progress
     perms = message.channel.permissions_for(message.guild.me)
     if user.battlepass >= len(battle["seasons"][str(user.season)]):
-        level_data = {"xp": 1500, "reward": "random cats", "amount": 5}
+        if user.season in [1, 2]:
+            level_data = {"xp": 1500, "reward": "random cats", "amount": 5}
+        else:
+            level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
         level_text = "Extra Rewards"
     else:
         level_data = battle["seasons"][str(user.season)][user.battlepass]
@@ -584,24 +623,65 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         user.battlepass += 1
         user.progress = current_xp - level_data["xp"]
         cat_emojis = None
-        if user.battlepass - 1 >= len(battle["seasons"][str(user.season)]):
+        if level_data["reward"] == "random cats":
             cat_emojis = ""
             for _ in range(5):
                 chosen_cat = random.choice(CAT_TYPES)
                 user[f"cat_{chosen_cat}"] += 1
                 cat_emojis += get_emoji(chosen_cat.lower() + "cat")
-        elif level_data["reward"] != "Rain":
+        elif level_data["reward"] in cattypes:
             user[f"cat_{level_data['reward']}"] += level_data["amount"]
-        else:
+        elif level_data["reward"] == "Rain":
             user.rain_minutes += level_data["amount"]
+        else:
+            level = next((i for i, p in enumerate(pack_data) if p["name"] == level_data["reward"]), 0)
+            reward_texts = []
+            build_string = ""
+
+            # bump rarity
+            try_bump = True
+            while try_bump:
+                if random.randint(1, 100) <= pack_data[level]["upgrade"]:
+                    reward_texts.append(f"{get_emoji(pack_data[level]['name'].lower() + 'pack')} **{pack_data[level]['name']}**" + build_string)
+                    build_string = f"Upgraded from {get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}! (30%)\n" + build_string
+                    level += 1
+                    user.pack_upgrades += 1
+                else:
+                    try_bump = False
+            final_level = pack_data[level]
+            reward_texts.append(f"{get_emoji(final_level['name'].lower() + 'pack')} **{final_level['name']}**\n" + build_string)
+
+            # select cat type
+            goal_value = final_level["value"]
+            lower_bound, upper_bound = goal_value * 0.85, goal_value * 1.15
+            found = []
+            while not found:
+                test_type = random.choice(cattypes)
+                value_per_type = len(CAT_TYPES) / type_dict[test_type]
+                n = 0
+                while True:
+                    n += 1
+                    if value_per_type * n < lower_bound:
+                        continue
+                    if value_per_type * n > upper_bound:
+                        break
+                    found.append([test_type, n])
+            reward = random.choice(found)
+            user[f"cat_{reward[0]}"] += reward[1]
+            user.packs_opened += 1
+            reward_texts.append(reward_texts[-1] + f"\nYou got {get_emoji(reward[0].lower() + 'cat')} {reward[1]} {reward[0]} cats!")
         user.save()
 
         if perms.send_messages and perms.embed_links and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
+            pack_mode = False
             if not cat_emojis:
                 if level_data["reward"] == "Rain":
                     description = f"You got ☔ {level_data['amount']} rain minutes!"
-                else:
+                elif level_data["reward"] in cattypes:
                     description = f"You got {get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']}!"
+                else:
+                    pack_mode = True
+                    description = reward_texts[0]
                 title = f"Level {user.battlepass} Complete!"
             else:
                 description = f"You got {cat_emojis}!"
@@ -609,11 +689,15 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
             embed_level_up = discord.Embed(title=title, description=description, color=0xFFF000)
 
             if user.battlepass >= len(battle["seasons"][str(user.season)]):
-                new_level_data = {"xp": 1500, "reward": "random cats", "amount": 5}
+                if user.season in [1, 2]:
+                    new_level_data = {"xp": 1500, "reward": "random cats", "amount": 5}
+                else:
+                    new_level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
                 new_level_text = "Extra Rewards"
             else:
                 new_level_data = battle["seasons"][str(user.season)][user.battlepass]
                 new_level_text = f"Level {user.battlepass + 1}"
+
             embed_progress = progress_embed(
                 message,
                 user,
@@ -625,10 +709,22 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
                 new_level_text,
             )
 
-            await message.channel.send(
-                f"<@{user.user_id}>",
-                embeds=[embed_level_up, embed_progress],
-            )
+            if not pack_mode:
+                await message.channel.send(
+                    f"<@{user.user_id}>",
+                    embeds=[embed_level_up, embed_progress],
+                )
+            else:
+                msg = await message.channel.send(
+                    f"<@{user.user_id}>",
+                    embed=embed_level_up,
+                )
+                for reward_text in reward_texts[1:]:
+                    await asyncio.sleep(1)
+                    embed_level_up = discord.Embed(title=title, description=reward_text, color=0xFFF000)
+                    await msg.edit(embed=embed_level_up)
+                await asyncio.sleep(1)
+                await msg.edit(embeds=[embed_level_up, embed_progress])
 
         if config.COLLECT_STATS:
             await stats.bump("battlepass", "level_up")
@@ -666,15 +762,17 @@ def progress_embed(message, user, level_data, current_xp, old_xp, quest_data, di
     title = quest_data["title"] if "top.gg" not in quest_data["title"] else "Vote on Top.gg"
 
     if level_data["reward"] == "Rain":
-        reward_emoji = "☔"
+        reward_text = f"☔ {level_data['amount']}m of Rain"
     elif level_data["reward"] == "random cats":
-        reward_emoji = "❓"
+        reward_text = f"❓ {level_data['amount']} random cats"
+    elif level_data["reward"] in cattypes:
+        reward_text = f"{get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']}"
     else:
-        reward_emoji = get_emoji(level_data["reward"].lower() + "cat")
+        reward_text = f"{get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack"
 
     return discord.Embed(
         title=f"✅ {title}",
-        description=f"{progress_line}\n{current_xp}/{level_data['xp']} XP (+{diff})\nReward: {reward_emoji} {level_data['amount']} {level_data['reward']}",
+        description=f"{progress_line}\n{current_xp}/{level_data['xp']} XP (+{diff})\nReward: {reward_text}",
         color=0x007F0E,
     ).set_author(name="/battlepass " + level_text)
 
@@ -2760,6 +2858,8 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     stats.append(f"Quests completed: {profile.quests_completed:,}{star}")
     stats.append(f"Seasons completed: {seasons_complete:,}")
     stats.append(f"Levels completed: {levels_complete:,}")
+    stats.append(f"Packs opened: {profile.packs_opened:,}")
+    stats.append(f"Pack upgrades: {profile.pack_upgrades:,}")
     stats.append(f"Highest ever level: {max_level:,}")
     stats.append(f"Total XP earned: {total_xp:,}")
     stats.append("")
@@ -2803,7 +2903,7 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     stats.append("")
 
     if star:
-        stats.append("\*this stat is only tracked since February 2025")
+        stats.append("\\*this stat is only tracked since February 2025")
 
     embedVar = discord.Embed(title=f"{person_id.name}'s Stats", color=0x6E593C, description="\n".join(stats))
     await message.followup.send(embed=embedVar)
@@ -3318,28 +3418,39 @@ async def battlepass(message: discord.Interaction):
         if user.battlepass >= len(battle["seasons"][str(user.season)]):
             description += f"**Extra Rewards** [{user.progress}/1500 XP]\n"
             colored = int(user.progress / 150)
-            description += get_emoji("staring_square") * colored + "⬛" * (10 - colored) + "\nReward: ❓ 5 random cats"
+            description += get_emoji("staring_square") * colored + "⬛" * (10 - colored) + "\nReward: "
+            if user.season in [1, 2]:
+                description += "❓ 5 random cats"
+            else:
+                description += get_emoji("stonepack") + " Stone pack"
         else:
             level_data = battle["seasons"][str(user.season)][user.battlepass]
             description += f"**Level {user.battlepass + 1}/30** [{user.progress}/{level_data['xp']} XP]\n"
             colored = int(user.progress / level_data["xp"] * 10)
             description += f"**{user.battlepass}** " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" **{user.battlepass + 1}**\n"
 
-            if level_data["reward"] != "Rain":
+            if level_data["reward"] == "Rain":
+                description += f"Reward: ☔ {level_data['amount']} minutes of rain\n\n"
+            elif level_data["reward"] in cattypes:
                 description += f"Reward: {get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']} cats\n\n"
             else:
-                description += f"Reward: ☔ {level_data['amount']} minutes of rain\n\n"
+                description += f"Reward: {get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack\n\n"
 
             # next reward
             if user.battlepass >= len(battle["seasons"][str(user.season)]) - 1:
-                description += "*Next:* 1500 XP - ❓ 5 random cats"
+                if user.season in [1, 2]:
+                    description += "*Next:* 1500 XP - ❓ 5 random cats"
+                else:
+                    description += f"*Next:* 1500 XP - {get_emoji('stonepack')} Stone pack"
             else:
                 level_data = battle["seasons"][str(user.season)][user.battlepass + 1]
                 description += f"*Next:* {level_data['xp']} XP - "
-                if level_data["reward"] != "Rain":
+                if level_data["reward"] == "Rain":
+                    description += f"☔ {level_data['amount']} minutes of rain"
+                elif level_data["reward"] in cattypes:
                     description += f"{get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']} cats"
                 else:
-                    description += f"☔ {level_data['amount']} minutes of rain"
+                    description += f"{get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack"
 
         embedVar = discord.Embed(
             title=f"Cattlepass Season {user.season}",
@@ -3382,14 +3493,22 @@ async def battlepass(message: discord.Interaction):
         await interaction.response.defer()
         current_mode = "Rewards"
         user = get_profile(message.guild.id, message.user.id)
-        description = "**Rewards this season**\n"
+        description = ""
+        if user.season >= 3:
+            description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n"
+        description += "**Rewards this season**\n"
 
         rewards = {}
         for i in battle["seasons"][str(user.season)]:
             amount = i["amount"] if i["reward"] != "Rain" else 0
             rewards[i["reward"]] = rewards.get(i["reward"], 0) + amount
 
-        rewards = {k: v for k, v in sorted(rewards.items(), key=lambda item: item[1], reverse=True)}
+        if user.season in [1, 2]:
+            rewards = {k: v for k, v in sorted(rewards.items(), key=lambda item: item[1], reverse=True)}
+        else:
+            order_mapping = {item["name"]: index for index, item in enumerate(pack_data)}
+            order_mapping["Rain"] = len(order_mapping)
+            rewards = {k: v for k, v in sorted(rewards.items(), key=lambda item: order_mapping[item[0]])}
 
         counter = len(rewards)
         for k, v in rewards.items():
@@ -3397,8 +3516,10 @@ async def battlepass(message: discord.Interaction):
                 emoji = "☔"
                 v = "2m"
                 k = "of Cat Rain"
-            else:
+            elif k in cattypes:
                 emoji = get_emoji(k.lower() + "cat")
+            else:
+                emoji = get_emoji(k.lower() + "pack")
             prefix = ""
 
             if counter == 4 or counter == 3:
