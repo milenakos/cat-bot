@@ -3249,9 +3249,11 @@ if config.DONOR_CHANNEL_ID:
 async def packs(message: discord.Interaction):
     def gen_view(user):
         view = discord.ui.View(timeout=3600)
+        empty = True
         for pack in pack_data:
             if user[f"pack_{pack['name'].lower()}"] < 1:
                 continue
+            empty = False
             amount = user[f"pack_{pack['name'].lower()}"]
             button = discord.ui.Button(
                 emoji=get_emoji(pack["name"].lower() + "pack"),
@@ -3261,6 +3263,8 @@ async def packs(message: discord.Interaction):
             )
             button.callback = open_pack
             view.add_item(button)
+        if empty:
+            view.add_item(discord.ui.Button(label="No packs!", style=discord.ButtonStyle.gray, disabled=True))
         return view
 
     async def open_pack(interaction: discord.Interaction):
