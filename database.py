@@ -139,7 +139,7 @@ class Profile(peewee.Model):
 
     # packs
     for pack in ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]:
-        locals()[f"pack_{pack}"] = peewee.IntegerField(default=0)
+        locals()[f"pack_{pack.lower()}"] = peewee.IntegerField(default=0)
 
     def __getitem__(self, item):
         return getattr(self, item)

@@ -635,7 +635,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         elif level_data["reward"] == "Rain":
             user.rain_minutes += level_data["amount"]
         else:
-            user[f"pack_{level_data['reward']}"] += 1
+            user[f"pack_{level_data['reward'].lower()}"] += 1
         user.save()
 
         if perms.send_messages and perms.embed_links and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
@@ -3250,9 +3250,9 @@ async def packs(message: discord.Interaction):
     def gen_view(user):
         view = discord.ui.View(timeout=3600)
         for pack in pack_data:
-            if user[f"pack_{pack['name']}"] < 1:
+            if user[f"pack_{pack['name'].lower()}"] < 1:
                 continue
-            amount = user[f"pack_{pack['name']}"]
+            amount = user[f"pack_{pack['name'].lower()}"]
             button = discord.ui.Button(
                 emoji=get_emoji(pack["name"].lower() + "pack"),
                 label=f"{pack['name']} ({amount})",
@@ -3304,7 +3304,7 @@ async def packs(message: discord.Interaction):
         reward = random.choice(found)
         user[f"cat_{reward[0]}"] += reward[1]
         user.packs_opened += 1
-        user[f"pack_{pack}"] -= 1
+        user[f"pack_{pack.lower()}"] -= 1
         user.save()
         reward_texts.append(reward_texts[-1] + f"\nYou got {get_emoji(reward[0].lower() + 'cat')} {reward[1]} {reward[0]} cats!")
 
