@@ -3427,7 +3427,7 @@ async def battlepass(message: discord.Interaction):
         # catch
         catch_quest = battle["quests"]["catch"][user.catch_quest]
         if user.catch_cooldown != 0:
-            description += f"✅ ~~{catch_quest['title']}~~\n - Refreshes <t:{int(user.catch_cooldown + 12 * 3600 if user.catch_cooldown + 12 * 3600 > timestamp else timestamp)}:R>\n"
+            description += f"✅ ~~{catch_quest['title']}~~\n - Refreshes <t:{int(user.catch_cooldown + 12 * 3600 if user.catch_cooldown + 12 * 3600 < timestamp else timestamp)}:R>\n"
         else:
             progress = ""
             if catch_quest["progress"] != 1:
@@ -3444,7 +3444,7 @@ async def battlepass(message: discord.Interaction):
         # misc
         misc_quest = battle["quests"]["misc"][user.misc_quest]
         if user.misc_cooldown != 0:
-            description += f"✅ ~~{misc_quest['title']}~~\n - Refreshes <t:{int(user.misc_cooldown + 12 * 3600 if user.misc_cooldown + 12 * 3600 > timestamp else timestamp)}:R>\n\n"
+            description += f"✅ ~~{misc_quest['title']}~~\n - Refreshes <t:{int(user.misc_cooldown + 12 * 3600 if user.misc_cooldown + 12 * 3600 < timestamp else timestamp)}:R>\n\n"
         else:
             progress = ""
             if misc_quest["progress"] != 1:
