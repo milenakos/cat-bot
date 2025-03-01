@@ -3250,9 +3250,10 @@ async def packs(message: discord.Interaction):
         for pack in pack_data:
             if user[f"pack_{pack['name']}"] < 1:
                 continue
+            amount = user[f"pack_{pack['name']}"]
             button = discord.ui.Button(
                 emoji=get_emoji(pack["name"].lower() + "pack"),
-                label=f"{pack['name']} ({user[f'pack_{pack["name"]}']})",
+                label=f"{pack['name']} ({amount})",
                 style=discord.ButtonStyle.blurple,
                 custom_id=pack["name"],
             )
