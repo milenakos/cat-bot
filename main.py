@@ -3282,7 +3282,7 @@ async def packs(message: discord.Interaction):
         try_bump = True
         while try_bump:
             if random.randint(1, 100) <= pack_data[level]["upgrade"]:
-                reward_texts.append(f"{get_emoji(pack_data[level]['name'].lower() + 'pack')} **{pack_data[level]['name']}**" + build_string)
+                reward_texts.append(f"{get_emoji(pack_data[level]['name'].lower() + 'pack')} **{pack_data[level]['name']}**\n" + build_string)
                 build_string = f"Upgraded from {get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}! (30%)\n" + build_string
                 level += 1
                 user.pack_upgrades += 1
@@ -3313,7 +3313,7 @@ async def packs(message: discord.Interaction):
         user.save()
         reward_texts.append(reward_texts[-1] + f"\nYou got {get_emoji(reward[0].lower() + 'cat')} {reward[1]} {reward[0]} cats!")
 
-        embed = discord.Embed(description=reward_texts[-1], color=0x6E593C)
+        embed = discord.Embed(description=reward_texts[0], color=0x6E593C)
         await interaction.edit_original_response(embed=embed, view=None)
         for reward_text in reward_texts[1:]:
             await asyncio.sleep(1)
