@@ -3264,7 +3264,7 @@ async def packs(message: discord.Interaction):
             button.callback = open_pack
             view.add_item(button)
         if empty:
-            view.add_item(discord.ui.Button(label="No packs!", style=discord.ButtonStyle.gray, disabled=True))
+            view.add_item(discord.ui.Button(label="No packs left!", style=discord.ButtonStyle.gray, disabled=True))
         return view
 
     async def open_pack(interaction: discord.Interaction):
