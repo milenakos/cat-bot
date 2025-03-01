@@ -3282,14 +3282,14 @@ async def packs(message: discord.Interaction):
         try_bump = True
         while try_bump:
             if random.randint(1, 100) <= pack_data[level]["upgrade"]:
-                reward_texts.append(f"{get_emoji(pack_data[level]['name'].lower() + 'pack')} **{pack_data[level]['name']}**\n" + build_string)
+                reward_texts.append(f"{get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}\n" + build_string)
                 build_string = f"Upgraded from {get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}! (30%)\n" + build_string
                 level += 1
                 user.pack_upgrades += 1
             else:
                 try_bump = False
         final_level = pack_data[level]
-        reward_texts.append(f"{get_emoji(final_level['name'].lower() + 'pack')} **{final_level['name']}**\n" + build_string)
+        reward_texts.append(f"{get_emoji(final_level['name'].lower() + 'pack')} {final_level['name']}\n" + build_string)
 
         # select cat type
         goal_value = final_level["value"]
@@ -3313,11 +3313,12 @@ async def packs(message: discord.Interaction):
         user.save()
         reward_texts.append(reward_texts[-1] + f"\nYou got {get_emoji(reward[0].lower() + 'cat')} {reward[1]} {reward[0]} cats!")
 
-        embed = discord.Embed(description=reward_texts[0], color=0x6E593C)
+        embed = discord.Embed(title=reward_texts[0], color=0x6E593C)
         await interaction.edit_original_response(embed=embed, view=None)
         for reward_text in reward_texts[1:]:
             await asyncio.sleep(1)
-            embed = discord.Embed(description=reward_text, color=0x6E593C)
+            things = reward_text.split("\n")
+            embed = discord.Embed(title=things[0], description="\n".join(things[1:]), color=0x6E593C)
             await interaction.edit_original_response(embed=embed)
         await asyncio.sleep(1)
         await interaction.edit_original_response(view=gen_view(user))
