@@ -23,10 +23,11 @@ from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
 from discord.ui import Button, View
-from PIL import Image
+# from PIL import Image
 
 import config
-import msg2img
+
+# import msg2img
 from database import Channel, Prism, Profile, Reminder, User, db
 
 if config.COLLECT_STATS:
@@ -2203,14 +2204,15 @@ async def on_message(message: discord.Message):
 
             if og_msg.attachments[0].content_type.startswith("image/gif"):
                 await bot.create_application_emoji(name=emoji_name, image=img_data)
-            else:
+            """
+            elif False:
                 img = Image.open(io.BytesIO(img_data))
                 img.thumbnail((128, 128))
                 with io.BytesIO() as image_binary:
                     img.save(image_binary, format="PNG")
                     image_binary.seek(0)
                     await bot.create_application_emoji(name=emoji_name, image=image_binary.getvalue())
-
+"""
         user.custom = cat_name if cat_name != "None" else ""
         emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
         user.save()
