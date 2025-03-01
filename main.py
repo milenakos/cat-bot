@@ -635,6 +635,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
             user.rain_minutes += level_data["amount"]
         else:
             user[f"pack_{level_data['reward']}"] += 1
+        user.save()
 
         if perms.send_messages and perms.embed_links and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
             if not cat_emojis:
