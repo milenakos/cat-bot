@@ -137,6 +137,10 @@ class Profile(peewee.Model):
     for ach in ach_list.keys():
         locals()[ach] = peewee.BooleanField(default=False)
 
+    # packs
+    for pack in ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]:
+        locals()[f"pack_{pack}"] = peewee.IntegerField(default=0)
+
     def __getitem__(self, item):
         return getattr(self, item)
 

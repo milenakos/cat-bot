@@ -294,7 +294,7 @@ news_list = [
     {"title": "New Cat Rains perks!", "emoji": "✨"},
     {"title": "Cat Bot Christmas 2024", "emoji": "🎅"},
     {"title": "Battlepass Update", "emoji": "⬆️"},
-    {"title": "Packs!", "emoji": get_emoji("goldpack")}
+    {"title": "Packs!", "emoji": get_emoji("goldpack")},
 ]
 
 
@@ -378,10 +378,10 @@ changes:
 - added some slashes to misc quest titles to clarify which commands to run
 - and the biggest...
 
-{get_emoji('goldpack')} __**The Pack Update**__
+{get_emoji("goldpack")} __**The Pack Update**__
 you want more gambling? we heard you!
 instead of predetermined cat rewards you now unlock Packs! packs have different rarities and have a 30% chance to upgrade a rarity when opening, then 30% for one more upgrade and so on. this means even the most common packs have a small chance to upgrade to the rarest one!
-the rarities are - Wooden {get_emoji('woodenpack')}, Stone {get_emoji('stonepack')}, Bronze {get_emoji('bronzepack')}, Silver {get_emoji('silverpack')}, Gold {get_emoji('goldpack')}, Platinum {get_emoji('platinumpack')}, Diamond {get_emoji('diamondpack')} and Celestial {get_emoji('celestialpack')}!
+the rarities are - Wooden {get_emoji("woodenpack")}, Stone {get_emoji("stonepack")}, Bronze {get_emoji("bronzepack")}, Silver {get_emoji("silverpack")}, Gold {get_emoji("goldpack")}, Platinum {get_emoji("platinumpack")}, Diamond {get_emoji("diamondpack")} and Celestial {get_emoji("celestialpack")}!
 the extra reward is now a stone pack instead of 5 random cats too!
 *LETS GO GAMBLING*""",
             color=0x6E593C,
@@ -634,54 +634,16 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         elif level_data["reward"] == "Rain":
             user.rain_minutes += level_data["amount"]
         else:
-            level = next((i for i, p in enumerate(pack_data) if p["name"] == level_data["reward"]), 0)
-            reward_texts = []
-            build_string = ""
-
-            # bump rarity
-            try_bump = True
-            while try_bump:
-                if random.randint(1, 100) <= pack_data[level]["upgrade"]:
-                    reward_texts.append(f"{get_emoji(pack_data[level]['name'].lower() + 'pack')} **{pack_data[level]['name']}**" + build_string)
-                    build_string = f"Upgraded from {get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}! (30%)\n" + build_string
-                    level += 1
-                    user.pack_upgrades += 1
-                else:
-                    try_bump = False
-            final_level = pack_data[level]
-            reward_texts.append(f"{get_emoji(final_level['name'].lower() + 'pack')} **{final_level['name']}**\n" + build_string)
-
-            # select cat type
-            goal_value = final_level["value"]
-            lower_bound, upper_bound = goal_value * 0.85, goal_value * 1.15
-            found = []
-            while not found:
-                test_type = random.choice(cattypes)
-                value_per_type = len(CAT_TYPES) / type_dict[test_type]
-                n = 0
-                while True:
-                    n += 1
-                    if value_per_type * n < lower_bound:
-                        continue
-                    if value_per_type * n > upper_bound:
-                        break
-                    found.append([test_type, n])
-            reward = random.choice(found)
-            user[f"cat_{reward[0]}"] += reward[1]
-            user.packs_opened += 1
-            reward_texts.append(reward_texts[-1] + f"\nYou got {get_emoji(reward[0].lower() + 'cat')} {reward[1]} {reward[0]} cats!")
-        user.save()
+            user[f"pack_{level_data['reward']}"] += 1
 
         if perms.send_messages and perms.embed_links and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
-            pack_mode = False
             if not cat_emojis:
                 if level_data["reward"] == "Rain":
                     description = f"You got ☔ {level_data['amount']} rain minutes!"
                 elif level_data["reward"] in cattypes:
                     description = f"You got {get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']}!"
                 else:
-                    pack_mode = True
-                    description = reward_texts[0]
+                    description = f"You got a {get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack! Do /pack to open it!"
                 title = f"Level {user.battlepass} Complete!"
             else:
                 description = f"You got {cat_emojis}!"
@@ -709,22 +671,10 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
                 new_level_text,
             )
 
-            if not pack_mode:
-                await message.channel.send(
-                    f"<@{user.user_id}>",
-                    embeds=[embed_level_up, embed_progress],
-                )
-            else:
-                msg = await message.channel.send(
-                    f"<@{user.user_id}>",
-                    embed=embed_level_up,
-                )
-                for reward_text in reward_texts[1:]:
-                    await asyncio.sleep(1)
-                    embed_level_up = discord.Embed(title=title, description=reward_text, color=0xFFF000)
-                    await msg.edit(embed=embed_level_up)
-                await asyncio.sleep(1)
-                await msg.edit(embeds=[embed_level_up, embed_progress])
+            await message.channel.send(
+                f"<@{user.user_id}>",
+                embeds=[embed_level_up, embed_progress],
+            )
 
         if config.COLLECT_STATS:
             await stats.bump("battlepass", "level_up")
@@ -3292,6 +3242,83 @@ if config.DONOR_CHANNEL_ID:
         await message.response.send_message("Success! Here is a preview:", embed=embedVar)
 
 
+@bot.tree.command(description="View and open packs")
+async def packs(message: discord.Interaction):
+    def gen_view(user):
+        view = discord.ui.View(timeout=3600)
+        for pack in pack_data:
+            if user[f"pack_{pack['name']}"] < 1:
+                continue
+            button = discord.ui.Button(
+                emoji=get_emoji(pack["name"].lower() + "pack"),
+                label=f"{pack['name']} ({user[f'pack_{pack["name"]}']})",
+                style=discord.ButtonStyle.blurple,
+                custom_id=pack["name"],
+            )
+            button.callback = open_pack
+            view.add_item(button)
+        return view
+
+    async def open_pack(interaction: discord.Interaction):
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+        pack = interaction.data["custom_id"]
+        user = get_profile(message.guild.id, message.user.id)
+        level = next((i for i, p in enumerate(pack_data) if p["name"] == pack), 0)
+        reward_texts = []
+        build_string = ""
+
+        # bump rarity
+        try_bump = True
+        while try_bump:
+            if random.randint(1, 100) <= pack_data[level]["upgrade"]:
+                reward_texts.append(f"{get_emoji(pack_data[level]['name'].lower() + 'pack')} **{pack_data[level]['name']}**" + build_string)
+                build_string = f"Upgraded from {get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}! (30%)\n" + build_string
+                level += 1
+                user.pack_upgrades += 1
+            else:
+                try_bump = False
+        final_level = pack_data[level]
+        reward_texts.append(f"{get_emoji(final_level['name'].lower() + 'pack')} **{final_level['name']}**\n" + build_string)
+
+        # select cat type
+        goal_value = final_level["value"]
+        lower_bound, upper_bound = goal_value * 0.85, goal_value * 1.15
+        found = []
+        while not found:
+            test_type = random.choice(cattypes)
+            value_per_type = len(CAT_TYPES) / type_dict[test_type]
+            n = 0
+            while True:
+                n += 1
+                if value_per_type * n < lower_bound:
+                    continue
+                if value_per_type * n > upper_bound:
+                    break
+                found.append([test_type, n])
+        reward = random.choice(found)
+        user[f"cat_{reward[0]}"] += reward[1]
+        user.packs_opened += 1
+        user[f"pack_{pack}"] -= 1
+        user.save()
+        reward_texts.append(reward_texts[-1] + f"\nYou got {get_emoji(reward[0].lower() + 'cat')} {reward[1]} {reward[0]} cats!")
+
+        embed = discord.Embed(description=reward_texts[-1], color=0x6E593C)
+        await interaction.edit_original_response(embed=embed, view=None)
+        for reward_text in reward_texts[1:]:
+            await asyncio.sleep(1)
+            embed = discord.Embed(description=reward_text, color=0x6E593C)
+            await interaction.edit_original_response(embed=embed)
+        await asyncio.sleep(1)
+        await interaction.edit_original_response(view=gen_view(user))
+
+    description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n\nClick the buttons below to start opening packs!"
+    embed = discord.Embed(title="Packs", description=description, color=0x6E593C)
+    user = get_profile(message.guild.id, message.user.id)
+    await message.response.send_message(embed=embed, view=gen_view(user))
+
+
 @bot.tree.command(description="who thought this was a good idea")
 async def battlepass(message: discord.Interaction):
     global_user, _ = User.get_or_create(user_id=message.user.id)
@@ -3495,7 +3522,7 @@ async def battlepass(message: discord.Interaction):
         user = get_profile(message.guild.id, message.user.id)
         description = ""
         if user.season >= 3:
-            description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n"
+            description = "To open packs, run `/packs`.\n\n"
         description += "**Rewards this season**\n"
 
         rewards = {}
