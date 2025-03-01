@@ -3271,6 +3271,7 @@ async def packs(message: discord.Interaction):
         if interaction.user != message.user:
             await do_funny(interaction)
             return
+        await interaction.response.defer()
         pack = interaction.data["custom_id"]
         user = get_profile(message.guild.id, message.user.id)
         level = next((i for i, p in enumerate(pack_data) if p["name"] == pack), 0)
