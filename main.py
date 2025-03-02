@@ -79,14 +79,14 @@ for i in type_dict.keys():
     allowedemojis.append(i.lower() + "cat")
 
 pack_data = [
-    {"name": "Wooden", "value": 65, "upgrade": 30},
-    {"name": "Stone", "value": 90, "upgrade": 30},
-    {"name": "Bronze", "value": 100, "upgrade": 30},
-    {"name": "Silver", "value": 115, "upgrade": 30},
-    {"name": "Gold", "value": 230, "upgrade": 30},
-    {"name": "Platinum", "value": 630, "upgrade": 30},
-    {"name": "Diamond", "value": 860, "upgrade": 30},
-    {"name": "Celestial", "value": 2000, "upgrade": 0},  # is that a madeline celeste reference????
+    {"name": "Wooden", "value": 65, "upgrade": 30, "totalvalue": 75},
+    {"name": "Stone", "value": 90, "upgrade": 30, "totalvalue": 100},
+    {"name": "Bronze", "value": 100, "upgrade": 30, "totalvalue": 130},
+    {"name": "Silver", "value": 115, "upgrade": 30, "totalvalue": 200},
+    {"name": "Gold", "value": 230, "upgrade": 30, "totalvalue": 400},
+    {"name": "Platinum", "value": 630, "upgrade": 30, "totalvalue": 800},
+    {"name": "Diamond", "value": 860, "upgrade": 30, "totalvalue": 1200},
+    {"name": "Celestial", "value": 2000, "upgrade": 0, "totalvalue": 2000},  # is that a madeline celeste reference????
 ]
 
 prism_names = [
@@ -295,7 +295,7 @@ news_list = [
     {"title": "New Cat Rains perks!", "emoji": "✨"},
     {"title": "Cat Bot Christmas 2024", "emoji": "🎅"},
     {"title": "Battlepass Update", "emoji": "⬆️"},
-    {"title": "Packs!", "emoji": get_emoji("goldpack")},
+    {"title": "Packs!", "emoji": "<:goldpack:1344395297505149051>"},
 ]
 
 
@@ -835,10 +835,15 @@ async def gift_autocomplete(interaction: discord.Interaction, current: str) -> l
     actual_user, _ = User.get_or_create(user_id=interaction.user.id)
     choices = []
     for choice in cattypes:
-        if current.lower() in choice.lower() and user[f"cat_{choice}"] != 0:
+        if current.lower() in choice.lower() and user[f"cat_{choice}"] > 0:
             choices.append(discord.app_commands.Choice(name=f"{choice} (x{user[f'cat_{choice}']})", value=choice))
-    if current.lower() in "rain" and actual_user.rain_minutes != 0:
+    if current.lower() in "rain" and actual_user.rain_minutes > 0:
         choices.append(discord.app_commands.Choice(name=f"Rain ({actual_user.rain_minutes} minutes)", value="rain"))
+    for choice in pack_data:
+        if user[f"pack_{choice['name'].lower()}"] > 0:
+            pack_name = choice["name"]
+            pack_amount = user[f"pack_{pack_name.lower()}"]
+            choices.append(discord.app_commands.Choice(name=f"{pack_name} pack (x{pack_amount})", value=pack_name.lower()))
     return choices[:25]
 
 
@@ -4319,6 +4324,31 @@ async def gift(
             await ch.send(f"{message.user.id} gave {amount}m to {person_id}")
         except Exception:
             pass
+    elif cat_type in [i["name"].lower() for i in pack_data]:
+        # packs um also this seems to be repetetive uh
+        user = get_profile(message.guild.id, message.user.id)
+        # if we even have enough packs
+        if user[f"pack_{cat_type}"] >= amount:
+            reciever = get_profile(message.guild.id, person_id)
+            user[f"pack_{cat_type}"] -= amount
+            reciever[f"pack_{cat_type}"] += amount
+            user.save()
+            reciever.save()
+            embed = discord.Embed(
+                title="Success!",
+                description=f"Successfully transfered {amount:,} {cat_type} packs from {message.user.mention} to <@{person_id}>!",
+                color=0x6E593C,
+            )
+
+            # handle aches
+            await achemb(message, "donator", "send")
+            await achemb(message, "anti_donator", "send", person)
+            if person_id == bot.user.id:
+                await achemb(message, "sacrifice", "send")
+
+            await progress(message, user, "gift")
+        else:
+            await message.response.send_message("no", ephemeral=True)
     else:
         await message.response.send_message("bro what", ephemeral=True)
 
@@ -4470,8 +4500,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             for k, v in person1gives.items():
                 if k in prism_names:
                     Prism.update(user_id=person2.id).where(Prism.guild_id == message.guild.id, Prism.name == k).execute()
-                    continue
-                if k == "rains":
+                elif k == "rains":
                     actual_user1.rain_minutes -= v
                     actual_user2.rain_minutes += v
                     try:
@@ -4479,16 +4508,18 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                         await ch.send(f"{actual_user1.user_id} traded {v}m to {actual_user2.user_id}")
                     except Exception:
                         pass
-                    continue
-                cat_count += v
-                user1[f"cat_{k}"] -= v
-                user2[f"cat_{k}"] += v
+                elif k in cattypes:
+                    cat_count += v
+                    user1[f"cat_{k}"] -= v
+                    user2[f"cat_{k}"] += v
+                else:
+                    user1[f"pack_{k.lower()}"] -= v
+                    user2[f"pack_{k.lower()}"] += v
 
             for k, v in person2gives.items():
                 if k in prism_names:
                     Prism.update(user_id=person1.id).where(Prism.guild_id == message.guild.id, Prism.name == k).execute()
-                    continue
-                if k == "rains":
+                elif k == "rains":
                     actual_user2.rain_minutes -= v
                     actual_user1.rain_minutes += v
                     try:
@@ -4496,10 +4527,13 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                         await ch.send(f"{actual_user2.user_id} traded {v}m to {actual_user1.user_id}")
                     except Exception:
                         pass
-                    continue
-                cat_count += v
-                user1[f"cat_{k}"] += v
-                user2[f"cat_{k}"] -= v
+                elif k in cattypes:
+                    cat_count += v
+                    user1[f"cat_{k}"] += v
+                    user2[f"cat_{k}"] -= v
+                else:
+                    user1[f"pack_{k.lower()}"] += v
+                    user2[f"pack_{k.lower()}"] -= v
 
             user1.cats_traded += cat_count
             user2.cats_traded += cat_count
@@ -4603,18 +4637,25 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             total = 0
             for k, v in persongives.items():
                 if k in prism_names:
+                    # prisms
                     valuestr += f"{get_emoji('prism')} {k}\n"
                     for v2 in type_dict.values():
                         valuenum += len(CAT_TYPES) / v2
-                    continue
-                if k == "rains":
+                elif k == "rains":
+                    # rains
                     valuestr += f"☔ {v:,}m of Cat Rains\n"
                     valuenum += 22 * 50 * v
-                    continue
-                valuenum += (len(CAT_TYPES) / type_dict[k]) * v
-                total += v
-                aicon = get_emoji(k.lower() + "cat")
-                valuestr += f"{aicon} {k} {v:,}\n"
+                elif k in cattypes:
+                    # cats
+                    valuenum += (len(CAT_TYPES) / type_dict[k]) * v
+                    total += v
+                    aicon = get_emoji(k.lower() + "cat")
+                    valuestr += f"{aicon} {k} {v:,}\n"
+                else:
+                    # packs
+                    valuenum = sum([i["totalvalue"] if i["name"] == k else 0 for i in pack_data])
+                    aicon = get_emoji(k.lower() + "pack")
+                    valuestr += f"{aicon} {k} {v:,}\n"
             if not valuestr:
                 valuestr = "Nothing offered!"
             else:
@@ -4650,8 +4691,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             self.currentuser = currentuser
 
             self.cattype = discord.ui.TextInput(
-                label='Cat Type, Prism Name or "Rain"',
-                placeholder="Fine / Alpha / Rain",
+                label='Cat or Pack Type, Prism Name or "Rain"',
+                placeholder="Fine / Wooden / Alpha / Rain",
             )
             self.add_item(self.cattype)
 
@@ -4688,7 +4729,28 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 await update_trade_embed(interaction)
                 return
 
-            # hella ton of checks
+            # handle packs
+            if self.cattype.value.capitalize() in [i["name"] for i in pack_data]:
+                pname = self.cattype.value.capitalize()
+                if self.currentuser == 1:
+                    if user1[f"pack_{pname}"] < value:
+                        await interaction.response.send_message("you dont have enough packs", ephemeral=True)
+                        return
+                    try:
+                        person1gives[pname] += int(value)
+                    except Exception:
+                        person1gives[pname] = int(value)
+                else:
+                    if user2[f"pack_{pname}"] < value:
+                        await interaction.response.send_message("you dont have enough packs", ephemeral=True)
+                        return
+                    try:
+                        person2gives[pname] += int(value)
+                    except Exception:
+                        person2gives[pname] = int(value)
+                await interaction.response.defer()
+                await update_trade_embed(interaction)
+                return
 
             # handle rains
             if "rain" in self.cattype.value.lower():
@@ -4722,7 +4784,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
             # if no cat type was found, the user input was invalid. as cname is still `None`
             if cname is None:
-                await interaction.response.send_message("add a valid cat type/prism name 💀💀💀", ephemeral=True)
+                await interaction.response.send_message("add a valid cat/pack/prism name 💀💀💀", ephemeral=True)
                 return
 
             try:
