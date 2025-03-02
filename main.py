@@ -5733,7 +5733,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 
     await achemb(message, "4k", "send")
 
-    if msg.author.id == bot.user.id and msg.content == "cought in 4k":
+    if msg.author.id == bot.user.id and "cought in 4k" in msg.content:
         await achemb(message, "8k", "send")
 
     try:
