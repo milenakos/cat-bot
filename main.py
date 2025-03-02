@@ -4324,7 +4324,8 @@ async def gift(
             await ch.send(f"{message.user.id} gave {amount}m to {person_id}")
         except Exception:
             pass
-    elif cat_type in [i["name"].lower() for i in pack_data]:
+    elif cat_type.lower() in [i["name"].lower() for i in pack_data]:
+        cat_type = cat_type.lower()
         # packs um also this seems to be repetetive uh
         user = get_profile(message.guild.id, message.user.id)
         # if we even have enough packs
@@ -4733,7 +4734,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             if self.cattype.value.capitalize() in [i["name"] for i in pack_data]:
                 pname = self.cattype.value.capitalize()
                 if self.currentuser == 1:
-                    if user1[f"pack_{pname}"] < value:
+                    if user1[f"pack_{pname.lower()}"] < value:
                         await interaction.response.send_message("you dont have enough packs", ephemeral=True)
                         return
                     try:
@@ -4741,7 +4742,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     except Exception:
                         person1gives[pname] = int(value)
                 else:
-                    if user2[f"pack_{pname}"] < value:
+                    if user2[f"pack_{pname.lower()}"] < value:
                         await interaction.response.send_message("you dont have enough packs", ephemeral=True)
                         return
                     try:
