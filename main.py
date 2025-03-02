@@ -4341,6 +4341,8 @@ async def gift(
                 color=0x6E593C,
             )
 
+            await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
+
             # handle aches
             await achemb(message, "donator", "send")
             await achemb(message, "anti_donator", "send", person)
