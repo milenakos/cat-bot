@@ -4749,12 +4749,12 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     if user2[f"pack_{pname.lower()}"] < int(value):
                         await interaction.response.send_message("you dont have enough packs", ephemeral=True)
                         return
-                new_val = person2gives.get(pname, 0) + int(value)
-                if new_val >= 0:
-                    person2gives[pname] += new_val
-                else:
-                    await interaction.response.send_message("skibidi toilet", ephemeral=True)
-                    return
+                    new_val = person2gives.get(pname, 0) + int(value)
+                    if new_val >= 0:
+                        person2gives[pname] += new_val
+                    else:
+                        await interaction.response.send_message("skibidi toilet", ephemeral=True)
+                        return
                 await interaction.response.defer()
                 await update_trade_embed(interaction)
                 return
