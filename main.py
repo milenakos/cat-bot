@@ -4741,7 +4741,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                         return
                     new_val = person1gives.get(pname, 0) + int(value)
                     if new_val >= 0:
-                        person1gives[pname] += new_val
+                        person1gives[pname] = new_val
                     else:
                         await interaction.response.send_message("skibidi toilet", ephemeral=True)
                         return
@@ -4751,7 +4751,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                         return
                     new_val = person2gives.get(pname, 0) + int(value)
                     if new_val >= 0:
-                        person2gives[pname] += new_val
+                        person2gives[pname] = new_val
                     else:
                         await interaction.response.send_message("skibidi toilet", ephemeral=True)
                         return
