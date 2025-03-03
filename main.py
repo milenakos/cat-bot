@@ -3279,6 +3279,8 @@ async def packs(message: discord.Interaction):
         await interaction.response.defer()
         pack = interaction.data["custom_id"]
         user = get_profile(message.guild.id, message.user.id)
+        if user[f"pack_{pack.lower()}"] < 1:
+            return
         level = next((i for i, p in enumerate(pack_data) if p["name"] == pack), 0)
         reward_texts = []
         build_string = ""
