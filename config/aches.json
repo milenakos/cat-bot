@@ -25,6 +25,7 @@
   "balling": {"title": "Balling", "description": "ball ball ball ball ball ball ball ball", "is_hidden": false, "category": "Commands"},
   "slots": {"title": "More gambling??", "description": "spin the /slots machine", "is_hidden": false, "category": "Commands"},
   "win_slots": {"title": "Pro Gambler", "description": "win at the /slots machine", "is_hidden": false, "category": "Commands"},
+  "define": {"title": "Definer", "description": "find out a definition of a word", "is_hidden": false, "category": "Commands"},
 
   "pineapple": {"title": "Pineapple", "description": "you said \"pineapple\". i have no idea why", "is_hidden": false, "category": "Random"},
   "dm": {"title": "DM", "description": "dm cat", "is_hidden": true, "category": "Random"},

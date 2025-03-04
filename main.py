@@ -989,7 +989,7 @@ async def maintaince_loop():
     reactions_ratelimit = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
-    if config.TOP_GG_TOKEN and len(bot.guilds) > config.MIN_SERVER_SEND:
+    if config.TOP_GG_TOKEN and (not config.MIN_SERVER_SEND or len(bot.guilds) > config.MIN_SERVER_SEND):
         async with aiohttp.ClientSession() as session:
             # send server count to top.gg
             try:
@@ -5260,6 +5260,27 @@ async def random_cat(message: discord.Interaction):
             await message.followup.send("no cats :(")
 
 
+if config.MERRIAM_WEBSTER_API_KEY:
+
+    @bot.tree.command(description="define a word")
+    async def define(message: discord.Interaction, word: str):
+        await message.response.defer()
+        word = word.lower()
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(
+                    f"https://www.dictionaryapi.com/api/v3/references/collegiate/json/{word}?key={config.MERRIAM_WEBSTER_API_KEY}"
+                ) as response:
+                    data = await response.json()
+                    if data[0]["meta"]["offensive"]:
+                        await message.followup.send(f"__{message.user.name}__\na stupid idiot", ephemeral=True)
+                    else:
+                        await message.followup.send(f"__{word}__\n{data[0]['shortdef'][0]}")
+                        await achemb(message, "define", "send")
+            except Exception:
+                await message.followup.send("no definition found", ephemeral=True)
+
+
 @bot.tree.command(name="fact", description="get a random cat fact")
 async def cat_fact(message: discord.Interaction):
     facts = [
@@ -6373,22 +6394,7 @@ async def on_command_error(ctx, error):
         await stats.bump("errors", "error")
 
     # implement your own filtering i give up
-
-    if config.CRASH_MODE == "DM":
-        try:
-            cont = ctx.guild.id
-        except Exception:
-            cont = "Error getting"
-
-        error2 = error.original.__traceback__
-
-        if not milenakoos:
-            return
-        await milenakoos.send(
-            "There is an error happend:\n" + str("".join(traceback.format_tb(error2))) + str(type(error).__name__) + str(error) + "\n\nGuild: " + str(cont)
-        )
-    elif config.CRASH_MODE == "RAISE":
-        raise
+    raise
 
 
 async def setup(bot2):

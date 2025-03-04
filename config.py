@@ -13,12 +13,6 @@ DB_PASS = os.environ["psql_password"]
 # channel id for db backups, private extremely recommended
 BACKUP_ID = 1060545763194707998
 
-# what to do when there is a crash
-CRASH_MODE = "RAISE"
-
-# only send stats if server count is above this, to prevent wrong stats
-MIN_SERVER_SEND = 50000
-
 #
 # all the following are optional (setting them to None will disable the feature)
 #
@@ -28,6 +22,12 @@ WEBHOOK_VERIFY = os.environ["webhook_verify"]
 
 # top.gg api token because they use ancient technology and you need to post server count manually smh
 TOP_GG_TOKEN = os.environ["top_gg_token"]
+
+# merriam-webster api key for /define command
+MERRIAM_WEBSTER_API_KEY = os.environ["merriam_webster_api_key"]
+
+# only send stats if server count is above this, to prevent wrong stats
+MIN_SERVER_SEND = 50000
 
 # this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
 GITHUB_CHANNEL_ID = 1060965767044149249
