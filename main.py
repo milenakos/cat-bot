@@ -5260,7 +5260,7 @@ async def random_cat(message: discord.Interaction):
             await message.followup.send("no cats :(")
 
 
-if config.MERRIAM_WEBSTER_API_KEY:
+if config.WORDNIK_API_KEY:
 
     @bot.tree.command(description="define a word")
     async def define(message: discord.Interaction, word: str):
@@ -5268,14 +5268,28 @@ if config.MERRIAM_WEBSTER_API_KEY:
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(
-                    f"https://www.dictionaryapi.com/api/v3/references/collegiate/json/{word}?key={config.MERRIAM_WEBSTER_API_KEY}"
+                    f"https://api.wordnik.com/v4/word.json/{word}/definitions?api_key={config.WORDNIK_API_KEY}&useCanonical=true&includeTags=false&includeRelated=false&limit=69"
                 ) as response:
                     data = await response.json()
-                    if data[0]["meta"]["offensive"]:
-                        await message.response.send_message(f"__{message.user.name}__\na stupid idiot", ephemeral=True)
-                    else:
-                        await message.response.send_message(f"__{word}__\n{data[0]['shortdef'][0]}")
-                        await achemb(message, "define", "send")
+
+                    # lazily filter some things
+                    text = (await response.text()).lower()
+                    for test in ["vulgar", "slur", "offensive", "profane", "insult", "abusive", "derogatory"]:
+                        if test in text:
+                            await message.response.send_message(f"__{message.user.name}__\na stupid idiot", ephemeral=True)
+                            return
+
+                    # sometimes the api returns results without definitions, so we search for the first one which has a definition
+                    for i in data:
+                        if "text" in i.keys():
+                            clean_data = re.sub(re.compile("<.*?>"), "", i["text"])
+                            await message.response.send_message(
+                                f"__{word}__\n{clean_data}\n[{i['attributionText']}](<{i['attributionUrl']}>) Powered by [Wordnik](<{i['wordnikUrl']}>"
+                            )
+                            await achemb(message, "define", "send")
+                            return
+
+                    raise Exception
             except Exception:
                 await message.response.send_message("no definition found", ephemeral=True)
 

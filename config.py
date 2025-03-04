@@ -23,8 +23,8 @@ WEBHOOK_VERIFY = os.environ["webhook_verify"]
 # top.gg api token because they use ancient technology and you need to post server count manually smh
 TOP_GG_TOKEN = os.environ["top_gg_token"]
 
-# merriam-webster api key for /define command
-MERRIAM_WEBSTER_API_KEY = os.environ["merriam_webster_api_key"]
+# wordnik api key for /define command
+WORDNIK_API_KEY = os.environ["wordnik_api_key"]
 
 # only send stats if server count is above this, to prevent wrong stats
 MIN_SERVER_SEND = 50000
