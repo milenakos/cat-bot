@@ -2285,7 +2285,7 @@ async def help(message):
         discord.Embed(title="How to Play", color=0x6E593C)
         .add_field(
             name="Catch Cats",
-            value='Whenever a cat spawns you will see a message along the lines of "a cat has appeared", which will also display it\'s type.\nCat types can have varying rarities from 25% for Fine to hundredths of percent for rarest types.\nSo, after saying "cat" the cat will be added to your inventory.',
+            value='Whenever a cat spawns you will see a message along the lines of "a cat has appeared," which will also display it\'s type.\nCat types can have varying rarities from 25% for Fine to hundredths of percent for rarest types.\nSo, after saying "cat" the cat will be added to your inventory.',
             inline=False,
         )
         .add_field(
@@ -2295,7 +2295,7 @@ async def help(message):
         )
         .add_field(
             name="Let's get funky!",
-            value='Cat Bot has various other mechanics to make fun funnier. You can collect various `/achievements`, for example saying "i read help", progress in the `/battlepass`, or have beef with the mafia over cataine addiction. The amount you worship is the limit!',
+            value='Cat Bot has various other mechanics to make fun funnier. You can collect various `/achievements`, for example saying "i read help," progress in the `/battlepass`, or have beef with the mafia over cataine addiction. The amount you worship is the limit!',
             inline=False,
         )
         .add_field(
