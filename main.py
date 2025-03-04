@@ -5284,7 +5284,7 @@ if config.WORDNIK_API_KEY:
                         if "text" in i.keys():
                             clean_data = re.sub(re.compile("<.*?>"), "", i["text"])
                             await message.response.send_message(
-                                f"__{word}__\n{clean_data}\n[{i['attributionText']}](<{i['attributionUrl']}>) Powered by [Wordnik](<{i['wordnikUrl']}>"
+                                f"__{word}__\n{clean_data}\n-# [{i['attributionText']}](<{i['attributionUrl']}>) Powered by [Wordnik](<{i['wordnikUrl']}>)"
                             )
                             await achemb(message, "define", "send")
                             return
