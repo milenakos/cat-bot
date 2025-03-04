@@ -5264,7 +5264,6 @@ if config.MERRIAM_WEBSTER_API_KEY:
 
     @bot.tree.command(description="define a word")
     async def define(message: discord.Interaction, word: str):
-        await message.response.defer()
         word = word.lower()
         async with aiohttp.ClientSession() as session:
             try:
@@ -5273,12 +5272,12 @@ if config.MERRIAM_WEBSTER_API_KEY:
                 ) as response:
                     data = await response.json()
                     if data[0]["meta"]["offensive"]:
-                        await message.followup.send(f"__{message.user.name}__\na stupid idiot", ephemeral=True)
+                        await message.response.send_message(f"__{message.user.name}__\na stupid idiot", ephemeral=True)
                     else:
-                        await message.followup.send(f"__{word}__\n{data[0]['shortdef'][0]}")
+                        await message.response.send_message(f"__{word}__\n{data[0]['shortdef'][0]}")
                         await achemb(message, "define", "send")
             except Exception:
-                await message.followup.send("no definition found", ephemeral=True)
+                await message.response.send_message("no definition found", ephemeral=True)
 
 
 @bot.tree.command(name="fact", description="get a random cat fact")
