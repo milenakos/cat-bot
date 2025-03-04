@@ -2329,7 +2329,7 @@ async def info(message: discord.Interaction):
         title="Cat Bot",
         color=0x6E593C,
         description=f"by **{gen_credits['author']}**\nWith contributions from **{gen_credits['contrib']}**.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n"
-        + f"Thanks to:\n**pathologicals** for the cat image\n**thecatapi.com** for random cats API\n**catfact.ninja** for cat facts API\n**countik** for TikTok TTS API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**",
+        + f"Thanks to:\n**pathologicals** for the cat image\n**thecatapi.com** for random cats API\n**catfact.ninja** for cat facts API\n**Countik** for TikTok TTS API\n**Wordnik** for Dictionary API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**",
     ).set_thumbnail(url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png")
 
     # add "last update" to footer if we are using git
