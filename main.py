@@ -167,6 +167,7 @@ hints = [
     "Cat Bot can go offline! Don't panic if it does",
     "By default, cats spawn 2-20 minutes apart",
     "View the last catch as well as the next one with /last",
+    "Make sure to leave Cat Bot [a review on top.gg](<https://top.gg/bot/966695034340663367#reviews>)!",
 ]
 
 # laod the jsons
