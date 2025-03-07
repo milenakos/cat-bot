@@ -2934,7 +2934,7 @@ async def gen_inventory(message, person_id):
         needed_xp = 1500
 
     embedVar = discord.Embed(
-        title=f"{emoji_prefix}{person_id.name}",
+        title=f"{emoji_prefix}{person_id.name.replace("_", r"\_")}",
         description=f"⏱️ Fastest: {catch_time}s, Slowest: {slow_time}h\n{get_emoji('cat_throphy')} Achievements: {unlocked}/{total_achs}{minus_achs}\n⬆️ Battlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)",
         color=discord.Colour.from_str(color),
     )
