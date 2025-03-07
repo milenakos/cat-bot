@@ -3338,6 +3338,7 @@ async def packs(message: discord.Interaction):
 
     description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n\nClick the buttons below to start opening packs!"
     embed = discord.Embed(title="Packs", description=description, color=0x6E593C)
+    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/packs")
     user = get_profile(message.guild.id, message.user.id)
     await message.response.send_message(embed=embed, view=gen_view(user))
 
