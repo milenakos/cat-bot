@@ -4665,7 +4665,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     valuestr += f"{aicon} {k} {v:,}\n"
                 else:
                     # packs
-                    valuenum += sum([i["totalvalue"] if i["name"] == k else 0 for i in pack_data])
+                    valuenum += sum([i["totalvalue"] if i["name"] == k else 0 for i in pack_data]) * v
                     aicon = get_emoji(k.lower() + "pack")
                     valuestr += f"{aicon} {k} {v:,}\n"
             if not valuestr:
