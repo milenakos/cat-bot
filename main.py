@@ -296,7 +296,7 @@ news_list = [
     {"title": "New Cat Rains perks!", "emoji": "✨"},
     {"title": "Cat Bot Christmas 2024", "emoji": "🎅"},
     {"title": "Battlepass Update", "emoji": "⬆️"},
-    {"title": "Packs!", "emoji": "<:goldpack:1344395297505149051>"},
+    {"title": "Packs!", "emoji": "goldpack"},
 ]
 
 
@@ -2361,7 +2361,7 @@ async def news(message: discord.Interaction):
                 have_read_this = False
             button = Button(
                 label=article["title"],
-                emoji=article["emoji"],
+                emoji=get_emoji(article["emoji"]),
                 custom_id=f"{num} {message.user.id}",
                 style=ButtonStyle.green if not have_read_this else ButtonStyle.gray,
             )
@@ -3289,7 +3289,7 @@ async def packs(message: discord.Interaction):
         while try_bump:
             if random.randint(1, 100) <= pack_data[level]["upgrade"]:
                 reward_texts.append(f"{get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}\n" + build_string)
-                build_string = f"Upgraded from {get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}! (30%)\n" + build_string
+                build_string = f"Upgraded from {get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}!\n" + build_string
                 level += 1
                 user.pack_upgrades += 1
             else:
@@ -3299,25 +3299,32 @@ async def packs(message: discord.Interaction):
 
         # select cat type
         goal_value = final_level["value"]
-        lower_bound, upper_bound = goal_value * 0.85, goal_value * 1.15
-        found = []
-        while not found:
-            test_type = random.choice(cattypes)
-            value_per_type = len(CAT_TYPES) / type_dict[test_type]
-            n = 0
-            while True:
-                n += 1
-                if value_per_type * n < lower_bound:
-                    continue
-                if value_per_type * n > upper_bound:
-                    break
-                found.append([test_type, n])
-        reward = random.choice(found)
-        user[f"cat_{reward[0]}"] += reward[1]
+        chosen_type = random.choice(cattypes)
+        pre_cat_amount = goal_value / (len(CAT_TYPES) / type_dict[chosen_type])
+        if pre_cat_amount % 1 > random.random():
+            cat_amount = math.ceil(pre_cat_amount)
+        else:
+            cat_amount = math.floor(pre_cat_amount)
+        if pre_cat_amount < 1:
+            reward_texts.append(
+                reward_texts[-1] + f"\n{round(pre_cat_amount * 100, 2)}% chance for a {get_emoji(chosen_type.lower() + 'cat')} {chosen_type} cat"
+            )
+            reward_texts.append(reward_texts[-1] + ".")
+            reward_texts.append(reward_texts[-1] + ".")
+            reward_texts.append(reward_texts[-1] + ".")
+            if cat_amount == 1:
+                # success
+                reward_texts.append(reward_texts[-1] + "\n✅ Success!")
+            else:
+                # fail
+                reward_texts.append(reward_texts[-1] + "\n❌ Fail!")
+                chosen_type = "Fine"
+                cat_amount = 1
+        user[f"cat_{chosen_type}"] += cat_amount
         user.packs_opened += 1
         user[f"pack_{pack.lower()}"] -= 1
         user.save()
-        reward_texts.append(reward_texts[-1] + f"\nYou got {get_emoji(reward[0].lower() + 'cat')} {reward[1]} {reward[0]} cats!")
+        reward_texts.append(reward_texts[-1] + f"\nYou got {get_emoji(chosen_type.lower() + 'cat')} {cat_amount} {chosen_type} cats!")
 
         embed = discord.Embed(title=reward_texts[0], color=0x6E593C)
         await interaction.edit_original_response(embed=embed, view=None)
