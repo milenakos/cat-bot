@@ -6377,19 +6377,8 @@ async def check_supporter(request):
         return web.Response(text="0", status=200)
 
 
-# this is the crash handler
-async def on_command_error(ctx, error):
-    if ctx.guild is None:
-        try:
-            await ctx.channel.send("hello good sir i would politely let you know cat bot is no workey in dms please consider gettng the hell out of here")
-        except Exception:
-            pass
-        return
-
-    if config.COLLECT_STATS:
-        await stats.bump("errors", "error")
-
-    # implement your own filtering i give up
+# cat bot uses glitchtip (sentry alternative) for errors, here u can instead implement some other logic like dming the owner
+async def on_error(*args, **kwargs):
     raise
 
 
@@ -6410,9 +6399,7 @@ async def setup(bot2):
     bot2.on_guild_join = on_guild_join
     bot2.on_message = on_message
     bot2.on_connect = on_connect
-
-    # copy the error logger
-    bot2.tree.error = on_command_error
+    bot2.on_error = on_error
 
     if config.WEBHOOK_VERIFY:
         app = web.Application()
