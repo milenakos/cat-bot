@@ -4423,9 +4423,10 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     if actual_user1.rain_minutes < v:
                         error = True
                         break
-                elif k in cattypes and user1[f"cat_{k}"] < v:
-                    error = True
-                    break
+                elif k in cattypes:
+                    if user1[f"cat_{k}"] < v:
+                        error = True
+                        break
                 elif user1[f"pack_{k.lower()}"] < v:
                     error = True
                     break
@@ -4442,9 +4443,10 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     if actual_user2.rain_minutes < v:
                         error = True
                         break
-                elif k in cattypes and user2[f"cat_{k}"] < v:
-                    error = True
-                    break
+                elif k in cattypes:
+                    if user2[f"cat_{k}"] < v:
+                        error = True
+                        break
                 elif user2[f"pack_{k.lower()}"] < v:
                     error = True
                     break
