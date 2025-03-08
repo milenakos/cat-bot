@@ -1830,6 +1830,7 @@ async def on_message(message: discord.Message):
                                     rn + 3600,
                                     channel.cat_rains + 606,
                                 )
+                                channel.yet_to_spawn = 0
                                 decided_time = 6
 
                         if normal_bump:
