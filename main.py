@@ -6163,13 +6163,15 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
         await message.response.send_message("bro what", ephemeral=True)
         return
 
-    try:
-        if Channel.get_or_none(channel_id=message.channel.id).cat:
-            await message.response.send_message("there is already a cat", ephemeral=True)
-            return
-    except Exception:
+    ch = Channel.get_or_none(channel_id=message.channel.id)
+    if ch is None:
         await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
         return
+    if ch.cat:
+        await message.response.send_message("there is already a cat", ephemeral=True)
+        return
+    ch.yet_to_spawn = 0
+    ch.save()
     await spawn_cat(str(message.channel.id), cat_type, True)
     await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this")
 
