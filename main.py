@@ -3115,6 +3115,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         profile.rain_minutes_started += rain_length
         channel.cat_rains = time.time() + (rain_length * 60)
         channel.yet_to_spawn = 0
+        channel.save()
         await spawn_cat(str(message.channel.id))
         if profile.rain_minutes:
             if rain_length > profile.rain_minutes:
@@ -3126,7 +3127,6 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             user.rain_minutes -= rain_length
         user.save()
         profile.save()
-        channel.save()
         await interaction.response.send_message(f"{rain_length}m cat rain was started by {interaction.user.mention}!")
         try:
             ch = bot.get_channel(config.RAIN_CHANNEL_ID)
