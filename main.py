@@ -2784,9 +2784,13 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
             if num >= profile.battlepass:
                 break
             total_xp += level["xp"]
+    current_packs = 0
+    for pack in pack_data:
+        current_packs += profile[f"pack_{pack['name'].lower()}"]
     stats.append(f"Quests completed: {profile.quests_completed:,}{star}")
     stats.append(f"Seasons completed: {seasons_complete:,}")
     stats.append(f"Levels completed: {levels_complete:,}")
+    stats.append(f"Current unopened packs: {current_packs:,}")
     stats.append(f"Packs opened: {profile.packs_opened:,}")
     stats.append(f"Pack upgrades: {profile.pack_upgrades:,}")
     stats.append(f"Highest ever level: {max_level:,}")
