@@ -3327,9 +3327,9 @@ async def packs(message: discord.Interaction):
         reward_texts.append(reward_texts[-1] + f"\nYou got {get_emoji(chosen_type.lower() + 'cat')} {cat_amount} {chosen_type} cats!")
         if pre_cat_amount > 1:
             if cat_amount > pre_cat_amount:
-                reward_texts[-1] += f"\nRounded up with {round(pre_cat_amount % 1 * 100, 2)}% chance."
+                reward_texts[-1] += f"\n-# Rounded up with {round(pre_cat_amount % 1 * 100, 2)}% chance."
             elif cat_amount < pre_cat_amount:
-                reward_texts[-1] += f"\nFailed to round up with {round(pre_cat_amount % 1 * 100, 2)}% chance."
+                reward_texts[-1] += f"\n-# Failed to round up with {round(pre_cat_amount % 1 * 100, 2)}% chance."
         embed = discord.Embed(title=reward_texts[0], color=0x6E593C)
         await interaction.edit_original_response(embed=embed, view=None)
         for reward_text in reward_texts[1:]:
