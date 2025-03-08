@@ -3114,6 +3114,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
         profile.rain_minutes_started += rain_length
         channel.cat_rains = time.time() + (rain_length * 60)
+        channel.yet_to_spawn = 0
         await spawn_cat(str(message.channel.id))
         if profile.rain_minutes:
             if rain_length > profile.rain_minutes:
