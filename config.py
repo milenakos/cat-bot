@@ -29,9 +29,6 @@ WORDNIK_API_KEY = os.environ["wordnik_api_key"]
 # only send stats if server count is above this, to prevent wrong stats
 MIN_SERVER_SEND = 50000
 
-# this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
-GITHUB_CHANNEL_ID = 1060965767044149249
-
 # channel to store supporter images
 DONOR_CHANNEL_ID = 1249343008890028144
 

@@ -30,14 +30,15 @@ async def setup_hook():
     await bot.load_extension("main")
 
 
-async def reload():
+async def reload(reload_db):
     try:
         await bot.unload_extension("main")
     except commands.ExtensionNotLoaded:
         pass
-    database.db.close()
-    importlib.reload(database)
-    database.db.connect()
+    if reload_db:
+        database.db.close()
+        importlib.reload(database)
+        database.db.connect()
     await bot.load_extension("main")
 
 

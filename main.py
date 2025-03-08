@@ -250,13 +250,6 @@ temp_catches_storage = []
 # to prevent weird behaviour shortly after a rain
 temp_rains_storage = []
 
-# prevent timetravel
-in_the_past = False
-about_to_stop = False
-
-# manual restarts
-queue_restart: Optional[discord.Message] = None
-
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
 
@@ -876,7 +869,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         channel = Channel.get(channel_id=ch_id)
     except Exception:
         return
-    if channel.cat or in_the_past:
+    if channel.cat:
         return
 
     if not localcat:
@@ -913,7 +906,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
 
     appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
 
-    if channel.cat or in_the_past:
+    if channel.cat:
         # its never too late to return
         return
 
@@ -984,7 +977,7 @@ async def postpone_reminder(interaction):
 
 # a loop for various maintaince which is ran every 5 minutes
 async def maintaince_loop():
-    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, in_the_past, about_to_stop
+    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count
     last_loop_time = time.time()
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
@@ -1268,7 +1261,7 @@ async def on_ready():
 # this is all the code which is ran on every message sent
 # a lot of it is for easter eggs or achievements
 async def on_message(message: discord.Message):
-    global in_the_past, emojis, queue_restart, about_to_stop
+    global emojis
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
         return
@@ -1337,14 +1330,7 @@ async def on_message(message: discord.Message):
         ],
     ]
 
-    # here are some automation hooks for giving out purchases and autoupdating
-    if config.GITHUB_CHANNEL_ID and message.channel.id == config.GITHUB_CHANNEL_ID:
-        about_to_stop = True
-        os.system("git pull")
-        await vote_server.cleanup()
-        in_the_past = True
-        await bot.cat_bot_reload_hook()  # pyright: ignore
-
+    # here are some automation hooks for giving out purchases and similiar
     if config.DONOR_CHANNEL_ID and message.channel.id == config.DONOR_CHANNEL_ID:
         user, _ = User.get_or_create(user_id=message.content)
         user.premium = True
@@ -1708,13 +1694,6 @@ async def on_message(message: discord.Message):
                             await message.channel.send("# :bangbang: this concludes the cat rain.")
                     except Exception:
                         pass
-                    if queue_restart and (len(cat_rains) == 0 or int(max(cat_rains.values())) < time.time()):
-                        about_to_stop = True
-                        await queue_restart.reply("restarting now!")
-                        os.system("git pull")
-                        await vote_server.cleanup()
-                        in_the_past = True
-                        await bot.cat_bot_reload_hook()  # pyright: ignore
             decided_time = random.uniform(times[0], times[1])
             if channel.yet_to_spawn < time.time():
                 channel.yet_to_spawn = time.time() + decided_time + 10
@@ -2133,16 +2112,10 @@ async def on_message(message: discord.Message):
         user.premium = True
         user.save()
     if text.lower().startswith("cat!restart") and message.author.id == OWNER_ID:
-        if not cat_rains or int(max(cat_rains.values())) < time.time():
-            about_to_stop = True
-            await message.reply("restarting now!")
-            os.system("git pull")
-            await vote_server.cleanup()
-            in_the_past = True
-            await bot.cat_bot_reload_hook()  # pyright: ignore
-        else:
-            queue_restart = message
-            await message.reply(f"restarting <t:{int(max(cat_rains.values()))}:R>")
+        await message.reply("restarting!")
+        os.system("git pull")
+        await vote_server.cleanup()
+        await bot.cat_bot_reload_hook("db" in text)  # pyright: ignore
     if text.lower().startswith("cat!print") and message.author.id == OWNER_ID:
         # just a simple one-line with no async (e.g. 2+3)
         try:
@@ -2934,7 +2907,7 @@ async def gen_inventory(message, person_id):
         needed_xp = 1500
 
     embedVar = discord.Embed(
-        title=f"{emoji_prefix}{person_id.name.replace("_", r"\_")}",
+        title=f"{emoji_prefix}{person_id.name.replace('_', r'\_')}",
         description=f"⏱️ Fastest: {catch_time}s, Slowest: {slow_time}h\n{get_emoji('cat_throphy')} Achievements: {unlocked}/{total_achs}{minus_achs}\n⬆️ Battlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)",
         color=discord.Colour.from_str(color),
     )
@@ -3090,13 +3063,6 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         if rain_length > user.rain_minutes + profile.rain_minutes:
             await interaction.response.send_message(
                 "you dont have enough rain! buy some more [here](<https://store.minkos.lol>)",
-                ephemeral=True,
-            )
-            return
-
-        if about_to_stop:
-            await interaction.response.send_message(
-                "cat bot is currently restarting. please try again in a few seconds.",
                 ephemeral=True,
             )
             return
