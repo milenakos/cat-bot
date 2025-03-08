@@ -974,7 +974,7 @@ async def postpone_reminder(interaction):
 
 # a loop for various maintaince which is ran every 5 minutes
 async def maintaince_loop():
-    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count
+    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown
     last_loop_time = time.time()
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
@@ -1665,12 +1665,7 @@ async def on_message(message: discord.Message):
         if not channel or not channel.cat or channel.cat in temp_catches_storage or user.timeout > time.time():
             # laugh at this user
             # (except if rain is active, we dont have perms or channel isnt setupped, or we laughed way too much already)
-            if (
-                channel
-                and channel.cat_rains < time.time()
-                and perms.add_reactions
-                and pointlaugh_ratelimit.get(message.channel.id, 0) < 10
-            ):
+            if channel and channel.cat_rains < time.time() and perms.add_reactions and pointlaugh_ratelimit.get(message.channel.id, 0) < 10:
                 try:
                     await message.add_reaction(get_emoji("pointlaugh"))
                     pointlaugh_ratelimit[message.channel.id] = pointlaugh_ratelimit.get(message.channel.id, 0) + 1
@@ -4428,7 +4423,10 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     if actual_user1.rain_minutes < v:
                         error = True
                         break
-                elif user1[f"cat_{k}"] < v:
+                elif k in cattypes and user1[f"cat_{k}"] < v:
+                    error = True
+                    break
+                elif user1[f"pack_{k.lower()}"] < v:
                     error = True
                     break
 
@@ -4444,7 +4442,10 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     if actual_user2.rain_minutes < v:
                         error = True
                         break
-                elif user2[f"cat_{k}"] < v:
+                elif k in cattypes and user2[f"cat_{k}"] < v:
+                    error = True
+                    break
+                elif user2[f"pack_{k.lower()}"] < v:
                     error = True
                     break
 
@@ -4469,12 +4470,12 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             if error:
                 try:
                     await interaction.edit_original_response(
-                        content="Uh oh - some of the cats/prisms/rains disappeared while trade was happening",
+                        content="Uh oh - some of the cats/prisms/packs/rains disappeared while trade was happening",
                         embed=None,
                         view=None,
                     )
                 except Exception:
-                    await interaction.followup.send("Uh oh - some of the cats/prisms/rains disappeared while trade was happening")
+                    await interaction.followup.send("Uh oh - some of the cats/prisms/packs/rains disappeared while trade was happening")
                 return
 
             # exchange
@@ -4618,6 +4619,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             valuenum = 0
             total = 0
             for k, v in persongives.items():
+                if v == 0:
+                    continue
                 if k in prism_names:
                     # prisms
                     valuestr += f"{get_emoji('prism')} {k}\n"
