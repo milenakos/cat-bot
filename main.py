@@ -241,9 +241,6 @@ slots_lock = []
 # ???
 rigged_users = []
 
-# cat rains
-cat_rains = {}
-
 # to prevent double catches
 temp_catches_storage = []
 
@@ -981,6 +978,8 @@ async def maintaince_loop():
     last_loop_time = time.time()
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
+    catchcooldown = {}
+    fakecooldown = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
     if config.TOP_GG_TOKEN and (not config.MIN_SERVER_SEND or len(bot.guilds) > config.MIN_SERVER_SEND):
@@ -1668,7 +1667,7 @@ async def on_message(message: discord.Message):
             # (except if rain is active, we dont have perms or channel isnt setupped, or we laughed way too much already)
             if (
                 channel
-                and cat_rains.get(str(message.channel.id), 0) < time.time()
+                and channel.cat_rains < time.time()
                 and perms.add_reactions
                 and pointlaugh_ratelimit.get(message.channel.id, 0) < 10
             ):
@@ -1681,12 +1680,12 @@ async def on_message(message: discord.Message):
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
             times = [channel.spawn_times_min, channel.spawn_times_max]
-            if cat_rains.get(str(message.channel.id), 0) != 0:
-                if cat_rains.get(str(message.channel.id), 0) > time.time():
+            if channel.cat_rains != 0:
+                if channel.cat_rains > time.time():
                     times = [1, 2]
                 else:
                     temp_rains_storage.append(message.channel.id)
-                    del cat_rains[str(message.channel.id)]
+                    channel.cat_rains = 0
                     try:
                         if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
                             await message.channel.send("# :bangbang: this concludes the cat rain.")
@@ -1777,7 +1776,7 @@ async def on_message(message: discord.Message):
                     do_time = False
                     caught_time = "undefined amounts of time "
 
-                if cat_rains.get(str(message.channel.id), 0) + 10 > time.time() or message.channel.id in temp_rains_storage:
+                if channel.cat_rains + 10 > time.time() or message.channel.id in temp_rains_storage:
                     do_time = False
 
                 suffix_string = ""
@@ -1827,14 +1826,14 @@ async def on_message(message: discord.Message):
                             # :SILENCE:
                             normal_bump = False
                             if not channel.forcespawned:
-                                if cat_rains.get(str(message.channel.id), 0) > time.time():
+                                if channel.cat_rains > time.time():
                                     await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                                     await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                                     await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                                 rn = time.time()
-                                cat_rains[str(message.channel.id)] = min(
+                                channel.cat_rains = min(
                                     rn + 3600,
-                                    cat_rains.get(str(message.channel.id), rn) + 606,
+                                    channel.cat_rains + 606,
                                 )
                                 decided_time = 6
 
@@ -1997,7 +1996,7 @@ async def on_message(message: discord.Message):
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT":
                     await achemb(message, "loud_cat", "send")
-                if cat_rains.get(str(message.channel.id), 0) != 0:
+                if channel.cat_rains != 0:
                     user.rain_participations += 1
                     await achemb(message, "cat_rain", "send")
 
@@ -3046,6 +3045,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         # i LOOOOVE checks
         user, _ = User.get_or_create(user_id=interaction.user.id)
         profile = get_profile(interaction.guild.id, interaction.user.id)
+        channel = Channel.get_or_none(channel_id=message.channel.id)
 
         if not user.rain_minutes:
             user.rain_minutes = 0
@@ -3067,7 +3067,6 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             )
             return
 
-        channel = Channel.get_or_none(channel_id=message.channel.id)
         if not channel:
             await interaction.response.send_message("please run this in a setupped channel.", ephemeral=True)
             return
@@ -3076,7 +3075,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             await interaction.response.send_message("please catch the cat in this channel first.", ephemeral=True)
             return
 
-        if cat_rains.get(str(message.channel.id), 0) != 0 or message.channel.id in temp_rains_storage:
+        if channel.cat_rains != 0 or message.channel.id in temp_rains_storage:
             await interaction.response.send_message("there is already a rain running!", ephemeral=True)
             return
 
@@ -3115,7 +3114,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             return
 
         profile.rain_minutes_started += rain_length
-        cat_rains[str(message.channel.id)] = time.time() + (rain_length * 60)
+        channel.cat_rains = time.time() + (rain_length * 60)
         await spawn_cat(str(message.channel.id))
         if profile.rain_minutes:
             if rain_length > profile.rain_minutes:
@@ -3127,6 +3126,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             user.rain_minutes -= rain_length
         user.save()
         profile.save()
+        channel.save()
         await interaction.response.send_message(f"{rain_length}m cat rain was started by {interaction.user.mention}!")
         try:
             ch = bot.get_channel(config.RAIN_CHANNEL_ID)

@@ -196,6 +196,7 @@ class Channel(peewee.Model):
 
     lastcatches = peewee.BigIntegerField(default=0)  # timestamp of last catch
     yet_to_spawn = peewee.BigIntegerField(default=0)  # timestamp of the next catch, if any
+    cat_rains = peewee.BigIntegerField(default=0) # timestamp of rain end, if any
 
     appear = peewee.CharField(default="", max_length=4000)
     cought = peewee.CharField(default="", max_length=4000)
