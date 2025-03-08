@@ -3306,9 +3306,18 @@ async def packs(message: discord.Interaction):
         else:
             cat_amount = math.floor(pre_cat_amount)
         if pre_cat_amount < 1:
-            reward_texts.append(
-                reward_texts[-1] + f"\n{round(pre_cat_amount * 100, 2)}% chance for a {get_emoji(chosen_type.lower() + 'cat')} {chosen_type} cat"
-            )
+            if pre_cat_amount < 0.01:
+                reward_texts.append(
+                    reward_texts[-1] + f"\n{round(pre_cat_amount * 100, 2)}% chance for a {get_emoji(chosen_type.lower() + 'cat')} {chosen_type} cat"
+                )
+            elif pre_cat_amount < 0.1:
+                reward_texts.append(
+                    reward_texts[-1] + f"\n{round(pre_cat_amount * 100, 1)}% chance for a {get_emoji(chosen_type.lower() + 'cat')} {chosen_type} cat"
+                )
+            else:
+                reward_texts.append(
+                    reward_texts[-1] + f"\n{round(pre_cat_amount * 100)}% chance for a {get_emoji(chosen_type.lower() + 'cat')} {chosen_type} cat"
+                )
             reward_texts.append(reward_texts[-1] + ".")
             reward_texts.append(reward_texts[-1] + ".")
             reward_texts.append(reward_texts[-1] + ".")
