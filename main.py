@@ -4693,6 +4693,10 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             user1 = get_profile(message.guild.id, person1.id)
             user2 = get_profile(message.guild.id, person2.id)
 
+            if int(value) < 0:
+                person1accept = False
+                person2accept = False
+
             # handle prisms
             if self.cattype.value.capitalize() in prism_names:
                 pname = self.cattype.value.capitalize()
@@ -4817,10 +4821,6 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                         person2gives.pop(cname)
                 except Exception:
                     person2gives[cname] = int(value)
-
-            if int(value) < 0:
-                person1accept = False
-                person2accept = False
 
             await interaction.response.defer()
             await update_trade_embed(interaction)
