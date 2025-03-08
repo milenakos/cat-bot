@@ -866,7 +866,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         channel = Channel.get(channel_id=ch_id)
     except Exception:
         return
-    if channel.cat:
+    if channel.cat or channel.yet_to_spawn > time.time() + 5:
         return
 
     if not localcat:
