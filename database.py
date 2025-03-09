@@ -104,6 +104,8 @@ class Profile(peewee.Model):
 
     reminders_enabled = peewee.BooleanField(default=False)
 
+    highlighted_stat = peewee.CharField(default="time_records", max_length=30)
+
     # advanced stats
     boosted_catches = peewee.IntegerField(default=0)  # amount of catches boosted by prism
     cataine_activations = peewee.IntegerField(default=0)  # amount of cataine activations
@@ -196,7 +198,7 @@ class Channel(peewee.Model):
 
     lastcatches = peewee.BigIntegerField(default=0)  # timestamp of last catch
     yet_to_spawn = peewee.BigIntegerField(default=0)  # timestamp of the next catch, if any
-    cat_rains = peewee.BigIntegerField(default=0) # timestamp of rain end, if any
+    cat_rains = peewee.BigIntegerField(default=0)  # timestamp of rain end, if any
 
     appear = peewee.CharField(default="", max_length=4000)
     cought = peewee.CharField(default="", max_length=4000)

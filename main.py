@@ -214,6 +214,10 @@ funny = [
 # rain shill message for footers
 rain_shill = "☔ Get tons of cats /rain"
 
+# timeout for views
+# higher one means buttons work for longer but uses more ram to keep track of them
+VIEW_TIMEOUT = 86400
+
 milenakoos = None
 
 # store credits usernames to prevent excessive api calls
@@ -1020,7 +1024,7 @@ async def maintaince_loop():
         if not ((user.reminder_vote != 0) and ((43200 < user.vote_time_topgg + 43200 < time.time()) or (1 < user.reminder_vote < time.time()))):
             continue
 
-        view = View(timeout=86400)
+        view = View(timeout=VIEW_TIMEOUT)
         button = Button(
             emoji=get_emoji("topgg"),
             label=random.choice(vote_button_texts),
@@ -1076,7 +1080,7 @@ async def maintaince_loop():
             color=0x007F0E,
         )
 
-        view = View(timeout=86400)
+        view = View(timeout=VIEW_TIMEOUT)
         button = Button(label="Postpone", custom_id=f"catch_{user.guild_id}")
         button.callback = postpone_reminder
         view.add_item(button)
@@ -1129,7 +1133,7 @@ async def maintaince_loop():
             color=0x007F0E,
         )
 
-        view = View(timeout=86400)
+        view = View(timeout=VIEW_TIMEOUT)
         button = Button(label="Postpone", custom_id=f"misc_{user.guild_id}")
         button.callback = postpone_reminder
         view.add_item(button)
@@ -1943,7 +1947,7 @@ async def on_message(message: discord.Message):
                     )
 
                 if button:
-                    view = View(timeout=3600)
+                    view = View(timeout=VIEW_TIMEOUT)
                     view.add_item(button)
 
                 user[f"cat_{le_emoji}"] += silly_amount
@@ -2369,7 +2373,7 @@ async def news(message: discord.Interaction):
             await do_funny(interaction)
 
     def generate_page(number):
-        view = View(timeout=3600)
+        view = View(timeout=VIEW_TIMEOUT)
 
         # article buttons
         for num, button in enumerate(buttons[number * 4 : (number + 1) * 4]):
@@ -2625,7 +2629,7 @@ leave blank to reset.""",
     button2 = Button(label="Catch Message", style=ButtonStyle.blurple)
     button2.callback = ask_catch
 
-    view = View(timeout=3600)
+    view = View(timeout=VIEW_TIMEOUT)
     view.add_item(button1)
     view.add_item(button2)
 
@@ -2690,57 +2694,47 @@ async def catalogue(message: discord.Interaction):
     await message.response.send_message(embed=embed)
 
 
-@bot.tree.command(name="stats", description="View some advanced stats")
-@discord.app_commands.rename(person_id="user")
-@discord.app_commands.describe(person_id="Person to view the stats of!")
-async def stats_command(message: discord.Interaction, person_id: Optional[discord.User]):
-    await message.response.defer()
-    if not person_id:
-        person_id = message.user
-    profile = get_profile(message.guild.id, person_id.id)
-
-    star = "*" if not profile.new_user else ""
-
+def gen_stats(profile, star):
     stats = []
+    user, _ = User.get_or_create(user_id=profile.user_id)
 
     # catching
-    stats.append(f"{get_emoji('staring_cat')} __Catching__")
-    stats.append(f"Catches: {profile.total_catches:,}{star}")
+    stats.append([get_emoji("staring_cat"), "Catching"])
+    stats.append(["catches", "🐈", f"Catches: {profile.total_catches:,}{star}"])
+    catch_time = "---" if profile.time >= 99999999999999 else round(profile.time, 3)
+    slow_time = "---" if profile.timeslow == 0 else round(profile.timeslow / 3600, 2)
+    stats.append(["time_records", "⏱️", f"Fastest: {catch_time}s, Slowest: {slow_time}h"])
     if profile.total_catches - profile.rain_participations != 0:
-        stats.append(f"Average catch time: {profile.total_catch_time / (profile.total_catches - profile.rain_participations):,.2f}s{star}")
+        stats.append(
+            ["average_time", "⏱️", f"Average catch time: {profile.total_catch_time / (profile.total_catches - profile.rain_participations):,.2f}s{star}"]
+        )
     else:
-        stats.append(f"Average catch time: N/A{star}")
-    stats.append(f"Purrfect catches: {profile.perfection_count:,}{star}")
-    stats.append("")
+        stats.append(["average_time", "⏱️", f"Average catch time: N/A{star}"])
+    stats.append(["purrfect_catches", "✨", f"Purrfect catches: {profile.perfection_count:,}{star}"])
 
     # catching boosts
-    stats.append(f"{get_emoji('prism')} __Boosts__")
-    prisms_owned = Prism.select().where(Prism.guild_id == message.guild.id, Prism.user_id == person_id.id).count()
-    prisms_crafted = Prism.select().where(Prism.guild_id == message.guild.id, Prism.creator == person_id.id).count()
-    boosts_done = Prism.select(peewee.fn.SUM(Prism.catches_boosted)).where(Prism.guild_id == message.guild.id, Prism.user_id == person_id.id).scalar()
+    stats.append([get_emoji("prism"), "Boosts"])
+    prisms_crafted = Prism.select().where(Prism.guild_id == profile.guild_id, Prism.creator == profile.user_id).count()
+    boosts_done = Prism.select(peewee.fn.SUM(Prism.catches_boosted)).where(Prism.guild_id == profile.guild_id, Prism.user_id == profile.user_id).scalar()
     if not boosts_done:
         boosts_done = 0
-    stats.append(f"Prisms owned: {prisms_owned:,}")
-    stats.append(f"Prisms crafted: {prisms_crafted:,}")
-    stats.append(f"Boosts done by your prisms: {boosts_done:,}{star}")
-    stats.append(f"Your boosted catches from any prism: {profile.boosted_catches:,}{star}")
-    stats.append(f"Cataine activations: {profile.cataine_activations:,}")
-    stats.append(f"Cataine bought: {profile.cataine_bought:,}")
-    stats.append("")
+    stats.append(["prism_crafted", get_emoji("prism"), f"Prisms crafted: {prisms_crafted:,}"])
+    stats.append(["boosts_done", get_emoji("prism"), f"Boosts by owned prisms: {boosts_done:,}{star}"])
+    stats.append(["boosted_catches", get_emoji("prism"), f"Prism-boosted catches: {profile.boosted_catches:,}{star}"])
+    stats.append(["cataine_activations", "🧂", f"Cataine activations: {profile.cataine_activations:,}"])
+    stats.append(["cataine_bought", "🧂", f"Cataine bought: {profile.cataine_bought:,}"])
 
-    user = User.get(user_id=person_id.id)
     # voting
-    stats.append(f"{get_emoji('topgg')} __Voting__")
-    stats.append(f"Total votes: {user.total_votes:,}{star}")
-    stats.append(f"Current vote streak: {user.vote_streak} (max {max(user.vote_streak, user.max_vote_streak):,}){star}")
+    stats.append([get_emoji("topgg"), "Voting"])
+    stats.append(["total_votes", get_emoji("topgg"), f"Total votes: {user.total_votes:,}{star}"])
+    stats.append(["current_vote_streak", "🔥", f"Current vote streak: {user.vote_streak} (max {max(user.vote_streak, user.max_vote_streak):,}){star}"])
     if user.vote_time_topgg + 43200 > time.time():
-        stats.append(f"Can vote <t:{user.vote_time_topgg + 43200}:R>")
+        stats.append(["can_vote", get_emoji("topgg"), f"Can vote <t:{user.vote_time_topgg + 43200}:R>"])
     else:
-        stats.append("Can vote!")
-    stats.append("")
+        stats.append(["can_vote", get_emoji("topgg"), "Can vote!"])
 
     # battlepass
-    stats.append(":arrow_up: __Battlepass__")
+    stats.append(["⬆️", "Cattlepass"])
     seasons_complete = 0
     levels_complete = 0
     max_level = 0
@@ -2781,58 +2775,74 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     current_packs = 0
     for pack in pack_data:
         current_packs += profile[f"pack_{pack['name'].lower()}"]
-    stats.append(f"Quests completed: {profile.quests_completed:,}{star}")
-    stats.append(f"Seasons completed: {seasons_complete:,}")
-    stats.append(f"Levels completed: {levels_complete:,}")
-    stats.append(f"Current unopened packs: {current_packs:,}")
-    stats.append(f"Packs opened: {profile.packs_opened:,}")
-    stats.append(f"Pack upgrades: {profile.pack_upgrades:,}")
-    stats.append(f"Highest ever level: {max_level:,}")
-    stats.append(f"Total XP earned: {total_xp:,}")
-    stats.append("")
+    stats.append(["quests_completed", "✅", f"Quests completed: {profile.quests_completed:,}{star}"])
+    stats.append(["seasons_completed", "🏅", f"Cattlepass seasons completed: {seasons_complete:,}"])
+    stats.append(["levels_completed", "✅", f"Cattlepass levels completed: {levels_complete:,}"])
+    stats.append(["packs_in_inventory", get_emoji("woodenpack"), f"Packs in inventory: {current_packs:,}"])
+    stats.append(["packs_opened", get_emoji("goldpack"), f"Packs opened: {profile.packs_opened:,}"])
+    stats.append(["pack_upgrades", get_emoji("diamondpack"), f"Pack upgrades: {profile.pack_upgrades:,}"])
+    stats.append(["highest_ever_level", "🏆", f"Highest ever Cattlepass level: {max_level:,}"])
+    stats.append(["total_xp_earned", "🧮", f"Total Cattlepass XP earned: {total_xp:,}"])
 
     # rains & supporter
-    stats.append(":umbrella:  __Rains__")
-    stats.append(f"Current rain minutes: {user.rain_minutes:,}")
-    stats.append("Ever bought rains: " + ("Yes" if user.premium else "No"))
-    stats.append(f"Cats caught during rains: {profile.rain_participations:,}{star}")
-    stats.append(f"Rain minutes started: {profile.rain_minutes_started:,}{star}")
-    stats.append("")
+    stats.append(["☔", "Rains"])
+    stats.append(["current_rain_minutes", "☔", f"Current rain minutes: {user.rain_minutes:,}"])
+    stats.append(["supporter", "👑", "Ever bought rains: " + ("Yes" if user.premium else "No")])
+    stats.append(["cats_caught_during_rains", "☔", f"Cats caught during rains: {profile.rain_participations:,}{star}"])
+    stats.append(["rain_minutes_started", "☔", f"Rain minutes started: {profile.rain_minutes_started:,}{star}"])
 
     # gambling
-    stats.append(":slot_machine: __Gambling__")
-    stats.append(f"Casino spins: {profile.gambles:,}")
-    stats.append(f"Slot spins: {profile.slot_spins:,}")
-    stats.append(f"Slot wins: {profile.slot_wins:,}")
-    stats.append(f"Slot big wins: {profile.slot_big_wins:,}")
-    stats.append("")
+    stats.append(["🎰", "Gambling"])
+    stats.append(["casino_spins", "🎰", f"Casino spins: {profile.gambles:,}"])
+    stats.append(["slot_spins", "🎰", f"Slot spins: {profile.slot_spins:,}"])
+    stats.append(["slot_wins", "🎰", f"Slot wins: {profile.slot_wins:,}"])
+    stats.append(["slot_big_wins", "🎰", f"Slot big wins: {profile.slot_big_wins:,}"])
 
     # tic tac toe
-    stats.append(":o: __Tic Tac Toe__")
-    stats.append(f"Tic Tac Toe games played: {profile.ttt_played:,}")
-    stats.append(f"Tic Tac Toe wins: {profile.ttt_won:,}")
-    stats.append(f"Tic Tac Toe draws: {profile.ttt_draws:,}")
-    if profile.ttt_won + profile.ttt_draws != 0:
-        stats.append(f"Tic Tac Toe win rate: {(profile.ttt_won + profile.ttt_draws) / profile.ttt_played * 100:.2f}%")
+    stats.append(["⭕", "Tic Tac Toe"])
+    stats.append(["ttc_games", "⭕", f"Tic Tac Toe games played: {profile.ttt_played:,}"])
+    stats.append(["ttc_wins", "⭕", f"Tic Tac Toe wins: {profile.ttt_won:,}"])
+    stats.append(["ttc_draws", "⭕", f"Tic Tac Toe draws: {profile.ttt_draws:,}"])
+    if profile.ttt_played != 0:
+        stats.append(["ttc_win_rate", "⭕", f"Tic Tac Toe win rate: {(profile.ttt_won + profile.ttt_draws) / profile.ttt_played * 100:.2f}%"])
     else:
-        stats.append("Tic Tac Toe win rate: 0%")
-    stats.append("")
+        stats.append(["ttc_win_rate", "⭕", "Tic Tac Toe win rate: 0%"])
 
     # misc
-    stats.append(":question:  __Misc__")
-    stats.append(f"Facts read: {profile.facts:,}")
-    stats.append(f"Private embed clicks: {profile.funny:,}")
-    stats.append(f"Reminders set: {profile.reminders_set:,}{star}")
-    stats.append(f"Cats gifted: {profile.cats_gifted:,}{star}")
-    stats.append(f"Cats received as gift: {profile.cat_gifts_recieved:,}{star}")
-    stats.append(f"Trades completed: {profile.trades_completed}{star}")
-    stats.append(f"Cats traded: {profile.cats_traded:,}{star}")
-    stats.append("")
+    stats.append(["❓", "Misc"])
+    stats.append(["facts_read", "🧐", f"Facts read: {profile.facts:,}"])
+    stats.append(["private_embed_clicks", get_emoji("pointlaugh"), f"Private embed clicks: {profile.funny:,}"])
+    stats.append(["reminders_set", "⏰", f"Reminders set: {profile.reminders_set:,}{star}"])
+    stats.append(["cats_gifted", "🎁", f"Cats gifted: {profile.cats_gifted:,}{star}"])
+    stats.append(["cats_received_as_gift", "🎁", f"Cats received as gift: {profile.cat_gifts_recieved:,}{star}"])
+    stats.append(["trades_completed", "💱", f"Trades completed: {profile.trades_completed}{star}"])
+    stats.append(["cats_traded", "💱", f"Cats traded: {profile.cats_traded:,}{star}"])
+    return stats
 
+
+@bot.tree.command(name="stats", description="View some advanced stats")
+@discord.app_commands.rename(person_id="user")
+@discord.app_commands.describe(person_id="Person to view the stats of!")
+async def stats_command(message: discord.Interaction, person_id: Optional[discord.User]):
+    await message.response.defer()
+    if not person_id:
+        person_id = message.user
+    profile = get_profile(message.guild.id, person_id.id)
+    star = "*" if not profile.new_user else ""
+
+    stats = gen_stats(profile, star)
+    stats_string = ""
+    for stat in stats:
+        if len(stat) == 2:
+            # category
+            stats_string += f"\n{stat[0]} __{stat[1]}__\n"
+        elif len(stat) == 3:
+            # stat
+            stats_string += f"{stat[2]}\n"
     if star:
-        stats.append("\\*this stat is only tracked since February 2025")
+        stats_string += "\n\\*this stat is only tracked since February 2025"
 
-    embedVar = discord.Embed(title=f"{person_id.name}'s Stats", color=0x6E593C, description="\n".join(stats))
+    embedVar = discord.Embed(title=f"{person_id.name}'s Stats", color=0x6E593C, description=stats_string)
     await message.followup.send(embed=embedVar)
 
 
@@ -2860,19 +2870,6 @@ async def gen_inventory(message, person_id):
                 unlocked += 1
     total_achs = len(ach_list) - minus_achs_count
     minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
-
-    # now we count time i think
-    catch_time = person.time
-
-    catch_time = "---" if catch_time >= 99999999999999 else str(round(catch_time, 3))
-
-    slow_time = person.timeslow
-
-    if str(int(slow_time)) == "0":
-        slow_time = "---"
-    else:
-        slow_time = float(slow_time) / 3600
-        slow_time = str(round(slow_time, 2))
 
     # count prism stuff
     prisms = []
@@ -2903,9 +2900,21 @@ async def gen_inventory(message, person_id):
     except Exception:
         needed_xp = 1500
 
+    stats = gen_stats(person, "")
+    highlighted_stat = None
+    for stat in stats:
+        if stat[0] == person.highlighted_stat:
+            highlighted_stat = stat
+            break
+    if not highlighted_stat:
+        for stat in stats:
+            if stat[0] == "time_records":
+                highlighted_stat = stat
+                break
+
     embedVar = discord.Embed(
         title=f"{emoji_prefix}{person_id.name.replace('_', r'\_')}",
-        description=f"⏱️ Fastest: {catch_time}s, Slowest: {slow_time}h\n{get_emoji('cat_throphy')} Achievements: {unlocked}/{total_achs}{minus_achs}\n⬆️ Battlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)",
+        description=f"{highlighted_stat[1]} {highlighted_stat[2]}\n{get_emoji('cat_throphy')} Achievements: {unlocked}/{total_achs}{minus_achs}\n⬆️ Battlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)",
         color=discord.Colour.from_str(color),
     )
 
@@ -2976,9 +2985,121 @@ async def gen_inventory(message, person_id):
 @discord.app_commands.describe(person_id="Person to view the inventory of!")
 async def inventory(message: discord.Interaction, person_id: Optional[discord.User]):
     await message.response.defer()
+    if not person_id:
+        person_id = message.user
+    person = get_profile(message.guild.id, person_id.id)
+    user, _ = User.get_or_create(user_id=message.user.id)
+    stats = gen_stats(person, "")
+
+    async def edit_profile(interaction: discord.Interaction):
+        if interaction.user.id != person_id.id:
+            await do_funny(interaction)
+            return
+
+        def stat_select(category):
+            options = [discord.SelectOption(emoji="⬅️", label="Back", value="back")]
+            track = False
+            for stat in stats:
+                if len(stat) == 2:
+                    track = bool(stat[1] == category)
+                if len(stat) == 3 and track:
+                    options.append(discord.SelectOption(value=stat[0], emoji=stat[1], label=stat[2]))
+
+            select = discord.ui.Select(placeholder="Edit highlighted stat... (2/2)", options=options)
+
+            async def select_callback(interaction: discord.Interaction):
+                await interaction.response.defer()
+                if select.values[0] == "back":
+                    view = View(timeout=VIEW_TIMEOUT)
+                    view.add_item(category_select())
+                    await interaction.edit_original_response(view=view)
+                else:
+                    # update the stat
+                    person.highlighted_stat = select.values[0]
+                    person.save()
+                    await interaction.edit_original_response(content="Highlighted stat updated!", embed=None, view=None)
+
+            select.callback = select_callback
+            return select
+
+        def category_select():
+            options = []
+            for stat in stats:
+                if len(stat) != 2:
+                    continue
+                options.append(discord.SelectOption(emoji=stat[0], label=stat[1], value=stat[1]))
+
+            select = discord.ui.Select(placeholder="Edit highlighted stat... (1/2)", options=options)
+
+            async def select_callback(interaction: discord.Interaction):
+                # im 13 and this is deep (nesting)
+                # and also please dont think about the fact this is async inside of sync :3
+                await interaction.response.defer()
+                view = View(timeout=VIEW_TIMEOUT)
+                view.add_item(stat_select(select.values[0]))
+                await interaction.edit_original_response(view=view)
+
+            select.callback = select_callback
+            return select
+
+        highlighted_stat = None
+        for stat in stats:
+            if stat[0] == person.highlighted_stat:
+                highlighted_stat = stat
+                break
+        if not highlighted_stat:
+            for stat in stats:
+                if stat[0] == "time_records":
+                    highlighted_stat = stat
+                    break
+
+        view = View(timeout=VIEW_TIMEOUT)
+        view.add_item(category_select())
+
+        if user.premium:
+            if not user.color:
+                user.color = "#6E593C"
+            description = f"""👑 __Supporter Settings__
+Global, change with `/editprofile`.
+**Color**: {user.color.lower() if user.color.upper() not in ["", "#6E593C"] else "Default"}
+**Emoji**: {user.emoji if user.emoji else "None"}
+**Image**: {"Yes" if user.image.startswith("https://cdn.discordapp.com/attachments/") else "No"}
+
+__Highlighted Stat__
+{highlighted_stat[1]} {highlighted_stat[2]}"""
+
+            embed = discord.Embed(
+                title=f"{(user.emoji + ' ') if user.emoji else ''}Edit Profile", description=description, color=discord.Colour.from_str(user.color)
+            )
+            if user.image.startswith("https://cdn.discordapp.com/attachments/"):
+                embed.set_thumbnail(url=user.image)
+
+        else:
+            description = f"""👑 __Supporter Settings__
+Global, buy anything from [the store](https://store.minkos.lol) to unlock.
+👑 **Color**
+👑 **Emoji**
+👑 **Image**
+
+__Highlighted Stat__
+{highlighted_stat[1]} {highlighted_stat[2]}"""
+
+            embed = discord.Embed(title="Edit Profile", description=description, color=0x6E593C)
+
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
     embedVar = await gen_inventory(message, person_id)
+
     embedVar.set_footer(text=rain_shill)
-    await message.followup.send(embed=embedVar)
+
+    if person_id.id == message.user.id:
+        view = View(timeout=VIEW_TIMEOUT)
+        btn = Button(emoji="📝", label="Edit", style=discord.ButtonStyle.blurple)
+        btn.callback = edit_profile
+        view.add_item(btn)
+        await message.followup.send(embed=embedVar, view=view)
+    else:
+        await message.followup.send(embed=embedVar)
 
 
 @bot.tree.command(description="its raining cats")
@@ -3147,7 +3268,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         url="https://store.minkos.lol",
     )
 
-    view = View(timeout=3600)
+    view = View(timeout=VIEW_TIMEOUT)
     view.add_item(button)
     view.add_item(shopbutton)
 
@@ -3217,7 +3338,7 @@ if config.DONOR_CHANNEL_ID:
 @bot.tree.command(description="View and open packs")
 async def packs(message: discord.Interaction):
     def gen_view(user):
-        view = discord.ui.View(timeout=3600)
+        view = discord.ui.View(timeout=VIEW_TIMEOUT)
         empty = True
         for pack in pack_data:
             if user[f"pack_{pack['name'].lower()}"] < 1:
@@ -3337,7 +3458,7 @@ async def battlepass(message: discord.Interaction):
         user.reminders_enabled = not user.reminders_enabled
         user.save()
 
-        view = View(timeout=3600)
+        view = View(timeout=VIEW_TIMEOUT)
         button = Button(
             label="Main",
             style=ButtonStyle.green if current_mode == "Main" else ButtonStyle.blurple,
@@ -3473,7 +3594,7 @@ async def battlepass(message: discord.Interaction):
             description=description,
             color=0x6E593C,
         ).set_footer(text=rain_shill)
-        view = View(timeout=3600)
+        view = View(timeout=VIEW_TIMEOUT)
 
         button = Button(label="Main", style=ButtonStyle.green)
         button.callback = gen_main
@@ -3553,7 +3674,7 @@ async def battlepass(message: discord.Interaction):
             description=description,
             color=0x6E593C,
         )
-        view = View(timeout=3600)
+        view = View(timeout=VIEW_TIMEOUT)
 
         button = Button(label="Main", style=ButtonStyle.blurple)
         button.callback = gen_main
@@ -3690,12 +3811,12 @@ async def prism(message: discord.Interaction):
                     missing_cats.append(get_emoji(i.lower() + "cat"))
 
             if len(missing_cats) == 0:
-                view = View(timeout=3600)
+                view = View(timeout=VIEW_TIMEOUT)
                 confirm_button = Button(label="Craft!", style=ButtonStyle.green, emoji=icon)
                 confirm_button.callback = confirm_craft
                 description = "The crafting recipe is __ONE of EVERY cat type__.\nContinue crafting?"
             else:
-                view = View(timeout=1)
+                view = View(timeout=VIEW_TIMEOUT)
                 confirm_button = Button(label="Not enough cats!", style=ButtonStyle.red, disabled=True)
                 description = "The crafting recipe is __ONE of EVERY cat type__.\nYou are missing " + "".join(missing_cats)
 
@@ -3712,7 +3833,7 @@ async def prism(message: discord.Interaction):
             enabled = "✅" if selected_prism[f"enabled_{i.lower()}"] else "❌"
             embedVar.description += f"{enabled} {icon1} {i}\n"
 
-        view = View(timeout=3600)
+        view = View(timeout=VIEW_TIMEOUT)
         edit_button = Button(label="Edit", style=ButtonStyle.blurple)
         edit_button.callback = editb
         view.add_item(edit_button)
@@ -3785,7 +3906,7 @@ async def prism(message: discord.Interaction):
             embedVar, view = prism_config_embed(selected_prism)
             await interaction.edit_original_response(embed=embedVar, view=view)
 
-    view = View(timeout=3600)
+    view = View(timeout=VIEW_TIMEOUT)
     if global_boost >= 25 or user_count >= 5:
         craft_button = Button(label="Prism limit reached!", style=ButtonStyle.gray, disabled=True)
     else:
@@ -3886,7 +4007,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         return best_move
 
     async def gen_board():
-        view = View(timeout=3600)
+        view = View(timeout=VIEW_TIMEOUT)
         has_unlocked_tiles = False
         for num, i in enumerate(board_state):
             if i == "":
@@ -4081,7 +4202,7 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
         description=description,
         color=0x6E593C,
     )
-    view = View(timeout=3600 * 24)
+    view = View(timeout=24 * 3600)
     for i in ["Rock", "Paper", "Scissors"]:
         button = Button(label=i, custom_id=i)
         button.callback = pick
@@ -4176,7 +4297,7 @@ async def gift(
                 button2 = Button(label="Evade the tax", style=ButtonStyle.red)
                 button2.callback = evade
 
-                myview = View(timeout=3600)
+                myview = View(timeout=VIEW_TIMEOUT)
 
                 myview.add_item(button)
                 myview.add_item(button2)
@@ -4226,7 +4347,7 @@ async def gift(
 
                         confirm = Button(label="Yes, pay the tax")
                         confirm.callback = pay
-                        confirm_view = View(timeout=3600)
+                        confirm_view = View(timeout=VIEW_TIMEOUT)
                         confirm_view.add_item(confirm)
 
                         await interaction.followup.send(
@@ -4278,7 +4399,7 @@ async def gift(
                 button2 = Button(label="Evade the tax", style=ButtonStyle.red)
                 button2.callback = evade
 
-                myview = View(timeout=3600)
+                myview = View(timeout=VIEW_TIMEOUT)
 
                 myview.add_item(button)
                 myview.add_item(button2)
@@ -4587,7 +4708,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             await achemb(message, "blackhole", "send", person2)
             return discord.Embed(color=0x6E593C, title="Blackhole", description="How Did We Get Here?"), None
 
-        view = View(timeout=3600)
+        view = View(timeout=VIEW_TIMEOUT)
 
         accept = Button(label="Accept", style=ButtonStyle.green)
         accept.callback = acceptb
@@ -4958,7 +5079,7 @@ async def casino(message: discord.Interaction):
         button = Button(label="Spin", style=ButtonStyle.blurple)
         button.callback = spin
 
-        myview = View(timeout=3600)
+        myview = View(timeout=VIEW_TIMEOUT)
         myview.add_item(button)
 
         casino_lock.remove(message.user.id)
@@ -4978,7 +5099,7 @@ async def casino(message: discord.Interaction):
     button = Button(label="Spin", style=ButtonStyle.blurple)
     button.callback = spin
 
-    myview = View(timeout=3600)
+    myview = View(timeout=VIEW_TIMEOUT)
     myview.add_item(button)
 
     await message.response.send_message(embed=embed, view=myview)
@@ -5092,7 +5213,7 @@ async def slots(message: discord.Interaction):
         button = Button(label="Spin", style=ButtonStyle.blurple)
         button.callback = spin
 
-        myview = View(timeout=3600)
+        myview = View(timeout=VIEW_TIMEOUT)
         myview.add_item(button)
 
         if big_win:
@@ -5124,7 +5245,7 @@ async def slots(message: discord.Interaction):
     button = Button(label="Spin", style=ButtonStyle.blurple)
     button.callback = spin
 
-    myview = View(timeout=3600)
+    myview = View(timeout=VIEW_TIMEOUT)
     myview.add_item(button)
 
     embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/gambling")
@@ -5403,7 +5524,7 @@ async def light_market(message):
                 ephemeral=True,
             )
 
-        myview = View(timeout=3600)
+        myview = View(timeout=VIEW_TIMEOUT)
 
         if user[f"cat_{type}"] >= amount:
             button = Button(label="Buy", style=ButtonStyle.blurple)
@@ -5546,7 +5667,7 @@ async def dark_market(message):
                     user.story_complete = True
                     user.save()
 
-            run_view = View(timeout=3600)
+            run_view = View(timeout=VIEW_TIMEOUT)
             button = Button(label="RUN", style=ButtonStyle.green)
             button.callback = step
             run_view.add_item(button)
@@ -5557,7 +5678,7 @@ async def dark_market(message):
                 ephemeral=True,
             )
 
-        myview = View(timeout=3600)
+        myview = View(timeout=VIEW_TIMEOUT)
 
         if level == len(cataine_prices) - 1:
             button = Button(label="What???", style=ButtonStyle.red)
@@ -5683,7 +5804,7 @@ async def achievements(message: discord.Interaction):
 
     # creates buttons at the bottom of the full view
     def insane_view_generator(category):
-        myview = View(timeout=3600)
+        myview = View(timeout=VIEW_TIMEOUT)
         buttons_list = []
 
         async def callback_hell(interaction):
@@ -5980,7 +6101,7 @@ async def leaderboards(
             embedVar.set_author(name=f"{message.user} has unread news! /news")
 
         # handle funny buttons
-        myview = View(timeout=3600)
+        myview = View(timeout=VIEW_TIMEOUT)
         buttons = []
 
         if type == "Cats":
@@ -6252,7 +6373,7 @@ async def reset(message: discord.Interaction, person_id: discord.User):
         else:
             await do_funny(interaction)
 
-    view = View(timeout=3600)
+    view = View(timeout=VIEW_TIMEOUT)
     button = Button(style=ButtonStyle.red, label="Confirm")
     button.callback = confirmed
     view.add_item(button)
@@ -6274,7 +6395,7 @@ async def nuke(message: discord.Interaction):
             "This is dangerous! (4)",
             "Reset everything! (5)",
         ]
-        view = View(timeout=3600)
+        view = View(timeout=VIEW_TIMEOUT)
         button = Button(label=lines[counter], style=ButtonStyle.red)
         button.callback = count
         view.add_item(button)
