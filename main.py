@@ -2817,6 +2817,8 @@ def gen_stats(profile, star):
     stats.append(["cats_received_as_gift", "🎁", f"Cats received as gift: {profile.cat_gifts_recieved:,}{star}"])
     stats.append(["trades_completed", "💱", f"Trades completed: {profile.trades_completed}{star}"])
     stats.append(["cats_traded", "💱", f"Cats traded: {profile.cats_traded:,}{star}"])
+    if profile.user_id == 553093932012011520:
+        stats.append(["owner", get_emoji("neocat"), "a cute catgirl :3"])
     return stats
 
 
