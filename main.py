@@ -3810,7 +3810,10 @@ async def prism(message: discord.Interaction):
             missing_cats = []
             for i in cattypes:
                 if user["cat_" + i] < 1:
-                    missing_cats.append(get_emoji(i.lower() + "cat"))
+                    if Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{i}"))).where(Profile.guild_id == message.guild.id).scalar() > 0:
+                        missing_cats.append(get_emoji(i.lower() + "cat"))
+                    else:
+                        missing_cats.append("mysterycat")
 
             if len(missing_cats) == 0:
                 view = View(timeout=VIEW_TIMEOUT)
