@@ -1825,11 +1825,7 @@ async def on_message(message: discord.Message):
                                     await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                                     await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                                     await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                                rn = time.time()
-                                channel.cat_rains = min(
-                                    rn + 3600,
-                                    channel.cat_rains + 606,
-                                )
+                                channel.cat_rains += 606
                                 channel.yet_to_spawn = 0
                                 decided_time = 6
 
