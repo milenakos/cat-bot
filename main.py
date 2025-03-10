@@ -2851,10 +2851,8 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
 async def gen_inventory(message, person_id):
     # check if we are viewing our own inv or some other person
     if person_id is None:
-        me = True
         person_id = message.user
-    else:
-        me = False
+    me = bool(person_id == message.user)
     person = get_profile(message.guild.id, person_id.id)
     user, _ = User.get_or_create(user_id=person_id.id)
 
