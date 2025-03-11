@@ -3743,6 +3743,10 @@ async def prism(message: discord.Interaction):
             inline=True,
         )
 
+    if len(embed.fields) > 25:
+        await message.response.send_message("i love skibidi toilet", ephemeral=True)
+        return
+
     embed.set_footer(text=f"Boost for everyone: {global_boost}% | {message.user}'s total boost: {user_boost}%")
 
     async def confirm_craft(interaction: discord.Interaction):
