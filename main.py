@@ -5020,7 +5020,7 @@ async def casino(message: discord.Interaction):
     # funny global gamble counter cus funny
     total_sum = Profile.select(peewee.fn.SUM(Profile.gambles)).scalar()
     embed = discord.Embed(
-        title=f"{get_emoji('Casinocat')} The Catsino",
+        title="🎲 The Catsino",
         description=f"One spin costs 5 {get_emoji('epiccat')} Epic cats\nSo far you gambled {profile.gambles} times.\nAll Cat Bot users gambled {total_sum:,} times.",
         color=0x750F0E,
     )
@@ -5064,7 +5064,7 @@ async def casino(message: discord.Interaction):
         ]
 
         random.shuffle(variants)
-        icon = get_emoji('Casinocat')
+        icon = "🎲"
 
         for i in variants:
             embed = discord.Embed(title=f"{icon} The Catsino", description=f"**{i}**", color=0x750F0E)
