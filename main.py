@@ -2669,7 +2669,7 @@ async def last(message: discord.Interaction):
 
 @bot.tree.command(description="View all the juicy numbers behind cat types")
 async def catalogue(message: discord.Interaction):
-    embed = discord.Embed(title="The Catalogue", color=0x6E593C)
+    embed = discord.Embed(title=f"{get_emoji('staring_cat')} The Catalogue", color=0x6E593C)
     for cat_type in cattypes:
         in_server = (
             Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{cat_type}")))
@@ -3147,7 +3147,7 @@ async def rain(message: discord.Interaction):
         server_rains = f" (+**{server_minutes}** bonus minutes)"
 
     embed = discord.Embed(
-        title="Cat Rains",
+        title="☔ Cat Rains",
         description=f"""Cat Rains are power-ups which spawn cats instantly for a limited amounts of time in channel of your choice.
 
 You can get those by buying them at our [store](<https://store.minkos.lol>) or by winning them in an event.
@@ -3423,7 +3423,7 @@ async def packs(message: discord.Interaction):
         await interaction.edit_original_response(view=gen_view(user))
 
     description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n\nClick the buttons below to start opening packs!"
-    embed = discord.Embed(title="Packs", description=description, color=0x6E593C)
+    embed = discord.Embed(title=f"{get_emoji('bronzepack')} Packs", description=description, color=0x6E593C)
     embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/packs")
     user = get_profile(message.guild.id, message.user.id)
     await message.response.send_message(embed=embed, view=gen_view(user))
@@ -3938,7 +3938,7 @@ async def ping(message: discord.Interaction):
         latency = round(bot.latency * 1000)
     except Exception:
         latency = "infinite"
-    await message.response.send_message(f"cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
+    await message.response.send_message(f"🏓 cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
     await progress(message, get_profile(message.guild.id, message.user.id), "ping")
 
 
@@ -5020,7 +5020,7 @@ async def casino(message: discord.Interaction):
     # funny global gamble counter cus funny
     total_sum = Profile.select(peewee.fn.SUM(Profile.gambles)).scalar()
     embed = discord.Embed(
-        title="The Catsino",
+        title="🎲 The Catsino",
         description=f"One spin costs 5 {get_emoji('epiccat')} Epic cats\nSo far you gambled {profile.gambles} times.\nAll Cat Bot users gambled {total_sum:,} times.",
         color=0x750F0E,
     )
@@ -5064,9 +5064,10 @@ async def casino(message: discord.Interaction):
         ]
 
         random.shuffle(variants)
+        icon = "🎲"
 
         for i in variants:
-            embed = discord.Embed(title="The Catsino", description=f"**{i}**", color=0x750F0E)
+            embed = discord.Embed(title=f"{icon} The Catsino", description=f"**{i}**", color=0x750F0E)
             try:
                 await interaction.edit_original_response(embed=embed, view=None)
             except Exception:
@@ -5076,7 +5077,7 @@ async def casino(message: discord.Interaction):
         amount = random.randint(1, 5)
 
         embed = discord.Embed(
-            title="The Catsino",
+            title=f"{icon} The Catsino",
             description=f"You won:\n**{get_emoji('finecat')} {amount} Fine cats**",
             color=0x750F0E,
         )
@@ -5343,7 +5344,7 @@ async def remind(
     if len(text) > 1900:
         await message.response.send_message("thats too long", ephemeral=True)
         return
-    await message.response.send_message(f"ok, <t:{goal_time}:R> (+- 5 min) ill remind you of:\n{text}")
+    await message.response.send_message(f"🔔 ok, <t:{goal_time}:R> (+- 5 min) ill remind you of:\n{text}")
     msg = await message.original_response()
     message_link = msg.jump_url
     text += f"\n\n*This is a [reminder](<{message_link}>) you set.*"
@@ -6096,7 +6097,7 @@ async def leaderboards(
                 if interactor_placement > show_amount and str(interaction.user.id) not in string:
                     string = string + f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
 
-        title = type + " Leaderboard"
+        title = "🏅 " + type + " Leaderboard"
         if type == "Cats":
             title = f"{specific_cat} {title}"
 
