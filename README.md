@@ -4,7 +4,7 @@ Discord Cat Bot Source Code
 
 # Development
 
-Please note self-hosting is hacky and isn't supported, instructions below are for testing/development/messing around. I won't stop you, but YOU will have to mess around with the code a bunch for it to work good, so be warned.
+Please note self-hosting is hacky and isn't supported, instructions below are for testing/development/messing around. I won't stop you, but you WILL have to mess around with the code a bunch for it to work good, so be warned.
 
 ## Prerequisites
 
