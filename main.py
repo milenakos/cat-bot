@@ -1850,7 +1850,7 @@ async def on_message(message: discord.Message):
                 if user.cataine_active > time.time():
                     # cataine is active
                     silly_amount = 2
-                    suffix_string += "\n🧂 cataine worked! you got 2 cats instead!"
+                    suffix_string += "\n🧂 cataine worked! you got 2 cats!"
                     user.cataine_activations += 1
 
                 elif user.cataine_active != 0:
@@ -6044,6 +6044,7 @@ async def leaderboards(
         emoji = ""
         if type == "Cats" and specific_cat != "All":
             emoji = get_emoji(specific_cat.lower() + "cat")
+
         # the little place counter
         current = 1
         leader = False
@@ -6097,9 +6098,10 @@ async def leaderboards(
                 if interactor_placement > show_amount and str(interaction.user.id) not in string:
                     string = string + f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
 
-        title = "🏅 " + type + " Leaderboard"
+        title = type + " Leaderboard"
         if type == "Cats":
             title = f"{specific_cat} {title}"
+        title = "🏅 " + title
 
         embedVar = discord.Embed(title=title, description=string.rstrip(), color=0x6E593C).set_footer(text=rain_shill)
 
