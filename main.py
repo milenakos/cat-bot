@@ -307,6 +307,8 @@ def get_profile(guild_id, user_id):
 
 def get_emoji(name):
     global emojis
+    if name in allowedemojis:
+        return emojis["finecat"]
     if name in emojis.keys():
         return emojis[name]
     elif name in emoji.EMOJI_DATA:
@@ -322,6 +324,7 @@ news_list = [
     {"title": "Cat Bot Christmas 2024", "emoji": "🎅"},
     {"title": "Battlepass Update", "emoji": "⬆️"},
     {"title": "Packs!", "emoji": "goldpack"},
+    {"title": "Message from CEO of Cat Bot", "emoji": ""},
 ]
 
 
@@ -411,6 +414,24 @@ instead of predetermined cat rewards you now unlock Packs! packs have different 
 the rarities are - Wooden {get_emoji("woodenpack")}, Stone {get_emoji("stonepack")}, Bronze {get_emoji("bronzepack")}, Silver {get_emoji("silverpack")}, Gold {get_emoji("goldpack")}, Platinum {get_emoji("platinumpack")}, Diamond {get_emoji("diamondpack")} and Celestial {get_emoji("celestialpack")}!
 the extra reward is now a stone pack instead of 5 random cats too!
 *LETS GO GAMBLING*""",
+            color=0x6E593C,
+        )
+        await interaction.edit_original_response(content=None, view=None, embed=embed)
+    elif news_id == 5:
+        embed = discord.Embed(
+            title="Important Message from CEO of Cat Bot",
+            description="""Dear Cat Bot users,
+
+I hope this message finds you well. I want to take a moment to address some recent developments within our organization that are crucial for our continued success.
+
+Our latest update has had a significant impact on our financial resources, resulting in an unexpected budget shortfall. In light of this situation, we have made the difficult decision to implement advertising on our platform to help offset these costs. We believe this strategy will not only stabilize our finances but also create new opportunities for growth.
+
+Additionally, in our efforts to manage expenses more effectively, we have replaced all cat emojis with just the "Fine Cat" branding. This change will help us save on copyright fees while maintaining an acceptable user experience.
+
+We are committed to resolving these challenges and aim to have everything back on track by **April 2nd**. Thank you for your understanding and continued dedication during this time. Together, we will navigate these changes and emerge stronger.
+
+Best regards,
+[Your Name]""",
             color=0x6E593C,
         )
         await interaction.edit_original_response(content=None, view=None, embed=embed)
@@ -1033,7 +1054,7 @@ async def maintaince_loop():
     temp_time_storage = {}
     catchcooldown = {}
     fakecooldown = {}
-    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
+    await bot.change_presence(activity=discord.CustomActivity(name=f"Budget's cut in {len(bot.guilds):,} servers"))
 
     if config.TOP_GG_TOKEN and (not config.MIN_SERVER_SEND or len(bot.guilds) > config.MIN_SERVER_SEND):
         async with aiohttp.ClientSession() as session:
@@ -2014,6 +2035,24 @@ async def on_message(message: discord.Message):
 
                 user[f"cat_{le_emoji}"] += silly_amount
                 new_count = user[f"cat_{le_emoji}"]
+
+                ads = [
+                    "Wanna double your earnings overnight? 1 Shady Alley.",
+                    "The best way to earn cats. Double deposits today only. /casino",
+                    "Lost? Confused? Check out our free guide! /wiki",
+                    "Do you like meaningless numbers? /getid is just for you!",
+                    "World Class Swiss Clocks. /remind",
+                    "Loans with only 69% interest from Cat Bank /bal",
+                    "Get a free cupcake by ordering a large cappucino! /brew",
+                    "The ONLY accurate news source! /news",
+                    "Our dictionaries have everything! /define",
+                    "Leaked Secret Cats Government Doesn't Want You To See! /catalogue",
+                    "Get daily facts to brighten up your mood! $6.99/month! /fact",
+                    "Predicting your future with 97% accuracy! /8ball",
+                    "Our AI Text To Speech is indistinguishable from humans! /tiktok",
+                    "Ping Pong World Cup! Watch now at /ping",
+                ]
+                coughstring += "AD: " + random.choice(ads) + "\n"
 
                 async def delete_cat():
                     try:
