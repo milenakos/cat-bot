@@ -2052,7 +2052,7 @@ async def on_message(message: discord.Message):
                     "Our AI Text To Speech is indistinguishable from humans! /tiktok",
                     "Ping Pong World Cup! Watch now at /ping",
                 ]
-                coughstring += "AD: " + random.choice(ads) + "\n"
+                coughstring = "AD: " + random.choice(ads) + "\n" + coughstring
 
                 async def delete_cat():
                     try:
