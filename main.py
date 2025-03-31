@@ -4424,24 +4424,6 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     error = True
                     break
 
-            person1prismcount = len(Prism.select().where(Prism.guild_id == message.guild.id, Prism.user_id == person1.id))
-            person2prismcount = len(Prism.select().where(Prism.guild_id == message.guild.id, Prism.user_id == person2.id))
-
-            if person1prismcount + person2prismgive > 5:
-                await interaction.edit_original_response(
-                    content=f"{person1.mention} reached the prism limit. trade cancelled.",
-                    embed=None,
-                    view=None,
-                )
-                return
-            if person2prismcount + person1prismgive > 5:
-                await interaction.edit_original_response(
-                    content=f"{person2.mention} reached the prism limit. trade cancelled.",
-                    embed=None,
-                    view=None,
-                )
-                return
-
             if error:
                 try:
                     await interaction.edit_original_response(
