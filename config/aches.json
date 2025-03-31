@@ -12,7 +12,7 @@
   "trolled": {"title": "Trolled", "description": "TROLLED SO HARD LMAOOO :joy:", "is_hidden": false, "category": "Cat Hunt"},
   "achiever": {"title": "Achiever", "description": "get 15 achievements", "is_hidden": false, "category": "Cat Hunt"},
   "leader": {"title": "Leader", "description": "reach top 5 in any leaderboard", "is_hidden": false, "category": "Cat Hunt"},
-  "dark_market": {"title": "Shady Corner", "description": "enter dark market", "is_hidden": true, "category": "Cat Hunt"},
+  "dark_market": {"title": "Shady Corner", "description": "follow the shadow", "is_hidden": true, "category": "Cat Hunt"},
   "news": {"title": "That's quite new", "description": "read the news", "is_hidden": false, "category": "Cat Hunt"},
   "boosted": {"title": "Boosted", "description": "get boosted by a prism", "is_hidden": false, "category": "Cat Hunt"},
 
@@ -76,7 +76,7 @@
   "perfection": {"title": "Purrfection", "description": "dot zero zero", "is_hidden": false, "category": "Hard"},
   "all_the_same": {"title": "All The Same", "description": "get all digits repeating in the time", "is_hidden": false, "category": "Hard"},
   "paradoxical_gambler": {"title": "Paradoxical Gambler", "description": "gamble so hard you create a paradox", "is_hidden": false, "category": "Hard"},
-  "darkest_market": {"title": "Darkest Market", "description": "20x more shady", "is_hidden": false, "category": "Hard"},
+  "darkest_market": {"title": "Hyper Hidden", "description": "20x more hidden", "is_hidden": false, "category": "Hard"},
   "capitalism": {"title": "Capitalism", "description": "trade over 1k cats", "is_hidden": false, "category": "Hard"},
   "profit": {"title": "Profit", "description": "get 100+ more value in a trade", "is_hidden": true, "category": "Hard"},
   "prism": {"title": "Oooh Shiny", "description": "get a prism", "is_hidden": false, "category": "Hard"},

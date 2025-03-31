@@ -89,7 +89,7 @@ pack_data = [
     {"name": "Celestial", "value": 2000, "upgrade": 0, "totalvalue": 2000},  # is that a madeline celeste reference????
 ]
 
-prism_names = [
+prism_names_start = [
     "Alpha",
     "Bravo",
     "Charlie",
@@ -115,7 +115,34 @@ prism_names = [
     "Whiskey",
     "X-ray",
     "Yankee",
+    "Zulu",
 ]
+prism_names_end = [
+    "",
+    " Two",
+    " Three",
+    " Four",
+    " Five",
+    " Six",
+    " Seven",
+    " Eight",
+    " Nine",
+    " Ten",
+    " Eleven",
+    " Twelve",
+    " Thirteen",
+    " Fourteen",
+    " Fifteen",
+    " Sixteen",
+    " Seventeen",
+    " Eighteen",
+    " Nineteen",
+    " Twenty",
+]
+prism_names = []
+for i in prism_names_end:
+    for j in prism_names_start:
+        prism_names.append(j + i)
 
 vote_button_texts = [
     "You havent voted today!",
@@ -158,6 +185,7 @@ hints = [
     "4 with 832 zeros cats were deleted on September 5th, 2024",
     "Cat Bot has reached top #19 on top.gg in January 2025",
     "Cat Bot has reached top #17 on top.gg in February 2025",
+    "Cat Bot has reached top #12 on top.gg in March 2025",
     "Most Cat Bot features were made within 2 weeks",
     "Cat Bot was initially made for only one server",
     "Cat Bot is made in Python with discord.py",
@@ -250,6 +278,9 @@ temp_catches_storage = []
 
 # to prevent weird behaviour shortly after a rain
 temp_rains_storage = []
+
+# for "faster than 10 seconds" belated bp quest
+temp_time_storage = {}
 
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
@@ -480,19 +511,17 @@ def generate_quest(user: Profile, quest_type: str):
     while True:
         quest = random.choice(list(battle["quests"][quest_type].keys()))
         if quest in ["slots", "reminder"]:
+            # removed quests
             continue
         elif quest == "prism":
-            prism_boost = 0
-            for prism in Prism.select().where(Prism.guild_id == user.guild_id):
-                if prism.user_id == user.user_id:
-                    prism_boost += 5
-                else:
-                    prism_boost += 1
-            if prism_boost < 15:
+            total_count = Prism.select().where(Prism.guild_id == user.guild_id).count()
+            user_count = Prism.select().where((Prism.guild_id == user.guild_id) & (Prism.user_id == user.user_id)).count()
+            prism_boost = 0.13953 * math.log(user_count + (total_count - user_count) * 0.2 + 1)
+            if prism_boost < 0.15:
                 continue
         elif quest == "news":
             global_user, _ = User.get_or_create(user_id=user.user_id)
-            if len(news_list) <= len(global_user.news_state.strip()) and "0" not in global_user.news_state:
+            if len(news_list) <= len(global_user.news_state.strip()) and "0" not in global_user.news_state.strip()[-4:]:
                 continue
         elif quest == "achievement":
             unlocked = 0
@@ -579,6 +608,9 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         voted_at = datetime.datetime.utcfromtimestamp(global_user.vote_time_topgg)
         if voted_at.weekday() >= 4:
             user.vote_reward *= 2
+
+        if global_user.vote_streak % 5 == 0:
+            user.pack_gold += 1
 
         current_xp = user.progress + user.vote_reward
         quest_complete = True
@@ -717,9 +749,15 @@ def progress_embed(message, user, level_data, current_xp, old_xp, quest_data, di
     else:
         reward_text = f"{get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack"
 
+    global_user = User.get(user.user_id)
+    if global_user.vote_streak % 5 == 0:
+        streak_reward = f"\n🔥 +1 {get_emoji('goldpack')} Gold pack"
+    else:
+        streak_reward = ""
+
     return discord.Embed(
         title=f"✅ {title}",
-        description=f"{progress_line}\n{current_xp}/{level_data['xp']} XP (+{diff})\nReward: {reward_text}",
+        description=f"{progress_line}\n{current_xp}/{level_data['xp']} XP (+{diff}){streak_reward}\nReward: {reward_text}",
         color=0x007F0E,
     ).set_author(name="/battlepass " + level_text)
 
@@ -803,6 +841,16 @@ async def finale(message, user):
 # function to autocomplete cat_type choices for /givecat, and /forcespawn, which also allows more than 25 options
 async def cat_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     return [discord.app_commands.Choice(name=choice, value=choice) for choice in cattypes if current.lower() in choice.lower()][:25]
+
+
+# function to autocomplete /cat, it only shows the cats you have
+async def cat_command_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
+    user = get_profile(interaction.guild.id, interaction.user.id)
+    choices = []
+    for choice in cattypes:
+        if current.lower() in choice.lower() and user[f"cat_{choice}"] > 0:
+            choices.append(discord.app_commands.Choice(name=choice, value=choice))
+    return choices[:25]
 
 
 async def lb_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
@@ -978,10 +1026,11 @@ async def postpone_reminder(interaction):
 
 # a loop for various maintaince which is ran every 5 minutes
 async def maintaince_loop():
-    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown
+    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_time_storage
     last_loop_time = time.time()
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
+    temp_time_storage = {}
     catchcooldown = {}
     fakecooldown = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
@@ -1157,6 +1206,47 @@ async def maintaince_loop():
 
     if config.COLLECT_STATS:
         await stats.bump("reminders", "misc", len(proccessed_users))
+
+    # repeated vote reminders for streaks over 5
+    for user in User.select().where(
+        (User.reminder_vote != 0) & ((43200 < User.vote_time_topgg + 43200 < time.time()) | (1 < User.reminder_vote < time.time()))
+    ):
+        select = Profile.select().where((Profile.user_id == user.user_id) & Profile.reminders_enabled)
+        if not select.exists():
+            continue
+        await asyncio.sleep(0.1)
+
+        user = User.get(user.user_id)
+
+        if not ((user.reminder_vote != 0) and ((43200 < user.vote_time_topgg + 43200 < time.time()) or (1 < user.reminder_vote < time.time()))):
+            continue
+
+        view = View(timeout=VIEW_TIMEOUT)
+        button = Button(
+            emoji=get_emoji("topgg"),
+            label=random.choice(vote_button_texts),
+            style=ButtonStyle.gray,
+            url="https://top.gg/bot/966695034340663367/vote",
+        )
+        view.add_item(button)
+
+        button = Button(label="Postpone", custom_id="vote")
+        button.callback = postpone_reminder
+        view.add_item(button)
+
+        try:
+            user_dm = await bot.fetch_user(user.user_id)
+            await user_dm.send("You can vote now!", view=view)
+        except Exception:
+            pass
+        user.reminder_vote = 0
+        proccessed_users.append(user)
+
+    with db.atomic():
+        User.bulk_update(proccessed_users, fields=[User.reminder_vote], batch_size=50)
+
+    if config.COLLECT_STATS:
+        await stats.bump("reminders", "vote", len(proccessed_users))
 
     for reminder in Reminder.select().where(Reminder.time < time.time()):
         try:
@@ -1655,7 +1745,6 @@ async def on_message(message: discord.Message):
         if (
             ("sus" in text.lower() or "amog" in text.lower() or "among" in text.lower() or "impost" in text.lower() or "report" in text.lower())
             and (channel := Channel.get_or_none(channel_id=message.channel.id))
-            and channel.cat
             and channel.cattype == "Sus"
         ):
             await achemb(message, "sussy", "send")
@@ -1675,6 +1764,36 @@ async def on_message(message: discord.Message):
                     pointlaugh_ratelimit[message.channel.id] = pointlaugh_ratelimit.get(message.channel.id, 0) + 1
                 except Exception:
                     pass
+
+            # belated battlepass
+            if channel and channel.lastcatches + 3 > int(time.time()):
+                await progress(message, user, "3cats")
+                if channel.cattype == "Fine":
+                    await progress(message, user, "2fine")
+                if channel.cattype == "Good":
+                    await progress(message, user, "good")
+                if temp_time_storage.get(message.channel.id, 10) + int(time.time()) - channel.lastcatches < 10:
+                    await progress(message, user, "under10")
+                if random.randint(0, 1) == 0:
+                    await progress(message, user, "even")
+                else:
+                    await progress(message, user, "odd")
+                if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
+                    await progress(message, user, "rare+")
+                total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
+                user_count = Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.author.id)).count()
+                if 0.13953 * math.log(user_count + (total_count - user_count) * 0.2 + 1) > random.random():
+                    await progress(message, user, "prism")
+                if user.catch_quest == "finenice":
+                    # 0 none
+                    # 1 fine
+                    # 2 nice
+                    # 3 both
+                    if channel.cattype == "Fine" and user.catch_progress in [0, 2]:
+                        await progress(message, user, "finenice")
+                    elif channel.cattype == "Nice" and user.catch_progress in [0, 1]:
+                        await progress(message, user, "finenice")
+                        await progress(message, user, "finenice")
         else:
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
@@ -1781,68 +1900,51 @@ async def on_message(message: discord.Message):
                 suffix_string = ""
 
                 # calculate prism boost
-                boost_chance = 0
-                disabled_chance = 0
-                boost_prisms = []
-                disabled_prisms = []
-                for prism in Prism.select().where(Prism.guild_id == message.guild.id):
-                    if prism.user_id == message.author.id:
-                        if prism[f"enabled_{le_emoji.lower()}"]:
-                            boost_chance += 5
-                            boost_prisms.extend([["Your", prism.name]] * 5)
-                        else:
-                            disabled_chance += 5
-                            disabled_prisms.extend([["Your", prism.name]] * 5)
-                    else:
-                        if prism[f"enabled_{le_emoji.lower()}"]:
-                            boost_chance += 1
-                            boost_prisms.append([prism.user_id, prism.name])
-                        else:
-                            disabled_chance += 1
-                            disabled_prisms.append([prism.user_id, prism.name])
-                all_prisms = boost_prisms + disabled_prisms
-
-                # apply prism boost
-                did_boost = False
-                if random.randint(1, 100) <= boost_chance + disabled_chance:
-                    boost_prism = random.choice(all_prisms)
-                    if boost_prism[0] != "Your":
-                        boost_applied_prism = f"<@{boost_prism[0]}>'s prism " + boost_prism[1]
-                    else:
-                        boost_applied_prism = "Your prism " + boost_prism[1]
-
-                    if boost_prism in boost_prisms:
-                        did_boost = True
-                        user.boosted_catches += 1
-                        prism_which_boosted = Prism.get(guild_id=message.guild.id, name=boost_prism[1])
-                        prism_which_boosted.catches_boosted += 1
-                        prism_which_boosted.save()
-                        try:
-                            le_old_emoji = le_emoji
-                            le_emoji = cattypes[cattypes.index(le_emoji) + 1]
-                            normal_bump = True
-                        except IndexError:
-                            # :SILENCE:
-                            normal_bump = False
-                            if not channel.forcespawned:
-                                if channel.cat_rains > time.time():
-                                    await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                                    await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                                    await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                                    channel.cat_rains += 606
-                                else:
-                                    channel.cat_rains = time.time() + 606
-                                channel.yet_to_spawn = 0
-                                decided_time = 6
-
-                        if normal_bump:
-                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
-                        else:
-                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
-                    else:
-                        suffix_string += (
-                            f"\n{get_emoji('prism')} {boost_applied_prism} would have boosted this catch, but this boost was disabled by its owner."
+                total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
+                user_count = Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.author.id)).count()
+                total_inputs = user_count + (total_count - user_count) * 0.2
+                if (chance := 0.13953 * math.log(total_inputs + 1)) > random.random():
+                    # determine whodunnit
+                    strong_chance = chance * (user_count / total_inputs)
+                    if random.uniform(0, chance) < strong_chance:
+                        # boost from our own prism
+                        prism_which_boosted = random.choice(
+                            Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.author.id)).execute()
                         )
+                        boost_applied_prism = "Your prism " + prism.name
+                    else:
+                        # boost from another prism
+                        prism_which_boosted = random.choice(
+                            Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id != message.author.id)).execute()
+                        )
+                        boost_applied_prism = f"<@{prism_which_boosted.user_id}>'s prism " + prism.name
+
+                    did_boost = True
+                    user.boosted_catches += 1
+                    prism_which_boosted.catches_boosted += 1
+                    prism_which_boosted.save()
+                    try:
+                        le_old_emoji = le_emoji
+                        le_emoji = cattypes[cattypes.index(le_emoji) + 1]
+                        normal_bump = True
+                    except IndexError:
+                        # :SILENCE:
+                        normal_bump = False
+                        if not channel.forcespawned:
+                            if channel.cat_rains > time.time():
+                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                                channel.cat_rains += 606
+                            else:
+                                channel.cat_rains = time.time() + 606
+                            channel.yet_to_spawn = 0
+                            decided_time = 6
+
+                    if normal_bump:
+                        suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
+                    else:
+                        suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
 
                 icon = get_emoji(le_emoji.lower() + "cat")
 
@@ -1921,7 +2023,7 @@ async def on_message(message: discord.Message):
 
                 vote_time_user, _ = User.get_or_create(user_id=message.author.id)
                 if random.randint(0, 10) == 0 and user.cat_Fine >= 20 and not user.dark_market_active:
-                    button = Button(label="You see a shadow...", style=ButtonStyle.blurple)
+                    button = Button(label="You see a shadow...", style=ButtonStyle.red)
                     button.callback = dark_market_cutscene
                 elif config.WEBHOOK_VERIFY and vote_time_user.vote_time_topgg + 43200 < time.time():
                     button = Button(
@@ -2032,17 +2134,17 @@ async def on_message(message: discord.Message):
 
                 # handle battlepass
                 await progress(message, user, "3cats")
-                if le_emoji == "Fine":
+                if channel.cattype == "Fine":
                     await progress(message, user, "2fine")
-                if le_emoji == "Good":
+                if channel.cattype == "Good":
                     await progress(message, user, "good")
-                if do_time and time_caught < 10:
+                if time_caught >= 0 and time_caught < 10:
                     await progress(message, user, "under10")
-                if do_time and int(time_caught) % 2 == 0:
+                if time_caught >= 0 and int(time_caught) % 2 == 0:
                     await progress(message, user, "even")
-                if do_time and int(time_caught) % 2 == 1:
+                if time_caught >= 0 and int(time_caught) % 2 == 1:
                     await progress(message, user, "odd")
-                if le_emoji not in ["Fine", "Nice", "Good"]:
+                if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
                     await progress(message, user, "rare+")
                 if did_boost:
                     await progress(message, user, "prism")
@@ -2051,9 +2153,9 @@ async def on_message(message: discord.Message):
                     # 1 fine
                     # 2 nice
                     # 3 both
-                    if le_emoji == "Fine" and user.catch_progress in [0, 2]:
+                    if channel.cattype == "Fine" and user.catch_progress in [0, 2]:
                         await progress(message, user, "finenice")
-                    elif le_emoji == "Nice" and user.catch_progress in [0, 1]:
+                    elif channel.cattype == "Nice" and user.catch_progress in [0, 1]:
                         await progress(message, user, "finenice")
                         await progress(message, user, "finenice")
 
@@ -2062,6 +2164,8 @@ async def on_message(message: discord.Message):
             finally:
                 user.save()
                 channel.save()
+                if time_caught >= 0:
+                    temp_time_storage[message.channel.id] = time_caught
                 if decided_time:
                     await asyncio.sleep(decided_time)
                     try:
@@ -2302,15 +2406,36 @@ async def info(message: discord.Interaction):
     ).set_thumbnail(url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png")
 
     # add "last update" to footer if we are using git
-    if config.GITHUB_CHANNEL_ID:
+    try:
         embedVar.timestamp = datetime.datetime.utcfromtimestamp(int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8")))
         embedVar.set_footer(text="Last code update:")
+    except Exception:
+        pass
     await message.followup.send(embed=embedVar)
 
 
 @bot.tree.command(description="Confused? Check out the Cat Bot Wiki!")
 async def wiki(message: discord.Interaction):
-    await message.response.send_message("https://wiki.minkos.lol/")
+    embed = discord.Embed(title="Cat Bot Wiki", color=0x6E593C)
+    embed.description = "\n".join(
+        [
+            "Main Page: https://wiki.minkos.lol/",
+            "",
+            "[Cat Bot](https://wiki.minkos.lol/cat-bot)",
+            "[Cat Spawning](https://wiki.minkos.lol/spawning)",
+            "[Commands](https://wiki.minkos.lol/commands)",
+            "[Cat Types](https://wiki.minkos.lol/cat-types)",
+            "[Cattlepass](https://wiki.minkos.lol/cattlepass)",
+            "[Achievements](https://wiki.minkos.lol/achievements)",
+            "[Packs](https://wiki.minkos.lol/packs)",
+            "[Trading](https://wiki.minkos.lol/trading)",
+            "[Gambling](https://wiki.minkos.lol/gambling)",
+            "[The Dark Market](https://wiki.minkos.lol/dark-market)",
+            "[Prisms](https://wiki.minkos.lol/prisms)",
+        ]
+    )
+    await message.response.send_message(embed=embed)
+    await achemb(message, "wiki", "send")
 
 
 @bot.tree.command(description="Read The Cat Bot Times™️")
@@ -2381,9 +2506,10 @@ async def news(message: discord.Interaction):
             view.add_item(button)
 
         # pages buttons
-        button = Button(label="<-", style=ButtonStyle.gray, disabled=bool(current_page == 0), row=4)
-        button.callback = prev_page
-        view.add_item(button)
+        if current_page > 0:
+            button = Button(label="<-", style=ButtonStyle.gray, row=4)
+            button.callback = prev_page
+            view.add_item(button)
 
         button = Button(
             label="Mark all as read",
@@ -2394,7 +2520,7 @@ async def news(message: discord.Interaction):
         view.add_item(button)
 
         button = Button(
-            label="->",
+            label="->" if current_page != 0 else "Archive",
             style=ButtonStyle.gray,
             disabled=bool(current_page * 4 + 4 >= len(buttons)),
             row=4,
@@ -2661,10 +2787,7 @@ async def last(message: discord.Interaction):
     if channel and not channel.cat:
         nextpossible = f"\nthe next cat will spawn between <t:{int(lasttime) + channel.spawn_times_min}:R> and <t:{int(lasttime) + channel.spawn_times_max}:R>"
 
-    embed = discord.Embed(description=f"the last cat in this channel was caught {displayedtime}.{nextpossible}", color=0x6E593C)
-    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/spawning")
-
-    await message.response.send_message(embed=embed)
+    await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.{nextpossible}")
 
 
 @bot.tree.command(description="View all the juicy numbers behind cat types")
@@ -2688,8 +2811,6 @@ async def catalogue(message: discord.Interaction):
             name=title,
             value=f"{round(len(CAT_TYPES) / type_dict[cat_type], 2)} value\n{in_server:,} in this server",
         )
-
-    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/cat-types")
 
     await message.response.send_message(embed=embed)
 
@@ -2872,14 +2993,10 @@ async def gen_inventory(message, person_id):
     minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
 
     # count prism stuff
-    prisms = []
-    prism_boost = 0
-    for prism in Prism.select().where(Prism.guild_id == message.guild.id):
-        if prism.user_id == person_id.id:
-            prisms.append(prism.name)
-            prism_boost += 5
-        else:
-            prism_boost += 1
+    prisms = [i.name for i in Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.user.id)).execute()]
+    total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
+    user_count = len(prisms)
+    prism_boost = round(0.13953 * math.log(user_count + (total_count - user_count) * 0.2 + 1) * 100, 3)
     if len(prisms) == 0:
         prism_list = "None"
     elif len(prisms) <= 3:
@@ -2953,7 +3070,7 @@ async def gen_inventory(message, person_id):
     if me:
         # give some aches if we are vieweing our own inventory
         global_user, _ = User.get_or_create(user_id=message.user.id)
-        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state:
+        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state.strip()[-4:]:
             embedVar.set_author(name="You have unread news! /news")
 
         if give_collector:
@@ -3158,7 +3275,6 @@ Fastest times are not saved during rains.
 You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         color=0x6E593C,
     )
-    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/cat-bot#cat-rains")
 
     async def do_rain(interaction, rain_length):
         # i LOOOOVE checks
@@ -3424,17 +3540,12 @@ async def packs(message: discord.Interaction):
 
     description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n\nClick the buttons below to start opening packs!"
     embed = discord.Embed(title=f"{get_emoji('bronzepack')} Packs", description=description, color=0x6E593C)
-    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/packs")
     user = get_profile(message.guild.id, message.user.id)
     await message.response.send_message(embed=embed, view=gen_view(user))
 
 
 @bot.tree.command(description="who thought this was a good idea")
 async def battlepass(message: discord.Interaction):
-    global_user, _ = User.get_or_create(user_id=message.user.id)
-    if global_user.vote_time_topgg + 12 * 3600 > time.time():
-        await progress(message, get_profile(message.guild.id, message.user.id), "vote")
-
     current_mode = ""
 
     async def toggle_reminders(interaction: discord.Interaction):
@@ -3459,24 +3570,14 @@ async def battlepass(message: discord.Interaction):
         user.save()
 
         view = View(timeout=VIEW_TIMEOUT)
-        button = Button(
-            label="Main",
-            style=ButtonStyle.green if current_mode == "Main" else ButtonStyle.blurple,
-        )
+        button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
         button.callback = gen_main
         view.add_item(button)
 
-        button = Button(
-            label="Rewards",
-            style=ButtonStyle.green if current_mode == "Rewards" else ButtonStyle.blurple,
-        )
-        button.callback = gen_rewards
-        view.add_item(button)
-
         if user.reminders_enabled:
-            button = Button(label="Disable Reminders", style=ButtonStyle.blurple)
+            button = Button(emoji="🔕", style=ButtonStyle.blurple)
         else:
-            button = Button(label="Enable Reminders", style=ButtonStyle.green)
+            button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
         button.callback = toggle_reminders
         view.add_item(button)
 
@@ -3496,6 +3597,12 @@ async def battlepass(message: discord.Interaction):
         user = get_profile(message.guild.id, message.user.id)
         refresh_quests(user)
 
+        global_user = User.get(user_id=message.user.id)
+        if global_user.vote_time_topgg + 12 * 3600 > time.time():
+            await progress(message, get_profile(message.guild.id, message.user.id), "vote")
+            user = get_profile(message.guild.id, message.user.id)
+            global_user = User.get(user_id=message.user.id)
+
         # season end
         now = datetime.datetime.utcnow()
 
@@ -3509,8 +3616,11 @@ async def battlepass(message: discord.Interaction):
         description = f"Season ends <t:{timestamp}:R>\n\n"
 
         # vote
+        streak_string = ""
+        if global_user.vote_streak >= 5 and user.vote_cooldown + 24 * 3600 > time.time():
+            streak_string = f" (🔥 {global_user.vote_streak}x streak)"
         if user.vote_cooldown != 0:
-            description += f"✅ ~~Vote on Top.gg~~\n - Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>\n"
+            description += f"✅ ~~Vote on Top.gg~~\n - Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>{streak_string}\n"
         else:
             # inform double vote xp during weekends
             is_weekend = now.weekday() >= 4
@@ -3521,36 +3631,41 @@ async def battlepass(message: discord.Interaction):
             description += f"{get_emoji('topgg')} [Vote on Top.gg](https://top.gg/bot/966695034340663367/vote)\n"
 
             if is_weekend:
-                description += f" - Reward: ~~{user.vote_reward}~~ **{user.vote_reward * 2}** XP\n"
+                description += f" - Reward: ~~{user.vote_reward}~~ **{user.vote_reward * 2}** XP"
             else:
-                description += f" - Reward: {user.vote_reward} XP\n"
+                description += f" - Reward: {user.vote_reward} XP"
+
+            if global_user.vote_streak % 5 == 4 and user.vote_cooldown + 24 * 3600 > time.time():
+                description += f" + {get_emoji('goldpack')} 1 Gold pack"
+
+            description += f"{streak_string}\n"
 
         # catch
         catch_quest = battle["quests"]["catch"][user.catch_quest]
         if user.catch_cooldown != 0:
             description += f"✅ ~~{catch_quest['title']}~~\n - Refreshes <t:{int(user.catch_cooldown + 12 * 3600 if user.catch_cooldown + 12 * 3600 < timestamp else timestamp)}:R>\n"
         else:
-            progress = ""
+            progress_string = ""
             if catch_quest["progress"] != 1:
                 if user.catch_quest == "finenice":
                     try:
                         real_progress = ["need both", "need Nice", "need Fine", "done"][user.catch_progress]
                     except IndexError:
                         real_progress = "error"
-                    progress = f" ({real_progress})"
+                    progress_string = f" ({real_progress})"
                 else:
-                    progress = f" ({user.catch_progress}/{catch_quest['progress']})"
-            description += f"{get_emoji(catch_quest['emoji'])} {catch_quest['title']}{progress}\n - Reward: {user.catch_reward} XP\n"
+                    progress_string = f" ({user.catch_progress}/{catch_quest['progress']})"
+            description += f"{get_emoji(catch_quest['emoji'])} {catch_quest['title']}{progress_string}\n - Reward: {user.catch_reward} XP\n"
 
         # misc
         misc_quest = battle["quests"]["misc"][user.misc_quest]
         if user.misc_cooldown != 0:
             description += f"✅ ~~{misc_quest['title']}~~\n - Refreshes <t:{int(user.misc_cooldown + 12 * 3600 if user.misc_cooldown + 12 * 3600 < timestamp else timestamp)}:R>\n\n"
         else:
-            progress = ""
+            progress_string = ""
             if misc_quest["progress"] != 1:
-                progress = f" ({user.misc_progress}/{misc_quest['progress']})"
-            description += f"{get_emoji(misc_quest['emoji'])} {misc_quest['title']}{progress}\n - Reward: {user.misc_reward} XP\n\n"
+                progress_string = f" ({user.misc_progress}/{misc_quest['progress']})"
+            description += f"{get_emoji(misc_quest['emoji'])} {misc_quest['title']}{progress_string}\n - Reward: {user.misc_reward} XP\n\n"
 
         if user.battlepass >= len(battle["seasons"][str(user.season)]):
             description += f"**Extra Rewards** [{user.progress}/1500 XP]\n"
@@ -3580,14 +3695,18 @@ async def battlepass(message: discord.Interaction):
                 else:
                     description += f"*Next:* 1500 XP - {get_emoji('stonepack')} Stone pack"
             else:
-                level_data = battle["seasons"][str(user.season)][user.battlepass + 1]
-                description += f"*Next:* {level_data['xp']} XP - "
-                if level_data["reward"] == "Rain":
-                    description += f"☔ {level_data['amount']} minutes of rain"
-                elif level_data["reward"] in cattypes:
-                    description += f"{get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']} cats"
-                else:
-                    description += f"{get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack"
+                levels = battle["seasons"][str(user.season)]
+                for num, level_data in enumerate(levels):
+                    if num < user.battlepass:
+                        description += get_emoji("bp_complete")
+                    elif level_data["reward"] == "Rain":
+                        description += get_emoji(str(level_data["amount"]) + "rain")
+                    elif level_data["reward"] in cattypes:
+                        description += get_emoji(level_data["reward"].lower() + "cat")
+                    else:
+                        description += get_emoji(level_data["reward"].lower() + "pack")
+                    if num % 10 == 9:
+                        description += "\n"
 
         embedVar = discord.Embed(
             title=f"Cattlepass Season {user.season}",
@@ -3596,102 +3715,24 @@ async def battlepass(message: discord.Interaction):
         ).set_footer(text=rain_shill)
         view = View(timeout=VIEW_TIMEOUT)
 
-        button = Button(label="Main", style=ButtonStyle.green)
+        button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
         button.callback = gen_main
         view.add_item(button)
 
-        button = Button(label="Rewards", style=ButtonStyle.blurple)
-        button.callback = gen_rewards
-        view.add_item(button)
-
         if user.reminders_enabled:
-            button = Button(label="Disable Reminders", style=ButtonStyle.blurple)
+            button = Button(emoji="🔕", style=ButtonStyle.blurple)
         else:
-            button = Button(label="Enable Reminders", style=ButtonStyle.green)
+            button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
         button.callback = toggle_reminders
         view.add_item(button)
 
-        global_user, _ = User.get_or_create(user_id=message.user.id)
-        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state:
+        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state.strip()[-4:]:
             embedVar.set_author(name="You have unread news! /news")
-        else:
-            embedVar.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/cattlepass")
 
         if first:
             await interaction.followup.send(embed=embedVar, view=view)
         else:
             await interaction.edit_original_response(embed=embedVar, view=view)
-
-    async def gen_rewards(interaction):
-        nonlocal current_mode
-        if interaction.user.id != message.user.id:
-            await do_funny(interaction)
-            return
-        await interaction.response.defer()
-        current_mode = "Rewards"
-        user = get_profile(message.guild.id, message.user.id)
-        description = ""
-        if user.season >= 3:
-            description = "To open packs, run `/packs`.\n\n"
-        description += "**Rewards this season**\n"
-
-        rewards = {}
-        for i in battle["seasons"][str(user.season)]:
-            amount = i["amount"] if i["reward"] != "Rain" else 0
-            rewards[i["reward"]] = rewards.get(i["reward"], 0) + amount
-
-        if user.season in [1, 2]:
-            rewards = {k: v for k, v in sorted(rewards.items(), key=lambda item: item[1], reverse=True)}
-        else:
-            order_mapping = {item["name"]: index for index, item in enumerate(pack_data)}
-            order_mapping["Rain"] = len(order_mapping)
-            rewards = {k: v for k, v in sorted(rewards.items(), key=lambda item: order_mapping[item[0]])}
-
-        counter = len(rewards)
-        for k, v in rewards.items():
-            if k == "Rain":
-                emoji = "☔"
-                v = "2m"
-                k = "of Cat Rain"
-            elif k in cattypes:
-                emoji = get_emoji(k.lower() + "cat")
-            else:
-                emoji = get_emoji(k.lower() + "pack")
-            prefix = ""
-
-            if counter == 4 or counter == 3:
-                prefix = "### "
-            elif counter == 2:
-                prefix = "## "
-            elif counter == 1:
-                prefix = "# "
-
-            description += f"{prefix}{emoji} {v} {k}\n"
-            counter -= 1
-
-        embedVar = discord.Embed(
-            title=f"Cattlepass Season {user.season}",
-            description=description,
-            color=0x6E593C,
-        )
-        view = View(timeout=VIEW_TIMEOUT)
-
-        button = Button(label="Main", style=ButtonStyle.blurple)
-        button.callback = gen_main
-        view.add_item(button)
-
-        button = Button(label="Rewards", style=ButtonStyle.green)
-        button.callback = gen_rewards
-        view.add_item(button)
-
-        if user.reminders_enabled:
-            button = Button(label="Disable Reminders", style=ButtonStyle.blurple)
-        else:
-            button = Button(label="Enable Reminders", style=ButtonStyle.green)
-        button.callback = toggle_reminders
-        view.add_item(button)
-
-        await interaction.edit_original_response(embed=embedVar, view=view)
 
     await gen_main(message, True)
 
@@ -3712,42 +3753,16 @@ async def vote(message: discord.Interaction):
 @bot.tree.command(description="cat prisms are a special power up")
 async def prism(message: discord.Interaction):
     icon = get_emoji("prism")
+    page_number = 0
 
-    embed = discord.Embed(
-        title=f"{icon} Cat Prisms",
-        color=0x6E593C,
-        description="are a tradeable power-up which occasionally bumps cat rarity up by one. For each prism in the server you get 1% chance of activation, or 5% if you are the owner of that prism. There is a limit of 25 prisms per server and 5 per person.",
-    )
+    total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
+    user_count = Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.user.id)).count()
+    global_boost = round(0.13953 * math.log(total_count * 0.2 + 1) * 100, 3)
+    user_boost = round(0.13953 * math.log(user_count + (total_count - user_count) * 0.2 + 1) * 100, 3)
+    prism_texts = []
 
-    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/prisms")
-
-    global_boost = 0
-    user_boost = 0
-    user_count = 0
-    owned_prisms = []
-    owned_prisms_name = []  # i sleepy and dunno any better
-    selected_prism = None
-
-    for prism in Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.name):
-        global_boost += 1
-        if prism.user_id == message.user.id:
-            owned_prisms.append(prism)
-            owned_prisms_name.append(prism.name)
-            user_boost += 5
-            user_count += 1
-        else:
-            user_boost += 1
-        embed.add_field(
-            name=f"{icon} {prism.name}",
-            value=f"Owner: <@{prism.user_id}>\nCrafted by <@{prism.creator}>\non <t:{prism.time}:D>",
-            inline=True,
-        )
-
-    if len(embed.fields) > 25:
-        await message.response.send_message("i love skibidi toilet", ephemeral=True)
-        return
-
-    embed.set_footer(text=f"Boost for everyone: {global_boost}% | {message.user}'s total boost: {user_boost}%")
+    for prism in Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.time):
+        prism_texts.append(f"{icon} **{prism.name}** Owner: <@{prism.user_id}>\n Crafted on <t:{prism.time}:D> by <@{prism.creator}>")
 
     async def confirm_craft(interaction: discord.Interaction):
         await interaction.response.defer()
@@ -3758,14 +3773,6 @@ async def prism(message: discord.Interaction):
             if user["cat_" + i] < 1:
                 await interaction.followup.send("You don't have enough cats. Nice try though.", ephemeral=True)
                 return
-
-        # couunt how many prisms we have
-        prism_count = 0
-        for prism in Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.user.id)):
-            prism_count += 1
-        if prism_count >= 5:
-            await interaction.followup.send("You already have 5 prisms. Nice try though.", ephemeral=True)
-            return
 
         if not isinstance(
             message.channel,
@@ -3786,6 +3793,9 @@ async def prism(message: discord.Interaction):
             except IndexError:
                 await interaction.followup.send("This server has reached the prism limit.", ephemeral=True)
                 return
+            if youngest_prism.get().time + 3 > int(time.time()):
+                await interaction.followup.send("Please wait a bit before doing this.", ephemeral=True)
+                return
         else:
             selected_name = prism_names[0]
 
@@ -3804,6 +3814,7 @@ async def prism(message: discord.Interaction):
         )
         await message.followup.send(f"{icon} {message.user.mention} has created prism {selected_name}!")
         await achemb(message, "prism", "send")
+        await achemb(message, "collecter", "send")
 
     async def craft_prism(interaction: discord.Interaction):
         if interaction.user.id == message.user.id:
@@ -3832,103 +3843,46 @@ async def prism(message: discord.Interaction):
         else:
             await do_funny(interaction)
 
-    def prism_config_embed(selected_prism):
-        embedVar = discord.Embed(title=f"Configure {selected_prism.name}", color=0x6E593C)
-        embedVar.description = "Turn off any boosts from your prism that you don't want\n\n__Upgrades from:__\n"
-        for i in cattypes:
-            icon1 = get_emoji(i.lower() + "cat")
-            enabled = "✅" if selected_prism[f"enabled_{i.lower()}"] else "❌"
-            embedVar.description += f"{enabled} {icon1} {i}\n"
+    async def prev_page(interaction):
+        nonlocal page_number
+        page_number -= 1
+        embed, view = gen_page()
+        await interaction.response.edit_message(embed=embed, view=view)
+
+    async def next_page(interaction):
+        nonlocal page_number
+        page_number += 1
+        embed, view = gen_page()
+        await interaction.response.edit_message(embed=embed, view=view)
+
+    def gen_page():
+        embed = discord.Embed(
+            title=f"{icon} Cat Prisms",
+            color=0x6E593C,
+            description="are a tradeable power-up which occasionally bumps cat rarity up by one. For each prism you own your chance of a boost increases, and it increases but less if you aren't the owner of that prism.\n\n",
+        ).set_footer(text=f"Boost for everyone: {global_boost}% | {message.user}'s total boost: {user_boost}%")
+
+        embed.description += "\n".join(prism_texts[page_number * 26 : (page_number + 1) * 26])
 
         view = View(timeout=VIEW_TIMEOUT)
-        edit_button = Button(label="Edit", style=ButtonStyle.blurple)
-        edit_button.callback = editb
-        view.add_item(edit_button)
-        return embedVar, view
 
-    async def configb(interaction):
-        if interaction.user.id == message.user.id:
-            modal = PrismModal()
-            await interaction.response.send_modal(modal)
-        else:
-            await do_funny(interaction)
-
-    class PrismModal(discord.ui.Modal):
-        def __init__(self):
-            super().__init__(
-                title="Configure a Prism",
-                timeout=3600,
-            )
-
-            self.prismname = discord.ui.TextInput(label="Prism to configure:", placeholder="Alpha")
-            self.add_item(self.prismname)
-
-        async def on_submit(self, interaction: discord.Interaction):
-            nonlocal owned_prisms, owned_prisms_name, selected_prism
-            if self.prismname.value not in owned_prisms_name:
-                await interaction.response.send_message("you dont even have that prism what", ephemeral=True)
-                return
-
-            # i ask for forgiveness
-            for prism in owned_prisms:
-                if prism.name == self.prismname.value:
-                    selected_prism = prism
-
-            if not selected_prism:
-                await interaction.response.send_message("you dont even have that prism what", ephemeral=True)
-                return
-
-            embedVar, view = prism_config_embed(selected_prism)
-            await interaction.response.send_message(embed=embedVar, view=view)
-
-    async def editb(interaction):
-        if interaction.user.id == message.user.id:
-            modal = EditModal()
-            await interaction.response.send_modal(modal)
-        else:
-            await do_funny(interaction)
-
-    class EditModal(discord.ui.Modal):
-        def __init__(self):
-            super().__init__(
-                title="Toggle a Boost",
-                timeout=3600,
-            )
-
-            self.toggletype = discord.ui.TextInput(label="Boost to toggle:", placeholder="Fine")
-            self.add_item(self.toggletype)
-
-        async def on_submit(self, interaction: discord.Interaction):
-            nonlocal owned_prisms, owned_prisms_name, selected_prism
-            await interaction.response.defer(ephemeral=True)
-            if not selected_prism or selected_prism.user_id != interaction.user.id:
-                await interaction.followup.send("you dont even have that prism what", ephemeral=True)
-                return
-            if self.toggletype.value not in cattypes:
-                await interaction.followup.send("you cant toggle that", ephemeral=True)
-                return
-            selected_prism[f"enabled_{self.toggletype.value.lower()}"] = not selected_prism[f"enabled_{self.toggletype.value.lower()}"]
-            selected_prism.save()
-
-            embedVar, view = prism_config_embed(selected_prism)
-            await interaction.edit_original_response(embed=embedVar, view=view)
-
-    view = View(timeout=VIEW_TIMEOUT)
-    if global_boost >= 25 or user_count >= 5:
-        craft_button = Button(label="Prism limit reached!", style=ButtonStyle.gray, disabled=True)
-    else:
         craft_button = Button(label="Craft!", style=ButtonStyle.blurple, emoji=icon)
         craft_button.callback = craft_prism
+        view.add_item(craft_button)
 
-    if len(owned_prisms) == 0:
-        config_button = Button(label="No prisms to configure!", style=ButtonStyle.gray, disabled=True)
-    else:
-        await achemb(message, "prism", "send")
-        config_button = Button(label="Configure", style=ButtonStyle.blurple)
-        config_button.callback = configb
+        if page_number != 0:
+            prev_button = Button(label="<-", style=ButtonStyle.gray)
+            prev_button.callback = prev_page
+            view.add_item(prev_button)
 
-    view.add_item(craft_button)
-    view.add_item(config_button)
+        if page_number != (len(prism_texts) + 1) // 26:
+            next_button = Button(label="->", style=ButtonStyle.gray)
+            next_button.callback = next_page
+            view.add_item(next_button)
+
+        return embed, view
+
+    embed, view = gen_page()
     await message.response.send_message(embed=embed, view=view)
 
 
@@ -4344,76 +4298,7 @@ async def gift(
                 color=0x6E593C,
             )
 
-            # handle tax
-            if amount >= 5:
-                tax_amount = round(amount * 0.2)
-
-                async def confirm_pay(interaction):
-                    if interaction.user.id == message.user.id:
-                        await interaction.response.defer()
-
-                        confirm = Button(label="Yes, pay the tax")
-                        confirm.callback = pay
-                        confirm_view = View(timeout=VIEW_TIMEOUT)
-                        confirm_view.add_item(confirm)
-
-                        await interaction.followup.send(
-                            f"Are you really sure you want to pay the tax? {tax_amount:,} minutes of rain will be lost forever...",
-                            view=confirm_view,
-                        )
-                    else:
-                        await do_funny(interaction)
-
-                async def pay(interaction):
-                    if interaction.user.id == message.user.id:
-                        try:
-                            await interaction.response.defer()
-                            actual_user, _ = User.get_or_create(user_id=message.user.id)
-
-                            # remove tax, don't transfer rain to cat bot because it makes no sense
-                            actual_user.rain_minutes -= tax_amount
-                            if actual_user.rain_minutes < 0:
-                                # negative rain could cause other bugs
-                                actual_user.rain_minutes = 0
-
-                            try:
-                                await interaction.edit_original_response(view=None)
-                            except Exception:
-                                pass
-                            await interaction.followup.send(f"Tax of {tax_amount:,} rain minutes was withdrawn from your account!")
-                            await achemb(message, "good_citizen", "send")
-                        finally:
-                            # always save to prevent issue with exceptions leaving bugged state
-                            actual_user.save()
-                    else:
-                        await do_funny(interaction)
-
-                async def evade(interaction):
-                    if interaction.user.id == message.user.id:
-                        await interaction.response.defer()
-                        try:
-                            await interaction.edit_original_response(view=None)
-                        except Exception:
-                            pass
-                        await interaction.followup.send(f"You evaded the tax of {tax_amount:,} rain minutes.")
-                        await achemb(message, "secret", "send")
-                    else:
-                        await do_funny(interaction)
-
-                button = Button(label="Pay 20% tax", style=ButtonStyle.green)
-                button.callback = confirm_pay
-
-                button2 = Button(label="Evade the tax", style=ButtonStyle.red)
-                button2.callback = evade
-
-                myview = View(timeout=VIEW_TIMEOUT)
-
-                myview.add_item(button)
-                myview.add_item(button2)
-
-                await message.response.send_message(person.mention, embed=embed, view=myview, allowed_mentions=discord.AllowedMentions(users=True))
-            else:
-                await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
+            await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
 
             # handle aches
             await achemb(message, "donator", "send")
@@ -4737,7 +4622,6 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             title=f"{person1name} and {person2name} trade",
             description="no way",
         )
-        coolembed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/trading")
 
         # a single field for one person
         def field(personaccept, persongives, person, number):
@@ -4759,7 +4643,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 elif k == "rains":
                     # rains
                     valuestr += f"☔ {v:,}m of Cat Rains\n"
-                    valuenum += 22 * 50 * v
+                    valuenum += 900 * v
                 elif k in cattypes:
                     # cats
                     valuenum += (len(CAT_TYPES) / type_dict[k]) * v
@@ -4966,7 +4850,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 @bot.tree.command(description="Get Cat Image, does not add a cat to your inventory")
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(cat_type="select a cat type ok")
-@discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
+@discord.app_commands.autocomplete(cat_type=cat_command_autocomplete)
 async def cat(message: discord.Interaction, cat_type: Optional[str]):
     if cat_type and cat_type not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
@@ -4974,6 +4858,11 @@ async def cat(message: discord.Interaction, cat_type: Optional[str]):
 
     if not message.channel.permissions_for(message.guild.me).attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
+        return
+
+    # check the user has the cat if required
+    if cat_type and get_profile(message.guild.id, message.user.id)[f"cat_{cat_type.lower()}"] <= 0:
+        await message.response.send_message("you dont have that cat", ephemeral=True)
         return
 
     image = f"images/spawn/{cat_type.lower()}_cat.png" if cat_type else "images/cat.png"
@@ -5021,10 +4910,9 @@ async def casino(message: discord.Interaction):
     total_sum = Profile.select(peewee.fn.SUM(Profile.gambles)).scalar()
     embed = discord.Embed(
         title="🎲 The Catsino",
-        description=f"One spin costs 5 {get_emoji('epiccat')} Epic cats\nSo far you gambled {profile.gambles} times.\nAll Cat Bot users gambled {total_sum:,} times.",
+        description=f"One spin costs 5 {get_emoji('finecat')} Fine cats\nSo far you gambled {profile.gambles} times.\nAll Cat Bot users gambled {total_sum:,} times.",
         color=0x750F0E,
     )
-    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/gambling")
 
     async def spin(interaction):
         nonlocal message
@@ -5038,16 +4926,23 @@ async def casino(message: discord.Interaction):
             )
             return
         user = get_profile(interaction.guild.id, interaction.user.id)
-        if user.cat_Epic < 5:
-            await interaction.response.send_message("BROKE ALERT ‼️", ephemeral=True)
+        if user.cat_Fine < 5:
+            await interaction.response.send_message("you are too broke now", ephemeral=True)
             await achemb(interaction, "broke", "send")
             return
 
         await interaction.response.defer()
+        amount = random.randint(1, 5)
         casino_lock.append(message.user.id)
         user = get_profile(interaction.guild.id, interaction.user.id)
-        user.cat_Epic -= 5
+        user.cat_Fine += amount - 5
+        user.gambles += 1
         user.save()
+
+        if user.gambles >= 10:
+            await achemb(message, "gambling_one", "send")
+        if user.gambles >= 50:
+            await achemb(message, "gambling_two", "send")
 
         variants = [
             f"{get_emoji('egirlcat')} 1 eGirl cats",
@@ -5074,15 +4969,11 @@ async def casino(message: discord.Interaction):
                 pass
             await asyncio.sleep(1)
 
-        amount = random.randint(1, 5)
-
         embed = discord.Embed(
             title=f"{icon} The Catsino",
             description=f"You won:\n**{get_emoji('finecat')} {amount} Fine cats**",
             color=0x750F0E,
         )
-        user = get_profile(message.guild.id, message.user.id)
-        user.cat_Fine += amount
 
         button = Button(label="Spin", style=ButtonStyle.blurple)
         button.callback = spin
@@ -5091,13 +4982,6 @@ async def casino(message: discord.Interaction):
         myview.add_item(button)
 
         casino_lock.remove(message.user.id)
-        user.gambles += 1
-        user.save()
-
-        if user.gambles >= 10:
-            await achemb(message, "gambling_one", "send")
-        if user.gambles >= 50:
-            await achemb(message, "gambling_two", "send")
 
         try:
             await interaction.edit_original_response(embed=embed, view=myview)
@@ -5166,6 +5050,9 @@ async def slots(message: discord.Interaction):
         slots_lock.append(message.user.id)
         user.slot_spins += 1
         user.save()
+
+        await progress(message, user, "slots")
+        await progress(message, user, "slots2")
 
         variants = ["🍒", "🍋", "🍇", "🔔", "⭐", ":seven:"]
         reel_durations = [random.randint(9, 12), random.randint(15, 22), random.randint(25, 28)]
@@ -5247,16 +5134,11 @@ async def slots(message: discord.Interaction):
         except Exception:
             await interaction.followup.send(embed=embed, view=myview)
 
-        await progress(message, user, "slots")
-        await progress(message, user, "slots2")
-
     button = Button(label="Spin", style=ButtonStyle.blurple)
     button.callback = spin
 
     myview = View(timeout=VIEW_TIMEOUT)
     myview.add_item(button)
-
-    embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/gambling")
 
     await message.response.send_message(embed=embed, view=myview)
 
@@ -5446,7 +5328,7 @@ async def cat_fact(message: discord.Interaction):
 
     try:
         channel = Channel.get_or_none(channel_id=message.channel.id)
-        if channel and channel.cat and channel.cattype == "Professor":
+        if channel and channel.cattype == "Professor":
             await achemb(message, "nerd_battle", "send")
     except Exception:
         pass
@@ -5557,21 +5439,16 @@ async def light_market(message):
 
 async def dark_market(message):
     cataine_prices = [
-        [10, "Fine"],
-        [30, "Fine"],
-        [20, "Good"],
-        [15, "Rare"],
-        [20, "Wild"],
-        [10, "Epic"],
-        [20, "Sus"],
-        [15, "Rickroll"],
-        [7, "Superior"],
-        [5, "Legendary"],
-        [3, "8bit"],
-        [4, "Divine"],
-        [3, "Real"],
-        [2, "Ultimate"],
-        [1, "eGirl"],
+        [5, "Fine"],
+        [5, "Good"],
+        [4, "Wild"],
+        [4, "Epic"],
+        [3, "Brave"],
+        [3, "Reverse"],
+        [2, "Trash"],
+        [2, "Mythic"],
+        [1, "Corrupt"],
+        [1, "Divine"],
         [100, "eGirl"],
     ]
     user = get_profile(message.guild.id, message.user.id)
@@ -5774,7 +5651,7 @@ async def achievements(message: discord.Interaction):
         ).set_footer(text=rain_shill)
 
         global_user, _ = User.get_or_create(user_id=message.user.id)
-        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state:
+        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state.strip()[-4:]:
             newembed.set_author(name="You have unread news! /news")
 
         for k, v in ach_list.items():
@@ -6107,7 +5984,7 @@ async def leaderboards(
 
         global_user, _ = User.get_or_create(user_id=message.user.id)
 
-        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state:
+        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state.strip()[-4:]:
             embedVar.set_author(name=f"{message.user} has unread news! /news")
 
         # handle funny buttons
@@ -6482,8 +6359,19 @@ async def recieve_vote(request):
 
     try:
         channeley = await bot.fetch_user(int(request_json["user"]))
+        if user.vote_streak % 5 == 0:
+            gold_suffix = f"(+1 {get_emoji('goldpack')} Gold pack!)"
+        else:
+            gold_suffix = f"(Bonus {get_emoji('goldpack')} Gold Pack at {math.ceil(user.vote_streak / 5) * 5} streak)"
         await channeley.send(
-            f"Thanks for voting! Streak: {user.vote_streak:,}\nTo claim your XP, run `/battlepass` in every server you want.\nYou can vote again in 12 hours.\nVote within the next 24 hours to not lose your streak."
+            "\n".join(
+                [
+                    f"Thanks for voting! Streak: {user.vote_streak:,} {gold_suffix}",
+                    "To claim your rewards, run `/battlepass` in every server you want.",
+                    f"You can vote again <t:{int(time.time()) + 43200}:R>.",
+                    "Vote within the next 24 hours to not lose your streak.",
+                ]
+            )
         )
     except Exception:
         pass
