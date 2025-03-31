@@ -1862,6 +1862,7 @@ async def on_message(message: discord.Message):
                 total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
                 user_count = Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.author.id)).count()
                 total_inputs = user_count + (total_count - user_count) * 0.2
+                did_boost = False
                 if (chance := 0.13953 * math.log(total_inputs + 1)) > random.random():
                     # determine whodunnit
                     strong_chance = chance * (user_count / total_inputs)
