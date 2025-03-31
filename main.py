@@ -4803,7 +4803,7 @@ async def cat(message: discord.Interaction, cat_type: Optional[str]):
         return
 
     # check the user has the cat if required
-    if cat_type and get_profile(message.guild.id, message.user.id)[f"cat_{cat_type.capitalize()}"] <= 0:
+    if cat_type and get_profile(message.guild.id, message.user.id)[f"cat_{cat_type}"] <= 0:
         await message.response.send_message("you dont have that cat", ephemeral=True)
         return
 
