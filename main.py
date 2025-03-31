@@ -5525,7 +5525,7 @@ async def dark_market(message):
 
         myview = View(timeout=VIEW_TIMEOUT)
 
-        if level == len(cataine_prices) - 1:
+        if level >= len(cataine_prices) - 1:
             button = Button(label="What???", style=ButtonStyle.red)
             button.callback = complain
         else:
