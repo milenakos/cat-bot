@@ -2953,7 +2953,7 @@ async def gen_inventory(message, person_id):
     minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
 
     # count prism stuff
-    prisms = [i.name for i in Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.user.id)).execute()]
+    prisms = [i.name for i in Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == person_id.id)).execute()]
     total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
     user_count = len(prisms)
     prism_boost = round(0.13953 * math.log(user_count + (total_count - user_count) * 0.2 + 1) * 100, 3)
