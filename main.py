@@ -749,7 +749,7 @@ def progress_embed(message, user, level_data, current_xp, old_xp, quest_data, di
     else:
         reward_text = f"{get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack"
 
-    global_user, _ = User.get_or_create(user.user_id)
+    global_user, _ = User.get_or_create(user_id=user.user_id)
     if global_user.vote_streak % 5 == 0:
         streak_reward = f"\n🔥 +1 {get_emoji('goldpack')} Gold pack"
     else:
