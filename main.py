@@ -324,7 +324,7 @@ news_list = [
     {"title": "Cat Bot Christmas 2024", "emoji": "🎅"},
     {"title": "Battlepass Update", "emoji": "⬆️"},
     {"title": "Packs!", "emoji": "goldpack"},
-    {"title": "Message from CEO of Cat Bot", "emoji": ""},
+    {"title": "Message from CEO of Cat Bot", "emoji": "finecat"},
 ]
 
 
