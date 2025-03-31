@@ -1871,13 +1871,13 @@ async def on_message(message: discord.Message):
                         prism_which_boosted = random.choice(
                             Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.author.id)).execute()
                         )
-                        boost_applied_prism = "Your prism " + prism.name
+                        boost_applied_prism = "Your prism " + prism_which_boosted.name
                     else:
                         # boost from another prism
                         prism_which_boosted = random.choice(
                             Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id != message.author.id)).execute()
                         )
-                        boost_applied_prism = f"<@{prism_which_boosted.user_id}>'s prism " + prism.name
+                        boost_applied_prism = f"<@{prism_which_boosted.user_id}>'s prism " + prism_which_boosted.name
 
                     did_boost = True
                     user.boosted_catches += 1
