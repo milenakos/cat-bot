@@ -2395,7 +2395,7 @@ async def wiki(message: discord.Interaction):
         ]
     )
     await message.response.send_message(embed=embed)
-    await achemb(message, "wiki", "send")
+    await progress(message, get_profile(message.guild.id, message.user.id), "wiki")
 
 
 @bot.tree.command(description="Read The Cat Bot Times™️")
