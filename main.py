@@ -1207,47 +1207,6 @@ async def maintaince_loop():
     if config.COLLECT_STATS:
         await stats.bump("reminders", "misc", len(proccessed_users))
 
-    # repeated vote reminders for streaks over 5
-    for user in User.select().where(
-        (User.reminder_vote != 0) & ((43200 < User.vote_time_topgg + 43200 < time.time()) | (1 < User.reminder_vote < time.time()))
-    ):
-        select = Profile.select().where((Profile.user_id == user.user_id) & Profile.reminders_enabled)
-        if not select.exists():
-            continue
-        await asyncio.sleep(0.1)
-
-        user = User.get(user.user_id)
-
-        if not ((user.reminder_vote != 0) and ((43200 < user.vote_time_topgg + 43200 < time.time()) or (1 < user.reminder_vote < time.time()))):
-            continue
-
-        view = View(timeout=VIEW_TIMEOUT)
-        button = Button(
-            emoji=get_emoji("topgg"),
-            label=random.choice(vote_button_texts),
-            style=ButtonStyle.gray,
-            url="https://top.gg/bot/966695034340663367/vote",
-        )
-        view.add_item(button)
-
-        button = Button(label="Postpone", custom_id="vote")
-        button.callback = postpone_reminder
-        view.add_item(button)
-
-        try:
-            user_dm = await bot.fetch_user(user.user_id)
-            await user_dm.send("You can vote now!", view=view)
-        except Exception:
-            pass
-        user.reminder_vote = 0
-        proccessed_users.append(user)
-
-    with db.atomic():
-        User.bulk_update(proccessed_users, fields=[User.reminder_vote], batch_size=50)
-
-    if config.COLLECT_STATS:
-        await stats.bump("reminders", "vote", len(proccessed_users))
-
     for reminder in Reminder.select().where(Reminder.time < time.time()):
         try:
             user = await bot.fetch_user(reminder.user_id)
