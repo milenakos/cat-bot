@@ -2981,8 +2981,8 @@ async def gen_inventory(message, person_id):
     prisms = [i.name for i in Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == person_id.id)).execute()]
     total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
     user_count = len(prisms)
-    global_boost = round(0.06 * math.log(2 * total_count + 1) * 100, 3)
-    prism_boost = global_boost + round(0.03 * math.log(2 * user_count + 1) * 100, 3)
+    global_boost = 0.06 * math.log(2 * total_count + 1)
+    prism_boost = round((global_boost + 0.03 * math.log(2 * user_count + 1)) * 100, 3)
     if len(prisms) == 0:
         prism_list = "None"
     elif len(prisms) <= 3:
@@ -3743,8 +3743,8 @@ async def prism(message: discord.Interaction):
 
     total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
     user_count = Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.user.id)).count()
-    global_boost = round(0.06 * math.log(2 * total_count + 1) * 100, 3)
-    user_boost = global_boost + round(0.03 * math.log(2 * user_count + 1) * 100, 3)
+    global_boost = 0.06 * math.log(2 * total_count + 1)
+    user_boost = round((global_boost + 0.03 * math.log(2 * user_count + 1)) * 100, 3)
     prism_texts = []
 
     for prism in Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.time):
