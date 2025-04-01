@@ -3846,7 +3846,7 @@ async def prism(message: discord.Interaction):
             title=f"{icon} Cat Prisms",
             color=0x6E593C,
             description="are a tradeable power-up which occasionally bumps cat rarity up by one. For each prism you own your chance of a boost increases, and it increases but less if you aren't the owner of that prism.\n\n",
-        ).set_footer(text=f"Boost for everyone: {global_boost}% | {message.user}'s total boost: {user_boost}%")
+        ).set_footer(text=f"Boost for everyone: {round(global_boost * 100, 3)}% | {message.user}'s total boost: {user_boost}%")
 
         embed.description += "\n".join(prism_texts[page_number * 26 : (page_number + 1) * 26])
 
