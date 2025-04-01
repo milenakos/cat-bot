@@ -1748,7 +1748,7 @@ async def on_message(message: discord.Message):
             belated = temp_belated_storage.get(message.channel.id, {"users": [message.author.id]})
             if channel and channel.lastcatches + 3 > int(time.time()) and message.author.id not in belated.get("users", [message.author.id]):
                 belated["users"].append(message.author.id)
-                temp_catches_storage[message.channel.id] = belated
+                temp_belated_storage[message.channel.id] = belated
                 await progress(message, user, "3cats")
                 if channel.cattype == "Fine":
                     await progress(message, user, "2fine")
