@@ -279,8 +279,8 @@ temp_catches_storage = []
 # to prevent weird behaviour shortly after a rain
 temp_rains_storage = []
 
-# for "faster than 10 seconds" belated bp quest
-temp_time_storage = {}
+# to prevent double belated battlepass progress and for "faster than 10 seconds" belated bp quest
+temp_belated_storage = {}
 
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
@@ -307,8 +307,6 @@ def get_profile(guild_id, user_id):
 
 def get_emoji(name):
     global emojis
-    if name in allowedemojis:
-        return emojis["finecat"]
     if name in emojis.keys():
         return emojis[name]
     elif name in emoji.EMOJI_DATA:
@@ -537,7 +535,8 @@ def generate_quest(user: Profile, quest_type: str):
         elif quest == "prism":
             total_count = Prism.select().where(Prism.guild_id == user.guild_id).count()
             user_count = Prism.select().where((Prism.guild_id == user.guild_id) & (Prism.user_id == user.user_id)).count()
-            prism_boost = 0.13953 * math.log(user_count + (total_count - user_count) * 0.2 + 1)
+            global_boost = 0.06 * math.log(2 * total_count + 1)
+            prism_boost = global_boost + 0.03 * math.log(2 * user_count + 1)
             if prism_boost < 0.15:
                 continue
         elif quest == "news":
@@ -630,7 +629,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         if voted_at.weekday() >= 4:
             user.vote_reward *= 2
 
-        if global_user.vote_streak % 5 == 0:
+        if global_user.vote_streak % 5 == 0 and global_user.vote_streak != 0:
             user.pack_gold += 1
 
         current_xp = user.progress + user.vote_reward
@@ -771,7 +770,7 @@ def progress_embed(message, user, level_data, current_xp, old_xp, quest_data, di
         reward_text = f"{get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack"
 
     global_user, _ = User.get_or_create(user_id=user.user_id)
-    if global_user.vote_streak % 5 == 0:
+    if global_user.vote_streak % 5 == 0 and global_user.vote_streak != 0 and "top.gg" not in quest_data["title"]:
         streak_reward = f"\n🔥 +1 {get_emoji('goldpack')} Gold pack"
     else:
         streak_reward = ""
@@ -1047,14 +1046,14 @@ async def postpone_reminder(interaction):
 
 # a loop for various maintaince which is ran every 5 minutes
 async def maintaince_loop():
-    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_time_storage
+    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage
     last_loop_time = time.time()
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
-    temp_time_storage = {}
+    temp_belated_storage = {}
     catchcooldown = {}
     fakecooldown = {}
-    await bot.change_presence(activity=discord.CustomActivity(name=f"Budget's cut in {len(bot.guilds):,} servers"))
+    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
     if config.TOP_GG_TOKEN and (not config.MIN_SERVER_SEND or len(bot.guilds) > config.MIN_SERVER_SEND):
         async with aiohttp.ClientSession() as session:
@@ -1746,13 +1745,16 @@ async def on_message(message: discord.Message):
                     pass
 
             # belated battlepass
-            if channel and channel.lastcatches + 3 > int(time.time()):
+            belated = temp_belated_storage.get(message.channel.id, {"users": [message.author.id]})
+            if channel and channel.lastcatches + 3 > int(time.time()) and message.author.id not in belated.get("users", [message.author.id]):
+                belated["users"].append(message.author.id)
+                temp_catches_storage[message.channel.id] = belated
                 await progress(message, user, "3cats")
                 if channel.cattype == "Fine":
                     await progress(message, user, "2fine")
                 if channel.cattype == "Good":
                     await progress(message, user, "good")
-                if temp_time_storage.get(message.channel.id, 10) + int(time.time()) - channel.lastcatches < 10:
+                if belated.get("time", 10) + int(time.time()) - channel.lastcatches < 10:
                     await progress(message, user, "under10")
                 if random.randint(0, 1) == 0:
                     await progress(message, user, "even")
@@ -1762,7 +1764,9 @@ async def on_message(message: discord.Message):
                     await progress(message, user, "rare+")
                 total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
                 user_count = Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.author.id)).count()
-                if 0.13953 * math.log(user_count + (total_count - user_count) * 0.2 + 1) > random.random():
+                global_boost = 0.06 * math.log(2 * total_count + 1)
+                user_boost = global_boost + 0.03 * math.log(2 * user_count + 1)
+                if user_boost > random.random():
                     await progress(message, user, "prism")
                 if user.catch_quest == "finenice":
                     # 0 none
@@ -1882,12 +1886,12 @@ async def on_message(message: discord.Message):
                 # calculate prism boost
                 total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
                 user_count = Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.author.id)).count()
-                total_inputs = user_count + (total_count - user_count) * 0.2
                 did_boost = False
-                if (chance := 0.13953 * math.log(total_inputs + 1)) > random.random():
+                global_boost = 0.06 * math.log(2 * total_count + 1)
+                user_boost = global_boost + 0.03 * math.log(2 * user_count + 1)
+                if user_boost > random.random():
                     # determine whodunnit
-                    strong_chance = chance * (user_count / total_inputs)
-                    if random.uniform(0, chance) < strong_chance:
+                    if random.uniform(0, user_boost) > global_boost:
                         # boost from our own prism
                         prism_which_boosted = random.choice(
                             Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.author.id)).execute()
@@ -2036,24 +2040,6 @@ async def on_message(message: discord.Message):
                 user[f"cat_{le_emoji}"] += silly_amount
                 new_count = user[f"cat_{le_emoji}"]
 
-                ads = [
-                    "Wanna double your earnings overnight? 1 Shady Alley.",
-                    "The best way to earn cats. Double deposits today only. /casino",
-                    "Lost? Confused? Check out our free guide! /wiki",
-                    "Do you like meaningless numbers? /getid is just for you!",
-                    "World Class Swiss Clocks. /remind",
-                    "Loans with only 69% interest from Cat Bank /bal",
-                    "Get a free cupcake by ordering a large cappucino! /brew",
-                    "The ONLY accurate news source! /news",
-                    "Our dictionaries have everything! /define",
-                    "Leaked Secret Cats Government Doesn't Want You To See! /catalogue",
-                    "Get daily facts to brighten up your mood! $6.99/month! /fact",
-                    "Predicting your future with 97% accuracy! /8ball",
-                    "Our AI Text To Speech is indistinguishable from humans! /tiktok",
-                    "Ping Pong World Cup! Watch now at /ping",
-                ]
-                coughstring = "AD: " + random.choice(ads) + "\n" + coughstring
-
                 async def delete_cat():
                     try:
                         if channel.thread_mappings:
@@ -2164,7 +2150,7 @@ async def on_message(message: discord.Message):
                 user.save()
                 channel.save()
                 if time_caught >= 0:
-                    temp_time_storage[message.channel.id] = time_caught
+                    temp_belated_storage[message.channel.id] = {"time": time_caught, "users": [message.author.id]}
                 if decided_time:
                     await asyncio.sleep(decided_time)
                     try:
@@ -2995,7 +2981,8 @@ async def gen_inventory(message, person_id):
     prisms = [i.name for i in Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == person_id.id)).execute()]
     total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
     user_count = len(prisms)
-    prism_boost = round(0.13953 * math.log(user_count + (total_count - user_count) * 0.2 + 1) * 100, 3)
+    global_boost = round(0.06 * math.log(2 * total_count + 1) * 100, 3)
+    prism_boost = global_boost + round(0.03 * math.log(2 * user_count + 1) * 100, 3)
     if len(prisms) == 0:
         prism_list = "None"
     elif len(prisms) <= 3:
@@ -3616,7 +3603,7 @@ async def battlepass(message: discord.Interaction):
 
         # vote
         streak_string = ""
-        if global_user.vote_streak >= 5 and user.vote_cooldown + 24 * 3600 > time.time():
+        if global_user.vote_streak >= 5 and global_user.vote_time_topgg + 24 * 3600 > time.time():
             streak_string = f" (🔥 {global_user.vote_streak}x streak)"
         if user.vote_cooldown != 0:
             description += f"✅ ~~Vote on Top.gg~~\n - Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>{streak_string}\n"
@@ -3634,7 +3621,7 @@ async def battlepass(message: discord.Interaction):
             else:
                 description += f" - Reward: {user.vote_reward} XP"
 
-            if global_user.vote_streak % 5 == 4 and user.vote_cooldown + 24 * 3600 > time.time():
+            if global_user.vote_streak % 5 == 4 and global_user.vote_time_topgg + 24 * 3600 > time.time():
                 description += f" + {get_emoji('goldpack')} 1 Gold pack"
 
             description += f"{streak_string}\n"
@@ -3756,8 +3743,8 @@ async def prism(message: discord.Interaction):
 
     total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
     user_count = Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.user.id)).count()
-    global_boost = round(0.13953 * math.log(total_count * 0.2 + 1) * 100, 3)
-    user_boost = round(0.13953 * math.log(user_count + (total_count - user_count) * 0.2 + 1) * 100, 3)
+    global_boost = round(0.06 * math.log(2 * total_count + 1) * 100, 3)
+    user_boost = global_boost + round(0.03 * math.log(2 * user_count + 1) * 100, 3)
     prism_texts = []
 
     for prism in Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.time):
@@ -4877,7 +4864,7 @@ async def brew(message: discord.Interaction):
 
 @bot.tree.command(description="Gamble your life savings away in our totally-not-rigged catsino!")
 async def casino(message: discord.Interaction):
-    if message.user.id in casino_lock:
+    if message.user.id + message.guild.id in casino_lock:
         await message.response.send_message(
             "you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe",
             ephemeral=True,
@@ -4899,7 +4886,7 @@ async def casino(message: discord.Interaction):
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
-        if message.user.id in casino_lock:
+        if message.user.id + message.guild.id in casino_lock:
             await interaction.response.send_message(
                 "you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe",
                 ephemeral=True,
@@ -4913,7 +4900,7 @@ async def casino(message: discord.Interaction):
 
         await interaction.response.defer()
         amount = random.randint(1, 5)
-        casino_lock.append(message.user.id)
+        casino_lock.append(message.user.id + message.guild.id)
         user = get_profile(interaction.guild.id, interaction.user.id)
         user.cat_Fine += amount - 5
         user.gambles += 1
@@ -4961,7 +4948,7 @@ async def casino(message: discord.Interaction):
         myview = View(timeout=VIEW_TIMEOUT)
         myview.add_item(button)
 
-        casino_lock.remove(message.user.id)
+        casino_lock.remove(message.user.id + message.guild.id)
 
         try:
             await interaction.edit_original_response(embed=embed, view=myview)
@@ -4979,7 +4966,7 @@ async def casino(message: discord.Interaction):
 
 @bot.tree.command(description="oh no")
 async def slots(message: discord.Interaction):
-    if message.user.id in slots_lock:
+    if message.user.id + message.guild.id in slots_lock:
         await message.response.send_message(
             "you get kicked from the slot machine because you are already there, and two of you playing at once would cause a glitch in the universe",
             ephemeral=True,
@@ -5017,7 +5004,7 @@ async def slots(message: discord.Interaction):
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
-        if message.user.id in slots_lock:
+        if message.user.id + message.guild.id in slots_lock:
             await interaction.response.send_message(
                 "you get kicked from the slot machine because you are already there, and two of you playing at once would cause a glitch in the universe",
                 ephemeral=True,
@@ -5027,7 +5014,7 @@ async def slots(message: discord.Interaction):
 
         await interaction.response.defer()
         await achemb(interaction, "slots", "send")
-        slots_lock.append(message.user.id)
+        slots_lock.append(message.user.id + message.guild.id)
         user.slot_spins += 1
         user.save()
 
@@ -5104,7 +5091,7 @@ async def slots(message: discord.Interaction):
                 button.callback = remove_debt
                 myview.add_item(button)
 
-        slots_lock.remove(message.user.id)
+        slots_lock.remove(message.user.id + message.guild.id)
         user.save()
 
         embed = discord.Embed(title=":slot_machine: The Slot Machine", description=desc, color=0x750F0E)
