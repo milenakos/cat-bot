@@ -3748,7 +3748,7 @@ async def prism(message: discord.Interaction):
     prism_texts = []
 
     for prism in Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.time):
-        prism_texts.append(f"{icon} **{prism.name}** Owner: <@{prism.user_id}>\n Crafted on <t:{prism.time}:D> by <@{prism.creator}>")
+        prism_texts.append(f"{icon} **{prism.name}** Owner: <@{prism.user_id}>\n<@{prism.creator}> crafted <t:{prism.time}:D>")
 
     async def confirm_craft(interaction: discord.Interaction):
         await interaction.response.defer()
