@@ -1745,39 +1745,40 @@ async def on_message(message: discord.Message):
                     pass
 
             # belated battlepass
-            belated = temp_belated_storage.get(message.channel.id, {"users": [message.author.id]})
-            if channel and channel.lastcatches + 3 > int(time.time()) and message.author.id not in belated.get("users", [message.author.id]):
-                belated["users"].append(message.author.id)
-                temp_belated_storage[message.channel.id] = belated
-                await progress(message, user, "3cats")
-                if channel.cattype == "Fine":
-                    await progress(message, user, "2fine")
-                if channel.cattype == "Good":
-                    await progress(message, user, "good")
-                if belated.get("time", 10) + int(time.time()) - channel.lastcatches < 10:
-                    await progress(message, user, "under10")
-                if random.randint(0, 1) == 0:
-                    await progress(message, user, "even")
-                else:
-                    await progress(message, user, "odd")
-                if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
-                    await progress(message, user, "rare+")
-                total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
-                user_count = Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.author.id)).count()
-                global_boost = 0.06 * math.log(2 * total_count + 1)
-                user_boost = global_boost + 0.03 * math.log(2 * user_count + 1)
-                if user_boost > random.random():
-                    await progress(message, user, "prism")
-                if user.catch_quest == "finenice":
-                    # 0 none
-                    # 1 fine
-                    # 2 nice
-                    # 3 both
-                    if channel.cattype == "Fine" and user.catch_progress in [0, 2]:
-                        await progress(message, user, "finenice")
-                    elif channel.cattype == "Nice" and user.catch_progress in [0, 1]:
-                        await progress(message, user, "finenice")
-                        await progress(message, user, "finenice")
+            if message.channel.id in temp_belated_storage:
+                belated = temp_belated_storage[message.channel.id]
+                if channel and "users" in belated and "time" in belated and channel.lastcatches + 3 > int(time.time()) and message.author.id not in belated["users"]:
+                    belated["users"].append(message.author.id)
+                    temp_belated_storage[message.channel.id] = belated
+                    await progress(message, user, "3cats")
+                    if channel.cattype == "Fine":
+                        await progress(message, user, "2fine")
+                    if channel.cattype == "Good":
+                        await progress(message, user, "good")
+                    if belated.get("time", 10) + int(time.time()) - channel.lastcatches < 10:
+                        await progress(message, user, "under10")
+                    if random.randint(0, 1) == 0:
+                        await progress(message, user, "even")
+                    else:
+                        await progress(message, user, "odd")
+                    if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
+                        await progress(message, user, "rare+")
+                    total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
+                    user_count = Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.author.id)).count()
+                    global_boost = 0.06 * math.log(2 * total_count + 1)
+                    user_boost = global_boost + 0.03 * math.log(2 * user_count + 1)
+                    if user_boost > random.random():
+                        await progress(message, user, "prism")
+                    if user.catch_quest == "finenice":
+                        # 0 none
+                        # 1 fine
+                        # 2 nice
+                        # 3 both
+                        if channel.cattype == "Fine" and user.catch_progress in [0, 2]:
+                            await progress(message, user, "finenice")
+                        elif channel.cattype == "Nice" and user.catch_progress in [0, 1]:
+                            await progress(message, user, "finenice")
+                            await progress(message, user, "finenice")
         else:
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
