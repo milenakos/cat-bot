@@ -770,7 +770,7 @@ def progress_embed(message, user, level_data, current_xp, old_xp, quest_data, di
         reward_text = f"{get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack"
 
     global_user, _ = User.get_or_create(user_id=user.user_id)
-    if global_user.vote_streak % 5 == 0 and global_user.vote_streak != 0 and "top.gg" not in quest_data["title"]:
+    if global_user.vote_streak % 5 == 0 and global_user.vote_streak != 0 and "top.gg" in quest_data["title"]:
         streak_reward = f"\n🔥 +1 {get_emoji('goldpack')} Gold pack"
     else:
         streak_reward = ""
