@@ -1747,7 +1747,13 @@ async def on_message(message: discord.Message):
             # belated battlepass
             if message.channel.id in temp_belated_storage:
                 belated = temp_belated_storage[message.channel.id]
-                if channel and "users" in belated and "time" in belated and channel.lastcatches + 3 > int(time.time()) and message.author.id not in belated["users"]:
+                if (
+                    channel
+                    and "users" in belated
+                    and "time" in belated
+                    and channel.lastcatches + 3 > int(time.time())
+                    and message.author.id not in belated["users"]
+                ):
                     belated["users"].append(message.author.id)
                     temp_belated_storage[message.channel.id] = belated
                     await progress(message, user, "3cats")
@@ -1897,12 +1903,13 @@ async def on_message(message: discord.Message):
                         prism_which_boosted = random.choice(
                             Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.author.id)).execute()
                         )
+                    else:
+                        # boost from any prism
+                        prism_which_boosted = random.choice(Prism.select().where(Prism.guild_id == message.guild.id).execute())
+
+                    if prism_which_boosted.user_id == message.author.id:
                         boost_applied_prism = "Your prism " + prism_which_boosted.name
                     else:
-                        # boost from another prism
-                        prism_which_boosted = random.choice(
-                            Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id != message.author.id)).execute()
-                        )
                         boost_applied_prism = f"<@{prism_which_boosted.user_id}>'s prism " + prism_which_boosted.name
 
                     did_boost = True
