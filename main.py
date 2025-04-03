@@ -6176,7 +6176,7 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
 
     person = get_profile(message.guild.id, person_id.id)
 
-    if valid and ach_id == "thanksforplaying" and not person.thanksforplaying:
+    if valid and ach_id == "thanksforplaying":
         await message.response.send_message("HAHAHHAHAH\nno", ephemeral=True)
         return
 
