@@ -3755,6 +3755,9 @@ async def prism(message: discord.Interaction):
     user_boost = round((global_boost + 0.03 * math.log(2 * user_count + 1)) * 100, 3)
     prism_texts = []
 
+    if user_count != 0:
+        await achemb(message, "prism", "send")
+
     for prism in Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.time):
         prism_texts.append(f"{icon} **{prism.name}** Owner: <@{prism.user_id}>\n<@{prism.creator}> crafted <t:{prism.time}:D>")
 
