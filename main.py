@@ -3758,7 +3758,11 @@ async def prism(message: discord.Interaction):
     if user_count != 0:
         await achemb(message, "prism", "send")
 
-    for prism in Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.time):
+    order_map = {name: index for index, name in enumerate(prism_names)}
+    prisms = list(Prism.select().where(Prism.guild_id == message.guild.id).execute())
+    prisms.sort(key=lambda p: order_map.get(p.name, float("inf")))
+
+    for prism in prisms:
         prism_texts.append(f"{icon} **{prism.name}** Owner: <@{prism.user_id}>\n<@{prism.creator}> crafted <t:{prism.time}:D>")
 
     async def confirm_craft(interaction: discord.Interaction):
