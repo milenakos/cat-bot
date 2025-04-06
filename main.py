@@ -3791,13 +3791,14 @@ async def prism(message: discord.Interaction):
             if not Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.name == selected_name)).limit(1).exists():
                 break
 
+        youngest_prism = Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.time.desc()).first()
+        if youngest_prism:
+            selected_time = max(round(time.time()), youngest_prism.time + 1)
+
         # actually take away cats
         for i in cattypes:
             user["cat_" + i] -= 1
         user.save()
-
-        youngest_prism = Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.time.desc()).limit(1).execute()
-        selected_time = max(round(time.time()), youngest_prism.time + 1)
 
         # create the prism
         Prism.create(
