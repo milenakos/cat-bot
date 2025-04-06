@@ -3798,6 +3798,8 @@ async def prism(message: discord.Interaction):
         youngest_prism = Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.time.desc()).first()
         if youngest_prism:
             selected_time = max(round(time.time()), youngest_prism.time + 1)
+        else:
+            selected_time = round(time.time())
 
         # actually take away cats
         for i in cattypes:
