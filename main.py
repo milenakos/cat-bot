@@ -3771,6 +3771,10 @@ async def prism(message: discord.Interaction):
                 await interaction.followup.send("You don't have enough cats. Nice try though.", ephemeral=True)
                 return
 
+        if Prism.select().where(Prism.guild_id == message.guild.id).count() >= len(prism_names):
+            await interaction.followup.send("This server has reached the prism limit.", ephemeral=True)
+            return
+
         if not isinstance(
             message.channel,
             Union[
@@ -3792,10 +3796,8 @@ async def prism(message: discord.Interaction):
             user["cat_" + i] -= 1
         user.save()
 
-        youngest_prism = Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.time.desc()).limit(1)
-        selected_time = round(time.time())
-        while selected_time <= youngest_prism.time:
-            selected_time += 1
+        youngest_prism = Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.time.desc()).limit(1).execute()
+        selected_time = min(round(time.time()), youngest_prism.time + 1)
 
         # create the prism
         Prism.create(
