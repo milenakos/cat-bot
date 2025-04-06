@@ -3797,7 +3797,7 @@ async def prism(message: discord.Interaction):
         user.save()
 
         youngest_prism = Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.time.desc()).limit(1).execute()
-        selected_time = min(round(time.time()), youngest_prism.time + 1)
+        selected_time = max(round(time.time()), youngest_prism.time + 1)
 
         # create the prism
         Prism.create(
