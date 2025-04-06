@@ -3783,30 +3783,26 @@ async def prism(message: discord.Interaction):
             return
 
         # determine the next name
-        youngest_prism = Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.time.desc()).limit(1)
-        if youngest_prism.exists():
-            try:
-                selected_name = prism_names[prism_names.index(youngest_prism.get().name) + 1]
-            except IndexError:
-                await interaction.followup.send("This server has reached the prism limit.", ephemeral=True)
-                return
-            if youngest_prism.get().time + 3 > int(time.time()):
-                await interaction.followup.send("Please wait a bit before doing this.", ephemeral=True)
-                return
-        else:
-            selected_name = prism_names[0]
+        for selected_name in prism_names:
+            if not Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.name == selected_name)).limit(1).exists():
+                break
 
         # actually take away cats
         for i in cattypes:
             user["cat_" + i] -= 1
         user.save()
 
+        youngest_prism = Prism.select().where(Prism.guild_id == message.guild.id).order_by(Prism.time.desc()).limit(1)
+        selected_time = round(time.time())
+        while selected_time <= youngest_prism.time:
+            selected_time += 1
+
         # create the prism
         Prism.create(
             guild_id=message.guild.id,
             user_id=message.user.id,
             creator=message.user.id,
-            time=round(time.time()),
+            time=selected_time,
             name=selected_name,
         )
         await message.followup.send(f"{icon} {message.user.mention} has created prism {selected_name}!")
@@ -6227,6 +6223,9 @@ async def reset(message: discord.Interaction, person_id: discord.User):
                 profile = get_profile(message.guild.id, person_id.id)
                 profile.guild_id = og.id
                 profile.save()
+                for p in Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == person_id.id)):
+                    p.guild_id = og.id
+                    p.save()
                 await interaction.edit_original_response(
                     content=f"Done! rip {person_id.mention}. f's in chat.\njoin our discord to rollback: <https://discord.gg/staring>", view=None
                 )
