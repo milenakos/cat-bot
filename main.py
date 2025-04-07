@@ -2110,17 +2110,17 @@ async def on_message(message: discord.Message):
                 if user.timeslow >= 3600:
                     await achemb(message, "slow_catcher", "send")
 
-                if do_time and time_caught == 3.14:
+                if time_caught in [3.14, 31.41, 31.42, 194.15, 194.16]:
                     await achemb(message, "pie", "send")
 
-                if do_time and time_caught == int(time_caught):
+                if time_caught > 0 and time_caught == int(time_caught):
                     user.perfection_count += 1
                     await achemb(message, "perfection", "send")
 
                 if did_boost:
                     await achemb(message, "boosted", "send")
 
-                if do_time:
+                if "undefined" not in caught_time and time_caught > 0:
                     raw_digits = "".join(char for char in caught_time[:-1] if char.isdigit())
                     if len(set(raw_digits)) == 1:
                         await achemb(message, "all_the_same", "send")
