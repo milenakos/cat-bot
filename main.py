@@ -2031,13 +2031,11 @@ async def on_message(message: discord.Message):
                 elif random.randint(0, 50000) == 0:
                     button = Button(
                         label="DAVE DISCORD 😀💀⚠️🥺",
-                        url="https://discord.gg/staring",
                         style=ButtonStyle.danger,
                     )
                 elif random.randint(0, 5000000) == 0:
                     button = Button(
                         label="JOHN AND DAVE HAD A SON 💀🤠😀⚠️🥺",
-                        url="https://discord.gg/staring",
                         style=ButtonStyle.green,
                     )
 
@@ -2110,7 +2108,7 @@ async def on_message(message: discord.Message):
                 if user.timeslow >= 3600:
                     await achemb(message, "slow_catcher", "send")
 
-                if time_caught in [3.14, 31.41, 31.42, 194.15, 194.16]:
+                if time_caught in [3.14, 31.41, 31.42, 194.15, 194.16, 0.314]:
                     await achemb(message, "pie", "send")
 
                 if time_caught > 0 and time_caught == int(time_caught):
