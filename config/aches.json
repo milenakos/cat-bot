@@ -72,7 +72,7 @@
   "nerd_battle": {"title": "Battle of the Wits", "description": "run /fact when a professor spawns", "is_hidden": false, "category": "Hard"},
   "its_not_working": {"title": "It's not working", "description": "click private button 50 times", "is_hidden": false, "category": "Hard"},
   "rich": {"title": "R I C H", "description": "gift 5 ultimates to cat bot", "is_hidden": false, "category": "Hard"},
-  "pie": {"title": "Pie Catcher", "description": "catch a cat in exactly 3.14 seconds", "is_hidden": false, "category": "Hard"},
+  "pie": {"title": "Pie Catcher", "description": "catch a cat in exactly pi", "is_hidden": false, "category": "Hard"},
   "perfection": {"title": "Purrfection", "description": "dot zero zero", "is_hidden": false, "category": "Hard"},
   "all_the_same": {"title": "All The Same", "description": "get all digits repeating in the time", "is_hidden": false, "category": "Hard"},
   "paradoxical_gambler": {"title": "Paradoxical Gambler", "description": "gamble so hard you create a paradox", "is_hidden": false, "category": "Hard"},
