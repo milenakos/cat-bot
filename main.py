@@ -944,8 +944,6 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     if not localcat:
         localcat = random.choice(CAT_TYPES)
     icon = get_emoji(localcat.lower() + "cat")
-    if icon == "🔳":
-        icon = localcat.lower() + "cat"
     file = discord.File(
         f"images/spawn/{localcat.lower()}_cat.png",
     )
