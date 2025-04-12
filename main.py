@@ -30,9 +30,6 @@ import config
 import msg2img
 from database import Channel, Prism, Profile, Reminder, User, db
 
-if config.COLLECT_STATS:
-    import stats
-
 logging.basicConfig(level=logging.INFO)
 
 # trigger warning, base64 encoded for your convinience
@@ -512,9 +509,6 @@ async def achemb(message, ach_id, send_type, author_string=None):
     except Exception:
         pass
 
-    if config.COLLECT_STATS:
-        await stats.bump("achievements", ach_id)
-
     if result and ach_id == "thanksforplaying":
         await asyncio.sleep(2)
         await result.edit(embed=embed2)
@@ -653,8 +647,6 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         return
 
     user.quests_completed += 1
-    if config.COLLECT_STATS:
-        await stats.bump("quests", quest)
 
     old_xp = user.progress
     perms = message.channel.permissions_for(message.guild.me)
@@ -724,9 +716,6 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
                 f"<@{user.user_id}>",
                 embeds=[embed_level_up, embed_progress],
             )
-
-        if config.COLLECT_STATS:
-            await stats.bump("battlepass", "level_up")
     else:
         user.progress = current_xp
         user.save()
@@ -1022,9 +1011,6 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     channel.cattype = localcat
     channel.save()
 
-    if config.COLLECT_STATS:
-        await stats.bump("catching", "spawn")
-
 
 async def postpone_reminder(interaction):
     reminder_type = interaction.data["custom_id"]
@@ -1115,9 +1101,6 @@ async def maintaince_loop():
     with db.atomic():
         User.bulk_update(proccessed_users, fields=[User.reminder_vote], batch_size=50)
 
-    if config.COLLECT_STATS:
-        await stats.bump("reminders", "vote", len(proccessed_users))
-
     # i know the next two are similiar enough to be merged but its currently dec 30 and i cant be bothered
     # catch reminders
     proccessed_users = []
@@ -1169,9 +1152,6 @@ async def maintaince_loop():
     with db.atomic():
         Profile.bulk_update(proccessed_users, fields=[Profile.reminder_catch], batch_size=50)
 
-    if config.COLLECT_STATS:
-        await stats.bump("reminders", "catch", len(proccessed_users))
-
     # misc reminders
     proccessed_users = []
     for user in Profile.select().where(
@@ -1222,9 +1202,6 @@ async def maintaince_loop():
     with db.atomic():
         Profile.bulk_update(proccessed_users, fields=[Profile.reminder_misc], batch_size=50)
 
-    if config.COLLECT_STATS:
-        await stats.bump("reminders", "misc", len(proccessed_users))
-
     for reminder in Reminder.select().where(Reminder.time < time.time()):
         try:
             user = await bot.fetch_user(reminder.user_id)
@@ -1233,9 +1210,6 @@ async def maintaince_loop():
         except Exception:
             pass
         reminder.delete_instance()
-
-        if config.COLLECT_STATS:
-            await stats.bump("reminders", "manual")
 
     backupchannel = bot.get_channel(config.BACKUP_ID)
     if not isinstance(
@@ -2149,9 +2123,6 @@ async def on_message(message: discord.Message):
                     elif channel.cattype == "Nice" and user.catch_progress in [0, 1]:
                         await progress(message, user, "finenice")
                         await progress(message, user, "finenice")
-
-                if config.COLLECT_STATS:
-                    await stats.bump("catching", "catch")
             finally:
                 user.save()
                 channel.save()
@@ -2328,13 +2299,6 @@ async def on_guild_join(guild):
             )
     except Exception:
         pass
-
-    if guild.self_role and config.COLLECT_STATS:
-        if guild.self_role.permissions.read_message_history:
-            source = "top.gg"
-        else:
-            source = "direct"
-        await stats.bump("invite", source)
 
 
 @bot.tree.command(description="Learn to use the bot")
@@ -6359,9 +6323,6 @@ async def recieve_vote(request):
         )
     except Exception:
         pass
-
-    if config.COLLECT_STATS:
-        await stats.bump("votes", "vote")
 
     return web.Response(text="ok", status=200)
 
