@@ -2108,7 +2108,7 @@ async def on_message(message: discord.Message):
                 if user.timeslow >= 3600:
                     await achemb(message, "slow_catcher", "send")
 
-                if time_caught in [3.14, 31.41, 31.42, 194.15, 194.16]:
+                if time_caught in [3.14, 31.41, 31.42, 194.15, 194.16, 1901.59, 11655.92, 11655.93]:
                     await achemb(message, "pie", "send")
 
                 if time_caught > 0 and time_caught == int(time_caught):
