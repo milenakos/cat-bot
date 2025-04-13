@@ -117,10 +117,10 @@ class Profile(peewee.Model):
     rain_participations = peewee.IntegerField(default=0)  # amount of catches during rains
     rain_minutes_started = peewee.IntegerField(default=0)  # amount of rain minutes started
     reminders_set = peewee.IntegerField(default=0)  # amount of reminders set
-    cats_gifted = peewee.IntegerField(default=0)  # amount of cats gifted
-    cat_gifts_recieved = peewee.IntegerField(default=0)  # amount of cat gifts recieved
+    cats_gifted = CappedIntegerField(default=0)  # amount of cats gifted
+    cat_gifts_recieved = CappedIntegerField(default=0)  # amount of cat gifts recieved
     trades_completed = peewee.IntegerField(default=0)  # amount of trades completed
-    cats_traded = peewee.IntegerField(default=0)  # amount of cats traded
+    cats_traded = CappedIntegerField(default=0)  # amount of cats traded
     ttt_played = peewee.IntegerField(default=0)  # amount of times played the TTT
     ttt_won = peewee.IntegerField(default=0)  # amount of TTT wins
     ttt_draws = peewee.IntegerField(default=0)  # amount of TTT draws
