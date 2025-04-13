@@ -2027,11 +2027,8 @@ async def on_message(message: discord.Message):
                         else:
                             await send_target.delete_message(cat_temp)
                     except Exception:
-                        try:
-                            if perms.manage_messages:
-                                await message.channel.delete_messages([discord.Object(cat_temp)])
-                        except Exception:
-                            pass
+                        if perms.manage_messages:
+                            await message.channel.delete_messages([discord.Object(cat_temp)])
 
                 async def send_confirm():
                     if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
@@ -2129,11 +2126,8 @@ async def on_message(message: discord.Message):
             finally:
                 user.save()
                 channel.save()
-                try:
-                    if time_caught >= 0:
-                        temp_belated_storage[message.channel.id] = {"time": time_caught, "users": [message.author.id]}
-                except Exception:
-                    pass
+                if time_caught >= 0:
+                    temp_belated_storage[message.channel.id] = {"time": time_caught, "users": [message.author.id]}
                 if decided_time:
                     await asyncio.sleep(decided_time)
                     try:
@@ -4174,11 +4168,8 @@ async def gift(
             reciever = get_profile(message.guild.id, person_id)
             user[f"cat_{cat_type}"] -= amount
             reciever[f"cat_{cat_type}"] += amount
-            try:
-                user.cats_gifted += amount
-                reciever.cat_gifts_recieved += amount
-            except Exception:
-                pass
+            user.cats_gifted += amount
+            reciever.cat_gifts_recieved += amount
             user.save()
             reciever.save()
             embed = discord.Embed(
@@ -4660,13 +4651,9 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             user1 = get_profile(message.guild.id, person1.id)
             user2 = get_profile(message.guild.id, person2.id)
 
-            try:
-                if int(value) < 0:
-                    person1accept = False
-                    person2accept = False
-            except Exception:
-                await interaction.response.send_message("invalid amount", ephemeral=True)
-                return
+            if int(value) < 0:
+                person1accept = False
+                person2accept = False
 
             # handle prisms
             if (pname := " ".join(i.capitalize() for i in self.cattype.value.split())) in prism_names:
@@ -5746,9 +5733,6 @@ async def leaderboards(
         leaderboard_type = "Cats"
     if not locked:
         locked = False
-    if cat_type not in cattypes:
-        await message.response.send_message("invalid cattype", ephemeral=True)
-        return
 
     # this fat function handles a single page
     async def lb_handler(interaction, type, do_edit=None, specific_cat="All"):
