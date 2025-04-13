@@ -5746,7 +5746,7 @@ async def leaderboards(
         leaderboard_type = "Cats"
     if not locked:
         locked = False
-    if cat_type not in cattypes:
+    if cat_type and cat_type not in cattypes + ["All"]:
         await message.response.send_message("invalid cattype", ephemeral=True)
         return
 
