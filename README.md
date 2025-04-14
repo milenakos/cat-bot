@@ -36,4 +36,4 @@ Please note self-hosting is hacky and isn't supported, instructions below are fo
 
 # License
 
-Cat Bot is licensed under Creative Commons Zero v1.0 Universal license. View `LICENSE` for more information.
+Cat Bot is licensed under GNU Affero General Public License v3.0 license. View `LICENSE` for more information.
