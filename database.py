@@ -177,6 +177,7 @@ class User(peewee.Model):
 
     vote_time_topgg = peewee.BigIntegerField(default=0)  # timestamp of last vote
     reminder_vote = peewee.BigIntegerField(default=0)  # timestamp of last vote reminder
+    streak_freezes = peewee.IntegerField(default=0)  # streak freezes
 
     custom = peewee.CharField(default="")  # custom cat name
     custom_num = peewee.IntegerField(default=1)  # custom cat amount

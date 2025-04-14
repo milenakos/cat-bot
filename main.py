@@ -639,7 +639,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         if voted_at.weekday() >= 4:
             user.vote_reward *= 2
 
-        if global_user.vote_streak % 5 == 0 and global_user.vote_streak != 0:
+        if global_user.vote_streak % 5 == 0 and global_user.vote_streak not in [0, 5]:
             user.pack_gold += 1
 
         current_xp = user.progress + user.vote_reward
@@ -775,7 +775,7 @@ def progress_embed(message, user, level_data, current_xp, old_xp, quest_data, di
         reward_text = f"{get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack"
 
     global_user, _ = User.get_or_create(user_id=user.user_id)
-    if global_user.vote_streak % 5 == 0 and global_user.vote_streak != 0 and "top.gg" in quest_data["title"]:
+    if global_user.vote_streak % 5 == 0 and global_user.vote_streak not in [0, 5] and "top.gg" in quest_data["title"]:
         streak_reward = f"\n🔥 +1 {get_emoji('goldpack')} Gold pack"
     else:
         streak_reward = ""
@@ -3613,7 +3613,7 @@ async def battlepass(message: discord.Interaction):
             else:
                 description += f" - Reward: {user.vote_reward} XP"
 
-            if global_user.vote_streak % 5 == 4 and global_user.vote_time_topgg + 24 * 3600 > time.time():
+            if global_user.vote_streak % 5 == 4 and global_user.vote_time_topgg + 24 * 3600 > time.time() and global_user.vote_streak != 4:
                 description += f" + {get_emoji('goldpack')} 1 Gold pack"
 
             description += f"{streak_string}\n"
@@ -6339,10 +6339,10 @@ async def recieve_vote(request):
 
     try:
         channeley = await bot.fetch_user(int(request_json["user"]))
-        if user.vote_streak % 5 == 0:
+        if user.vote_streak != 5 and user.vote_streak % 5 == 0:
             gold_suffix = f"(+1 {get_emoji('goldpack')} Gold pack!)"
         else:
-            gold_suffix = f"(Bonus {get_emoji('goldpack')} Gold Pack at {math.ceil(user.vote_streak / 5) * 5} streak)"
+            gold_suffix = f"(Bonus {get_emoji('goldpack')} Gold Pack at {math.ceil((user.vote_streak + 5) / 5) * 5} streak)"
         await channeley.send(
             "\n".join(
                 [
