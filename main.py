@@ -2793,11 +2793,13 @@ async def catalogue(message: discord.Interaction):
 
 
 def gen_stats(profile, star):
-    stats = []
+    embed = discord.Embed(title="Stats", color=discord.Color.blurple())
     user, _ = User.get_or_create(user_id=profile.user_id)
 
+    stats = []
+
     # catching
-    stats.append([get_emoji("staring_cat"), "Catching"])
+    stats.append(["HEADER", get_emoji("staring_cat"), "Catching"])
     stats.append(["catches", "🐈", f"Catches: {profile.total_catches:,}{star}"])
     catch_time = "---" if profile.time >= 99999999999999 else round(profile.time, 3)
     slow_time = "---" if profile.timeslow == 0 else round(profile.timeslow / 3600, 2)
@@ -2811,7 +2813,7 @@ def gen_stats(profile, star):
     stats.append(["purrfect_catches", "✨", f"Purrfect catches: {profile.perfection_count:,}{star}"])
 
     # catching boosts
-    stats.append([get_emoji("prism"), "Boosts"])
+    stats.append(["HEADER", get_emoji("prism"), "Boosts"])
     prisms_crafted = Prism.select().where(Prism.guild_id == profile.guild_id, Prism.creator == profile.user_id).count()
     boosts_done = Prism.select(peewee.fn.SUM(Prism.catches_boosted)).where(Prism.guild_id == profile.guild_id, Prism.user_id == profile.user_id).scalar()
     if not boosts_done:
@@ -2823,7 +2825,7 @@ def gen_stats(profile, star):
     stats.append(["cataine_bought", "🧂", f"Cataine bought: {profile.cataine_bought:,}"])
 
     # voting
-    stats.append([get_emoji("topgg"), "Voting"])
+    stats.append(["HEADER", get_emoji("topgg"), "Voting"])
     stats.append(["total_votes", get_emoji("topgg"), f"Total votes: {user.total_votes:,}{star}"])
     stats.append(["current_vote_streak", "🔥", f"Current vote streak: {user.vote_streak} (max {max(user.vote_streak, user.max_vote_streak):,}){star}"])
     if user.vote_time_topgg + 43200 > time.time():
@@ -2832,12 +2834,11 @@ def gen_stats(profile, star):
         stats.append(["can_vote", get_emoji("topgg"), "Can vote!"])
 
     # battlepass
-    stats.append(["⬆️", "Cattlepass"])
+    stats.append(["HEADER", "⬆️", "Cattlepass"])
     seasons_complete = 0
     levels_complete = 0
     max_level = 0
     total_xp = 0
-    # past seasons
     for season in profile.bp_history.split(";"):
         if not season:
             break
@@ -2851,12 +2852,10 @@ def gen_stats(profile, star):
             total_xp += 1500 * (season_lvl - 31)
         if season_lvl > max_level:
             max_level = season_lvl
-
         for num, level in enumerate(battle["seasons"][str(season_num)]):
             if num >= season_lvl:
                 break
             total_xp += level["xp"]
-    # current season
     if profile.season != 0:
         levels_complete += profile.battlepass
         total_xp += profile.progress
@@ -2865,14 +2864,11 @@ def gen_stats(profile, star):
             total_xp += 1500 * (profile.battlepass - 31)
         if profile.battlepass > max_level:
             max_level = profile.battlepass
-
         for num, level in enumerate(battle["seasons"][str(profile.season)]):
             if num >= profile.battlepass:
                 break
             total_xp += level["xp"]
-    current_packs = 0
-    for pack in pack_data:
-        current_packs += profile[f"pack_{pack['name'].lower()}"]
+    current_packs = sum(profile[f"pack_{pack['name'].lower()}"] for pack in pack_data)
     stats.append(["quests_completed", "✅", f"Quests completed: {profile.quests_completed:,}{star}"])
     stats.append(["seasons_completed", "🏅", f"Cattlepass seasons completed: {seasons_complete:,}"])
     stats.append(["levels_completed", "✅", f"Cattlepass levels completed: {levels_complete:,}"])
@@ -2882,22 +2878,22 @@ def gen_stats(profile, star):
     stats.append(["highest_ever_level", "🏆", f"Highest ever Cattlepass level: {max_level:,}"])
     stats.append(["total_xp_earned", "🧮", f"Total Cattlepass XP earned: {total_xp:,}"])
 
-    # rains & supporter
-    stats.append(["☔", "Rains"])
+    # rains
+    stats.append(["HEADER", "☔", "Rains"])
     stats.append(["current_rain_minutes", "☔", f"Current rain minutes: {user.rain_minutes:,}"])
     stats.append(["supporter", "👑", "Ever bought rains: " + ("Yes" if user.premium else "No")])
     stats.append(["cats_caught_during_rains", "☔", f"Cats caught during rains: {profile.rain_participations:,}{star}"])
     stats.append(["rain_minutes_started", "☔", f"Rain minutes started: {profile.rain_minutes_started:,}{star}"])
 
     # gambling
-    stats.append(["🎰", "Gambling"])
+    stats.append(["HEADER", "🎰", "Gambling"])
     stats.append(["casino_spins", "🎰", f"Casino spins: {profile.gambles:,}"])
     stats.append(["slot_spins", "🎰", f"Slot spins: {profile.slot_spins:,}"])
     stats.append(["slot_wins", "🎰", f"Slot wins: {profile.slot_wins:,}"])
     stats.append(["slot_big_wins", "🎰", f"Slot big wins: {profile.slot_big_wins:,}"])
 
     # tic tac toe
-    stats.append(["⭕", "Tic Tac Toe"])
+    stats.append(["HEADER", "⭕", "Tic Tac Toe"])
     stats.append(["ttc_games", "⭕", f"Tic Tac Toe games played: {profile.ttt_played:,}"])
     stats.append(["ttc_wins", "⭕", f"Tic Tac Toe wins: {profile.ttt_won:,}"])
     stats.append(["ttc_draws", "⭕", f"Tic Tac Toe draws: {profile.ttt_draws:,}"])
@@ -2907,7 +2903,7 @@ def gen_stats(profile, star):
         stats.append(["ttc_win_rate", "⭕", "Tic Tac Toe win rate: 0%"])
 
     # misc
-    stats.append(["❓", "Misc"])
+    stats.append(["HEADER", "❓", "Misc"])
     stats.append(["facts_read", "🧐", f"Facts read: {profile.facts:,}"])
     stats.append(["private_embed_clicks", get_emoji("pointlaugh"), f"Private embed clicks: {profile.funny:,}"])
     stats.append(["reminders_set", "⏰", f"Reminders set: {profile.reminders_set:,}{star}"])
@@ -2917,7 +2913,38 @@ def gen_stats(profile, star):
     stats.append(["cats_traded", "💱", f"Cats traded: {profile.cats_traded:,}{star}"])
     if profile.user_id == 553093932012011520:
         stats.append(["owner", get_emoji("neocat"), "a cute catgirl :3"])
-    return stats
+
+    # format the embed to shrink vertical space
+    buffer = []
+    for stat in stats:
+        key, emoji, value = stat
+        if key == "HEADER":
+            # flush current buffer
+            for i in range(0, len(buffer), 3):
+                for j in range(3):
+                    if i + j < len(buffer):
+                        s = buffer[i + j]
+                        embed.add_field(name=s[1], value=s[2], inline=True)
+                # pad with empty fields? maybe??
+                if len(buffer[i:i + 3]) < 3:
+                    for _ in range(3 - len(buffer[i:i + 3])):
+                        embed.add_field(name="\u200b", value="\u200b", inline=True)
+            buffer = []
+            embed.add_field(name=f"**{emoji} {value}**", value="\u200b", inline=False)
+        else:
+            buffer.append(stat)
+
+    # flush remaining stats
+    for i in range(0, len(buffer), 3):
+        for j in range(3):
+            if i + j < len(buffer):
+                s = buffer[i + j]
+                embed.add_field(name=s[1], value=s[2], inline=True)
+        if len(buffer[i:i + 3]) < 3:
+            for _ in range(3 - len(buffer[i:i + 3])):
+                embed.add_field(name="\u200b", value="\u200b", inline=True)
+
+    return embed
 
 
 @bot.tree.command(name="stats", description="View some advanced stats")
