@@ -3894,7 +3894,7 @@ async def ping(message: discord.Interaction):
                     total_shards = 0
                     for line in data.split("\n"):
                         if line.startswith("gateway_shard_latency{shard="):
-                            total_latencies += int(line.split(" ")[1])
+                            total_latencies += float(line.split(" ")[1])
                             total_shards += 1
                     latency = round((total_latencies / total_shards) * 1000)
             except Exception:
