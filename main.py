@@ -1059,13 +1059,14 @@ async def maintaince_loop():
         async with aiohttp.ClientSession() as session:
             # send server count to top.gg
             try:
-                await session.post(
+                r = await session.post(
                     f"https://top.gg/api/bots/{bot.user.id}/stats",
                     headers={"Authorization": config.TOP_GG_TOKEN},
                     json={
                         "server_count": len(bot.guilds),
                     },
                 )
+                r.close()
             except Exception:
                 print("Posting to top.gg failed.")
 
