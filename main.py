@@ -1108,10 +1108,18 @@ async def maintaince_loop():
 
         try:
             user_dm = await bot.fetch_user(user.user_id)
-            await user_dm.send("You can vote now!", view=view)
+            await user_dm.send("You can vote now!" if user.vote_streak < 10 else f"Vote now to keep your {user.vote_streak} streak going!", view=view)
         except Exception:
             pass
-        user.reminder_vote = 0
+        if user.vote_streak < 10:
+            user.reminder_vote = 0
+        else:
+            # schedule the next of vote streak reminders
+            time_until_expiry = user.vote_time_topgg + 36 * 3600 - time.time()
+            if time_until_expiry > 12 * 3600:
+                user.reminder_vote = user.vote_time_topgg + 24 * 3600
+            elif time_until_expiry > 3600:
+                user.reminder_vote = user.vote_time_topgg + 35 * 3600
         proccessed_users.append(user)
 
     with db.atomic():
@@ -6327,7 +6335,7 @@ async def recieve_vote(request):
 
     user.reminder_vote = 1
     user.total_votes += 1
-    if user.vote_time_topgg + 86400 <= time.time():
+    if user.vote_time_topgg + 36 * 3600 <= time.time():
         # streak end
         if user.max_vote_streak < user.vote_streak:
             user.max_vote_streak = user.vote_streak
@@ -6349,7 +6357,7 @@ async def recieve_vote(request):
                     f"Thanks for voting! Streak: {user.vote_streak:,} {gold_suffix}",
                     "To claim your rewards, run `/battlepass` in every server you want.",
                     f"You can vote again <t:{int(time.time()) + 43200}:R>.",
-                    "Vote within the next 24 hours to not lose your streak.",
+                    "Vote within the next 36 hours to not lose your streak.",
                 ]
             )
         )
