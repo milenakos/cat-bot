@@ -6263,7 +6263,7 @@ async def nuke(message: discord.Interaction):
             "Reset everything! (5)",
         ]
         view = View(timeout=VIEW_TIMEOUT)
-        button = Button(label=lines[counter], style=ButtonStyle.red)
+        button = Button(label=lines[max(1, counter)], style=ButtonStyle.red)
         button.callback = count
         view.add_item(button)
         return view
