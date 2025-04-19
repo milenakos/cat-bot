@@ -3884,6 +3884,21 @@ async def ping(message: discord.Interaction):
         latency = round(bot.latency * 1000)
     except Exception:
         latency = "infinite"
+    if latency == 0:
+        # probably using gateway proxy, try fetching latency from metrics
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get("http://localhost:7878/metrics") as response:
+                    data = await response.text()
+                    total_latencies = 0
+                    total_shards = 0
+                    for line in data.split("\n"):
+                        if line.startswith("gateway_shard_latency{shard="):
+                            total_latencies += int(line.split(" ")[1])
+                            total_shards += 1
+                    latency = round((total_latencies / total_shards) * 1000)
+            except Exception:
+                pass
     await message.response.send_message(f"🏓 cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
     await progress(message, get_profile(message.guild.id, message.user.id), "ping")
 
