@@ -3303,10 +3303,8 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         channel_permissions = message.channel.permissions_for(message.guild.me)
         needed_perms = {
             "View Channel": channel_permissions.view_channel,
-            "Manage Webhooks": channel_permissions.manage_webhooks,
             "Send Messages": channel_permissions.send_messages,
             "Attach Files": channel_permissions.attach_files,
-            "Use External Emojis": channel_permissions.use_external_emojis,
         }
         if isinstance(message.channel, discord.Thread):
             needed_perms["Send Messages in Threads"] = channel_permissions.send_messages_in_threads
@@ -6066,7 +6064,6 @@ async def setup_channel(message: discord.Interaction):
                 "Manage Webhooks": channel_permissions.manage_webhooks,
                 "Send Messages": channel_permissions.send_messages,
                 "Attach Files": channel_permissions.attach_files,
-                "Use External Emojis": channel_permissions.use_external_emojis,
             }
             if isinstance(message.channel, discord.Thread):
                 needed_perms["Send Messages in Threads"] = channel_permissions.send_messages_in_threads
