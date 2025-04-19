@@ -6363,7 +6363,7 @@ async def recieve_vote(request):
         if user.vote_streak != 5 and user.vote_streak % 5 == 0:
             gold_suffix = f"(+1 {get_emoji('goldpack')} Gold pack!)"
         else:
-            gold_suffix = f"(Bonus {get_emoji('goldpack')} Gold Pack at {math.ceil((user.vote_streak + 5) / 5) * 5} streak)"
+            gold_suffix = f"(Bonus {get_emoji('goldpack')} Gold Pack at {max(10, math.ceil(user.vote_streak / 5) * 5)} streak)"
         await channeley.send(
             "\n".join(
                 [
