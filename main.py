@@ -3757,7 +3757,7 @@ async def prism(message: discord.Interaction):
 
     async def confirm_craft(interaction: discord.Interaction):
         await interaction.response.defer()
-        user = get_profile(message.guild.id, message.user.id)
+        user = get_profile(interaction.guild.id, interaction.user.id)
 
         # check we still can craft
         for i in cattypes:
@@ -3798,42 +3798,39 @@ async def prism(message: discord.Interaction):
 
         # create the prism
         Prism.create(
-            guild_id=message.guild.id,
-            user_id=message.user.id,
-            creator=message.user.id,
+            guild_id=interaction.guild.id,
+            user_id=interaction.user.id,
+            creator=interaction.user.id,
             time=selected_time,
             name=selected_name,
         )
-        await message.followup.send(f"{icon} {message.user.mention} has created prism {selected_name}!")
-        await achemb(message, "prism", "send")
-        await achemb(message, "collecter", "send")
+        await message.followup.send(f"{icon} {interaction.user.mention} has created prism {selected_name}!")
+        await achemb(interaction, "prism", "send")
+        await achemb(interaction, "collecter", "send")
 
     async def craft_prism(interaction: discord.Interaction):
-        if interaction.user.id == message.user.id:
-            user = get_profile(message.guild.id, message.user.id)
+        user = get_profile(interaction.guild.id, interaction.user.id)
 
-            missing_cats = []
-            for i in cattypes:
-                if user["cat_" + i] < 1:
-                    if Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{i}"))).where(Profile.guild_id == message.guild.id).scalar() > 0:
-                        missing_cats.append(get_emoji(i.lower() + "cat"))
-                    else:
-                        missing_cats.append(get_emoji("mysterycat"))
+        missing_cats = []
+        for i in cattypes:
+            if user["cat_" + i] < 1:
+                if Profile.select(peewee.fn.SUM(getattr(Profile, f"cat_{i}"))).where(Profile.guild_id == interaction.guild.id).scalar() > 0:
+                    missing_cats.append(get_emoji(i.lower() + "cat"))
+                else:
+                    missing_cats.append(get_emoji("mysterycat"))
 
-            if len(missing_cats) == 0:
-                view = View(timeout=VIEW_TIMEOUT)
-                confirm_button = Button(label="Craft!", style=ButtonStyle.green, emoji=icon)
-                confirm_button.callback = confirm_craft
-                description = "The crafting recipe is __ONE of EVERY cat type__.\nContinue crafting?"
-            else:
-                view = View(timeout=VIEW_TIMEOUT)
-                confirm_button = Button(label="Not enough cats!", style=ButtonStyle.red, disabled=True)
-                description = "The crafting recipe is __ONE of EVERY cat type__.\nYou are missing " + "".join(missing_cats)
-
-            view.add_item(confirm_button)
-            await interaction.response.send_message(description, view=view, ephemeral=True)
+        if len(missing_cats) == 0:
+            view = View(timeout=VIEW_TIMEOUT)
+            confirm_button = Button(label="Craft!", style=ButtonStyle.green, emoji=icon)
+            confirm_button.callback = confirm_craft
+            description = "The crafting recipe is __ONE of EVERY cat type__.\nContinue crafting?"
         else:
-            await do_funny(interaction)
+            view = View(timeout=VIEW_TIMEOUT)
+            confirm_button = Button(label="Not enough cats!", style=ButtonStyle.red, disabled=True)
+            description = "The crafting recipe is __ONE of EVERY cat type__.\nYou are missing " + "".join(missing_cats)
+
+        view.add_item(confirm_button)
+        await interaction.response.send_message(description, view=view, ephemeral=True)
 
     async def prev_page(interaction):
         nonlocal page_number
