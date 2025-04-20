@@ -1089,7 +1089,7 @@ async def maintaince_loop():
 
         user = User.get(user.user_id)
 
-        if not ((user.reminder_vote != 0) and ((43200 < user.vote_time_topgg + 43200 < time.time()) or (1 < user.reminder_vote < time.time()))):
+        if not ((43200 < user.vote_time_topgg + 43200 < time.time()) and (0 < user.reminder_vote < time.time())):
             continue
 
         view = View(timeout=VIEW_TIMEOUT)
