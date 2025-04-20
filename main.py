@@ -1081,9 +1081,7 @@ async def maintaince_loop():
     # i wont go into the details of this because its a complicated mess which took me like solid 30 minutes of planning
     #
     # vote reminders
-    for user in User.select().where(
-        (User.reminder_vote != 0) & ((43200 < User.vote_time_topgg + 43200 < time.time()) | (1 < User.reminder_vote < time.time()))
-    ):
+    for user in User.select().where((43200 < User.vote_time_topgg + 43200 < time.time()) & (0 < User.reminder_vote < time.time())):
         select = Profile.select().where((Profile.user_id == user.user_id) & Profile.reminders_enabled)
         if not select.exists():
             continue
