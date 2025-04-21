@@ -1801,7 +1801,7 @@ async def on_message(message: discord.Message):
         else:
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
-            times = [channel.spawn_times_min, channel.spawn_times_max]
+            times = [max(100, channel.spawn_times_min), channel.spawn_times_max]
             if channel.cat_rains != 0:
                 if channel.cat_rains > time.time():
                     times = [1, 2]
@@ -3284,7 +3284,8 @@ This bot is developed by a single person so buying one would be very appreciated
 As a bonus, you will get access to /editprofile command!
 Fastest times are not saved during rains.
 
-You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
+You currently have **{user.rain_minutes}** minutes of rains{server_rains}.
+**NOTE**: Rains are disabled for the length of the event to reduce server load.""",
         color=0x6E593C,
     )
 
@@ -5028,7 +5029,7 @@ async def event(message: discord.Interaction):
     embed = discord.Embed(
         color=0x000001,
         title=f"{get_emoji('piece')} {total_puzzle_pieces:,}/1,000,000",
-        description=f"__pieces collected__\nby this server: {server_puzzle_pieces:,}\nby {message.user.name} in this server: {profile_puzzle_pieces:,}\nby {message.user.name} in all servers: {user_puzzle_pieces:,}",
+        description=f"__pieces collected__\nby this server: {server_puzzle_pieces:,}\nby {message.user.name} in this server: {profile_puzzle_pieces:,}\nby {message.user.name} in all servers: {user_puzzle_pieces:,}\n\nnote: spawn times are forced to be atleast 100 seconds and rains are disabled until 1 million pieces are collected.",
     )
 
     view = View(timeout=1)
