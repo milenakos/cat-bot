@@ -48,6 +48,8 @@ from database import Channel, Prism, Profile, Reminder, User, db
 
 logging.basicConfig(level=logging.INFO)
 
+total_puzzle_pieces = Profile.select(peewee.fn.SUM(Profile.puzzle_pieces)).scalar()
+
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
 
@@ -1346,7 +1348,7 @@ async def on_ready():
 # this is all the code which is ran on every message sent
 # a lot of it is for easter eggs or achievements
 async def on_message(message: discord.Message):
-    global emojis
+    global emojis, total_puzzle_pieces
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
         return
@@ -1801,7 +1803,7 @@ async def on_message(message: discord.Message):
         else:
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
-            times = [max(100, channel.spawn_times_min), max(101, channel.spawn_times_max)]
+            times = [channel.spawn_times_min, channel.spawn_times_max]
             if channel.cat_rains != 0:
                 if channel.cat_rains > time.time():
                     times = [1, 2]
@@ -1973,12 +1975,10 @@ async def on_message(message: discord.Message):
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
 
-                total_puzzle_pieces = Profile.select(peewee.fn.SUM(Profile.puzzle_pieces)).scalar()
                 if total_puzzle_pieces == 999_999:
                     print("gg", time.time(), message.guild.id, message.author.id)
                 if total_puzzle_pieces < 1_000_000:
                     user.puzzle_pieces += 1
-                    user.save()
                     total_puzzle_pieces += 1
                     suffix_string += f"\n{get_emoji('piece')} +1 piece - {total_puzzle_pieces:,}/1,000,000. </event:{EVENT_ID}>"
 
@@ -2795,7 +2795,7 @@ async def last(message: discord.Interaction):
     except Exception:
         displayedtime = "forever ago"
 
-    times = [max(100, channel.spawn_times_min), max(101, channel.spawn_times_max)]
+    times = [channel.spawn_times_min, channel.spawn_times_max]
 
     if channel and not channel.cat:
         nextpossible = f"\nthe next cat will spawn between <t:{int(lasttime) + times[0]}:R> and <t:{int(lasttime) + times[1]}:R>"
@@ -3286,8 +3286,7 @@ This bot is developed by a single person so buying one would be very appreciated
 As a bonus, you will get access to /editprofile command!
 Fastest times are not saved during rains.
 
-You currently have **{user.rain_minutes}** minutes of rains{server_rains}.
-**NOTE**: Rains are disabled for the length of the event to reduce server load.""",
+You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         color=0x6E593C,
     )
 
@@ -3387,7 +3386,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.
         modal = RainModal(interaction.user)
         await interaction.response.send_modal(modal)
 
-    button = Button(label="Rain!", style=ButtonStyle.blurple, disabled=True)
+    button = Button(label="Rain!", style=ButtonStyle.blurple)
     button.callback = rain_modal
 
     shopbutton = Button(
@@ -5023,6 +5022,7 @@ async def casino(message: discord.Interaction):
 
 @bot.tree.command(description="???")
 async def event(message: discord.Interaction):
+    global total_puzzle_pieces
     total_puzzle_pieces = Profile.select(peewee.fn.SUM(Profile.puzzle_pieces)).scalar()
     profile_puzzle_pieces = get_profile(message.guild.id, message.user.id).puzzle_pieces
     user_puzzle_pieces = Profile.select(peewee.fn.SUM(Profile.puzzle_pieces)).where(Profile.user_id == message.user.id).scalar()
@@ -5031,7 +5031,7 @@ async def event(message: discord.Interaction):
     embed = discord.Embed(
         color=0x000001,
         title=f"{get_emoji('piece')} {total_puzzle_pieces:,}/1,000,000",
-        description=f"__pieces collected__\nby this server: {server_puzzle_pieces:,}\nby {message.user.name} in this server: {profile_puzzle_pieces:,}\nby {message.user.name} in all servers: {user_puzzle_pieces:,}\n\nnote: spawn times are forced to be atleast 100 seconds and rains are disabled until 1 million pieces are collected.",
+        description=f"__pieces collected__\nby this server: {server_puzzle_pieces:,}\nby {message.user.name} in this server: {profile_puzzle_pieces:,}\nby {message.user.name} in all servers: {user_puzzle_pieces:,}",
     )
 
     view = View(timeout=1)
