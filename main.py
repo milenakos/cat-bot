@@ -1978,7 +1978,7 @@ async def on_message(message: discord.Message):
                     user.puzzle_pieces += 1
                     user.save()
                     total_puzzle_pieces += 1
-                    suffix_string += f"{get_emoji('piece')} +1 piece - {total_puzzle_pieces:,}/1,000,000. </event:{EVENT_ID}>"
+                    suffix_string += f"\n{get_emoji('piece')} +1 piece - {total_puzzle_pieces:,}/1,000,000. </event:{EVENT_ID}>"
 
                 if channel.cought:
                     coughstring = channel.cought
