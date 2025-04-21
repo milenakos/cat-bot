@@ -1801,7 +1801,7 @@ async def on_message(message: discord.Message):
         else:
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
-            times = [max(100, channel.spawn_times_min), channel.spawn_times_max]
+            times = [max(100, channel.spawn_times_min), max(101, channel.spawn_times_max)]
             if channel.cat_rains != 0:
                 if channel.cat_rains > time.time():
                     times = [1, 2]
