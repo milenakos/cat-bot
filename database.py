@@ -144,6 +144,8 @@ class Profile(peewee.Model):
     pack_upgrades = peewee.IntegerField(default=0)  # amount of pack upgrades
     new_user = peewee.BooleanField(default=True)  # whether the user is new
 
+    puzzle_pieces = peewee.IntegerField(default=0)  # amount of puzzle pieces collected for birthday 2025 event
+
     # thanks chatgpt
     # cat types
     for cattype in cattypes:

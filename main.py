@@ -253,7 +253,7 @@ funny = [
 ]
 
 # rain shill message for footers
-rain_shill = "☔ Get tons of cats /rain"
+rain_shill = "🥳 Birthday sale! /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -303,6 +303,7 @@ emojis = {}
 
 # for mentioning it in catch message, will be auto-fetched in on_ready()
 RAIN_ID = 1270470307102195752
+EVENT_ID = 0
 
 # for funny stats, you can probably edit maintaince_loop to restart every X of them
 loop_count = 0
@@ -336,6 +337,7 @@ news_list = [
     {"title": "Battlepass Update", "emoji": "⬆️"},
     {"title": "Packs!", "emoji": "goldpack"},
     {"title": "Message from CEO of Cat Bot", "emoji": "finecat"},
+    {"title": "Cat Bot Turns 3", "emoji": "🥳"},
 ]
 
 
@@ -443,6 +445,20 @@ We are committed to resolving these challenges and aim to have everything back o
 
 Best regards,
 [Your Name]""",
+            color=0x6E593C,
+        )
+        await interaction.edit_original_response(content=None, view=None, embed=embed)
+    elif news_id == 6:
+        embed = discord.Embed(
+            title="🥳 Cat Bot Turns 3",
+            description="""today is a special day for cat bot! april 21st is its birthday, and this year its turning three!
+to celebrate, we will be doing the biggest sale yet! -50% off for the next 5 days at our [store](https://store.minkos.lol)
+happy birthda~~
+...
+hold on...
+im recieving some news cats are starting to get caught with puzzle pieces in their teeth!
+the puzzle pieces say something about running `/event` on their back and that you might need to reload your discord to see it
+how considerate!""",
             color=0x6E593C,
         )
         await interaction.edit_original_response(content=None, view=None, embed=embed)
@@ -782,7 +798,7 @@ def progress_embed(message, user, level_data, current_xp, old_xp, quest_data, di
 
     return discord.Embed(
         title=f"✅ {title}",
-        description=f"{progress_line}\n{current_xp}/{level_data['xp']} XP (+{diff}){streak_reward}\nReward: {reward_text}",
+        description=f"{progress_line}\n{current_xp}/{level_data['xp']} XP (+{diff})\nReward: {reward_text}{streak_reward}",
         color=0x007F0E,
     ).set_author(name="/battlepass " + level_text)
 
@@ -1950,10 +1966,19 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
+                    suffix_string += f"\n🥳 cat bot birthday! -50% </rain:{RAIN_ID}>"
                 if random.randint(0, 19) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
+
+                total_puzzle_pieces = Profile.select(peewee.fn.SUM(Profile.puzzle_pieces)).scalar()
+                if total_puzzle_pieces == 999_999:
+                    print("gg", time.time(), message.guild.id, message.author.id)
+                if total_puzzle_pieces < 1_000_000:
+                    user.puzzle_pieces += 1
+                    user.save()
+                    total_puzzle_pieces += 1
+                    suffix_string += f"{get_emoji('piece')} +1 piece - {total_puzzle_pieces:,}/1,000,000. </event:{EVENT_ID}>"
 
                 if channel.cought:
                     coughstring = channel.cought
@@ -4991,6 +5016,30 @@ async def casino(message: discord.Interaction):
     await message.response.send_message(embed=embed, view=myview)
 
 
+@bot.tree.command(description="???")
+async def event(message: discord.Interaction):
+    total_puzzle_pieces = Profile.select(peewee.fn.SUM(Profile.puzzle_pieces)).scalar()
+    profile_puzzle_pieces = get_profile(message.guild.id, message.user.id).puzzle_pieces
+    user_puzzle_pieces = Profile.select(peewee.fn.SUM(Profile.puzzle_pieces)).where(Profile.user_id == message.user.id).scalar()
+    server_puzzle_pieces = Profile.select(peewee.fn.SUM(Profile.puzzle_pieces)).where(Profile.server_id == message.guild.id).scalar()
+
+    embed = discord.Embed(
+        color=0x000001,
+        title=f"{get_emoji('piece')} {total_puzzle_pieces:,}/1,000,000",
+        description=f"__pieces collected__\nby this server: {server_puzzle_pieces:,}\nby {message.user.name} in this server: {profile_puzzle_pieces:,}\nby {message.user.name} in all servers: {user_puzzle_pieces:,}",
+    )
+
+    view = View(timeout=1)
+    view.add_item(Button(label="join discord to discuss", url="https://discord.gg/staring"))
+
+    if total_puzzle_pieces >= 1000000:
+        file = discord.File("1000000.png", filename="1000000.png")
+        embed = embed.set_image(url="attachment://1000000.png")
+        await message.response.send_message(embed=embed, view=view, file=file)
+    else:
+        await message.response.send_message(embed=embed, view=view)
+
+
 @bot.tree.command(description="oh no")
 async def slots(message: discord.Interaction):
     if message.user.id + message.guild.id in slots_lock:
@@ -6396,7 +6445,7 @@ async def on_error(*args, **kwargs):
 
 
 async def setup(bot2):
-    global bot, RAIN_ID, vote_server
+    global bot, RAIN_ID, vote_server, EVENT_ID
 
     for command in bot.tree.walk_commands():
         # copy all the commands
@@ -6429,6 +6478,8 @@ async def setup(bot2):
     for i in app_commands:
         if i.name == "rain":
             RAIN_ID = i.id
+        if i.name == "event":
+            EVENT_ID = i.id
 
     if bot.is_ready() and not on_ready_debounce:
         await on_ready()
