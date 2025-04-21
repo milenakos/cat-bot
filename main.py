@@ -3384,7 +3384,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         modal = RainModal(interaction.user)
         await interaction.response.send_modal(modal)
 
-    button = Button(label="Rain!", style=ButtonStyle.blurple)
+    button = Button(label="Rain!", style=ButtonStyle.blurple, disabled=True)
     button.callback = rain_modal
 
     shopbutton = Button(
