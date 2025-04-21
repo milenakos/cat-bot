@@ -5021,7 +5021,7 @@ async def event(message: discord.Interaction):
     total_puzzle_pieces = Profile.select(peewee.fn.SUM(Profile.puzzle_pieces)).scalar()
     profile_puzzle_pieces = get_profile(message.guild.id, message.user.id).puzzle_pieces
     user_puzzle_pieces = Profile.select(peewee.fn.SUM(Profile.puzzle_pieces)).where(Profile.user_id == message.user.id).scalar()
-    server_puzzle_pieces = Profile.select(peewee.fn.SUM(Profile.puzzle_pieces)).where(Profile.server_id == message.guild.id).scalar()
+    server_puzzle_pieces = Profile.select(peewee.fn.SUM(Profile.puzzle_pieces)).where(Profile.guild_id == message.guild.id).scalar()
 
     embed = discord.Embed(
         color=0x000001,
