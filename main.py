@@ -2289,7 +2289,7 @@ async def on_message(message: discord.Message):
     if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
         stuff = text.split(" ")
         if stuff[1][0] not in "1234567890":
-            stuff.insert(1, stuff.channel.owner_id)
+            stuff.insert(1, message.channel.owner_id)
         user, _ = User.get_or_create(user_id=stuff[1])
         cat_name = " ".join(stuff[2:])
         if stuff[2] != "None" and message.reference and message.reference.message_id:
