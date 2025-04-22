@@ -2288,15 +2288,10 @@ async def on_message(message: discord.Message):
                 pass
     if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
         stuff = text.split(" ")
-        if stuff[1][0] in "1234567890":
-            user, _ = User.get_or_create(user_id=stuff[1])
-            cat_name = " ".join(stuff[2:])
-        elif message.channel.type == discord.ChannelType.public_thread:
-            user, _ = User.get_or_create(user_id=message.channel.owner_id)
-            cat_name = " ".join(stuff[1:])
-        else:
-            await message.reply("missing user id")
-            return
+        if stuff[1][0] not in "1234567890":
+            stuff.insert(1, stuff.channel.owner_id)
+        user, _ = User.get_or_create(user_id=stuff[1])
+        cat_name = " ".join(stuff[2:])
         if stuff[2] != "None" and message.reference and message.reference.message_id:
             emoji_name = re.sub(r"[^a-zA-Z0-9]", "", cat_name).lower() + "cat"
             if emoji_name in emojis.keys():
