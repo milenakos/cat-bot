@@ -2291,7 +2291,7 @@ async def on_message(message: discord.Message):
         if stuff[1][0] in "1234567890":
             user, _ = User.get_or_create(user_id=stuff[1])
             cat_name = " ".join(stuff[2:])
-        elif message.channel.type == discord.ChannelType.Thread:
+        elif message.channel.type == discord.ChannelType.public_thread:
             user, _ = User.get_or_create(user_id=message.channel.owner_id)
             cat_name = " ".join(stuff[1:])
         else:
