@@ -323,9 +323,7 @@ def get_profile(guild_id, user_id):
 
 def get_emoji(name):
     global emojis
-    if name in allowedemojis:
-        return emojis["b_" + name]
-    elif name in emojis.keys():
+    if name in emojis.keys():
         return emojis[name]
     elif name in emoji.EMOJI_DATA:
         return name
