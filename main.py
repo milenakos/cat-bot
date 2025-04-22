@@ -3898,7 +3898,7 @@ async def prism(message: discord.Interaction):
             # filter prisms by user
             prisms_text_copy = []
             for prism in prism_texts:
-                if user_filter.id in prism.split("\n")[0]:
+                if str(user_filter.id) in prism.split("\n")[0]:
                     prisms_text_copy.append(prism)
         else:
             prisms_text_copy = prism_texts
