@@ -38,7 +38,7 @@ import peewee
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
-from discord.ui import Button, View
+from discord.ui import Button, View, UserSelect
 from PIL import Image
 
 import config
@@ -3786,6 +3786,9 @@ async def prism(message: discord.Interaction):
     for prism in prisms:
         prism_texts.append(f"{icon} **{prism.name}** Owner: <@{prism.user_id}>\n<@{prism.creator}> crafted <t:{prism.time}:D>")
 
+    if len(prisms) == 0:
+        prism_texts.append("No prisms found!")
+
     async def confirm_craft(interaction: discord.Interaction):
         await interaction.response.defer()
         user = get_profile(interaction.guild.id, interaction.user.id)
@@ -3875,14 +3878,32 @@ async def prism(message: discord.Interaction):
         embed, view = gen_page()
         await interaction.response.edit_message(embed=embed, view=view)
 
-    def gen_page():
+    async def filter_prisms(interaction):
+        nonlocal page_number
+        page_number = 0
+        embed, view = gen_page(user_filter=user_select.values[0])
+        await interaction.response.edit_message(embed=embed, view=view)
+
+    user_select = UserSelect(placeholder="Filter by user...", min_values=0, max_values=1)
+    user_select.callback = filter_prisms
+
+    def gen_page(user_filter=None):
         embed = discord.Embed(
             title=f"{icon} Cat Prisms",
             color=0x6E593C,
             description="are a tradeable power-up which occasionally bumps cat rarity up by one. For each prism you own your chance of a boost increases, and it increases but less if you aren't the owner of that prism.\n\n",
         ).set_footer(text=f"Boost for everyone: {round(global_boost * 100, 3)}% | {message.user}'s total boost: {user_boost}%")
 
-        embed.description += "\n".join(prism_texts[page_number * 26 : (page_number + 1) * 26])
+        if user_filter:
+            # filter prisms by user
+            prisms_text_copy = []
+            for prism in prism_texts:
+                if user_filter.id in prism.split("\n")[0]:
+                    prisms_text_copy.append(prism)
+        else:
+            prisms_text_copy = prism_texts
+
+        embed.description += "\n".join(prisms_text_copy[page_number * 26 : (page_number + 1) * 26])
 
         view = View(timeout=VIEW_TIMEOUT)
 
@@ -3890,15 +3911,14 @@ async def prism(message: discord.Interaction):
         craft_button.callback = craft_prism
         view.add_item(craft_button)
 
-        if page_number != 0:
-            prev_button = Button(label="<-", style=ButtonStyle.gray)
-            prev_button.callback = prev_page
-            view.add_item(prev_button)
+        prev_button = Button(label="<-", style=ButtonStyle.gray, disabled=(page_number != 0))
+        prev_button.callback = prev_page
+        view.add_item(prev_button)
 
-        if page_number != (len(prism_texts) + 1) // 26:
-            next_button = Button(label="->", style=ButtonStyle.gray)
-            next_button.callback = next_page
-            view.add_item(next_button)
+        next_button = Button(label="->", style=ButtonStyle.gray, disabled=(page_number != (len(prisms_text_copy) + 1) // 26))
+        next_button.callback = next_page
+        view.add_item(next_button)
+        view.add_item(user_select)
 
         return embed, view
 
