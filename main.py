@@ -3911,13 +3911,14 @@ async def prism(message: discord.Interaction):
         craft_button.callback = craft_prism
         view.add_item(craft_button)
 
-        prev_button = Button(label="<-", style=ButtonStyle.gray, disabled=(page_number != 0))
+        prev_button = Button(label="<-", style=ButtonStyle.gray, disabled=(page_number == 0))
         prev_button.callback = prev_page
         view.add_item(prev_button)
 
-        next_button = Button(label="->", style=ButtonStyle.gray, disabled=(page_number != (len(prisms_text_copy) + 1) // 26))
+        next_button = Button(label="->", style=ButtonStyle.gray, disabled=(page_number == (len(prisms_text_copy) + 1) // 26))
         next_button.callback = next_page
         view.add_item(next_button)
+
         view.add_item(user_select)
 
         return embed, view
