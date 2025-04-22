@@ -3786,9 +3786,6 @@ async def prism(message: discord.Interaction):
     for prism in prisms:
         prism_texts.append(f"{icon} **{prism.name}** Owner: <@{prism.user_id}>\n<@{prism.creator}> crafted <t:{prism.time}:D>")
 
-    if len(prisms) == 0:
-        prism_texts.append("No prisms found!")
-
     async def confirm_craft(interaction: discord.Interaction):
         await interaction.response.defer()
         user = get_profile(interaction.guild.id, interaction.user.id)
@@ -3881,7 +3878,7 @@ async def prism(message: discord.Interaction):
     async def filter_prisms(interaction):
         nonlocal page_number
         page_number = 0
-        embed, view = gen_page(user_filter=user_select.values[0])
+        embed, view = gen_page(user_filter=user_select.values[0] if len(user_select.values) > 0 else None)
         await interaction.response.edit_message(embed=embed, view=view)
 
     user_select = UserSelect(placeholder="Filter by user...", min_values=0, max_values=1)
@@ -3902,6 +3899,9 @@ async def prism(message: discord.Interaction):
                     prisms_text_copy.append(prism)
         else:
             prisms_text_copy = prism_texts
+
+        if prisms_text_copy:
+            prisms_text_copy.append("No prisms found!")
 
         embed.description += "\n".join(prisms_text_copy[page_number * 26 : (page_number + 1) * 26])
 
