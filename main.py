@@ -3878,29 +3878,29 @@ async def prism(message: discord.Interaction):
     async def filter_prisms(interaction):
         nonlocal page_number
         page_number = 0
-        embed, view = gen_page(user_filter=user_select.values[0] if len(user_select.values) > 0 else None)
+        embed, view = gen_page()
         await interaction.response.edit_message(embed=embed, view=view)
 
     user_select = UserSelect(placeholder="Filter by user...", min_values=0, max_values=1)
     user_select.callback = filter_prisms
 
-    def gen_page(user_filter=None):
+    def gen_page():
         embed = discord.Embed(
             title=f"{icon} Cat Prisms",
             color=0x6E593C,
             description="are a tradeable power-up which occasionally bumps cat rarity up by one. For each prism you own your chance of a boost increases, and it increases but less if you aren't the owner of that prism.\n\n",
         ).set_footer(text=f"Boost for everyone: {round(global_boost * 100, 3)}% | {message.user}'s total boost: {user_boost}%")
 
-        if user_filter:
+        if len(user_select.values) > 0:
             # filter prisms by user
             prisms_text_copy = []
-            for prism in prism_texts:
-                if str(user_filter.id) in prism.split("\n")[0]:
-                    prisms_text_copy.append(prism)
+            for prism_text in prism_texts:
+                if str(user_select.values[0].id) in prism_text.split("\n")[0]:
+                    prisms_text_copy.append(prism_text)
         else:
             prisms_text_copy = prism_texts
 
-        if prisms_text_copy:
+        if not prisms_text_copy:
             prisms_text_copy.append("No prisms found!")
 
         embed.description += "\n".join(prisms_text_copy[page_number * 26 : (page_number + 1) * 26])
