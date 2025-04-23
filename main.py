@@ -1114,7 +1114,6 @@ async def maintaince_loop():
         button = Button(
             emoji=get_emoji("topgg"),
             label=random.choice(vote_button_texts),
-            style=ButtonStyle.gray,
             url="https://top.gg/bot/966695034340663367/vote",
         )
         view.add_item(button)
@@ -2055,13 +2054,11 @@ async def on_message(message: discord.Message):
                     button = Button(
                         label="DAVE DISCORD 😀💀⚠️🥺",
                         url="https://discord.gg/staring",
-                        style=ButtonStyle.danger,
                     )
                 elif random.randint(0, 5000000) == 0:
                     button = Button(
                         label="JOHN AND DAVE HAD A SON 💀🤠😀⚠️🥺",
                         url="https://discord.gg/staring",
-                        style=ButtonStyle.green,
                     )
 
                 if button:
@@ -2521,26 +2518,24 @@ async def news(message: discord.Interaction):
 
         # pages buttons
         if current_page > 0:
-            button = Button(label="<-", style=ButtonStyle.gray, row=4)
+            button = Button(label="Back", row=4)
             button.callback = prev_page
             view.add_item(button)
 
         button = Button(
             label="Mark all as read",
-            style=ButtonStyle.gray,
             row=4,
         )
         button.callback = mark_all_as_read
         view.add_item(button)
 
-        button = Button(
-            label="->" if current_page != 0 else "Archive",
-            style=ButtonStyle.gray,
-            disabled=bool(current_page * 4 + 4 >= len(buttons)),
-            row=4,
-        )
-        button.callback = next_page
-        view.add_item(button)
+        if current_page == 0:
+            button = Button(
+                label="Archive",
+                row=4,
+            )
+            button.callback = next_page
+            view.add_item(button)
 
         return view
 
@@ -2765,10 +2760,10 @@ leave blank to reset.""",
         color=0x6E593C,
     )
 
-    button1 = Button(label="Appear Message", style=ButtonStyle.blurple)
+    button1 = Button(label="Appear Message")
     button1.callback = ask_appear
 
-    button2 = Button(label="Catch Message", style=ButtonStyle.blurple)
+    button2 = Button(label="Catch Message")
     button2.callback = ask_catch
 
     view = View(timeout=VIEW_TIMEOUT)
@@ -3396,7 +3391,6 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
     shopbutton = Button(
         emoji="🛒",
         label="Store",
-        style=ButtonStyle.gray,
         url="https://store.minkos.lol",
     )
 
@@ -3480,13 +3474,12 @@ async def packs(message: discord.Interaction):
             button = discord.ui.Button(
                 emoji=get_emoji(pack["name"].lower() + "pack"),
                 label=f"{pack['name']} ({amount})",
-                style=discord.ButtonStyle.blurple,
                 custom_id=pack["name"],
             )
             button.callback = open_pack
             view.add_item(button)
         if empty:
-            view.add_item(discord.ui.Button(label="No packs left!", style=discord.ButtonStyle.gray, disabled=True))
+            view.add_item(discord.ui.Button(label="No packs left!", disabled=True))
         return view
 
     async def open_pack(interaction: discord.Interaction):
@@ -3586,12 +3579,12 @@ async def battlepass(message: discord.Interaction):
         user.save()
 
         view = View(timeout=VIEW_TIMEOUT)
-        button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
+        button = Button(emoji="🔄", label="Refresh")
         button.callback = gen_main
         view.add_item(button)
 
         if user.reminders_enabled:
-            button = Button(emoji="🔕", style=ButtonStyle.blurple)
+            button = Button(emoji="🔕")
         else:
             button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
         button.callback = toggle_reminders
@@ -3731,12 +3724,12 @@ async def battlepass(message: discord.Interaction):
         ).set_footer(text=rain_shill)
         view = View(timeout=VIEW_TIMEOUT)
 
-        button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
+        button = Button(emoji="🔄", label="Refresh")
         button.callback = gen_main
         view.add_item(button)
 
         if user.reminders_enabled:
-            button = Button(emoji="🔕", style=ButtonStyle.blurple)
+            button = Button(emoji="🔕")
         else:
             button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
         button.callback = toggle_reminders
@@ -3856,7 +3849,7 @@ async def prism(message: discord.Interaction):
 
         if len(missing_cats) == 0:
             view = View(timeout=VIEW_TIMEOUT)
-            confirm_button = Button(label="Craft!", style=ButtonStyle.green, emoji=icon)
+            confirm_button = Button(label="Craft!", style=ButtonStyle.blurple, emoji=icon)
             confirm_button.callback = confirm_craft
             description = "The crafting recipe is __ONE of EVERY cat type__.\nContinue crafting?"
         else:
@@ -3894,11 +3887,11 @@ async def prism(message: discord.Interaction):
         craft_button.callback = craft_prism
         view.add_item(craft_button)
 
-        prev_button = Button(label="<-", style=ButtonStyle.gray, disabled=bool(page_number == 0))
+        prev_button = Button(label="<-", disabled=bool(page_number == 0))
         prev_button.callback = prev_page
         view.add_item(prev_button)
 
-        next_button = Button(label="->", style=ButtonStyle.gray, disabled=bool(page_number == (len(prism_texts) + 1) // 26))
+        next_button = Button(label="->", disabled=bool(page_number == (len(prism_texts) + 1) // 26))
         next_button.callback = next_page
         view.add_item(next_button)
 
@@ -5476,7 +5469,6 @@ async def light_market(message):
         else:
             button = Button(
                 label="You don't have enough cats!",
-                style=ButtonStyle.gray,
                 disabled=True,
             )
         button.callback = make_cataine
@@ -5629,7 +5621,6 @@ async def dark_market(message):
             else:
                 button = Button(
                     label="You don't have enough cats!",
-                    style=ButtonStyle.gray,
                     disabled=True,
                 )
             button.callback = buy_cataine
@@ -5770,7 +5761,7 @@ async def achievements(message: discord.Interaction):
             if category == i:
                 buttons_list.append(Button(label=i, custom_id=i, style=ButtonStyle.green, row=num // 3))
             else:
-                buttons_list.append(Button(label=i, custom_id=i, style=ButtonStyle.blurple, row=num // 3))
+                buttons_list.append(Button(label=i, custom_id=i, row=num // 3))
             buttons_list[-1].callback = callback_hell
 
         for j in buttons_list:
@@ -6075,7 +6066,7 @@ async def leaderboards(
             if type == t:
                 button = Button(label="Refresh", style=ButtonStyle.green)
             else:
-                button = Button(label=t, style=ButtonStyle.blurple)
+                button = Button(label=t)
             button.callback = partial(lb_handler, type=t, do_edit=True, specific_cat=specific_cat)
             buttons.append(button)
 
