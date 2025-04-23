@@ -1980,6 +1980,8 @@ async def on_message(message: discord.Message):
                     user.puzzle_pieces += 1
                     total_puzzle_pieces += 1
                     suffix_string += f"\n{get_emoji('piece')} +1 piece - {total_puzzle_pieces:,}/1,000,000. </event:{EVENT_ID}>"
+                else:
+                    suffix_string += f"\n{get_emoji('piece')} 1,000,000 pieces collected! </event:{EVENT_ID}>"
 
                 if channel.cought:
                     coughstring = channel.cought
@@ -6130,7 +6132,7 @@ async def setup_channel(message: discord.Interaction):
             channel_permissions = message.channel.permissions_for(message.guild.me)
             needed_perms = {
                 "View Channel": channel_permissions.view_channel,
-                "Manage Webhooks": channel_permissions.manage_webhooks,
+                #    "Manage Webhooks": channel_permissions.manage_webhooks,
                 "Send Messages": channel_permissions.send_messages,
                 "Attach Files": channel_permissions.attach_files,
             }
@@ -6153,7 +6155,11 @@ async def setup_channel(message: discord.Interaction):
                 parent = bot.get_channel(message.channel.parent_id)
                 if not isinstance(parent, Union[discord.TextChannel, discord.ForumChannel]):
                     raise Exception
-                wh = await parent.create_webhook(name="Cat Bot", avatar=f.read())
+                try:
+                    wh = await parent.create_webhook(name="Cat Bot", avatar=f.read())
+                except Exception:
+                    await message.response.send_message(":x: Missing Permissions! Please give me the Manage Webhooks permission.")
+                    return
                 Channel.create(channel_id=message.channel.id, webhook=wh.url, thread_mappings=True)
             elif isinstance(
                 message.channel,
