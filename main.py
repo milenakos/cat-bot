@@ -1971,8 +1971,6 @@ async def on_message(message: discord.Message):
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
 
-                suffix_string += f"\n{get_emoji('piece')} 1,000,000 collected! next step: </event:{EVENT_ID}>"
-
                 if channel.cought:
                     coughstring = channel.cought
                 elif le_emoji == "Corrupt":
@@ -5009,26 +5007,6 @@ async def casino(message: discord.Interaction):
     myview.add_item(button)
 
     await message.response.send_message(embed=embed, view=myview)
-
-
-@bot.tree.command(description="???")
-async def event(message: discord.Interaction):
-    profile_puzzle_pieces = get_profile(message.guild.id, message.user.id).puzzle_pieces
-    user_puzzle_pieces = Profile.select(peewee.fn.SUM(Profile.puzzle_pieces)).where(Profile.user_id == message.user.id).scalar()
-    server_puzzle_pieces = Profile.select(peewee.fn.SUM(Profile.puzzle_pieces)).where(Profile.guild_id == message.guild.id).scalar()
-
-    embed = discord.Embed(
-        color=0x000001,
-        title=f"{get_emoji('piece')} 1,000,000/1,000,000",
-        description=f"__pieces collected__\nby this server: {server_puzzle_pieces:,}\nby {message.user.name} in this server: {profile_puzzle_pieces:,}\nby {message.user.name} in all servers: {user_puzzle_pieces:,}",
-    )
-
-    view = View(timeout=1)
-    view.add_item(Button(label="join discord to discuss", url="https://discord.gg/staring"))
-
-    file = discord.File("1000000.png", filename="1000000.png")
-    embed = embed.set_image(url="attachment://1000000.png")
-    await message.response.send_message(embed=embed, view=view, file=file)
 
 
 @bot.tree.command(description="oh no")
