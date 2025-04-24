@@ -48,8 +48,6 @@ from database import Channel, Prism, Profile, Reminder, User, db
 
 logging.basicConfig(level=logging.INFO)
 
-total_puzzle_pieces = Profile.select(peewee.fn.SUM(Profile.puzzle_pieces)).scalar()
-
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
 
@@ -1344,7 +1342,7 @@ async def on_ready():
 # this is all the code which is ran on every message sent
 # a lot of it is for easter eggs or achievements
 async def on_message(message: discord.Message):
-    global emojis, total_puzzle_pieces
+    global emojis
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
         return
@@ -1973,14 +1971,7 @@ async def on_message(message: discord.Message):
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
 
-                if total_puzzle_pieces == 999_999:
-                    print("gg", time.time(), message.guild.id, message.author.id)
-                if total_puzzle_pieces < 1_000_000:
-                    user.puzzle_pieces += 1
-                    total_puzzle_pieces += 1
-                    suffix_string += f"\n{get_emoji('piece')} +1 piece - {total_puzzle_pieces:,}/1,000,000. </event:{EVENT_ID}>"
-                else:
-                    suffix_string += f"\n{get_emoji('piece')} 1,000,000 pieces collected! </event:{EVENT_ID}>"
+                suffix_string += f"\n{get_emoji('piece')} 1,000,000 collected! next step: </event:{EVENT_ID}>"
 
                 if channel.cought:
                     coughstring = channel.cought
@@ -5037,12 +5028,9 @@ async def event(message: discord.Interaction):
     view = View(timeout=1)
     view.add_item(Button(label="join discord to discuss", url="https://discord.gg/staring"))
 
-    if total_puzzle_pieces >= 1000000:
-        file = discord.File("1000000.png", filename="1000000.png")
-        embed = embed.set_image(url="attachment://1000000.png")
-        await message.response.send_message(embed=embed, view=view, file=file)
-    else:
-        await message.response.send_message(embed=embed, view=view)
+    file = discord.File("1000000.png", filename="1000000.png")
+    embed = embed.set_image(url="attachment://1000000.png")
+    await message.response.send_message(embed=embed, view=view, file=file)
 
 
 @bot.tree.command(description="oh no")
