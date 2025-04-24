@@ -33,7 +33,7 @@
   "introvert": {"title": "Introvert", "description": "trade with yourself", "is_hidden": false, "category": "Random"},
   "pleasedonotthecat": {"title": "Please do not the cat", "description": "reject cat", "is_hidden": true, "category": "Random"},
   "pleasedothecat": {"title": "Please do the cat", "description": "accept cat", "is_hidden": true, "category": "Random"},
-  "worship": {"title": "Cat Worshipper", "description": "have both :place_of_worship: and <:staring_cat:966697804611321908> in your message", "is_hidden": false, "category": "Random"},
+  "worship": {"title": "Cat Worshipper", "description": "have both :place_of_worship: and :cat: in your message", "is_hidden": false, "category": "Random"},
   "test_ach": {"title": "Test Achievement", "description": "testing testing 1 2 3", "is_hidden": false, "category": "Random"},
   "curious": {"title": "Curious", "description": "try to click a private button", "is_hidden": false, "category": "Random"},
   "???": {"title": "???", "description": "cat???", "is_hidden": false, "category": "Random"},
