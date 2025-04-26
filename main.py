@@ -6125,7 +6125,11 @@ async def setup_channel(message: discord.Interaction):
                 message.channel,
                 Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel],
             ):
-                wh = await message.channel.create_webhook(name="Cat Bot", avatar=f.read())
+                try:
+                    wh = await message.channel.create_webhook(name="Cat Bot", avatar=f.read())
+                except Exception:
+                    await message.response.send_message(":x: Missing Permissions! Please give me the Manage Webhooks permission.")
+                    return
                 Channel.create(channel_id=message.channel.id, webhook=wh.url, thread_mappings=False)
         except Exception:
             await message.response.send_message("this channel gives me bad vibes.")
