@@ -3294,8 +3294,8 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             user.claimed_free_rain = True
             user.save()
 
-        if rain_length < 1 or rain_length > 60:
-            await interaction.response.send_message("pls input a number 1-60", ephemeral=True)
+        if rain_length < 1 or rain_length > 120:
+            await interaction.response.send_message("pls input a number 1-120", ephemeral=True)
             return
 
         if rain_length > user.rain_minutes + profile.rain_minutes:
