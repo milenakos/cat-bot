@@ -3245,11 +3245,11 @@ async def rain(message: discord.Interaction):
 
             self.input = discord.ui.TextInput(
                 min_length=1,
-                max_length=2,
+                max_length=3,
                 label="Duration in minutes",
                 style=discord.TextStyle.short,
                 required=True,
-                placeholder="2",
+                placeholder="3",
             )
             self.add_item(self.input)
 
