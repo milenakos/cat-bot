@@ -2750,10 +2750,10 @@ leave blank to reset.""",
         color=0x6E593C,
     )
 
-    button1 = Button(label="Appear Message")
+    button1 = Button(label="Appear Message", style=ButtonStyle.blurple)
     button1.callback = ask_appear
 
-    button2 = Button(label="Catch Message")
+    button2 = Button(label="Catch Message", style=ButtonStyle.blurple)
     button2.callback = ask_catch
 
     view = View(timeout=VIEW_TIMEOUT)
@@ -3464,6 +3464,7 @@ async def packs(message: discord.Interaction):
             button = discord.ui.Button(
                 emoji=get_emoji(pack["name"].lower() + "pack"),
                 label=f"{pack['name']} ({amount})",
+                style=ButtonStyle.blurple,
                 custom_id=pack["name"],
             )
             button.callback = open_pack
@@ -3569,12 +3570,12 @@ async def battlepass(message: discord.Interaction):
         user.save()
 
         view = View(timeout=VIEW_TIMEOUT)
-        button = Button(emoji="🔄", label="Refresh")
+        button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
         button.callback = gen_main
         view.add_item(button)
 
         if user.reminders_enabled:
-            button = Button(emoji="🔕")
+            button = Button(emoji="🔕", style=ButtonStyle.blurple)
         else:
             button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
         button.callback = toggle_reminders
@@ -3714,12 +3715,12 @@ async def battlepass(message: discord.Interaction):
         ).set_footer(text=rain_shill)
         view = View(timeout=VIEW_TIMEOUT)
 
-        button = Button(emoji="🔄", label="Refresh")
+        button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
         button.callback = gen_main
         view.add_item(button)
 
         if user.reminders_enabled:
-            button = Button(emoji="🔕")
+            button = Button(emoji="🔕", style=ButtonStyle.blurple)
         else:
             button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
         button.callback = toggle_reminders
@@ -5726,7 +5727,7 @@ async def achievements(message: discord.Interaction):
             if category == i:
                 buttons_list.append(Button(label=i, custom_id=i, style=ButtonStyle.green, row=num // 3))
             else:
-                buttons_list.append(Button(label=i, custom_id=i, row=num // 3))
+                buttons_list.append(Button(label=i, custom_id=i, style=ButtonStyle.blurple, row=num // 3))
             buttons_list[-1].callback = callback_hell
 
         for j in buttons_list:
@@ -6031,7 +6032,7 @@ async def leaderboards(
             if type == t:
                 button = Button(label="Refresh", style=ButtonStyle.green)
             else:
-                button = Button(label=t)
+                button = Button(label=t, style=ButtonStyle.blurple)
             button.callback = partial(lb_handler, type=t, do_edit=True, specific_cat=specific_cat)
             buttons.append(button)
 
