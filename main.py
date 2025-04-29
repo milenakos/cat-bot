@@ -1289,6 +1289,11 @@ async def on_ready():
         return
     on_ready_debounce = True
     print("cat is now online")
+    # Print out your own invite link. Mostly for self-hosters.
+    invite_url = discord.utils.oauth_url(
+        self.user.id, permissions=discord.Permissions(administrator=True)
+    )
+    print(invite_url)
     emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
     appinfo = bot.application
     if appinfo.team and appinfo.team.owner_id:
