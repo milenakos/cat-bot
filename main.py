@@ -1889,14 +1889,16 @@ async def on_message(message: discord.Message):
                             # replace .0 with .00 basically
                             pre_time = str(int(pre_time)) + ".00"
                         caught_time = caught_time + str(pre_time) + " seconds "
+                    if caught_time == "":
+                        # Catch instances where there's no seconds, minutes, etc.
+                        caught_time = "(woah) 0.00 seconds "
                     do_time = True
-                    if time_caught <= 0:
+                    if time_caught <= 0: # Removing the = allows the LB to update right? Not sure if that's what you want?
                         do_time = False
                 except Exception:
                     # if some of the above explodes just give up
                     do_time = False
                     caught_time = "undefined amounts of time "
-
                 if channel.cat_rains + 10 > time.time() or message.channel.id in temp_rains_storage:
                     do_time = False
 
