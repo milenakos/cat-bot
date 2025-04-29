@@ -1890,6 +1890,8 @@ async def on_message(message: discord.Message):
                             pre_time = str(int(pre_time)) + ".00"
                         caught_time = caught_time + str(pre_time) + " seconds "
                     do_time = True
+                    if not caught_time:
+                        caught_time = "0.000 seconds (woah) "
                     if time_caught <= 0:
                         do_time = False
                 except Exception:
