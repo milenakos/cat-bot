@@ -299,6 +299,8 @@ temp_belated_storage = {}
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
 
+about_to_stop = False
+
 # d.py doesnt cache app emojis so we do it on our own yippe
 emojis = {}
 
@@ -3295,6 +3297,10 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             user.rain_minutes += 2
             user.claimed_free_rain = True
             user.save()
+
+        if about_to_stop:
+            await interaction.response.send_message("the bot is about to stop. please try again later.", ephemeral=True)
+            return
 
         if rain_length < 1 or rain_length > 60:
             await interaction.response.send_message("pls input a number 1-60", ephemeral=True)
