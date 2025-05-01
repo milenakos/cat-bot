@@ -378,11 +378,11 @@ async def send_news(interaction: discord.Interaction):
     elif news_id == 2:
         embed = discord.Embed(
             title="☃️ Cat Bot Christmas",
-            description=f"🎅 **Christmas Sale**\nFor the next 15 days (until January 1st) all items on [the Cat Bot Store](<https://store.minkos.lol/>) will be **-20%** off! Go buy something :exploding_head:\n\n⚡ **Cat Bot Wrapped 2024**\nIn 2024 Cat Bot got...\n- 🖥️ *45777* new servers!\n- 👋 *286607* new profiles!\n- {get_emoji('staring_cat')} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though\n- {get_emoji('cat_throphy')} *1518096* achievements get!\nSee last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).\n\n❓ **New Year Update**\nSomething is coming...",
+            description=f"🎅 **Christmas Sale**\nFor the next 15 days (until January 1st) all items on [the Cat Bot Store](<https://catbot.shop/>) will be **-20%** off! Go buy something :exploding_head:\n\n⚡ **Cat Bot Wrapped 2024**\nIn 2024 Cat Bot got...\n- 🖥️ *45777* new servers!\n- 👋 *286607* new profiles!\n- {get_emoji('staring_cat')} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though\n- {get_emoji('cat_throphy')} *1518096* achievements get!\nSee last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).\n\n❓ **New Year Update**\nSomething is coming...",
             color=0x6E593C,
         )
         view = discord.ui.View(timeout=1)
-        button = discord.ui.Button(label="Cat Bot Store", url="https://store.minkos.lol")
+        button = discord.ui.Button(label="Cat Bot Store", url="https://catbot.shop")
         view.add_item(button)
         await interaction.edit_original_response(content=None, embed=embed, view=view)
     elif news_id == 3:
@@ -405,7 +405,7 @@ Don't worry, quests are very easy and to complete the battlepass you will need t
 There are currently no plans to sell a paid battlepass.
 
 ## christmas sale
-That's not a question, but it does end in less than 24 hours so don't [miss your opportunity](<https://store.minkos.lol>).""",
+That's not a question, but it does end in less than 24 hours so don't [miss your opportunity](<https://catbot.shop>).""",
             color=0x6E593C,
         )
         await interaction.edit_original_response(content=None, view=None, embed=embed)
@@ -455,7 +455,7 @@ Best regards,
         embed = discord.Embed(
             title="🥳 Cat Bot Turns 3",
             description="""today is a special day for cat bot! april 21st is its birthday, and this year its turning three!
-to celebrate, we will be doing the biggest sale yet! -50% off for the next 5 days at our [store](https://store.minkos.lol)
+to celebrate, we will be doing the biggest sale yet! -50% off for the next 5 days at our [store](https://catbot.shop)
 happy birthda~~
 ...
 hold on...
@@ -3200,7 +3200,7 @@ __Highlighted Stat__
 
         else:
             description = f"""👑 __Supporter Settings__
-Global, buy anything from [the store](https://store.minkos.lol) to unlock.
+Global, buy anything from [the store](https://catbot.shop) to unlock.
 👑 **Color**
 👑 **Emoji**
 👑 **Image**
@@ -3274,7 +3274,7 @@ async def rain(message: discord.Interaction):
         title="☔ Cat Rains",
         description=f"""Cat Rains are power-ups which spawn cats instantly for a limited amounts of time in channel of your choice.
 
-You can get those by buying them at our [store](<https://store.minkos.lol>) or by winning them in an event.
+You can get those by buying them at our [store](<https://catbot.shop>) or by winning them in an event.
 This bot is developed by a single person so buying one would be very appreciated.
 As a bonus, you will get access to /editprofile command!
 Fastest times are not saved during rains.
@@ -3308,7 +3308,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
         if rain_length > user.rain_minutes + profile.rain_minutes:
             await interaction.response.send_message(
-                "you dont have enough rain! buy some more [here](<https://store.minkos.lol>)",
+                "you dont have enough rain! buy some more [here](<https://catbot.shop>)",
                 ephemeral=True,
             )
             return
@@ -3389,7 +3389,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
     shopbutton = Button(
         emoji="🛒",
         label="Store",
-        url="https://store.minkos.lol",
+        url="https://catbot.shop",
     )
 
     view = View(timeout=VIEW_TIMEOUT)
@@ -3401,9 +3401,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
 @bot.tree.command(description="Buy Cat Rains!")
 async def store(message: discord.Interaction):
-    await message.response.send_message(
-        "☔ Cat rains make cats spawn instantly! Make your server active, get more cats and have fun!\n<https://store.minkos.lol>"
-    )
+    await message.response.send_message("☔ Cat rains make cats spawn instantly! Make your server active, get more cats and have fun!\n<https://catbot.shop>")
 
 
 if config.DONOR_CHANNEL_ID:
@@ -3427,7 +3425,7 @@ if config.DONOR_CHANNEL_ID:
         user, _ = User.get_or_create(user_id=message.user.id)
         if not user.premium:
             await message.response.send_message(
-                "👑 This feature is supporter-only!\nBuy anything from Cat Bot Store to unlock profile customization!\n<https://store.minkos.lol>"
+                "👑 This feature is supporter-only!\nBuy anything from Cat Bot Store to unlock profile customization!\n<https://catbot.shop>"
             )
             return
 
