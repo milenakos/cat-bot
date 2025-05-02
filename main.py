@@ -5837,8 +5837,8 @@ async def leaderboards(
     async def lb_type_select_callback(interaction):
         await lb_handler(interaction, lb_select.values[0], True, "All")
 
-    options = [discord.SelectOption(label=i, default=bool(i == leaderboard_type)) for i in ["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies"]]
-    lb_select = discord.ui.Select(placeholder="Select a leaderboard type", options=options)
+    options = [discord.SelectOption(label=i) for i in ["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies"]]
+    lb_select = discord.ui.Select(placeholder=leaderboard_type, options=options)
     lb_select.callback = lb_type_select_callback
 
     # this fat function handles a single page
