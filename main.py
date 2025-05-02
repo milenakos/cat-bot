@@ -6067,7 +6067,8 @@ async def leaderboards(
                 disabled=locked,
             )
 
-        options = [Option(label=i, emoji=None) for i in ["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies"]]
+        emojied_options = {"Cats": "🐈", "Value": "🧮", "Fast": "⏱️", "Slow": "💤", "Battlepass": "⬆️", "Cookies": "🍪"}
+        options = [Option(label=k, emoji=v) for k, v in emojied_options.items()]
         lb_select = Select(
             "lb_type",
             placeholder=type,
