@@ -6070,8 +6070,7 @@ async def leaderboards(
         options = [Option(label=i, emoji=None) for i in ["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies"]]
         lb_select = Select(
             "lb_type",
-            placeholder="Select a leaderboard type",
-            selected=type,
+            placeholder=type,
             opts=options,
             on_select=lambda interaction, type: lb_handler(interaction, type, True),
         )
