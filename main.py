@@ -4212,22 +4212,21 @@ async def cookie(message: discord.Interaction):
         if interaction.user != message.user:
             await do_funny(interaction)
             return
+        await interaction.response.defer()
         # i think this will act weirdly if you use multiple /cookie commands, so, dont do that.
         profile.cookies += 1
         profile.save()
-        await interaction.edit_original_response(view=cookie_view())
+        view.children[0].label = f"{profile.cookies:,}"  # this should make it not unknown interaction that badly i think
+        await interaction.edit_original_response(view=view)
         if profile.cookies < 5:
             # to prevent excessive load
             await achemb(interaction, "cookieclicker", "send")
 
-    def cookie_view():
-        view = View(timeout=VIEW_TIMEOUT)
-        button = Button(emoji="🍪", label=f"{profile.cookies:,}", style=ButtonStyle.blurple)
-        button.callback = bake
-        view.add_item(button)
-        return view
-
-    await message.response.send_message(view=cookie_view())
+    view = View(timeout=VIEW_TIMEOUT)
+    button = Button(emoji="🍪", label=f"{profile.cookies:,}", style=ButtonStyle.blurple)
+    button.callback = bake
+    view.add_item(button)
+    await message.response.send_message(view=view)
 
 
 @bot.tree.command(description="give cats now")
