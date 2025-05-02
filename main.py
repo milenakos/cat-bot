@@ -295,7 +295,8 @@ temp_rains_storage = []
 
 # to prevent double belated battlepass progress and for "faster than 10 seconds" belated bp quest
 temp_belated_storage = {}
-
+# to store belated catches between maintaince loops 
+temp_belated_storage_maintaince = {}
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
 
@@ -1065,11 +1066,12 @@ async def postpone_reminder(interaction):
 
 # a loop for various maintaince which is ran every 5 minutes
 async def maintaince_loop():
-    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage
+    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage, temp_belated_storage_maintaince
     last_loop_time = time.time()
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
-    temp_belated_storage = {}
+    temp_belated_storage = temp_belated_storage_maintaince
+    temp_belated_storage_maintaince = {}
     catchcooldown = {}
     fakecooldown = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
@@ -1770,6 +1772,10 @@ async def on_message(message: discord.Message):
                 ):
                     belated["users"].append(message.author.id)
                     temp_belated_storage[message.channel.id] = belated
+                    # If maintaince is coming up, store in carryover
+                    if time.time() > last_loop_time + 295:
+                        temp_belated_storage_maintaince[message.channel.id] = belated
+                    
                     await progress(message, user, "3cats")
                     if channel.cattype == "Fine":
                         await progress(message, user, "2fine")
@@ -1900,7 +1906,15 @@ async def on_message(message: discord.Message):
                     # if some of the above explodes just give up
                     do_time = False
                     caught_time = "undefined amounts of time "
-
+                try:
+                    if time_caught >= 0:
+                        temp_belated_storage[message.channel.id] = {"time": time_caught, "users": [message.author.id]}
+                        # If maintaince is coming up, store in maintaince carryover
+                        if time.time() > last_loop_time + 295:
+                            temp_belated_storage_maintaince[message.channel.id] = {"time": time_caught, "users": [message.author.id]}
+                except Exception:
+                    pass
+                
                 if channel.cat_rains + 10 > time.time() or message.channel.id in temp_rains_storage:
                     do_time = False
 
@@ -2171,11 +2185,6 @@ async def on_message(message: discord.Message):
             finally:
                 user.save()
                 channel.save()
-                try:
-                    if time_caught >= 0:
-                        temp_belated_storage[message.channel.id] = {"time": time_caught, "users": [message.author.id]}
-                except Exception:
-                    pass
                 if decided_time:
                     await asyncio.sleep(decided_time)
                     try:
