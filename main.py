@@ -6054,7 +6054,6 @@ async def leaderboards(
 
         # handle funny buttons
         myview = View(timeout=VIEW_TIMEOUT)
-        buttons = []
 
         if type == "Cats":
             dd_opts = [Option(label="All", emoji=get_emoji("staring_cat"), value="All")]
@@ -6079,8 +6078,7 @@ async def leaderboards(
             )
 
         if not locked:
-            for i in buttons:
-                myview.add_item(lb_select)
+            myview.add_item(lb_select)
             if type == "Cats":
                 myview.add_item(dropdown)
 
