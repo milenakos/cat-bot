@@ -2938,6 +2938,7 @@ def gen_stats(profile, star):
     # misc
     stats.append(["❓", "Misc"])
     stats.append(["facts_read", "🧐", f"Facts read: {profile.facts:,}"])
+    stats.append(["cookies", "🍪", f"Cookies clicked: {profile.cookies:,}"])
     stats.append(["private_embed_clicks", get_emoji("pointlaugh"), f"Private embed clicks: {profile.funny:,}"])
     stats.append(["reminders_set", "⏰", f"Reminders set: {profile.reminders_set:,}{star}"])
     stats.append(["cats_gifted", "🎁", f"Cats gifted: {profile.cats_gifted:,}{star}"])
@@ -4201,6 +4202,30 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
         button.callback = pick
         view.add_item(button)
     await message.response.send_message("Players picked: 0", embed=embed, view=view)
+
+
+@bot.tree.command(description="you feel like making cookies")
+async def cookie(message: discord.Interaction):
+    profile = get_profile(message.guild.id, message.user.id)
+
+    async def bake(interaction):
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+        # i think this will act weirdly if you use multiple /cookie commands, so, dont do that.
+        profile.cookies += 1
+        profile.save()
+        view.children[0].label = f"{profile.cookies:,}"  # this should make it not unknown interaction that badly i think
+        await interaction.edit_original_response(view=view)
+        if profile.cookies < 5:
+            # to prevent excessive load
+            await achemb(interaction, "cookieclicker", "send")
+
+    view = View(timeout=VIEW_TIMEOUT)
+    button = Button(emoji="🍪", label=f"{profile.cookies:,}", style=ButtonStyle.blurple)
+    button.callback = bake
+    view.add_item(button)
+    await message.response.send_message(view=view)
 
 
 @bot.tree.command(description="give cats now")
