@@ -4219,8 +4219,9 @@ async def cookie(message: discord.Interaction):
         view.children[0].label = f"{profile.cookies:,}"  # this should make it not unknown interaction that badly i think
         await interaction.edit_original_response(view=view)
         if profile.cookies < 5:
-            # to prevent excessive load
             await achemb(interaction, "cookieclicker", "send")
+        if 5000 <= profile.cookies < 5100:
+            await achemb(interaction, "cookiesclicked", "send")
 
     view = View(timeout=VIEW_TIMEOUT)
     button = Button(emoji="🍪", label=f"{profile.cookies:,}", style=ButtonStyle.blurple)

@@ -83,6 +83,7 @@
   "prism": {"title": "Oooh Shiny", "description": "get a prism", "is_hidden": false, "category": "Hard"},
   "big_win_slots": {"title": "Hyper Lucky", "description": "get 777 at the /slots machine", "is_hidden": false, "category": "Hard"},
   "debt": {"title": "Debt Recovery", "description": "gamble away your debts", "is_hidden": false, "category": "Hard"},
+  "cookiesclicked": {"title": "Cookies Clicked", "description": "collect 5,000 cookies", "is_hidden": true, "category": "Hard"},
 
   "catn": {"title": "Cat'n", "description": "no cat??? :megamind:", "is_hidden": true, "category": "Hidden"},
   "coupon_user": {"title": "Coupon User", "description": "use a coupon for a 10% discount on all cats!!!", "is_hidden": true, "category": "Hidden"},
