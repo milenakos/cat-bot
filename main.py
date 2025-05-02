@@ -6067,7 +6067,7 @@ async def leaderboards(
                 disabled=locked,
             )
 
-        options = [Option(label=i) for i in ["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies"]]
+        options = [Option(label=i, emoji=None) for i in ["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies"]]
         lb_select = Select(selected=type, options=options, on_select=lambda interaction, type: lb_handler(interaction, type, True))
 
         if not locked:
