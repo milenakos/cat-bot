@@ -5834,13 +5834,6 @@ async def leaderboards(
         await message.response.send_message("invalid cattype", ephemeral=True)
         return
 
-    async def lb_type_select_callback(interaction):
-        await lb_handler(interaction, lb_select.values[0], True, "All")
-
-    options = [discord.SelectOption(label=i) for i in ["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies"]]
-    lb_select = discord.ui.Select(placeholder=leaderboard_type, options=options)
-    lb_select.callback = lb_type_select_callback
-
     # this fat function handles a single page
     async def lb_handler(interaction, type, do_edit=None, specific_cat="All"):
         if specific_cat is None:
@@ -6073,6 +6066,9 @@ async def leaderboards(
                 on_select=lambda interaction, option: lb_handler(interaction, type, True, option),
                 disabled=locked,
             )
+
+        options = [Option(label=i) for i in ["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies"]]
+        lb_select = Select(selected=type, options=options, on_select=lambda interaction, type: lb_handler(interaction, type, True))
 
         if not locked:
             myview.add_item(lb_select)
