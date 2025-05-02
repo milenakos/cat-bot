@@ -222,8 +222,6 @@ with open("config/battlepass.json", "r", encoding="utf-8") as f:
 ach_names = ach_list.keys()
 ach_titles = {value["title"].lower(): key for (key, value) in ach_list.items()}
 
-leaderboard_types = ["Cats", "Value", "Fast", "Slow", "Battlepass"]
-
 bot = commands.AutoShardedBot(
     command_prefix="this is a placebo bot which will be replaced when this will get loaded",
     intents=discord.Intents.default(),
@@ -5837,10 +5835,9 @@ async def leaderboards(
         return
 
     async def lb_type_select_callback(interaction):
-        await interaction.response.defer()
         await lb_handler(interaction, lb_select.values[0], True, "All")
 
-    options = [discord.SelectOption(label=i, default=bool(i == leaderboard_type)) for i in leaderboard_types]
+    options = [discord.SelectOption(label=i, default=bool(i == leaderboard_type)) for i in ["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies"]]
     lb_select = discord.ui.Select(placeholder="Select a leaderboard type", options=options)
     lb_select.callback = lb_type_select_callback
 
