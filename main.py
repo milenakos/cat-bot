@@ -27,7 +27,6 @@ import re
 import subprocess
 import time
 import traceback
-from functools import partial
 from typing import Literal, Optional, Union
 
 import aiohttp
@@ -5825,7 +5824,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass"]],
+    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies"]],
     cat_type: Optional[str],
     locked: Optional[bool],
 ):
@@ -5836,6 +5835,14 @@ async def leaderboards(
     if cat_type and cat_type not in cattypes + ["All"]:
         await message.response.send_message("invalid cattype", ephemeral=True)
         return
+
+    async def lb_type_select_callback(interaction):
+        await interaction.response.defer()
+        await lb_handler(interaction, lb_select.values[0], True, "All")
+
+    options = [discord.SelectOption(label=i, default=bool(i == leaderboard_type)) for i in leaderboard_types]
+    lb_select = discord.ui.Select(placeholder="Select a leaderboard type", options=options)
+    lb_select.callback = lb_type_select_callback
 
     # this fat function handles a single page
     async def lb_handler(interaction, type, do_edit=None, specific_cat="All"):
@@ -5930,6 +5937,14 @@ async def leaderboards(
                 .group_by(Profile.user_id, Profile.battlepass, Profile.progress, Profile.season)
                 .order_by(Profile.battlepass.desc(), Profile.progress.desc())
             ).execute()
+        elif type == "Cookies":
+            unit = "cookies"
+            result = (
+                Profile.select(Profile.user_id, Profile.cookies.alias("final_value"))
+                .where(Profile.guild_id == message.guild.id)
+                .group_by(Profile.user_id, Profile.cookies)
+                .order_by(Profile.cookies.desc())
+            ).execute()
         else:
             # qhar
             return
@@ -5952,14 +5967,14 @@ async def leaderboards(
                 messager = round(messager / 3600, 2)
 
         # dont show placements if they arent defined
-        if interactor and type in ["Cats", "Slow", "Value"]:
+        if interactor and type in ["Cats", "Slow", "Value", "Cookies"]:
             if interactor <= 0:
                 interactor_placement = 0
             interactor = round(interactor)
         elif interactor and type == "Fast" and interactor >= 99999999999999:
             interactor_placement = 0
 
-        if messager and type in ["Cats", "Slow", "Value"]:
+        if messager and type in ["Cats", "Slow", "Value", "Cookies"]:
             if messager <= 0:
                 messager_placement = 0
             messager = round(messager)
@@ -5998,6 +6013,8 @@ async def leaderboards(
                         break
                     num = round(num)
                 elif type == "Fast" and num >= 99999999999999:
+                    break
+                elif type == "Cookies" and num <= 0:
                     break
                 string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i.user_id}>\n"
 
@@ -6061,21 +6078,11 @@ async def leaderboards(
                 disabled=locked,
             )
 
-        for t in leaderboard_types:
-            if type == t:
-                button = Button(label="Refresh", style=ButtonStyle.green)
-            else:
-                button = Button(label=t, style=ButtonStyle.blurple)
-            button.callback = partial(lb_handler, type=t, do_edit=True, specific_cat=specific_cat)
-            buttons.append(button)
-
         if not locked:
             for i in buttons:
-                myview.add_item(i)
+                myview.add_item(lb_select)
             if type == "Cats":
                 myview.add_item(dropdown)
-        else:
-            myview.add_item(buttons[leaderboard_types.index(type)])
 
         # just send if first time, otherwise edit existing
         try:
