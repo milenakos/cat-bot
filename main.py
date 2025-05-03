@@ -4229,11 +4229,11 @@ async def cookie(message: discord.Interaction):
         if interaction.user != message.user:
             await do_funny(interaction)
             return
-        # i think this will act weirdly if you use multiple /cookie commands, so, dont do that.
         await interaction.response.defer()
-        view.children[0].label = f"{temp_cookie_storage[cookie_id] + 1:,}"
+        curr = temp_cookie_storage.get(cookie_id, get_profile(message.guild.id, message.user.id).cookies) + 1
+        view.children[0].label = f"{curr:,}"
         await interaction.edit_original_response(view=view)
-        temp_cookie_storage[cookie_id] += 1
+        temp_cookie_storage[cookie_id] = curr
         if temp_cookie_storage[cookie_id] < 5:
             await achemb(interaction, "cookieclicker", "send")
         if 5100 > temp_cookie_storage[cookie_id] >= 5000:
