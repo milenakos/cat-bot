@@ -293,6 +293,9 @@ temp_rains_storage = []
 # to prevent double belated battlepass progress and for "faster than 10 seconds" belated bp quest
 temp_belated_storage = {}
 
+# to prevent weird cookie things without destroying the database with load
+temp_cookie_storage = {}
+
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
 
@@ -1062,7 +1065,7 @@ async def postpone_reminder(interaction):
 
 # a loop for various maintaince which is ran every 5 minutes
 async def maintaince_loop():
-    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage
+    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage, temp_cookie_storage
     last_loop_time = time.time()
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
@@ -1070,6 +1073,17 @@ async def maintaince_loop():
     catchcooldown = {}
     fakecooldown = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
+
+    cookie_updates = []
+    for cookie_id, cookies in temp_cookie_storage.items():
+        p = get_profile(cookie_id[0], cookie_id[1])
+        p.cookies = cookies
+        cookie_updates.append(p)
+
+    with db.atomic():
+        Profile.bulk_update(cookie_updates, fields=[User.cookies], batch_size=50)
+
+    temp_cookie_storage = {}
 
     if config.TOP_GG_TOKEN and (not config.MIN_SERVER_SEND or len(bot.guilds) > config.MIN_SERVER_SEND):
         async with aiohttp.ClientSession() as session:
@@ -2932,10 +2946,14 @@ def gen_stats(profile, star):
     else:
         stats.append(["ttc_win_rate", "⭕", "Tic Tac Toe win rate: 0%"])
 
+    if (profile.guild_id, profile.user_id) not in temp_cookie_storage.keys():
+        cookies = profile.cookies
+    else:
+        cookies = temp_cookie_storage[(profile.guild_id, profile.user_id)]
     # misc
     stats.append(["❓", "Misc"])
     stats.append(["facts_read", "🧐", f"Facts read: {profile.facts:,}"])
-    stats.append(["cookies", "🍪", f"Cookies clicked: {profile.cookies:,}"])
+    stats.append(["cookies", "🍪", f"Cookies clicked: {cookies:,}"])
     stats.append(["private_embed_clicks", get_emoji("pointlaugh"), f"Private embed clicks: {profile.funny:,}"])
     stats.append(["reminders_set", "⏰", f"Reminders set: {profile.reminders_set:,}{star}"])
     stats.append(["cats_gifted", "🎁", f"Cats gifted: {profile.cats_gifted:,}{star}"])
@@ -4203,7 +4221,9 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
 
 @bot.tree.command(description="you feel like making cookies")
 async def cookie(message: discord.Interaction):
-    profile = get_profile(message.guild.id, message.user.id)
+    cookie_id = (message.guild.id, message.user.id)
+    if cookie_id not in temp_cookie_storage.keys():
+        temp_cookie_storage[cookie_id] = get_profile(message.guild.id, message.user.id).cookies
 
     async def bake(interaction):
         if interaction.user != message.user:
@@ -4211,17 +4231,16 @@ async def cookie(message: discord.Interaction):
             return
         # i think this will act weirdly if you use multiple /cookie commands, so, dont do that.
         await interaction.response.defer()
-        view.children[0].label = f"{profile.cookies + 1:,}"
+        view.children[0].label = f"{temp_cookie_storage[cookie_id] + 1:,}"
         await interaction.edit_original_response(view=view)
-        profile.cookies += 1
-        profile.save()
-        if profile.cookies < 5:
+        temp_cookie_storage[cookie_id] += 1
+        if temp_cookie_storage[cookie_id] < 5:
             await achemb(interaction, "cookieclicker", "send")
-        if 5000 <= profile.cookies < 5100:
+        if 5100 > temp_cookie_storage[cookie_id] >= 5000:
             await achemb(interaction, "cookiesclicked", "send")
 
     view = View(timeout=VIEW_TIMEOUT)
-    button = Button(emoji="🍪", label=f"{profile.cookies:,}", style=ButtonStyle.blurple)
+    button = Button(emoji="🍪", label=f"{temp_cookie_storage[cookie_id]:,}", style=ButtonStyle.blurple)
     button.callback = bake
     view.add_item(button)
     await message.response.send_message(view=view)
@@ -5886,6 +5905,9 @@ async def leaderboards(
                         joined = f"{len(rarest_holder)} people"
                     string = f"Rarest cat: {catmoji} ({joined}'s)\n\n"
 
+        if type == "Cookies":
+            string = "Cookie leaderboard updates every 5 min\n\n"
+
         elif type == "Value":
             unit = "value"
             total_sum_expr = peewee.fn.SUM(
@@ -6500,6 +6522,15 @@ async def setup(bot2):
 
 
 async def teardown(bot):
+    cookie_updates = []
+    for cookie_id, cookies in temp_cookie_storage.items():
+        p = get_profile(cookie_id[0], cookie_id[1])
+        p.cookies = cookies
+        cookie_updates.append(p)
+
+    with db.atomic():
+        Profile.bulk_update(cookie_updates, fields=[User.cookies], batch_size=50)
+
     await vote_server.cleanup()
 
 
