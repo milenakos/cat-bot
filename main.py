@@ -1987,7 +1987,6 @@ async def on_message(message: discord.Message):
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
 
-                # removed that terrifying if/elif/else chain :horror:
                 custom_cough_strings = {
                     "Corrupt": "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!",
                     "eGirl": "{username} cowought {emoji} {type} cat~~ ^^\nYou-u now *blushes* hawe {count} cats of dat tywe~!!!\nthis fella was <3 cought in {time}!!!!",
@@ -1998,13 +1997,15 @@ async def on_message(message: discord.Message):
                     "Reverse": "!!!!{time} in cought was fella this\n!!!type dat of cats {count} have now You\n!1!!!!cat {type} {emoji} cought {username}",
                 }
 
-                # default cough string
-                coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
                 if channel.cought:
-                    # if user has their own cought message, use that and throw away the rest
+                    # custom spawn message
                     coughstring = channel.cought
                 elif le_emoji in custom_cough_strings:
+                    # custom type message
                     coughstring = custom_cough_strings[le_emoji]
+                else:
+                    # default
+                    coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
 
                 view = None
                 button = None
