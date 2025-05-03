@@ -5904,10 +5904,6 @@ async def leaderboards(
                     if len(rarest_holder) > 10:
                         joined = f"{len(rarest_holder)} people"
                     string = f"Rarest cat: {catmoji} ({joined}'s)\n\n"
-
-        if type == "Cookies":
-            string = "Cookie leaderboard updates every 5 min\n\n"
-
         elif type == "Value":
             unit = "value"
             total_sum_expr = peewee.fn.SUM(
@@ -5957,6 +5953,7 @@ async def leaderboards(
                 .group_by(Profile.user_id, Profile.cookies)
                 .order_by(Profile.cookies.desc())
             ).execute()
+            string = "Cookie leaderboard updates every 5 min\n\n"
         else:
             # qhar
             return
