@@ -1081,7 +1081,7 @@ async def maintaince_loop():
         cookie_updates.append(p)
 
     with db.atomic():
-        Profile.bulk_update(cookie_updates, fields=[User.cookies], batch_size=50)
+        Profile.bulk_update(cookie_updates, fields=[Profile.cookies], batch_size=50)
 
     temp_cookie_storage = {}
 
