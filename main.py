@@ -306,7 +306,6 @@ emojis = {}
 
 # for mentioning it in catch message, will be auto-fetched in on_ready()
 RAIN_ID = 1270470307102195752
-EVENT_ID = 0
 
 # for funny stats, you can probably edit maintaince_loop to restart every X of them
 loop_count = 0
@@ -6428,9 +6427,20 @@ async def recieve_vote(request):
         # top.gg is NOT realiable with their webhooks, but we politely pretend they are
         return web.Response(text="you fucking dumb idiot", status=200)
 
+    if user.vote_streak < 10:
+        extend_time = 24
+    elif user.vote_streak < 20:
+        extend_time = 36
+    elif user.vote_streak < 50:
+        extend_time = 48
+    elif user.vote_streak < 100:
+        extend_time = 60
+    else:
+        extend_time = 72
+
     user.reminder_vote = 1
     user.total_votes += 1
-    if user.vote_time_topgg + 36 * 3600 <= time.time():
+    if user.vote_time_topgg + extend_time * 3600 <= time.time():
         # streak end
         if user.max_vote_streak < user.vote_streak:
             user.max_vote_streak = user.vote_streak
@@ -6452,7 +6462,7 @@ async def recieve_vote(request):
                     f"Thanks for voting! Streak: {user.vote_streak:,} {gold_suffix}",
                     "To claim your rewards, run `/battlepass` in every server you want.",
                     f"You can vote again <t:{int(time.time()) + 43200}:R>.",
-                    "Vote within the next 36 hours to not lose your streak.",
+                    f"Vote within the next {extend_time} hours to not lose your streak.",
                 ]
             )
         )
@@ -6480,7 +6490,7 @@ async def on_error(*args, **kwargs):
 
 
 async def setup(bot2):
-    global bot, RAIN_ID, vote_server, EVENT_ID
+    global bot, RAIN_ID, vote_server
 
     for command in bot.tree.walk_commands():
         # copy all the commands
@@ -6513,8 +6523,6 @@ async def setup(bot2):
     for i in app_commands:
         if i.name == "rain":
             RAIN_ID = i.id
-        if i.name == "event":
-            EVENT_ID = i.id
 
     if bot.is_ready() and not on_ready_debounce:
         await on_ready()
