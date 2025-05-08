@@ -1103,8 +1103,6 @@ async def maintaince_loop():
         await spawn_cat(str(channel.channel_id))
         await asyncio.sleep(0.1)
 
-    proccessed_users = []
-
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
     #
     # i wont go into the details of this because its a complicated mess which took me like solid 30 minutes of planning
