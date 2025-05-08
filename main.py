@@ -1147,10 +1147,7 @@ async def maintaince_loop():
                 user.reminder_vote = user.vote_time_topgg + 24 * 3600
             elif time_until_expiry > 3600:
                 user.reminder_vote = user.vote_time_topgg + 35 * 3600
-        proccessed_users.append(user)
-
-    with db.atomic():
-        User.bulk_update(proccessed_users, fields=[User.reminder_vote], batch_size=50)
+        user.save()
 
     # i know the next two are similiar enough to be merged but its currently dec 30 and i cant be bothered
     # catch reminders
@@ -4231,10 +4228,9 @@ async def cookie(message: discord.Interaction):
             await do_funny(interaction)
             return
         await interaction.response.defer()
-        curr = temp_cookie_storage.get(cookie_id, get_profile(message.guild.id, message.user.id).cookies) + 1
-        view.children[0].label = f"{curr:,}"
+        temp_cookie_storage[cookie_id] = temp_cookie_storage.get(cookie_id, get_profile(message.guild.id, message.user.id).cookies) + 1
+        view.children[0].label = f"{temp_cookie_storage[cookie_id]:,}"
         await interaction.edit_original_response(view=view)
-        temp_cookie_storage[cookie_id] = curr
         if temp_cookie_storage[cookie_id] < 5:
             await achemb(interaction, "cookieclicker", "send")
         if 5100 > temp_cookie_storage[cookie_id] >= 5000:
