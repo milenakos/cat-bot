@@ -2462,7 +2462,7 @@ async def news(message: discord.Interaction):
         current_state = user.news_state.strip()
         for num, article in enumerate(news_list):
             try:
-                have_read_this = (current_state[num] != "0")
+                have_read_this = current_state[num] != "0"
             except Exception:
                 have_read_this = False
             button = Button(
