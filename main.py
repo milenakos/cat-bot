@@ -1073,16 +1073,16 @@ async def maintaince_loop():
     fakecooldown = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
+    temp_temp_cookie_storage = temp_cookie_storage.copy()
+    temp_cookie_storage = {}
     cookie_updates = []
-    for cookie_id, cookies in temp_cookie_storage.items():
+    for cookie_id, cookies in temp_temp_cookie_storage.items():
         p = get_profile(cookie_id[0], cookie_id[1])
         p.cookies = cookies
         cookie_updates.append(p)
 
     with db.atomic():
         Profile.bulk_update(cookie_updates, fields=[Profile.cookies], batch_size=50)
-
-    temp_cookie_storage = {}
 
     if config.TOP_GG_TOKEN and (not config.MIN_SERVER_SEND or len(bot.guilds) > config.MIN_SERVER_SEND):
         async with aiohttp.ClientSession() as session:
@@ -4226,12 +4226,13 @@ async def cookie(message: discord.Interaction):
             await do_funny(interaction)
             return
         await interaction.response.defer()
+        curr = temp_cookie_storage.get(cookie_id, get_profile(message.guild.id, message.user.id).cookies) + 1
         temp_cookie_storage[cookie_id] = temp_cookie_storage.get(cookie_id, get_profile(message.guild.id, message.user.id).cookies) + 1
-        view.children[0].label = f"{temp_cookie_storage[cookie_id]:,}"
+        view.children[0].label = f"{curr:,}"
         await interaction.edit_original_response(view=view)
-        if temp_cookie_storage[cookie_id] < 5:
+        if curr < 5:
             await achemb(interaction, "cookieclicker", "send")
-        if 5100 > temp_cookie_storage[cookie_id] >= 5000:
+        if 5100 > curr >= 5000:
             await achemb(interaction, "cookiesclicked", "send")
 
     view = View(timeout=VIEW_TIMEOUT)
