@@ -4227,7 +4227,7 @@ async def cookie(message: discord.Interaction):
             return
         await interaction.response.defer()
         curr = temp_cookie_storage.get(cookie_id, get_profile(message.guild.id, message.user.id).cookies) + 1
-        temp_cookie_storage[cookie_id] = temp_cookie_storage.get(cookie_id, get_profile(message.guild.id, message.user.id).cookies) + 1
+        temp_cookie_storage[cookie_id] = curr
         view.children[0].label = f"{curr:,}"
         await interaction.edit_original_response(view=view)
         if curr < 5:
