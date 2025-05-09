@@ -1877,12 +1877,11 @@ async def on_message(message: discord.Message):
                     time_caught = round(abs(current_time - then), 3)  # cry about it
                     if time_caught >= 1:
                         time_caught = round(time_caught, 2)
-                    days = time_caught // 86400
-                    time_left = time_caught - (days * 86400)
-                    hours = time_left // 3600
-                    time_left = time_left - (hours * 3600)
-                    minutes = time_left // 60
-                    seconds = time_left - (minutes * 60)
+
+                    days, time_left = divmod(time_caught, 86400)
+                    hours, time_left = divmod(time_left, 3600)
+                    minutes, seconds = divmod(time_left, 60)
+
                     caught_time = ""
                     if days:
                         caught_time = caught_time + str(int(days)) + " days "
@@ -1892,7 +1891,7 @@ async def on_message(message: discord.Message):
                         caught_time = caught_time + str(int(minutes)) + " minutes "
                     if seconds:
                         pre_time = round(seconds, 3)
-                        if int(pre_time) == float(pre_time):
+                        if pre_time % 1 == 0:
                             # replace .0 with .00 basically
                             pre_time = str(int(pre_time)) + ".00"
                         caught_time = caught_time + str(pre_time) + " seconds "
@@ -2018,24 +2017,19 @@ async def on_message(message: discord.Message):
                     user.dark_market_active = True
                     user.save()
                     await interaction.response.send_message("is someone watching after you?", ephemeral=True)
-                    await asyncio.sleep(5)
-                    await interaction.followup.send("you walk up to them. the dark voice says:", ephemeral=True)
-                    await asyncio.sleep(5)
-                    await interaction.followup.send("**???**: Hello. We have a unique deal for you.", ephemeral=True)
-                    await asyncio.sleep(5)
-                    await interaction.followup.send(
+
+                    dark_market_followups = [
+                        "you walk up to them. the dark voice says:",
+                        "**???**: Hello. We have a unique deal for you.",
                         '**???**: To access our services, press "Hidden" `/achievements` tab 3 times in a row.',
-                        ephemeral=True,
-                    )
-                    await asyncio.sleep(5)
-                    await interaction.followup.send("**???**: You won't be disappointed.", ephemeral=True)
-                    await asyncio.sleep(5)
-                    await interaction.followup.send(
+                        "**???**: You won't be disappointed.",
                         "before you manage to process that, the figure disappears. will you figure out whats going on?",
-                        ephemeral=True,
-                    )
-                    await asyncio.sleep(5)
-                    await interaction.followup.send("the only choice is to go to that place.", ephemeral=True)
+                        "the only choice is to go to that place.",
+                    ]
+
+                    for phrase in dark_market_followups:
+                        await asyncio.sleep(5)
+                        await interaction.followup.send(phrase, ephemeral=True)
 
                 vote_time_user, _ = User.get_or_create(user_id=message.author.id)
                 if random.randint(0, 10) == 0 and user.cat_Fine >= 20 and not user.dark_market_active:
@@ -2204,8 +2198,13 @@ async def on_message(message: discord.Message):
             await message.reply("success")
         except Exception:
             await message.reply("invalid number")
+
+    # only letting the owner of the bot access anything past this point
+    if message.author.id != OWNER_ID:
+        return
     # those are "owner" commands which are not really interesting
-    if text.lower().startswith("cat!sweep") and message.author.id == OWNER_ID:
+
+    if text.lower().startswith("cat!sweep"):
         try:
             channel = Channel.get(channel_id=message.channel.id)
             channel.cat = 0
@@ -2213,7 +2212,7 @@ async def on_message(message: discord.Message):
             await message.reply("success")
         except Exception:
             pass
-    if text.lower().startswith("cat!rain") and message.author.id == OWNER_ID:
+    if text.lower().startswith("cat!rain"):
         # syntax: cat!rain 553093932012011520 short
         things = text.split(" ")
         user, _ = User.get_or_create(user_id=things[1])
@@ -2229,12 +2228,12 @@ async def on_message(message: discord.Message):
             user.rain_minutes += int(things[2])
         user.premium = True
         user.save()
-    if text.lower().startswith("cat!restart") and message.author.id == OWNER_ID:
+    if text.lower().startswith("cat!restart"):
         await message.reply("restarting!")
         os.system("git pull")
         await vote_server.cleanup()
         await bot.cat_bot_reload_hook("db" in text)  # pyright: ignore
-    if text.lower().startswith("cat!print") and message.author.id == OWNER_ID:
+    if text.lower().startswith("cat!print"):
         # just a simple one-line with no async (e.g. 2+3)
         try:
             await message.reply(eval(text[9:]))
@@ -2243,7 +2242,7 @@ async def on_message(message: discord.Message):
                 await message.reply(traceback.format_exc())
             except Exception:
                 pass
-    if text.lower().startswith("cat!eval") and message.author.id == OWNER_ID:
+    if text.lower().startswith("cat!eval"):
         # complex eval, multi-line + async support
         # requires the full `await message.channel.send(2+3)` to get the result
 
@@ -2266,7 +2265,7 @@ async def on_message(message: discord.Message):
 
         complete = intro + spaced + ending
         exec(complete)
-    if text.lower().startswith("cat!news") and message.author.id == OWNER_ID:
+    if text.lower().startswith("cat!news"):
         for i in Channel.select():
             try:
                 channeley = bot.get_channel(int(i.channel_id))
@@ -2284,7 +2283,7 @@ async def on_message(message: discord.Message):
                     await channeley.send(text[8:])
             except Exception:
                 pass
-    if text.lower().startswith("cat!custom") and message.author.id == OWNER_ID:
+    if text.lower().startswith("cat!custom"):
         stuff = text.split(" ")
         if stuff[1][0] not in "1234567890":
             stuff.insert(1, message.channel.owner_id)
@@ -2463,7 +2462,7 @@ async def news(message: discord.Interaction):
         current_state = user.news_state.strip()
         for num, article in enumerate(news_list):
             try:
-                have_read_this = False if current_state[num] == "0" else True
+                have_read_this = (current_state[num] != "0")
             except Exception:
                 have_read_this = False
             button = Button(
@@ -2486,28 +2485,28 @@ async def news(message: discord.Interaction):
 
     async def prev_page(interaction):
         nonlocal current_page
-        if interaction.user.id == message.user.id:
-            current_page -= 1
-            await interaction.response.edit_message(view=generate_page(current_page))
-        else:
+        if interaction.user.id != message.user.id:
             await do_funny(interaction)
+            return
+        current_page -= 1
+        await interaction.response.edit_message(view=generate_page(current_page))
 
     async def next_page(interaction):
         nonlocal current_page
-        if interaction.user.id == message.user.id:
-            current_page += 1
-            await interaction.response.edit_message(view=generate_page(current_page))
-        else:
+        if interaction.user.id != message.user.id:
             await do_funny(interaction)
+            return
+        current_page += 1
+        await interaction.response.edit_message(view=generate_page(current_page))
 
     async def mark_all_as_read(interaction):
-        if interaction.user.id == message.user.id:
-            user.news_state = "1" * len(news_list)
-            user.save()
-            regen_buttons()
-            await interaction.response.edit_message(view=generate_page(current_page))
-        else:
+        if interaction.user.id != message.user.id:
             await do_funny(interaction)
+            return
+        user.news_state = "1" * len(news_list)
+        user.save()
+        regen_buttons()
+        await interaction.response.edit_message(view=generate_page(current_page))
 
     def generate_page(number):
         view = View(timeout=VIEW_TIMEOUT)
@@ -3000,10 +2999,11 @@ async def gen_inventory(message, person_id):
     minus_achs = 0
     minus_achs_count = 0
     for k in ach_names:
-        if ach_list[k]["category"] == "Hidden":
+        is_ach_hidden = ach_list[k]["category"] == "Hidden"
+        if is_ach_hidden:
             minus_achs_count += 1
         if person[k]:
-            if ach_list[k]["category"] == "Hidden":
+            if is_ach_hidden:
                 minus_achs += 1
             else:
                 unlocked += 1
@@ -3505,15 +3505,14 @@ async def packs(message: discord.Interaction):
         build_string = ""
 
         # bump rarity
-        try_bump = True
-        while try_bump:
+        while True:
             if random.randint(1, 100) <= pack_data[level]["upgrade"]:
                 reward_texts.append(f"{get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}\n" + build_string)
                 build_string = f"Upgraded from {get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}!\n" + build_string
                 level += 1
                 user.pack_upgrades += 1
             else:
-                try_bump = False
+                break
         final_level = pack_data[level]
         reward_texts.append(f"{get_emoji(final_level['name'].lower() + 'pack')} {final_level['name']}\n" + build_string)
 
@@ -3936,7 +3935,7 @@ async def ping(message: discord.Interaction):
                     latency = round((total_latencies / total_shards) * 1000)
             except Exception:
                 pass
-    await message.response.send_message(f"🏓 cat has brain delay of {latency} ms " + str(get_emoji("staring_cat")))
+    await message.response.send_message(f"🏓 cat has brain delay of {latency} ms {get_emoji('staring_cat')}")
     await progress(message, get_profile(message.guild.id, message.user.id), "ping")
 
 
@@ -5583,29 +5582,20 @@ async def dark_market(message):
                     except Exception:
                         pass
 
-                    await asyncio.sleep(5)
-                    await interaction.followup.send(
+                    final_cutscene_followups = [
                         "You barely manage to turn around a corner and hide to run away.",
-                        ephemeral=True,
-                    )
-                    await asyncio.sleep(5)
-                    await interaction.followup.send(
                         "You quietly get to the police station and tell them everything.",
-                        ephemeral=True,
-                    )
-                    await asyncio.sleep(5)
-                    await interaction.followup.send("## The next day.", ephemeral=True)
-                    await asyncio.sleep(5)
-                    await interaction.followup.send("A nice day outside. You open the news:", ephemeral=True)
-                    await asyncio.sleep(5)
-                    await interaction.followup.send(
+                        "## The next day.",
+                        "A nice day outside. You open the news:",
                         "*Dog Mafia, the biggest cataine distributor, was finally caught after anonymous report.*",
-                        ephemeral=True,
-                    )
-                    await asyncio.sleep(5)
-                    await interaction.followup.send("HUH? It was dogs all along...", ephemeral=True)
-                    await asyncio.sleep(5)
+                        "HUH? It was dogs all along...",
+                    ]
 
+                    for phrase in final_cutscene_followups:
+                        await asyncio.sleep(5)
+                        await interaction.followup.send(phrase, ephemeral=True)
+
+                    await asyncio.sleep(5)
                     await achemb(interaction, "thanksforplaying", "send")
                     user.story_complete = True
                     user.save()
@@ -5657,10 +5647,11 @@ async def achievements(message: discord.Interaction):
     minus_achs = 0
     minus_achs_count = 0
     for k in ach_names:
-        if ach_list[k]["category"] == "Hidden":
+        is_ach_hidden = ach_list[k]["category"] == "Hidden"
+        if is_ach_hidden:
             minus_achs_count += 1
         if user[k]:
-            if ach_list[k]["category"] == "Hidden":
+            if is_ach_hidden:
                 minus_achs += 1
             else:
                 unlocked += 1
@@ -5678,10 +5669,11 @@ async def achievements(message: discord.Interaction):
         minus_achs_count = 0
 
         for k in ach_names:
-            if ach_list[k]["category"] == "Hidden":
+            is_ach_hidden = ach_list[k]["category"] == "Hidden"
+            if is_ach_hidden:
                 minus_achs_count += 1
             if user[k]:
-                if ach_list[k]["category"] == "Hidden":
+                if is_ach_hidden:
                     minus_achs += 1
                 else:
                     unlocked += 1
@@ -6028,22 +6020,28 @@ async def leaderboards(
             current += 1
 
         # add the messager and interactor
-        # todo: refactor this
         if type != "Battlepass" and (messager_placement > show_amount or interactor_placement > show_amount):
             string = string + "...\n"
+
+            # setting up names
+            include_interactor = interactor_placement > show_amount and str(interaction.user.id) not in string
+            include_messager = messager_placement > show_amount and str(message.user.id) not in string
+            interactor_line = ""
+            messager_line = ""
+            if include_interactor:
+                interactor_line = f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
+            if include_messager:
+                messager_line = f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: {message.user.mention}\n"
+
             # sort them correctly!
             if messager_placement > interactor_placement:
                 # interactor should go first
-                if interactor_placement > show_amount and str(interaction.user.id) not in string:
-                    string = string + f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
-                if messager_placement > show_amount and str(message.user.id) not in string:
-                    string = string + f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: {message.user.mention}\n"
+                string += interactor_line
+                string += messager_line
             else:
                 # messager should go first
-                if messager_placement > show_amount and str(message.user.id) not in string:
-                    string = string + f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: {message.user.mention}\n"
-                if interactor_placement > show_amount and str(interaction.user.id) not in string:
-                    string = string + f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
+                string += messager_line
+                string += interactor_line
 
         title = type + " Leaderboard"
         if type == "Cats":
