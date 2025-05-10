@@ -3505,14 +3505,11 @@ async def packs(message: discord.Interaction):
         build_string = ""
 
         # bump rarity
-        while True:
-            if random.randint(1, 100) <= pack_data[level]["upgrade"]:
-                reward_texts.append(f"{get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}\n" + build_string)
-                build_string = f"Upgraded from {get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}!\n" + build_string
-                level += 1
-                user.pack_upgrades += 1
-            else:
-                break
+        while random.randint(1, 100) <= pack_data[level]["upgrade"]:
+            reward_texts.append(f"{get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}\n" + build_string)
+            build_string = f"Upgraded from {get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}!\n" + build_string
+            level += 1
+            user.pack_upgrades += 1
         final_level = pack_data[level]
         reward_texts.append(f"{get_emoji(final_level['name'].lower() + 'pack')} {final_level['name']}\n" + build_string)
 
@@ -5283,6 +5280,9 @@ async def remind(
         return
     if len(text) > 1900:
         await message.response.send_message("thats too long", ephemeral=True)
+        return
+    if goal_time < 0:
+        await message.response.send_message("cat cant time travel (yet)", ephemeral=True)
         return
     await message.response.send_message(f"🔔 ok, <t:{goal_time}:R> (+- 5 min) ill remind you of:\n{text}")
     msg = await message.original_response()
