@@ -1081,8 +1081,7 @@ async def maintaince_loop():
         p.cookies = cookies
         cookie_updates.append(p)
 
-    with db.atomic():
-        Profile.bulk_update(cookie_updates, fields=[Profile.cookies], batch_size=50)
+    Profile.bulk_update(cookie_updates, fields=[Profile.cookies])
 
     if config.TOP_GG_TOKEN and (not config.MIN_SERVER_SEND or len(bot.guilds) > config.MIN_SERVER_SEND):
         async with aiohttp.ClientSession() as session:
@@ -1195,8 +1194,7 @@ async def maintaince_loop():
         user.reminder_catch = 0
         proccessed_users.append(user)
 
-    with db.atomic():
-        Profile.bulk_update(proccessed_users, fields=[Profile.reminder_catch], batch_size=50)
+    Profile.bulk_update(proccessed_users, fields=[Profile.reminder_catch])
 
     # misc reminders
     proccessed_users = []
@@ -1245,8 +1243,7 @@ async def maintaince_loop():
         user.reminder_misc = 0
         proccessed_users.append(user)
 
-    with db.atomic():
-        Profile.bulk_update(proccessed_users, fields=[Profile.reminder_misc], batch_size=50)
+    Profile.bulk_update(proccessed_users, fields=[Profile.reminder_misc])
 
     for reminder in Reminder.select().where(Reminder.time < time.time()):
         try:
@@ -1904,13 +1901,13 @@ async def on_message(message: discord.Message):
                     # if some of the above explodes just give up
                     do_time = False
                     caught_time = "undefined amounts of time "
-                    
+
                 try:
                     if time_caught >= 0:
                         temp_belated_storage[message.channel.id] = {"time": time_caught, "users": [message.author.id]}
                 except Exception:
                     pass
-                
+
                 if channel.cat_rains + 10 > time.time() or message.channel.id in temp_rains_storage:
                     do_time = False
 
@@ -6385,10 +6382,8 @@ async def nuke(message: discord.Interaction):
                     i.guild_id = interaction.message.id
                     changed_prisms.append(i)
 
-                with db.atomic():
-                    Profile.bulk_update(changed_profiles, fields=[Profile.guild_id], batch_size=50)
-                    Prism.bulk_update(changed_prisms, fields=[Prism.guild_id], batch_size=50)
-
+                Profile.bulk_update(changed_profiles, fields=[Profile.guild_id])
+                Prism.bulk_update(changed_prisms, fields=[Prism.guild_id])
                 Profile.create(guild_id=interaction.message.id, user_id=0)
 
                 try:
@@ -6529,8 +6524,7 @@ async def teardown(bot):
         p.cookies = cookies
         cookie_updates.append(p)
 
-    with db.atomic():
-        Profile.bulk_update(cookie_updates, fields=[Profile.cookies], batch_size=50)
+    Profile.bulk_update(cookie_updates, fields=[Profile.cookies])
 
     await vote_server.cleanup()
 
