@@ -43,7 +43,7 @@ from PIL import Image
 import config
 
 import msg2img
-from database import Channel, Prism, Profile, Reminder, User, db
+from database import Channel, Prism, Profile, Reminder, User
 
 logging.basicConfig(level=logging.INFO)
 
@@ -306,6 +306,9 @@ emojis = {}
 
 # for mentioning it in catch message, will be auto-fetched in on_ready()
 RAIN_ID = 1270470307102195752
+
+# for dev commands, this is fetched in on_ready
+OWNER_ID = 553093932012011520
 
 # for funny stats, you can probably edit maintaince_loop to restart every X of them
 loop_count = 0
@@ -1655,8 +1658,7 @@ async def on_message(message: discord.Message):
         "qattusa",
         "katt",
         "kit",
-        "kishka"
-        "cath",
+        "kishkacath",
         "qitta",
         "katu",
         "pisik",
@@ -1673,16 +1675,14 @@ async def on_message(message: discord.Message):
         "chhma",
         "goyangi",
         "pucha",
-        "manjar", 
+        "manjar",
         "muur",
         "biralo",
         "gorbeh",
-        "punai"
-        "pilli",
+        "punaipilli",
         "kedi",
         "mushuk",
-        "meo"
-        "demat",
+        "meodemat",
         "nwamba",
         "jangwe",
         "adure",
