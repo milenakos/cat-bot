@@ -189,7 +189,7 @@ hints = [
     "/casino is *surely* not rigged",
     "You probably shouldn't use a Discord bot for /remind-ers",
     "Cat /Rain is an excellent way to support development!",
-    "Cat Bot was made later than it's support server",
+    "Cat Bot was made later than its support server",
     "Cat Bot reached 100 servers 3 days after release",
     "Cat died for 2+ weeks bc the servers were flooded with water",
     "Cat Bot's top.gg page was deleted at one point",
