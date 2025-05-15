@@ -257,8 +257,6 @@ rain_shill = "☔ Get tons of cats /rain"
 # higher one means buttons work for longer but uses more ram to keep track of them
 VIEW_TIMEOUT = 86400
 
-milenakoos = None
-
 # store credits usernames to prevent excessive api calls
 gen_credits = {}
 
@@ -1291,7 +1289,7 @@ async def on_connect():
 
 # some code which is run when bot is started
 async def on_ready():
-    global milenakoos, OWNER_ID, on_ready_debounce, gen_credits, emojis
+    global OWNER_ID, on_ready_debounce, gen_credits, emojis
     if on_ready_debounce:
         return
     on_ready_debounce = True
@@ -1299,10 +1297,9 @@ async def on_ready():
     emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
     appinfo = bot.application
     if appinfo.team and appinfo.team.owner_id:
-        milenakoos = await bot.fetch_user(appinfo.team.owner_id)
+        OWNER_ID = (await bot.fetch_user(appinfo.team.owner_id)).id
     else:
-        milenakoos = appinfo.owner
-    OWNER_ID = milenakoos.id
+        OWNER_ID = appinfo.owner.id
 
     credits = {
         "author": [553093932012011520],
@@ -2257,8 +2254,8 @@ async def on_message(message: discord.Message):
     # only letting the owner of the bot access anything past this point
     if message.author.id != OWNER_ID:
         return
-    # those are "owner" commands which are not really interesting
 
+    # those are "owner" commands which are not really interesting
     if text.lower().startswith("cat!sweep"):
         try:
             channel = Channel.get(channel_id=message.channel.id)
@@ -5382,7 +5379,7 @@ if config.WORDNIK_API_KEY:
                     text = (await response.text()).lower()
                     for test in ["vulgar", "slur", "offensive", "profane", "insult", "abusive", "derogatory"]:
                         if test in text:
-                            await message.response.send_message(f"__{message.user.name}__\na stupid idiot", ephemeral=True)
+                            await message.response.send_message(f"__{message.user.name}__\na stupid idiot (result was filtered)", ephemeral=True)
                             return
 
                     # sometimes the api returns results without definitions, so we search for the first one which has a definition
@@ -6524,10 +6521,7 @@ async def check_supporter(request):
     request_json = await request.json()
 
     user, _ = User.get_or_create(user_id=int(request_json["user"]))
-    if user.premium:
-        return web.Response(text="1", status=200)
-    else:
-        return web.Response(text="0", status=200)
+    return web.Response(text="1" if user.premium else "0", status=200)
 
 
 # cat bot uses glitchtip (sentry alternative) for errors, here u can instead implement some other logic like dming the owner
