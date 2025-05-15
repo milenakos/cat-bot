@@ -1,3 +1,19 @@
+# Cat Bot - A Discord bot about catching cats.
+# Copyright (C) 2025 Lia Milenakos & Cat Bot Contributors
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import io
 import os
 
@@ -189,22 +205,11 @@ def msg2img(message):
     with Pilmoji(new_img) as pilmoji2:
         pilmoji2.text((122, 55), text.strip(), (255, 255, 255), font2, emoji_scale_factor=45 / 33)
 
-    now = message.created_at
-    # there is probably easier way than this but ehhh
-    twelvehour = now.strftime("%I:%M")
-    twentyfourhour = now.strftime("%H:%M")
-    if twelvehour == twentyfourhour:
-        suffix = "AM"
-    else:
-        suffix = "PM"
-
-    # 09:34 -> 9:34
-    if twelvehour[0] == "0" and twelvehour[1] != ":":
-        twelvehour = twelvehour[1:]
+    twentyfourhour = message.created_at.strftime("%H:%M")
 
     pencil.text(
         (13 + 122 + getsize(font, nick)[0] + move, 17),
-        f"Today at {twelvehour} {suffix}",
+        f"Today at {twentyfourhour}",
         font=font3,
         fill=ImageColor.getrgb("#A3A4AA"),
     )  # draw time

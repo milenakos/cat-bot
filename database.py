@@ -1,3 +1,19 @@
+# Cat Bot - A Discord bot about catching cats.
+# Copyright (C) 2025 Lia Milenakos & Cat Bot Contributors
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import json
 import config
 import peewee
@@ -72,6 +88,8 @@ class Profile(peewee.Model):
     facts = peewee.SmallIntegerField(default=0)  # /fact amount
     gambles = peewee.SmallIntegerField(default=0)  # casino spins amount
 
+    cookies = peewee.BigIntegerField(default=0)  # cookies clicked
+
     rain_minutes = peewee.SmallIntegerField(default=0)  # server-locked rains amount
 
     slot_spins = peewee.IntegerField(default=0)
@@ -104,6 +122,8 @@ class Profile(peewee.Model):
 
     reminders_enabled = peewee.BooleanField(default=False)
 
+    highlighted_stat = peewee.CharField(default="time_records", max_length=30)
+
     # advanced stats
     boosted_catches = peewee.IntegerField(default=0)  # amount of catches boosted by prism
     cataine_activations = peewee.IntegerField(default=0)  # amount of cataine activations
@@ -115,14 +135,18 @@ class Profile(peewee.Model):
     rain_participations = peewee.IntegerField(default=0)  # amount of catches during rains
     rain_minutes_started = peewee.IntegerField(default=0)  # amount of rain minutes started
     reminders_set = peewee.IntegerField(default=0)  # amount of reminders set
-    cats_gifted = peewee.IntegerField(default=0)  # amount of cats gifted
-    cat_gifts_recieved = peewee.IntegerField(default=0)  # amount of cat gifts recieved
+    cats_gifted = CappedIntegerField(default=0)  # amount of cats gifted
+    cat_gifts_recieved = CappedIntegerField(default=0)  # amount of cat gifts recieved
     trades_completed = peewee.IntegerField(default=0)  # amount of trades completed
-    cats_traded = peewee.IntegerField(default=0)  # amount of cats traded
+    cats_traded = CappedIntegerField(default=0)  # amount of cats traded
     ttt_played = peewee.IntegerField(default=0)  # amount of times played the TTT
     ttt_won = peewee.IntegerField(default=0)  # amount of TTT wins
     ttt_draws = peewee.IntegerField(default=0)  # amount of TTT draws
+    packs_opened = peewee.IntegerField(default=0)  # amount of packs opened
+    pack_upgrades = peewee.IntegerField(default=0)  # amount of pack upgrades
     new_user = peewee.BooleanField(default=True)  # whether the user is new
+
+    puzzle_pieces = peewee.IntegerField(default=0)  # amount of puzzle pieces collected for birthday 2025 event
 
     # thanks chatgpt
     # cat types
@@ -134,6 +158,10 @@ class Profile(peewee.Model):
         ach_list = json.load(f)
     for ach in ach_list.keys():
         locals()[ach] = peewee.BooleanField(default=False)
+
+    # packs
+    for pack in ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]:
+        locals()[f"pack_{pack.lower()}"] = peewee.IntegerField(default=0)
 
     def __getitem__(self, item):
         return getattr(self, item)
@@ -180,6 +208,8 @@ class Channel(peewee.Model):
     channel_id = peewee.BigIntegerField(unique=True, index=True, primary_key=True)
 
     cat = peewee.BigIntegerField(default=0)  # cat message id
+    cattype = peewee.CharField(default="", max_length=20)  # curently spawned cat type (parsed from msg if none)
+    forcespawned = peewee.BooleanField(default=False)  # whether the current cat is forcespawned
 
     thread_mappings = peewee.BooleanField(default=False)  # whether the channel is a thread
 
@@ -188,6 +218,7 @@ class Channel(peewee.Model):
 
     lastcatches = peewee.BigIntegerField(default=0)  # timestamp of last catch
     yet_to_spawn = peewee.BigIntegerField(default=0)  # timestamp of the next catch, if any
+    cat_rains = peewee.BigIntegerField(default=0)  # timestamp of rain end, if any
 
     appear = peewee.CharField(default="", max_length=4000)
     cought = peewee.CharField(default="", max_length=4000)
