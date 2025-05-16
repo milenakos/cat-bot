@@ -1354,8 +1354,6 @@ async def on_message(message: discord.Message):
     if not bot.user or message.author.id == bot.user.id:
         return
 
-    start_time = time.time()
-
     if time.time() > last_loop_time + 300:
         last_loop_time = time.time()
         await maintaince_loop()
@@ -1808,7 +1806,6 @@ async def on_message(message: discord.Message):
     except Exception:
         pass
 
-    print("precat", time.time() - start_time)
     # this is run whether someone says "cat" (very complex)
     if text.lower() == "cat":
         start_time = time.time()
