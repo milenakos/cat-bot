@@ -1866,6 +1866,7 @@ async def on_message(message: discord.Message):
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
             times = [channel.spawn_times_min, channel.spawn_times_max]
+            print(message.id, time.time() - start_time)
             if channel.cat_rains != 0:
                 if channel.cat_rains > time.time():
                     times = [1, 2]
@@ -1880,12 +1881,13 @@ async def on_message(message: discord.Message):
                     except Exception:
                         pass
             decided_time = random.uniform(times[0], times[1])
+            print(message.id, time.time() - start_time)
             if channel.yet_to_spawn < time.time():
                 channel.yet_to_spawn = time.time() + decided_time + 10
             else:
                 decided_time = 0
+            print(message.id, time.time() - start_time)
             try:
-                print(message.id, time.time() - start_time)
                 current_time = message.created_at.timestamp()
                 channel.lastcatches = current_time
                 cat_temp = channel.cat
@@ -1926,8 +1928,6 @@ async def on_message(message: discord.Message):
                         pass
                     return
 
-                print(message.id, time.time() - start_time)
-
                 try:
                     send_target = discord.Webhook.from_url(channel.webhook, client=bot)
                 except Exception:
@@ -1966,8 +1966,6 @@ async def on_message(message: discord.Message):
                     do_time = False
                     caught_time = "undefined amounts of time "
 
-                print(message.id, time.time() - start_time)
-
                 try:
                     if time_caught >= 0:
                         temp_belated_storage[message.channel.id] = {"time": time_caught, "users": [message.author.id]}
@@ -1978,8 +1976,6 @@ async def on_message(message: discord.Message):
                     do_time = False
 
                 suffix_string = ""
-
-                print(message.id, time.time() - start_time)
 
                 # calculate prism boost
                 total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
@@ -2102,8 +2098,6 @@ async def on_message(message: discord.Message):
                         await asyncio.sleep(5)
                         await interaction.followup.send(phrase, ephemeral=True)
 
-                print(message.id, time.time() - start_time)
-
                 vote_time_user, _ = User.get_or_create(user_id=message.author.id)
                 if random.randint(0, 10) == 0 and user.cat_Fine >= 20 and not user.dark_market_active:
                     button = Button(label="You see a shadow...", style=ButtonStyle.red)
@@ -2170,11 +2164,7 @@ async def on_message(message: discord.Message):
                         except Exception:
                             pass
 
-                print(message.id, time.time() - start_time)
-
                 await asyncio.gather(delete_cat(), send_confirm())
-
-                print(message.id, time.time() - start_time)
 
                 user.total_catches += 1
                 if do_time:
@@ -2220,8 +2210,6 @@ async def on_message(message: discord.Message):
                     if len(set(raw_digits)) == 1:
                         await achemb(message, "all_the_same", "send")
 
-                print(message.id, time.time() - start_time)
-
                 # handle battlepass
                 await progress(message, user, "3cats")
                 if channel.cattype == "Fine":
@@ -2249,10 +2237,8 @@ async def on_message(message: discord.Message):
                         await progress(message, user, "finenice")
                         await progress(message, user, "finenice")
             finally:
-                print(message.id, time.time() - start_time)
                 user.save()
                 channel.save()
-                print(message.id, time.time() - start_time)
                 if decided_time:
                     await asyncio.sleep(decided_time)
                     try:
