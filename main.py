@@ -1066,7 +1066,6 @@ async def postpone_reminder(interaction):
 # a loop for various maintaince which is ran every 5 minutes
 async def maintaince_loop():
     global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage, temp_cookie_storage
-    last_loop_time = time.time()
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     temp_belated_storage = {}
@@ -1347,12 +1346,13 @@ async def on_ready():
 # this is all the code which is ran on every message sent
 # a lot of it is for easter eggs or achievements
 async def on_message(message: discord.Message):
-    global emojis
+    global emojis, last_loop_time
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
         return
 
     if time.time() > last_loop_time + 300:
+        last_loop_time = time.time()
         await maintaince_loop()
 
     if message.guild is None:
@@ -1808,6 +1808,7 @@ async def on_message(message: discord.Message):
         user = get_profile(message.guild.id, message.author.id)
         channel = Channel.get_or_none(channel_id=message.channel.id)
         if not channel or not channel.cat or channel.cat in temp_catches_storage or user.timeout > time.time():
+            return  # testing
             # laugh at this user
             # (except if rain is active, we dont have perms or channel isnt setupped, or we laughed way too much already)
             if channel and channel.cat_rains < time.time() and perms.add_reactions and pointlaugh_ratelimit.get(message.channel.id, 0) < 10:
@@ -3846,7 +3847,7 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
     prisms.sort(key=lambda p: order_map.get(p.name, float("inf")))
 
     for prism in prisms:
-        prism_texts.append(f"{icon} **{prism.name}** {f"Owner: <@{prism.user_id}>" if not person else ""}\n<@{prism.creator}> crafted <t:{prism.time}:D>")
+        prism_texts.append(f"{icon} **{prism.name}** {f'Owner: <@{prism.user_id}>' if not person else ''}\n<@{prism.creator}> crafted <t:{prism.time}:D>")
 
     if len(prisms) == 0:
         prism_texts.append("No prisms found!")
@@ -3942,12 +3943,14 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
 
     def gen_page():
         target = "" if not person else f"{person_id.name}'s"
-        
+
         embed = discord.Embed(
             title=f"{icon} {target} Cat Prisms",
             color=0x6E593C,
             description="Prisms are a tradeable power-up which occasionally bumps cat rarity up by one. Each prism crafted gives everyone an increased chance to get upgraded, plus additional chance for prism owners.\n\n",
-        ).set_footer(text=f"{total_count} Total Prisms | Global boost: {round(global_boost * 100, 3)}%\n{person_id.name}'s prisms | Owned: {user_count} | Personal boost: {user_boost}%")
+        ).set_footer(
+            text=f"{total_count} Total Prisms | Global boost: {round(global_boost * 100, 3)}%\n{person_id.name}'s prisms | Owned: {user_count} | Personal boost: {user_boost}%"
+        )
 
         embed.description += "\n".join(prism_texts[page_number * 26 : (page_number + 1) * 26])
 
@@ -4352,9 +4355,12 @@ async def gift(
             # handle tax
             if amount >= 5:
                 tax_amount = round(amount * 0.2)
+                tax_debounce = False
 
                 async def pay(interaction):
-                    if interaction.user.id == message.user.id:
+                    nonlocal tax_debounce
+                    if interaction.user.id == message.user.id and not tax_debounce:
+                        tax_debounce = True
                         await interaction.response.defer()
                         user = get_profile(message.guild.id, message.user.id)
                         try:

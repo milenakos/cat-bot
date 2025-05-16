@@ -38,11 +38,6 @@ bot = commands.AutoShardedBot(
 
 @bot.event
 async def setup_hook():
-    try:
-        await bot.load_extension("stats")
-        config.COLLECT_STATS = True
-    except commands.ExtensionNotFound:
-        config.COLLECT_STATS = False
     await bot.load_extension("main")
 
 
