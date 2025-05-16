@@ -4287,28 +4287,32 @@ async def cookie(message: discord.Interaction):
     if cookie_id not in temp_cookie_storage.keys():
         temp_cookie_storage[cookie_id] = get_profile(message.guild.id, message.user.id).cookies
 
-    async def bake(interaction):
-        if interaction.user != message.user:
-            await do_funny(interaction)
-            return
-        await interaction.response.defer()
+    async def bake():
         curr = temp_cookie_storage.get(cookie_id, get_profile(message.guild.id, message.user.id).cookies) + 1
         temp_cookie_storage[cookie_id] = curr
-        view.children[0].label = f"{curr:,}"
-        await interaction.edit_original_response(view=view)
-        if curr < 5:
-            await achemb(interaction, "cookieclicker", "send")
+        await msg.edit(content=f"🍪 {curr:,}")
+        if curr < 50:
+            await achemb(message, "cookieclicker", "send")
         if 5100 > curr >= 5000:
-            await achemb(interaction, "cookiesclicked", "send")
+            await achemb(message, "cookiesclicked", "send")
 
-    view = View(timeout=VIEW_TIMEOUT)
-    button = Button(emoji="🍪", label=f"{temp_cookie_storage[cookie_id]:,}", style=ButtonStyle.blurple)
-    button.callback = bake
-    view.add_item(button)
-    # await message.response.send_message(view=view)
-    await message.response.send_message(
-        "okay so im currently investigating the bot lagging a lot and i have a suspicion that it might be due to people clicking cookies too agressively.\nif that isnt the case, i will bring back this command soon\nif it turns out cookie clicker is at fault, i will try remaking it to not be as resource intensive.\nsorry for the inconvinience!"
-    )
+    msg = (await message.response.send_message(f"🍪 {temp_cookie_storage[cookie_id]:,}")).resource
+    await msg.add_reaction(get_emoji("cookie"))
+
+    def check(reaction, user):
+        return user == message.user and reaction.message.id == msg.id
+
+    async def track_adds():
+        while True:
+            await bot.wait_for("reaction_add", timeout=VIEW_TIMEOUT, check=check)
+            await bake()
+
+    async def track_removes():
+        while True:
+            await bot.wait_for("reaction_remove", timeout=VIEW_TIMEOUT, check=check)
+            await bake()
+
+    await asyncio.gather(track_adds(), track_removes())
 
 
 @bot.tree.command(description="give cats now")
