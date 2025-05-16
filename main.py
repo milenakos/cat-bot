@@ -1354,6 +1354,8 @@ async def on_message(message: discord.Message):
     if not bot.user or message.author.id == bot.user.id:
         return
 
+    start_time = time.time()
+
     if time.time() > last_loop_time + 300:
         last_loop_time = time.time()
         await maintaince_loop()
@@ -1806,8 +1808,10 @@ async def on_message(message: discord.Message):
     except Exception:
         pass
 
+    print("precat", time.time() - start_time)
     # this is run whether someone says "cat" (very complex)
     if text.lower() == "cat":
+        start_time = time.time()
         user = get_profile(message.guild.id, message.author.id)
         channel = Channel.get_or_none(channel_id=message.channel.id)
         if not channel or not channel.cat or channel.cat in temp_catches_storage or user.timeout > time.time():
@@ -1861,6 +1865,7 @@ async def on_message(message: discord.Message):
                         elif channel.cattype == "Nice" and user.catch_progress in [0, 1]:
                             await progress(message, user, "finenice")
                             await progress(message, user, "finenice")
+            print("noppers", time.time() - start_time)
         else:
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
@@ -2235,6 +2240,7 @@ async def on_message(message: discord.Message):
             finally:
                 user.save()
                 channel.save()
+                print("yessers", time.time() - start_time)
                 if decided_time:
                     await asyncio.sleep(decided_time)
                     try:
