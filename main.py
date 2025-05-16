@@ -43,7 +43,7 @@ from PIL import Image
 import config
 
 import msg2img
-from database import Channel, Prism, Profile, Reminder, User
+from database import Channel, Prism, Profile, Reminder, User, db
 
 logging.basicConfig(level=logging.INFO)
 
@@ -1081,7 +1081,8 @@ async def maintaince_loop():
         p.cookies = cookies
         cookie_updates.append(p)
 
-    Profile.bulk_update(cookie_updates, fields=[Profile.cookies])
+    with db.atomic():
+        Profile.bulk_update(cookie_updates, fields=[Profile.cookies], batch_size=200)
 
     if config.TOP_GG_TOKEN and (not config.MIN_SERVER_SEND or len(bot.guilds) > config.MIN_SERVER_SEND):
         async with aiohttp.ClientSession() as session:
@@ -1194,7 +1195,8 @@ async def maintaince_loop():
         user.reminder_catch = 0
         proccessed_users.append(user)
 
-    Profile.bulk_update(proccessed_users, fields=[Profile.reminder_catch])
+    with db.atomic():
+        Profile.bulk_update(proccessed_users, fields=[Profile.reminder_catch], batch_size=200)
 
     # misc reminders
     proccessed_users = []
@@ -1243,7 +1245,8 @@ async def maintaince_loop():
         user.reminder_misc = 0
         proccessed_users.append(user)
 
-    Profile.bulk_update(proccessed_users, fields=[Profile.reminder_misc])
+    with db.atomic():
+        Profile.bulk_update(proccessed_users, fields=[Profile.reminder_misc], batch_size=200)
 
     for reminder in Reminder.select().where(Reminder.time < time.time()):
         try:
@@ -1808,7 +1811,6 @@ async def on_message(message: discord.Message):
         user = get_profile(message.guild.id, message.author.id)
         channel = Channel.get_or_none(channel_id=message.channel.id)
         if not channel or not channel.cat or channel.cat in temp_catches_storage or user.timeout > time.time():
-            return  # testing
             # laugh at this user
             # (except if rain is active, we dont have perms or channel isnt setupped, or we laughed way too much already)
             if channel and channel.cat_rains < time.time() and perms.add_reactions and pointlaugh_ratelimit.get(message.channel.id, 0) < 10:
@@ -6455,8 +6457,9 @@ async def nuke(message: discord.Interaction):
                     i.guild_id = interaction.message.id
                     changed_prisms.append(i)
 
-                Profile.bulk_update(changed_profiles, fields=[Profile.guild_id])
-                Prism.bulk_update(changed_prisms, fields=[Prism.guild_id])
+                with db.atomic():
+                    Profile.bulk_update(changed_profiles, fields=[Profile.guild_id], batch_size=200)
+                    Prism.bulk_update(changed_prisms, fields=[Prism.guild_id], batch_size=200)
                 Profile.create(guild_id=interaction.message.id, user_id=0)
 
                 try:
@@ -6594,7 +6597,8 @@ async def teardown(bot):
         p.cookies = cookies
         cookie_updates.append(p)
 
-    Profile.bulk_update(cookie_updates, fields=[Profile.cookies])
+    with db.atomic():
+        Profile.bulk_update(cookie_updates, fields=[Profile.cookies], batch_size=200)
 
     await vote_server.cleanup()
 
