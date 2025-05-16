@@ -343,6 +343,117 @@ news_list = [
     {"title": "Cat Bot Turns 3", "emoji": "🥳"},
 ]
 
+news_titles = [
+    "📜 Cat Bot Survey",
+    "✨ New Cat Rains perks!",
+    "☃️ Cat Bot Christmas",
+    "Battlepass is getting an update!",
+    "Packs!",
+    "Important Message from CEO of Cat Bot",
+    "🥳 Cat Bot Turns 3",
+]
+
+news_content = [
+# 📜 Cat Bot Survey
+"""Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.
+
+Good high-quality responses will win FREE cat rain prizes.
+
+Survey is closed!""",
+
+# ✨ New Cat Rains perks!
+"""Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).
+Everyone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have received 10 minutes of Rains as compensation.
+
+This is a really cool perk and I hope you like it!""",
+
+# ☃️ Cat Bot Christmas
+f"""🎅 **Christmas Sale**
+For the next 15 days (until January 1st) all items on [the Cat Bot Store](<https://catbot.shop/>) will be **-20%** off! Go buy something :exploding_head:
+
+⚡ **Cat Bot Wrapped 2024**
+In 2024 Cat Bot got...
+- 🖥️ *45777* new servers!
+- 👋 *286607* new profiles!
+- {get_emoji('staring_cat')} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though
+- {get_emoji('cat_throphy')} *1518096* achievements get!
+See last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).
+
+❓ **New Year Update**
+Something is coming...""",
+
+# Battlepass is getting an update!
+"""## qhar?
+- Huge stuff!
+- Battlepass will now reset every month
+- You will have 3 quests, including voting
+- They refresh 12 hours after completing
+- Quest reward is XP which goes towards progressing
+- There are 30 battlepass levels with much better rewards (even Ultimate cats and Rain minutes!)
+- Prism crafting/true ending no longer require battlepass progress.
+- More fun stuff to do each day and better rewards!
+
+## oh no what if i hate grinding?
+Don't worry, quests are very easy and to complete the battlepass you will need to complete less than 3 easy quests a day.
+
+## will you sell paid battlepass? its joever
+There are currently no plans to sell a paid battlepass.
+
+## christmas sale
+That's not a question, but it does end in less than 24 hours so don't [miss your opportunity](<https://catbot.shop>).""",
+
+# Packs!
+f"""⬆️ __season 2 has concluded!__
+some fun stats:
+- 214k levels complete
+- 43k people completed atleast a single level
+- 543k quests complete
+- 73k people completed atleast a single quest
+
+changes:
+- reminder quest is replaced for play tictactoe quest with the same xp rewards
+- added some slashes to misc quest titles to clarify which commands to run
+- and the biggest...
+
+{get_emoji("goldpack")} __**The Pack Update**__
+you want more gambling? we heard you!
+instead of predetermined cat rewards you now unlock Packs! packs have different rarities and have a 30% chance to upgrade a rarity when opening, then 30% for one more upgrade and so on. this means even the most common packs have a small chance to upgrade to the rarest one!
+the rarities are - Wooden {get_emoji("woodenpack")}, Stone {get_emoji("stonepack")}, Bronze {get_emoji("bronzepack")}, Silver {get_emoji("silverpack")}, Gold {get_emoji("goldpack")}, Platinum {get_emoji("platinumpack")}, Diamond {get_emoji("diamondpack")} and Celestial {get_emoji("celestialpack")}!
+the extra reward is now a stone pack instead of 5 random cats too!
+*LETS GO GAMBLING*""",
+
+# Important Message from CEO of Cat Bot
+"""Dear Cat Bot users,
+
+I hope this message finds you well. I want to take a moment to address some recent developments within our organization that are crucial for our continued success.
+
+Our latest update has had a significant impact on our financial resources, resulting in an unexpected budget shortfall. In light of this situation, we have made the difficult decision to implement advertising on our platform to help offset these costs. We believe this strategy will not only stabilize our finances but also create new opportunities for growth.
+
+Additionally, in our efforts to manage expenses more effectively, we have replaced all cat emojis with just the "Fine Cat" branding. This change will help us save on copyright fees while maintaining an acceptable user experience.
+
+We are committed to resolving these challenges and aim to have everything back on track by **April 2nd**. Thank you for your understanding and continued dedication during this time. Together, we will navigate these changes and emerge stronger.
+
+Best regards,
+[Your Name]""",
+
+# 🥳 Cat Bot Turns 3
+"""today is a special day for cat bot! april 21st is its birthday, and this year its turning three!
+to celebrate, we will be doing the biggest sale yet! -50% off for the next 5 days at our [store](https://catbot.shop)
+happy birthda~~
+...
+hold on...
+im recieving some news cats are starting to get caught with puzzle pieces in their teeth!
+the puzzle pieces say something about running `/event` on their back and that you might need to reload your discord to see it
+how considerate!""",
+]
+
+# checking if news data is actually valid and there isn't anything missing
+if not len(news_list) == len(news_titles) == len(news_content):
+    print("WARN: news list lengths don't match, please fix me before anyone notices")
+    print(f"len of news_list:    {len(news_list)}")
+    print(f"len of news_titles:  {len(news_titles)}")
+    print(f"len of news_content: {len(news_content)}")
+
 
 async def send_news(interaction: discord.Interaction):
     news_id, original_caller = interaction.data["custom_id"].split(" ")  # pyright: ignore
@@ -361,110 +472,23 @@ async def send_news(interaction: discord.Interaction):
 
     await progress(interaction, get_profile(interaction.guild.id, interaction.user.id), "news")
 
-    if news_id == 0:
-        embed = discord.Embed(
-            title="📜 Cat Bot Survey",
-            description="Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nSurvey is closed!",
-            color=0x6E593C,
-        )
-        await interaction.edit_original_response(content=None, view=None, embed=embed)
-    elif news_id == 1:
-        embed = discord.Embed(
-            title="✨ New Cat Rains perks!",
-            description="Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).\nEveryone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have received 10 minutes of Rains as compensation.\n\nThis is a really cool perk and I hope you like it!",
-            color=0x6E593C,
-        )
-        await interaction.edit_original_response(content=None, view=None, embed=embed)
-    elif news_id == 2:
-        embed = discord.Embed(
-            title="☃️ Cat Bot Christmas",
-            description=f"🎅 **Christmas Sale**\nFor the next 15 days (until January 1st) all items on [the Cat Bot Store](<https://catbot.shop/>) will be **-20%** off! Go buy something :exploding_head:\n\n⚡ **Cat Bot Wrapped 2024**\nIn 2024 Cat Bot got...\n- 🖥️ *45777* new servers!\n- 👋 *286607* new profiles!\n- {get_emoji('staring_cat')} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though\n- {get_emoji('cat_throphy')} *1518096* achievements get!\nSee last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).\n\n❓ **New Year Update**\nSomething is coming...",
-            color=0x6E593C,
-        )
-        view = discord.ui.View(timeout=1)
-        button = discord.ui.Button(label="Cat Bot Store", url="https://catbot.shop")
-        view.add_item(button)
-        await interaction.edit_original_response(content=None, embed=embed, view=view)
-    elif news_id == 3:
-        embed = discord.Embed(
-            title="Battlepass is getting an update!",
-            description="""## qhar?
-- Huge stuff!
-- Battlepass will now reset every month
-- You will have 3 quests, including voting
-- They refresh 12 hours after completing
-- Quest reward is XP which goes towards progressing
-- There are 30 battlepass levels with much better rewards (even Ultimate cats and Rain minutes!)
-- Prism crafting/true ending no longer require battlepass progress.
-- More fun stuff to do each day and better rewards!
+    # can't be too safe
+    if news_id < len(news_titles):
+        embed_title = news_titles[news_id]
+    else:
+        embed_title = f"[missing title #{news_id}]"
 
-## oh no what if i hate grinding?
-Don't worry, quests are very easy and to complete the battlepass you will need to complete less than 3 easy quests a day.
+    if news_id < len(news_content):
+        embed_content = news_content[news_id]
+    else:
+        embed_content = f"[missing content #{news_id}]"
 
-## will you sell paid battlepass? its joever
-There are currently no plans to sell a paid battlepass.
-
-## christmas sale
-That's not a question, but it does end in less than 24 hours so don't [miss your opportunity](<https://catbot.shop>).""",
-            color=0x6E593C,
-        )
-        await interaction.edit_original_response(content=None, view=None, embed=embed)
-    elif news_id == 4:
-        embed = discord.Embed(
-            title="Packs!",
-            description=f"""⬆️ __season 2 has concluded!__
-some fun stats:
-- 214k levels complete
-- 43k people completed atleast a single level
-- 543k quests complete
-- 73k people completed atleast a single quest
-
-changes:
-- reminder quest is replaced for play tictactoe quest with the same xp rewards
-- added some slashes to misc quest titles to clarify which commands to run
-- and the biggest...
-
-{get_emoji("goldpack")} __**The Pack Update**__
-you want more gambling? we heard you!
-instead of predetermined cat rewards you now unlock Packs! packs have different rarities and have a 30% chance to upgrade a rarity when opening, then 30% for one more upgrade and so on. this means even the most common packs have a small chance to upgrade to the rarest one!
-the rarities are - Wooden {get_emoji("woodenpack")}, Stone {get_emoji("stonepack")}, Bronze {get_emoji("bronzepack")}, Silver {get_emoji("silverpack")}, Gold {get_emoji("goldpack")}, Platinum {get_emoji("platinumpack")}, Diamond {get_emoji("diamondpack")} and Celestial {get_emoji("celestialpack")}!
-the extra reward is now a stone pack instead of 5 random cats too!
-*LETS GO GAMBLING*""",
-            color=0x6E593C,
-        )
-        await interaction.edit_original_response(content=None, view=None, embed=embed)
-    elif news_id == 5:
-        embed = discord.Embed(
-            title="Important Message from CEO of Cat Bot",
-            description="""Dear Cat Bot users,
-
-I hope this message finds you well. I want to take a moment to address some recent developments within our organization that are crucial for our continued success.
-
-Our latest update has had a significant impact on our financial resources, resulting in an unexpected budget shortfall. In light of this situation, we have made the difficult decision to implement advertising on our platform to help offset these costs. We believe this strategy will not only stabilize our finances but also create new opportunities for growth.
-
-Additionally, in our efforts to manage expenses more effectively, we have replaced all cat emojis with just the "Fine Cat" branding. This change will help us save on copyright fees while maintaining an acceptable user experience.
-
-We are committed to resolving these challenges and aim to have everything back on track by **April 2nd**. Thank you for your understanding and continued dedication during this time. Together, we will navigate these changes and emerge stronger.
-
-Best regards,
-[Your Name]""",
-            color=0x6E593C,
-        )
-        await interaction.edit_original_response(content=None, view=None, embed=embed)
-    elif news_id == 6:
-        embed = discord.Embed(
-            title="🥳 Cat Bot Turns 3",
-            description="""today is a special day for cat bot! april 21st is its birthday, and this year its turning three!
-to celebrate, we will be doing the biggest sale yet! -50% off for the next 5 days at our [store](https://catbot.shop)
-happy birthda~~
-...
-hold on...
-im recieving some news cats are starting to get caught with puzzle pieces in their teeth!
-the puzzle pieces say something about running `/event` on their back and that you might need to reload your discord to see it
-how considerate!""",
-            color=0x6E593C,
-        )
-        await interaction.edit_original_response(content=None, view=None, embed=embed)
+    embed = discord.Embed(
+        title=embed_title,
+        description=embed_content,
+        color=0x6E593C,
+    )
+    await interaction.edit_original_response(content=None, view=None, embed=embed)
 
 
 # this is some common code which is run whether someone gets an achievement
