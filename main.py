@@ -1888,6 +1888,7 @@ async def on_message(message: discord.Message):
                 decided_time = 0
             print(message.id, time.time() - start_time)
             try:
+                print(message.id, time.time() - start_time)
                 current_time = message.created_at.timestamp()
                 channel.lastcatches = current_time
                 cat_temp = channel.cat
