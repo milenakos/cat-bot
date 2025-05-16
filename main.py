@@ -4305,10 +4305,7 @@ async def cookie(message: discord.Interaction):
     button = Button(emoji="🍪", label=f"{temp_cookie_storage[cookie_id]:,}", style=ButtonStyle.blurple)
     button.callback = bake
     view.add_item(button)
-    # await message.response.send_message(view=view)
-    await message.response.send_message(
-        "okay so im currently investigating the bot lagging a lot and i have a suspicion that it might be due to people clicking cookies too agressively.\nif that isnt the case, i will bring back this command soon\nif it turns out cookie clicker is at fault, i will try remaking it to not be as resource intensive.\nsorry for the inconvinience!"
-    )
+    await message.response.send_message(view=view)
 
 
 @bot.tree.command(description="give cats now")
