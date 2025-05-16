@@ -3792,7 +3792,7 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
     user_boost = round((global_boost + 0.03 * math.log(2 * user_count + 1)) * 100, 3)
     prism_texts = []
 
-    if person_id.id == message.user.id & user_count != 0:
+    if person_id == message.user and user_count != 0:
         await achemb(message, "prism", "send")
 
     order_map = {name: index for index, name in enumerate(prism_names)}
