@@ -1866,7 +1866,7 @@ async def on_message(message: discord.Message):
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
             times = [channel.spawn_times_min, channel.spawn_times_max]
-            print(message.id, time.time() - start_time)
+            print(message.id, time.time() - start_time, 1)
             if channel.cat_rains != 0:
                 if channel.cat_rains > time.time():
                     times = [1, 2]
@@ -1881,14 +1881,12 @@ async def on_message(message: discord.Message):
                     except Exception:
                         pass
             decided_time = random.uniform(times[0], times[1])
-            print(message.id, time.time() - start_time)
             if channel.yet_to_spawn < time.time():
                 channel.yet_to_spawn = time.time() + decided_time + 10
             else:
                 decided_time = 0
-            print(message.id, time.time() - start_time)
             try:
-                print(message.id, time.time() - start_time)
+                print(message.id, time.time() - start_time, 2)
                 current_time = message.created_at.timestamp()
                 channel.lastcatches = current_time
                 cat_temp = channel.cat
@@ -1928,6 +1926,7 @@ async def on_message(message: discord.Message):
                     except Exception:
                         pass
                     return
+                print(message.id, time.time() - start_time, 3)
 
                 try:
                     send_target = discord.Webhook.from_url(channel.webhook, client=bot)
@@ -1966,6 +1965,7 @@ async def on_message(message: discord.Message):
                     # if some of the above explodes just give up
                     do_time = False
                     caught_time = "undefined amounts of time "
+                print(message.id, time.time() - start_time, 4)
 
                 try:
                     if time_caught >= 0:
@@ -2027,6 +2027,7 @@ async def on_message(message: discord.Message):
                     else:
                         suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
 
+                print(message.id, time.time() - start_time, 5)
                 icon = get_emoji(le_emoji.lower() + "cat")
 
                 silly_amount = 1
@@ -2099,6 +2100,8 @@ async def on_message(message: discord.Message):
                         await asyncio.sleep(5)
                         await interaction.followup.send(phrase, ephemeral=True)
 
+                print(message.id, time.time() - start_time, 6)
+
                 vote_time_user, _ = User.get_or_create(user_id=message.author.id)
                 if random.randint(0, 10) == 0 and user.cat_Fine >= 20 and not user.dark_market_active:
                     button = Button(label="You see a shadow...", style=ButtonStyle.red)
@@ -2130,6 +2133,8 @@ async def on_message(message: discord.Message):
 
                 user[f"cat_{le_emoji}"] += silly_amount
                 new_count = user[f"cat_{le_emoji}"]
+
+                print(message.id, time.time() - start_time, 7)
 
                 async def delete_cat():
                     try:
@@ -2167,6 +2172,8 @@ async def on_message(message: discord.Message):
 
                 await asyncio.gather(delete_cat(), send_confirm())
 
+                print(message.id, time.time() - start_time, 8)
+
                 user.total_catches += 1
                 if do_time:
                     user.total_catch_time += time_caught
@@ -2187,6 +2194,8 @@ async def on_message(message: discord.Message):
 
                 if message.channel.id in temp_rains_storage:
                     temp_rains_storage.remove(message.channel.id)
+
+                print(message.id, time.time() - start_time, 9)
 
                 await achemb(message, "first", "send")
 
@@ -2210,6 +2219,8 @@ async def on_message(message: discord.Message):
                     raw_digits = "".join(char for char in caught_time[:-1] if char.isdigit())
                     if len(set(raw_digits)) == 1:
                         await achemb(message, "all_the_same", "send")
+
+                print(message.id, time.time() - start_time, 10)
 
                 # handle battlepass
                 await progress(message, user, "3cats")
@@ -2238,8 +2249,10 @@ async def on_message(message: discord.Message):
                         await progress(message, user, "finenice")
                         await progress(message, user, "finenice")
             finally:
+                print(message.id, time.time() - start_time, 11)
                 user.save()
                 channel.save()
+                print(message.id, time.time() - start_time, 12)
                 if decided_time:
                     await asyncio.sleep(decided_time)
                     try:
