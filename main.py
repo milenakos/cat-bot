@@ -3820,25 +3820,33 @@ async def vote(message: discord.Interaction):
 
 
 @bot.tree.command(description="cat prisms are a special power up")
-async def prism(message: discord.Interaction):
+@discord.app_commands.describe(person="Person to view the prisms of")
+async def prism(message: discord.Interaction, person: Optional[discord.User]):
     icon = get_emoji("prism")
     page_number = 0
 
-    total_count = Prism.select().where(Prism.guild_id == message.guild.id).count()
-    user_count = Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == message.user.id)).count()
+    if not person:
+        person_id = message.user
+    else:
+        person_id = person
+
+    user_prisms = Prism.select().where((Prism.guild_id == message.guild.id) & (Prism.user_id == person_id.id))
+    all_prisms = Prism.select().where(Prism.guild_id == message.guild.id)
+    total_count = all_prisms.count()
+    user_count = user_prisms.count()
     global_boost = 0.06 * math.log(2 * total_count + 1)
     user_boost = round((global_boost + 0.03 * math.log(2 * user_count + 1)) * 100, 3)
     prism_texts = []
 
-    if user_count != 0:
+    if person_id == message.user and user_count != 0:
         await achemb(message, "prism", "send")
 
     order_map = {name: index for index, name in enumerate(prism_names)}
-    prisms = list(Prism.select().where(Prism.guild_id == message.guild.id).execute())
+    prisms = list((all_prisms if not person else user_prisms).execute())
     prisms.sort(key=lambda p: order_map.get(p.name, float("inf")))
 
     for prism in prisms:
-        prism_texts.append(f"{icon} **{prism.name}** Owner: <@{prism.user_id}>\n<@{prism.creator}> crafted <t:{prism.time}:D>")
+        prism_texts.append(f"{icon} **{prism.name}** {f"Owner: <@{prism.user_id}>" if not person else ""}\n<@{prism.creator}> crafted <t:{prism.time}:D>")
 
     if len(prisms) == 0:
         prism_texts.append("No prisms found!")
@@ -3933,11 +3941,13 @@ async def prism(message: discord.Interaction):
         await interaction.response.edit_message(embed=embed, view=view)
 
     def gen_page():
+        target = "" if not person else f"{person_id.name}'s"
+        
         embed = discord.Embed(
-            title=f"{icon} Cat Prisms",
+            title=f"{icon} {target} Cat Prisms",
             color=0x6E593C,
-            description="are a tradeable power-up which occasionally bumps cat rarity up by one. For each prism you own your chance of a boost increases, and it increases but less if you aren't the owner of that prism.\n\n",
-        ).set_footer(text=f"Boost for everyone: {round(global_boost * 100, 3)}% | {message.user}'s total boost: {user_boost}%")
+            description="Prisms are a tradeable power-up which occasionally bumps cat rarity up by one. Each prism crafted gives everyone an increased chance to get upgraded, plus additional chance for prism owners.\n\n",
+        ).set_footer(text=f"{total_count} Total Prisms | Global boost: {round(global_boost * 100, 3)}%\n{person_id.name}'s prisms | Owned: {user_count} | Personal boost: {user_boost}%")
 
         embed.description += "\n".join(prism_texts[page_number * 26 : (page_number + 1) * 26])
 
