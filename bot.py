@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import asyncio
 import importlib
 
 import discord
@@ -38,6 +39,7 @@ bot = commands.AutoShardedBot(
 
 @bot.event
 async def setup_hook():
+    await database.init()
     await bot.load_extension("main")
 
 
@@ -47,23 +49,15 @@ async def reload(reload_db):
     except commands.ExtensionNotLoaded:
         pass
     if reload_db:
-        database.db.close()
+        await database.close()
         importlib.reload(database)
-        database.db.connect()
+        await database.init()
     await bot.load_extension("main")
 
 
 bot.cat_bot_reload_hook = reload  # pyright: ignore
 
-database.db.connect()
-if not database.db.get_tables():
-    database.db.create_tables([database.Profile, database.User, database.Channel, database.Prism])
-if "prism" not in database.db.get_tables():
-    database.db.create_tables([database.Prism])
-if "reminder" not in database.db.get_tables():
-    database.db.create_tables([database.Reminder])
-
 try:
     bot.run(config.TOKEN)
 finally:
-    database.db.close()
+    asyncio.run(database.close())
