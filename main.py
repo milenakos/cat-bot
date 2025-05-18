@@ -1043,7 +1043,7 @@ async def postpone_reminder(interaction):
     if reminder_type == "vote":
         user, _ = await User.get_or_create(user_id=interaction.user.id)
         user.reminder_vote = int(time.time()) + 30 * 60
-        await user.save(fields=["reminder_vote"])
+        await user.save()
     else:
         guild_id = reminder_type.split("_")[1]
         user, _ = await Profile.get_or_create(guild_id=int(guild_id), user_id=interaction.user.id)
@@ -1051,7 +1051,7 @@ async def postpone_reminder(interaction):
             user.reminder_catch = int(time.time()) + 30 * 60
         else:
             user.reminder_misc = int(time.time()) + 30 * 60
-        await user.save(fields=["reminder_catch", "reminder_misc"])
+        await user.save()
     await interaction.response.send_message(f"ok, i will remind you <t:{int(time.time()) + 30 * 60}:R>", ephemeral=True)
 
 
@@ -2215,7 +2215,6 @@ async def on_message(message: discord.Message):
                         await progress(message, user, "finenice")
                         await progress(message, user, "finenice")
             finally:
-                await user.save()
                 await channel.save()
                 if decided_time:
                     await asyncio.sleep(decided_time)
@@ -2545,8 +2544,9 @@ async def news(message: discord.Interaction):
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
+        user, _ = await User.get_or_create(user_id=message.user.id)
         user.news_state = "1" * len(news_list)
-        await user.save(fields=["news_state"])
+        await user.save()
         await regen_buttons()
         await interaction.response.edit_message(view=generate_page(current_page))
 
@@ -3828,7 +3828,7 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
         await achemb(message, "prism", "send")
 
     order_map = {name: index for index, name in enumerate(prism_names)}
-    prisms = list((all_prisms if not person else user_prisms).execute())
+    prisms = all_prisms if not person else user_prisms
     prisms.sort(key=lambda p: order_map.get(p.name, float("inf")))
 
     for prism in prisms:
@@ -3867,7 +3867,7 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
             if not await Prism.filter(guild_id=message.guild.id, name=selected_name).exists():
                 break
 
-        youngest_prism = await Prism.fiter(guild_id=message.guild.id).order_by("-time").first()
+        youngest_prism = await Prism.filter(guild_id=message.guild.id).order_by("-time").first()
         if youngest_prism:
             selected_time = max(round(time.time()), youngest_prism.time + 1)
         else:
@@ -3896,6 +3896,8 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
         found_cats = await cats_in_server(interaction.guild.id)
         missing_cats = []
         for i in cattypes:
+            if user[f"cat_{i}"] > 0:
+                continue
             if i in found_cats:
                 missing_cats.append(get_emoji(i.lower() + "cat"))
             else:
@@ -4329,7 +4331,7 @@ async def gift(
         user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
         # if we even have enough cats
         if user[f"cat_{cat_type}"] >= amount:
-            reciever, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
+            reciever, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id)
             user[f"cat_{cat_type}"] -= amount
             reciever[f"cat_{cat_type}"] += amount
             try:
