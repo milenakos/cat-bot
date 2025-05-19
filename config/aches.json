@@ -65,7 +65,7 @@
   "perfectly_balanced": {"title": "Perfectly Balanced", "description": "as all things should be", "is_hidden": false, "category": "Silly"},
   "fact_enjoyer": {"title": "Fact Enjoyer", "description": "wow such good facts thanks cat bot", "is_hidden": false, "category": "Silly"},
   "morse_cat": {"title": "Morse Cat", "description": ".. / .-- --- .-. ... .... .. .--. / -.-. .- -", "is_hidden": false, "category": "Silly"},
-  "multilingual": {"title": "Multilingual", "description": "cat in french is \"chat\"", "is_hidden": true, "category": "Silly"},
+  "multilingual": {"title": "Multilingual", "description": "cat in fr*nch is \"chat\"", "is_hidden": true, "category": "Silly"},
   "ttt_win": {"title": "Pro Tic-Tac-Toer", "description": "win a game of tic tac toe", "is_hidden": false, "category": "Silly"},
 
   "lucky": {"title": "Lucky", "description": "0.1% chance you get it each time you catch a cat", "is_hidden": true, "category": "Hard"},
