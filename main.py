@@ -1105,7 +1105,7 @@ async def maintaince_loop():
             continue
         await asyncio.sleep(0.1)
 
-        user = await User.get(user.user_id)
+        user = await User.get(user_id=user.user_id)
 
         if not ((43200 < user.vote_time_topgg + 43200 < time.time()) and (0 < user.reminder_vote < time.time())):
             continue
@@ -6032,6 +6032,8 @@ async def leaderboards(
             messager = round(messager)
         elif messager and type == "Fast" and messager >= 99999999999999:
             messager_placement = 0
+
+        interactor, messager = round(interactor, 3), round(messager, 3)
 
         emoji = ""
         if type == "Cats" and specific_cat != "All":
