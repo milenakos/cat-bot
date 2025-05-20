@@ -5938,12 +5938,10 @@ async def leaderboards(
             if specific_cat != "All":
                 result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=Sum(f"cat_{specific_cat}")).order_by("-final_value")
             else:
-                # dynamically generate sum expression, cast to bigint to handle large totals
-                result = (
-                    await Profile.filter(guild_id=message.guild.id)
-                    .annotate(final_value=RawSQL(f"CAST(({'+'.join([f'"cat_{c}"' for c in cattypes if c])}) AS BIGINT)"))
-                    .order_by("-final_value")
-                )
+                # dynamically generate sum expression, cast each value to bigint first to handle large totals
+                cat_columns = [f'CAST("cat_{c}" AS BIGINT)' for c in cattypes if c]
+                sum_expression = " + ".join(cat_columns)
+                result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=RawSQL(sum_expression)).order_by("-final_value")
 
                 # find rarest
                 rarest = None
