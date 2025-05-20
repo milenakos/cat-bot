@@ -75,11 +75,6 @@ type_dict = {
     "eGirl": 2,
 }
 
-# create a huge list where each cat type is multipled the needed amount of times
-CAT_TYPES = []
-for k, v in type_dict.items():
-    CAT_TYPES.extend([k] * v)
-
 # this list stores unique non-duplicate cattypes
 cattypes = list(type_dict.keys())
 
@@ -701,7 +696,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         if level_data["reward"] == "random cats":
             cat_emojis = ""
             for _ in range(5):
-                chosen_cat = random.choice(CAT_TYPES)
+                chosen_cat = random.choices(type_dict.keys(), type_dict.values())[0]
                 user[f"cat_{chosen_cat}"] += 1
                 cat_emojis += get_emoji(chosen_cat.lower() + "cat")
         elif level_data["reward"] in cattypes:
@@ -966,7 +961,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         return
 
     if not localcat:
-        localcat = random.choice(CAT_TYPES)
+        localcat = random.choices(type_dict.keys(), type_dict.values())[0]
     icon = get_emoji(localcat.lower() + "cat")
     file = discord.File(
         f"images/spawn/{localcat.lower()}_cat.png",
@@ -2875,11 +2870,11 @@ async def catalogue(message: discord.Interaction):
             in_server = 0
             title = f"{get_emoji('mysterycat')} ???"
 
-        title += f" ({round((type_dict[cat_type] / len(CAT_TYPES)) * 100, 2)}%)"
+        title += f" ({round((type_dict[cat_type] / sum(type_dict.values()) * 100, 2)}%)"
 
         embed.add_field(
             name=title,
-            value=f"{round(len(CAT_TYPES) / type_dict[cat_type], 2)} value\n{in_server:,} in this server",
+            value=f"{round(sum(type_dict.values()) / type_dict[cat_type], 2)} value\n{in_server:,} in this server",
         )
 
     await message.response.send_message(embed=embed)
@@ -3126,7 +3121,7 @@ async def gen_inventory(message, person_id):
             debt = True
         if cat_num != 0:
             total += cat_num
-            valuenum += (len(CAT_TYPES) / type_dict[i]) * cat_num
+            valuenum += (sum(type_dict.values()) / type_dict[i]) * cat_num
             cat_desc += f"{icon} **{i}** {cat_num:,}\n"
         else:
             give_collector = False
@@ -3574,7 +3569,7 @@ async def packs(message: discord.Interaction):
         # select cat type
         goal_value = final_level["value"]
         chosen_type = random.choice(cattypes)
-        pre_cat_amount = goal_value / (len(CAT_TYPES) / type_dict[chosen_type])
+        pre_cat_amount = goal_value / (sum(type_dict.values()) / type_dict[chosen_type])
         if pre_cat_amount % 1 > random.random():
             cat_amount = math.ceil(pre_cat_amount)
         else:
@@ -4764,14 +4759,14 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     # prisms
                     valuestr += f"{get_emoji('prism')} {k}\n"
                     for v2 in type_dict.values():
-                        valuenum += len(CAT_TYPES) / v2
+                        valuenum += sum(type_dict.values()) / v2
                 elif k == "rains":
                     # rains
                     valuestr += f"☔ {v:,}m of Cat Rains\n"
                     valuenum += 900 * v
                 elif k in cattypes:
                     # cats
-                    valuenum += (len(CAT_TYPES) / type_dict[k]) * v
+                    valuenum += (sum(type_dict.values()) / type_dict[k]) * v
                     total += v
                     aicon = get_emoji(k.lower() + "cat")
                     valuestr += f"{aicon} {k} {v:,}\n"
@@ -5968,7 +5963,7 @@ async def leaderboards(
         elif type == "Value":
             unit = "value"
             total_sum_expr = peewee.fn.SUM(
-                sum((len(CAT_TYPES) / type_dict[cat_type]) * getattr(Profile, f"cat_{cat_type}").cast("BIGINT") for cat_type in cattypes)
+                sum((sum(type_dict.values()) / type_dict[cat_type]) * getattr(Profile, f"cat_{cat_type}").cast("BIGINT") for cat_type in cattypes)
             )
             result = (
                 Profile.select(Profile.user_id, total_sum_expr.alias("final_value"))
