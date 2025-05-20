@@ -5936,7 +5936,11 @@ async def leaderboards(
             unit = "cats"
 
             if specific_cat != "All":
-                result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=Sum(f"cat_{specific_cat}")).order_by("-final_value")
+                result = (
+                    await Profile.filter(guild_id=message.guild.id, **{f"cat_{specific_cat}__gt": 0})
+                    .annotate(final_value=Sum(f"cat_{specific_cat}"))
+                    .order_by("-final_value")
+                )
             else:
                 # dynamically generate sum expression, cast each value to bigint first to handle large totals
                 cat_columns = [f'CAST("cat_{c}" AS BIGINT)' for c in cattypes if c]
@@ -5971,10 +5975,10 @@ async def leaderboards(
             result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=RawSQL(total_sum_expr)).order_by("-final_value")
         elif type == "Fast":
             unit = "sec"
-            result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=Sum("time")).order_by("final_value")
+            result = await Profile.filter(guild_id=message.guild.id, time__lt=99999999999999).annotate(final_value=Sum("time")).order_by("final_value")
         elif type == "Slow":
             unit = "h"
-            result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=Sum("timeslow")).order_by("-final_value")
+            result = await Profile.filter(guild_id=message.guild.id, timeslow__gt=0).annotate(final_value=Sum("timeslow")).order_by("-final_value")
         elif type == "Battlepass":
             start_date = datetime.datetime(2024, 12, 1)
             current_date = datetime.datetime.utcnow()
@@ -5988,7 +5992,7 @@ async def leaderboards(
             )
         elif type == "Cookies":
             unit = "cookies"
-            result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=Sum("cookies")).order_by("-final_value")
+            result = await Profile.filter(guild_id=message.guild.id, cookies__gt=0).annotate(final_value=Sum("cookies")).order_by("-final_value")
             string = "Cookie leaderboard updates every 5 min\n\n"
         else:
             # qhar
