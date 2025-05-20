@@ -1089,8 +1089,8 @@ async def maintaince_loop():
             except Exception:
                 print("Posting to top.gg failed.")
 
-    async for channel in Channel.filter(yet_to_spawn__lt=time.time(), cat=0).values("channel_id"):
-        await spawn_cat(str(channel["channel_id"]))
+    async for channel in Channel.filter(yet_to_spawn__lt=time.time(), cat=0).values_list("channel_id", flat=True):
+        await spawn_cat(str(channel))
         await asyncio.sleep(0.1)
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
@@ -1098,14 +1098,14 @@ async def maintaince_loop():
     # i wont go into the details of this because its a complicated mess which took me like solid 30 minutes of planning
     #
     # vote reminders
-    async for user in User.filter(vote_time_topgg__not=0, vote_time_topgg__lt=time.time() - 43200, reminder_vote__not=0, reminder_vote__lt=time.time()).values(
-        "user_id"
-    ):
-        if not await Profile.filter(user_id=user["user_id"], reminders_enabled=True).exists():
+    async for user in User.filter(
+        vote_time_topgg__not=0, vote_time_topgg__lt=time.time() - 43200, reminder_vote__not=0, reminder_vote__lt=time.time()
+    ).values_list("user_id", flat=True):
+        if not await Profile.filter(user_id=user, reminders_enabled=True).exists():
             continue
         await asyncio.sleep(0.1)
 
-        user = await User.get(user_id=user["user_id"])
+        user = await User.get(user_id=user)
 
         if not ((43200 < user.vote_time_topgg + 43200 < time.time()) and (0 < user.reminder_vote < time.time())):
             continue
