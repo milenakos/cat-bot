@@ -5938,7 +5938,6 @@ async def leaderboards(
             if specific_cat != "All":
                 result = (
                     await Profile.filter(guild_id=message.guild.id, **{f"cat_{specific_cat}__gt": 0})
-                    .values("user_id")
                     .annotate(final_value=Sum(f"cat_{specific_cat}"))
                     .order_by("-final_value")
                     .values("user_id", "final_value")
