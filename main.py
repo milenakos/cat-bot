@@ -5938,14 +5938,21 @@ async def leaderboards(
             if specific_cat != "All":
                 result = (
                     await Profile.filter(guild_id=message.guild.id, **{f"cat_{specific_cat}__gt": 0})
+                    .values("user_id")
                     .annotate(final_value=Sum(f"cat_{specific_cat}"))
                     .order_by("-final_value")
+                    .values("user_id", "final_value")
                 )
             else:
                 # dynamically generate sum expression, cast each value to bigint first to handle large totals
                 cat_columns = [f'CAST("cat_{c}" AS BIGINT)' for c in cattypes if c]
                 sum_expression = " + ".join(cat_columns)
-                result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=RawSQL(sum_expression)).order_by("-final_value")
+                result = (
+                    await Profile.filter(guild_id=message.guild.id)
+                    .annotate(final_value=RawSQL(sum_expression))
+                    .order_by("-final_value")
+                    .values("user_id", "final_value")
+                )
 
                 # find rarest
                 rarest = None
@@ -5972,13 +5979,28 @@ async def leaderboards(
                 weight = len(CAT_TYPES) / type_dict[cat_type]
                 sums.append(f'({weight}) * "cat_{cat_type}"')
             total_sum_expr = " + ".join(sums)
-            result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=RawSQL(total_sum_expr)).order_by("-final_value")
+            result = (
+                await Profile.filter(guild_id=message.guild.id)
+                .annotate(final_value=RawSQL(total_sum_expr))
+                .order_by("-final_value")
+                .values("user_id", "final_value")
+            )
         elif type == "Fast":
             unit = "sec"
-            result = await Profile.filter(guild_id=message.guild.id, time__lt=99999999999999).annotate(final_value=Sum("time")).order_by("final_value")
+            result = (
+                await Profile.filter(guild_id=message.guild.id, time__lt=99999999999999)
+                .annotate(final_value=Sum("time"))
+                .order_by("final_value")
+                .values("user_id", "final_value")
+            )
         elif type == "Slow":
             unit = "h"
-            result = await Profile.filter(guild_id=message.guild.id, timeslow__gt=0).annotate(final_value=Sum("timeslow")).order_by("-final_value")
+            result = (
+                await Profile.filter(guild_id=message.guild.id, timeslow__gt=0)
+                .annotate(final_value=Sum("timeslow"))
+                .order_by("-final_value")
+                .values("user_id", "final_value")
+            )
         elif type == "Battlepass":
             start_date = datetime.datetime(2024, 12, 1)
             current_date = datetime.datetime.utcnow()
@@ -5989,10 +6011,16 @@ async def leaderboards(
                 await Profile.filter(guild_id=message.guild.id, season=full_months_passed)
                 .annotate(final_value=Sum("battlepass"))
                 .order_by("-final_value", "progress")
+                .values("user_id", "final_value")
             )
         elif type == "Cookies":
             unit = "cookies"
-            result = await Profile.filter(guild_id=message.guild.id, cookies__gt=0).annotate(final_value=Sum("cookies")).order_by("-final_value")
+            result = (
+                await Profile.filter(guild_id=message.guild.id, cookies__gt=0)
+                .annotate(final_value=Sum("cookies"))
+                .order_by("-final_value")
+                .values("user_id", "final_value")
+            )
             string = "Cookie leaderboard updates every 5 min\n\n"
         else:
             # qhar
@@ -6002,12 +6030,12 @@ async def leaderboards(
         interactor_placement = 0
         messager_placement = 0
         for index, position in enumerate(result):
-            if position.user_id == interaction.user.id:
+            if position["user_id"] == interaction.user.id:
                 interactor_placement = index
-                interactor = position.final_value
-            if interaction.user != message.user and position.user_id == message.user.id:
+                interactor = position["final_value"]
+            if interaction.user != message.user and position["user_id"] == message.user.id:
                 messager_placement = index
-                messager = position.final_value
+                messager = position["final_value"]
 
         if type == "Slow":
             if interactor:
@@ -6044,18 +6072,18 @@ async def leaderboards(
         current = 1
         leader = False
         for i in result[:show_amount]:
-            num = i.final_value
+            num = i["final_value"]
 
             if type == "Battlepass":
                 bp_season = battle["seasons"][f"{i.season}"]
-                if i.final_value >= len(bp_season):
+                if i["final_value"] >= len(bp_season):
                     lv_xp_req = 1500
                 else:
-                    lv_xp_req = bp_season[int(i.final_value) - 1]["xp"]
+                    lv_xp_req = bp_season[int(i["final_value"]) - 1]["xp"]
 
                 prog_perc = math.floor((100 / lv_xp_req) * i.progress)
 
-                string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i.user_id}>\n"
+                string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i['user_id']}>\n"
             else:
                 if type == "Slow":
                     if num <= 0:
@@ -6073,9 +6101,9 @@ async def leaderboards(
                     num = round(num, 3)
                 elif type == "Cookies" and num <= 0:
                     break
-                string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i.user_id}>\n"
+                string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
 
-            if message.user.id == i.user_id and current <= 5:
+            if message.user.id == i["user_id"] and current <= 5:
                 leader = True
             current += 1
 
