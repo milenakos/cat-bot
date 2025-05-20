@@ -17,12 +17,10 @@
 import asyncio
 import base64
 import datetime
-import functools
 import io
 import json
 import logging
 import math
-import operator
 import os
 import random
 import re
@@ -40,7 +38,7 @@ from discord import ButtonStyle
 from discord.ext import commands
 from discord.ui import Button, View
 from PIL import Image
-from tortoise.expressions import F, Q, RawSQL
+from tortoise.expressions import Q, RawSQL
 from tortoise.functions import Sum
 
 import config
@@ -5940,14 +5938,7 @@ async def leaderboards(
             if specific_cat != "All":
                 result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=Sum(f"cat_{specific_cat}")).order_by("-final_value")
             else:
-                # dynamically generate sum expression
-                sums = []
-                for cat_type in cattypes:
-                    if not cat_type:
-                        continue
-                    sums.append(F(f"cat_{cat_type}"))
-                total_sum_expr = functools.reduce(operator.add, sums)
-                # cast to bigint to handle large totals
+                # dynamically generate sum expression, cast to bigint to handle large totals
                 result = (
                     await Profile.filter(guild_id=message.guild.id)
                     .annotate(final_value=RawSQL(f"CAST(({'+'.join([f'"cat_{c}"' for c in cattypes if c])}) AS BIGINT)"))
@@ -5957,7 +5948,7 @@ async def leaderboards(
                 # find rarest
                 rarest = None
                 for i in cattypes[::-1]:
-                    non_zero_count = await Profile.filter(guild_id=message.guild.id, **{f"cat_{cat_type}__gt": 0})
+                    non_zero_count = await Profile.filter(guild_id=message.guild.id, **{f"cat_{i}__gt": 0})
                     if len(non_zero_count) != 0:
                         rarest = i
                         rarest_holder = non_zero_count
