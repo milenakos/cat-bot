@@ -5950,7 +5950,7 @@ async def leaderboards(
                 # cast to bigint to handle large totals
                 result = (
                     await Profile.filter(guild_id=message.guild.id)
-                    .annotate(final_value=RawSQL(f"CAST(({'+'.join([f'cat_{c}' for c in cattypes if c])}) AS BIGINT)"))
+                    .annotate(final_value=RawSQL(f"CAST(({'+'.join([f'"cat_{c}"' for c in cattypes if c])}) AS BIGINT)"))
                     .order_by("-final_value")
                 )
 
