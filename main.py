@@ -696,7 +696,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         if level_data["reward"] == "random cats":
             cat_emojis = ""
             for _ in range(5):
-                chosen_cat = random.choices(type_dict.keys(), type_dict.values())[0]
+                chosen_cat = random.choices(type_dict.keys(), weights=type_dict.values())[0]
                 user[f"cat_{chosen_cat}"] += 1
                 cat_emojis += get_emoji(chosen_cat.lower() + "cat")
         elif level_data["reward"] in cattypes:
@@ -961,7 +961,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         return
 
     if not localcat:
-        localcat = random.choices(type_dict.keys(), type_dict.values())[0]
+        localcat = random.choices(type_dict.keys(), weights=type_dict.values())[0]
     icon = get_emoji(localcat.lower() + "cat")
     file = discord.File(
         f"images/spawn/{localcat.lower()}_cat.png",
