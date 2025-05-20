@@ -6020,6 +6020,12 @@ async def leaderboards(
             if messager:
                 messager = round(messager / 3600, 2)
 
+        if type == "Fast":
+            if interactor:
+                interactor = round(interactor, 3)
+            if messager:
+                messager = round(messager, 3)
+
         # dont show placements if they arent defined
         if interactor and type in ["Cats", "Slow", "Value", "Cookies"]:
             if interactor <= 0:
@@ -6034,8 +6040,6 @@ async def leaderboards(
             messager = round(messager)
         elif messager and type == "Fast" and messager >= 99999999999999:
             messager_placement = 0
-
-        interactor, messager = round(interactor, 3), round(messager, 3)
 
         emoji = ""
         if type == "Cats" and specific_cat != "All":
