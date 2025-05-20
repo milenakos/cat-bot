@@ -4453,7 +4453,7 @@ async def gift(
         user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
         # if we even have enough packs
         if user[f"pack_{cat_type}"] >= amount:
-            reciever = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id)
+            reciever, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id)
             user[f"pack_{cat_type}"] -= amount
             reciever[f"pack_{cat_type}"] += amount
             await user.save()
