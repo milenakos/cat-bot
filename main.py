@@ -3653,6 +3653,7 @@ async def battlepass(message: discord.Interaction):
         current_mode = "Main"
         user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
         await refresh_quests(user)
+        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
         global_user, _ = await User.get_or_create(user_id=message.user.id)
         if global_user.vote_time_topgg + 12 * 3600 > time.time():
