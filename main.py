@@ -1281,7 +1281,7 @@ async def on_ready():
     emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
     appinfo = bot.application
     if appinfo.team and appinfo.team.owner_id:
-        OWNER_ID = (await bot.fetch_user(appinfo.team.owner_id)).id
+        OWNER_ID = appinfo.team.owner_id
     else:
         OWNER_ID = appinfo.owner.id
 
