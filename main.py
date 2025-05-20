@@ -876,7 +876,7 @@ async def finale(message, user):
             )
             .set_author(
                 name="All achievements complete!",
-                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png",
+                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/media/cat.png",
             )
             .set_footer(text=f"Congrats to {author_string}")
         )
@@ -969,7 +969,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         localcat = random.choice(CAT_TYPES)
     icon = get_emoji(localcat.lower() + "cat")
     file = discord.File(
-        f"images/spawn/{localcat.lower()}_cat.png",
+        f"media/spawn/{localcat.lower()}_cat.png",
     )
     try:
         channeley = discord.Webhook.from_url(channel.webhook, client=bot)
@@ -986,7 +986,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
                 or not temp_channel.permissions_for(temp_channel.guild.me).manage_webhooks
             ):
                 raise Exception
-            with open("images/cat.png", "rb") as f:
+            with open("media/cat.png", "rb") as f:
                 wh = await temp_channel.create_webhook(name="Cat Bot", avatar=f.read())
                 channel.webhook = wh.url
                 channel.save()
@@ -1769,7 +1769,7 @@ async def on_message(message: discord.Message):
         await achemb(message, "pleasedonotthecat", "reply")
 
     if text.lower() == "please do the cat":
-        thing = discord.File("images/socialcredit.jpg", filename="socialcredit.jpg")
+        thing = discord.File("media/socialcredit.jpg", filename="socialcredit.jpg")
         try:
             if perms.send_messages and perms.attach_files and (not message.thread or perms.send_messages_in_threads):
                 await message.reply(file=thing)
@@ -1778,7 +1778,7 @@ async def on_message(message: discord.Message):
         await achemb(message, "pleasedothecat", "reply")
 
     if text.lower() == "car":
-        file = discord.File("images/car.png", filename="car.png")
+        file = discord.File("media/car.png", filename="car.png")
         embed = discord.Embed(title="car!", color=0x6E593C).set_image(url="attachment://car.png")
         try:
             if perms.send_messages and perms.attach_files and (not message.thread or perms.send_messages_in_threads):
@@ -1788,7 +1788,7 @@ async def on_message(message: discord.Message):
         await achemb(message, "car", "reply")
 
     if text.lower() == "cart":
-        file = discord.File("images/cart.png", filename="cart.png")
+        file = discord.File("media/cart.png", filename="cart.png")
         embed = discord.Embed(title="cart!", color=0x6E593C).set_image(url="attachment://cart.png")
         try:
             if perms.send_messages and perms.attach_files and (not message.thread or perms.send_messages_in_threads):
@@ -2421,7 +2421,7 @@ async def help(message):
         title="How to Setup",
         description="Server moderator (anyone with *Manage Server* permission) needs to run `/setup` in any channel. After that, cats will start to spawn in 2-20 minute intervals inside of that channel.\nYou can customize those intervals with `/changetimings` and change the spawn message with `/changemessage`.\nCat spawns can also be forced by moderators using `/forcespawn` command.\nYou can have unlimited amounts of setupped channels at once.\nYou can stop the spawning in a channel by running `/forget`.",
         color=0x6E593C,
-    ).set_thumbnail(url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png")
+    ).set_thumbnail(url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/media/cat.png")
 
     embed2 = (
         discord.Embed(title="How to Play", color=0x6E593C)
@@ -2447,7 +2447,7 @@ async def help(message):
         )
         .set_footer(
             text=f"Cat Bot by Milenakos, {datetime.datetime.utcnow().year}",
-            icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png",
+            icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/media/cat.png",
         )
     )
 
@@ -2472,7 +2472,7 @@ async def info(message: discord.Interaction):
         color=0x6E593C,
         description=f"by **{gen_credits['author']}**\nWith contributions from **{gen_credits['contrib']}**.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n"
         + f"Thanks to:\n**pathologicals** for the cat image\n**thecatapi.com** for random cats API\n**catfact.ninja** for cat facts API\n**Weilbyte** for TikTok TTS API\n**Wordnik** for Dictionary API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**",
-    ).set_thumbnail(url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png")
+    ).set_thumbnail(url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/media/cat.png")
 
     # add "last update" to footer if we are using git
     try:
@@ -2617,7 +2617,7 @@ async def tiktok(message: discord.Interaction, text: str):
     await message.response.defer()
 
     if text == "bwomp":
-        file = discord.File("bwomp.mp3", filename="bwomp.mp3")
+        file = discord.File("media/bwomp.mp3", filename="bwomp.mp3")
         await message.followup.send(file=file)
         await achemb(message, "bwomp", "send")
         await progress(message, get_profile(message.guild.id, message.user.id), "tiktok")
@@ -4993,7 +4993,7 @@ async def cat(message: discord.Interaction, cat_type: Optional[str]):
         await message.response.send_message("you dont have that cat", ephemeral=True)
         return
 
-    image = f"images/spawn/{cat_type.lower()}_cat.png" if cat_type else "images/cat.png"
+    image = f"media/spawn/{cat_type.lower()}_cat.png" if cat_type else "media/cat.png"
     file = discord.File(image, filename=image)
     await message.response.send_message(file=file)
 
@@ -5003,7 +5003,7 @@ async def cursed(message: discord.Interaction):
     if not message.channel.permissions_for(message.guild.me).attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
-    file = discord.File("images/cursed.jpg", filename="cursed.jpg")
+    file = discord.File("media/cursed.jpg", filename="cursed.jpg")
     await message.response.send_message(file=file)
 
 
@@ -5012,7 +5012,7 @@ async def bal(message: discord.Interaction):
     if not message.channel.permissions_for(message.guild.me).attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
-    file = discord.File("images/money.png", filename="money.png")
+    file = discord.File("media/money.png", filename="money.png")
     embed = discord.Embed(title="cat coins", color=0x6E593C).set_image(url="attachment://money.png")
     await message.response.send_message(file=file, embed=embed)
 
@@ -5376,7 +5376,7 @@ async def random_cat(message: discord.Interaction):
     await message.response.defer()
     async with aiohttp.ClientSession() as session:
         try:
-            async with session.get("https://api.thecatapi.com/v1/images/search") as response:
+            async with session.get("https://api.thecatapi.com/v1/media/search") as response:
                 data = await response.json()
                 await message.followup.send(data[0]["url"])
                 await achemb(message, "randomizer", "send")
@@ -6211,7 +6211,7 @@ async def setup_channel(message: discord.Interaction):
         )
         return
 
-    with open("images/cat.png", "rb") as f:
+    with open("media/cat.png", "rb") as f:
         try:
             channel_permissions = message.channel.permissions_for(message.guild.me)
             needed_perms = {
@@ -6278,7 +6278,7 @@ async def fake(message: discord.Interaction):
     if message.user.id in fakecooldown and fakecooldown[message.user.id] + 60 > time.time():
         await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
         return
-    file = discord.File("images/australian cat.png", filename="australian cat.png")
+    file = discord.File("media/australian cat.png", filename="australian cat.png")
     icon = get_emoji("egirlcat")
     perms: discord.Permissions = message.channel.permissions_for(message.guild.me)
     if not isinstance(
