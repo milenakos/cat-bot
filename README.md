@@ -4,7 +4,7 @@ Discord Cat Bot Source Code
 
 # Development
 
-Please note self-hosting is hacky and isn't supported, instructions below are for testing/development/messing around. I won't stop you, but you WILL have to mess around with the code a bunch for it to work good, so be warned.
+Please note that self-hosting is hacky and isn't supported; instructions below are for testing/development/messing around. I won't stop you, but you WILL have to mess around with the code a bunch for it to work good, so be warned.
 
 ## Prerequisites
 
@@ -14,27 +14,31 @@ Please note self-hosting is hacky and isn't supported, instructions below are fo
 
 ## Instructions
 
-1. Clone the repository. You can use green "Code" button at the top or a git command:
+1. Clone the repository. You can use the green "Code" button at the top or a git command:
 
-   `git clone https://github.com/milenakos/cat-bot.git`
+   ```shell
+   git clone https://github.com/milenakos/cat-bot.git
+   ```
 
-2. Install requirements:
+3. Install requirements:
 
-   `pip install -r requirements.txt`
+   ```shell
+   pip install -r requirements.txt
+   ```
 
-   If you are running a Gateway Proxy, do `pip install -r requirements-gw.txt` instead. This uses a custom fork which contacts `localhost:7878` instead, removes ratelimits and heartbeats.
+   If you are running a Gateway Proxy, do `pip install -r requirements-gw.txt` instead. This uses a custom fork which contacts `localhost:7878` instead and removes ratelimits and heartbeats.
 
-3. You will need to add all emojis you want to Discord's App Emoji in the Dev Portal.
+4. You will need to add all emojis you want to Discord's App Emoji in the Dev Portal.
 
    If they aren't found there, they will be replaced with a placeholder.
 
    All emojis can be downloaded [here](https://github.com/staring-cat/emojis/releases/latest/download/emojis.zip).
 
-4. Go inside of the `config.py` file and configure everything for your liking.
+5. Go inside of the `config.py` file and configure everything to your liking.
 
-5. Run the bot with `python bot.py`
+6. Run the bot with `python bot.py`.
 
-6. Done!
+7. Done!
 
 # License
 
