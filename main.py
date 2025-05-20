@@ -6012,7 +6012,7 @@ async def leaderboards(
                 await Profile.filter(guild_id=message.guild.id, season=full_months_passed)
                 .annotate(final_value=Sum("battlepass"))
                 .order_by("-final_value", "progress")
-                .values("user_id", "final_value")
+                .values("user_id", "final_value", "progress")
             )
         elif type == "Cookies":
             unit = "cookies"
@@ -6076,13 +6076,13 @@ async def leaderboards(
             num = i["final_value"]
 
             if type == "Battlepass":
-                bp_season = battle["seasons"][f"{i.season}"]
+                bp_season = battle["seasons"][full_months_passed]
                 if i["final_value"] >= len(bp_season):
                     lv_xp_req = 1500
                 else:
                     lv_xp_req = bp_season[int(i["final_value"]) - 1]["xp"]
 
-                prog_perc = math.floor((100 / lv_xp_req) * i.progress)
+                prog_perc = math.floor((100 / lv_xp_req) * i["progress"])
 
                 string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i['user_id']}>\n"
             else:
