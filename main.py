@@ -17,12 +17,10 @@
 import asyncio
 import base64
 import datetime
-import functools
 import io
 import json
 import logging
 import math
-import operator
 import os
 import random
 import re
@@ -40,7 +38,7 @@ from discord import ButtonStyle
 from discord.ext import commands
 from discord.ui import Button, View
 from PIL import Image
-from tortoise.expressions import F, Q, RawSQL
+from tortoise.expressions import Q, RawSQL
 from tortoise.functions import Sum
 
 import config
@@ -1086,8 +1084,8 @@ async def maintaince_loop():
             except Exception:
                 print("Posting to top.gg failed.")
 
-    async for channel in Channel.filter(yet_to_spawn__lt=time.time(), cat=0):
-        await spawn_cat(str(channel.channel_id))
+    async for channel in Channel.filter(yet_to_spawn__lt=time.time(), cat=0).values_list("channel_id", flat=True):
+        await spawn_cat(str(channel))
         await asyncio.sleep(0.1)
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
@@ -1095,12 +1093,14 @@ async def maintaince_loop():
     # i wont go into the details of this because its a complicated mess which took me like solid 30 minutes of planning
     #
     # vote reminders
-    async for user in User.filter(vote_time_topgg__not=0, vote_time_topgg__lt=time.time() - 43200, reminder_vote__not=0, reminder_vote__lt=time.time()):
-        if not await Profile.filter(user_id=user.user_id, reminders_enabled=True).exists():
+    async for user in User.filter(
+        vote_time_topgg__not=0, vote_time_topgg__lt=time.time() - 43200, reminder_vote__not=0, reminder_vote__lt=time.time()
+    ).values_list("user_id", flat=True):
+        if not await Profile.filter(user_id=user, reminders_enabled=True).exists():
             continue
         await asyncio.sleep(0.1)
 
-        user = await User.get(user_id=user.user_id)
+        user = await User.get(user_id=user)
 
         if not ((43200 < user.vote_time_topgg + 43200 < time.time()) and (0 < user.reminder_vote < time.time())):
             continue
@@ -1132,10 +1132,10 @@ async def maintaince_loop():
     async for user in Profile.filter(
         Q(reminders_enabled=True, reminder_catch__not=0)
         & Q(Q(catch_cooldown__not=0, catch_cooldown__lt=time.time() - 43200), Q(reminder_catch__gt=1, reminder_catch__lt=time.time()), join_type="OR"),
-    ):
+    ).values("guild_id", "user_id"):
         await asyncio.sleep(0.1)
 
-        user, _ = await Profile.get_or_create(guild_id=user.guild_id, user_id=user.user_id)
+        user, _ = await Profile.get_or_create(guild_id=user["guild_id"], user_id=user["user_id"])
 
         if not (
             user.reminders_enabled
@@ -1181,10 +1181,10 @@ async def maintaince_loop():
     async for user in Profile.filter(
         Q(reminders_enabled=True, reminder_misc__not=0)
         & Q(Q(misc_cooldown__not=0, misc_cooldown__lt=time.time() - 43200), Q(reminder_misc__gt=1, reminder_misc__lt=time.time()), join_type="OR"),
-    ):
+    ).values("guild_id", "user_id"):
         await asyncio.sleep(0.1)
 
-        user, _ = await Profile.get_or_create(guild_id=user.guild_id, user_id=user.user_id)
+        user, _ = await Profile.get_or_create(guild_id=user["guild_id"], user_id=user["user_id"])
 
         if not (
             user.reminders_enabled
@@ -3047,7 +3047,7 @@ async def gen_inventory(message, person_id):
     minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
 
     # count prism stuff
-    prisms = [i.name async for i in Prism.filter(guild_id=message.guild.id, user_id=person_id.id)]
+    prisms = await Prism.filter(guild_id=message.guild.id, user_id=person_id.id).values_list("name", flat=True)
     total_count = await Prism.filter(guild_id=message.guild.id).count()
     user_count = len(prisms)
     global_boost = 0.06 * math.log(2 * total_count + 1)
@@ -4450,7 +4450,7 @@ async def gift(
         user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
         # if we even have enough packs
         if user[f"pack_{cat_type}"] >= amount:
-            reciever = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
+            reciever, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id)
             user[f"pack_{cat_type}"] -= amount
             reciever[f"pack_{cat_type}"] += amount
             await user.save()
@@ -5932,25 +5932,28 @@ async def leaderboards(
         if type == "Cats":
             unit = "cats"
 
-            # dynamically generate sum expression
-            if specific_cat == "All":
-                sums = []
-                for cat_type in cattypes:
-                    if not cat_type:
-                        continue
-                    sums.append(F(f"cat_{cat_type}"))
-                total_sum_expr = functools.reduce(operator.add, sums)
+            if specific_cat != "All":
+                result = (
+                    await Profile.filter(guild_id=message.guild.id, **{f"cat_{specific_cat}__gt": 0})
+                    .annotate(final_value=Sum(f"cat_{specific_cat}"))
+                    .order_by("-final_value")
+                    .values("user_id", "final_value")
+                )
             else:
-                total_sum_expr = Sum(f"cat_{specific_cat}")
+                # dynamically generate sum expression, cast each value to bigint first to handle large totals
+                cat_columns = [f'CAST("cat_{c}" AS BIGINT)' for c in cattypes if c]
+                sum_expression = " + ".join(cat_columns)
+                result = (
+                    await Profile.filter(guild_id=message.guild.id)
+                    .annotate(final_value=RawSQL(sum_expression))
+                    .order_by("-final_value")
+                    .values("user_id", "final_value")
+                )
 
-            # run the query
-            result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=total_sum_expr).order_by("-final_value")
-
-            if specific_cat == "All":
                 # find rarest
                 rarest = None
                 for i in cattypes[::-1]:
-                    non_zero_count = await Profile.filter(guild_id=message.guild.id, **{f"cat_{cat_type}__gt": 0})
+                    non_zero_count = await Profile.filter(guild_id=message.guild.id, **{f"cat_{i}__gt": 0}).values_list("user_id", flat=True)
                     if len(non_zero_count) != 0:
                         rarest = i
                         rarest_holder = non_zero_count
@@ -5958,7 +5961,7 @@ async def leaderboards(
 
                 if rarest and specific_cat != rarest:
                     catmoji = get_emoji(rarest.lower() + "cat")
-                    rarest_holder = [f"<@{i.user_id}>" for i in rarest_holder]
+                    rarest_holder = [f"<@{i}>" for i in rarest_holder]
                     joined = ", ".join(rarest_holder)
                     if len(rarest_holder) > 10:
                         joined = f"{len(rarest_holder)} people"
@@ -5972,13 +5975,28 @@ async def leaderboards(
                 weight = sum(type_dict.values()) / type_dict[cat_type]
                 sums.append(f'({weight}) * "cat_{cat_type}"')
             total_sum_expr = " + ".join(sums)
-            result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=RawSQL(total_sum_expr)).order_by("-final_value")
+            result = (
+                await Profile.filter(guild_id=message.guild.id)
+                .annotate(final_value=RawSQL(total_sum_expr))
+                .order_by("-final_value")
+                .values("user_id", "final_value")
+            )
         elif type == "Fast":
             unit = "sec"
-            result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=Sum("time")).order_by("final_value")
+            result = (
+                await Profile.filter(guild_id=message.guild.id, time__lt=99999999999999)
+                .annotate(final_value=Sum("time"))
+                .order_by("final_value")
+                .values("user_id", "final_value")
+            )
         elif type == "Slow":
             unit = "h"
-            result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=Sum("timeslow")).order_by("-final_value")
+            result = (
+                await Profile.filter(guild_id=message.guild.id, timeslow__gt=0)
+                .annotate(final_value=Sum("timeslow"))
+                .order_by("-final_value")
+                .values("user_id", "final_value")
+            )
         elif type == "Battlepass":
             start_date = datetime.datetime(2024, 12, 1)
             current_date = datetime.datetime.utcnow()
@@ -5989,10 +6007,16 @@ async def leaderboards(
                 await Profile.filter(guild_id=message.guild.id, season=full_months_passed)
                 .annotate(final_value=Sum("battlepass"))
                 .order_by("-final_value", "progress")
+                .values("user_id", "final_value", "progress")
             )
         elif type == "Cookies":
             unit = "cookies"
-            result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=Sum("cookies")).order_by("-final_value")
+            result = (
+                await Profile.filter(guild_id=message.guild.id, cookies__gt=0)
+                .annotate(final_value=Sum("cookies"))
+                .order_by("-final_value")
+                .values("user_id", "final_value")
+            )
             string = "Cookie leaderboard updates every 5 min\n\n"
         else:
             # qhar
@@ -6002,12 +6026,12 @@ async def leaderboards(
         interactor_placement = 0
         messager_placement = 0
         for index, position in enumerate(result):
-            if position.user_id == interaction.user.id:
+            if position["user_id"] == interaction.user.id:
                 interactor_placement = index
-                interactor = position.final_value
-            if interaction.user != message.user and position.user_id == message.user.id:
+                interactor = position["final_value"]
+            if interaction.user != message.user and position["user_id"] == message.user.id:
                 messager_placement = index
-                messager = position.final_value
+                messager = position["final_value"]
 
         if type == "Slow":
             if interactor:
@@ -6044,18 +6068,18 @@ async def leaderboards(
         current = 1
         leader = False
         for i in result[:show_amount]:
-            num = i.final_value
+            num = i["final_value"]
 
             if type == "Battlepass":
-                bp_season = battle["seasons"][f"{i.season}"]
-                if i.final_value >= len(bp_season):
+                bp_season = battle["seasons"][str(full_months_passed)]
+                if i["final_value"] >= len(bp_season):
                     lv_xp_req = 1500
                 else:
-                    lv_xp_req = bp_season[int(i.final_value) - 1]["xp"]
+                    lv_xp_req = bp_season[int(i["final_value"]) - 1]["xp"]
 
-                prog_perc = math.floor((100 / lv_xp_req) * i.progress)
+                prog_perc = math.floor((100 / lv_xp_req) * i["progress"])
 
-                string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i.user_id}>\n"
+                string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i['user_id']}>\n"
             else:
                 if type == "Slow":
                     if num <= 0:
@@ -6067,13 +6091,15 @@ async def leaderboards(
                     if num <= 0:
                         break
                     num = round(num)
-                elif type == "Fast" and num >= 99999999999999:
-                    break
+                elif type == "Fast":
+                    if num >= 99999999999999:
+                        break
+                    num = round(num, 3)
                 elif type == "Cookies" and num <= 0:
                     break
-                string = string + f"{current}. {emoji} **{round(num, 3):,}** {unit}: <@{i.user_id}>\n"
+                string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
 
-            if message.user.id == i.user_id and current <= 5:
+            if message.user.id == i["user_id"] and current <= 5:
                 leader = True
             current += 1
 
