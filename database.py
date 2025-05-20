@@ -24,7 +24,7 @@ async def init():
     if config.DB_TYPE == "SQLITE":
         db_url = "sqlite://catbot.db"
     elif config.DB_TYPE == "POSTGRES":
-        db_url = f"asyncpg://cat_bot:{config.DB_PASSWORD}@localhost/cat_bot"
+        db_url = f"asyncpg://cat_bot:{config.DB_PASS}@localhost/cat_bot"
     await Tortoise.init(db_url=db_url, modules={"models": ["database"]})
     await Tortoise.generate_schemas(safe=True)
 
