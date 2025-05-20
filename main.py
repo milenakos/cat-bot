@@ -2853,7 +2853,7 @@ async def catalogue(message: discord.Interaction):
             in_server = 0
             title = f"{get_emoji('mysterycat')} ???"
 
-        title += f" ({round((type_dict[cat_type] / sum(type_dict.values()) * 100, 2)}%)"
+        title += f" ({round((type_dict[cat_type] / sum(type_dict.values())) * 100, 2)}%)"
 
         embed.add_field(
             name=title,
