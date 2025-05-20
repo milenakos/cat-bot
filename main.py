@@ -2850,7 +2850,9 @@ async def last(message: discord.Interaction):
 async def catalogue(message: discord.Interaction):
     embed = discord.Embed(title=f"{get_emoji('staring_cat')} The Catalogue", color=0x6E593C)
     for cat_type in cattypes:
-        in_server = (await Profile.filter(guild_id=message.guild.id).annotate(total=Sum(f"cat_{cat_type}")).values_list("total", flat=True))[0]
+        in_server = (
+            await Profile.filter(guild_id=message.guild.id, **{f"cat_{cat_type}__gt": 0}).annotate(total=Sum(f"cat_{cat_type}")).values_list("total", flat=True)
+        )[0]
         title = f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}"
         if in_server == 0 or not in_server:
             in_server = 0
