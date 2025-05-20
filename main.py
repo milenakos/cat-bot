@@ -5973,7 +5973,7 @@ async def leaderboards(
                 if not cat_type:
                     continue
                 weight = len(CAT_TYPES) / type_dict[cat_type]
-                sums.append(f"({weight}) * cat_{cat_type}")
+                sums.append(f'({weight}) * "cat_{cat_type}"')
             total_sum_expr = " + ".join(sums)
             result = await Profile.filter(guild_id=message.guild.id).annotate(final_value=RawSQL(total_sum_expr)).order_by("-final_value")
         elif type == "Fast":
@@ -6065,6 +6065,7 @@ async def leaderboards(
                         break
                     num = round(num)
                 elif type == "Fast" and num >= 99999999999999:
+                    num = round(num, 3)
                     break
                 elif type == "Cookies" and num <= 0:
                     break
