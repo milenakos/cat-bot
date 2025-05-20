@@ -6065,11 +6065,10 @@ async def leaderboards(
                         break
                     num = round(num)
                 elif type == "Fast" and num >= 99999999999999:
-                    num = round(num, 3)
                     break
                 elif type == "Cookies" and num <= 0:
                     break
-                string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i.user_id}>\n"
+                string = string + f"{current}. {emoji} **{round(num, 3):,}** {unit}: <@{i.user_id}>\n"
 
             if message.user.id == i.user_id and current <= 5:
                 leader = True
