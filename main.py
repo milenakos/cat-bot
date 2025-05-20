@@ -1089,8 +1089,8 @@ async def maintaince_loop():
             except Exception:
                 print("Posting to top.gg failed.")
 
-    async for channel in Channel.filter(yet_to_spawn__lt=time.time(), cat=0):
-        await spawn_cat(str(channel.channel_id))
+    async for channel in Channel.filter(yet_to_spawn__lt=time.time(), cat=0).values("channel_id"):
+        await spawn_cat(str(channel["channel_id"]))
         await asyncio.sleep(0.1)
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
@@ -1098,12 +1098,14 @@ async def maintaince_loop():
     # i wont go into the details of this because its a complicated mess which took me like solid 30 minutes of planning
     #
     # vote reminders
-    async for user in User.filter(vote_time_topgg__not=0, vote_time_topgg__lt=time.time() - 43200, reminder_vote__not=0, reminder_vote__lt=time.time()):
-        if not await Profile.filter(user_id=user.user_id, reminders_enabled=True).exists():
+    async for user in User.filter(vote_time_topgg__not=0, vote_time_topgg__lt=time.time() - 43200, reminder_vote__not=0, reminder_vote__lt=time.time()).values(
+        "user_id"
+    ):
+        if not await Profile.filter(user_id=user["user_id"], reminders_enabled=True).exists():
             continue
         await asyncio.sleep(0.1)
 
-        user = await User.get(user_id=user.user_id)
+        user = await User.get(user_id=user["user_id"])
 
         if not ((43200 < user.vote_time_topgg + 43200 < time.time()) and (0 < user.reminder_vote < time.time())):
             continue
@@ -1135,10 +1137,10 @@ async def maintaince_loop():
     async for user in Profile.filter(
         Q(reminders_enabled=True, reminder_catch__not=0)
         & Q(Q(catch_cooldown__not=0, catch_cooldown__lt=time.time() - 43200), Q(reminder_catch__gt=1, reminder_catch__lt=time.time()), join_type="OR"),
-    ):
+    ).values("guild_id", "user_id"):
         await asyncio.sleep(0.1)
 
-        user, _ = await Profile.get_or_create(guild_id=user.guild_id, user_id=user.user_id)
+        user, _ = await Profile.get_or_create(guild_id=user["guild_id"], user_id=user["user_id"])
 
         if not (
             user.reminders_enabled
@@ -1184,10 +1186,10 @@ async def maintaince_loop():
     async for user in Profile.filter(
         Q(reminders_enabled=True, reminder_misc__not=0)
         & Q(Q(misc_cooldown__not=0, misc_cooldown__lt=time.time() - 43200), Q(reminder_misc__gt=1, reminder_misc__lt=time.time()), join_type="OR"),
-    ):
+    ).values("guild_id", "user_id"):
         await asyncio.sleep(0.1)
 
-        user, _ = await Profile.get_or_create(guild_id=user.guild_id, user_id=user.user_id)
+        user, _ = await Profile.get_or_create(guild_id=user["guild_id"], user_id=user["user_id"])
 
         if not (
             user.reminders_enabled
@@ -3050,7 +3052,7 @@ async def gen_inventory(message, person_id):
     minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
 
     # count prism stuff
-    prisms = [i.name async for i in Prism.filter(guild_id=message.guild.id, user_id=person_id.id)]
+    prisms = await Prism.filter(guild_id=message.guild.id, user_id=person_id.id).values_list("name", flat=True)
     total_count = await Prism.filter(guild_id=message.guild.id).count()
     user_count = len(prisms)
     global_boost = 0.06 * math.log(2 * total_count + 1)
@@ -5956,7 +5958,7 @@ async def leaderboards(
                 # find rarest
                 rarest = None
                 for i in cattypes[::-1]:
-                    non_zero_count = await Profile.filter(guild_id=message.guild.id, **{f"cat_{i}__gt": 0})
+                    non_zero_count = await Profile.filter(guild_id=message.guild.id, **{f"cat_{i}__gt": 0}).values_list("user_id", flat=True)
                     if len(non_zero_count) != 0:
                         rarest = i
                         rarest_holder = non_zero_count
@@ -5964,7 +5966,7 @@ async def leaderboards(
 
                 if rarest and specific_cat != rarest:
                     catmoji = get_emoji(rarest.lower() + "cat")
-                    rarest_holder = [f"<@{i.user_id}>" for i in rarest_holder]
+                    rarest_holder = [f"<@{i}>" for i in rarest_holder]
                     joined = ", ".join(rarest_holder)
                     if len(rarest_holder) > 10:
                         joined = f"{len(rarest_holder)} people"
