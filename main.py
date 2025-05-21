@@ -320,6 +320,15 @@ def get_emoji(name):
         return "🔳"
 
 
+async def fetch_perms(message: discord.Message | discord.Interaction) -> discord.Permissions:
+    # this is mainly for threads where the parent isnt cached
+    if isinstance(message.channel, discord.Thread) and not message.channel.parent:
+        parent = await message.guild.fetch_channel(message.channel.parent_id)
+        return parent.permissions_for(message.guild.me)
+    else:
+        return message.channel.permissions_for(message.guild.me)
+
+
 # news stuff
 news_list = [
     {"title": "Cat Bot Survey - win rains!", "emoji": "📜"},
@@ -518,7 +527,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
 
     try:
         result = None
-        perms: discord.Permissions = message.channel.permissions_for(message.guild.me)
+        perms = await fetch_perms(message)
         correct_perms = perms.send_messages and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads)
         if send_type == "reply" and correct_perms:
             result = await message.reply(embed=embed)
@@ -675,7 +684,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
     user.quests_completed += 1
 
     old_xp = user.progress
-    perms = message.channel.permissions_for(message.guild.me)
+    perms = await fetch_perms(message)
     if user.battlepass >= len(battle["seasons"][str(user.season)]):
         if user.season in [1, 2]:
             level_data = {"xp": 1500, "reward": "random cats", "amount": 5}
@@ -846,7 +855,7 @@ async def finale(message, user):
 
     user.finale_seen = True
     await user.save()
-    perms: discord.Permissions = message.channel.permissions_for(message.guild.me)
+    perms = await fetch_perms(message)
     if perms.send_messages and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
         try:
             author_string = message.author
@@ -967,7 +976,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
                     temp_channel,
                     Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel],
                 )
-                or not temp_channel.permissions_for(temp_channel.guild.me).manage_webhooks
+                or not await fetch_perms(temp_channel).manage_webhooks
             ):
                 raise Exception
             with open("images/cat.png", "rb") as f:
@@ -1354,7 +1363,7 @@ async def on_message(message: discord.Message):
             await message.channel.send('good job! please send "lol_i_have_dmed_the_cat_bot_and_got_an_ach" in server to get your ach!')
         return
 
-    perms: discord.Permissions = message.channel.permissions_for(message.guild.me)
+    perms = await fetch_perms(message)
 
     achs = [
         ["cat?", "startswith", "???"],
@@ -1573,7 +1582,7 @@ async def on_message(message: discord.Message):
             const_perc = len(text) / (len(text) - total_vow)
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
             try:
-                if message.channel.permissions_for(message.guild.me).add_reactions:
+                if perms.add_reactions:
                     await message.add_reaction(get_emoji("staring_cat"))
                     react_count += 1
             except Exception:
@@ -2585,7 +2594,8 @@ async def news(message: discord.Interaction):
 @bot.tree.command(description="Read text as TikTok's TTS woman")
 @discord.app_commands.describe(text="The text to be read! (300 characters max)")
 async def tiktok(message: discord.Interaction, text: str):
-    if not message.channel.permissions_for(message.guild.me).attach_files:
+    perms = await fetch_perms(message)
+    if not perms.attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
 
@@ -3377,7 +3387,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             await interaction.response.send_message("there is already a rain running!", ephemeral=True)
             return
 
-        channel_permissions = message.channel.permissions_for(message.guild.me)
+        channel_permissions = await fetch_perms(message)
         needed_perms = {
             "View Channel": channel_permissions.view_channel,
             "Send Messages": channel_permissions.send_messages,
@@ -4977,7 +4987,8 @@ async def cat(message: discord.Interaction, cat_type: Optional[str]):
         await message.response.send_message("bro what", ephemeral=True)
         return
 
-    if not message.channel.permissions_for(message.guild.me).attach_files:
+    perms = await fetch_perms(message)
+    if not perms.attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
 
@@ -4994,7 +5005,8 @@ async def cat(message: discord.Interaction, cat_type: Optional[str]):
 
 @bot.tree.command(description="Get Cursed Cat")
 async def cursed(message: discord.Interaction):
-    if not message.channel.permissions_for(message.guild.me).attach_files:
+    perms = await fetch_perms(message)
+    if not perms.attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
     file = discord.File("images/cursed.jpg", filename="cursed.jpg")
@@ -5003,7 +5015,8 @@ async def cursed(message: discord.Interaction):
 
 @bot.tree.command(description="Get Your balance")
 async def bal(message: discord.Interaction):
-    if not message.channel.permissions_for(message.guild.me).attach_files:
+    perms = await fetch_perms(message)
+    if not perms.attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
     file = discord.File("images/money.png", filename="money.png")
@@ -5864,7 +5877,8 @@ async def catch_tip(message: discord.Interaction):
 
 
 async def catch(message: discord.Interaction, msg: discord.Message):
-    if not message.channel.permissions_for(message.guild.me).attach_files:
+    perms = await fetch_perms(message)
+    if not perms.attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
     if message.user.id in catchcooldown and catchcooldown[message.user.id] + 6 > time.time():
@@ -6220,7 +6234,7 @@ async def setup_channel(message: discord.Interaction):
 
     with open("images/cat.png", "rb") as f:
         try:
-            channel_permissions = message.channel.permissions_for(message.guild.me)
+            channel_permissions = await fetch_perms(message)
             needed_perms = {
                 "View Channel": channel_permissions.view_channel,
                 "Manage Webhooks": channel_permissions.manage_webhooks,
@@ -6287,7 +6301,7 @@ async def fake(message: discord.Interaction):
         return
     file = discord.File("images/australian cat.png", filename="australian cat.png")
     icon = get_emoji("egirlcat")
-    perms: discord.Permissions = message.channel.permissions_for(message.guild.me)
+    perms = await fetch_perms(message)
     if not isinstance(
         message.channel,
         Union[
