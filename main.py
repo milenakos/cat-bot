@@ -1145,6 +1145,7 @@ async def maintaince_loop():
             continue
 
         await refresh_quests(user)
+        user, _ = await Profile.get_or_create(guild_id=user["guild_id"], user_id=user["user_id"])
 
         quest_data = battle["quests"]["catch"][user.catch_quest]
 
@@ -1194,6 +1195,7 @@ async def maintaince_loop():
             continue
 
         await refresh_quests(user)
+        user, _ = await Profile.get_or_create(guild_id=user["guild_id"], user_id=user["user_id"])
 
         quest_data = battle["quests"]["misc"][user.misc_quest]
 
@@ -6221,7 +6223,7 @@ async def setup_channel(message: discord.Interaction):
             channel_permissions = message.channel.permissions_for(message.guild.me)
             needed_perms = {
                 "View Channel": channel_permissions.view_channel,
-                #    "Manage Webhooks": channel_permissions.manage_webhooks,
+                "Manage Webhooks": channel_permissions.manage_webhooks,
                 "Send Messages": channel_permissions.send_messages,
                 "Attach Files": channel_permissions.attach_files,
             }

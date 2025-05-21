@@ -57,7 +57,7 @@
   "scammed": {"title": "Scammed", "description": "get less value in a trade", "is_hidden": true, "category": "Silly"},
   "absolutely_nothing": {"title": "Absolutely Nothing", "description": "why did you do this?", "is_hidden": false, "category": "Silly"},
   "sacrifice": {"title": "Sacrifice", "description": "gift to cat bot", "is_hidden": false, "category": "Silly"},
-  "not_like_that": {"title": "Not like that...", "description": "catch the catch the wrong way", "is_hidden": false, "category": "Silly"},
+  "not_like_that": {"title": "Not like that...", "description": "catch the cat the wrong way", "is_hidden": false, "category": "Silly"},
   "gambling_one": {"title": "LETS GO GAMBLING", "description": "gamble 10 times", "is_hidden": false, "category": "Silly"},
   "broke": {"title": "Broke", "description": "go broke playing casino", "is_hidden": true, "category": "Silly"},
   "secret": {"title": "Tax Fraud", "description": "evade paying your cat taxes", "is_hidden": true, "category": "Silly"},
