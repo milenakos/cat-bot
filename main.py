@@ -2122,25 +2122,24 @@ async def on_message(message: discord.Message):
                             pass
 
                 async def send_confirm():
-                    if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                        try:
-                            kwargs = {}
-                            if channel.thread_mappings:
-                                kwargs["thread"] = discord.Object(message.channel.id)
-                            if view:
-                                kwargs["view"] = view
+                    try:
+                        kwargs = {}
+                        if channel.thread_mappings:
+                            kwargs["thread"] = discord.Object(message.channel.id)
+                        if view:
+                            kwargs["view"] = view
 
-                            await send_target.send(
-                                coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
-                                .replace("{emoji}", str(icon))
-                                .replace("{type}", le_emoji)
-                                .replace("{count}", f"{new_count:,}")
-                                .replace("{time}", caught_time[:-1])
-                                + suffix_string,
-                                **kwargs,
-                            )
-                        except Exception:
-                            pass
+                        await send_target.send(
+                            coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
+                            .replace("{emoji}", str(icon))
+                            .replace("{type}", le_emoji)
+                            .replace("{count}", f"{new_count:,}")
+                            .replace("{time}", caught_time[:-1])
+                            + suffix_string,
+                            **kwargs,
+                        )
+                    except Exception:
+                        pass
 
                 await asyncio.gather(delete_cat(), send_confirm())
 
