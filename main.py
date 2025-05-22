@@ -2128,7 +2128,7 @@ async def on_message(message: discord.Message):
                             kwargs["thread"] = discord.Object(message.channel.id)
                         if view:
                             kwargs["view"] = view
-                        if isinstance(send_target, discord.Webhook) and random.randint(0, 1000) == 0:
+                        if isinstance(send_target, discord.Webhook) and random.randint(0, 1000) == 69:
                             kwargs["username"] = "Cot Bat"
 
                         await send_target.send(
