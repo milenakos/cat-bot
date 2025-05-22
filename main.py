@@ -2128,6 +2128,8 @@ async def on_message(message: discord.Message):
                             kwargs["thread"] = discord.Object(message.channel.id)
                         if view:
                             kwargs["view"] = view
+                        if isinstance(send_target, discord.Webhook) and random.randint(0, 1000) == 0:
+                            kwargs["username"] = "Cot Bat"
 
                         await send_target.send(
                             coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
