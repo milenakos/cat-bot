@@ -6237,7 +6237,7 @@ async def setup_channel(message: discord.Interaction):
             channel_permissions = await fetch_perms(message)
             needed_perms = {
                 "View Channel": channel_permissions.view_channel,
-                "Manage Webhooks": channel_permissions.manage_webhooks,
+                # "Manage Webhooks": channel_permissions.manage_webhooks,
                 "Send Messages": channel_permissions.send_messages,
                 "Attach Files": channel_permissions.attach_files,
             }
