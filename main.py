@@ -1309,7 +1309,7 @@ async def on_ready():
     contributors = []
 
     async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
+        async with session.get(url, headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}) as response:
             if response.status == 200:
                 data = await response.json()
                 for contributor in data:
@@ -2460,7 +2460,7 @@ async def info(message: discord.Interaction):
         title="Cat Bot",
         color=0x6E593C,
         description=f"by **{gen_credits['author']}**\nWith contributions from **{gen_credits['contrib']}**.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n"
-        + f"Thanks to:\n**pathologicals** for the cat image\n**thecatapi.com** for random cats API\n**catfact.ninja** for cat facts API\n**Weilbyte** for TikTok TTS API\n**Wordnik** for Dictionary API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**",
+        + f"Thanks to:\n**pathologicals** for the cat image\n**thecatapi.com** for random cats API\n**catfact.ninja** for cat facts API\n**BlueberryWolf** for TikTok TTS API\n**Wordnik** for Dictionary API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**",
     ).set_thumbnail(url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png")
 
     # add "last update" to footer if we are using git
@@ -2619,13 +2619,14 @@ async def tiktok(message: discord.Interaction, text: str):
     async with aiohttp.ClientSession() as session:
         try:
             async with session.post(
-                "https://tiktok-tts.weilnet.workers.dev/api/generation",
+                "https://tiktok-tts.printmechanicalbeltpumpkingutter.workers.dev/api/generation",
                 json={"text": text, "voice": "en_us_001"},
+                headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
             ) as response:
                 stuff = await response.json()
                 if not stuff["success"]:
                     raise Exception
-                data = "" + stuff["data"]
+                data = "" + stuff["audio"]
                 with io.BytesIO() as f:
                     ba = "data:audio/mpeg;base64," + data
                     f.write(base64.b64decode(ba))
@@ -5390,7 +5391,7 @@ async def random_cat(message: discord.Interaction):
     await message.response.defer()
     async with aiohttp.ClientSession() as session:
         try:
-            async with session.get("https://api.thecatapi.com/v1/images/search") as response:
+            async with session.get("https://api.thecatapi.com/v1/images/search", headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}) as response:
                 data = await response.json()
                 await message.followup.send(data[0]["url"])
                 await achemb(message, "randomizer", "send")
@@ -5406,7 +5407,8 @@ if config.WORDNIK_API_KEY:
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(
-                    f"https://api.wordnik.com/v4/word.json/{word}/definitions?api_key={config.WORDNIK_API_KEY}&useCanonical=true&includeTags=false&includeRelated=false&limit=69"
+                    f"https://api.wordnik.com/v4/word.json/{word}/definitions?api_key={config.WORDNIK_API_KEY}&useCanonical=true&includeTags=false&includeRelated=false&limit=69",
+                    headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
                 ) as response:
                     data = await response.json()
 
@@ -5447,7 +5449,7 @@ async def cat_fact(message: discord.Interaction):
     else:
         await message.response.defer()
         async with aiohttp.ClientSession() as session:
-            async with session.get("https://catfact.ninja/fact") as response:
+            async with session.get("https://catfact.ninja/fact", headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}) as response:
                 if response.status == 200:
                     data = await response.json()
                     await message.followup.send(data["fact"])
