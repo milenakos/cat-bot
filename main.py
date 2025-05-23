@@ -2624,11 +2624,8 @@ async def tiktok(message: discord.Interaction, text: str):
                 headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
             ) as response:
                 stuff = await response.json()
-                if not stuff["success"]:
-                    raise Exception
-                data = "" + stuff["audio"]
                 with io.BytesIO() as f:
-                    ba = "data:audio/mpeg;base64," + data
+                    ba = "data:audio/mpeg;base64," + stuff["audio"]
                     f.write(base64.b64decode(ba))
                     f.seek(0)
                     await message.followup.send(file=discord.File(fp=f, filename="output.mp3"))
