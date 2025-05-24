@@ -89,8 +89,8 @@ class Profile(Model):
     cataine_week = fields.SmallIntField(default=0)  # light market purcashes this week
     recent_week = fields.SmallIntField(default=0)  # the week
 
-    funny = fields.SmallIntField(default=0)  # private embed click amount
-    facts = fields.SmallIntField(default=0)  # /fact amount
+    funny = fields.IntField(default=0)  # private embed click amount
+    facts = fields.IntField(default=0)  # /fact amount
     gambles = fields.SmallIntField(default=0)  # casino spins amount
 
     cookies = fields.BigIntField(default=0)  # cookies clicked

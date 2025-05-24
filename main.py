@@ -194,6 +194,7 @@ hints = [
     "Cat Bot has reached top #17 on top.gg in February 2025",
     "Cat Bot has reached top #12 on top.gg in March 2025",
     "Cat Bot has reached top #9 on top.gg in April 2025",
+    "Cat Bot has reached top #7 on top.gg in May 2025",
     "Most Cat Bot features were made within 2 weeks",
     "Cat Bot was initially made for only one server",
     "Cat Bot is made in Python with discord.py",
@@ -2632,7 +2633,7 @@ async def tiktok(message: discord.Interaction, text: str):
         except discord.NotFound:
             pass
         except Exception:
-            await message.followup.send("i dont speak your language (remove non-english characters, make sure the message is below 300 chars)")
+            await message.followup.send("i dont speak guacamole (remove non-english characters, make sure the message is below 300 characters)")
 
     await progress(message, profile, "tiktok")
 
@@ -5388,7 +5389,9 @@ async def random_cat(message: discord.Interaction):
     await message.response.defer()
     async with aiohttp.ClientSession() as session:
         try:
-            async with session.get("https://api.thecatapi.com/v1/images/search", headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}) as response:
+            async with session.get(
+                "https://api.thecatapi.com/v1/images/search", headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}
+            ) as response:
                 data = await response.json()
                 await message.followup.send(data[0]["url"])
                 await achemb(message, "randomizer", "send")
