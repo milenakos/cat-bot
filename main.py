@@ -627,7 +627,7 @@ async def refresh_quests(user):
         await generate_quest(user, "misc")
 
 
-async def progress(message: discord.Message | discord.Interaction, user: Profile, quest: str):
+async def progress(message: discord.Message | discord.Interaction, user: Profile, quest: str, is_belated: Optional[bool] = False):
     # oh you passed me a user? thanks bro i'll do it on my own though
     user, _ = await Profile.get_or_create(guild_id=user.guild_id, user_id=user.user_id)
     await refresh_quests(user)
@@ -748,6 +748,9 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
                 new_level_text,
             )
 
+            if is_belated:
+                embed_progress.set_footer(text="For catching within 3 seconds")
+
             await message.channel.send(
                 f"<@{user.user_id}>",
                 embeds=[embed_level_up, embed_progress],
@@ -761,19 +764,21 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
             and perms.embed_links
             and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads)
         ):
-            await message.channel.send(
-                f"<@{user.user_id}>",
-                embed=await progress_embed(
-                    message,
-                    user,
-                    level_data,
-                    current_xp,
-                    old_xp,
-                    quest_data,
-                    current_xp - old_xp,
-                    level_text,
-                ),
+            embed_progress = await progress_embed(
+                message,
+                user,
+                level_data,
+                current_xp,
+                old_xp,
+                quest_data,
+                current_xp - old_xp,
+                level_text,
             )
+
+            if is_belated:
+                embed_progress.set_footer(text="For catching within 3 seconds")
+
+            await message.channel.send(f"<@{user.user_id}>", embed=embed_progress)
 
 
 async def progress_embed(message, user, level_data, current_xp, old_xp, quest_data, diff, level_text) -> discord.Embed:
@@ -1063,11 +1068,11 @@ async def maintaince_loop():
     global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage, temp_cookie_storage
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
-    temp_belated_storage = {}
     catchcooldown = {}
     fakecooldown = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
+    # update cookies
     temp_temp_cookie_storage = temp_cookie_storage.copy()
     temp_cookie_storage = {}
     cookie_updates = []
@@ -1075,9 +1080,15 @@ async def maintaince_loop():
         p, _ = await Profile.get_or_create(guild_id=cookie_id[0], user_id=cookie_id[1])
         p.cookies = cookies
         cookie_updates.append(p)
-
     if cookie_updates:
         await Profile.bulk_update(cookie_updates, fields=["cookies"])
+
+    # temp_belated_storage cleanup
+    # clean up anything older than 1 minute
+    baseflake = discord.utils.time_snowflake(datetime.datetime.utcnow() - datetime.timedelta(minutes=1))
+    for id in temp_belated_storage.copy().keys():
+        if id < baseflake:
+            del temp_belated_storage[id]
 
     if config.TOP_GG_TOKEN and (not config.MIN_SERVER_SEND or len(bot.guilds) > config.MIN_SERVER_SEND):
         async with aiohttp.ClientSession() as session:
@@ -1094,6 +1105,7 @@ async def maintaince_loop():
             except Exception:
                 print("Posting to top.gg failed.")
 
+    # revive dead catch loops
     async for channel in Channel.filter(yet_to_spawn__lt=time.time(), cat=0).values_list("channel_id", flat=True):
         await spawn_cat(str(channel))
         await asyncio.sleep(0.1)
@@ -1237,6 +1249,7 @@ async def maintaince_loop():
     if proccessed_users:
         await Profile.bulk_update(proccessed_users, fields=["reminder_misc"])
 
+    # manual reminders
     async for reminder in Reminder.filter(time__lt=time.time()):
         try:
             user = await bot.fetch_user(reminder.user_id)
@@ -1246,6 +1259,7 @@ async def maintaince_loop():
             pass
         await reminder.delete()
 
+    # db backups
     backupchannel = bot.get_channel(config.BACKUP_ID)
     if not isinstance(
         backupchannel,
@@ -1816,35 +1830,35 @@ async def on_message(message: discord.Message):
                 ):
                     belated["users"].append(message.author.id)
                     temp_belated_storage[message.channel.id] = belated
-                    await progress(message, user, "3cats")
+                    await progress(message, user, "3cats", True)
                     if channel.cattype == "Fine":
-                        await progress(message, user, "2fine")
+                        await progress(message, user, "2fine", True)
                     if channel.cattype == "Good":
-                        await progress(message, user, "good")
+                        await progress(message, user, "good", True)
                     if belated.get("time", 10) + int(time.time()) - channel.lastcatches < 10:
-                        await progress(message, user, "under10")
+                        await progress(message, user, "under10", True)
                     if random.randint(0, 1) == 0:
-                        await progress(message, user, "even")
+                        await progress(message, user, "even", True)
                     else:
-                        await progress(message, user, "odd")
+                        await progress(message, user, "odd", True)
                     if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
-                        await progress(message, user, "rare+")
+                        await progress(message, user, "rare+", True)
                     total_count = await Prism.filter(guild_id=message.guild.id).count()
                     user_count = await Prism.filter(guild_id=message.guild.id, user_id=message.author.id).count()
                     global_boost = 0.06 * math.log(2 * total_count + 1)
                     prism_boost = global_boost + 0.03 * math.log(2 * user_count + 1)
                     if prism_boost > random.random():
-                        await progress(message, user, "prism")
+                        await progress(message, user, "prism", True)
                     if user.catch_quest == "finenice":
                         # 0 none
                         # 1 fine
                         # 2 nice
                         # 3 both
                         if channel.cattype == "Fine" and user.catch_progress in [0, 2]:
-                            await progress(message, user, "finenice")
+                            await progress(message, user, "finenice", True)
                         elif channel.cattype == "Nice" and user.catch_progress in [0, 1]:
-                            await progress(message, user, "finenice")
-                            await progress(message, user, "finenice")
+                            await progress(message, user, "finenice", True)
+                            await progress(message, user, "finenice", True)
         else:
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
