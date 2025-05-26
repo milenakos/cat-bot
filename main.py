@@ -2744,6 +2744,9 @@ async def changemessage(message: discord.Interaction):
 
         async def on_submit(self, interaction: discord.Interaction):
             channel = await Channel.get_or_none(channel_id=message.channel.id)
+            if not channel:
+                await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
+                return
             input_value = self.input.value
 
             # check if all placeholders are there
@@ -6224,7 +6227,9 @@ async def leaderboards(
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="who", amount="how many (negatives to remove)", cat_type="what")
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
-async def givecat(message: discord.Interaction, person_id: discord.User, amount: int, cat_type: str):
+async def givecat(message: discord.Interaction, person_id: discord.User, cat_type: str, amount: Optional[int]):
+    if amount is None:
+        amount = 1
     if cat_type not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
         return
