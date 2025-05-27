@@ -6043,7 +6043,7 @@ async def leaderboards(
             result = (
                 await Profile.filter(guild_id=message.guild.id, season=full_months_passed)
                 .annotate(final_value=Sum("battlepass"))
-                .order_by("-final_value", "progress")
+                .order_by("-final_value", "-progress")
                 .values("user_id", "final_value", "progress")
             )
         elif type == "Cookies":
