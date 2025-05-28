@@ -495,7 +495,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
             discord.Embed(title=ach_data["title"], description=desc, color=0x007F0E)
             .set_author(
                 name="Achievement get!",
-                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/cat_throphy.png",
+                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/ach.png",
             )
             .set_footer(text=f"Unlocked by {author_string.name}")
         )
@@ -508,7 +508,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
             )
             .set_author(
                 name="Demonic achievement unlocked! 🌟",
-                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/demonic.png",
+                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/demonic_ach.png",
             )
             .set_footer(text=f"Congrats to {author_string.name}!!")
         )
@@ -521,7 +521,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
             )
             .set_author(
                 name="Demonic achievement unlocked! 🌟",
-                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/demonic.png",
+                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/demonic_ach.png",
             )
             .set_footer(text=f"Congrats to {author_string.name}!!")
         )
@@ -1606,11 +1606,11 @@ async def on_message(message: discord.Message):
     try:
         if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
             if "robotop" in message.author.name.lower() and "i rate **cat" in message.content.lower():
-                icon = str(get_emoji("no_cat_throphy")) + " "
+                icon = str(get_emoji("no_ach"))
                 await message.reply("**RoboTop**, I rate **you** 0 cats " + icon * 5)
 
             if "leafbot" in message.author.name.lower() and "hmm... i would rate cat" in message.content.lower():
-                icon = str(get_emoji("no_cat_throphy")) + " "
+                icon = str(get_emoji("no_ach")) + " "
                 await message.reply("Hmm... I would rate you **0 cats**! " + icon * 5)
     except Exception:
         pass
@@ -3115,7 +3115,7 @@ async def gen_inventory(message, person_id):
 
     embedVar = discord.Embed(
         title=f"{emoji_prefix}{person_id.name.replace('_', r'\_')}",
-        description=f"{highlighted_stat[1]} {highlighted_stat[2]}\n{get_emoji('cat_throphy')} Achievements: {unlocked}/{total_achs}{minus_achs}\n⬆️ Battlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)",
+        description=f"{highlighted_stat[1]} {highlighted_stat[2]}\n{get_emoji('ach')} Achievements: {unlocked}/{total_achs}{minus_achs}\n⬆️ Battlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)",
         color=discord.Colour.from_str(color),
     )
 
@@ -5815,22 +5815,22 @@ async def achievements(message: discord.Interaction):
                 if k == "thanksforplaying":
                     if user[k]:
                         newembed.add_field(
-                            name=str(get_emoji("demonic")) + " Cataine Addict",
+                            name=str(get_emoji("demonic_ach")) + " Cataine Addict",
                             value="Defeat the dog mafia",
                             inline=True,
                         )
                     else:
                         newembed.add_field(
-                            name=str(get_emoji("no_demonic")) + " Thanks For Playing",
+                            name=str(get_emoji("no_demonic_ach")) + " Thanks For Playing",
                             value="Complete the story",
                             inline=True,
                         )
                     continue
 
-                icon = str(get_emoji("no_cat_throphy")) + " "
+                icon = str(get_emoji("no_ach")) + " "
                 if user[k]:
                     newembed.add_field(
-                        name=str(get_emoji("cat_throphy")) + " " + v["title"],
+                        name=str(get_emoji("ach")) + " " + v["title"],
                         value=v["description"],
                         inline=True,
                     )
@@ -6401,13 +6401,13 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
         color, title, icon = (
             0x007F0E,
             "Achievement forced!",
-            "https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/cat_throphy.png",
+            "https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/ach.png",
         )
         if reverse:
             color, title, icon = (
                 0xFF0000,
                 "Achievement removed!",
-                "https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/no_cat_throphy.png",
+                "https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/no_ach.png",
             )
         ach_data = ach_list[ach_id]
         embed = (
