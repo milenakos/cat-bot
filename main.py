@@ -247,7 +247,7 @@ funny = [
 ]
 
 # rain shill message for footers
-rain_shill = "☔ Get tons of cats /rain"
+rain_shill = "🔥 Summer Sale! -20% /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -687,10 +687,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
     old_xp = user.progress
     perms = await fetch_perms(message)
     if user.battlepass >= len(battle["seasons"][str(user.season)]):
-        if user.season in [1, 2]:
-            level_data = {"xp": 1500, "reward": "random cats", "amount": 5}
-        else:
-            level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
+        level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
         level_text = "Extra Rewards"
     else:
         level_data = battle["seasons"][str(user.season)][user.battlepass]
@@ -699,13 +696,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         user.battlepass += 1
         user.progress = current_xp - level_data["xp"]
         cat_emojis = None
-        if level_data["reward"] == "random cats":
-            cat_emojis = ""
-            for _ in range(5):
-                chosen_cat = random.choices(cattypes, weights=type_dict.values())[0]
-                user[f"cat_{chosen_cat}"] += 1
-                cat_emojis += get_emoji(chosen_cat.lower() + "cat")
-        elif level_data["reward"] in cattypes:
+        if level_data["reward"] in cattypes:
             user[f"cat_{level_data['reward']}"] += level_data["amount"]
         elif level_data["reward"] == "Rain":
             user.rain_minutes += level_data["amount"]
@@ -728,10 +719,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
             embed_level_up = discord.Embed(title=title, description=description, color=0xFFF000)
 
             if user.battlepass >= len(battle["seasons"][str(user.season)]):
-                if user.season in [1, 2]:
-                    new_level_data = {"xp": 1500, "reward": "random cats", "amount": 5}
-                else:
-                    new_level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
+                new_level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
                 new_level_text = "Extra Rewards"
             else:
                 new_level_data = battle["seasons"][str(user.season)][user.battlepass]
@@ -1871,9 +1859,11 @@ async def on_message(message: discord.Message):
                     channel.cat_rains = 0
                     try:
                         if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                            await message.channel.send("# :bangbang: this concludes the cat rain.")
-                            await message.channel.send("# :bangbang: this concludes the cat rain.")
-                            await message.channel.send("# :bangbang: this concludes the cat rain.")
+                            # this is pretty but i want a delay lmao
+                            # await asyncio.gather(*(message.channel.send("h") for _ in range(3)))
+                            for _ in range(3):
+                                await message.channel.send("# :bangbang: cat rain has ended")
+                                await asyncio.sleep(0.2)
                     except Exception:
                         pass
             decided_time = random.uniform(times[0], times[1])
@@ -2034,7 +2024,7 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
+                    suffix_string += f"\n🔥 summer sale! -20% </rain:{RAIN_ID}>"
                 if random.randint(0, 19) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
@@ -2475,7 +2465,7 @@ async def info(message: discord.Interaction):
         title="Cat Bot",
         color=0x6E593C,
         description=f"by **{gen_credits['author']}**\nWith contributions from **{gen_credits['contrib']}**.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n"
-        + f"Thanks to:\n**pathologicals** for the cat image\n**thecatapi.com** for random cats API\n**catfact.ninja** for cat facts API\n**BlueberryWolf** for TikTok TTS API\n**Wordnik** for Dictionary API\n**{gen_credits['trash']}** for making cat, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**",
+        + f"Thanks to:\n**pathologicals** for the cat image\n**thecatapi.com** for random cats API\n**catfact.ninja** for cat facts API\n**BlueberryWolf** for TikTok TTS API\n**Wordnik** for Dictionary API\n**{gen_credits['trash']}** for art, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**",
     ).set_thumbnail(url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png")
 
     # add "last update" to footer if we are using git
@@ -3467,7 +3457,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
     shopbutton = Button(
         emoji="🛒",
-        label="Store",
+        label="Store (-20%!)",
         url="https://catbot.shop",
     )
 
@@ -3752,11 +3742,7 @@ async def battlepass(message: discord.Interaction):
         if user.battlepass >= len(battle["seasons"][str(user.season)]):
             description += f"**Extra Rewards** [{user.progress}/1500 XP]\n"
             colored = int(user.progress / 150)
-            description += get_emoji("staring_square") * colored + "⬛" * (10 - colored) + "\nReward: "
-            if user.season in [1, 2]:
-                description += "❓ 5 random cats"
-            else:
-                description += get_emoji("stonepack") + " Stone pack"
+            description += get_emoji("staring_square") * colored + "⬛" * (10 - colored) + "\nReward: " + get_emoji("stonepack") + " Stone pack"
         else:
             level_data = battle["seasons"][str(user.season)][user.battlepass]
             description += f"**Level {user.battlepass + 1}/30** [{user.progress}/{level_data['xp']} XP]\n"
@@ -3770,25 +3756,20 @@ async def battlepass(message: discord.Interaction):
             else:
                 description += f"Reward: {get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack\n\n"
 
-            # next reward
-            if user.battlepass >= len(battle["seasons"][str(user.season)]) - 1:
-                if user.season in [1, 2]:
-                    description += "*Next:* 1500 XP - ❓ 5 random cats"
-                else:
-                    description += f"*Next:* 1500 XP - {get_emoji('stonepack')} Stone pack"
+        # next reward
+        levels = battle["seasons"][str(user.season)]
+        for num, level_data in enumerate(levels):
+            claimed_suffix = "_claimed" if num < user.battlepass else ""
+            if level_data["reward"] == "Rain":
+                description += get_emoji(str(level_data["amount"]) + "rain" + claimed_suffix)
+            elif level_data["reward"] in cattypes:
+                description += get_emoji(level_data["reward"].lower() + "cat" + claimed_suffix)
             else:
-                levels = battle["seasons"][str(user.season)]
-                for num, level_data in enumerate(levels):
-                    if num < user.battlepass:
-                        description += get_emoji("bp_complete")
-                    elif level_data["reward"] == "Rain":
-                        description += get_emoji(str(level_data["amount"]) + "rain")
-                    elif level_data["reward"] in cattypes:
-                        description += get_emoji(level_data["reward"].lower() + "cat")
-                    else:
-                        description += get_emoji(level_data["reward"].lower() + "pack")
-                    if num % 10 == 9:
-                        description += "\n"
+                description += get_emoji(level_data["reward"].lower() + "pack" + claimed_suffix)
+            if num % 10 == 9:
+                description += "\n"
+        if user.battlepass >= len(battle["seasons"][str(user.season)]) - 1:
+            description += f"*Extra Rewards:* {get_emoji('stonepack')} Stone pack per 1500 XP"
 
         embedVar = discord.Embed(
             title=f"Cattlepass Season {user.season}",
