@@ -3171,7 +3171,7 @@ async def gen_inventory(message, person_id):
     return embedVar
 
 
-@bot.tree.command(description="View your inventory")
+@bot.tree.command(description="View your inventory", aliases=["inv"])
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="Person to view the inventory of!")
 async def inventory(message: discord.Interaction, person_id: Optional[discord.User]):
@@ -3615,7 +3615,7 @@ async def packs(message: discord.Interaction):
     await message.response.send_message(embed=embed, view=gen_view(user))
 
 
-@bot.tree.command(description="who thought this was a good idea")
+@bot.tree.command(description="who thought this was a good idea", aliases=["bp"])
 async def battlepass(message: discord.Interaction):
     current_mode = ""
 
@@ -4000,7 +4000,7 @@ async def ping(message: discord.Interaction):
     await progress(message, user, "ping")
 
 
-@bot.tree.command(description="play a relaxing game of tic tac toe")
+@bot.tree.command(description="play a relaxing game of tic tac toe", aliases=["ttt"])
 @discord.app_commands.describe(person="who do you want to play with? (choose Cat Bot for ai)")
 async def tictactoe(message: discord.Interaction, person: discord.Member):
     # WOW this code is bad
@@ -4194,9 +4194,9 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
     await message.response.send_message(text, view=view, allowed_mentions=discord.AllowedMentions(users=True))
 
 
-@bot.tree.command(description="dont select a person to make an everyone vs you game")
+@bot.tree.command(description="dont select a person to make an everyone vs you game", aliases=["rps"])
 @discord.app_commands.describe(person="Who do you want to play with?")
-async def rps(message: discord.Interaction, person: Optional[discord.Member]):
+async def rockpaperscissors(message: discord.Interaction, person: Optional[discord.Member]):
     clean_name = message.user.name.replace("_", "\\_")
     picks = {"Rock": [], "Paper": [], "Scissors": []}
     mappings = {"Rock": ["Paper", "Rock", "Scissors"], "Paper": ["Scissors", "Paper", "Rock"], "Scissors": ["Rock", "Scissors", "Paper"]}
@@ -4309,7 +4309,7 @@ async def cookie(message: discord.Interaction):
     await message.response.send_message(view=view)
 
 
-@bot.tree.command(description="give cats now")
+@bot.tree.command(description="give cats now", aliases=["donate"])
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(
     person="Whom to gift?",
@@ -5724,7 +5724,7 @@ async def dark_market(message):
         await message.followup.send(embed=embed, ephemeral=True)
 
 
-@bot.tree.command(description="View your achievements")
+@bot.tree.command(description="View your achievements", aliases=["achs"])
 async def achievements(message: discord.Interaction):
     # this is very close to /inv's ach counter
     user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
@@ -5908,7 +5908,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         await achemb(message, "not_like_that", "send")
 
 
-@bot.tree.command(description="View the leaderboards")
+@bot.tree.command(description="View the leaderboards", aliases=["lb"])
 @discord.app_commands.rename(leaderboard_type="type")
 @discord.app_commands.describe(
     leaderboard_type="The leaderboard type to view!",
@@ -6203,7 +6203,7 @@ async def leaderboards(
     await lb_handler(message, leaderboard_type, False, cat_type)
 
 
-@bot.tree.command(description="(ADMIN) Give cats to people")
+@bot.tree.command(description="(ADMIN) Give cats to people", aliases=["summon"])
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="who", amount="how many (negatives to remove)", cat_type="what")
@@ -6329,7 +6329,7 @@ async def fake(message: discord.Interaction):
     await achemb(message, "trolled", "followup")
 
 
-@bot.tree.command(description="(ADMIN) Force cats to appear")
+@bot.tree.command(description="(ADMIN) Force cats to appear", aliases=["force"])
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(cat_type="select a cat type ok")
@@ -6352,7 +6352,7 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
     await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this")
 
 
-@bot.tree.command(description="(ADMIN) Give achievements to people")
+@bot.tree.command(description="(ADMIN) Give achievements to people", aliases=["giveach"])
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(person_id="user", ach_id="name")
 @discord.app_commands.describe(person_id="who", ach_id="name or id of the achievement")
