@@ -791,7 +791,7 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
 
     global_user, _ = await User.get_or_create(user_id=user.user_id)
     if global_user.vote_streak % 50 == 0 and global_user.vote_streak and "top.gg" in quest_data["title"]:
-        streak_reward = f"\n +1 {get_emoji('celestialpack')} Celestial pack"
+        streak_reward = f"\n🔥🔥 +1 {get_emoji('celestialpack')} Celestial pack"
     if global_user.vote_streak % 5 == 0 and global_user.vote_streak not in [0, 5] and "top.gg" in quest_data["title"]:
         streak_reward = f"\n🔥 +1 {get_emoji('goldpack')} Gold pack"
     else:
