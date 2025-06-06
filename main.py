@@ -659,6 +659,8 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         if voted_at.weekday() >= 4:
             user.vote_reward *= 2
 
+        if global_user.vote_streak % 50 == 0 and global_user.vote_streak:
+            user.pack_celestial += 1
         if global_user.vote_streak % 5 == 0 and global_user.vote_streak not in [0, 5]:
             user.pack_gold += 1
 
@@ -788,6 +790,8 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
         reward_text = f"{get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack"
 
     global_user, _ = await User.get_or_create(user_id=user.user_id)
+    if global_user.vote_streak % 50 == 0 and global_user.vote_streak and "top.gg" in quest_data["title"]:
+        streak_reward = f"\n +1 {get_emoji('celestialpack')} Celestial pack"
     if global_user.vote_streak % 5 == 0 and global_user.vote_streak not in [0, 5] and "top.gg" in quest_data["title"]:
         streak_reward = f"\n🔥 +1 {get_emoji('goldpack')} Gold pack"
     else:
@@ -6542,14 +6546,18 @@ async def recieve_vote(request):
 
     try:
         channeley = await bot.fetch_user(int(request_json["user"]))
-        if user.vote_streak != 5 and user.vote_streak % 5 == 0:
-            gold_suffix = f"(+1 {get_emoji('goldpack')} Gold pack!)"
+        if user.vote_streak % 50 == 0:
+            streak_suffix = f"(+1 {get_emoji('celestialpack')} Celestial pack!!"
+        else if user.vote_streak != 5 and user.vote_streak % 5 == 0:
+            streak_suffix = f"(+1 {get_emoji('goldpack')} Gold pack!)"
+        else if user.vote_streak % 50 >= 45:
+            streak_suffix = f"(Bonus {get_emoji('celestialpack')} Celestial Pack at {math.ceil(user.vote_streak / 50) * 50} streak!!)"
         else:
-            gold_suffix = f"(Bonus {get_emoji('goldpack')} Gold Pack at {max(10, math.ceil(user.vote_streak / 5) * 5)} streak)"
+            streak_suffix = f"(Bonus {get_emoji('goldpack')} Gold Pack at {max(10, math.ceil(user.vote_streak / 5) * 5)} streak)"
         await channeley.send(
             "\n".join(
                 [
-                    f"Thanks for voting! Streak: {user.vote_streak:,} {gold_suffix}",
+                    f"Thanks for voting! Streak: {user.vote_streak:,} {streak_suffix}",
                     "To claim your rewards, run `/battlepass` in every server you want.",
                     f"You can vote again <t:{int(time.time()) + 43200}:R>.",
                     f"Vote within the next {extend_time} hours to not lose your streak.",
@@ -6559,6 +6567,8 @@ async def recieve_vote(request):
     except Exception:
         pass
 
+    if math.random(0, 100) == 42:
+        return web.Response(text=":3", status=200)
     return web.Response(text="ok", status=200)
 
 
