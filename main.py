@@ -22,9 +22,11 @@ import json
 import logging
 import math
 import os
+import platform
 import random
 import re
 import subprocess
+import sys
 import time
 import traceback
 from typing import Literal, Optional, Union
@@ -1294,18 +1296,14 @@ async def on_ready():
     else:
         OWNER_ID = appinfo.owner.id
 
-    credits = {
-        "author": [553093932012011520],
-        "tester": [
-            712639066373619754,
-            902862104971849769,
-            709374062237057074,
-            520293520418930690,
-            1004128541853618197,
-            839458185059500032,
-        ],
-        "trash": [520293520418930690],
-    }
+    testers = [
+        712639066373619754,
+        902862104971849769,
+        709374062237057074,
+        520293520418930690,
+        1004128541853618197,
+        839458185059500032,
+    ]
 
     # fetch github contributors
     url = "https://api.github.com/repos/milenakos/cat-bot/contributors"
@@ -1322,19 +1320,26 @@ async def on_ready():
             else:
                 print(f"Error: {response.status} - {await response.text()}")
 
-    gen_credits["contrib"] = ", ".join(contributors)
+    # fetch testers
+    tester_users = []
+    try:
+        for i in testers:
+            user = await bot.fetch_user(i)
+            tester_users.append(user.name.replace("_", r"\_"))
+    except Exception:
+        # death
+        pass
 
-    # fetch discord usernames by user ids
-    for key in credits.keys():
-        peoples = []
-        try:
-            for i in credits[key]:
-                user = await bot.fetch_user(i)
-                peoples.append(user.name.replace("_", r"\_"))
-        except Exception:
-            # death
-            pass
-        gen_credits[key] = ", ".join(peoples)
+    gen_credits = [
+        "Made by Lia Milenakos",
+        "With contributions from " + ", ".join(contributors),
+        "Original Cat Image: pathologicals",
+        "APIs: catfact.ninja, blueberry.coffee, wordnik.com, thecatapi.com",
+        "Open Source Projects: [discord.py](https://github.com/Rapptz/discord.py), [tortoise-orm](https://github.com/tortoise/tortoise-orm), [gateway-proxy](https://github.com/Gelbpunkt/gateway-proxy)"
+        "Art, suggestions, and a lot more: TheTrashCell",
+        "Testers: " + ", ".join(tester_users),
+        "Enjoying the bot: You <3",
+    ].join("\n")
 
 
 # this is all the code which is ran on every message sent
@@ -2448,8 +2453,8 @@ async def help(message):
     await message.response.send_message(embeds=[embed1, embed2])
 
 
-@bot.tree.command(description="View information about the bot")
-async def info(message: discord.Interaction):
+@bot.tree.command(description="Roll the credits")
+async def credits(message: discord.Interaction):
     global gen_credits
 
     if not gen_credits:
@@ -2461,20 +2466,43 @@ async def info(message: discord.Interaction):
 
     await message.response.defer()
 
-    embedVar = discord.Embed(
-        title="Cat Bot",
-        color=0x6E593C,
-        description=f"by **{gen_credits['author']}**\nWith contributions from **{gen_credits['contrib']}**.\n\nThis bot adds Cat Hunt to your server with many different types of cats for people to discover! People can see leaderboards and give cats to each other.\n\n"
-        + f"Thanks to:\n**pathologicals** for the cat image\n**thecatapi.com** for random cats API\n**catfact.ninja** for cat facts API\n**BlueberryWolf** for TikTok TTS API\n**Wordnik** for Dictionary API\n**{gen_credits['trash']}** for art, suggestions, and a lot more.\n\n**{gen_credits['tester']}** for being test monkeys\n\n**And everyone for the support!**",
-    ).set_thumbnail(url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png")
+    embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description=gen_credits).set_thumbnail(
+        url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png"
+    )
 
-    # add "last update" to footer if we are using git
-    try:
-        embedVar.timestamp = datetime.datetime.utcfromtimestamp(int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8")))
-        embedVar.set_footer(text="Last code update:")
-    except Exception:
-        pass
     await message.followup.send(embed=embedVar)
+
+
+def format_timedelta(start_timestamp, end_timestamp):
+    delta = datetime.timedelta(seconds=end_timestamp - start_timestamp)
+    days = delta.days
+    seconds = delta.seconds
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = seconds % 60
+    return f"{days}d {hours}h {minutes}m {seconds}s"
+
+
+@bot.tree.command(description="View various bot information and stats")
+async def info(message: discord.Interaction):
+    embed = discord.Embed(title="Cat Bot Info", color=0x6E593C)
+    try:
+        git_timestamp = int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8"))
+    except Exception:
+        git_timestamp = 0
+
+    embed.description = f"""
+Python Version: `{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}`
+discord.py Version: `{discord.__version__}`
+OS Version: `{platform.system()} {platform.release()}`
+Full uptime: `{format_timedelta(config.HARD_RESTART_TIME, time.time())}`
+Soft uptime: `{format_timedelta(config.SOFT_RESTART_TIME, time.time())}`
+Last code update: `{format_timedelta(git_timestamp, time.time()) if git_timestamp else "N/A"}`
+Guilds: `{len(bot.guilds):,}`
+Loops since last restart: `{loop_count + 1}`
+"""
+
+    await message.response.send_message(embed=embed)
 
 
 @bot.tree.command(description="Confused? Check out the Cat Bot Wiki!")
@@ -6605,6 +6633,8 @@ async def setup(bot2):
 
     # finally replace the fake bot with the real one
     bot = bot2
+
+    config.SOFT_RESTART_TIME = time.time()
 
     app_commands = await bot.tree.sync()
     for i in app_commands:
