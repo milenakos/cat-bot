@@ -1330,16 +1330,18 @@ async def on_ready():
         # death
         pass
 
-    gen_credits = [
-        "Made by Lia Milenakos",
-        "With contributions from " + ", ".join(contributors),
-        "Original Cat Image: pathologicals",
-        "APIs: catfact.ninja, blueberry.coffee, wordnik.com, thecatapi.com",
-        "Open Source Projects: [discord.py](https://github.com/Rapptz/discord.py), [tortoise-orm](https://github.com/tortoise/tortoise-orm), [gateway-proxy](https://github.com/Gelbpunkt/gateway-proxy)"
-        "Art, suggestions, and a lot more: TheTrashCell",
-        "Testers: " + ", ".join(tester_users),
-        "Enjoying the bot: You <3",
-    ].join("\n")
+    gen_credits = "\n".join(
+        [
+            "Made by Lia Milenakos",
+            "With contributions from " + ", ".join(contributors),
+            "Original Cat Image: pathologicals",
+            "APIs: catfact.ninja, blueberry.coffee, wordnik.com, thecatapi.com",
+            "Open Source Projects: [discord.py](https://github.com/Rapptz/discord.py), [tortoise-orm](https://github.com/tortoise/tortoise-orm), [gateway-proxy](https://github.com/Gelbpunkt/gateway-proxy)"
+            "Art, suggestions, and a lot more: TheTrashCell",
+            "Testers: " + ", ".join(tester_users),
+            "Enjoying the bot: You <3",
+        ]
+    )
 
 
 # this is all the code which is ran on every message sent
