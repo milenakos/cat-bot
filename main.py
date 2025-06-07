@@ -3531,11 +3531,13 @@ async def packs(message: discord.Interaction):
     def gen_view(user):
         view = discord.ui.View(timeout=VIEW_TIMEOUT)
         empty = True
+        total_amount = 0
         for pack in pack_data:
             if user[f"pack_{pack['name'].lower()}"] < 1:
                 continue
             empty = False
             amount = user[f"pack_{pack['name'].lower()}"]
+            total_amount += amount
             button = discord.ui.Button(
                 emoji=get_emoji(pack["name"].lower() + "pack"),
                 label=f"{pack['name']} ({amount})",
@@ -3546,6 +3548,10 @@ async def packs(message: discord.Interaction):
             view.add_item(button)
         if empty:
             view.add_item(discord.ui.Button(label="No packs left!", disabled=True))
+        if total_amount > 10:
+            button = discord.ui.Button(label=f"Open all! ({total_amount})", style=ButtonStyle.blurple) # maybe change this to a different color(?)
+            button.callback = open_all_packs
+            view.add_item(button)
         return view
 
     async def open_pack(interaction: discord.Interaction):
@@ -3606,6 +3612,87 @@ async def packs(message: discord.Interaction):
             things = reward_text.split("\n")
             embed = discord.Embed(title=things[0], description="\n".join(things[1:]), color=0x6E593C)
             await interaction.edit_original_response(embed=embed)
+        await asyncio.sleep(1)
+        await interaction.edit_original_response(view=gen_view(user))
+
+    async def open_all_packs(interaction: discord.Interaction):
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+        await interaction.response.defer()
+        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        pack_names = [pack["name"] for pack in pack_data]
+        total_pack_count = sum(user[f"pack_{pack_id.lower()}"] for pack_id in pack_names)
+        if total_pack_count < 1:
+            return
+
+        display_cats = total_pack_count >= 50
+        results_header = []
+        results_detail = []
+        results_percat = {cat: 0 for cat in cattypes}
+        total_upgrades = 0
+        for level, pack in enumerate(pack_names):
+            pack_id = f"pack_{pack.lower()}"
+            this_packs_count = user[pack_id]
+            if this_packs_count < 1:
+                continue
+            do_the_s = "" if this_packs_count == 1 else "s"
+            results_header.append(f"{get_emoji(pack.lower() + 'pack')} {this_packs_count} {pack} pack{do_the_s}")
+            for _ in range(this_packs_count):
+                pack_string = get_emoji(pack.lower() + "pack")
+
+                # bump rarity
+                this_level = level
+                while random.randint(1, 100) <= pack_data[this_level]["upgrade"]:
+                    this_level += 1
+                    total_upgrades += 1
+                    pack_string += f" -> {get_emoji(pack_data[this_level]['name'].lower() + 'pack')}"
+                final_level = pack_data[this_level]
+
+                # select cat type
+                goal_value = final_level["value"]
+                chosen_type = random.choice(cattypes)
+                pre_cat_amount = goal_value / (sum(type_dict.values()) / type_dict[chosen_type])
+                cat_emoji = get_emoji(chosen_type.lower() + 'cat')
+                if pre_cat_amount % 1 > random.random():
+                    cat_amount = math.ceil(pre_cat_amount)
+                else:
+                    cat_amount = math.floor(pre_cat_amount)
+                if pre_cat_amount < 1:
+                    pack_string += f" {round(pre_cat_amount * 100, 2)}% {cat_emoji}? "
+                    if cat_amount == 1:
+                        # success
+                        pack_string += f"✅ -> {cat_emoji} 1"
+                    else:
+                        # fail
+                        pack_string += f"❌ -> {get_emoji('finecat')} 1"
+                        chosen_type = "Fine"
+                        cat_amount = 1
+                else:
+                    pack_string += f" {cat_emoji} {cat_amount}"
+                user[f"cat_{chosen_type}"] += cat_amount
+                if not display_cats:
+                    results_detail.append(pack_string)
+                results_percat[chosen_type] += cat_amount
+            user[pack_id] = 0
+        user.packs_opened += total_pack_count
+        user.pack_upgrades += total_upgrades
+        await user.save()
+        final_header = f"Opened {total_pack_count} packs! (" + ", ".join(results_header) + ")"
+
+        final_result = "\n".join(results_detail)
+        if display_cats or len(final_result) > 2047: # you can never be too safe
+            half_result = []
+            for cat in cattypes:
+                if results_percat[cat] == 0:
+                    continue
+                half_result.append(f"{get_emoji(cat.lower() + 'cat')} {results_percat[cat]} {cat} cats!")
+            final_result = "\n".join(half_result)
+
+        embed = discord.Embed(title=reward_texts[0], color=0x6E593C)
+        await interaction.edit_original_response(embed=embed, view=None)
+        embed = discord.Embed(title=final_header, description=final_result, color=0x6E593C)
+        await interaction.edit_original_response(embed=embed)
         await asyncio.sleep(1)
         await interaction.edit_original_response(view=gen_view(user))
 
