@@ -5358,7 +5358,7 @@ async def eightball(message: discord.Interaction, question: str):
         "ask again later",
         "better not tell you now",
         "cannot predict now",
-        "concetrate and ask again",
+        "concentrate and ask again",
     ]
 
     await message.response.send_message(f"{question}\n:8ball: **{random.choice(catball_responses)}**")
