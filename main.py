@@ -4433,7 +4433,7 @@ async def move(
 
                 await message.response.send_message(person.mention, embed=embed, view=myview, allowed_mentions=discord.AllowedMentions(users=True))
             else:
-                await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True), ephemeral=True if admin else False)
+                await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True), ephemeral=admin)
 
             # handle aches
             if not admin:
