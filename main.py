@@ -2716,7 +2716,7 @@ async def changetimings(
             return
         if maximum_time < minimum_time:
             await message.response.send_message(
-                "Sorry, but minimum time must be less than maximum time.",
+                "Sorry, but maximum time must not be less than minimum time.",
                 ephemeral=True,
             )
             return
