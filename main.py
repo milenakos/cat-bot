@@ -3645,7 +3645,7 @@ async def packs(message: discord.Interaction):
     await message.response.send_message(embed=embed, view=gen_view(user))
 
 
-@bot.tree.command(description="who thought this was a good idea")
+@bot.tree.command(description="why would anyone think a cattlepass would be a good idea")
 async def battlepass(message: discord.Interaction):
     current_mode = ""
 
