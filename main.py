@@ -5400,7 +5400,7 @@ async def remind(
     if goal_time < 0:
         await message.response.send_message("cat cant time travel (yet)", ephemeral=True)
         return
-    await message.response.send_message(f"🔔 ok, <t:{goal_time}:R> (+- 5 min) ill remind you of:\n{text}")
+    await message.response.send_message(f"🔔 ok, <t:{goal_time}:R> (+- 5 min) ill remind you of:\n{text}\n-# use `/reminders` to see any other reminders")
     msg = await message.original_response()
     message_link = msg.jump_url
     text += f"\n\n*This is a [reminder](<{message_link}>) you set.*"
@@ -5410,6 +5410,22 @@ async def remind(
     await profile.save()
     await achemb(message, "reminder", "send")  # the ai autocomplete thing suggested this and its actually a cool ach
     await progress(message, profile, "reminder")  # the ai autocomplete thing also suggested this though profile wasnt defined
+
+@bot.tree.command(name="reminders", description="view reminders you have set")
+async def reminders(message: discord.Interaction):
+    text = ""
+    if await Reminder.exists(user_id=message.user.id):
+        reminders = await Reminder.filter(user_id=message.user.id).all()
+        text += ":bell: you have **" + str(len(reminders)) + "** reminders set:"
+        for reminder in reminders:
+            # this is so we don't have formatting oddities, and to avoid repetition of redundant information
+            filtered_text = reminder.text.split("\n\n*This is a")[0]
+            text += "\n- you will be reminded of `" + filtered_text + "` <t:" + str(reminder.time) + ":R>"
+    else:
+        text = ":x: you have no reminders set, set some using `/remind`"
+
+    await message.response.send_message(text)
+
 
 
 @bot.tree.command(name="random", description="Get a random cat")
