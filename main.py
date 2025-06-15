@@ -2769,6 +2769,11 @@ async def changemessage(message: discord.Interaction):
                 return
             input_value = self.input.value
 
+            # detect bad words
+            if any(i in input_value.lower() for i in NONOWORDS):
+                await message.response.send_message("Dont.", ephemeral=True)
+                return
+
             # check if all placeholders are there
             if input_value != "":
                 check = ["{emoji}", "{type}"] + (["{username}", "{count}", "{time}"] if self.type == "Cought" else [])
