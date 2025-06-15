@@ -3772,7 +3772,7 @@ async def battlepass(message: discord.Interaction):
         if user.battlepass >= len(battle["seasons"][str(user.season)]):
             description += f"**Extra Rewards** [{user.progress}/1500 XP]\n"
             colored = int(user.progress / 150)
-            description += get_emoji("staring_square") * colored + "⬛" * (10 - colored) + "\nReward: " + get_emoji("stonepack") + " Stone pack"
+            description += get_emoji("staring_square") * colored + "⬛" * (10 - colored) + "\nReward: " + get_emoji("stonepack") + " Stone pack\n\n"
         else:
             level_data = battle["seasons"][str(user.season)][user.battlepass]
             description += f"**Level {user.battlepass + 1}/30** [{user.progress}/{level_data['xp']} XP]\n"
@@ -3799,7 +3799,7 @@ async def battlepass(message: discord.Interaction):
             if num % 10 == 9:
                 description += "\n"
         if user.battlepass >= len(battle["seasons"][str(user.season)]) - 1:
-            description += f"*Extra Rewards:* {get_emoji('stonepack')} Stone pack per 1500 XP"
+            description += f"*Extra:* {get_emoji('stonepack')} per 1500 XP"
 
         embedVar = discord.Embed(
             title=f"Cattlepass Season {user.season}",
