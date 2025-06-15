@@ -3471,7 +3471,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             user.rain_minutes -= rain_length
         await user.save()
         await profile.save()
-        await interaction.response.send_message(f"{rain_length}m cat rain was started by {interaction.user.mention}, ending <t:{channel.cat_rains}:R>!")
+        await interaction.response.send_message(f"{rain_length}m cat rain was started by {interaction.user.mention}, ending <t:{int(channel.cat_rains)}:R>!")
         try:
             ch = bot.get_channel(config.RAIN_CHANNEL_ID)
             await ch.send(f"{interaction.user.id} started {rain_length}m rain in {interaction.channel.id} ({user.rain_minutes} left)")
