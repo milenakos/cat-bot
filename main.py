@@ -554,6 +554,8 @@ async def achemb(message, ach_id, send_type, author_string=None):
         await result.edit(embed=embed2)
         await asyncio.sleep(2)
         await result.edit(embed=embed)
+    elif result and ach_id == "curious":
+        await result.delete(delay=30)
 
 
 async def generate_quest(user: Profile, quest_type: str):
