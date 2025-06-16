@@ -5917,16 +5917,26 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         return
     await message.response.defer()
 
-    event_loop = asyncio.get_event_loop()
-    result = await event_loop.run_in_executor(None, msg2img.msg2img, msg)
+    message_text = "cought in 4k"
+    should_capture = True
+    if msg.author.id == bot.user.id and "cought in 4k" in msg.content:
+        message_text = "cought in 8k"
+    elif msg.author.id == bot.user.id and "cought in 8k" in msg.content:
+        message_text = "Even Vegeta's smart glasses cant render this."
+        should_capture = False
+        result = None
 
-    await message.followup.send("cought in 4k", file=result)
+    if should_capture:
+        event_loop = asyncio.get_event_loop()
+        result = await event_loop.run_in_executor(None, msg2img.msg2img, msg)
+
+    await message.followup.send(message_text, file=result)
 
     catchcooldown[message.user.id] = time.time()
 
     await achemb(message, "4k", "send")
 
-    if msg.author.id == bot.user.id and "cought in 4k" in msg.content:
+    if message_text == "cought in 8k":
         await achemb(message, "8k", "send")
 
     try:
