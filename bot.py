@@ -24,6 +24,7 @@ from discord.ext import commands
 
 import config
 import database
+from main import ReminderCog
 
 winuvloop.install()
 
@@ -40,6 +41,7 @@ bot = commands.AutoShardedBot(
 
 @bot.event
 async def setup_hook():
+    await bot.add_cog(ReminderCog())
     await database.init()
     await bot.load_extension("main")
 
