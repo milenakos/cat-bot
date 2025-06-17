@@ -5417,16 +5417,24 @@ class ReminderCog(commands.GroupCog, group_name="reminder", description="Manage 
         self,
         message: discord.Interaction
     ):
-        text = ""
+
+        # sort out reminders beforehand to get an accurate count
+        reminders = []
         if await Reminder.exists(user_id=message.user.id):
-            reminders = await Reminder.filter(user_id=message.user.id).all()
-            text += ":bell: you have **" + str(len(reminders)) + "** reminders set:"
+            queried_reminders = await Reminder.filter(user_id=message.user.id).all()
+            for reminder in queried_reminders:
+                if reminder.time >= time.time():
+                    reminders.append(reminder) 
+
+        # actually build up the text from the previously generated reminders
+
+        text = ":x: you have no reminders set, set some using `/remind`"
+        if len(reminders) > 0:
+            text = ":bell: you have **" + str(len(reminders)) + "** reminders set:"
             for reminder in reminders:
                 # this is so we don't have formatting oddities, and to avoid repetition of redundant information
                 filtered_text = reminder.text.split("\n\n*This is a")[0]
                 text += "\n- you will be reminded of `" + filtered_text + "` <t:" + str(reminder.time) + ":R>"
-        else:
-            text = ":x: you have no reminders set, set some using `/remind`"
 
         await message.response.send_message(text)
 
