@@ -5419,17 +5419,7 @@ class ReminderCog(commands.GroupCog, group_name="reminder", description="Manage 
         self,
         message: discord.Interaction
     ):
-
-        # sort out reminders beforehand to get an accurate count
-        reminders = []
-        if await Reminder.exists(user_id=message.user.id):
-            queried_reminders = await Reminder.filter(user_id=message.user.id).all()
-            for reminder in queried_reminders:
-                if reminder.time >= time.time():
-                    reminders.append(reminder) 
-
-        # actually build up the text from the previously generated reminders
-
+        reminders = await Reminder.filter(user_id=message.user.id).all()
         text = ":x: you have no reminders set, set some using `/remind`"
         if len(reminders) > 0:
             text = ":bell: you have **" + str(len(reminders)) + "** reminders set:"
