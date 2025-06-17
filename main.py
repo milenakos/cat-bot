@@ -554,6 +554,8 @@ async def achemb(message, ach_id, send_type, author_string=None):
         await result.edit(embed=embed2)
         await asyncio.sleep(2)
         await result.edit(embed=embed)
+    elif result and ach_id == "curious":
+        await result.delete(delay=30)
 
 
 async def generate_quest(user: Profile, quest_type: str):
@@ -3471,7 +3473,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             user.rain_minutes -= rain_length
         await user.save()
         await profile.save()
-        await interaction.response.send_message(f"{rain_length}m cat rain was started by {interaction.user.mention}, ending <t:{channel.cat_rains}:R>!")
+        await interaction.response.send_message(f"{rain_length}m cat rain was started by {interaction.user.mention}, ending <t:{int(channel.cat_rains)}:R>!")
         try:
             ch = bot.get_channel(config.RAIN_CHANNEL_ID)
             await ch.send(f"{interaction.user.id} started {rain_length}m rain in {interaction.channel.id} ({user.rain_minutes} left)")
@@ -3772,7 +3774,7 @@ async def battlepass(message: discord.Interaction):
         if user.battlepass >= len(battle["seasons"][str(user.season)]):
             description += f"**Extra Rewards** [{user.progress}/1500 XP]\n"
             colored = int(user.progress / 150)
-            description += get_emoji("staring_square") * colored + "⬛" * (10 - colored) + "\nReward: " + get_emoji("stonepack") + " Stone pack"
+            description += get_emoji("staring_square") * colored + "⬛" * (10 - colored) + "\nReward: " + get_emoji("stonepack") + " Stone pack\n\n"
         else:
             level_data = battle["seasons"][str(user.season)][user.battlepass]
             description += f"**Level {user.battlepass + 1}/30** [{user.progress}/{level_data['xp']} XP]\n"
@@ -3799,7 +3801,7 @@ async def battlepass(message: discord.Interaction):
             if num % 10 == 9:
                 description += "\n"
         if user.battlepass >= len(battle["seasons"][str(user.season)]) - 1:
-            description += f"*Extra Rewards:* {get_emoji('stonepack')} Stone pack per 1500 XP"
+            description += f"*Extra:* {get_emoji('stonepack')} per 1500 XP"
 
         embedVar = discord.Embed(
             title=f"Cattlepass Season {user.season}",
