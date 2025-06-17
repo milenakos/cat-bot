@@ -29,7 +29,7 @@ import subprocess
 import sys
 import time
 import traceback
-from typing import Literal, Optional, Union
+from typing import List, Literal, Optional, Union
 
 import aiohttp
 import discord
@@ -5369,6 +5369,21 @@ async def eightball(message: discord.Interaction, question: str):
     await achemb(message, "balling", "send")
 
 class ReminderCog(commands.GroupCog, group_name="reminder", description="Manage your reminders"):
+    # this is so we don't have formatting oddities, and to avoid repetition of redundant information
+    def isolate_reminder_text(self, input: str):
+        return input.split("\n\n*This is a")[0]
+    
+    async def reminder_listing_autocomplete(
+        self,
+        message: discord.Interaction,
+        current: str
+    ) -> List[discord.app_commands.Choice[str]]:
+        responses = []
+        queries = await Reminder.filter(user_id=message.user.id).all()
+        for query in queries:
+            responses.append(discord.app_commands.Choice(name=self.isolate_reminder_text(query.text), value=self.isolate_reminder_text(query.text)))
+        return responses
+
     @discord.app_commands.command(description="get a reminder in the future (+- 5 minutes)")
     @discord.app_commands.describe(
         days="in how many days",
@@ -5424,16 +5439,15 @@ class ReminderCog(commands.GroupCog, group_name="reminder", description="Manage 
         if len(reminders) > 0:
             text = ":bell: you have **" + str(len(reminders)) + "** reminders set:"
             for reminder in reminders:
-                # this is so we don't have formatting oddities, and to avoid repetition of redundant information
-                filtered_text = reminder.text.split("\n\n*This is a")[0]
-                text += "\n- you will be reminded of `" + filtered_text + "` <t:" + str(reminder.time) + ":R>"
+                text += "\n- you will be reminded of `" + self.isolate_reminder_text(reminder.text) + "` <t:" + str(reminder.time) + ":R>"
 
         await message.response.send_message(text)
 
-    @discord.app_commands.command(description="remove a reminder based on reminder text")
+    @discord.app_commands.command(name="remove", description="remove a reminder based on reminder text")
     @discord.app_commands.describe(
         text="reminders whose message contains the text provided will be removed",
     )
+    @discord.app_commands.autocomplete(text=reminder_listing_autocomplete)
     async def remove(
         self,
         message: discord.Interaction,
@@ -5453,7 +5467,6 @@ class ReminderCog(commands.GroupCog, group_name="reminder", description="Manage 
                 await message.response.send_message(":scissors: **" + str(counter) + "** reminder(s) have been deleted")
         else:
             await message.response.send_message(":x: you have no reminders")
-            pass
 
 @bot.tree.command(name="random", description="Get a random cat")
 async def random_cat(message: discord.Interaction):
