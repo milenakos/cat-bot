@@ -5440,8 +5440,34 @@ class ReminderCog(commands.GroupCog, group_name="reminder", description="Manage 
 
         await message.response.send_message(text)
 
+    @discord.app_commands.command(description="remove a reminder based on reminder text")
+    @discord.app_commands.describe(
+        text="reminders whose message contains the text provided will be removed",
+    )
+    async def remove(
+        self,
+        message: discord.Interaction,
+        text: str
+    ):
+        if await Reminder.exists(user_id=message.user.id):
+            counter = 0
+            reminders = await Reminder.filter(user_id=message.user.id).all()
+            for reminder in reminders:
+                if text in reminder.text:
+                    await reminder.delete()
+                    counter += 1
+
+            if counter == 0:
+                await message.response.send_message(":x: no reminders match your search")
+            else:
+                await message.response.send_message(":scissors: **" + str(counter) + "** reminder(s) have been deleted")
+        else:
+            await message.response.send_message(":x: you have no reminders")
+            pass
+
 @bot.tree.command(name="random", description="Get a random cat")
 async def random_cat(message: discord.Interaction):
+
     await message.response.defer()
     async with aiohttp.ClientSession() as session:
         try:
