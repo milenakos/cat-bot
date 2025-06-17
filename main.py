@@ -5418,7 +5418,7 @@ class ReminderCog(commands.GroupCog, group_name="reminder", description="Manage 
         if goal_time < 0:
             await message.response.send_message("cat cant time travel (yet)", ephemeral=True)
             return
-        await message.response.send_message(f"🔔 ok, <t:{goal_time}:R> (+- 5 min) ill remind you of:\n{text}\n-# use `/reminders` to see any other reminders")
+        await message.response.send_message(f"🔔 ok, <t:{goal_time}:R> (+- 5 min) ill remind you of:\n{text}")
         msg = await message.original_response()
         message_link = msg.jump_url
         text += f"\n\n*This is a [reminder](<{message_link}>) you set.*"
