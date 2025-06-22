@@ -40,7 +40,7 @@ from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
 from discord.ui import Button, View
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from tortoise.expressions import Q, RawSQL
 from tortoise.functions import Sum
 
@@ -1054,6 +1054,23 @@ async def postpone_reminder(interaction):
     await interaction.response.send_message(f"ok, i will remind you <t:{int(time.time()) + 30 * 60}:R>", ephemeral=True)
 
 
+def draw_banner(server_count):
+    image = Image.open("images/funny_template.png").convert("RGBA")
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.truetype(os.path.abspath("./fonts/ggsans-Medium.ttf"), 100)
+    draw.text((385, 120), f"{server_count + 1:,}", fill="black", font=font)
+    img_byte_arr = io.BytesIO()
+    image.save(img_byte_arr, format="PNG")
+    img_byte_arr.seek(0)
+    return img_byte_arr.read()
+
+
+async def update_banner():
+    event_loop = asyncio.get_event_loop()
+    result = await event_loop.run_in_executor(None, draw_banner, len(bot.guilds))
+    await bot.user.edit(banner=result)
+
+
 # a loop for various maintaince which is ran every 5 minutes
 async def maintaince_loop():
     global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage, temp_cookie_storage
@@ -1062,6 +1079,9 @@ async def maintaince_loop():
     catchcooldown = {}
     fakecooldown = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
+
+    # update the banner
+    asyncio.create_task(update_banner())
 
     # update cookies
     temp_temp_cookie_storage = temp_cookie_storage.copy()
