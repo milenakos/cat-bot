@@ -4323,8 +4323,8 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
 @bot.tree.command(description="you feel like making cookies")
 async def cookie(message: discord.Interaction):
     cookie_id = (message.guild.id, message.user.id)
+    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     if cookie_id not in temp_cookie_storage.keys():
-        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
         temp_cookie_storage[cookie_id] = user.cookies
 
     async def bake(interaction):
