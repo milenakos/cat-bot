@@ -2498,7 +2498,7 @@ async def info(message: discord.Interaction):
 **__System__**
 OS Version: `{platform.system()} {platform.release()}`
 Python Version: `{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}`
-discord.py Version: `{discord.__version__}{"-catbot" if "localhost" in discord.gateway.DiscordWebSocket.DEFAULT_GATEWAY else ""}`
+discord.py Version: `{discord.__version__}{"-catbot" if "localhost" in str(discord.gateway.DiscordWebSocket.DEFAULT_GATEWAY) else ""}`
 CPU usage: `{psutil.cpu_percent():.1f}%`
 RAM usage: `{psutil.virtual_memory().percent:.1f}%`
 
