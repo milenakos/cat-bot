@@ -5299,7 +5299,7 @@ async def slots(message: discord.Interaction):
             # check if user has debt in any cat type
             has_debt = False
             for i in cattypes:
-                if user[f"cat_{i}"] < 0:
+                if profile[f"cat_{i}"] < 0:
                     has_debt = True
                     break
             if has_debt:
@@ -5327,7 +5327,6 @@ async def slots(message: discord.Interaction):
 
 
 @bot.tree.command(description="roll a dice")
-@discord.app_commands.describe(thing="The thing or person to check", stat="The stat to check")
 async def roll(message: discord.Interaction, sides: Optional[int]):
     if sides is not None and sides < 1:
         await message.response.send_message("please get a life", ephemeral=True)
