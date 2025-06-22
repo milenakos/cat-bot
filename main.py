@@ -35,6 +35,7 @@ import aiohttp
 import discord
 import discord_emoji
 import emoji
+import psutil
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
@@ -2496,14 +2497,26 @@ async def info(message: discord.Interaction):
         git_timestamp = 0
 
     embed.description = f"""
-Python Version: `{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}`
-discord.py Version: `{discord.__version__}`
+**__System__**
 OS Version: `{platform.system()} {platform.release()}`
-Full uptime: `{format_timedelta(config.HARD_RESTART_TIME, time.time())}`
+Python Version: `{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}`
+discord.py Version: `{discord.__version__}{"-catbot" if "localhost" in discord.gateway.DiscordWebSocket.DEFAULT_GATEWAY else ""}`
+CPU usage: `{psutil.cpu_percent():.1f}%`
+RAM usage: `{psutil.virtual_memory().percent:.1f}%`
+
+**__Tech__**
+Hard uptime: `{format_timedelta(config.HARD_RESTART_TIME, time.time())}`
 Soft uptime: `{format_timedelta(config.SOFT_RESTART_TIME, time.time())}`
 Last code update: `{format_timedelta(git_timestamp, time.time()) if git_timestamp else "N/A"}`
+Loops since soft restart: `{loop_count + 1:,}`
+Shards: `{len(bot.shards):,}`
+Guild shard: `{message.guild.shard_id:,}`
+
+**__Global Stats__**
 Guilds: `{len(bot.guilds):,}`
-Loops since last restart: `{loop_count + 1}`
+DB Profiles: `{await Profile.all().count():,}`
+DB Users: `{await User.all().count():,}`
+DB Channels: `{await Channel.all().count():,}`
 """
 
     await message.response.send_message(embed=embed)
