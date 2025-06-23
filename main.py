@@ -5321,7 +5321,7 @@ async def rate(message: discord.Interaction, thing: str, stat: str):
         await message.response.send_message("thats kinda long", ephemeral=True)
         return
     if thing == "/rate" and stat.lower() == "correct":
-        await message.response.send_message(f"{thing} is 100% {stat.lower()}")
+        await message.response.send_message("/rate is 100% correct")
     else:
         await message.response.send_message(f"{thing} is {random.randint(0, 100)}% {stat}")
     user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
