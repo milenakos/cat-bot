@@ -35,6 +35,7 @@ import aiohttp
 import discord
 import discord_emoji
 import emoji
+import psutil
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
@@ -600,7 +601,7 @@ async def generate_quest(user: Profile, quest_type: str):
 
 
 async def refresh_quests(user):
-    user, _ = await Profile.get_or_create(user_id=user.user_id, guild_id=user.guild_id)
+    await user.refresh_from_db()
     start_date = datetime.datetime(2024, 12, 1)
     current_date = datetime.datetime.utcnow()
     full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
@@ -632,10 +633,8 @@ async def refresh_quests(user):
 
 
 async def progress(message: discord.Message | discord.Interaction, user: Profile, quest: str, is_belated: Optional[bool] = False):
-    # oh you passed me a user? thanks bro i'll do it on my own though
-    user, _ = await Profile.get_or_create(guild_id=user.guild_id, user_id=user.user_id)
     await refresh_quests(user)
-    user, _ = await Profile.get_or_create(guild_id=user.guild_id, user_id=user.user_id)
+    await user.refresh_from_db()
 
     # progress
     quest_complete = False
@@ -1159,7 +1158,7 @@ async def maintaince_loop():
             continue
 
         await refresh_quests(user)
-        user, _ = await Profile.get_or_create(guild_id=user["guild_id"], user_id=user["user_id"])
+        await user.refresh_from_db()
 
         quest_data = battle["quests"]["catch"][user.catch_quest]
 
@@ -1209,7 +1208,7 @@ async def maintaince_loop():
             continue
 
         await refresh_quests(user)
-        user, _ = await Profile.get_or_create(guild_id=user["guild_id"], user_id=user["user_id"])
+        await user.refresh_from_db()
 
         quest_data = battle["quests"]["misc"][user.misc_quest]
 
@@ -2069,7 +2068,7 @@ async def on_message(message: discord.Message):
                             ephemeral=True,
                         )
                         return
-                    user, _ = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild.id)
+                    await user.refresh_from_db()
                     if user.dark_market_active:
                         await interaction.response.send_message("the shadowy figure is nowhere to be found.", ephemeral=True)
                         return
@@ -2496,14 +2495,26 @@ async def info(message: discord.Interaction):
         git_timestamp = 0
 
     embed.description = f"""
-Python Version: `{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}`
-discord.py Version: `{discord.__version__}`
+**__System__**
 OS Version: `{platform.system()} {platform.release()}`
-Full uptime: `{format_timedelta(config.HARD_RESTART_TIME, time.time())}`
+Python Version: `{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}`
+discord.py Version: `{discord.__version__}{"-catbot" if "localhost" in str(discord.gateway.DiscordWebSocket.DEFAULT_GATEWAY) else ""}`
+CPU usage: `{psutil.cpu_percent():.1f}%`
+RAM usage: `{psutil.virtual_memory().percent:.1f}%`
+
+**__Tech__**
+Hard uptime: `{format_timedelta(config.HARD_RESTART_TIME, time.time())}`
 Soft uptime: `{format_timedelta(config.SOFT_RESTART_TIME, time.time())}`
 Last code update: `{format_timedelta(git_timestamp, time.time()) if git_timestamp else "N/A"}`
+Loops since soft restart: `{loop_count + 1:,}`
+Shards: `{len(bot.shards):,}`
+Guild shard: `{message.guild.shard_id:,}`
+
+**__Global Stats__**
 Guilds: `{len(bot.guilds):,}`
-Loops since last restart: `{loop_count + 1}`
+DB Profiles: `{await Profile.all().count():,}`
+DB Users: `{await User.all().count():,}`
+DB Channels: `{await Channel.all().count():,}`
 """
 
     await message.response.send_message(embed=embed)
@@ -2542,7 +2553,7 @@ async def news(message: discord.Interaction):
 
     async def regen_buttons():
         nonlocal buttons
-        user, _ = await User.get_or_create(user_id=message.user.id)
+        await user.refresh_from_db()
         buttons = []
         current_state = user.news_state.strip()
         for num, article in enumerate(news_list):
@@ -2588,7 +2599,7 @@ async def news(message: discord.Interaction):
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
-        user, _ = await User.get_or_create(user_id=message.user.id)
+        await user.refresh_from_db()
         user.news_state = "1" * len(news_list)
         await user.save()
         await regen_buttons()
@@ -2765,7 +2776,7 @@ async def changemessage(message: discord.Interaction):
             self.add_item(self.input)
 
         async def on_submit(self, interaction: discord.Interaction):
-            channel = await Channel.get_or_none(channel_id=message.channel.id)
+            await channel.refresh_from_db()
             if not channel:
                 await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
                 return
@@ -3175,8 +3186,7 @@ async def gen_inventory(message, person_id):
 
     if me:
         # give some aches if we are vieweing our own inventory
-        global_user, _ = await User.get_or_create(user_id=message.user.id)
-        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state.strip()[-4:]:
+        if len(news_list) > len(user.news_state.strip()) or "0" in user.news_state.strip()[-4:]:
             embedVar.set_author(name="You have unread news! /news")
 
         if give_collector:
@@ -3238,7 +3248,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
                     await interaction.edit_original_response(view=view)
                 else:
                     # update the stat
-                    person, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+                    await person.refresh_from_db()
                     person.highlighted_stat = select.values[0]
                     await person.save()
                     await interaction.edit_original_response(content="Highlighted stat updated!", embed=None, view=None)
@@ -3329,6 +3339,7 @@ __Highlighted Stat__
 @bot.tree.command(description="its raining cats")
 async def rain(message: discord.Interaction):
     user, _ = await User.get_or_create(user_id=message.user.id)
+    profile, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
     if not user.rain_minutes:
         user.rain_minutes = 0
@@ -3338,6 +3349,24 @@ async def rain(message: discord.Interaction):
         user.rain_minutes += 2
         user.claimed_free_rain = True
         await user.save()
+
+    server_rains = ""
+    server_minutes = profile.rain_minutes
+    if server_minutes > 0:
+        server_rains = f" (+**{server_minutes}** bonus minutes)"
+
+    embed = discord.Embed(
+        title="☔ Cat Rains",
+        description=f"""Cat Rains are power-ups which spawn cats instantly for a limited amounts of time in channel of your choice.
+
+You can get those by buying them at our [store](<https://catbot.shop>) or by winning them in an event.
+This bot is developed by a single person so buying one would be very appreciated.
+As a bonus, you will get access to /editprofile command!
+Fastest times are not saved during rains.
+
+You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
+        color=0x6E593C,
+    )
 
     # this is the silly popup when you click the button
     class RainModal(discord.ui.Modal):
@@ -3365,29 +3394,10 @@ async def rain(message: discord.Interaction):
                 return
             await do_rain(interaction, duration)
 
-    server_rains = ""
-    profile, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    server_minutes = profile.rain_minutes
-    if server_minutes > 0:
-        server_rains = f" (+**{server_minutes}** bonus minutes)"
-
-    embed = discord.Embed(
-        title="☔ Cat Rains",
-        description=f"""Cat Rains are power-ups which spawn cats instantly for a limited amounts of time in channel of your choice.
-
-You can get those by buying them at our [store](<https://catbot.shop>) or by winning them in an event.
-This bot is developed by a single person so buying one would be very appreciated.
-As a bonus, you will get access to /editprofile command!
-Fastest times are not saved during rains.
-
-You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
-        color=0x6E593C,
-    )
-
     async def do_rain(interaction, rain_length):
         # i LOOOOVE checks
-        user, _ = await User.get_or_create(user_id=interaction.user.id)
-        profile, _ = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
+        user, _ = await User.get_or_create(user_id=message.user.id)
+        profile, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
         channel = await Channel.get_or_none(channel_id=interaction.channel.id)
 
         if not user.rain_minutes:
@@ -3586,7 +3596,7 @@ async def packs(message: discord.Interaction):
             return
         await interaction.response.defer()
         pack = interaction.data["custom_id"]
-        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        await user.refresh_from_db()
         if user[f"pack_{pack.lower()}"] < 1:
             return
         level = next((i for i, p in enumerate(pack_data) if p["name"] == pack), 0)
@@ -3641,7 +3651,7 @@ async def packs(message: discord.Interaction):
         await asyncio.sleep(1)
         await interaction.edit_original_response(view=gen_view(user))
 
-    description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n\nClick the buttons below to start opening packs!"
+    description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n[Chance Info](<https://catbot.minkos.lol/packs>)\n\nClick the buttons below to start opening packs!"
     embed = discord.Embed(title=f"{get_emoji('bronzepack')} Packs", description=description, color=0x6E593C)
     user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     await message.response.send_message(embed=embed, view=gen_view(user))
@@ -3650,6 +3660,8 @@ async def packs(message: discord.Interaction):
 @bot.tree.command(description="why would anyone think a cattlepass would be a good idea")
 async def battlepass(message: discord.Interaction):
     current_mode = ""
+    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    global_user, _ = await User.get_or_create(user_id=message.user.id)
 
     async def toggle_reminders(interaction: discord.Interaction):
         nonlocal current_mode
@@ -3657,7 +3669,7 @@ async def battlepass(message: discord.Interaction):
             await do_funny(interaction)
             return
         await interaction.response.defer()
-        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        await user.refresh_from_db()
         if not user.reminders_enabled:
             try:
                 await interaction.user.send(
@@ -3697,15 +3709,15 @@ async def battlepass(message: discord.Interaction):
             return
         await interaction.response.defer()
         current_mode = "Main"
-        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-        await refresh_quests(user)
-        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
-        global_user, _ = await User.get_or_create(user_id=message.user.id)
+        await refresh_quests(user)
+
+        await global_user.refresh_from_db()
         if global_user.vote_time_topgg + 12 * 3600 > time.time():
             await progress(message, user, "vote")
-            user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-            global_user, _ = await User.get_or_create(user_id=message.user.id)
+            await global_user.refresh_from_db()
+
+        await user.refresh_from_db()
 
         # season end
         now = datetime.datetime.utcnow()
@@ -4311,8 +4323,8 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
 @bot.tree.command(description="you feel like making cookies")
 async def cookie(message: discord.Interaction):
     cookie_id = (message.guild.id, message.user.id)
+    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     if cookie_id not in temp_cookie_storage.keys():
-        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
         temp_cookie_storage[cookie_id] = user.cookies
 
     async def bake(interaction):
@@ -4323,7 +4335,7 @@ async def cookie(message: discord.Interaction):
         if cookie_id in temp_cookie_storage:
             curr = temp_cookie_storage[cookie_id]
         else:
-            user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+            await user.refresh_from_db()
             curr = user.cookies
         curr += 1
         temp_cookie_storage[cookie_id] = curr
@@ -4397,7 +4409,7 @@ async def gift(
                     if interaction.user.id == message.user.id and not tax_debounce:
                         tax_debounce = True
                         await interaction.response.defer()
-                        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+                        await user.refresh_from_db()
                         try:
                             # transfer tax
                             user[f"cat_{cat_type}"] -= tax_amount
@@ -4591,8 +4603,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
         if person1accept and person2accept:
             blackhole = True
-            user1, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person1.id)
-            user2, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person2.id)
+            await user1.refresh_from_db()
+            await user2.refresh_from_db()
             actual_user1, _ = await User.get_or_create(user_id=person1.id)
             actual_user2, _ = await User.get_or_create(user_id=person2.id)
 
@@ -4860,8 +4872,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         async def on_submit(self, interaction: discord.Interaction):
             nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
             value = self.amount.value if self.amount.value else 1
-            user1, _ = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=person1.id)
-            user2, _ = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=person2.id)
+            await user1.refresh_from_db()
+            await user2.refresh_from_db()
 
             try:
                 if int(value) < 0:
@@ -5091,8 +5103,8 @@ async def casino(message: discord.Interaction):
             )
             return
 
-        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-        if user.cat_Fine < 5:
+        await profile.refresh_from_db()
+        if profile.cat_Fine < 5:
             await interaction.response.send_message("you are too broke now", ephemeral=True)
             await achemb(interaction, "broke", "send")
             return
@@ -5100,13 +5112,13 @@ async def casino(message: discord.Interaction):
         await interaction.response.defer()
         amount = random.randint(1, 5)
         casino_lock.append(message.user.id + message.guild.id)
-        user.cat_Fine += amount - 5
-        user.gambles += 1
-        await user.save()
+        profile.cat_Fine += amount - 5
+        profile.gambles += 1
+        await profile.save()
 
-        if user.gambles >= 10:
+        if profile.gambles >= 10:
             await achemb(message, "gambling_one", "send")
-        if user.gambles >= 50:
+        if profile.gambles >= 50:
             await achemb(message, "gambling_two", "send")
 
         variants = [
@@ -5192,13 +5204,13 @@ async def slots(message: discord.Interaction):
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
-        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        await profile.refresh_from_db()
 
         # remove debt
         for i in cattypes:
-            user[f"cat_{i}"] = max(0, user[f"cat_{i}"])
+            profile[f"cat_{i}"] = max(0, profile[f"cat_{i}"])
 
-        await user.save()
+        await profile.save()
         await interaction.response.send_message("You have removed your debts! Life is wonderful!", ephemeral=True)
         await achemb(interaction, "debt", "send")
 
@@ -5213,16 +5225,16 @@ async def slots(message: discord.Interaction):
                 ephemeral=True,
             )
             return
-        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        await profile.refresh_from_db()
 
         await interaction.response.defer()
         slots_lock.append(message.user.id + message.guild.id)
-        user.slot_spins += 1
-        await user.save()
+        profile.slot_spins += 1
+        await profile.save()
 
         await achemb(interaction, "slots", "send")
-        await progress(message, user, "slots")
-        await progress(message, user, "slots2")
+        await progress(message, profile, "slots")
+        await progress(message, profile, "slots2")
 
         variants = ["🍒", "🍋", "🍇", "🔔", "⭐", ":seven:"]
         reel_durations = [random.randint(9, 12), random.randint(15, 22), random.randint(25, 28)]
@@ -5260,19 +5272,19 @@ async def slots(message: discord.Interaction):
                 pass
             await asyncio.sleep(0.5)
 
-        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        await profile.refresh_from_db()
         big_win = False
         if col1[current1] == col2[current2] == col3[current3]:
-            user.slot_wins += 1
+            profile.slot_wins += 1
             if col1[current1] == ":seven:":
                 desc = "**BIG WIN!**\n\n" + desc
-                user.slot_big_wins += 1
+                profile.slot_big_wins += 1
                 big_win = True
-                await user.save()
+                await profile.save()
                 await achemb(interaction, "big_win_slots", "send")
             else:
                 desc = "**You win!**\n\n" + desc
-                await user.save()
+                await profile.save()
             await achemb(interaction, "win_slots", "send")
         else:
             desc = "**You lose!**\n\n" + desc
@@ -5287,7 +5299,7 @@ async def slots(message: discord.Interaction):
             # check if user has debt in any cat type
             has_debt = False
             for i in cattypes:
-                if user[f"cat_{i}"] < 0:
+                if profile[f"cat_{i}"] < 0:
                     has_debt = True
                     break
             if has_debt:
@@ -5312,6 +5324,50 @@ async def slots(message: discord.Interaction):
     myview.add_item(button)
 
     await message.response.send_message(embed=embed, view=myview)
+
+
+@bot.tree.command(description="roll a dice")
+async def roll(message: discord.Interaction, sides: Optional[int]):
+    if sides is not None and sides < 1:
+        await message.response.send_message("please get a life", ephemeral=True)
+    if not sides:
+        sides = 6
+
+    # loosely based on this wikipedia article
+    # https://en.wikipedia.org/wiki/Dice
+    dice_names = {
+        1: '"dice"',
+        2: "coin",
+        4: "tetrahedron",
+        5: "triangular prism",
+        6: "cube",
+        7: "pentagonal prism",
+        8: "octahedron",
+        9: "hexagonal prism",
+        10: "pentagonal trapezohedron",
+        12: "dodecahedron",
+        14: "heptagonal trapezohedron",
+        16: "octagonal bipyramid",
+        18: "rounded rhombicuboctahedron",
+        20: "icosahedron",
+        24: "triakis octahedron",
+        30: "rhombic triacontahedron",
+        34: "heptadecagonal trapezohedron",
+        48: "disdyakis dodecahedron",
+        50: "icosipentagonal trapezohedron",
+        60: "deltoidal hexecontahedron",
+        100: "zocchihedron",
+        120: "disdyakis triacontahedron",
+    }
+
+    if sides in dice_names.keys():
+        dice = dice_names[sides]
+    else:
+        dice = f"d{sides}"
+
+    await message.response.send_message(f"🎲 your {dice} lands on **{random.randint(1, sides)}**")
+    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    await progress(message, user, "roll")
 
 
 @bot.tree.command(description="get a super accurate rating of something")
@@ -5634,7 +5690,7 @@ async def light_market(message):
 
         async def make_cataine(interaction):
             nonlocal message, type, amount
-            user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+            await user.refresh_from_db()
             if user[f"cat_{type}"] < amount or user.cataine_active > time.time():
                 return
             user[f"cat_{type}"] -= amount
@@ -5701,7 +5757,7 @@ async def dark_market(message):
 
         async def buy_cataine(interaction):
             nonlocal message, type, amount
-            user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+            await user.refresh_from_db()
             if user[f"cat_{type}"] < amount or user.cataine_active > time.time():
                 return
             user[f"cat_{type}"] -= amount
