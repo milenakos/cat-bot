@@ -16,6 +16,7 @@
 
 import asyncio
 import importlib
+import time
 
 import discord
 import winuvloop
@@ -58,6 +59,7 @@ async def reload(reload_db):
 bot.cat_bot_reload_hook = reload  # pyright: ignore
 
 try:
+    config.HARD_RESTART_TIME = time.time()
     bot.run(config.TOKEN)
 finally:
     asyncio.run(database.close())

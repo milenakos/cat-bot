@@ -243,6 +243,7 @@
       "ttc": {"emoji": "⭕", "title": "Play a game of /tictactoe", "xp_min": 190, "xp_max": 250, "progress": 1},
       "rate": {"emoji": "👍", "title": "/Rate something", "xp_min": 160, "xp_max": 220, "progress": 1},
       "catball": {"emoji": "🎱", "title": "Ask the magic /8ball", "xp_min": 150, "xp_max": 250, "progress": 1},
+      "roll": {"emoji": "🎲", "title": "Roll a dice", "xp_min": 150, "xp_max": 250, "progress": 1},
       "ping": {"emoji": "🏓", "title": "Check cat's /ping", "xp_min": 160, "xp_max": 200, "progress": 1},
       "tiktok": {"emoji": "sillycat", "title": "Use /tiktok TTS", "xp_min": 170, "xp_max": 250, "progress": 1},
       "wiki": {"emoji": "🤓", "title": "Check out /wiki", "xp_min": 180, "xp_max": 220, "progress": 1}
