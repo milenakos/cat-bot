@@ -378,7 +378,7 @@ async def send_news(interaction: discord.Interaction):
     view = View(timeout=VIEW_TIMEOUT)
     back_button = Button(emoji="⬅️")
     back_button.callback = go_back
-    view.add_item(go_back)
+    view.add_item(back_button)
 
     if news_id == 0:
         embed = discord.Embed(
