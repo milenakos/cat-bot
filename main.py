@@ -385,7 +385,7 @@ async def send_news(interaction: discord.Interaction):
             title="📜 Cat Bot Survey",
             description="Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nSurvey is closed!",
             color=0x6E593C,
-            timestamp=datetime.utcfromtimestamp(1731168230),
+            timestamp=datetime.datetime.fromtimestamp(1731168230),
         )
         await interaction.edit_original_response(content=None, view=view, embed=embed)
     elif news_id == 1:
@@ -393,7 +393,7 @@ async def send_news(interaction: discord.Interaction):
             title="✨ New Cat Rains perks!",
             description="Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).\nEveryone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have received 10 minutes of Rains as compensation.\n\nThis is a really cool perk and I hope you like it!",
             color=0x6E593C,
-            timestamp=datetime.utcfromtimestamp(1732377932),
+            timestamp=datetime.datetime.fromtimestamp(1732377932),
         )
         await interaction.edit_original_response(content=None, view=view, embed=embed)
     elif news_id == 2:
@@ -401,7 +401,7 @@ async def send_news(interaction: discord.Interaction):
             title="☃️ Cat Bot Christmas",
             description=f"⚡ **Cat Bot Wrapped 2024**\nIn 2024 Cat Bot got...\n- 🖥️ *45777* new servers!\n- 👋 *286607* new profiles!\n- {get_emoji('staring_cat')} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though\n- {get_emoji('cat_throphy')} *1518096* achievements get!\nSee last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).\n\n❓ **New Year Update**\nSomething is coming...",
             color=0x6E593C,
-            timestamp=datetime.utcfromtimestamp(1734458962),
+            timestamp=datetime.datetime.fromtimestamp(1734458962),
         )
         button = discord.ui.Button(label="Cat Bot Store", url="https://catbot.shop")
         view.add_item(button)
@@ -425,7 +425,7 @@ Don't worry, quests are very easy and to complete the battlepass you will need t
 ## will you sell paid battlepass? its joever
 There are currently no plans to sell a paid battlepass.""",
             color=0x6E593C,
-            timestamp=datetime.utcfromtimestamp(1735689601),
+            timestamp=datetime.datetime.fromtimestamp(1735689601),
         )
         await interaction.edit_original_response(content=None, view=view, embed=embed)
     elif news_id == 4:
@@ -438,7 +438,7 @@ the rarities are - Wooden {get_emoji("woodenpack")}, Stone {get_emoji("stonepack
 the extra reward is now a stone pack instead of 5 random cats too!
 *LETS GO GAMBLING*""",
             color=0x6E593C,
-            timestamp=datetime.utcfromtimestamp(1740787200),
+            timestamp=datetime.datetime.fromtimestamp(1740787200),
         )
         await interaction.edit_original_response(content=None, view=view, embed=embed)
     elif news_id == 5:
@@ -459,7 +459,7 @@ We are committed to resolving these challenges and aim to have everything back o
 Best regards,
 [Your Name]""",
             color=0x6E593C,
-            timestamp=datetime.utcfromtimestamp(1743454803),
+            timestamp=datetime.datetime.fromtimestamp(1743454803),
         )
         await interaction.edit_original_response(content=None, view=view, embed=embed)
     elif news_id == 6:
@@ -475,7 +475,7 @@ how interesting!
 
 update: the puzzle piece event has concluded""",
             color=0x6E593C,
-            timestamp=datetime.utcfromtimestamp(1745242856),
+            timestamp=datetime.datetime.fromtimestamp(1745242856),
         )
         await interaction.edit_original_response(content=None, view=view, embed=embed)
 
