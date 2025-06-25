@@ -2428,7 +2428,7 @@ async def news(message: discord.Interaction):
     current_state = user.news_state.strip()
 
     async def send_news(interaction: discord.Interaction):
-        news_id = interaction.data["custom_id"]
+        news_id = int(interaction.data["custom_id"])
         if interaction.user != message.user:
             await do_funny(interaction)
             return
@@ -2439,8 +2439,6 @@ async def news(message: discord.Interaction):
             await back_interaction.edit_original_response(content="Choose an article:", view=generate_page(current_page), embed=None)
 
         await interaction.response.defer()
-
-        news_id = int(news_id)
 
         await user.refresh_from_db()
         current_state = user.news_state.strip()
@@ -2567,7 +2565,7 @@ update: the puzzle piece event has concluded""",
             button = Button(
                 label=article["title"],
                 emoji=get_emoji(article["emoji"]),
-                custom_id=num,
+                custom_id=str(num),
                 style=ButtonStyle.green if not have_read_this else ButtonStyle.gray,
             )
             button.callback = send_news
