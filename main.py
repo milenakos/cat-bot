@@ -6629,7 +6629,6 @@ async def recieve_vote(request):
     else:
         user.vote_streak += 1
     user.vote_time_topgg = time.time()
-    await user.save()
 
     try:
         channeley = await bot.fetch_user(int(request_json["user"]))
@@ -6649,6 +6648,8 @@ async def recieve_vote(request):
         )
     except Exception:
         pass
+
+    await user.save()
 
     return web.Response(text="ok", status=200)
 
