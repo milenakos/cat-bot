@@ -6136,10 +6136,10 @@ async def leaderboards(
         messager_placement = 0
         for index, position in enumerate(result):
             if position["user_id"] == interaction.user.id:
-                interactor_placement = index
+                interactor_placement = index + 1
                 interactor = position["final_value"]
             if interaction.user != message.user and position["user_id"] == message.user.id:
-                messager_placement = index
+                messager_placement = index + 1
                 messager = position["final_value"]
 
         if type == "Slow":
