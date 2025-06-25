@@ -354,12 +354,12 @@ async def send_news(interaction: discord.Interaction):
     og = interaction.message
 
     async def go_back(back_interaction: discord.Interaction):
-        view = og.components
+        view = View.from_message(og, timeout=VIEW_TIMEOUT)
         # find the button of the news post and make it gray
         # technically this is bad i dont care
-        for idx, arow in enumerate(view):
-            if arow.children[0].custom_id == interaction.data["custom_id"]:
-                view[idx].children[0].style = ButtonStyle.gray
+        for item in view.children:
+            if item.custom_id == interaction.data["custom_id"]:
+                item.style = ButtonStyle.gray
                 break
         await back_interaction.edit_original_response(content=og.content, view=view, embed=None)
 
