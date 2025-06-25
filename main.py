@@ -2449,7 +2449,7 @@ async def news(message: discord.Interaction):
         await progress(interaction, profile, "news")
 
         view = View(timeout=VIEW_TIMEOUT)
-        back_button = Button(emoji="⬅️")
+        back_button = Button(emoji="⬅️", label="Back")
         back_button.callback = go_back
         view.add_item(back_button)
 
@@ -2468,6 +2468,8 @@ async def news(message: discord.Interaction):
                 color=0x6E593C,
                 timestamp=datetime.datetime.fromtimestamp(1732377932),
             )
+            button = discord.ui.Button(label="Cat Bot Store", url="https://catbot.shop")
+            view.add_item(button)
             await interaction.edit_original_response(content=None, view=view, embed=embed)
         elif news_id == 2:
             embed = discord.Embed(
@@ -2476,8 +2478,6 @@ async def news(message: discord.Interaction):
                 color=0x6E593C,
                 timestamp=datetime.datetime.fromtimestamp(1734458962),
             )
-            button = discord.ui.Button(label="Cat Bot Store", url="https://catbot.shop")
-            view.add_item(button)
             await interaction.edit_original_response(content=None, embed=embed, view=view)
         elif news_id == 3:
             embed = discord.Embed(
@@ -2503,9 +2503,8 @@ There are currently no plans to sell a paid battlepass.""",
             await interaction.edit_original_response(content=None, view=view, embed=embed)
         elif news_id == 4:
             embed = discord.Embed(
-                title="Packs!",
-                description=f"""{get_emoji("goldpack")} __**The Pack Update**__
-you want more gambling? we heard you!
+                title=f"{get_emoji('goldpack')} Packs!",
+                description=f"""you want more gambling? we heard you!
 instead of predetermined cat rewards you now unlock Packs! packs have different rarities and have a 30% chance to upgrade a rarity when opening, then 30% for one more upgrade and so on. this means even the most common packs have a small chance to upgrade to the rarest one!
 the rarities are - Wooden {get_emoji("woodenpack")}, Stone {get_emoji("stonepack")}, Bronze {get_emoji("bronzepack")}, Silver {get_emoji("silverpack")}, Gold {get_emoji("goldpack")}, Platinum {get_emoji("platinumpack")}, Diamond {get_emoji("diamondpack")} and Celestial {get_emoji("celestialpack")}!
 the extra reward is now a stone pack instead of 5 random cats too!
