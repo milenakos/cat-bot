@@ -351,6 +351,18 @@ async def send_news(interaction: discord.Interaction):
         await do_funny(interaction)
         return
 
+    og = interaction.message
+
+    async def go_back(back_interaction: discord.Interaction):
+        view = og.components
+        # find the button of the news post and make it gray
+        # technically this is bad i dont care
+        for idx, arow in enumerate(view):
+            if arow.children[0].custom_id == interaction.data["custom_id"]:
+                view[idx].children[0].style = ButtonStyle.gray
+                break
+        await back_interaction.edit_original_response(content=og.content, view=view, embed=None)
+
     await interaction.response.defer()
 
     news_id = int(news_id)
@@ -363,27 +375,34 @@ async def send_news(interaction: discord.Interaction):
     profile, _ = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
     await progress(interaction, profile, "news")
 
+    view = View(timeout=VIEW_TIMEOUT)
+    back_button = Button(emoji="⬅️")
+    back_button.callback = go_back
+    view.add_item(go_back)
+
     if news_id == 0:
         embed = discord.Embed(
             title="📜 Cat Bot Survey",
             description="Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nSurvey is closed!",
             color=0x6E593C,
+            timestamp=datetime.utcfromtimestamp(1731168230),
         )
-        await interaction.edit_original_response(content=None, view=None, embed=embed)
+        await interaction.edit_original_response(content=None, view=view, embed=embed)
     elif news_id == 1:
         embed = discord.Embed(
             title="✨ New Cat Rains perks!",
             description="Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).\nEveryone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have received 10 minutes of Rains as compensation.\n\nThis is a really cool perk and I hope you like it!",
             color=0x6E593C,
+            timestamp=datetime.utcfromtimestamp(1732377932),
         )
-        await interaction.edit_original_response(content=None, view=None, embed=embed)
+        await interaction.edit_original_response(content=None, view=view, embed=embed)
     elif news_id == 2:
         embed = discord.Embed(
             title="☃️ Cat Bot Christmas",
-            description=f"🎅 **Christmas Sale**\nFor the next 15 days (until January 1st) all items on [the Cat Bot Store](<https://catbot.shop/>) will be **-20%** off! Go buy something :exploding_head:\n\n⚡ **Cat Bot Wrapped 2024**\nIn 2024 Cat Bot got...\n- 🖥️ *45777* new servers!\n- 👋 *286607* new profiles!\n- {get_emoji('staring_cat')} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though\n- {get_emoji('cat_throphy')} *1518096* achievements get!\nSee last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).\n\n❓ **New Year Update**\nSomething is coming...",
+            description=f"⚡ **Cat Bot Wrapped 2024**\nIn 2024 Cat Bot got...\n- 🖥️ *45777* new servers!\n- 👋 *286607* new profiles!\n- {get_emoji('staring_cat')} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though\n- {get_emoji('cat_throphy')} *1518096* achievements get!\nSee last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).\n\n❓ **New Year Update**\nSomething is coming...",
             color=0x6E593C,
+            timestamp=datetime.utcfromtimestamp(1734458962),
         )
-        view = discord.ui.View(timeout=1)
         button = discord.ui.Button(label="Cat Bot Store", url="https://catbot.shop")
         view.add_item(button)
         await interaction.edit_original_response(content=None, embed=embed, view=view)
@@ -404,41 +423,30 @@ async def send_news(interaction: discord.Interaction):
 Don't worry, quests are very easy and to complete the battlepass you will need to complete less than 3 easy quests a day.
 
 ## will you sell paid battlepass? its joever
-There are currently no plans to sell a paid battlepass.
-
-## christmas sale
-That's not a question, but it does end in less than 24 hours so don't [miss your opportunity](<https://catbot.shop>).""",
+There are currently no plans to sell a paid battlepass.""",
             color=0x6E593C,
+            timestamp=datetime.utcfromtimestamp(1735689601),
         )
-        await interaction.edit_original_response(content=None, view=None, embed=embed)
+        await interaction.edit_original_response(content=None, view=view, embed=embed)
     elif news_id == 4:
         embed = discord.Embed(
             title="Packs!",
-            description=f"""⬆️ __season 2 has concluded!__
-some fun stats:
-- 214k levels complete
-- 43k people completed atleast a single level
-- 543k quests complete
-- 73k people completed atleast a single quest
-
-changes:
-- reminder quest is replaced for play tictactoe quest with the same xp rewards
-- added some slashes to misc quest titles to clarify which commands to run
-- and the biggest...
-
-{get_emoji("goldpack")} __**The Pack Update**__
+            description=f"""{get_emoji("goldpack")} __**The Pack Update**__
 you want more gambling? we heard you!
 instead of predetermined cat rewards you now unlock Packs! packs have different rarities and have a 30% chance to upgrade a rarity when opening, then 30% for one more upgrade and so on. this means even the most common packs have a small chance to upgrade to the rarest one!
 the rarities are - Wooden {get_emoji("woodenpack")}, Stone {get_emoji("stonepack")}, Bronze {get_emoji("bronzepack")}, Silver {get_emoji("silverpack")}, Gold {get_emoji("goldpack")}, Platinum {get_emoji("platinumpack")}, Diamond {get_emoji("diamondpack")} and Celestial {get_emoji("celestialpack")}!
 the extra reward is now a stone pack instead of 5 random cats too!
 *LETS GO GAMBLING*""",
             color=0x6E593C,
+            timestamp=datetime.utcfromtimestamp(1740787200),
         )
-        await interaction.edit_original_response(content=None, view=None, embed=embed)
+        await interaction.edit_original_response(content=None, view=view, embed=embed)
     elif news_id == 5:
         embed = discord.Embed(
             title="Important Message from CEO of Cat Bot",
-            description="""Dear Cat Bot users,
+            description="""(April Fools 2025)
+
+Dear Cat Bot users,
 
 I hope this message finds you well. I want to take a moment to address some recent developments within our organization that are crucial for our continued success.
 
@@ -451,22 +459,25 @@ We are committed to resolving these challenges and aim to have everything back o
 Best regards,
 [Your Name]""",
             color=0x6E593C,
+            timestamp=datetime.utcfromtimestamp(1743454803),
         )
-        await interaction.edit_original_response(content=None, view=None, embed=embed)
+        await interaction.edit_original_response(content=None, view=view, embed=embed)
     elif news_id == 6:
         embed = discord.Embed(
             title="🥳 Cat Bot Turns 3",
-            description="""today is a special day for cat bot! april 21st is its birthday, and this year its turning three!
-to celebrate, we will be doing the biggest sale yet! -50% off for the next 5 days at our [store](https://catbot.shop)
+            description="""april 21st is a special day for cat bot! on this day is its birthday, and in 2025 its turning three!
 happy birthda~~
 ...
 hold on...
 im recieving some news cats are starting to get caught with puzzle pieces in their teeth!
-the puzzle pieces say something about running `/event` on their back and that you might need to reload your discord to see it
-how considerate!""",
+the puzzle pieces say something about having to collect a million of them...
+how interesting!
+
+update: the puzzle piece event has concluded""",
             color=0x6E593C,
+            timestamp=datetime.utcfromtimestamp(1745242856),
         )
-        await interaction.edit_original_response(content=None, view=None, embed=embed)
+        await interaction.edit_original_response(content=None, view=view, embed=embed)
 
 
 # this is some common code which is run whether someone gets an achievement
@@ -2610,7 +2621,8 @@ async def news(message: discord.Interaction):
 
         # article buttons
         for num, button in enumerate(buttons[number * 4 : (number + 1) * 4]):
-            button.row = num
+            if current_page == 0:
+                button.row = num
             view.add_item(button)
 
         # pages buttons
