@@ -2567,7 +2567,7 @@ update: the puzzle piece event has concluded""",
             button = Button(
                 label=article["title"],
                 emoji=get_emoji(article["emoji"]),
-                custom_id=f"{num} {user.user_id}",
+                custom_id=num,
                 style=ButtonStyle.green if not have_read_this else ButtonStyle.gray,
             )
             button.callback = send_news
