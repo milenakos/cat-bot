@@ -354,6 +354,7 @@ async def send_news(interaction: discord.Interaction):
     og = interaction.message
 
     async def go_back(back_interaction: discord.Interaction):
+        await back_interaction.response.defer()
         view = View.from_message(og, timeout=VIEW_TIMEOUT)
         # find the button of the news post and make it gray
         # technically this is bad i dont care
