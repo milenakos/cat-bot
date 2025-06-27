@@ -1889,7 +1889,7 @@ async def on_message(message: discord.Message):
 
                     if normal_bump:
                         suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
-                    else:
+                    elif not channel.forcespawned:
                         suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
 
                 icon = get_emoji(le_emoji.lower() + "cat")
