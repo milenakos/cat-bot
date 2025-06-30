@@ -1929,7 +1929,6 @@ async def on_message(message: discord.Message):
                     else:
                         progress_bar = "🟦" * int(user.event_rain_points // (1000 / 7)) + "⬛" * (7 - int(user.event_rain_points // (1000 / 7)))
                         suffix_string += f"\n🎁 +{plus_points}! {user.event_rain_points}/1,000 {progress_bar} {get_emoji('2rain')} ends <t:{EVENT_DEADLINE}:R>"
-                    await user.save()
 
                 custom_cough_strings = {
                     "Corrupt": "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!",
