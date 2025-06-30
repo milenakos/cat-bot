@@ -215,6 +215,40 @@
       {"xp": 1000, "reward": "Silver", "amount": 1},
       {"xp": 1000, "reward": "Platinum", "amount": 1},
       {"xp": 1000, "reward": "Rain", "amount": 2}
+    ],
+    "7": [
+      {"xp": 550, "reward": "Bronze", "amount": 1},
+      {"xp": 550, "reward": "Stone", "amount": 1},
+      {"xp": 550, "reward": "Bronze", "amount": 1},
+      {"xp": 600, "reward": "Bronze", "amount": 1},
+      {"xp": 600, "reward": "Bronze", "amount": 1},
+      {"xp": 600, "reward": "Stone", "amount": 1},
+      {"xp": 650, "reward": "Bronze", "amount": 1},
+      {"xp": 650, "reward": "Bronze", "amount": 1},
+      {"xp": 650, "reward": "Bronze", "amount": 1},
+      {"xp": 700, "reward": "Platinum", "amount": 1},
+
+      {"xp": 700, "reward": "Bronze", "amount": 1},
+      {"xp": 700, "reward": "Wooden", "amount": 1},
+      {"xp": 750, "reward": "Bronze", "amount": 1},
+      {"xp": 750, "reward": "Wooden", "amount": 1},
+      {"xp": 750, "reward": "Bronze", "amount": 1},
+      {"xp": 800, "reward": "Wooden", "amount": 1},
+      {"xp": 800, "reward": "Bronze", "amount": 1},
+      {"xp": 800, "reward": "Wooden", "amount": 1},
+      {"xp": 850, "reward": "Bronze", "amount": 1},
+      {"xp": 850, "reward": "Platinum", "amount": 1},
+
+      {"xp": 850, "reward": "Bronze", "amount": 1},
+      {"xp": 900, "reward": "Silver", "amount": 1},
+      {"xp": 900, "reward": "Bronze", "amount": 1},
+      {"xp": 900, "reward": "Bronze", "amount": 1},
+      {"xp": 950, "reward": "Bronze", "amount": 1},
+      {"xp": 950, "reward": "Silver", "amount": 1},
+      {"xp": 950, "reward": "Bronze", "amount": 1},
+      {"xp": 1000, "reward": "Bronze", "amount": 1},
+      {"xp": 1000, "reward": "Bronze", "amount": 1},
+      {"xp": 1000, "reward": "Rain", "amount": 2}
     ]
   },
   "quests": {
