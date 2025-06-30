@@ -152,6 +152,7 @@ class Profile(Model):
     new_user = fields.BooleanField(default=True)  # whether the user is new
 
     puzzle_pieces = fields.IntField(default=0)  # amount of puzzle pieces collected for birthday 2025 event
+    event_rain_points = fields.IntField(default=0)  # amount of points collected for 100k event
 
     def __getitem__(self, item):
         return getattr(self, item)

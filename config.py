@@ -5,32 +5,35 @@ TOKEN = os.environ["TOKEN"]
 
 # database type
 # either SQLITE or POSTGRES
+# SQLITE: a `catbot.db` file in this folder
+# POSTGRES: user - cat_bot, database - cat_bot, ip - localhost, port - default, password see below
 DB_TYPE = "POSTGRES"
 
-# db pass if postgres (user is cat_bot), otherwise set to None
+# db password if postgres, otherwise set to None
 DB_PASS = os.environ["psql_password"]
-
-# channel id for db backups, private extremely recommended
-BACKUP_ID = 1060545763194707998
 
 #
 # all the following are optional (setting them to None will disable the feature)
 #
 
-# top.gg voting key
+# channel id for db backups, private extremely recommended
+BACKUP_ID = 1060545763194707998
+
+# top.gg vote webhook verification key, setting this to None disables all voting stuff
 WEBHOOK_VERIFY = os.environ["webhook_verify"]
 
-# top.gg api token because they use ancient technology and you need to post server count manually smh
+# top.gg api token to occasionally post stats
 TOP_GG_TOKEN = os.environ["top_gg_token"]
+
+# only post stats if server count is above this, to prevent wrong stats
+MIN_SERVER_SEND = 100_000
 
 # wordnik api key for /define command
 WORDNIK_API_KEY = os.environ["wordnik_api_key"]
 
-# only send stats if server count is above this, to prevent wrong stats
-MIN_SERVER_SEND = 50000
-
-# channel to store supporter images
+# channel to store supporter images, can also be used for moderation purposes
 DONOR_CHANNEL_ID = 1249343008890028144
 
-# all messages in this channel are allowed to be cat!rain commands, cat bot will also log all rain uses/movements there
+# cat bot will also log all rain uses/movements here
+# cat!rain commands here can be used without author check and will dm reciever a thanks message
 RAIN_CHANNEL_ID = 1278705994536321157

@@ -50,6 +50,8 @@ from database import Channel, Prism, Profile, Reminder, User
 
 logging.basicConfig(level=logging.INFO)
 
+EVENT_DEADLINE = 1751695200
+
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
 
@@ -250,7 +252,7 @@ funny = [
 ]
 
 # rain shill message for footers
-rain_shill = "☔ Get tons of cats /rain"
+rain_shill = "🔥 100,000 SERVERS SALE OH GOD /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -342,6 +344,7 @@ news_list = [
     {"title": "Packs!", "emoji": "goldpack"},
     {"title": "Message from CEO of Cat Bot", "emoji": "finecat"},
     {"title": "Cat Bot Turns 3", "emoji": "🥳"},
+    {"title": "100,000 SERVERS WHAT", "emoji": "🎉"},
 ]
 
 
@@ -937,7 +940,7 @@ async def maintaince_loop():
     reactions_ratelimit = {}
     catchcooldown = {}
     fakecooldown = {}
-    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
+    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers!"))
 
     # update cookies
     temp_temp_cookie_storage = temp_cookie_storage.copy()
@@ -1127,28 +1130,29 @@ async def maintaince_loop():
         await reminder.delete()
 
     # db backups
-    backupchannel = bot.get_channel(config.BACKUP_ID)
-    if not isinstance(
-        backupchannel,
-        Union[
-            discord.TextChannel,
-            discord.StageChannel,
-            discord.VoiceChannel,
-            discord.Thread,
-        ],
-    ):
-        raise ValueError
+    if config.BACKUP_ID:
+        backupchannel = bot.get_channel(config.BACKUP_ID)
+        if not isinstance(
+            backupchannel,
+            Union[
+                discord.TextChannel,
+                discord.StageChannel,
+                discord.VoiceChannel,
+                discord.Thread,
+            ],
+        ):
+            return
 
-    if loop_count % 10 == 0 and config.DB_TYPE == "POSTGRES":
-        backup_file = f"/root/backups/backup-{int(time.time())}.dump"
-        try:
-            process = await asyncio.create_subprocess_shell(f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -Fc -Z 9 -f {backup_file} cat_bot")
-            await process.wait()
-            await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.", file=discord.File(backup_file))
-        except Exception as e:
-            print(f"Error during backup: {e}")
-    else:
-        await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.")
+        if loop_count % 10 == 0 and config.DB_TYPE == "POSTGRES":
+            backup_file = f"/root/backups/backup-{int(time.time())}.dump"
+            try:
+                process = await asyncio.create_subprocess_shell(f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -Fc -Z 9 -f {backup_file} cat_bot")
+                await process.wait()
+                await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.", file=discord.File(backup_file))
+            except Exception as e:
+                print(f"Error during backup: {e}")
+        else:
+            await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.")
 
     loop_count += 1
 
@@ -1908,10 +1912,23 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
+                    suffix_string += f"\n🔥 100,000 SERVER SALE OMG OMG </rain:{RAIN_ID}>"
                 if random.randint(0, 19) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
+
+                if user.event_rain_points < 1000 and time.time() < EVENT_DEADLINE:
+                    plus_points = random.randint(15, 25)
+                    # 1000/20 = 50 catches during event
+                    # 50/5 = 10 catches a day on average
+                    user.event_rain_points += plus_points
+                    if user.event_rain_points >= 1000:
+                        user.event_rain_points = 1000
+                        user.rain_minutes += 2
+                        suffix_string += f"\n✅ +{plus_points}! 1,000/1,000. +2 rain minutes!"
+                    else:
+                        progress_bar = "🟦" * int(user.event_rain_points // (1000 / 7)) + "⬛" * (7 - int(user.event_rain_points // (1000 / 7)))
+                        suffix_string += f"\n🎁 +{plus_points}! {user.event_rain_points}/1,000 {progress_bar} {get_emoji('2rain')} ends <t:{EVENT_DEADLINE}:R>"
 
                 custom_cough_strings = {
                     "Corrupt": "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!",
@@ -2549,6 +2566,35 @@ update: the puzzle piece event has concluded""",
                 color=0x6E593C,
                 timestamp=datetime.datetime.fromtimestamp(1745242856),
             )
+            await interaction.edit_original_response(content=None, view=view, embed=embed)
+        elif news_id == 7:
+            embed = discord.Embed(
+                title="🎉 100,000 SERVERS WHAT",
+                description="""wow! cat bot has reached 100,000 servers! this beyond insane i never thought this would happen thanks everyone
+giving away a whole bunch of rain as celebration!
+
+1. cat stand giveaway
+[join our discord server](<https://discord.gg/FBkXDxjqSz>) and click the first reaction under the latest newspost to join in!
+there will be a total of 10 winners who will get 40 minutes each!
+
+2. art contest
+again in our [discord server](<https://discord.gg/zrYstPe3W6>) a new channel has opened for art submissions!
+top 5 people who get the most community votes will get 250, 150, 100, 50 and 50 rain minutes respectively!
+
+3. cat bot event
+for the next 5 days you will get points randomly on every catch! if you manage to collect 1,000 points before the time runs out you will get 2 minutes of rain!!
+
+4. sale
+[catbot.shop](<https://catbot.shop>) will have a sale for the next 5 days! if everything above wasnt enough rain for your fancy you can buy some more with a discount!
+
+aaaaaaaaaaaaaaa""",
+                color=0x6E593C,
+                timestamp=datetime.datetime.fromtimestamp(1751252181),
+            )
+            button = discord.ui.Button(label="Join our Server", url="https://discord.gg/staring")
+            view.add_item(button)
+            button2 = discord.ui.Button(label="Cat Bot Store", url="https://catbot.shop")
+            view.add_item(button2)
             await interaction.edit_original_response(content=None, view=view, embed=embed)
 
     async def regen_buttons():
@@ -3500,7 +3546,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
     shopbutton = Button(
         emoji="🛒",
-        label="Store",
+        label="Store (-20%!)",
         url="https://catbot.shop",
     )
 
