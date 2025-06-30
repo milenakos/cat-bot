@@ -5377,6 +5377,7 @@ async def slots(message: discord.Interaction):
 async def roll(message: discord.Interaction, sides: Optional[int]):
     if sides is not None and sides < 1:
         await message.response.send_message("please get a life", ephemeral=True)
+        return
     if not sides:
         sides = 6
 
