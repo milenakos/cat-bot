@@ -6723,7 +6723,7 @@ async def recieve_vote(request):
                     f"You can vote again <t:{int(time.time()) + 43200}:R>.",
                     "",
                     f"{streak_progress}",
-                    f"Streak: {user.vote_streak:,}"
+                    f"Streak: {user.vote_streak:,}",
                     f"Your streak will expire <t:{int(time.time()) + extend_time * 3600}:R>.",
                 ]
             )
