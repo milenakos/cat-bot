@@ -5384,7 +5384,7 @@ async def roll(message: discord.Interaction, sides: Optional[int]):
     # loosely based on this wikipedia article
     # https://en.wikipedia.org/wiki/Dice
     dice_names = {
-        1: '"dice"',
+        1: '"die"',
         2: "coin",
         4: "tetrahedron",
         5: "triangular prism",
