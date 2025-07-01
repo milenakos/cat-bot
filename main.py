@@ -3443,8 +3443,8 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
     async def do_rain(interaction, rain_length):
         # i LOOOOVE checks
-        user, _ = await User.get_or_create(user_id=message.user.id)
-        profile, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        user, _ = await User.get_or_create(user_id=interaction.user.id)
+        profile, _ = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         channel = await Channel.get_or_none(channel_id=interaction.channel.id)
 
         if not user.rain_minutes:
