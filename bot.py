@@ -40,7 +40,7 @@ bot = commands.AutoShardedBot(
 
 @bot.event
 async def setup_hook():
-    await database.init()
+    await database.connect()
     await bot.load_extension("main")
 
 
@@ -52,7 +52,7 @@ async def reload(reload_db):
     if reload_db:
         await database.close()
         importlib.reload(database)
-        await database.init()
+        await database.connect()
     await bot.load_extension("main")
 
 

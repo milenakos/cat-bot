@@ -8,9 +8,9 @@ Please note that self-hosting is hacky and isn't supported; instructions below a
 
 ## Prerequisites
 
-- Python 3
+- Python 3 (around 3.8 or so, newer is better ofc)
+- PostgreSQL
 - Git (optional)
-- PostgreSQL (optional)
 
 ## Instructions
 
