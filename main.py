@@ -892,6 +892,8 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     except discord.NotFound:
         await unsetup(channel)
         return
+    except Exception:
+        return
 
     if message_is_sus.channel.id != int(ch_id):
         # user changed the webhook destination, panic mode
@@ -6352,8 +6354,7 @@ async def setup_channel(message: discord.Interaction):
         return
 
     with open("images/cat.png", "rb") as f:
-        # try:
-        if 1:
+        try:
             channel_permissions = await fetch_perms(message)
             needed_perms = {
                 "View Channel": channel_permissions.view_channel,
@@ -6396,9 +6397,9 @@ async def setup_channel(message: discord.Interaction):
                     await message.response.send_message(":x: Missing Permissions! Please give me the Manage Webhooks permission.")
                     return
                 await Channel.create(channel_id=message.channel.id, webhook=wh.url, thread_mappings=False)
-        # except Exception:
-        #     await message.response.send_message("this channel gives me bad vibes.")
-        #     return
+        except Exception:
+            await message.response.send_message("this channel gives me bad vibes.")
+            return
 
     await spawn_cat(str(message.channel.id))
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
