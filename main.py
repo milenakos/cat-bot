@@ -671,7 +671,7 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
 
     global_user, _ = await User.get_or_create(user_id=user.user_id)
     if global_user.vote_streak % 5 == 0 and global_user.vote_streak not in [0, 5] and "top.gg" in quest_data["title"]:
-        streak_reward = f"\n🔥 +1 {get_emoji('goldpack')} Gold pack"
+        streak_reward = f"\n🔥 **Streak Bonus!** +1 {get_emoji('goldpack')} Gold pack"
     else:
         streak_reward = ""
 
@@ -6680,17 +6680,23 @@ async def recieve_vote(request):
 
     try:
         channeley = await bot.fetch_user(int(request_json["user"]))
-        if user.vote_streak != 5 and user.vote_streak % 5 == 0:
-            gold_suffix = f"(+1 {get_emoji('goldpack')} Gold pack!)"
-        else:
-            gold_suffix = f"(Bonus {get_emoji('goldpack')} Gold Pack at {max(10, math.ceil(user.vote_streak / 5) * 5)} streak)"
+        gold_progress = get_emoji("goldpack_claimed") if i % 5 == 0 and i not in [0, 5] else "🟦"
+
+        for i in range(user.vote_streak+1, user.vote_streak+10):
+            if i % 5 == 0 and i not in [0, 5]:
+                gold_progress += get_emoji("goldpack")
+            else:
+                gold_progress += "⬛"
+        
         await channeley.send(
             "\n".join(
                 [
-                    f"Thanks for voting! Streak: {user.vote_streak:,} {gold_suffix}",
-                    "To claim your rewards, run `/battlepass` in every server you want.",
+                    "Thanks for voting! To claim your rewards, run `/battlepass` in every server you want.",
                     f"You can vote again <t:{int(time.time()) + 43200}:R>.",
-                    f"Vote within the next {extend_time} hours to not lose your streak.",
+                    "",
+                    f"{gold_progress}",
+                    f"Streak: {user.vote_streak:,}"
+                    f"Your streak will expire <t:{int(time.time()) + extend_time * 3600}:R>.",
                 ]
             )
         )
