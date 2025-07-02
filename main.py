@@ -29,7 +29,7 @@ import subprocess
 import sys
 import time
 import traceback
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 import aiohttp
 import discord
@@ -44,6 +44,7 @@ from PIL import Image
 
 import config
 import msg2img
+from catpg import RawSQL
 from database import Channel, Prism, Profile, Reminder, User
 
 logging.basicConfig(level=logging.INFO)
@@ -6026,299 +6027,275 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         await achemb(message, "not_like_that", "send")
 
 
-# @bot.tree.command(description="View the leaderboards")
-# @discord.app_commands.rename(leaderboard_type="type")
-# @discord.app_commands.describe(
-#     leaderboard_type="The leaderboard type to view!",
-#     cat_type="The cat type to view (only for the Cats leaderboard)",
-#     locked="Whether to remove page switch buttons to prevent tampering",
-# )
-# @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
-# async def leaderboards(
-#     message: discord.Interaction,
-#     leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies"]],
-#     cat_type: Optional[str],
-#     locked: Optional[bool],
-# ):
-#     if not leaderboard_type:
-#         leaderboard_type = "Cats"
-#     if not locked:
-#         locked = False
-#     if cat_type and cat_type not in cattypes + ["All"]:
-#         await message.response.send_message("invalid cattype", ephemeral=True)
-#         return
+@bot.tree.command(description="View the leaderboards")
+@discord.app_commands.rename(leaderboard_type="type")
+@discord.app_commands.describe(
+    leaderboard_type="The leaderboard type to view!",
+    cat_type="The cat type to view (only for the Cats leaderboard)",
+    locked="Whether to remove page switch buttons to prevent tampering",
+)
+@discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
+async def leaderboards(
+    message: discord.Interaction,
+    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies"]],
+    cat_type: Optional[str],
+    locked: Optional[bool],
+):
+    if not leaderboard_type:
+        leaderboard_type = "Cats"
+    if not locked:
+        locked = False
+    if cat_type and cat_type not in cattypes + ["All"]:
+        await message.response.send_message("invalid cattype", ephemeral=True)
+        return
 
-#     # this fat function handles a single page
-#     async def lb_handler(interaction, type, do_edit=None, specific_cat="All"):
-#         if specific_cat is None:
-#             specific_cat = "All"
+    # this fat function handles a single page
+    async def lb_handler(interaction, type, do_edit=None, specific_cat="All"):
+        if specific_cat is None:
+            specific_cat = "All"
 
-#         nonlocal message
-#         if do_edit is None:
-#             do_edit = True
-#         await interaction.response.defer()
+        nonlocal message
+        if do_edit is None:
+            do_edit = True
+        await interaction.response.defer()
 
-#         messager = None
-#         interactor = None
+        messager = None
+        interactor = None
 
-#         # leaderboard top amount
-#         show_amount = 15
+        # leaderboard top amount
+        show_amount = 15
 
-#         string = ""
-#         if type == "Cats":
-#             unit = "cats"
+        string = ""
+        if type == "Cats":
+            unit = "cats"
 
-#             if specific_cat != "All":
-#                 result = (
-#                     await Profile.filter(guild_id=message.guild.id, **{f"cat_{specific_cat}__gt": 0})
-#                     .annotate(final_value=Sum(f"cat_{specific_cat}"))
-#                     .order_by("-final_value")
-#                     .values("user_id", "final_value")
-#                 )
-#             else:
-#                 # dynamically generate sum expression, cast each value to bigint first to handle large totals
-#                 cat_columns = [f'CAST("cat_{c}" AS BIGINT)' for c in cattypes if c]
-#                 sum_expression = " + ".join(cat_columns)
-#                 result = (
-#                     await Profile.filter(guild_id=message.guild.id)
-#                     .annotate(final_value=RawSQL(sum_expression))
-#                     .order_by("-final_value")
-#                     .values("user_id", "final_value")
-#                 )
+            if specific_cat != "All":
+                result = await Profile.collect_limit(
+                    ["user_id", f"cat_{specific_cat}"], f'guild_id = $1 AND "cat_{specific_cat}" > 0 ORDER BY "cat_{specific_cat}" DESC', message.guild.id
+                )
+                final_value = f"cat_{specific_cat}"
+            else:
+                # dynamically generate sum expression, cast each value to bigint first to handle large totals
+                cat_columns = [f'CAST("cat_{c}" AS BIGINT)' for c in cattypes]
+                sum_expression = RawSQL("(" + " + ".join(cat_columns) + ") AS final_value")
+                result = await Profile.collect_limit(["user_id", sum_expression], "guild_id = $1 ORDER BY final_value DESC", message.guild.id)
+                final_value = "final_value"
 
-#                 # find rarest
-#                 rarest = None
-#                 for i in cattypes[::-1]:
-#                     non_zero_count = await Profile.limit("user_id", "guild_id = $1 AND $2 > 0", message.guild.id, f"cat_{i}")
-#                     if len(non_zero_count) != 0:
-#                         rarest = i
-#                         rarest_holder = non_zero_count
-#                         break
+                # find rarest
+                rarest = None
+                for i in cattypes[::-1]:
+                    non_zero_count = await Profile.collect_limit("user_id", f'guild_id = $1 AND "cat_{i}" > 0', message.guild.id)
+                    if len(non_zero_count) != 0:
+                        rarest = i
+                        rarest_holder = non_zero_count
+                        break
 
-#                 if rarest and specific_cat != rarest:
-#                     catmoji = get_emoji(rarest.lower() + "cat")
-#                     rarest_holder = [f"<@{i.user_id}>" for i in rarest_holder]
-#                     joined = ", ".join(rarest_holder)
-#                     if len(rarest_holder) > 10:
-#                         joined = f"{len(rarest_holder)} people"
-#                     string = f"Rarest cat: {catmoji} ({joined}'s)\n\n"
-#         elif type == "Value":
-#             unit = "value"
-#             sums = []
-#             for cat_type in cattypes:
-#                 if not cat_type:
-#                     continue
-#                 weight = sum(type_dict.values()) / type_dict[cat_type]
-#                 sums.append(f'({weight}) * "cat_{cat_type}"')
-#             total_sum_expr = " + ".join(sums)
-#             result = (
-#                 await Profile.filter(guild_id=message.guild.id)
-#                 .annotate(final_value=RawSQL(total_sum_expr))
-#                 .order_by("-final_value")
-#                 .values("user_id", "final_value")
-#             )
-#         elif type == "Fast":
-#             unit = "sec"
-#             result = (
-#                 await Profile.filter(guild_id=message.guild.id, time__lt=99999999999999)
-#                 .annotate(final_value=Sum("time"))
-#                 .order_by("final_value")
-#                 .values("user_id", "final_value")
-#             )
-#         elif type == "Slow":
-#             unit = "h"
-#             result = (
-#                 await Profile.filter(guild_id=message.guild.id, timeslow__gt=0)
-#                 .annotate(final_value=Sum("timeslow"))
-#                 .order_by("-final_value")
-#                 .values("user_id", "final_value")
-#             )
-#         elif type == "Battlepass":
-#             start_date = datetime.datetime(2024, 12, 1)
-#             current_date = datetime.datetime.utcnow()
-#             full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
-#             if current_date.day < start_date.day:
-#                 full_months_passed -= 1
-#             result = (
-#                 await Profile.filter(guild_id=message.guild.id, season=full_months_passed)
-#                 .annotate(final_value=Sum("battlepass"))
-#                 .order_by("-final_value", "-progress")
-#                 .values("user_id", "final_value", "progress")
-#             )
-#         elif type == "Cookies":
-#             unit = "cookies"
-#             result = (
-#                 await Profile.filter(guild_id=message.guild.id, cookies__gt=0)
-#                 .annotate(final_value=Sum("cookies"))
-#                 .order_by("-final_value")
-#                 .values("user_id", "final_value")
-#             )
-#             string = "Cookie leaderboard updates every 5 min\n\n"
-#         else:
-#             # qhar
-#             return
+                if rarest and specific_cat != rarest:
+                    catmoji = get_emoji(rarest.lower() + "cat")
+                    rarest_holder = [f"<@{i.user_id}>" for i in rarest_holder]
+                    joined = ", ".join(rarest_holder)
+                    if len(rarest_holder) > 10:
+                        joined = f"{len(rarest_holder)} people"
+                    string = f"Rarest cat: {catmoji} ({joined}'s)\n\n"
+        elif type == "Value":
+            unit = "value"
+            sums = []
+            for cat_type in cattypes:
+                if not cat_type:
+                    continue
+                weight = sum(type_dict.values()) / type_dict[cat_type]
+                sums.append(f'({weight}) * "cat_{cat_type}"')
+            total_sum_expr = RawSQL("(" + " + ".join(sums) + ") AS final_value")
+            result = await Profile.collect_limit(["user_id", total_sum_expr], "guild_id = $1 ORDER BY final_value DESC", message.guild.id)
+            final_value = "final_value"
+        elif type == "Fast":
+            unit = "sec"
+            result = await Profile.collect_limit(["user_id", "time"], "guild_id = $1 AND time < 99999999999999 ORDER BY time ASC", message.guild.id)
+            final_value = "time"
+        elif type == "Slow":
+            unit = "h"
+            result = await Profile.collect_limit(["user_id", "timeslow"], "guild_id = $1 AND timeslow > 0 ORDER BY timeslow DESC", message.guild.id)
+            final_value = "timeslow"
+        elif type == "Battlepass":
+            start_date = datetime.datetime(2024, 12, 1)
+            current_date = datetime.datetime.utcnow()
+            full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
+            if current_date.day < start_date.day:
+                full_months_passed -= 1
+            result = await Profile.collect_limit(
+                ["user_id", "battlepass", "progress"], "guild_id = $1 AND (battlepass > 0 OR progress > 0) ORDER BY battlepass, progress DESC", message.guild.id
+            )
+            final_value = "battlepass"
+        elif type == "Cookies":
+            unit = "cookies"
+            result = await Profile.collect_limit(["user_id", "cookies"], "guild_id = $1 AND cookies > 0 ORDER BY cookies DESC", message.guild.id)
+            string = "Cookie leaderboard updates every 5 min\n\n"
+            final_value = "cookies"
+        else:
+            # qhar
+            return
 
-#         # find the placement of the person who ran the command and optionally the person who pressed the button
-#         interactor_placement = 0
-#         messager_placement = 0
-#         for index, position in enumerate(result):
-#             if position["user_id"] == interaction.user.id:
-#                 interactor_placement = index + 1
-#                 interactor = position["final_value"]
-#             if interaction.user != message.user and position["user_id"] == message.user.id:
-#                 messager_placement = index + 1
-#                 messager = position["final_value"]
+        # find the placement of the person who ran the command and optionally the person who pressed the button
+        interactor_placement = 0
+        messager_placement = 0
+        for index, position in enumerate(result):
+            if position["user_id"] == interaction.user.id:
+                interactor_placement = index + 1
+                interactor = position[final_value]
+            if interaction.user != message.user and position["user_id"] == message.user.id:
+                messager_placement = index + 1
+                messager = position[final_value]
 
-#         if type == "Slow":
-#             if interactor:
-#                 interactor = round(interactor / 3600, 2)
-#             if messager:
-#                 messager = round(messager / 3600, 2)
+        if type == "Slow":
+            if interactor:
+                interactor = round(interactor / 3600, 2)
+            if messager:
+                messager = round(messager / 3600, 2)
 
-#         if type == "Fast":
-#             if interactor:
-#                 interactor = round(interactor, 3)
-#             if messager:
-#                 messager = round(messager, 3)
+        if type == "Fast":
+            if interactor:
+                interactor = round(interactor, 3)
+            if messager:
+                messager = round(messager, 3)
 
-#         # dont show placements if they arent defined
-#         if interactor and type in ["Cats", "Slow", "Value", "Cookies"]:
-#             if interactor <= 0:
-#                 interactor_placement = 0
-#             interactor = round(interactor)
-#         elif interactor and type == "Fast" and interactor >= 99999999999999:
-#             interactor_placement = 0
+        # dont show placements if they arent defined
+        if interactor and type in ["Cats", "Slow", "Value", "Cookies"]:
+            if interactor <= 0:
+                interactor_placement = 0
+            interactor = round(interactor)
+        elif interactor and type == "Fast" and interactor >= 99999999999999:
+            interactor_placement = 0
 
-#         if messager and type in ["Cats", "Slow", "Value", "Cookies"]:
-#             if messager <= 0:
-#                 messager_placement = 0
-#             messager = round(messager)
-#         elif messager and type == "Fast" and messager >= 99999999999999:
-#             messager_placement = 0
+        if messager and type in ["Cats", "Slow", "Value", "Cookies"]:
+            if messager <= 0:
+                messager_placement = 0
+            messager = round(messager)
+        elif messager and type == "Fast" and messager >= 99999999999999:
+            messager_placement = 0
 
-#         emoji = ""
-#         if type == "Cats" and specific_cat != "All":
-#             emoji = get_emoji(specific_cat.lower() + "cat")
+        emoji = ""
+        if type == "Cats" and specific_cat != "All":
+            emoji = get_emoji(specific_cat.lower() + "cat")
 
-#         # the little place counter
-#         current = 1
-#         leader = False
-#         for i in result[:show_amount]:
-#             num = i["final_value"]
+        # the little place counter
+        current = 1
+        leader = False
+        for i in result[:show_amount]:
+            num = i[final_value]
 
-#             if type == "Battlepass":
-#                 bp_season = battle["seasons"][str(full_months_passed)]
-#                 if i["final_value"] >= len(bp_season):
-#                     lv_xp_req = 1500
-#                 else:
-#                     lv_xp_req = bp_season[int(i["final_value"]) - 1]["xp"]
+            if type == "Battlepass":
+                bp_season = battle["seasons"][str(full_months_passed)]
+                if i[final_value] >= len(bp_season):
+                    lv_xp_req = 1500
+                else:
+                    lv_xp_req = bp_season[int(i[final_value]) - 1]["xp"]
 
-#                 prog_perc = math.floor((100 / lv_xp_req) * i["progress"])
+                prog_perc = math.floor((100 / lv_xp_req) * i["progress"])
 
-#                 string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i['user_id']}>\n"
-#             else:
-#                 if type == "Slow":
-#                     if num <= 0:
-#                         break
-#                     num = round(num / 3600, 2)
-#                 elif type == "Cats" and num <= 0:
-#                     break
-#                 elif type == "Value":
-#                     if num <= 0:
-#                         break
-#                     num = round(num)
-#                 elif type == "Fast":
-#                     if num >= 99999999999999:
-#                         break
-#                     num = round(num, 3)
-#                 elif type == "Cookies" and num <= 0:
-#                     break
-#                 string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
+                string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i['user_id']}>\n"
+            else:
+                if type == "Slow":
+                    if num <= 0:
+                        break
+                    num = round(num / 3600, 2)
+                elif type == "Cats" and num <= 0:
+                    break
+                elif type == "Value":
+                    if num <= 0:
+                        break
+                    num = round(num)
+                elif type == "Fast":
+                    if num >= 99999999999999:
+                        break
+                    num = round(num, 3)
+                elif type == "Cookies" and num <= 0:
+                    break
+                string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
 
-#             if message.user.id == i["user_id"] and current <= 5:
-#                 leader = True
-#             current += 1
+            if message.user.id == i["user_id"] and current <= 5:
+                leader = True
+            current += 1
 
-#         # add the messager and interactor
-#         if type != "Battlepass" and (messager_placement > show_amount or interactor_placement > show_amount):
-#             string = string + "...\n"
+        # add the messager and interactor
+        if type != "Battlepass" and (messager_placement > show_amount or interactor_placement > show_amount):
+            string = string + "...\n"
 
-#             # setting up names
-#             include_interactor = interactor_placement > show_amount and str(interaction.user.id) not in string
-#             include_messager = messager_placement > show_amount and str(message.user.id) not in string
-#             interactor_line = ""
-#             messager_line = ""
-#             if include_interactor:
-#                 interactor_line = f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
-#             if include_messager:
-#                 messager_line = f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: {message.user.mention}\n"
+            # setting up names
+            include_interactor = interactor_placement > show_amount and str(interaction.user.id) not in string
+            include_messager = messager_placement > show_amount and str(message.user.id) not in string
+            interactor_line = ""
+            messager_line = ""
+            if include_interactor:
+                interactor_line = f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
+            if include_messager:
+                messager_line = f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: {message.user.mention}\n"
 
-#             # sort them correctly!
-#             if messager_placement > interactor_placement:
-#                 # interactor should go first
-#                 string += interactor_line
-#                 string += messager_line
-#             else:
-#                 # messager should go first
-#                 string += messager_line
-#                 string += interactor_line
+            # sort them correctly!
+            if messager_placement > interactor_placement:
+                # interactor should go first
+                string += interactor_line
+                string += messager_line
+            else:
+                # messager should go first
+                string += messager_line
+                string += interactor_line
 
-#         title = type + " Leaderboard"
-#         if type == "Cats":
-#             title = f"{specific_cat} {title}"
-#         title = "🏅 " + title
+        title = type + " Leaderboard"
+        if type == "Cats":
+            title = f"{specific_cat} {title}"
+        title = "🏅 " + title
 
-#         embedVar = discord.Embed(title=title, description=string.rstrip(), color=0x6E593C).set_footer(text=rain_shill)
+        embedVar = discord.Embed(title=title, description=string.rstrip(), color=0x6E593C).set_footer(text=rain_shill)
 
-#         global_user = await User.get_or_create(user_id=message.user.id)
+        global_user = await User.get_or_create(user_id=message.user.id)
 
-#         if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state.strip()[-4:]:
-#             embedVar.set_author(name=f"{message.user} has unread news! /news")
+        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state.strip()[-4:]:
+            embedVar.set_author(name=f"{message.user} has unread news! /news")
 
-#         # handle funny buttons
-#         myview = View(timeout=VIEW_TIMEOUT)
+        # handle funny buttons
+        myview = View(timeout=VIEW_TIMEOUT)
 
-#         if type == "Cats":
-#             dd_opts = [Option(label="All", emoji=get_emoji("staring_cat"), value="All")]
+        if type == "Cats":
+            dd_opts = [Option(label="All", emoji=get_emoji("staring_cat"), value="All")]
 
-#             for i in await cats_in_server(message.guild.id):
-#                 dd_opts.append(Option(label=i, emoji=get_emoji(i.lower() + "cat"), value=i))
+            for i in await cats_in_server(message.guild.id):
+                dd_opts.append(Option(label=i, emoji=get_emoji(i.lower() + "cat"), value=i))
 
-#             dropdown = Select(
-#                 "cat_type_dd",
-#                 placeholder="Select a cat type",
-#                 opts=dd_opts,
-#                 selected=specific_cat,
-#                 on_select=lambda interaction, option: lb_handler(interaction, type, True, option),
-#                 disabled=locked,
-#             )
+            dropdown = Select(
+                "cat_type_dd",
+                placeholder="Select a cat type",
+                opts=dd_opts,
+                selected=specific_cat,
+                on_select=lambda interaction, option: lb_handler(interaction, type, True, option),
+                disabled=locked,
+            )
 
-#         emojied_options = {"Cats": "🐈", "Value": "🧮", "Fast": "⏱️", "Slow": "💤", "Battlepass": "⬆️", "Cookies": "🍪"}
-#         options = [Option(label=k, emoji=v) for k, v in emojied_options.items()]
-#         lb_select = Select(
-#             "lb_type",
-#             placeholder=type,
-#             opts=options,
-#             on_select=lambda interaction, type: lb_handler(interaction, type, True),
-#         )
+        emojied_options = {"Cats": "🐈", "Value": "🧮", "Fast": "⏱️", "Slow": "💤", "Battlepass": "⬆️", "Cookies": "🍪"}
+        options = [Option(label=k, emoji=v) for k, v in emojied_options.items()]
+        lb_select = Select(
+            "lb_type",
+            placeholder=type,
+            opts=options,
+            on_select=lambda interaction, type: lb_handler(interaction, type, True),
+        )
 
-#         if not locked:
-#             myview.add_item(lb_select)
-#             if type == "Cats":
-#                 myview.add_item(dropdown)
+        if not locked:
+            myview.add_item(lb_select)
+            if type == "Cats":
+                myview.add_item(dropdown)
 
-#         # just send if first time, otherwise edit existing
-#         try:
-#             if not do_edit:
-#                 raise Exception
-#             await interaction.edit_original_response(embed=embedVar, view=myview)
-#         except Exception:
-#             await interaction.followup.send(embed=embedVar, view=myview)
+        # just send if first time, otherwise edit existing
+        try:
+            if not do_edit:
+                raise Exception
+            await interaction.edit_original_response(embed=embedVar, view=myview)
+        except Exception:
+            await interaction.followup.send(embed=embedVar, view=myview)
 
-#         if leader:
-#             await achemb(message, "leader", "send")
+        if leader:
+            await achemb(message, "leader", "send")
 
-#     await lb_handler(message, leaderboard_type, False, cat_type)
+    await lb_handler(message, leaderboard_type, False, cat_type)
 
 
 @bot.tree.command(description="(ADMIN) Give cats to people")

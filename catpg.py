@@ -2,6 +2,7 @@
 # it will eventually be a separate thing once its good enough
 
 import asyncpg
+from typing import Any, AsyncGenerator, TypeVar
 
 conn = None
 
@@ -12,25 +13,34 @@ async def connect(**kwargs):
 
 
 async def close():
-    await conn.close()
+    if conn:
+        await conn.close()
+
+
+# this is used in limit() to distinguish between raw SQL and column names
+class RawSQL(str):
+    pass
+
+
+ModelInstance = TypeVar("ModelInstance", bound="Model")
 
 
 class Model:
     _primary_key = "id"
     _capped_ints = []
 
-    def __init__(self, record):
+    def __init__(self, record: asyncpg.Record):
         # init model from asyncpg Record
         self.__dirty_values = []
         self.__values = dict(record.items())
 
     # setter sugar
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value) -> None:
         if name[0] == "_":
             return super().__setattr__(name, value)
         self.__setitem__(name, value)
 
-    def __setitem__(self, name, value):
+    def __setitem__(self, name: str, value) -> None:
         if name[0] == "_":
             return super().__setitem__(name, value)
         if name in self.__values:
@@ -43,24 +53,24 @@ class Model:
                 self.__values[name] = value
 
     # getter sugar
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         if name[0] == "_":
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
         return self.__values[name]
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> Any:
         if name[0] == "_":
             return super().__getitem__(name)
         return self.__values[name]
 
-    async def delete(self):
+    async def delete(self) -> None:
         table = self.__class__.__name__.lower()
         query_string = f'DELETE FROM "{table}" WHERE {self._primary_key} = $1;'
         await conn.execute(query_string, self.__values[self._primary_key])
         self.__dirty_values = []
         self.__values = []
 
-    async def save(self):
+    async def save(self) -> None:
         table = self.__class__.__name__.lower()
         if not self.__dirty_values:
             return
@@ -85,13 +95,13 @@ class Model:
         self.__dirty_values = []
 
     @classmethod
-    async def _get(self, fields=None, **kwargs):
+    async def _get(self, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance:
         table = self.__name__.lower()
         select = "*"
         if fields:
             if self._primary_key not in fields:
                 fields.append(self._primary_key)
-            select = ", ".join(f'"{i}"' for i in fields)
+            select = ", ".join(i if isinstance(i, RawSQL) else f'"{i}"' for i in fields)
         query_string = f'SELECT {select} FROM "{table}" WHERE '
         var_counter = 1
 
@@ -105,21 +115,25 @@ class Model:
         # run the query
         return await conn.fetchrow(query_string, *kwargs.values())
 
-    async def refresh_from_db(self):
+    async def refresh_from_db(self) -> None:
         args = {self._primary_key: self.__values[self._primary_key]}
         result = await self._get(**args)
         self.__init__(result)
 
     @classmethod
-    async def get_or_none(self, fields=None, **kwargs):
+    async def get(self, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance:
+        result = await self._get(fields=fields, **kwargs)
+        return self(result)
+
+    @classmethod
+    async def get_or_none(self, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance | None:
         try:
-            result = await self._get(fields, **kwargs)
-            return self(result)
-        except Exception:
+            return await self.get(fields=fields, **kwargs)
+        except asyncpg.exceptions.PostgresError:
             return None
 
     @classmethod
-    async def get_or_create(self, **kwargs):
+    async def get_or_create(self, **kwargs) -> ModelInstance:
         table = self.__name__.lower()
         values = kwargs.values()
 
@@ -149,7 +163,7 @@ class Model:
         return self(result)
 
     @classmethod
-    async def create(self, **kwargs):
+    async def create(self, **kwargs) -> None:
         table = self.__name__.lower()
         values = kwargs.values()
 
@@ -169,44 +183,49 @@ class Model:
         await conn.execute(query_string, *values)
 
     @classmethod
-    async def filter(self, filter=None, *args, **kwargs):
+    async def filter(self, filter: str | RawSQL | None = None, *args, **kwargs) -> AsyncGenerator[ModelInstance]:
         table = self.__name__.lower()
-        async with conn.transaction():
-            select = "*"
+        select = "*"
+        if "fields" in kwargs:
+            if self._primary_key not in kwargs["fields"]:
+                kwargs["fields"].append(self._primary_key)
+            select = ", ".join(i if isinstance(i, RawSQL) else f'"{i}"' for i in kwargs["fields"])
+        query = f'SELECT {select} FROM "{table}"'
+        if filter:
+            query += f" WHERE {filter}"
+        cur = await conn.fetch(query + ";", *args)
+        for row in cur:
+            val = {self._primary_key: row[self._primary_key]}
             if "fields" in kwargs:
-                if self._primary_key not in kwargs["fields"]:
-                    kwargs["fields"].append(self._primary_key)
-                select = ", ".join(f'"{i}"' for i in kwargs["fields"])
-            query = f'SELECT {select} FROM "{table}"'
-            if filter:
-                query += f" WHERE {filter}"
-            cur = await conn.fetch(query + ";", *args)
-            for row in cur:
-                val = {self._primary_key: row[self._primary_key]}
-                if "fields" in kwargs:
-                    row = await self.get_or_none(kwargs["fields"], **val)
-                else:
-                    row = await self.get_or_none(**val)
-                if not row:
-                    continue
-                yield row
+                row = await self.get_or_none(fields=kwargs["fields"], **val)
+            else:
+                row = await self.get_or_none(**val)
+            if not row:
+                continue
+            yield row
 
     @classmethod
-    async def limit(self, fields, filter=None, *args):
+    async def limit(self, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, *args) -> AsyncGenerator[ModelInstance]:
+        if isinstance(fields, str):
+            fields = [fields]
         async for row in self.filter(filter, *args, fields=fields):
             yield row
 
     @classmethod
-    async def all(self):
+    async def all(self) -> AsyncGenerator[ModelInstance]:
         async for row in self.filter():
             yield row
 
     @classmethod
-    async def collect(self, filter=None, *args):
+    async def collect(self, filter: str | RawSQL | None = None, *args) -> list[ModelInstance]:
         return [i async for i in self.filter(filter, *args)]
 
     @classmethod
-    async def __do_function(self, func, column, filter=None, *args):
+    async def collect_limit(self, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, *args) -> list[ModelInstance]:
+        return [i async for i in self.limit(fields, filter, *args)]
+
+    @classmethod
+    async def __do_function(self, func: str, column: str, filter: str | RawSQL | None = None, *args) -> Any:
         table = self.__name__.lower()
         if column != "*":
             column = f'"{column}"'
@@ -216,23 +235,23 @@ class Model:
         return await conn.fetchval(query + ";", *args)
 
     @classmethod
-    async def sum(self, column, filter=None, *args):
+    async def sum(self, column: str, filter: str | RawSQL | None = None, *args) -> int:
         return await self.__do_function("SUM", column, filter, *args) or 0
 
     @classmethod
-    async def max(self, column, filter=None, *args):
+    async def max(self, column: str, filter: str | RawSQL | None = None, *args) -> int:
         return await self.__do_function("MAX", column, filter, *args)
 
     @classmethod
-    async def min(self, column, filter=None, *args):
+    async def min(self, column: str, filter: str | RawSQL | None = None, *args) -> int:
         return await self.__do_function("MIN", column, filter, *args)
 
     @classmethod
-    async def count(self, filter=None, *args):
+    async def count(self, filter: str | RawSQL | None = None, *args) -> int:
         return await self.__do_function("COUNT", "*", filter, *args)
 
     @classmethod
-    async def bulk_update(self, rows, *columns):
+    async def bulk_update(self, rows: list[ModelInstance], *columns) -> None:
         table = self.__name__.lower()
         # build the query
         query = f'UPDATE "{table}" SET '
