@@ -49,8 +49,6 @@ from database import Channel, Prism, Profile, Reminder, User
 
 logging.basicConfig(level=logging.INFO)
 
-EVENT_DEADLINE = 1751695200
-
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
 
@@ -251,7 +249,7 @@ funny = [
 ]
 
 # rain shill message for footers
-rain_shill = "🔥 100,000 SERVERS SALE OH GOD /rain"
+rain_shill = "☔ Get tons of cats /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -941,7 +939,7 @@ async def maintaince_loop():
     reactions_ratelimit = {}
     catchcooldown = {}
     fakecooldown = {}
-    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers!"))
+    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
     # update cookies
     temp_temp_cookie_storage = temp_cookie_storage.copy()
@@ -1897,23 +1895,10 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n🔥 100,000 SERVER SALE OMG OMG </rain:{RAIN_ID}>"
+                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
                 if random.randint(0, 19) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
-
-                if user.event_rain_points < 1000 and time.time() < EVENT_DEADLINE:
-                    plus_points = random.randint(15, 25)
-                    # 1000/20 = 50 catches during event
-                    # 50/5 = 10 catches a day on average
-                    user.event_rain_points += plus_points
-                    if user.event_rain_points >= 1000:
-                        user.event_rain_points = 1000
-                        user.rain_minutes += 2
-                        suffix_string += f"\n✅ +{plus_points}! 1,000/1,000. +2 rain minutes!"
-                    else:
-                        progress_bar = "🟦" * int(user.event_rain_points // (1000 / 7)) + "⬛" * (7 - int(user.event_rain_points // (1000 / 7)))
-                        suffix_string += f"\n🎁 +{plus_points}! {user.event_rain_points}/1,000 {progress_bar} {get_emoji('2rain')} ends <t:{EVENT_DEADLINE}:R>"
 
                 custom_cough_strings = {
                     "Corrupt": "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!",
@@ -2556,19 +2541,19 @@ update: the puzzle piece event has concluded""",
                 description="""wow! cat bot has reached 100,000 servers! this beyond insane i never thought this would happen thanks everyone
 giving away a whole bunch of rain as celebration!
 
-1. cat stand giveaway
+1. cat stand giveaway (ENDED)
 [join our discord server](<https://discord.gg/FBkXDxjqSz>) and click the first reaction under the latest newspost to join in!
-there will be a total of 10 winners who will get 40 minutes each!
+there will be a total of 10 winners who will get 40 minutes each! giveaway ends july 5th.
 
 2. art contest
 again in our [discord server](<https://discord.gg/zrYstPe3W6>) a new channel has opened for art submissions!
 top 5 people who get the most community votes will get 250, 150, 100, 50 and 50 rain minutes respectively!
 
-3. cat bot event
-for the next 5 days you will get points randomly on every catch! if you manage to collect 1,000 points before the time runs out you will get 2 minutes of rain!!
+3. cat bot event (ENDED)
+starting june 30th, for the next 5 days you will get points randomly on every catch! if you manage to collect 1,000 points before the time runs out you will get 2 minutes of rain!!
 
-4. sale
-[catbot.shop](<https://catbot.shop>) will have a sale for the next 5 days! if everything above wasnt enough rain for your fancy you can buy some more with a discount!
+4. sale (ENDED)
+starting june 30th, [catbot.shop](<https://catbot.shop>) will have a sale for the next 5 days! if everything above wasnt enough rain for your fancy you can buy some more with a discount!
 
 aaaaaaaaaaaaaaa""",
                 color=0x6E593C,
@@ -3523,7 +3508,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
     shopbutton = Button(
         emoji="🛒",
-        label="Store (-20%!)",
+        label="Store",
         url="https://catbot.shop",
     )
 
