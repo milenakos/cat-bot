@@ -29,7 +29,7 @@ import subprocess
 import sys
 import time
 import traceback
-from typing import Literal, Optional, Union
+from typing import List, Literal, Optional, Union
 
 import aiohttp
 import discord
@@ -5460,54 +5460,109 @@ async def eightball(message: discord.Interaction, question: str):
     await progress(message, user, "catball")
     await achemb(message, "balling", "send")
 
+class ReminderCog(commands.GroupCog, group_name="reminder", description="Manage your reminders"):
+    # this is so we don't have formatting oddities, and to avoid repetition of redundant information
+    def isolate_reminder_text(self, input: str):
+        return input.split("\n\n*This is a")[0]
+    
+    async def reminder_listing_autocomplete(
+        self,
+        message: discord.Interaction,
+        current: str
+    ) -> List[discord.app_commands.Choice[str]]:
+        responses = []
+        queries = await Reminder.filter(user_id=message.user.id).all()
+        for query in queries:
+            responses.append(discord.app_commands.Choice(name=self.isolate_reminder_text(query.text), value=self.isolate_reminder_text(query.text)))
+        return responses
 
-@bot.tree.command(description="get a reminder in the future (+- 5 minutes)")
-@discord.app_commands.describe(
-    days="in how many days",
-    hours="in how many hours",
-    minutes="in how many minutes (+- 5 minutes)",
-    text="what to remind",
-)
-async def remind(
-    message: discord.Interaction,
-    days: Optional[int],
-    hours: Optional[int],
-    minutes: Optional[int],
-    text: Optional[str],
-):
-    if not days:
-        days = 0
-    if not hours:
-        hours = 0
-    if not minutes:
-        minutes = 0
-    if not text:
-        text = "Reminder!"
+    @discord.app_commands.command(description="get a reminder in the future (+- 5 minutes)")
+    @discord.app_commands.describe(
+        days="in how many days",
+        hours="in how many hours",
+        minutes="in how many minutes (+- 5 minutes)",
+        text="what to remind",
+    )
+    async def add(
+        self,
+        message: discord.Interaction,
+        days: Optional[int],
+        hours: Optional[int],
+        minutes: Optional[int],
+        text: Optional[str],
+    ):
+        if not days:
+            days = 0
+        if not hours:
+            hours = 0
+        if not minutes:
+            minutes = 0
+        if not text:
+            text = "Reminder!"
 
-    goal_time = int(time.time() + (days * 86400) + (hours * 3600) + (minutes * 60))
-    if goal_time > time.time() + (86400 * 365 * 20):
-        await message.response.send_message("cats do not live for that long", ephemeral=True)
-        return
-    if len(text) > 1900:
-        await message.response.send_message("thats too long", ephemeral=True)
-        return
-    if goal_time < 0:
-        await message.response.send_message("cat cant time travel (yet)", ephemeral=True)
-        return
-    await message.response.send_message(f"🔔 ok, <t:{goal_time}:R> (+- 5 min) ill remind you of:\n{text}")
-    msg = await message.original_response()
-    message_link = msg.jump_url
-    text += f"\n\n*This is a [reminder](<{message_link}>) you set.*"
-    await Reminder.create(user_id=message.user.id, text=text, time=goal_time)
-    profile, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    profile.reminders_set += 1
-    await profile.save()
-    await achemb(message, "reminder", "send")  # the ai autocomplete thing suggested this and its actually a cool ach
-    await progress(message, profile, "reminder")  # the ai autocomplete thing also suggested this though profile wasnt defined
+        goal_time = int(time.time() + (days * 86400) + (hours * 3600) + (minutes * 60))
+        if goal_time > time.time() + (86400 * 365 * 20):
+            await message.response.send_message("cats do not live for that long", ephemeral=True)
+            return
+        if len(text) > 1900:
+            await message.response.send_message("thats too long", ephemeral=True)
+            return
+        if goal_time < 0:
+            await message.response.send_message("cat cant time travel (yet)", ephemeral=True)
+            return
+        await message.response.send_message(f"🔔 ok, <t:{goal_time}:R> (+- 5 min) ill remind you of:\n{text}")
+        msg = await message.original_response()
+        message_link = msg.jump_url
+        text += f"\n\n*This is a [reminder](<{message_link}>) you set.*"
+        await Reminder.create(user_id=message.user.id, text=text, time=goal_time)
+        profile, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        profile.reminders_set += 1
+        await profile.save()
+        await achemb(message, "reminder", "send")  # the ai autocomplete thing suggested this and its actually a cool ach
+        await progress(message, profile, "reminder")  # the ai autocomplete thing also suggested this though profile wasnt defined
 
+    @discord.app_commands.command(description = "list all reminders")
+    async def list(
+        self,
+        message: discord.Interaction
+    ):
+        reminders = await Reminder.filter(user_id=message.user.id).all()
+        text = ":x: you have no reminders set, set some using `/remind`"
+        if len(reminders) > 0:
+            text = ":bell: you have **" + str(len(reminders)) + "** reminders set:"
+            for reminder in reminders:
+                text += "\n- you will be reminded of `" + self.isolate_reminder_text(reminder.text) + "` <t:" + str(reminder.time) + ":R>"
+
+        await message.response.send_message(text)
+
+    @discord.app_commands.command(name="remove", description="remove a reminder based on reminder text")
+    @discord.app_commands.describe(
+        text="reminders whose message contains the text provided will be removed",
+    )
+    @discord.app_commands.autocomplete(text=reminder_listing_autocomplete)
+    async def remove(
+        self,
+        message: discord.Interaction,
+        text: str
+    ):
+        if await Reminder.exists(user_id=message.user.id):
+            counter = 0
+            reminders = await Reminder.filter(user_id=message.user.id).all()
+            for reminder in reminders:
+                if text in reminder.text:
+                    await reminder.delete()
+                    counter += 1
+
+            if counter == 0:
+                await message.response.send_message(":x: no reminders match your search")
+            else:
+                await message.response.send_message(":scissors: **" + str(counter) + "** reminder(s) have been deleted")
+        else:
+            await message.response.send_message(":x: you have no reminders")
 
 @bot.tree.command(name="random", description="Get a random cat")
 async def random_cat(message: discord.Interaction):
+
     await message.response.defer()
     async with aiohttp.ClientSession() as session:
         try:
