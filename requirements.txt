@@ -7,3 +7,4 @@ requests
 discord-emoji
 winuvloop
 psutil
+asyncpg

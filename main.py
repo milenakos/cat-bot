@@ -1200,7 +1200,7 @@ async def on_ready():
             "With contributions from **" + ", ".join(contributors) + "**",
             "Original Cat Image: **pathologicals**",
             "APIs: **catfact.ninja, blueberry.coffee, wordnik.com, thecatapi.com**",
-            "Open Source Projects: **[discord.py](https://github.com/Rapptz/discord.py), [tortoise-orm](https://github.com/tortoise/tortoise-orm), [gateway-proxy](https://github.com/Gelbpunkt/gateway-proxy)**",
+            "Open Source Projects: **[discord.py](https://github.com/Rapptz/discord.py), [asyncpg](https://github.com/MagicStack/asyncpg), [gateway-proxy](https://github.com/Gelbpunkt/gateway-proxy)**",
             "Art, suggestions, and a lot more: **TheTrashCell**",
             "Testers: **" + ", ".join(tester_users) + "**",
             "Enjoying the bot: **You <3**",
