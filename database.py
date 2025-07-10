@@ -211,8 +211,6 @@ class Channel(Model):
     cattype = fields.CharField(default="", max_length=20)  # curently spawned cat type (parsed from msg if none)
     forcespawned = fields.BooleanField(default=False)  # whether the current cat is forcespawned
 
-    thread_mappings = fields.BooleanField(default=False)  # whether the channel is a thread
-
     spawn_times_min = fields.BigIntField(default=120)  # spawn times minimum
     spawn_times_max = fields.BigIntField(default=1200)  # spawn times maximum
 

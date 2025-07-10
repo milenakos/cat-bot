@@ -830,7 +830,6 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         f"images/spawn/{localcat.lower()}_cat.png",
     )
     channeley = bot.get_channel(int(ch_id))
-    thread_id = channel.thread_mappings
 
     appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
 
@@ -1951,8 +1950,6 @@ async def on_message(message: discord.Message):
                 async def send_confirm():
                     try:
                         kwargs = {}
-                        if channel.thread_mappings:
-                            kwargs["thread"] = discord.Object(message.channel.id)
                         if view:
                             kwargs["view"] = view
 
@@ -6322,16 +6319,7 @@ async def setup_channel(message: discord.Interaction):
             )
             return
 
-        if isinstance(message.channel, discord.Thread):
-            parent = bot.get_channel(message.channel.parent_id)
-            if not isinstance(parent, Union[discord.TextChannel, discord.ForumChannel]):
-                raise Exception
-            await Channel.create(channel_id=message.channel.id, thread_mappings=True)
-        elif isinstance(
-            message.channel,
-            Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel],
-        ):
-            await Channel.create(channel_id=message.channel.id, thread_mappings=False)
+        await Channel.create(channel_id=message.channel.id)
     except Exception:
         await message.response.send_message("this channel gives me bad vibes.")
         return
