@@ -6315,42 +6315,41 @@ async def setup_channel(message: discord.Interaction):
         )
         return
 
-    with open("images/cat.png", "rb") as f:
-        try:
-            channel_permissions = await fetch_perms(message)
-            needed_perms = {
-                "View Channel": channel_permissions.view_channel,
-                "Send Messages": channel_permissions.send_messages,
-                "Attach Files": channel_permissions.attach_files,
-            }
-            if isinstance(message.channel, discord.Thread):
-                needed_perms["Send Messages in Threads"] = channel_permissions.send_messages_in_threads
+    try:
+        channel_permissions = await fetch_perms(message)
+        needed_perms = {
+            "View Channel": channel_permissions.view_channel,
+            "Send Messages": channel_permissions.send_messages,
+            "Attach Files": channel_permissions.attach_files,
+        }
+        if isinstance(message.channel, discord.Thread):
+            needed_perms["Send Messages in Threads"] = channel_permissions.send_messages_in_threads
 
-            for name, value in needed_perms.copy().items():
-                if value:
-                    needed_perms.pop(name)
+        for name, value in needed_perms.copy().items():
+            if value:
+                needed_perms.pop(name)
 
-            missing_perms = list(needed_perms.keys())
-            if len(missing_perms) != 0:
-                needed_perms = "\n- ".join(missing_perms)
-                await message.response.send_message(
-                    f":x: Missing Permissions! Please give me the following:\n- {needed_perms}\nHint: try setting channel permissions if server ones don't work."
-                )
-                return
-
-            if isinstance(message.channel, discord.Thread):
-                parent = bot.get_channel(message.channel.parent_id)
-                if not isinstance(parent, Union[discord.TextChannel, discord.ForumChannel]):
-                    raise Exception
-                await Channel.create(channel_id=message.channel.id, thread_mappings=True)
-            elif isinstance(
-                message.channel,
-                Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel],
-            ):
-                await Channel.create(channel_id=message.channel.id, thread_mappings=False)
-        except Exception:
-            await message.response.send_message("this channel gives me bad vibes.")
+        missing_perms = list(needed_perms.keys())
+        if len(missing_perms) != 0:
+            needed_perms = "\n- ".join(missing_perms)
+            await message.response.send_message(
+                f":x: Missing Permissions! Please give me the following:\n- {needed_perms}\nHint: try setting channel permissions if server ones don't work."
+            )
             return
+
+        if isinstance(message.channel, discord.Thread):
+            parent = bot.get_channel(message.channel.parent_id)
+            if not isinstance(parent, Union[discord.TextChannel, discord.ForumChannel]):
+                raise Exception
+            await Channel.create(channel_id=message.channel.id, thread_mappings=True)
+        elif isinstance(
+            message.channel,
+            Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel],
+        ):
+            await Channel.create(channel_id=message.channel.id, thread_mappings=False)
+    except Exception:
+        await message.response.send_message("this channel gives me bad vibes.")
+        return
 
     await spawn_cat(str(message.channel.id))
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
