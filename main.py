@@ -839,24 +839,16 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         return
 
     try:
-        if thread_id:
-            message_is_sus = await channeley.send(
-                appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat),
-                file=file,
-                thread=discord.Object(int(ch_id)),
-                allowed_mentions=discord.AllowedMentions.all(),
-            )
-        else:
-            message_is_sus = await channeley.send(
-                appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat),
-                file=file,
-                allowed_mentions=discord.AllowedMentions.all(),
-            )
+        message_is_sus = await channeley.send(
+            appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat),
+            file=file,
+            allowed_mentions=discord.AllowedMentions.all(),
+        )
     except discord.Forbidden:
-        # await channel.delete()
+        await channel.delete()
         return
     except discord.NotFound:
-        # await channel.delete()
+        await channel.delete()
         return
     except Exception:
         return
@@ -1951,10 +1943,10 @@ async def on_message(message: discord.Message):
                 new_count = user[f"cat_{le_emoji}"]
 
                 async def delete_cat():
-                    if channel.thread_mappings:
-                        await send_target.delete_messages([discord.Object(cat_temp)], thread=discord.Object(int(message.channel.id)))
-                    else:
+                    try:
                         await send_target.delete_messages([discord.Object(cat_temp)])
+                    except Exception:
+                        pass
 
                 async def send_confirm():
                     try:
