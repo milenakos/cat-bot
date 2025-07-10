@@ -1942,6 +1942,8 @@ async def on_message(message: discord.Message):
                 new_count = user[f"cat_{le_emoji}"]
 
                 async def delete_cat():
+                    if cat_temp < 1392866269069443153 and not perms.manage_messages:
+                        return
                     try:
                         await send_target.delete_messages([discord.Object(cat_temp)])
                     except Exception:
