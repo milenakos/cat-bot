@@ -1951,17 +1951,10 @@ async def on_message(message: discord.Message):
                 new_count = user[f"cat_{le_emoji}"]
 
                 async def delete_cat():
-                    try:
-                        if channel.thread_mappings:
-                            await send_target.delete_message(cat_temp, thread=discord.Object(int(message.channel.id)))
-                        else:
-                            await send_target.delete_message(cat_temp)
-                    except Exception:
-                        try:
-                            if perms.manage_messages:
-                                await message.channel.delete_messages([discord.Object(cat_temp)])
-                        except Exception:
-                            pass
+                    if channel.thread_mappings:
+                        await send_target.delete_messages(discord.Object(cat_temp), thread=discord.Object(int(message.channel.id)))
+                    else:
+                        await send_target.delete_messages(discord.Object(cat_temp))
 
                 async def send_confirm():
                     try:
