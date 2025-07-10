@@ -1952,9 +1952,9 @@ async def on_message(message: discord.Message):
 
                 async def delete_cat():
                     if channel.thread_mappings:
-                        await send_target.delete_messages(discord.Object(cat_temp), thread=discord.Object(int(message.channel.id)))
+                        await send_target.delete_messages([discord.Object(cat_temp)], thread=discord.Object(int(message.channel.id)))
                     else:
-                        await send_target.delete_messages(discord.Object(cat_temp))
+                        await send_target.delete_messages([discord.Object(cat_temp)])
 
                 async def send_confirm():
                     try:
