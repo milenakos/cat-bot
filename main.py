@@ -2502,7 +2502,7 @@ giving away a whole bunch of rain as celebration!
 [join our discord server](<https://discord.gg/FBkXDxjqSz>) and click the first reaction under the latest newspost to join in!
 there will be a total of 10 winners who will get 40 minutes each! giveaway ends july 5th.
 
-2. art contest
+2. art contest (ENDED)
 again in our [discord server](<https://discord.gg/zrYstPe3W6>) a new channel has opened for art submissions!
 top 5 people who get the most community votes will get 250, 150, 100, 50 and 50 rain minutes respectively!
 
@@ -3389,7 +3389,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             await interaction.response.send_message("pls input a number 1-60", ephemeral=True)
             return
 
-        if rain_length > user.rain_minutes + profile.rain_minutes:
+        if rain_length > user.rain_minutes + profile.rain_minutes or user.rain_minutes < 0:
             await interaction.response.send_message(
                 "you dont have enough rain! buy some more [here](<https://catbot.shop>)",
                 ephemeral=True,
