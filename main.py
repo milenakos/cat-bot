@@ -829,7 +829,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     file = discord.File(
         f"images/spawn/{localcat.lower()}_cat.png",
     )
-    channeley = bot.get_channel(int(ch_id))
+    channeley = bot.get_partial_messageable(int(ch_id))
 
     appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
 
