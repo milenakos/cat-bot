@@ -281,8 +281,14 @@ slots_lock = []
 # ???
 rigged_users = []
 
+
+# WELCOME TO THE TEMP_.._STORAGE HELL
+
 # to prevent double catches
 temp_catches_storage = []
+
+# to prevent double spawns
+temp_spawn_storage = []
 
 # to prevent weird behaviour shortly after a rain
 temp_rains_storage = []
@@ -820,8 +826,10 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         channel = await Channel.get(channel_id=ch_id)
     except Exception:
         return
-    if channel.cat or channel.yet_to_spawn > time.time() + 10:
+    if channel.cat or channel.yet_to_spawn > time.time() + 10 or int(ch_id) in temp_spawn_storage:
         return
+
+    temp_spawn_storage.append(int(ch_id))
 
     if not localcat:
         localcat = random.choices(cattypes, weights=type_dict.values())[0]
@@ -857,6 +865,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     channel.forcespawned = bool(force_spawn)
     channel.cattype = localcat
     await channel.save()
+    temp_spawn_storage.remove(int(ch_id))
 
 
 async def postpone_reminder(interaction):
