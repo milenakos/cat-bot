@@ -888,11 +888,11 @@ async def postpone_reminder(interaction):
 
 # a loop for various maintaince which is ran every 5 minutes
 async def maintaince_loop():
-    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage, temp_cookie_storage
+    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, cooldown, temp_belated_storage, temp_cookie_storage
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     catchcooldown = {}
-    fakecooldown = {}
+    cooldown = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
     # update cookies
@@ -6303,7 +6303,7 @@ async def forget(message: discord.Interaction):
     else:
         await message.response.send_message("your an idiot there is literally no cat setupped in this channel you stupid")
 
-# fake command was getting a bit difficult to prank with, decided to throw in a randomizer to make it more realistic.
+#  Command was getting a bit difficult to prank with, decided to throw in a randomizer to make it more realistic.
 @bot.tree.command(description="LMAO TROLLED SO HARD :JOY:")
 async def fake(message: discord.Interaction):
 	if message.user.id in fakecooldown and fakecooldown[message.user.id] + 60 > time.time():
