@@ -3067,7 +3067,7 @@ async def gen_inventory(message, person_id):
     minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
 
     # count prism stuff
-    prisms = [prism.name async for prism in Prism.limit(["name"], "guild_id = $1 AND user_id = $2", message.guild.id, person_id.id)]
+    prisms = await Prism.collect_limit(["name"], "guild_id = $1 AND user_id = $2", message.guild.id, person_id.id)
     total_count = await Prism.count("guild_id = $1", message.guild.id)
     user_count = len(prisms)
     global_boost = 0.06 * math.log(2 * total_count + 1)
@@ -3075,9 +3075,9 @@ async def gen_inventory(message, person_id):
     if len(prisms) == 0:
         prism_list = "None"
     elif len(prisms) <= 3:
-        prism_list = ", ".join(prisms)
+        prism_list = ", ".join([i.name for i in prisms])
     else:
-        prism_list = f"{prisms[0]}, {prisms[1]}, {len(prisms) - 2} more..."
+        prism_list = f"{prisms[0].name}, {prisms[1].name}, {len(prisms) - 2} more..."
 
     emoji_prefix = str(user.emoji) + " " if user.emoji else ""
 

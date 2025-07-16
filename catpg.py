@@ -212,7 +212,7 @@ class Model:
             await conn.execute(query_string, *values)
 
     @classmethod
-    async def filter(self, filter: str | RawSQL | None = None, *args, **kwargs) -> AsyncGenerator[ModelInstance]:
+    async def filter(self, filter: str | RawSQL | None = None, refetch: bool = True, *args, **kwargs) -> AsyncGenerator[ModelInstance]:
         table = self.__name__.lower()
         select = "*"
         if "fields" in kwargs:
@@ -225,13 +225,16 @@ class Model:
         async with pool.acquire() as conn:
             cur = await conn.fetch(query + ";", *args)
         for row in cur:
-            val = {self._primary_key: row[self._primary_key]}
-            if "fields" in kwargs:
-                row = await self.get_or_none(fields=kwargs["fields"], **val)
+            if refetch:
+                val = {self._primary_key: row[self._primary_key]}
+                if "fields" in kwargs:
+                    row = await self.get_or_none(fields=kwargs["fields"], **val)
+                else:
+                    row = await self.get_or_none(**val)
+                if not row:
+                    continue
             else:
-                row = await self.get_or_none(**val)
-            if not row:
-                continue
+                row = self(row)
             yield row
 
     @classmethod
@@ -248,11 +251,11 @@ class Model:
 
     @classmethod
     async def collect(self, filter: str | RawSQL | None = None, *args) -> list[ModelInstance]:
-        return [i async for i in self.filter(filter, *args)]
+        return [i async for i in self.filter(filter, refetch=False, *args)]
 
     @classmethod
     async def collect_limit(self, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, *args) -> list[ModelInstance]:
-        return [i async for i in self.limit(fields, filter, *args)]
+        return [i async for i in self.limit(fields, filter, refetch=False, *args)]
 
     @classmethod
     async def __do_function(self, func: str, column: str, filter: str | RawSQL | None = None, *args) -> Any:
