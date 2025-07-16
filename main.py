@@ -6303,7 +6303,8 @@ async def forget(message: discord.Interaction):
     else:
         await message.response.send_message("your an idiot there is literally no cat setupped in this channel you stupid")
 
-#  Command was getting a bit difficult to prank with, decided to throw in a randomizer to make it more realistic.
+# Command was getting a bit difficult to prank with, decided to throw in a randomizer to make it more realistic.
+# Note that this command was not tested in full, and only a portion of a replication on my personal machine was used as a test.
 @bot.tree.command(description="LMAO TROLLED SO HARD :JOY:")
 async def fake(message: discord.Interaction):
 	if message.user.id in fakecooldown and fakecooldown[message.user.id] + 60 > time.time():
