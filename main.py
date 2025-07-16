@@ -929,7 +929,7 @@ async def maintaince_loop():
                 print("Posting to top.gg failed.")
 
     # revive dead catch loops
-    async for channel in Channel.limit(["channel_id"], "yet_to_spawn = $1 AND cat = 0", time.time()):
+    async for channel in Channel.limit(["channel_id"], "yet_to_spawn < $1 AND cat = 0", time.time(), refetch=False):
         await spawn_cat(str(channel.channel_id))
         await asyncio.sleep(0.1)
 
