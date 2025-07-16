@@ -1080,7 +1080,7 @@ async def maintaince_loop():
         ):
             return
 
-        if loop_count % 10 == 0 and config.DB_TYPE == "POSTGRES":
+        if loop_count % 10 == 0:
             backup_file = f"/root/backups/backup-{int(time.time())}.dump"
             try:
                 process = await asyncio.create_subprocess_shell(f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -Fc -Z 9 -f {backup_file} cat_bot")
