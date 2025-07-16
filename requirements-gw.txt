@@ -5,5 +5,6 @@ Pilmoji
 emoji==1.7
 requests
 discord-emoji
-tortoise-orm[asyncpg]
 winuvloop
+psutil
+asyncpg

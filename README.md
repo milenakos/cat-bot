@@ -8,9 +8,9 @@ Please note that self-hosting is hacky and isn't supported; instructions below a
 
 ## Prerequisites
 
-- Python 3
+- Python 3 (around 3.8 or so, newer is better ofc)
+- PostgreSQL
 - Git (optional)
-- PostgreSQL (optional)
 
 ## Instructions
 
@@ -43,3 +43,5 @@ Please note that self-hosting is hacky and isn't supported; instructions below a
 # License
 
 Cat Bot is licensed under GNU Affero General Public License v3.0 license. View `LICENSE` for more information.
+
+CatPG, our custom-made `asyncpg` wrapper, is licensed under MIT License instead. The license text is present in the beginning of `catpg.py` file.
