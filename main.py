@@ -332,13 +332,10 @@ def get_emoji(name):
 async def fetch_perms(message: discord.Message | discord.Interaction) -> discord.Permissions:
     # this is mainly for threads where the parent isnt cached
     if isinstance(message.channel, discord.Thread) and not message.channel.parent:
-        parent = await message.guild.fetch_channel(message.channel.parent_id)
+        parent = message.guild.get_channel(message.channel.parent_id) or await message.guild.fetch_channel(message.channel.parent_id)
         return parent.permissions_for(message.guild.me)
     else:
-        result = message.channel.permissions_for(message.guild.me)
-        if result == 0:
-            result = (await message.guild.fetch_channel(message.channel.id)).permissions_for(message.guild.me)
-        return result
+        return message.channel.permissions_for(message.guild.me)
 
 
 # news stuff
