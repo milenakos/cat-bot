@@ -280,8 +280,14 @@ slots_lock = []
 # ???
 rigged_users = []
 
+
+# WELCOME TO THE TEMP_.._STORAGE HELL
+
 # to prevent double catches
 temp_catches_storage = []
+
+# to prevent double spawns
+temp_spawn_storage = []
 
 # to prevent weird behaviour shortly after a rain
 temp_rains_storage = []
@@ -814,15 +820,6 @@ def alnum(string):
     return "".join(item for item in string.lower() if item.isalnum())
 
 
-async def unsetup(channel: Channel):
-    try:
-        wh = discord.Webhook.from_url(channel.webhook, client=bot)
-        await wh.delete(prefer_auth=False)
-    except Exception:
-        pass
-    await channel.delete()
-
-
 async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     try:
         channel = await Channel.get_or_none(channel_id=int(ch_id))
@@ -830,8 +827,10 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
             raise Exception
     except Exception:
         return
-    if channel.cat or channel.yet_to_spawn > time.time() + 10:
+    if channel.cat or channel.yet_to_spawn > time.time() + 10 or int(ch_id) in temp_spawn_storage:
         return
+
+    temp_spawn_storage.append(int(ch_id))
 
     if not localcat:
         localcat = random.choices(cattypes, weights=type_dict.values())[0]
@@ -839,29 +838,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     file = discord.File(
         f"images/spawn/{localcat.lower()}_cat.png",
     )
-    try:
-        channeley = discord.Webhook.from_url(channel.webhook, client=bot)
-        thread_id = channel.thread_mappings
-    except Exception:
-        try:
-            temp_channel = bot.get_channel(int(ch_id))
-            if (
-                not temp_channel
-                or not isinstance(
-                    temp_channel,
-                    Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel],
-                )
-                or not await fetch_perms(temp_channel).manage_webhooks
-            ):
-                raise Exception
-            with open("images/cat.png", "rb") as f:
-                wh = await temp_channel.create_webhook(name="Cat Bot", avatar=f.read())
-                channel.webhook = wh.url
-                await channel.save()
-                await spawn_cat(ch_id, localcat)  # respawn
-        except Exception:
-            await unsetup(channel)
-            return
+    channeley = bot.get_partial_messageable(int(ch_id))
 
     appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
 
@@ -870,42 +847,18 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         return
 
     try:
-        if thread_id:
-            message_is_sus = await channeley.send(
-                appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat),
-                file=file,
-                wait=True,
-                thread=discord.Object(int(ch_id)),
-                allowed_mentions=discord.AllowedMentions.all(),
-            )
-        else:
-            message_is_sus = await channeley.send(
-                appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat),
-                file=file,
-                wait=True,
-                allowed_mentions=discord.AllowedMentions.all(),
-            )
+        message_is_sus = await channeley.send(
+            appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat),
+            file=file,
+            allowed_mentions=discord.AllowedMentions.all(),
+        )
     except discord.Forbidden:
-        await unsetup(channel)
+        await channel.delete()
         return
     except discord.NotFound:
-        await unsetup(channel)
+        await channel.delete()
         return
     except Exception:
-        return
-
-    if message_is_sus.channel.id != int(ch_id):
-        # user changed the webhook destination, panic mode
-        if thread_id:
-            await channeley.send(
-                "uh oh spaghettio you changed webhook destination and idk what to do with that so i will now self destruct do /setup to fix it",
-                thread=discord.Object(int(ch_id)),
-            )
-        else:
-            await channeley.send(
-                "uh oh spaghettio you changed webhook destination and idk what to do with that so i will now self destruct do /setup to fix it"
-            )
-        await unsetup(channel)
         return
 
     channel.cat = message_is_sus.id
@@ -913,6 +866,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     channel.forcespawned = bool(force_spawn)
     channel.cattype = localcat
     await channel.save()
+    temp_spawn_storage.remove(int(ch_id))
 
 
 async def postpone_reminder(interaction):
@@ -1783,10 +1737,7 @@ async def on_message(message: discord.Message):
                         pass
                     return
 
-                try:
-                    send_target = discord.Webhook.from_url(channel.webhook, client=bot)
-                except Exception:
-                    send_target = message.channel
+                send_target = message.channel
                 try:
                     # some math to make time look cool
                     then = catchtime.timestamp()
@@ -1985,26 +1936,16 @@ async def on_message(message: discord.Message):
 
                 async def delete_cat():
                     try:
-                        if channel.thread_mappings:
-                            await send_target.delete_message(cat_temp, thread=discord.Object(int(message.channel.id)))
-                        else:
-                            await send_target.delete_message(cat_temp)
+                        cat_spawn = send_target.get_partial_message(cat_temp)
+                        await cat_spawn.delete()
                     except Exception:
-                        try:
-                            if perms.manage_messages:
-                                await message.channel.delete_messages([discord.Object(cat_temp)])
-                        except Exception:
-                            pass
+                        pass
 
                 async def send_confirm():
                     try:
                         kwargs = {}
-                        if channel.thread_mappings:
-                            kwargs["thread"] = discord.Object(message.channel.id)
                         if view:
                             kwargs["view"] = view
-                        if isinstance(send_target, discord.Webhook) and random.randint(0, 1000) == 69:
-                            kwargs["username"] = "Cot Bat"
 
                         await send_target.send(
                             coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
@@ -2552,7 +2493,7 @@ giving away a whole bunch of rain as celebration!
 [join our discord server](<https://discord.gg/FBkXDxjqSz>) and click the first reaction under the latest newspost to join in!
 there will be a total of 10 winners who will get 40 minutes each! giveaway ends july 5th.
 
-2. art contest
+2. art contest (ENDED)
 again in our [discord server](<https://discord.gg/zrYstPe3W6>) a new channel has opened for art submissions!
 top 5 people who get the most community votes will get 250, 150, 100, 50 and 50 rain minutes respectively!
 
@@ -3433,7 +3374,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             await interaction.response.send_message("pls input a number 1-60", ephemeral=True)
             return
 
-        if rain_length > user.rain_minutes + profile.rain_minutes:
+        if rain_length > user.rain_minutes + profile.rain_minutes or user.rain_minutes < 0:
             await interaction.response.send_message(
                 "you dont have enough rain! buy some more [here](<https://catbot.shop>)",
                 ephemeral=True,
@@ -6322,53 +6263,32 @@ async def setup_channel(message: discord.Interaction):
         )
         return
 
-    with open("images/cat.png", "rb") as f:
-        try:
-            channel_permissions = await fetch_perms(message)
-            needed_perms = {
-                "View Channel": channel_permissions.view_channel,
-                # "Manage Webhooks": channel_permissions.manage_webhooks,
-                "Send Messages": channel_permissions.send_messages,
-                "Attach Files": channel_permissions.attach_files,
-            }
-            if isinstance(message.channel, discord.Thread):
-                needed_perms["Send Messages in Threads"] = channel_permissions.send_messages_in_threads
+    try:
+        channel_permissions = await fetch_perms(message)
+        needed_perms = {
+            "View Channel": channel_permissions.view_channel,
+            "Send Messages": channel_permissions.send_messages,
+            "Attach Files": channel_permissions.attach_files,
+        }
+        if isinstance(message.channel, discord.Thread):
+            needed_perms["Send Messages in Threads"] = channel_permissions.send_messages_in_threads
 
-            for name, value in needed_perms.copy().items():
-                if value:
-                    needed_perms.pop(name)
+        for name, value in needed_perms.copy().items():
+            if value:
+                needed_perms.pop(name)
 
-            missing_perms = list(needed_perms.keys())
-            if len(missing_perms) != 0:
-                needed_perms = "\n- ".join(missing_perms)
-                await message.response.send_message(
-                    f":x: Missing Permissions! Please give me the following:\n- {needed_perms}\nHint: try setting channel permissions if server ones don't work."
-                )
-                return
-
-            if isinstance(message.channel, discord.Thread):
-                parent = bot.get_channel(message.channel.parent_id)
-                if not isinstance(parent, Union[discord.TextChannel, discord.ForumChannel]):
-                    raise Exception
-                try:
-                    wh = await parent.create_webhook(name="Cat Bot", avatar=f.read())
-                except Exception:
-                    await message.response.send_message(":x: Missing Permissions! Please give me the Manage Webhooks permission.")
-                    return
-                await Channel.create(channel_id=message.channel.id, webhook=wh.url, thread_mappings=True)
-            elif isinstance(
-                message.channel,
-                Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel],
-            ):
-                try:
-                    wh = await message.channel.create_webhook(name="Cat Bot", avatar=f.read())
-                except Exception:
-                    await message.response.send_message(":x: Missing Permissions! Please give me the Manage Webhooks permission.")
-                    return
-                await Channel.create(channel_id=message.channel.id, webhook=wh.url, thread_mappings=False)
-        except Exception:
-            await message.response.send_message("this channel gives me bad vibes.")
+        missing_perms = list(needed_perms.keys())
+        if len(missing_perms) != 0:
+            needed_perms = "\n- ".join(missing_perms)
+            await message.response.send_message(
+                f":x: Missing Permissions! Please give me the following:\n- {needed_perms}\nHint: try setting channel permissions if server ones don't work."
+            )
             return
+
+        await Channel.create(channel_id=message.channel.id)
+    except Exception:
+        await message.response.send_message("this channel gives me bad vibes.")
+        return
 
     await spawn_cat(str(message.channel.id))
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
@@ -6378,7 +6298,7 @@ async def setup_channel(message: discord.Interaction):
 @discord.app_commands.default_permissions(manage_guild=True)
 async def forget(message: discord.Interaction):
     if channel := await Channel.get_or_none(channel_id=message.channel.id):
-        await unsetup(channel)
+        await channel.delete()
         await message.response.send_message(f"ok, now i wont send cats in <#{message.channel.id}>")
     else:
         await message.response.send_message("your an idiot there is literally no cat setupped in this channel you stupid")

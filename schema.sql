@@ -20,7 +20,6 @@ SET default_table_access_method = heap;
 CREATE TABLE public.channel (
     channel_id bigint NOT NULL,
     cat bigint DEFAULT 0,
-    thread_mappings boolean DEFAULT false,
     spawn_times_min bigint DEFAULT 120,
     spawn_times_max bigint DEFAULT 1200,
     lastcatches bigint DEFAULT 0,
