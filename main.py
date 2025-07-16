@@ -335,7 +335,10 @@ async def fetch_perms(message: discord.Message | discord.Interaction) -> discord
         parent = await message.guild.fetch_channel(message.channel.parent_id)
         return parent.permissions_for(message.guild.me)
     else:
-        return message.channel.permissions_for(message.guild.me)
+        result = message.channel.permissions_for(message.guild.me)
+        if result == 0:
+            result = (await message.guild.fetch_channel(message.channel.id)).permissions_for(message.guild.me)
+        return result
 
 
 # news stuff
