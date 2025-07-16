@@ -238,10 +238,12 @@ class Model:
             yield row
 
     @classmethod
-    async def limit(self, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, *args) -> AsyncGenerator[ModelInstance]:
+    async def limit(
+        self, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, refetch: bool = True, *args
+    ) -> AsyncGenerator[ModelInstance]:
         if isinstance(fields, str):
             fields = [fields]
-        async for row in self.filter(filter, *args, fields=fields):
+        async for row in self.filter(filter, refetch=refetch, *args, fields=fields):
             yield row
 
     @classmethod
