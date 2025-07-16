@@ -22,20 +22,24 @@
 
 # this is a KISS wrapper i made for asyncpg
 
-import asyncpg
+import asyncpg, asyncio
 from typing import Any, AsyncGenerator, TypeVar
 
 conn = None
 
+conn_lock = asyncio.Lock()
+
 
 async def connect(**kwargs):
     global conn
-    conn = await asyncpg.connect(**kwargs)
+    async with conn_lock:
+        conn = await asyncpg.connect(**kwargs)
 
 
 async def close():
     if conn:
-        await conn.close()
+        async with conn_lock:
+            await conn.close()
 
 
 # this is used in limit() to distinguish between raw SQL and column names
@@ -87,7 +91,8 @@ class Model:
     async def delete(self) -> None:
         table = self.__class__.__name__.lower()
         query_string = f'DELETE FROM "{table}" WHERE {self._primary_key} = $1;'
-        await conn.execute(query_string, self.__values[self._primary_key])
+        async with conn_lock:
+            await conn.execute(query_string, self.__values[self._primary_key])
         self.__dirty_values = []
         self.__values = []
 
@@ -112,7 +117,8 @@ class Model:
         args.append(self.__values[self._primary_key])
 
         # run the query
-        await conn.execute(query_string, *args)
+        async with conn_lock:
+            await conn.execute(query_string, *args)
         self.__dirty_values = []
 
     @classmethod
@@ -134,7 +140,8 @@ class Model:
         query_string += " AND ".join(changes) + " LIMIT 1;"
 
         # run the query
-        return await conn.fetchrow(query_string, *kwargs.values())
+        async with conn_lock:
+            return await conn.fetchrow(query_string, *kwargs.values())
 
     async def refresh_from_db(self) -> None:
         args = {self._primary_key: self.__values[self._primary_key]}
@@ -177,7 +184,8 @@ class Model:
         query_string += ") ON CONFLICT (" + ", ".join(changes) + ") DO NOTHING;"
 
         # run the query
-        await conn.execute(query_string, *values)
+        async with conn_lock:
+            await conn.execute(query_string, *values)
 
         # get
         result = await self._get(**kwargs)
@@ -201,7 +209,8 @@ class Model:
         # add the var numbers
         changes2 = ["$" + str(i) for i in range(1, var_counter)]
         query_string += ", ".join(changes2) + ");"
-        await conn.execute(query_string, *values)
+        async with conn_lock:
+            await conn.execute(query_string, *values)
 
     @classmethod
     async def filter(self, filter: str | RawSQL | None = None, *args, **kwargs) -> AsyncGenerator[ModelInstance]:
@@ -214,7 +223,8 @@ class Model:
         query = f'SELECT {select} FROM "{table}"'
         if filter:
             query += f" WHERE {filter}"
-        cur = await conn.fetch(query + ";", *args)
+        async with conn_lock:
+            cur = await conn.fetch(query + ";", *args)
         for row in cur:
             val = {self._primary_key: row[self._primary_key]}
             if "fields" in kwargs:
@@ -253,7 +263,8 @@ class Model:
         query = f'SELECT {func}({column}) FROM "{table}"'
         if filter:
             query += f" WHERE {filter}"
-        return await conn.fetchval(query + ";", *args)
+        async with conn_lock:
+            return await conn.fetchval(query + ";", *args)
 
     @classmethod
     async def sum(self, column: str, filter: str | RawSQL | None = None, *args) -> int:
@@ -293,4 +304,5 @@ class Model:
             data.append(tuple(curr))
 
         # execute the query
-        await conn.executemany(query, data)
+        async with conn_lock:
+            await conn.executemany(query, data)
