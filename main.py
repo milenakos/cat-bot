@@ -1238,7 +1238,7 @@ async def on_message(message: discord.Message):
     # here are some automation hooks for giving out purchases and similiar
     if config.RAIN_CHANNEL_ID and message.channel.id == config.RAIN_CHANNEL_ID and text.lower().startswith("cat!rain"):
         things = text.split(" ")
-        user = await User.get_or_create(user_id=things[1])
+        user = await User.get_or_create(user_id=int(things[1]))
         if not user.rain_minutes:
             user.rain_minutes = 0
 
@@ -2077,7 +2077,7 @@ async def on_message(message: discord.Message):
     if text.lower().startswith("cat!rain"):
         # syntax: cat!rain 553093932012011520 short
         things = text.split(" ")
-        user = await User.get_or_create(user_id=things[1])
+        user = await User.get_or_create(user_id=int(things[1]))
         if not user.rain_minutes:
             user.rain_minutes = 0
         if things[2] == "short":
