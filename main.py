@@ -2541,7 +2541,7 @@ thanks for using cat bot!""",
                 await profile.refresh_from_db()
                 await user.refresh_from_db()
 
-                if user.vote_time_topgg > 1752689941 + 3600 or user.vote_time < 1752689941 - (3600 * 25 * 3):
+                if user.vote_time_topgg > 1752689941 + 3600 or user.vote_time_topgg < 1752689941 - (3600 * 25 * 3):
                     await give_interaction.followup.send("You are not eligible to claim this reward!", ephemeral=True)
                     return
 
