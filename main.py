@@ -2545,7 +2545,7 @@ thanks for using cat bot!""",
                     await give_interaction.followup.send("You are not eligible to claim this reward!", ephemeral=True)
                     return
 
-                profile.pack_gold += 2
+                # profile.pack_gold += 2
                 await profile.save()
 
                 current_state = user.news_state.strip()
