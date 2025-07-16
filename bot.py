@@ -24,6 +24,7 @@ from discord.ext import commands
 
 import config
 import database
+import catpg
 
 winuvloop.install()
 
@@ -52,6 +53,7 @@ async def reload(reload_db):
     if reload_db:
         await database.close()
         importlib.reload(database)
+        importlib.reload(catpg)
         await database.connect()
     await bot.load_extension("main")
 
