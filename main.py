@@ -2556,7 +2556,7 @@ thanks for using cat bot!""",
 
             if user.news_state[news_id] != "2":
                 button = discord.ui.Button(label="Claim!", style=ButtonStyle.blurple, emoji=get_emoji("goldpack"))
-                button.callback = give_two_packs
+                # button.callback = give_two_packs
                 view.add_item(button)
             else:
                 button = discord.ui.Button(label="Claimed!", disabled=True)
