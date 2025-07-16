@@ -22,24 +22,21 @@
 
 # this is a KISS wrapper i made for asyncpg
 
-import asyncpg, asyncio
 from typing import Any, AsyncGenerator, TypeVar
 
-conn = None
+import asyncpg
 
-conn_lock = asyncio.Lock()
+pool = None
 
 
 async def connect(**kwargs):
-    global conn
-    async with conn_lock:
-        conn = await asyncpg.connect(**kwargs)
+    global pool
+    pool = await asyncpg.create_pool(**kwargs)
 
 
 async def close():
-    if conn:
-        async with conn_lock:
-            await conn.close()
+    if pool:
+        await pool.close()
 
 
 # this is used in limit() to distinguish between raw SQL and column names
@@ -91,7 +88,7 @@ class Model:
     async def delete(self) -> None:
         table = self.__class__.__name__.lower()
         query_string = f'DELETE FROM "{table}" WHERE {self._primary_key} = $1;'
-        async with conn_lock:
+        async with pool.acquire() as conn:
             await conn.execute(query_string, self.__values[self._primary_key])
         self.__dirty_values = []
         self.__values = []
@@ -117,7 +114,7 @@ class Model:
         args.append(self.__values[self._primary_key])
 
         # run the query
-        async with conn_lock:
+        async with pool.acquire() as conn:
             await conn.execute(query_string, *args)
         self.__dirty_values = []
 
@@ -140,7 +137,7 @@ class Model:
         query_string += " AND ".join(changes) + " LIMIT 1;"
 
         # run the query
-        async with conn_lock:
+        async with pool.acquire() as conn:
             return await conn.fetchrow(query_string, *kwargs.values())
 
     async def refresh_from_db(self) -> None:
@@ -186,7 +183,7 @@ class Model:
         query_string += ") ON CONFLICT (" + ", ".join(changes) + ") DO NOTHING;"
 
         # run the query
-        async with conn_lock:
+        async with pool.acquire() as conn:
             await conn.execute(query_string, *values)
 
         # get
@@ -211,7 +208,7 @@ class Model:
         # add the var numbers
         changes2 = ["$" + str(i) for i in range(1, var_counter)]
         query_string += ", ".join(changes2) + ");"
-        async with conn_lock:
+        async with pool.acquire() as conn:
             await conn.execute(query_string, *values)
 
     @classmethod
@@ -225,7 +222,7 @@ class Model:
         query = f'SELECT {select} FROM "{table}"'
         if filter:
             query += f" WHERE {filter}"
-        async with conn_lock:
+        async with pool.acquire() as conn:
             cur = await conn.fetch(query + ";", *args)
         for row in cur:
             val = {self._primary_key: row[self._primary_key]}
@@ -265,7 +262,7 @@ class Model:
         query = f'SELECT {func}({column}) FROM "{table}"'
         if filter:
             query += f" WHERE {filter}"
-        async with conn_lock:
+        async with pool.acquire() as conn:
             return await conn.fetchval(query + ";", *args)
 
     @classmethod
@@ -306,5 +303,5 @@ class Model:
             data.append(tuple(curr))
 
         # execute the query
-        async with conn_lock:
+        async with pool.acquire() as conn:
             await conn.executemany(query, data)
