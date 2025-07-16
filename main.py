@@ -1694,7 +1694,7 @@ async def on_message(message: discord.Message):
             decided_time = random.uniform(times[0], times[1])
             if channel.yet_to_spawn < time.time():
                 channel.yet_to_spawn = time.time() + decided_time + 10
-            else:
+            elif channel.cat_rains == 0:
                 decided_time = 0
             try:
                 current_time = message.created_at.timestamp()
@@ -3451,7 +3451,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         modal = RainModal(interaction.user)
         await interaction.response.send_modal(modal)
 
-    button = Button(label="Disabled for maintenance.", style=ButtonStyle.blurple, disabled=True)
+    button = Button(label="Rain!", style=ButtonStyle.blurple)
     button.callback = rain_modal
 
     shopbutton = Button(
