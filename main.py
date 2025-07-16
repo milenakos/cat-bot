@@ -2376,8 +2376,9 @@ async def news(message: discord.Interaction):
         await interaction.response.defer()
 
         current_state = user.news_state.strip()
-        user.news_state = current_state[:news_id] + "1" + current_state[news_id + 1 :]
-        await user.save()
+        if current_state[news_id] not in "123456789":
+            user.news_state = current_state[:news_id] + "1" + current_state[news_id + 1 :]
+            await user.save()
 
         profile = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         await progress(interaction, profile, "news")
@@ -2535,7 +2536,7 @@ thanks for using cat bot!""",
                     await do_funny(give_interaction)
                     return
                 await give_interaction.response.defer()
-                if user.news_state[news_id] == "2":
+                if user.news_state[news_id] == "3":
                     return
 
                 await profile.refresh_from_db()
@@ -2545,18 +2546,18 @@ thanks for using cat bot!""",
                     await give_interaction.followup.send("You are not eligible to claim this reward!", ephemeral=True)
                     return
 
-                # profile.pack_gold += 2
+                profile.pack_gold += 2
                 await profile.save()
 
                 current_state = user.news_state.strip()
-                user.news_state = current_state[:news_id] + "2" + current_state[news_id + 1 :]
+                user.news_state = current_state[:news_id] + "3" + current_state[news_id + 1 :]
                 await user.save()
 
                 await give_interaction.followup.send(f"You have received 2 {get_emoji('goldpack')} Gold packs!", ephemeral=True)
 
-            if user.news_state[news_id] != "2":
+            if user.news_state[news_id] != "3":
                 button = discord.ui.Button(label="Claim!", style=ButtonStyle.blurple, emoji=get_emoji("goldpack"))
-                # button.callback = give_two_packs
+                button.callback = give_two_packs
                 view.add_item(button)
             else:
                 button = discord.ui.Button(label="Claimed!", disabled=True)
