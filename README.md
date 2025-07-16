@@ -43,3 +43,5 @@ Please note that self-hosting is hacky and isn't supported; instructions below a
 # License
 
 Cat Bot is licensed under GNU Affero General Public License v3.0 license. View `LICENSE` for more information.
+
+CatPG, our custom-made `asyncpg` wrapper, is licensed under MIT License instead. The license text is present in the beginning of `catpg.py` file.

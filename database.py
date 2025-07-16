@@ -15,11 +15,11 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import catpg
-# import config
+import config
 
 
 async def connect(**_):
-    await catpg.connect(user="cat_bot", password="594085Ml", database="cat_bot", host="127.0.0.1")
+    await catpg.connect(user="cat_bot", password=config.DB_PASS, database="cat_bot", host="127.0.0.1")
 
 
 async def close():
