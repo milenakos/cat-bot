@@ -348,6 +348,7 @@ news_list = [
     {"title": "Message from CEO of Cat Bot", "emoji": "finecat"},
     {"title": "Cat Bot Turns 3", "emoji": "🥳"},
     {"title": "100,000 SERVERS WHAT", "emoji": "🎉"},
+    {"title": "Regarding recent instabilities", "emoji": "🗒️"},
 ]
 
 
@@ -2513,6 +2514,55 @@ aaaaaaaaaaaaaaa""",
             view.add_item(button2)
             await interaction.edit_original_response(content=None, view=view, embed=embed)
 
+        elif news_id == 8:
+            embed = discord.Embed(
+                title="Regarding recent instabilities",
+                description="""hello!
+
+stuff has been kinda broken the past few days, and the past 24 hours in paricular.
+
+it was mostly my fault, but i worked hard to fix everything and i think its mostly working now.
+
+as a compensation i will give everyone who voted in the past 3 days 2 free gold packs! you can press the button below to claim them. (note you can only claim it in 1 server, choose wisely)
+
+thanks for using cat bot!""",
+                color=0x6E593C,
+                timestamp=datetime.datetime.fromtimestamp(1752689941),
+            )
+
+            async def give_two_packs(give_interaction):
+                if give_interaction.user != interaction.user:
+                    await do_funny(give_interaction)
+                    return
+                await give_interaction.response.defer()
+                if user.news_state[news_id] != "2":
+                    return
+
+                await profile.refresh_from_db()
+                await user.refresh_from_db()
+
+                if user.vote_time_topgg > 1752689941 + 3600 or user.vote_time < 1752689941 - (3600 * 25 * 3):
+                    await give_interaction.followup.send("You are not eligible to claim this reward!", ephemeral=True)
+                    return
+
+                profile.pack_gold += 2
+                await profile.save()
+
+                current_state = user.news_state.strip()
+                user.news_state = current_state[:news_id] + "2" + current_state[news_id + 1 :]
+                await user.save()
+
+                await give_interaction.followup.send(f"You have received 2 {get_emoji('goldpack')} Gold packs!", ephemeral=True)
+
+            if user.news_state[news_id] != "2":
+                button = discord.ui.Button(label="Claim!", style=ButtonStyle.blurple, emoji=get_emoji("goldpack"))
+                button.callback = give_two_packs
+                view.add_item(button)
+            else:
+                button = discord.ui.Button(label="Claimed!", disabled=True)
+                view.add_item(button)
+            await interaction.edit_original_response(content=None, view=view, embed=embed)
+
     async def regen_buttons():
         nonlocal buttons
         await user.refresh_from_db()
@@ -3567,7 +3617,7 @@ async def packs(message: discord.Interaction):
                 reward_texts.append(f"{get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}\n" + build_string)
                 build_string = f"Upgraded from {get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}!\n" + build_string
             else:
-                build_string += f" -> {get_emoji(pack_data[level+1]['name'].lower() + 'pack')}"
+                build_string += f" -> {get_emoji(pack_data[level + 1]['name'].lower() + 'pack')}"
             level += 1
             upgrades += 1
         final_level = pack_data[level]
@@ -3577,7 +3627,7 @@ async def packs(message: discord.Interaction):
         # select cat type
         goal_value = final_level["value"]
         chosen_type = random.choice(cattypes)
-        cat_emoji = get_emoji(chosen_type.lower() + 'cat')
+        cat_emoji = get_emoji(chosen_type.lower() + "cat")
         pre_cat_amount = goal_value / (sum(type_dict.values()) / type_dict[chosen_type])
         if pre_cat_amount % 1 > random.random():
             cat_amount = math.ceil(pre_cat_amount)
@@ -3681,7 +3731,7 @@ async def packs(message: discord.Interaction):
 
         final_header = f"Opened {total_pack_count} packs! (" + ", ".join(results_header) + ")"
         final_result = "\n".join(results_detail)
-        if display_cats or len(final_result) > 2047: # you can never be too safe
+        if display_cats or len(final_result) > 2047:  # you can never be too safe
             half_result = []
             for cat in cattypes:
                 if results_percat[cat] == 0:
