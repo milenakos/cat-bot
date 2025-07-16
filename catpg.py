@@ -212,7 +212,7 @@ class Model:
             await conn.execute(query_string, *values)
 
     @classmethod
-    async def filter(self, filter: str | RawSQL | None = None, refetch: bool = True, *args, **kwargs) -> AsyncGenerator[ModelInstance]:
+    async def filter(self, filter: str | RawSQL | None = None, *args, refetch: bool = True, **kwargs) -> AsyncGenerator[ModelInstance]:
         table = self.__name__.lower()
         select = "*"
         if "fields" in kwargs:
@@ -239,7 +239,7 @@ class Model:
 
     @classmethod
     async def limit(
-        self, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, refetch: bool = True, *args
+        self, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, *args, refetch: bool = True
     ) -> AsyncGenerator[ModelInstance]:
         if isinstance(fields, str):
             fields = [fields]
@@ -253,11 +253,11 @@ class Model:
 
     @classmethod
     async def collect(self, filter: str | RawSQL | None = None, *args) -> list[ModelInstance]:
-        return [i async for i in self.filter(filter, refetch=False, *args)]
+        return [i async for i in self.filter(filter, *args, refetch=False)]
 
     @classmethod
     async def collect_limit(self, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, *args) -> list[ModelInstance]:
-        return [i async for i in self.limit(fields, filter, refetch=False, *args)]
+        return [i async for i in self.limit(fields, filter, *args, refetch=False)]
 
     @classmethod
     async def __do_function(self, func: str, column: str, filter: str | RawSQL | None = None, *args) -> Any:
