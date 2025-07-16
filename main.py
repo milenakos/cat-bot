@@ -3878,7 +3878,7 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
 
         youngest_prism = await Prism.collect("guild_id = $1 ORDER BY time DESC LIMIT 1", message.guild.id)
         if youngest_prism:
-            selected_time = max(round(time.time()), youngest_prism.time + 1)
+            selected_time = max(round(time.time()), youngest_prism[0].time + 1)
         else:
             selected_time = round(time.time())
 
