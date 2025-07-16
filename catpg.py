@@ -159,6 +159,8 @@ class Model:
             return await self.get(fields=fields, **kwargs)
         except asyncpg.exceptions.PostgresError:
             return None
+        except AttributeError:
+            return None
 
     @classmethod
     async def get_or_create(self, **kwargs) -> ModelInstance:
