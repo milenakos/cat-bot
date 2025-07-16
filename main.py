@@ -6303,37 +6303,46 @@ async def forget(message: discord.Interaction):
     else:
         await message.response.send_message("your an idiot there is literally no cat setupped in this channel you stupid")
 
-
+# fake command was getting a bit difficult to prank with, decided to throw in a randomizer to make it more realistic.
 @bot.tree.command(description="LMAO TROLLED SO HARD :JOY:")
 async def fake(message: discord.Interaction):
-    if message.user.id in fakecooldown and fakecooldown[message.user.id] + 60 > time.time():
-        await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
-        return
-    file = discord.File("images/australian cat.png", filename="australian cat.png")
-    icon = get_emoji("egirlcat")
-    perms = await fetch_perms(message)
-    if not isinstance(
-        message.channel,
-        Union[
-            discord.TextChannel,
-            discord.VoiceChannel,
-            discord.StageChannel,
-            discord.Thread,
-        ],
-    ):
-        return
-    fakecooldown[message.user.id] = time.time()
-    try:
-        if not perms.send_messages or not perms.attach_files:
-            raise Exception
-        await message.response.send_message(
-            str(icon) + ' eGirl cat hasn\'t appeared! Type "cat" to catch ratio!',
-            file=file,
-        )
-    except Exception:
-        await message.response.send_message("i dont have perms lmao here is the ach anyways", ephemeral=True)
-        pass
-    await achemb(message, "trolled", "followup")
+	if message.user.id in fakecooldown and fakecooldown[message.user.id] + 60 > time.time():
+		await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
+		return
+
+	# pick a random cat type
+	random_cat = random.choice(cattypes)
+	filename = f"{random_cat.lower()}_cat.png"
+	file = discord.File(f"images/spawn/{filename}", filename=filename)
+
+	icon = get_emoji(random_cat.lower() + "cat")
+	perms = await fetch_perms(message)
+
+	if not isinstance(
+		message.channel,
+		Union[
+			discord.TextChannel,
+			discord.VoiceChannel,
+			discord.StageChannel,
+			discord.Thread,
+		],
+	):
+		return
+
+	fakecooldown[message.user.id] = time.time()
+
+	try:
+		if not perms.send_messages or not perms.attach_files:
+			raise Exception
+		await message.response.send_message(
+			f"{str(icon)} {random_cat} cat hasn't appeared! Type \"cat\" to catch ratio!",
+			file=file,
+		)
+	except Exception:
+		await message.response.send_message("i dont have perms lmao here is the ach anyways", ephemeral=True)
+		pass
+
+	await achemb(message, "trolled", "followup")
 
 
 @bot.tree.command(description="(ADMIN) Force cats to appear")
