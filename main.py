@@ -2535,7 +2535,7 @@ thanks for using cat bot!""",
                     await do_funny(give_interaction)
                     return
                 await give_interaction.response.defer()
-                if user.news_state[news_id] != "2":
+                if user.news_state[news_id] == "2":
                     return
 
                 await profile.refresh_from_db()
