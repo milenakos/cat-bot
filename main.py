@@ -6193,6 +6193,7 @@ async def leaderboards(
             start_date = datetime.datetime(2024, 12, 1)
             current_date = datetime.datetime.utcnow()
             full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
+            bp_season = battle["seasons"][str(full_months_passed)]
             if current_date.day < start_date.day:
                 full_months_passed -= 1
             result = await Profile.collect_limit(
@@ -6211,8 +6212,6 @@ async def leaderboards(
             # qhar
             return
 
-        bp_season = battle["seasons"][str(full_months_passed)]
-
         # find the placement of the person who ran the command and optionally the person who pressed the button
         interactor_placement = 0
         messager_placement = 0
@@ -6221,7 +6220,7 @@ async def leaderboards(
                 interactor_placement = index + 1
                 interactor = position[final_value]
                 if type == "Battlepass":
-                    if i[final_value] >= len(bp_season):
+                    if position[final_value] >= len(bp_season):
                         lv_xp_req = 1500
                     else:
                         lv_xp_req = bp_season[int(position[final_value]) - 1]["xp"]
@@ -6230,7 +6229,7 @@ async def leaderboards(
                 messager_placement = index + 1
                 messager = position[final_value]
                 if type == "Battlepass":
-                    if i[final_value] >= len(bp_season):
+                    if position[final_value] >= len(bp_season):
                         lv_xp_req = 1500
                     else:
                         lv_xp_req = bp_season[int(position[final_value]) - 1]["xp"]
