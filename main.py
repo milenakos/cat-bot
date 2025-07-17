@@ -3729,7 +3729,8 @@ async def packs(message: discord.Interaction):
             user[f"cat_{cat_type}"] += cat_amount
         await user.save()
 
-        final_header = f"Opened {total_pack_count} packs! (" + ", ".join(results_header) + ")"
+        final_header = f"Opened {total_pack_count} packs!"
+        pack_list = ", ".join(results_header)
         final_result = "\n".join(results_detail)
         if display_cats or len(final_result) > 2047:  # you can never be too safe
             half_result = []
@@ -3739,10 +3740,10 @@ async def packs(message: discord.Interaction):
                 half_result.append(f"{get_emoji(cat.lower() + 'cat')} {results_percat[cat]} {cat} cats!")
             final_result = "\n".join(half_result)
 
-        embed = discord.Embed(title=final_header, color=0x6E593C)
+        embed = discord.Embed(title=final_header, description=pack_list, color=0x6E593C)
         await interaction.edit_original_response(embed=embed, view=None)
         await asyncio.sleep(1)
-        embed = discord.Embed(title=final_header, description=final_result, color=0x6E593C)
+        embed = discord.Embed(title=final_header, description=pack_list + "\n\n" + final_result, color=0x6E593C)
         await interaction.edit_original_response(embed=embed)
         await asyncio.sleep(1)
         await interaction.edit_original_response(view=gen_view(user))
