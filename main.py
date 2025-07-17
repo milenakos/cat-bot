@@ -2541,37 +2541,8 @@ thanks for using cat bot!""",
                 timestamp=datetime.datetime.fromtimestamp(1752689941),
             )
 
-            async def give_two_packs(give_interaction):
-                if give_interaction.user != interaction.user:
-                    await do_funny(give_interaction)
-                    return
-                await give_interaction.response.defer()
-                if user.news_state[news_id] == "3":
-                    return
-
-                await profile.refresh_from_db()
-                await user.refresh_from_db()
-
-                if user.vote_time_topgg > 1752689941 + (24 * 3600) or user.vote_time_topgg < 1752689941 - (3600 * 25 * 3):
-                    await give_interaction.followup.send("You are not eligible to claim this reward!", ephemeral=True)
-                    return
-
-                profile.pack_gold += 2
-                await profile.save()
-
-                current_state = user.news_state.strip()
-                user.news_state = current_state[:news_id] + "3" + current_state[news_id + 1 :]
-                await user.save()
-
-                await give_interaction.followup.send(f"You have received 2 {get_emoji('goldpack')} Gold packs!", ephemeral=True)
-
-            if user.news_state[news_id] != "3":
-                button = discord.ui.Button(label="Claim!", style=ButtonStyle.blurple, emoji=get_emoji("goldpack"))
-                button.callback = give_two_packs
-                view.add_item(button)
-            else:
-                button = discord.ui.Button(label="Claimed!", disabled=True)
-                view.add_item(button)
+            button = discord.ui.Button(label="Expired!", disabled=True)
+            view.add_item(button)
             await interaction.edit_original_response(content=None, view=view, embed=embed)
 
     async def regen_buttons():
