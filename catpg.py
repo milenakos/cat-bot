@@ -143,7 +143,8 @@ class Model:
     async def refresh_from_db(self) -> None:
         args = {self._primary_key: self.__values[self._primary_key]}
         result = await self._get(**args)
-        self.__init__(result)
+        if result:
+            self.__init__(result)
 
     @classmethod
     async def get(self, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance:
