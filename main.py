@@ -547,7 +547,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
 
         streak_data = get_streak_reward(global_user.vote_streak)
         if streak_data["reward"]:
-            user[f"pack_{streak_data["reward"]}"] += 1
+            user[f"pack_{streak_data['reward']}"] += 1
 
         current_xp = user.progress + user.vote_reward
         quest_complete = True
@@ -677,7 +677,7 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
     global_user = await User.get_or_create(user_id=user.user_id)
     streak_data = get_streak_reward(global_user.vote_streak)
     if streak_data["reward"] and "top.gg" in quest_data["title"]:
-        streak_reward = f"\n🔥 **Streak Bonus!** +1 {streak_data["emoji"]} {streak_data["reward"].capitalize()} pack"
+        streak_reward = f"\n🔥 **Streak Bonus!** +1 {streak_data['emoji']} {streak_data['reward'].capitalize()} pack"
     else:
         streak_reward = ""
 
@@ -687,14 +687,11 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
         color=0x007F0E,
     ).set_author(name="/battlepass " + level_text)
 
+
 def get_streak_reward(streak):
     if streak % 5 != 0 or streak in [0, 5]:
-        return {
-              "reward": None,
-              "emoji": "⬛",
-              "done_emoji": "🟦"
-              }
-    
+        return {"reward": None, "emoji": "⬛", "done_emoji": "🟦"}
+
     pack_type = "gold"
     # these honestly don't add that much value but feel like good milestones
     if streak % 100 == 0:
@@ -702,11 +699,8 @@ def get_streak_reward(streak):
     elif streak % 25 == 0:
         pack_type = "platinum"
 
-    return {
-        "reward": pack_type, 
-        "emoji": get_emoji(f"{pack_type}pack"), 
-        "done_emoji": get_emoji(f"{pack_type}pack_claimed")
-        }
+    return {"reward": pack_type, "emoji": get_emoji(f"{pack_type}pack"), "done_emoji": get_emoji(f"{pack_type}pack_claimed")}
+
 
 # handle curious people clicking buttons
 async def do_funny(message):
@@ -1808,7 +1802,7 @@ async def on_message(message: discord.Message):
 
                 # calculate prism boost
                 total_prisms = await Prism.collect("guild_id = $1", message.guild.id)
-                user_prisms = await Prism.collect("guild_id = $1 AND user_id = $2", user.guild_id, message.author.id)
+                user_prisms = await Prism.collect("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id)
                 global_boost = 0.06 * math.log(2 * len(total_prisms) + 1)
                 user_boost = global_boost + 0.03 * math.log(2 * len(user_prisms) + 1)
                 did_boost = False
@@ -3872,7 +3866,7 @@ async def battlepass(message: discord.Interaction):
 
             next_streak_data = get_streak_reward(global_user.vote_streak + 1)
             if next_streak_data["reward"] and global_user.vote_time_topgg + 24 * 3600 > time.time():
-                description += f" + {next_streak_data["emoji"]} 1 {next_streak_data["reward"].capitalize()} pack"
+                description += f" + {next_streak_data['emoji']} 1 {next_streak_data['reward'].capitalize()} pack"
 
             description += f"{streak_string}\n"
 
@@ -6741,14 +6735,14 @@ async def recieve_vote(request):
 
         streak_progress = ""
         if user.vote_streak > 0:
-            streak_progress += get_streak_reward(user.vote_streak-1)["done_emoji"]
+            streak_progress += get_streak_reward(user.vote_streak - 1)["done_emoji"]
         streak_progress += get_streak_reward(user.vote_streak)["done_emoji"]
 
-        for i in range(user.vote_streak+1, user.vote_streak+9):
+        for i in range(user.vote_streak + 1, user.vote_streak + 9):
             streak_progress += get_streak_reward(i)["emoji"]
-        
+
         special_reward = math.ceil(user.vote_streak / 25) * 25
-        if not special_reward in range(user.vote_streak, user.vote_streak + 9):
+        if special_reward not in range(user.vote_streak, user.vote_streak + 9):
             streak_progress += f" | {get_streak_reward(special_reward)['emoji']} at {special_reward} streak"
 
         await channeley.send(
