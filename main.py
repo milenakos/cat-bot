@@ -3590,7 +3590,7 @@ async def packs(message: discord.Interaction):
             total_amount += amount
             button = discord.ui.Button(
                 emoji=get_emoji(pack["name"].lower() + "pack"),
-                label=f"{pack['name']} ({amount})",
+                label=f"{pack['name']} ({amount:,})",
                 style=ButtonStyle.blurple,
                 custom_id=pack["name"],
             )
@@ -3599,7 +3599,7 @@ async def packs(message: discord.Interaction):
         if empty:
             view.add_item(discord.ui.Button(label="No packs left!", disabled=True))
         if total_amount > 10:
-            button = discord.ui.Button(label=f"Open all! ({total_amount})", style=ButtonStyle.blurple)
+            button = discord.ui.Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.blurple)
             button.callback = open_all_packs
             view.add_item(button)
         return view
@@ -3659,9 +3659,9 @@ async def packs(message: discord.Interaction):
                 chosen_type = "Fine"
                 cat_amount = 1
         elif not is_single:
-            build_string += f" {cat_emoji} {cat_amount}"
+            build_string += f" {cat_emoji} {cat_amount:,}"
         if is_single:
-            reward_texts.append(reward_texts[-1] + f"\nYou got {get_emoji(chosen_type.lower() + 'cat')} {cat_amount} {chosen_type} cats!")
+            reward_texts.append(reward_texts[-1] + f"\nYou got {get_emoji(chosen_type.lower() + 'cat')} {cat_amount:,} {chosen_type} cats!")
             return chosen_type, cat_amount, upgrades, reward_texts
         return chosen_type, cat_amount, upgrades, build_string
 
@@ -3714,7 +3714,7 @@ async def packs(message: discord.Interaction):
             this_packs_count = user[pack_id]
             if this_packs_count < 1:
                 continue
-            results_header.append(f"{this_packs_count}x {get_emoji(pack.lower() + 'pack')}")
+            results_header.append(f"{this_packs_count:,}x {get_emoji(pack.lower() + 'pack')}")
             for _ in range(this_packs_count):
                 chosen_type, cat_amount, upgrades, rewards = get_pack_rewards(level, is_single=False)
                 total_upgrades += upgrades
@@ -3729,15 +3729,15 @@ async def packs(message: discord.Interaction):
             user[f"cat_{cat_type}"] += cat_amount
         await user.save()
 
-        final_header = f"Opened {total_pack_count} packs!"
+        final_header = f"Opened {total_pack_count:,} packs!"
         pack_list = "**" + ", ".join(results_header) + "**"
         final_result = "\n".join(results_detail)
-        if display_cats or len(final_result) > 2047:  # you can never be too safe
+        if display_cats or len(final_result) > 4000 - len(pack_list):
             half_result = []
             for cat in cattypes:
                 if results_percat[cat] == 0:
                     continue
-                half_result.append(f"{get_emoji(cat.lower() + 'cat')} {results_percat[cat]} {cat} cats!")
+                half_result.append(f"{get_emoji(cat.lower() + 'cat')} {results_percat[cat]:,} {cat} cats!")
             final_result = "\n".join(half_result)
 
         embed = discord.Embed(title=final_header, description=pack_list, color=0x6E593C)
