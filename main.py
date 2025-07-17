@@ -4450,29 +4450,23 @@ async def cookie(message: discord.Interaction):
     await message.response.send_message(view=view)
 
 
-@bot.tree.command(description="give cats now")
-@discord.app_commands.rename(cat_type="type")
-@discord.app_commands.describe(
-    person="Whom to gift?",
-    cat_type="im gonna airstrike your house from orbit",
-    amount="And how much?",
-)
-@discord.app_commands.autocomplete(cat_type=gift_autocomplete)
-async def gift(
+async def move(
     message: discord.Interaction,
-    person: discord.User,
+    person1: discord.User,
+    person2: discord.User,
     cat_type: str,
     amount: Optional[int],
+    admin: bool = False,
 ):
     if amount is None:
         # default the amount to 1
         amount = 1
     person_id = person.id
 
-    if amount <= 0 or message.user.id == person_id:
+    if amount <= 0 or person1.id == person2.id:
         # haha skill issue
         await message.response.send_message("no", ephemeral=True)
-        if message.user.id == person_id:
+        if not admin and person1.id == person2.id:
             await achemb(message, "lonely", "send")
         return
 
@@ -4492,18 +4486,18 @@ async def gift(
             await reciever.save()
             embed = discord.Embed(
                 title="Success!",
-                description=f"Successfully transfered {amount:,} {cat_type} cats from {message.user.mention} to <@{person_id}>!",
+                description=f"Successfully transfered {amount:,} {cat_type} cats from {person1.mention} to {person2.mention}!",
                 color=0x6E593C,
             )
 
             # handle tax
-            if amount >= 5:
+            if not admin and amount >= 5:
                 tax_amount = round(amount * 0.2)
                 tax_debounce = False
 
                 async def pay(interaction):
                     nonlocal tax_debounce
-                    if interaction.user.id == message.user.id and not tax_debounce:
+                    if interaction.user.id == person1.id and not tax_debounce:
                         tax_debounce = True
                         await interaction.response.defer()
                         await user.refresh_from_db()
@@ -4526,7 +4520,7 @@ async def gift(
                         await do_funny(interaction)
 
                 async def evade(interaction):
-                    if interaction.user.id == message.user.id:
+                    if interaction.user.id == person1.id:
                         await interaction.response.defer()
                         try:
                             await interaction.edit_original_response(view=None)
@@ -4550,23 +4544,28 @@ async def gift(
 
                 await message.response.send_message(person.mention, embed=embed, view=myview, allowed_mentions=discord.AllowedMentions(users=True))
             else:
-                await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
+                await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True), ephemeral=admin)
 
             # handle aches
-            await achemb(message, "donator", "send")
-            await achemb(message, "anti_donator", "send", person)
-            if person_id == bot.user.id and cat_type == "Ultimate" and int(amount) >= 5:
-                await achemb(message, "rich", "send")
-            if person_id == bot.user.id:
-                await achemb(message, "sacrifice", "send")
-            if cat_type == "Nice" and int(amount) == 69:
-                await achemb(message, "nice", "send")
+            if not admin:
+                await achemb(message, "donator", "send")
+                await achemb(message, "anti_donator", "send", person)
+                if person2.id == bot.user.id and cat_type == "Ultimate" and int(amount) >= 5:
+                    await achemb(message, "rich", "send")
+                if person2.id == bot.user.id:
+                    await achemb(message, "sacrifice", "send")
+                if cat_type == "Nice" and int(amount) == 69:
+                    await achemb(message, "nice", "send")
 
-            await progress(message, user, "gift")
+                await progress(message, user, "gift")
         else:
             await message.response.send_message("no", ephemeral=True)
     elif cat_type.lower() == "rain":
-        if person_id == bot.user.id:
+        if admin:
+            await message.response.send_message("no touching rains", ephemeral=True)
+            return
+
+        if person2.id == bot.user.id:
             await message.response.send_message("you can't sacrifice rains", ephemeral=True)
             return
 
@@ -4579,21 +4578,22 @@ async def gift(
             await actual_receiver.save()
             embed = discord.Embed(
                 title="Success!",
-                description=f"Successfully transfered {amount:,} minutes of rain from {message.user.mention} to <@{person_id}>!",
+                description=f"Successfully transfered {amount:,} minutes of rain from {person1.mention} to {person2.mention}!",
                 color=0x6E593C,
             )
 
             await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
 
             # handle aches
-            await achemb(message, "donator", "send")
-            await achemb(message, "anti_donator", "send", person)
+            if not admin:
+                await achemb(message, "donator", "send")
+                await achemb(message, "anti_donator", "send", person)
         else:
             await message.response.send_message("no", ephemeral=True)
 
         try:
             ch = bot.get_channel(config.RAIN_CHANNEL_ID)
-            await ch.send(f"{message.user.id} gave {amount}m to {person_id}")
+            await ch.send(f"{person1.id} gave {amount}m to {person2.id}")
         except Exception:
             pass
     elif cat_type.lower() in [i["name"].lower() for i in pack_data]:
@@ -4609,23 +4609,41 @@ async def gift(
             await reciever.save()
             embed = discord.Embed(
                 title="Success!",
-                description=f"Successfully transfered {amount:,} {cat_type} packs from {message.user.mention} to <@{person_id}>!",
+                description=f"Successfully transfered {amount:,} {cat_type} packs from {person1.mention} to {person2.mention}!",
                 color=0x6E593C,
             )
 
             await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
 
             # handle aches
-            await achemb(message, "donator", "send")
-            await achemb(message, "anti_donator", "send", person)
-            if person_id == bot.user.id:
-                await achemb(message, "sacrifice", "send")
+            if not admin:
+                await achemb(message, "donator", "send")
+                await achemb(message, "anti_donator", "send", person)
+                if person2.id == bot.user.id:
+                    await achemb(message, "sacrifice", "send")
 
-            await progress(message, user, "gift")
+                await progress(message, user, "gift")
         else:
             await message.response.send_message("no", ephemeral=True)
     else:
         await message.response.send_message("bro what", ephemeral=True)
+
+
+@bot.tree.command(description="give cats now")
+@discord.app_commands.rename(cat_type="type")
+@discord.app_commands.describe(
+    person="Whom to gift?",
+    cat_type="im gonna airstrike your house from orbit",
+    amount="And how much?",
+)
+@discord.app_commands.autocomplete(cat_type=gift_autocomplete)
+async def gift(
+    message: discord.Interaction,
+    person: discord.User,
+    cat_type: str,
+    amount: Optional[int],
+):
+    await move(message, message.user, person, cat_type, amount)
 
 
 @bot.tree.command(description="Trade stuff!")
@@ -6420,6 +6438,23 @@ async def givecat(message: discord.Interaction, person_id: discord.User, cat_typ
     )
     await message.response.send_message(person_id.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
 
+@bot.tree.command(description="(ADMIN) transfer cats now")
+@discord.app_commands.rename(person1="from", person2="to", cat_type="type")
+@discord.app_commands.describe(
+    person1="whom to take from?",
+    person2="whom to give to?",
+    cat_type="im gonna airstrike your house from orbit",
+    amount="And how much?",
+)
+@discord.app_commands.autocomplete(cat_type=gift_autocomplete)
+async def transfer(
+    message: discord.Interaction,
+    erson1: discord.User,
+    person2: discord.User,
+    cat_type: str,
+    amount: Optional[int],
+):
+    await move(message, person1, person2, cat_type, amount, True)
 
 @bot.tree.command(name="setup", description="(ADMIN) Setup cat in current channel")
 @discord.app_commands.default_permissions(manage_guild=True)
