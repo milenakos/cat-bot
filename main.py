@@ -6197,8 +6197,9 @@ async def leaderboards(
                 full_months_passed -= 1
             result = await Profile.collect_limit(
                 ["user_id", "battlepass", "progress"],
-                "guild_id = $1 AND (battlepass > 0 OR progress > 0) ORDER BY battlepass DESC, progress DESC",
+                "guild_id = $1 AND season = $2 AND (battlepass > 0 OR progress > 0) ORDER BY battlepass DESC, progress DESC",
                 message.guild.id,
+                full_months_passed,
             )
             final_value = "battlepass"
         elif type == "Cookies":
