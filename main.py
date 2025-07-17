@@ -3730,7 +3730,7 @@ async def packs(message: discord.Interaction):
         await user.save()
 
         final_header = f"Opened {total_pack_count} packs!"
-        pack_list = ", ".join(results_header)
+        pack_list = "**" + ", ".join(results_header) + "**"
         final_result = "\n".join(results_detail)
         if display_cats or len(final_result) > 2047:  # you can never be too safe
             half_result = []
