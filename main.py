@@ -6211,6 +6211,12 @@ async def leaderboards(
             # qhar
             return
 
+        bp_season = battle["seasons"][str(full_months_passed)]
+        if i[final_value] >= len(bp_season):
+            lv_xp_req = 1500
+        else:
+            lv_xp_req = bp_season[int(i[final_value]) - 1]["xp"]
+
         # find the placement of the person who ran the command and optionally the person who pressed the button
         interactor_placement = 0
         messager_placement = 0
@@ -6218,9 +6224,13 @@ async def leaderboards(
             if position["user_id"] == interaction.user.id:
                 interactor_placement = index + 1
                 interactor = position[final_value]
+                if type == "Battlepass":
+                    interactor_perc = math.floor((100 / lv_xp_req) * position["progress"])
             if interaction.user != message.user and position["user_id"] == message.user.id:
                 messager_placement = index + 1
                 messager = position[final_value]
+                if type == "Battlepass":
+                    messager_perc = math.floor((100 / lv_xp_req) * position["progress"])
 
         if type == "Slow":
             if interactor:
@@ -6260,19 +6270,7 @@ async def leaderboards(
             num = i[final_value]
 
             if type == "Battlepass":
-                bp_season = battle["seasons"][str(full_months_passed)]
-                if i[final_value] >= len(bp_season):
-                    lv_xp_req = 1500
-                else:
-                    lv_xp_req = bp_season[int(i[final_value]) - 1]["xp"]
-
                 prog_perc = math.floor((100 / lv_xp_req) * i["progress"])
-
-                if i["user_id"] == interaction.user.id:
-                    interactor_percent = prog_perc
-                if interaction.user != message.user and i["user_id"] == message.user.id:
-                    messager_perc = prog_perc
-
                 string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i['user_id']}>\n"
             else:
                 if type == "Slow":
@@ -6308,7 +6306,7 @@ async def leaderboards(
             messager_line = ""
             if include_interactor:
                 if type == "Battlepass":
-                    interactor_line = f"{interactor_placement}\\. Level **{interactor}** *({interactor_percent}%)*: {interaction.user.mention}\n"
+                    interactor_line = f"{interactor_placement}\\. Level **{interactor}** *({interactor_perc}%)*: {interaction.user.mention}\n"
                 else:
                     interactor_line = f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
             if include_messager:
