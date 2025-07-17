@@ -5466,7 +5466,15 @@ async def roll(message: discord.Interaction, sides: Optional[int]):
     else:
         dice = f"d{sides}"
 
-    await message.response.send_message(f"🎲 your {dice} lands on **{random.randint(1, sides)}**")
+    if sides == 2:
+        coinflipresult = random.randint(1, 2)
+        if coinflipresult == 2:
+            side = "tails"
+        else:
+            side = "heads"
+        await message.response.send_message(f"🪙 your coin lands on **{side}** ({coinflipresult})")
+    else:
+        await message.response.send_message(f"🎲 your {dice} lands on **{random.randint(1, sides)}**")
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     await progress(message, user, "roll")
 
