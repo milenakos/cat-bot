@@ -3714,8 +3714,7 @@ async def packs(message: discord.Interaction):
             this_packs_count = user[pack_id]
             if this_packs_count < 1:
                 continue
-            do_the_s = "" if this_packs_count == 1 else "s"
-            results_header.append(f"{get_emoji(pack.lower() + 'pack')} {this_packs_count} {pack} pack{do_the_s}")
+            results_header.append(f"{this_packs_count}x {get_emoji(pack.lower() + 'pack')}")
             for _ in range(this_packs_count):
                 chosen_type, cat_amount, upgrades, rewards = get_pack_rewards(level, is_single=False)
                 total_upgrades += upgrades
