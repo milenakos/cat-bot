@@ -6235,14 +6235,14 @@ async def leaderboards(
                 messager = round(messager, 3)
 
         # dont show placements if they arent defined
-        if interactor and type in ["Cats", "Slow", "Value", "Cookies"]:
+        if interactor and type != "Fast":
             if interactor <= 0:
                 interactor_placement = 0
             interactor = round(interactor)
         elif interactor and type == "Fast" and interactor >= 99999999999999:
             interactor_placement = 0
 
-        if messager and type in ["Cats", "Slow", "Value", "Cookies"]:
+        if messager and type != "Fast":
             if messager <= 0:
                 messager_placement = 0
             messager = round(messager)
@@ -6267,6 +6267,11 @@ async def leaderboards(
                     lv_xp_req = bp_season[int(i[final_value]) - 1]["xp"]
 
                 prog_perc = math.floor((100 / lv_xp_req) * i["progress"])
+
+                if i["user_id"] == interaction.user.id:
+                    interactor_percent = prog_perc
+                if interaction.user != message.user and i["user_id"] == message.user.id:
+                    messager_perc = prog_perc
 
                 string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i['user_id']}>\n"
             else:
@@ -6293,7 +6298,7 @@ async def leaderboards(
             current += 1
 
         # add the messager and interactor
-        if type != "Battlepass" and (messager_placement > show_amount or interactor_placement > show_amount):
+        if messager_placement > show_amount or interactor_placement > show_amount:
             string = string + "...\n"
 
             # setting up names
@@ -6302,9 +6307,15 @@ async def leaderboards(
             interactor_line = ""
             messager_line = ""
             if include_interactor:
-                interactor_line = f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
+                if type == "Battlepass":
+                    interactor_line = f"{interactor_placement}\\. Level **{interactor}** *({interactor_percent}%)*: {interaction.user.mention}\n"
+                else:
+                    interactor_line = f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
             if include_messager:
-                messager_line = f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: {message.user.mention}\n"
+                if type == "Battlepass":
+                    messager_line = f"{messager_placement}\\. Level **{messager}** *({messager_perc}%)*: {message.user.mention}\n"
+                else:
+                    messager_line = f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: {message.user.mention}\n"
 
             # sort them correctly!
             if messager_placement > interactor_placement:
