@@ -41,16 +41,13 @@ from discord import ButtonStyle
 from discord.ext import commands
 from discord.ui import Button, View
 from PIL import Image
-from tortoise.expressions import Q, RawSQL
-from tortoise.functions import Sum
 
 import config
 import msg2img
+from catpg import RawSQL
 from database import Channel, Prism, Profile, Reminder, User
 
 logging.basicConfig(level=logging.INFO)
-
-EVENT_DEADLINE = 1751695200
 
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
@@ -252,7 +249,7 @@ funny = [
 ]
 
 # rain shill message for footers
-rain_shill = "🔥 100,000 SERVERS SALE OH GOD /rain"
+rain_shill = "☔ Get tons of cats /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -283,8 +280,14 @@ slots_lock = []
 # ???
 rigged_users = []
 
+
+# WELCOME TO THE TEMP_.._STORAGE HELL
+
 # to prevent double catches
 temp_catches_storage = []
+
+# to prevent double spawns
+temp_spawn_storage = []
 
 # to prevent weird behaviour shortly after a rain
 temp_rains_storage = []
@@ -329,7 +332,7 @@ def get_emoji(name):
 async def fetch_perms(message: discord.Message | discord.Interaction) -> discord.Permissions:
     # this is mainly for threads where the parent isnt cached
     if isinstance(message.channel, discord.Thread) and not message.channel.parent:
-        parent = await message.guild.fetch_channel(message.channel.parent_id)
+        parent = message.guild.get_channel(message.channel.parent_id) or await message.guild.fetch_channel(message.channel.parent_id)
         return parent.permissions_for(message.guild.me)
     else:
         return message.channel.permissions_for(message.guild.me)
@@ -345,6 +348,7 @@ news_list = [
     {"title": "Message from CEO of Cat Bot", "emoji": "finecat"},
     {"title": "Cat Bot Turns 3", "emoji": "🥳"},
     {"title": "100,000 SERVERS WHAT", "emoji": "🎉"},
+    {"title": "Regarding recent instabilities", "emoji": "🗒️"},
 ]
 
 
@@ -360,7 +364,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
     if not message.guild:
         return
 
-    profile, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=author)
+    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=author)
 
     if profile[ach_id]:
         return
@@ -445,14 +449,14 @@ async def generate_quest(user: Profile, quest_type: str):
             # removed quests
             continue
         elif quest == "prism":
-            total_count = await Prism.filter(guild_id=user.guild_id).count()
-            user_count = await Prism.filter(guild_id=user.guild_id, user_id=user.user_id).count()
+            total_count = await Prism.count("guild_id = $1", user.guild_id)
+            user_count = await Prism.count("guild_id = $1 AND user_id = $2", user.guild_id, user.user_id)
             global_boost = 0.06 * math.log(2 * total_count + 1)
             prism_boost = global_boost + 0.03 * math.log(2 * user_count + 1)
             if prism_boost < 0.15:
                 continue
         elif quest == "news":
-            global_user, _ = await User.get_or_create(user_id=user.user_id)
+            global_user = await User.get_or_create(user_id=user.user_id)
             if len(news_list) <= len(global_user.news_state.strip()) and "0" not in global_user.news_state.strip()[-4:]:
                 continue
         elif quest == "achievement":
@@ -532,7 +536,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         if user.vote_cooldown != 0:
             return
         quest_data = battle["quests"]["vote"][quest]
-        global_user, _ = await User.get_or_create(user_id=user.user_id)
+        global_user = await User.get_or_create(user_id=user.user_id)
         user.vote_cooldown = global_user.vote_time_topgg
 
         # Weekdays 0 Mon - 6 Sun
@@ -670,7 +674,7 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
     else:
         reward_text = f"{get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack"
 
-    global_user, _ = await User.get_or_create(user_id=user.user_id)
+    global_user = await User.get_or_create(user_id=user.user_id)
     streak_data = get_streak_reward(global_user.vote_streak)
     if streak_data["reward"] and "top.gg" in quest_data["title"]:
         streak_reward = f"\n🔥 **Streak Bonus!** +1 {streak_data["emoji"]} {streak_data["reward"].capitalize()} pack"
@@ -707,7 +711,7 @@ def get_streak_reward(streak):
 # handle curious people clicking buttons
 async def do_funny(message):
     await message.response.send_message(random.choice(funny), ephemeral=True)
-    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     user.funny += 1
     await user.save()
     await achemb(message, "curious", "send")
@@ -787,7 +791,7 @@ async def cat_type_autocomplete(interaction: discord.Interaction, current: str) 
 
 # function to autocomplete /cat, it only shows the cats you have
 async def cat_command_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
-    user, _ = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
+    user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
     choices = []
     for choice in cattypes:
         if current.lower() in choice.lower() and user[f"cat_{choice}"] > 0:
@@ -804,13 +808,13 @@ async def lb_type_autocomplete(interaction: discord.Interaction, current: str) -
 
 
 async def cats_in_server(guild_id):
-    return [cat_type for cat_type in cattypes if (await Profile.filter(guild_id=guild_id, **{f"cat_{cat_type}__gt": 0}).exists())]
+    return [cat_type for cat_type in cattypes if (await Profile.count(f'guild_id = $1 AND "cat_{cat_type}" > 0 LIMIT 1', guild_id))]
 
 
 # function to autocomplete cat_type choices for /gift, which shows only cats user has and how many of them they have
 async def gift_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
-    user, _ = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
-    actual_user, _ = await User.get_or_create(user_id=interaction.user.id)
+    user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
+    actual_user = await User.get_or_create(user_id=interaction.user.id)
     choices = []
     for choice in cattypes:
         if current.lower() in choice.lower() and user[f"cat_{choice}"] > 0:
@@ -839,22 +843,17 @@ def alnum(string):
     return "".join(item for item in string.lower() if item.isalnum())
 
 
-async def unsetup(channel: Channel):
-    try:
-        wh = discord.Webhook.from_url(channel.webhook, client=bot)
-        await wh.delete(prefer_auth=False)
-    except Exception:
-        pass
-    await channel.delete()
-
-
 async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     try:
-        channel = await Channel.get(channel_id=ch_id)
+        channel = await Channel.get_or_none(channel_id=int(ch_id))
+        if not channel:
+            raise Exception
     except Exception:
         return
-    if channel.cat or channel.yet_to_spawn > time.time() + 10:
+    if channel.cat or channel.yet_to_spawn > time.time() + 10 or int(ch_id) in temp_spawn_storage:
         return
+
+    temp_spawn_storage.append(int(ch_id))
 
     if not localcat:
         localcat = random.choices(cattypes, weights=type_dict.values())[0]
@@ -862,29 +861,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     file = discord.File(
         f"images/spawn/{localcat.lower()}_cat.png",
     )
-    try:
-        channeley = discord.Webhook.from_url(channel.webhook, client=bot)
-        thread_id = channel.thread_mappings
-    except Exception:
-        try:
-            temp_channel = bot.get_channel(int(ch_id))
-            if (
-                not temp_channel
-                or not isinstance(
-                    temp_channel,
-                    Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel],
-                )
-                or not await fetch_perms(temp_channel).manage_webhooks
-            ):
-                raise Exception
-            with open("images/cat.png", "rb") as f:
-                wh = await temp_channel.create_webhook(name="Cat Bot", avatar=f.read())
-                channel.webhook = wh.url
-                await channel.save()
-                await spawn_cat(ch_id, localcat)  # respawn
-        except Exception:
-            await unsetup(channel)
-            return
+    channeley = bot.get_partial_messageable(int(ch_id))
 
     appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
 
@@ -893,42 +870,18 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         return
 
     try:
-        if thread_id:
-            message_is_sus = await channeley.send(
-                appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat),
-                file=file,
-                wait=True,
-                thread=discord.Object(int(ch_id)),
-                allowed_mentions=discord.AllowedMentions.all(),
-            )
-        else:
-            message_is_sus = await channeley.send(
-                appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat),
-                file=file,
-                wait=True,
-                allowed_mentions=discord.AllowedMentions.all(),
-            )
+        message_is_sus = await channeley.send(
+            appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat),
+            file=file,
+            allowed_mentions=discord.AllowedMentions.all(),
+        )
     except discord.Forbidden:
-        await unsetup(channel)
+        await channel.delete()
         return
     except discord.NotFound:
-        await unsetup(channel)
+        await channel.delete()
         return
     except Exception:
-        return
-
-    if message_is_sus.channel.id != int(ch_id):
-        # user changed the webhook destination, panic mode
-        if thread_id:
-            await channeley.send(
-                "uh oh spaghettio you changed webhook destination and idk what to do with that so i will now self destruct do /setup to fix it",
-                thread=discord.Object(int(ch_id)),
-            )
-        else:
-            await channeley.send(
-                "uh oh spaghettio you changed webhook destination and idk what to do with that so i will now self destruct do /setup to fix it"
-            )
-        await unsetup(channel)
         return
 
     channel.cat = message_is_sus.id
@@ -936,17 +889,18 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     channel.forcespawned = bool(force_spawn)
     channel.cattype = localcat
     await channel.save()
+    temp_spawn_storage.remove(int(ch_id))
 
 
 async def postpone_reminder(interaction):
     reminder_type = interaction.data["custom_id"]
     if reminder_type == "vote":
-        user, _ = await User.get_or_create(user_id=interaction.user.id)
+        user = await User.get_or_create(user_id=interaction.user.id)
         user.reminder_vote = int(time.time()) + 30 * 60
         await user.save()
     else:
         guild_id = reminder_type.split("_")[1]
-        user, _ = await Profile.get_or_create(guild_id=int(guild_id), user_id=interaction.user.id)
+        user = await Profile.get_or_create(guild_id=int(guild_id), user_id=interaction.user.id)
         if reminder_type.startswith("catch"):
             user.reminder_catch = int(time.time()) + 30 * 60
         else:
@@ -962,18 +916,18 @@ async def maintaince_loop():
     reactions_ratelimit = {}
     catchcooldown = {}
     fakecooldown = {}
-    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers!"))
+    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
     # update cookies
     temp_temp_cookie_storage = temp_cookie_storage.copy()
     temp_cookie_storage = {}
     cookie_updates = []
     for cookie_id, cookies in temp_temp_cookie_storage.items():
-        p, _ = await Profile.get_or_create(guild_id=cookie_id[0], user_id=cookie_id[1])
+        p = await Profile.get_or_create(guild_id=cookie_id[0], user_id=cookie_id[1])
         p.cookies = cookies
         cookie_updates.append(p)
     if cookie_updates:
-        await Profile.bulk_update(cookie_updates, fields=["cookies"])
+        await Profile.bulk_update(cookie_updates, "cookies")
 
     # temp_belated_storage cleanup
     # clean up anything older than 1 minute
@@ -998,8 +952,8 @@ async def maintaince_loop():
                 print("Posting to top.gg failed.")
 
     # revive dead catch loops
-    async for channel in Channel.filter(yet_to_spawn__lt=time.time(), cat=0).values_list("channel_id", flat=True):
-        await spawn_cat(str(channel))
+    async for channel in Channel.limit(["channel_id"], "yet_to_spawn < $1 AND cat = 0", time.time(), refetch=False):
+        await spawn_cat(str(channel.channel_id))
         await asyncio.sleep(0.1)
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
@@ -1007,17 +961,15 @@ async def maintaince_loop():
     # i wont go into the details of this because its a complicated mess which took me like solid 30 minutes of planning
     #
     # vote reminders
-    async for user in User.filter(
-        vote_time_topgg__not=0, vote_time_topgg__lt=time.time() - 43200, reminder_vote__not=0, reminder_vote__lt=time.time()
-    ).values_list("user_id", flat=True):
-        if not await Profile.filter(user_id=user, reminders_enabled=True).exists():
+    proccessed_users = []
+    async for user in User.limit(
+        ["user_id", "reminder_vote", "vote_streak"],
+        "vote_time_topgg != 0 AND vote_time_topgg + 43200 < $1 AND reminder_vote != 0 AND reminder_vote < $1",
+        time.time(),
+    ):
+        if not await Profile.count("user_id = $1 AND reminders_enabled = true LIMIT 1", user.user_id):
             continue
         await asyncio.sleep(0.1)
-
-        user = await User.get(user_id=user)
-
-        if not ((43200 < user.vote_time_topgg + 43200 < time.time()) and (0 < user.reminder_vote < time.time())):
-            continue
 
         view = View(timeout=VIEW_TIMEOUT)
         button = Button(
@@ -1038,25 +990,19 @@ async def maintaince_loop():
             pass
         # no repeat reminers for now
         user.reminder_vote = 0
-        await user.save()
+        proccessed_users.append(user)
+
+    await User.bulk_update(proccessed_users, "reminder_vote")
 
     # i know the next two are similiar enough to be merged but its currently dec 30 and i cant be bothered
     # catch reminders
     proccessed_users = []
-    async for user in Profile.filter(
-        Q(reminders_enabled=True, reminder_catch__not=0)
-        & Q(Q(catch_cooldown__not=0, catch_cooldown__lt=time.time() - 43200), Q(reminder_catch__gt=1, reminder_catch__lt=time.time()), join_type="OR"),
-    ).values("guild_id", "user_id"):
+    async for user in Profile.limit(
+        ["id"],
+        "(reminders_enabled = true AND reminder_catch != 0) AND ((catch_cooldown != 0 AND catch_cooldown + 43200 < $1) OR (reminder_catch > 1 AND reminder_catch < $1))",
+        time.time(),
+    ):
         await asyncio.sleep(0.1)
-
-        user, _ = await Profile.get_or_create(guild_id=user["guild_id"], user_id=user["user_id"])
-
-        if not (
-            user.reminders_enabled
-            and (user.reminder_catch != 0)
-            and ((43200 < user.catch_cooldown + 43200 < time.time()) or (1 < user.reminder_catch < time.time()))
-        ):
-            continue
 
         await refresh_quests(user)
         await user.refresh_from_db()
@@ -1089,24 +1035,16 @@ async def maintaince_loop():
         proccessed_users.append(user)
 
     if proccessed_users:
-        await Profile.bulk_update(proccessed_users, fields=["reminder_catch"])
+        await Profile.bulk_update(proccessed_users, "reminder_catch")
 
     # misc reminders
     proccessed_users = []
-    async for user in Profile.filter(
-        Q(reminders_enabled=True, reminder_misc__not=0)
-        & Q(Q(misc_cooldown__not=0, misc_cooldown__lt=time.time() - 43200), Q(reminder_misc__gt=1, reminder_misc__lt=time.time()), join_type="OR"),
-    ).values("guild_id", "user_id"):
+    async for user in Profile.limit(
+        ["id"],
+        "(reminders_enabled = true AND reminder_misc != 0) AND ((misc_cooldown != 0 AND misc_cooldown + 43200 < $1) OR (reminder_misc > 1 AND reminder_misc < $1))",
+        time.time(),
+    ):
         await asyncio.sleep(0.1)
-
-        user, _ = await Profile.get_or_create(guild_id=user["guild_id"], user_id=user["user_id"])
-
-        if not (
-            user.reminders_enabled
-            and (user.reminder_misc != 0)
-            and ((43200 < user.misc_cooldown + 43200 < time.time()) or (1 < user.reminder_misc < time.time()))
-        ):
-            continue
 
         await refresh_quests(user)
         await user.refresh_from_db()
@@ -1139,10 +1077,10 @@ async def maintaince_loop():
         proccessed_users.append(user)
 
     if proccessed_users:
-        await Profile.bulk_update(proccessed_users, fields=["reminder_misc"])
+        await Profile.bulk_update(proccessed_users, "reminder_misc")
 
     # manual reminders
-    async for reminder in Reminder.filter(time__lt=time.time()):
+    async for reminder in Reminder.filter("time < $1", time.time()):
         try:
             user = await bot.fetch_user(reminder.user_id)
             await user.send(reminder.text)
@@ -1165,7 +1103,7 @@ async def maintaince_loop():
         ):
             return
 
-        if loop_count % 10 == 0 and config.DB_TYPE == "POSTGRES":
+        if loop_count % 10 == 0:
             backup_file = f"/root/backups/backup-{int(time.time())}.dump"
             try:
                 process = await asyncio.create_subprocess_shell(f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -Fc -Z 9 -f {backup_file} cat_bot")
@@ -1239,7 +1177,7 @@ async def on_ready():
             "With contributions from **" + ", ".join(contributors) + "**",
             "Original Cat Image: **pathologicals**",
             "APIs: **catfact.ninja, blueberry.coffee, wordnik.com, thecatapi.com**",
-            "Open Source Projects: **[discord.py](https://github.com/Rapptz/discord.py), [tortoise-orm](https://github.com/tortoise/tortoise-orm), [gateway-proxy](https://github.com/Gelbpunkt/gateway-proxy)**",
+            "Open Source Projects: **[discord.py](https://github.com/Rapptz/discord.py), [asyncpg](https://github.com/MagicStack/asyncpg), [gateway-proxy](https://github.com/Gelbpunkt/gateway-proxy)**",
             "Art, suggestions, and a lot more: **TheTrashCell**",
             "Testers: **" + ", ".join(tester_users) + "**",
             "Enjoying the bot: **You <3**",
@@ -1263,7 +1201,7 @@ async def on_message(message: discord.Message):
         if text.startswith("disable"):
             # disable reminders
             try:
-                user, _ = await Profile.get_or_create(guild_id=int(text.split(" ")[1]), user_id=message.author.id)
+                user = await Profile.get_or_create(guild_id=int(text.split(" ")[1]), user_id=message.author.id)
             except Exception:
                 await message.channel.send("failed. check if your guild id is correct")
                 return
@@ -1323,7 +1261,7 @@ async def on_message(message: discord.Message):
     # here are some automation hooks for giving out purchases and similiar
     if config.RAIN_CHANNEL_ID and message.channel.id == config.RAIN_CHANNEL_ID and text.lower().startswith("cat!rain"):
         things = text.split(" ")
-        user, _ = await User.get_or_create(user_id=things[1])
+        user = await User.get_or_create(user_id=int(things[1]))
         if not user.rain_minutes:
             user.rain_minutes = 0
 
@@ -1653,7 +1591,7 @@ async def on_message(message: discord.Message):
         await achemb(message, "test_ach", "reply")
 
     if text.lower() == "please do not the cat":
-        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.author.id)
+        user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.author.id)
         user.cat_Fine -= 1
         await user.save()
         try:
@@ -1704,7 +1642,7 @@ async def on_message(message: discord.Message):
 
     # this is run whether someone says "cat" (very complex)
     if text.lower() == "cat":
-        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.author.id)
+        user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.author.id)
         channel = await Channel.get_or_none(channel_id=message.channel.id)
         if not channel or not channel.cat or channel.cat in temp_catches_storage or user.timeout > time.time():
             # laugh at this user
@@ -1741,8 +1679,8 @@ async def on_message(message: discord.Message):
                         await progress(message, user, "odd", True)
                     if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
                         await progress(message, user, "rare+", True)
-                    total_count = await Prism.filter(guild_id=message.guild.id).count()
-                    user_count = await Prism.filter(guild_id=message.guild.id, user_id=message.author.id).count()
+                    total_count = await Prism.count("guild_id = $1", message.guild.id)
+                    user_count = await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id)
                     global_boost = 0.06 * math.log(2 * total_count + 1)
                     prism_boost = global_boost + 0.03 * math.log(2 * user_count + 1)
                     if prism_boost > random.random():
@@ -1779,7 +1717,7 @@ async def on_message(message: discord.Message):
             decided_time = random.uniform(times[0], times[1])
             if channel.yet_to_spawn < time.time():
                 channel.yet_to_spawn = time.time() + decided_time + 10
-            else:
+            elif channel.cat_rains == 0:
                 decided_time = 0
             try:
                 current_time = message.created_at.timestamp()
@@ -1822,10 +1760,7 @@ async def on_message(message: discord.Message):
                         pass
                     return
 
-                try:
-                    send_target = discord.Webhook.from_url(channel.webhook, client=bot)
-                except Exception:
-                    send_target = message.channel
+                send_target = message.channel
                 try:
                     # some math to make time look cool
                     then = catchtime.timestamp()
@@ -1872,8 +1807,8 @@ async def on_message(message: discord.Message):
                 suffix_string = ""
 
                 # calculate prism boost
-                total_prisms = await Prism.filter(guild_id=message.guild.id)
-                user_prisms = await Prism.filter(guild_id=message.guild.id, user_id=message.author.id)
+                total_prisms = await Prism.collect("guild_id = $1", message.guild.id)
+                user_prisms = await Prism.collect("guild_id = $1 AND user_id = $2", user.guild_id, message.author.id)
                 global_boost = 0.06 * math.log(2 * len(total_prisms) + 1)
                 user_boost = global_boost + 0.03 * math.log(2 * len(user_prisms) + 1)
                 did_boost = False
@@ -1934,23 +1869,10 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n🔥 100,000 SERVER SALE OMG OMG </rain:{RAIN_ID}>"
+                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
                 if random.randint(0, 19) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
-
-                if user.event_rain_points < 1000 and time.time() < EVENT_DEADLINE:
-                    plus_points = random.randint(15, 25)
-                    # 1000/20 = 50 catches during event
-                    # 50/5 = 10 catches a day on average
-                    user.event_rain_points += plus_points
-                    if user.event_rain_points >= 1000:
-                        user.event_rain_points = 1000
-                        user.rain_minutes += 2
-                        suffix_string += f"\n✅ +{plus_points}! 1,000/1,000. +2 rain minutes!"
-                    else:
-                        progress_bar = "🟦" * int(user.event_rain_points // (1000 / 7)) + "⬛" * (7 - int(user.event_rain_points // (1000 / 7)))
-                        suffix_string += f"\n🎁 +{plus_points}! {user.event_rain_points}/1,000 {progress_bar} {get_emoji('2rain')} ends <t:{EVENT_DEADLINE}:R>"
 
                 custom_cough_strings = {
                     "Corrupt": "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!",
@@ -1983,7 +1905,6 @@ async def on_message(message: discord.Message):
                             ephemeral=True,
                         )
                         return
-                    await user.refresh_from_db()
                     if user.dark_market_active:
                         await interaction.response.send_message("the shadowy figure is nowhere to be found.", ephemeral=True)
                         return
@@ -2004,7 +1925,7 @@ async def on_message(message: discord.Message):
                         await asyncio.sleep(5)
                         await interaction.followup.send(phrase, ephemeral=True)
 
-                vote_time_user, _ = await User.get_or_create(user_id=message.author.id)
+                vote_time_user = await User.get_or_create(user_id=message.author.id)
                 if random.randint(0, 10) == 0 and user.cat_Fine >= 20 and not user.dark_market_active:
                     button = Button(label="You see a shadow...", style=ButtonStyle.red)
                     button.callback = dark_market_cutscene
@@ -2038,26 +1959,16 @@ async def on_message(message: discord.Message):
 
                 async def delete_cat():
                     try:
-                        if channel.thread_mappings:
-                            await send_target.delete_message(cat_temp, thread=discord.Object(int(message.channel.id)))
-                        else:
-                            await send_target.delete_message(cat_temp)
+                        cat_spawn = send_target.get_partial_message(cat_temp)
+                        await cat_spawn.delete()
                     except Exception:
-                        try:
-                            if perms.manage_messages:
-                                await message.channel.delete_messages([discord.Object(cat_temp)])
-                        except Exception:
-                            pass
+                        pass
 
                 async def send_confirm():
                     try:
                         kwargs = {}
-                        if channel.thread_mappings:
-                            kwargs["thread"] = discord.Object(message.channel.id)
                         if view:
                             kwargs["view"] = view
-                        if isinstance(send_target, discord.Webhook) and random.randint(0, 1000) == 69:
-                            kwargs["username"] = "Cot Bat"
 
                         await send_target.send(
                             coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
@@ -2165,7 +2076,7 @@ async def on_message(message: discord.Message):
                         pass
 
     if text.lower().startswith("cat!amount") and perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-        user, _ = await User.get_or_create(user_id=message.author.id)
+        user = await User.get_or_create(user_id=message.author.id)
         try:
             user.custom_num = int(text.split(" ")[1])
             await user.save()
@@ -2180,7 +2091,7 @@ async def on_message(message: discord.Message):
     # those are "owner" commands which are not really interesting
     if text.lower().startswith("cat!sweep"):
         try:
-            channel = await Channel.get(channel_id=message.channel.id)
+            channel = await Channel.get_or_none(channel_id=message.channel.id)
             channel.cat = 0
             await channel.save()
             await message.reply("success")
@@ -2189,7 +2100,7 @@ async def on_message(message: discord.Message):
     if text.lower().startswith("cat!rain"):
         # syntax: cat!rain 553093932012011520 short
         things = text.split(" ")
-        user, _ = await User.get_or_create(user_id=things[1])
+        user = await User.get_or_create(user_id=int(things[1]))
         if not user.rain_minutes:
             user.rain_minutes = 0
         if things[2] == "short":
@@ -2262,7 +2173,7 @@ async def on_message(message: discord.Message):
         stuff = text.split(" ")
         if stuff[1][0] not in "1234567890":
             stuff.insert(1, message.channel.owner_id)
-        user, _ = await User.get_or_create(user_id=stuff[1])
+        user = await User.get_or_create(user_id=stuff[1])
         cat_name = " ".join(stuff[2:])
         if stuff[2] != "None" and message.reference and message.reference.message_id:
             emoji_name = re.sub(r"[^a-zA-Z0-9]", "", cat_name).lower() + "cat"
@@ -2330,6 +2241,13 @@ async def on_guild_join(guild):
             )
     except Exception:
         pass
+
+    if guild.self_role:
+        if guild.self_role.permissions.read_message_history:
+            source = "top.gg"
+        else:
+            source = "direct"
+        print(f"New guild: {guild.id} - {source}")
 
 
 @bot.tree.command(description="Learn to use the bot")
@@ -2427,9 +2345,9 @@ Guild shard: `{message.guild.shard_id:,}`
 
 **__Global Stats__**
 Guilds: `{len(bot.guilds):,}`
-DB Profiles: `{await Profile.all().count():,}`
-DB Users: `{await User.all().count():,}`
-DB Channels: `{await Channel.all().count():,}`
+DB Profiles: `{await Profile.count():,}`
+DB Users: `{await User.count():,}`
+DB Channels: `{await Channel.count():,}`
 """
 
     await message.response.send_message(embed=embed)
@@ -2456,13 +2374,13 @@ async def wiki(message: discord.Interaction):
         ]
     )
     await message.response.send_message(embed=embed)
-    profile, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     await progress(message, profile, "wiki")
 
 
 @bot.tree.command(description="Read The Cat Bot Times™️")
 async def news(message: discord.Interaction):
-    user, _ = await User.get_or_create(user_id=message.user.id)
+    user = await User.get_or_create(user_id=message.user.id)
     buttons = []
     current_state = user.news_state.strip()
 
@@ -2479,12 +2397,12 @@ async def news(message: discord.Interaction):
 
         await interaction.response.defer()
 
-        await user.refresh_from_db()
         current_state = user.news_state.strip()
-        user.news_state = current_state[:news_id] + "1" + current_state[news_id + 1 :]
-        await user.save()
+        if current_state[news_id] not in "123456789":
+            user.news_state = current_state[:news_id] + "1" + current_state[news_id + 1 :]
+            await user.save()
 
-        profile, _ = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
+        profile = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         await progress(interaction, profile, "news")
 
         view = View(timeout=VIEW_TIMEOUT)
@@ -2595,19 +2513,19 @@ update: the puzzle piece event has concluded""",
                 description="""wow! cat bot has reached 100,000 servers! this beyond insane i never thought this would happen thanks everyone
 giving away a whole bunch of rain as celebration!
 
-1. cat stand giveaway
+1. cat stand giveaway (ENDED)
 [join our discord server](<https://discord.gg/FBkXDxjqSz>) and click the first reaction under the latest newspost to join in!
-there will be a total of 10 winners who will get 40 minutes each!
+there will be a total of 10 winners who will get 40 minutes each! giveaway ends july 5th.
 
-2. art contest
+2. art contest (ENDED)
 again in our [discord server](<https://discord.gg/zrYstPe3W6>) a new channel has opened for art submissions!
 top 5 people who get the most community votes will get 250, 150, 100, 50 and 50 rain minutes respectively!
 
-3. cat bot event
-for the next 5 days you will get points randomly on every catch! if you manage to collect 1,000 points before the time runs out you will get 2 minutes of rain!!
+3. cat bot event (ENDED)
+starting june 30th, for the next 5 days you will get points randomly on every catch! if you manage to collect 1,000 points before the time runs out you will get 2 minutes of rain!!
 
-4. sale
-[catbot.shop](<https://catbot.shop>) will have a sale for the next 5 days! if everything above wasnt enough rain for your fancy you can buy some more with a discount!
+4. sale (ENDED)
+starting june 30th, [catbot.shop](<https://catbot.shop>) will have a sale for the next 5 days! if everything above wasnt enough rain for your fancy you can buy some more with a discount!
 
 aaaaaaaaaaaaaaa""",
                 color=0x6E593C,
@@ -2617,6 +2535,55 @@ aaaaaaaaaaaaaaa""",
             view.add_item(button)
             button2 = discord.ui.Button(label="Cat Bot Store", url="https://catbot.shop")
             view.add_item(button2)
+            await interaction.edit_original_response(content=None, view=view, embed=embed)
+
+        elif news_id == 8:
+            embed = discord.Embed(
+                title="Regarding recent instabilities",
+                description="""hello!
+
+stuff has been kinda broken the past few days, and the past 24 hours in paricular.
+
+it was mostly my fault, but i worked hard to fix everything and i think its mostly working now.
+
+as a compensation i will give everyone who voted in the past 3 days 2 free gold packs! you can press the button below to claim them. (note you can only claim it in 1 server, choose wisely)
+
+thanks for using cat bot!""",
+                color=0x6E593C,
+                timestamp=datetime.datetime.fromtimestamp(1752689941),
+            )
+
+            async def give_two_packs(give_interaction):
+                if give_interaction.user != interaction.user:
+                    await do_funny(give_interaction)
+                    return
+                await give_interaction.response.defer()
+                if user.news_state[news_id] == "3":
+                    return
+
+                await profile.refresh_from_db()
+                await user.refresh_from_db()
+
+                if user.vote_time_topgg > 1752689941 + (24 * 3600) or user.vote_time_topgg < 1752689941 - (3600 * 25 * 3):
+                    await give_interaction.followup.send("You are not eligible to claim this reward!", ephemeral=True)
+                    return
+
+                profile.pack_gold += 2
+                await profile.save()
+
+                current_state = user.news_state.strip()
+                user.news_state = current_state[:news_id] + "3" + current_state[news_id + 1 :]
+                await user.save()
+
+                await give_interaction.followup.send(f"You have received 2 {get_emoji('goldpack')} Gold packs!", ephemeral=True)
+
+            if user.news_state[news_id] != "3":
+                button = discord.ui.Button(label="Claim!", style=ButtonStyle.blurple, emoji=get_emoji("goldpack"))
+                button.callback = give_two_packs
+                view.add_item(button)
+            else:
+                button = discord.ui.Button(label="Claimed!", disabled=True)
+                view.add_item(button)
             await interaction.edit_original_response(content=None, view=view, embed=embed)
 
     async def regen_buttons():
@@ -2667,7 +2634,6 @@ aaaaaaaaaaaaaaa""",
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
-        await user.refresh_from_db()
         user.news_state = "1" * len(news_list)
         await user.save()
         await regen_buttons()
@@ -2724,7 +2690,7 @@ async def tiktok(message: discord.Interaction, text: str):
             return
 
     await message.response.defer()
-    profile, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
     if text == "bwomp":
         file = discord.File("bwomp.mp3", filename="bwomp.mp3")
@@ -2761,7 +2727,7 @@ async def preventcatch(message: discord.Interaction, person: discord.User, timeo
     if timeout < 0:
         await message.response.send_message("uhh i think time is supposed to be a number", ephemeral=True)
         return
-    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person.id)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=person.id)
     timestamp = round(time.time()) + timeout
     user.timeout = timestamp
     await user.save()
@@ -2976,9 +2942,7 @@ async def last(message: discord.Interaction):
 async def catalogue(message: discord.Interaction):
     embed = discord.Embed(title=f"{get_emoji('staring_cat')} The Catalogue", color=0x6E593C)
     for cat_type in cattypes:
-        in_server = (
-            await Profile.filter(guild_id=message.guild.id, **{f"cat_{cat_type}__gt": 0}).annotate(total=Sum(f"cat_{cat_type}")).values_list("total", flat=True)
-        )[0]
+        in_server = await Profile.sum(f"cat_{cat_type}", f'guild_id = $1 AND "cat_{cat_type}" > 0', message.guild.id)
         title = f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}"
         if in_server == 0 or not in_server:
             in_server = 0
@@ -2996,7 +2960,7 @@ async def catalogue(message: discord.Interaction):
 
 async def gen_stats(profile, star):
     stats = []
-    user, _ = await User.get_or_create(user_id=profile.user_id)
+    user = await User.get_or_create(user_id=profile.user_id)
 
     # catching
     stats.append([get_emoji("staring_cat"), "Catching"])
@@ -3014,10 +2978,8 @@ async def gen_stats(profile, star):
 
     # catching boosts
     stats.append([get_emoji("prism"), "Boosts"])
-    prisms_crafted = await Prism.filter(guild_id=profile.guild_id, creator=profile.user_id).count()
-    boosts_done = (
-        await Prism.filter(guild_id=profile.guild_id, user_id=profile.user_id).annotate(total=Sum("catches_boosted")).values_list("total", flat=True)
-    )[0] or 0
+    prisms_crafted = await Prism.count("guild_id = $1 AND user_id = $2", profile.guild_id, profile.user_id)
+    boosts_done = await Prism.sum("catches_boosted", "guild_id = $1 AND user_id = $2", profile.guild_id, profile.user_id)
     stats.append(["prism_crafted", get_emoji("prism"), f"Prisms crafted: {prisms_crafted:,}"])
     stats.append(["boosts_done", get_emoji("prism"), f"Boosts by owned prisms: {boosts_done:,}{star}"])
     stats.append(["boosted_catches", get_emoji("prism"), f"Prism-boosted catches: {profile.boosted_catches:,}{star}"])
@@ -3134,7 +3096,7 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     await message.response.defer()
     if not person_id:
         person_id = message.user
-    profile, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
+    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
     star = "*" if not profile.new_user else ""
 
     stats = await gen_stats(profile, star)
@@ -3158,8 +3120,8 @@ async def gen_inventory(message, person_id):
     if person_id is None:
         person_id = message.user
     me = bool(person_id == message.user)
-    person, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
-    user, _ = await User.get_or_create(user_id=person_id.id)
+    person = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
+    user = await User.get_or_create(user_id=person_id.id)
 
     # around here we count aches
     unlocked = 0
@@ -3178,17 +3140,17 @@ async def gen_inventory(message, person_id):
     minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
 
     # count prism stuff
-    prisms = await Prism.filter(guild_id=message.guild.id, user_id=person_id.id).values_list("name", flat=True)
-    total_count = await Prism.filter(guild_id=message.guild.id).count()
+    prisms = await Prism.collect_limit(["name"], "guild_id = $1 AND user_id = $2", message.guild.id, person_id.id)
+    total_count = await Prism.count("guild_id = $1", message.guild.id)
     user_count = len(prisms)
     global_boost = 0.06 * math.log(2 * total_count + 1)
     prism_boost = round((global_boost + 0.03 * math.log(2 * user_count + 1)) * 100, 3)
     if len(prisms) == 0:
         prism_list = "None"
     elif len(prisms) <= 3:
-        prism_list = ", ".join(prisms)
+        prism_list = ", ".join([i.name for i in prisms])
     else:
-        prism_list = f"{prisms[0]}, {prisms[1]}, {len(prisms) - 2} more..."
+        prism_list = f"{prisms[0].name}, {prisms[1].name}, {len(prisms) - 2} more..."
 
     emoji_prefix = str(user.emoji) + " " if user.emoji else ""
 
@@ -3289,8 +3251,8 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
     await message.response.defer()
     if not person_id:
         person_id = message.user
-    person, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
-    user, _ = await User.get_or_create(user_id=message.user.id)
+    person = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
+    user = await User.get_or_create(user_id=message.user.id)
     stats = await gen_stats(person, "")
 
     async def edit_profile(interaction: discord.Interaction):
@@ -3317,7 +3279,6 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
                     await interaction.edit_original_response(view=view)
                 else:
                     # update the stat
-                    await person.refresh_from_db()
                     person.highlighted_stat = select.values[0]
                     await person.save()
                     await interaction.edit_original_response(content="Highlighted stat updated!", embed=None, view=None)
@@ -3407,8 +3368,8 @@ __Highlighted Stat__
 
 @bot.tree.command(description="its raining cats")
 async def rain(message: discord.Interaction):
-    user, _ = await User.get_or_create(user_id=message.user.id)
-    profile, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    user = await User.get_or_create(user_id=message.user.id)
+    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
     if not user.rain_minutes:
         user.rain_minutes = 0
@@ -3465,8 +3426,8 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
     async def do_rain(interaction, rain_length):
         # i LOOOOVE checks
-        user, _ = await User.get_or_create(user_id=interaction.user.id)
-        profile, _ = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
+        user = await User.get_or_create(user_id=interaction.user.id)
+        profile = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         channel = await Channel.get_or_none(channel_id=interaction.channel.id)
 
         if not user.rain_minutes:
@@ -3486,7 +3447,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             await interaction.response.send_message("pls input a number 1-60", ephemeral=True)
             return
 
-        if rain_length > user.rain_minutes + profile.rain_minutes:
+        if rain_length > user.rain_minutes + profile.rain_minutes or user.rain_minutes < 0:
             await interaction.response.send_message(
                 "you dont have enough rain! buy some more [here](<https://catbot.shop>)",
                 ephemeral=True,
@@ -3568,7 +3529,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
     shopbutton = Button(
         emoji="🛒",
-        label="Store (-20%!)",
+        label="Store",
         url="https://catbot.shop",
     )
 
@@ -3602,7 +3563,7 @@ if config.DONOR_CHANNEL_ID:
         if not config.DONOR_CHANNEL_ID:
             return
 
-        user, _ = await User.get_or_create(user_id=message.user.id)
+        user = await User.get_or_create(user_id=message.user.id)
         if not user.premium:
             await message.response.send_message(
                 "👑 This feature is supporter-only!\nBuy anything from Cat Bot Store to unlock profile customization!\n<https://catbot.shop>"
@@ -3642,14 +3603,16 @@ async def packs(message: discord.Interaction):
     def gen_view(user):
         view = discord.ui.View(timeout=VIEW_TIMEOUT)
         empty = True
+        total_amount = 0
         for pack in pack_data:
             if user[f"pack_{pack['name'].lower()}"] < 1:
                 continue
             empty = False
             amount = user[f"pack_{pack['name'].lower()}"]
+            total_amount += amount
             button = discord.ui.Button(
                 emoji=get_emoji(pack["name"].lower() + "pack"),
-                label=f"{pack['name']} ({amount})",
+                label=f"{pack['name']} ({amount:,})",
                 style=ButtonStyle.blurple,
                 custom_id=pack["name"],
             )
@@ -3657,7 +3620,72 @@ async def packs(message: discord.Interaction):
             view.add_item(button)
         if empty:
             view.add_item(discord.ui.Button(label="No packs left!", disabled=True))
+        if total_amount > 10:
+            button = discord.ui.Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.blurple)
+            button.callback = open_all_packs
+            view.add_item(button)
         return view
+
+    def get_pack_rewards(level: int, is_single=True):
+        # returns cat_type, cat_amount, upgrades, verbal_output
+        reward_texts = []
+        build_string = ""
+        upgrades = 0
+        if not is_single:
+            build_string = get_emoji(pack_data[level]["name"].lower() + "pack")
+
+        # bump rarity
+        while random.randint(1, 100) <= pack_data[level]["upgrade"]:
+            if is_single:
+                reward_texts.append(f"{get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}\n" + build_string)
+                build_string = f"Upgraded from {get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}!\n" + build_string
+            else:
+                build_string += f" -> {get_emoji(pack_data[level + 1]['name'].lower() + 'pack')}"
+            level += 1
+            upgrades += 1
+        final_level = pack_data[level]
+        if is_single:
+            reward_texts.append(f"{get_emoji(final_level['name'].lower() + 'pack')} {final_level['name']}\n" + build_string)
+
+        # select cat type
+        goal_value = final_level["value"]
+        chosen_type = random.choice(cattypes)
+        cat_emoji = get_emoji(chosen_type.lower() + "cat")
+        pre_cat_amount = goal_value / (sum(type_dict.values()) / type_dict[chosen_type])
+        if pre_cat_amount % 1 > random.random():
+            cat_amount = math.ceil(pre_cat_amount)
+        else:
+            cat_amount = math.floor(pre_cat_amount)
+        if pre_cat_amount < 1:
+            if is_single:
+                reward_texts.append(
+                    reward_texts[-1] + f"\n{round(pre_cat_amount * 100, 2)}% chance for a {get_emoji(chosen_type.lower() + 'cat')} {chosen_type} cat"
+                )
+                reward_texts.append(reward_texts[-1] + ".")
+                reward_texts.append(reward_texts[-1] + ".")
+                reward_texts.append(reward_texts[-1] + ".")
+            else:
+                build_string += f" {round(pre_cat_amount * 100, 2)}% {cat_emoji}? "
+            if cat_amount == 1:
+                # success
+                if is_single:
+                    reward_texts.append(reward_texts[-1] + "\n✅ Success!")
+                else:
+                    build_string += f"✅ -> {cat_emoji} 1"
+            else:
+                # fail
+                if is_single:
+                    reward_texts.append(reward_texts[-1] + "\n❌ Fail!")
+                else:
+                    build_string += f"❌ -> {get_emoji('finecat')} 1"
+                chosen_type = "Fine"
+                cat_amount = 1
+        elif not is_single:
+            build_string += f" {cat_emoji} {cat_amount:,}"
+        if is_single:
+            reward_texts.append(reward_texts[-1] + f"\nYou got {get_emoji(chosen_type.lower() + 'cat')} {cat_amount:,} {chosen_type} cats!")
+            return chosen_type, cat_amount, upgrades, reward_texts
+        return chosen_type, cat_amount, upgrades, build_string
 
     async def open_pack(interaction: discord.Interaction):
         if interaction.user != message.user:
@@ -3669,68 +3697,90 @@ async def packs(message: discord.Interaction):
         if user[f"pack_{pack.lower()}"] < 1:
             return
         level = next((i for i, p in enumerate(pack_data) if p["name"] == pack), 0)
-        reward_texts = []
-        build_string = ""
 
-        # bump rarity
-        while random.randint(1, 100) <= pack_data[level]["upgrade"]:
-            reward_texts.append(f"{get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}\n" + build_string)
-            build_string = f"Upgraded from {get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}!\n" + build_string
-            level += 1
-            user.pack_upgrades += 1
-        final_level = pack_data[level]
-        reward_texts.append(f"{get_emoji(final_level['name'].lower() + 'pack')} {final_level['name']}\n" + build_string)
-
-        # select cat type
-        goal_value = final_level["value"]
-        chosen_type = random.choice(cattypes)
-        pre_cat_amount = goal_value / (sum(type_dict.values()) / type_dict[chosen_type])
-        if pre_cat_amount % 1 > random.random():
-            cat_amount = math.ceil(pre_cat_amount)
-        else:
-            cat_amount = math.floor(pre_cat_amount)
-        if pre_cat_amount < 1:
-            reward_texts.append(
-                reward_texts[-1] + f"\n{round(pre_cat_amount * 100, 2)}% chance for a {get_emoji(chosen_type.lower() + 'cat')} {chosen_type} cat"
-            )
-            reward_texts.append(reward_texts[-1] + ".")
-            reward_texts.append(reward_texts[-1] + ".")
-            reward_texts.append(reward_texts[-1] + ".")
-            if cat_amount == 1:
-                # success
-                reward_texts.append(reward_texts[-1] + "\n✅ Success!")
-            else:
-                # fail
-                reward_texts.append(reward_texts[-1] + "\n❌ Fail!")
-                chosen_type = "Fine"
-                cat_amount = 1
+        chosen_type, cat_amount, upgrades, reward_texts = get_pack_rewards(level)
         user[f"cat_{chosen_type}"] += cat_amount
+        user.pack_upgrades += upgrades
         user.packs_opened += 1
         user[f"pack_{pack.lower()}"] -= 1
         await user.save()
-        reward_texts.append(reward_texts[-1] + f"\nYou got {get_emoji(chosen_type.lower() + 'cat')} {cat_amount} {chosen_type} cats!")
 
         embed = discord.Embed(title=reward_texts[0], color=0x6E593C)
         await interaction.edit_original_response(embed=embed, view=None)
         for reward_text in reward_texts[1:]:
             await asyncio.sleep(1)
-            things = reward_text.split("\n")
-            embed = discord.Embed(title=things[0], description="\n".join(things[1:]), color=0x6E593C)
+            things = reward_text.split("\n", 1)
+            embed = discord.Embed(title=things[0], description=things[1], color=0x6E593C)
             await interaction.edit_original_response(embed=embed)
+        await asyncio.sleep(1)
+        await interaction.edit_original_response(view=gen_view(user))
+
+    async def open_all_packs(interaction: discord.Interaction):
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+        await interaction.response.defer()
+        await user.refresh_from_db()
+        pack_names = [pack["name"] for pack in pack_data]
+        total_pack_count = sum(user[f"pack_{pack_id.lower()}"] for pack_id in pack_names)
+        if total_pack_count < 1:
+            return
+
+        display_cats = total_pack_count >= 50
+        results_header = []
+        results_detail = []
+        results_percat = {cat: 0 for cat in cattypes}
+        total_upgrades = 0
+        for level, pack in enumerate(pack_names):
+            pack_id = f"pack_{pack.lower()}"
+            this_packs_count = user[pack_id]
+            if this_packs_count < 1:
+                continue
+            results_header.append(f"{this_packs_count:,}x {get_emoji(pack.lower() + 'pack')}")
+            for _ in range(this_packs_count):
+                chosen_type, cat_amount, upgrades, rewards = get_pack_rewards(level, is_single=False)
+                total_upgrades += upgrades
+                if not display_cats:
+                    results_detail.append(rewards)
+                results_percat[chosen_type] += cat_amount
+            user[pack_id] = 0
+
+        user.packs_opened += total_pack_count
+        user.pack_upgrades += total_upgrades
+        for cat_type, cat_amount in results_percat.items():
+            user[f"cat_{cat_type}"] += cat_amount
+        await user.save()
+
+        final_header = f"Opened {total_pack_count:,} packs!"
+        pack_list = "**" + ", ".join(results_header) + "**"
+        final_result = "\n".join(results_detail)
+        if display_cats or len(final_result) > 4000 - len(pack_list):
+            half_result = []
+            for cat in cattypes:
+                if results_percat[cat] == 0:
+                    continue
+                half_result.append(f"{get_emoji(cat.lower() + 'cat')} {results_percat[cat]:,} {cat} cats!")
+            final_result = "\n".join(half_result)
+
+        embed = discord.Embed(title=final_header, description=pack_list, color=0x6E593C)
+        await interaction.edit_original_response(embed=embed, view=None)
+        await asyncio.sleep(1)
+        embed = discord.Embed(title=final_header, description=pack_list + "\n\n" + final_result, color=0x6E593C)
+        await interaction.edit_original_response(embed=embed)
         await asyncio.sleep(1)
         await interaction.edit_original_response(view=gen_view(user))
 
     description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n[Chance Info](<https://catbot.minkos.lol/packs>)\n\nClick the buttons below to start opening packs!"
     embed = discord.Embed(title=f"{get_emoji('bronzepack')} Packs", description=description, color=0x6E593C)
-    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     await message.response.send_message(embed=embed, view=gen_view(user))
 
 
 @bot.tree.command(description="why would anyone think a cattlepass would be a good idea")
 async def battlepass(message: discord.Interaction):
     current_mode = ""
-    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    global_user, _ = await User.get_or_create(user_id=message.user.id)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    global_user = await User.get_or_create(user_id=message.user.id)
 
     async def toggle_reminders(interaction: discord.Interaction):
         nonlocal current_mode
@@ -3938,8 +3988,8 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
     else:
         person_id = person
 
-    user_prisms = await Prism.filter(guild_id=message.guild.id, user_id=person_id.id)
-    all_prisms = await Prism.filter(guild_id=message.guild.id)
+    user_prisms = await Prism.collect("guild_id = $1 AND user_id = $2", message.guild.id, person_id.id)
+    all_prisms = await Prism.collect("guild_id = $1", message.guild.id)
     total_count = len(all_prisms)
     user_count = len(user_prisms)
     global_boost = 0.06 * math.log(2 * total_count + 1)
@@ -3961,7 +4011,7 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
 
     async def confirm_craft(interaction: discord.Interaction):
         await interaction.response.defer()
-        user, _ = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
+        user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
 
         # check we still can craft
         for i in cattypes:
@@ -3969,7 +4019,7 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
                 await interaction.followup.send("You don't have enough cats. Nice try though.", ephemeral=True)
                 return
 
-        if await Prism.filter(guild_id=interaction.guild.id).count() >= len(prism_names):
+        if await Prism.count("guild_id = $1", interaction.guild.id) >= len(prism_names):
             await interaction.followup.send("This server has reached the prism limit.", ephemeral=True)
             return
 
@@ -3986,12 +4036,12 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
 
         # determine the next name
         for selected_name in prism_names:
-            if not await Prism.filter(guild_id=message.guild.id, name=selected_name).exists():
+            if not await Prism.get_or_none(guild_id=message.guild.id, name=selected_name):
                 break
 
-        youngest_prism = await Prism.filter(guild_id=message.guild.id).order_by("-time").first()
+        youngest_prism = await Prism.collect("guild_id = $1 ORDER BY time DESC LIMIT 1", message.guild.id)
         if youngest_prism:
-            selected_time = max(round(time.time()), youngest_prism.time + 1)
+            selected_time = max(round(time.time()), youngest_prism[0].time + 1)
         else:
             selected_time = round(time.time())
 
@@ -4013,7 +4063,7 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
         await achemb(interaction, "collecter", "send")
 
     async def craft_prism(interaction: discord.Interaction):
-        user, _ = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
+        user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
 
         found_cats = await cats_in_server(interaction.guild.id)
         missing_cats = []
@@ -4110,7 +4160,7 @@ async def ping(message: discord.Interaction):
             except Exception:
                 pass
     await message.response.send_message(f"🏓 cat has brain delay of {latency} ms {get_emoji('staring_cat')}")
-    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     await progress(message, user, "ping")
 
 
@@ -4204,8 +4254,8 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
             view.add_item(button)
         if not has_unlocked_tiles:
             text = f"{message.user.mention} (X) vs {person.mention} (O)\nits a tie!"
-            user1, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-            user2, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person.id)
+            user1 = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+            user2 = await Profile.get_or_create(guild_id=message.guild.id, user_id=person.id)
             user1.ttt_played += 1
             user2.ttt_played += 1
             user1.ttt_draws += 1
@@ -4248,8 +4298,8 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
                     view.add_item(button)
                 await interaction.edit_original_response(content=f"{message.user.mention} (X) vs {person.mention} (O)\n{current_turn.mention} wins!", view=view)
-                user1, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-                user2, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person.id)
+                user1 = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+                user2 = await Profile.get_or_create(guild_id=message.guild.id, user_id=person.id)
                 user1.ttt_played += 1
                 user2.ttt_played += 1
                 if current_turn == message.user:
@@ -4287,8 +4337,8 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
                         view.add_item(button)
                     await interaction.edit_original_response(content=f"{message.user.mention} (X) vs {person.mention} (O)\n{person.mention} wins!", view=view)
-                    user1, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-                    user2, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person.id)
+                    user1 = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+                    user2 = await Profile.get_or_create(guild_id=message.guild.id, user_id=person.id)
                     user1.ttt_played += 1
                     user2.ttt_played += 1
                     user2.ttt_won += 1
@@ -4393,7 +4443,7 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
 @bot.tree.command(description="you feel like making cookies")
 async def cookie(message: discord.Interaction):
     cookie_id = (message.guild.id, message.user.id)
-    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     if cookie_id not in temp_cookie_storage.keys():
         temp_cookie_storage[cookie_id] = user.cookies
 
@@ -4450,10 +4500,10 @@ async def gift(
         return
 
     if cat_type in cattypes:
-        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
         # if we even have enough cats
         if user[f"cat_{cat_type}"] >= amount:
-            reciever, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id)
+            reciever = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id)
             user[f"cat_{cat_type}"] -= amount
             reciever[f"cat_{cat_type}"] += amount
             try:
@@ -4543,8 +4593,8 @@ async def gift(
             await message.response.send_message("you can't sacrifice rains", ephemeral=True)
             return
 
-        actual_user, _ = await User.get_or_create(user_id=message.user.id)
-        actual_receiver, _ = await User.get_or_create(user_id=person_id)
+        actual_user = await User.get_or_create(user_id=message.user.id)
+        actual_receiver = await User.get_or_create(user_id=person_id)
         if actual_user.rain_minutes >= amount:
             actual_user.rain_minutes -= amount
             actual_receiver.rain_minutes += amount
@@ -4572,10 +4622,10 @@ async def gift(
     elif cat_type.lower() in [i["name"].lower() for i in pack_data]:
         cat_type = cat_type.lower()
         # packs um also this seems to be repetetive uh
-        user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
         # if we even have enough packs
         if user[f"pack_{cat_type}"] >= amount:
-            reciever, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id)
+            reciever = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id)
             user[f"pack_{cat_type}"] -= amount
             reciever[f"pack_{cat_type}"] += amount
             await user.save()
@@ -4619,8 +4669,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
     person1gives = {}
     person2gives = {}
 
-    user1, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person1.id)
-    user2, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person2.id)
+    user1 = await Profile.get_or_create(guild_id=message.guild.id, user_id=person1.id)
+    user2 = await Profile.get_or_create(guild_id=message.guild.id, user_id=person2.id)
 
     if not bot.user:
         return
@@ -4675,8 +4725,8 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             blackhole = True
             await user1.refresh_from_db()
             await user2.refresh_from_db()
-            actual_user1, _ = await User.get_or_create(user_id=person1.id)
-            actual_user2, _ = await User.get_or_create(user_id=person2.id)
+            actual_user1 = await User.get_or_create(user_id=person1.id)
+            actual_user2 = await User.get_or_create(user_id=person2.id)
 
             # check if we have enough things (person could have moved them during the trade)
             error = False
@@ -4737,7 +4787,9 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             cat_count = 0
             for k, v in person1gives.items():
                 if k in prism_names:
-                    await Prism.filter(guild_id=message.guild.id, name=k).update(user_id=person2.id)
+                    move_prism = await Prism.get_or_none(guild_id=message.guild.id, name=k)
+                    move_prism.user_id = person2.id
+                    await move_prism.save()
                 elif k == "rains":
                     actual_user1.rain_minutes -= v
                     actual_user2.rain_minutes += v
@@ -4756,7 +4808,9 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
             for k, v in person2gives.items():
                 if k in prism_names:
-                    await Prism.filter(guild_id=message.guild.id, name=k).update(user_id=person1.id)
+                    move_prism = await Prism.get_or_none(guild_id=message.guild.id, name=k)
+                    move_prism.user_id = person1.id
+                    await move_prism.save()
                 elif k == "rains":
                     actual_user2.rain_minutes -= v
                     actual_user1.rain_minutes += v
@@ -4956,7 +5010,9 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             # handle prisms
             if (pname := " ".join(i.capitalize() for i in self.cattype.value.split())) in prism_names:
                 try:
-                    prism = await Prism.get(guild_id=interaction.guild.id, name=pname)
+                    prism = await Prism.get_or_none(guild_id=interaction.guild.id, name=pname)
+                    if not prism:
+                        raise Exception
                 except Exception:
                     await interaction.response.send_message("this prism doesnt exist", ephemeral=True)
                     return
@@ -5004,7 +5060,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
             # handle rains
             if "rain" in self.cattype.value.lower():
-                user, _ = await User.get_or_create(user_id=interaction.user.id)
+                user = await User.get_or_create(user_id=interaction.user.id)
                 try:
                     if user.rain_minutes < int(value) or int(value) < 1:
                         await interaction.response.send_message("you dont have enough rains", ephemeral=True)
@@ -5105,7 +5161,7 @@ async def cat(message: discord.Interaction, cat_type: Optional[str]):
         return
 
     # check the user has the cat if required
-    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     if cat_type and user[f"cat_{cat_type}"] <= 0:
         await message.response.send_message("you dont have that cat", ephemeral=True)
         return
@@ -5152,9 +5208,9 @@ async def casino(message: discord.Interaction):
         await achemb(message, "paradoxical_gambler", "send")
         return
 
-    profile, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     # funny global gamble counter cus funny
-    total_sum = (await Profile.filter(gambles__gt=0).annotate(total=Sum("gambles")).values_list("total", flat=True))[0] or 0
+    total_sum = await Profile.sum("gambles", "gambles > 0")
     embed = discord.Embed(
         title="🎲 The Catsino",
         description=f"One spin costs 5 {get_emoji('finecat')} Fine cats\nSo far you gambled {profile.gambles} times.\nAll Cat Bot users gambled {total_sum:,} times.",
@@ -5254,15 +5310,12 @@ async def slots(message: discord.Interaction):
         await achemb(message, "paradoxical_gambler", "send")
         return
 
-    profile, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    # i hate this
+    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     total_spins, total_wins, total_big_wins = (
-        await Profile.filter(slot_spins__gt=0)
-        .annotate(total_spins=Sum("slot_spins"), total_wins=Sum("slot_wins"), total_big_wins=Sum("slot_big_wins"))
-        .values_list("total_spins", "total_wins", "total_big_wins")
-    )[0]
-    if (total_spins, total_wins, total_big_wins) == (None, None, None):
-        total_spins, total_wins, total_big_wins = 0, 0, 0
+        await Profile.sum("slot_spins", "slot_spins > 0"),
+        await Profile.sum("slot_wins", "slot_wins > 0"),
+        await Profile.sum("slot_big_wins", "slot_big_wins > 0"),
+    )
     embed = discord.Embed(
         title=":slot_machine: The Slot Machine",
         description=f"__Your stats__\n{profile.slot_spins:,} spins\n{profile.slot_wins:,} wins\n{profile.slot_big_wins:,} big wins\n\n__Global stats__\n{total_spins:,} spins\n{total_wins:,} wins\n{total_big_wins:,} big wins",
@@ -5437,7 +5490,7 @@ async def roll(message: discord.Interaction, sides: Optional[int]):
         dice = f"d{sides}"
 
     await message.response.send_message(f"🎲 your {dice} lands on **{random.randint(1, sides)}**")
-    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     await progress(message, user, "roll")
 
 
@@ -5451,7 +5504,7 @@ async def rate(message: discord.Interaction, thing: str, stat: str):
         await message.response.send_message("/rate is 100% correct")
     else:
         await message.response.send_message(f"{thing} is {random.randint(0, 100)}% {stat}")
-    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     await progress(message, user, "rate")
 
 
@@ -5494,7 +5547,7 @@ async def eightball(message: discord.Interaction, question: str):
     ]
 
     await message.response.send_message(f"{question}\n:8ball: **{random.choice(catball_responses)}**")
-    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     await progress(message, user, "catball")
     await achemb(message, "balling", "send")
 
@@ -5537,7 +5590,7 @@ async def remind(
     message_link = msg.jump_url
     text += f"\n\n*This is a [reminder](<{message_link}>) you set.*"
     await Reminder.create(user_id=message.user.id, text=text, time=goal_time)
-    profile, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     profile.reminders_set += 1
     await profile.save()
     await achemb(message, "reminder", "send")  # the ai autocomplete thing suggested this and its actually a cool ach
@@ -5627,7 +5680,7 @@ async def cat_fact(message: discord.Interaction):
     ):
         return
 
-    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     user.facts += 1
     await user.save()
     if user.facts >= 10:
@@ -5659,7 +5712,7 @@ async def light_market(message):
         [2, "Ultimate"],
         [1, "eGirl"],
     ]
-    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     if user.cataine_active < int(time.time()):
         count = user.cataine_week
         lastweek = user.recent_week
@@ -5758,7 +5811,7 @@ async def dark_market(message):
         [1, "Divine"],
         [100, "eGirl"],
     ]
-    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     if user.cataine_active < int(time.time()):
         level = user.dark_market_level
         embed = discord.Embed(
@@ -5889,7 +5942,7 @@ async def dark_market(message):
 @bot.tree.command(description="View your achievements")
 async def achievements(message: discord.Interaction):
     # this is very close to /inv's ach counter
-    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     if user.funny >= 50:
         await achemb(message, "its_not_working", "send")
 
@@ -5949,7 +6002,7 @@ async def achievements(message: discord.Interaction):
             color=0x6E593C,
         ).set_footer(text=rain_shill)
 
-        global_user, _ = await User.get_or_create(user_id=message.user.id)
+        global_user = await User.get_or_create(user_id=message.user.id)
         if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state.strip()[-4:]:
             newembed.set_author(name="You have unread news! /news")
 
@@ -6062,7 +6115,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         await achemb(message, "8k", "send")
 
     try:
-        is_cat = (await Channel.get(channel_id=message.channel.id)).cat
+        is_cat = (await Channel.get_or_none(channel_id=message.channel.id)).cat
     except Exception:
         is_cat = False
 
@@ -6113,27 +6166,21 @@ async def leaderboards(
             unit = "cats"
 
             if specific_cat != "All":
-                result = (
-                    await Profile.filter(guild_id=message.guild.id, **{f"cat_{specific_cat}__gt": 0})
-                    .annotate(final_value=Sum(f"cat_{specific_cat}"))
-                    .order_by("-final_value")
-                    .values("user_id", "final_value")
+                result = await Profile.collect_limit(
+                    ["user_id", f"cat_{specific_cat}"], f'guild_id = $1 AND "cat_{specific_cat}" > 0 ORDER BY "cat_{specific_cat}" DESC', message.guild.id
                 )
+                final_value = f"cat_{specific_cat}"
             else:
                 # dynamically generate sum expression, cast each value to bigint first to handle large totals
-                cat_columns = [f'CAST("cat_{c}" AS BIGINT)' for c in cattypes if c]
-                sum_expression = " + ".join(cat_columns)
-                result = (
-                    await Profile.filter(guild_id=message.guild.id)
-                    .annotate(final_value=RawSQL(sum_expression))
-                    .order_by("-final_value")
-                    .values("user_id", "final_value")
-                )
+                cat_columns = [f'CAST("cat_{c}" AS BIGINT)' for c in cattypes]
+                sum_expression = RawSQL("(" + " + ".join(cat_columns) + ") AS final_value")
+                result = await Profile.collect_limit(["user_id", sum_expression], "guild_id = $1 ORDER BY final_value DESC", message.guild.id)
+                final_value = "final_value"
 
                 # find rarest
                 rarest = None
                 for i in cattypes[::-1]:
-                    non_zero_count = await Profile.filter(guild_id=message.guild.id, **{f"cat_{i}__gt": 0}).values_list("user_id", flat=True)
+                    non_zero_count = await Profile.collect_limit("user_id", f'guild_id = $1 AND "cat_{i}" > 0', message.guild.id)
                     if len(non_zero_count) != 0:
                         rarest = i
                         rarest_holder = non_zero_count
@@ -6141,7 +6188,7 @@ async def leaderboards(
 
                 if rarest and specific_cat != rarest:
                     catmoji = get_emoji(rarest.lower() + "cat")
-                    rarest_holder = [f"<@{i}>" for i in rarest_holder]
+                    rarest_holder = [f"<@{i.user_id}>" for i in rarest_holder]
                     joined = ", ".join(rarest_holder)
                     if len(rarest_holder) > 10:
                         joined = f"{len(rarest_holder)} people"
@@ -6154,50 +6201,36 @@ async def leaderboards(
                     continue
                 weight = sum(type_dict.values()) / type_dict[cat_type]
                 sums.append(f'({weight}) * "cat_{cat_type}"')
-            total_sum_expr = " + ".join(sums)
-            result = (
-                await Profile.filter(guild_id=message.guild.id)
-                .annotate(final_value=RawSQL(total_sum_expr))
-                .order_by("-final_value")
-                .values("user_id", "final_value")
-            )
+            total_sum_expr = RawSQL("(" + " + ".join(sums) + ") AS final_value")
+            result = await Profile.collect_limit(["user_id", total_sum_expr], "guild_id = $1 ORDER BY final_value DESC", message.guild.id)
+            final_value = "final_value"
         elif type == "Fast":
             unit = "sec"
-            result = (
-                await Profile.filter(guild_id=message.guild.id, time__lt=99999999999999)
-                .annotate(final_value=Sum("time"))
-                .order_by("final_value")
-                .values("user_id", "final_value")
-            )
+            result = await Profile.collect_limit(["user_id", "time"], "guild_id = $1 AND time < 99999999999999 ORDER BY time ASC", message.guild.id)
+            final_value = "time"
         elif type == "Slow":
             unit = "h"
-            result = (
-                await Profile.filter(guild_id=message.guild.id, timeslow__gt=0)
-                .annotate(final_value=Sum("timeslow"))
-                .order_by("-final_value")
-                .values("user_id", "final_value")
-            )
+            result = await Profile.collect_limit(["user_id", "timeslow"], "guild_id = $1 AND timeslow > 0 ORDER BY timeslow DESC", message.guild.id)
+            final_value = "timeslow"
         elif type == "Battlepass":
             start_date = datetime.datetime(2024, 12, 1)
             current_date = datetime.datetime.utcnow()
             full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
+            bp_season = battle["seasons"][str(full_months_passed)]
             if current_date.day < start_date.day:
                 full_months_passed -= 1
-            result = (
-                await Profile.filter(guild_id=message.guild.id, season=full_months_passed)
-                .annotate(final_value=Sum("battlepass"))
-                .order_by("-final_value", "-progress")
-                .values("user_id", "final_value", "progress")
+            result = await Profile.collect_limit(
+                ["user_id", "battlepass", "progress"],
+                "guild_id = $1 AND season = $2 AND (battlepass > 0 OR progress > 0) ORDER BY battlepass DESC, progress DESC",
+                message.guild.id,
+                full_months_passed,
             )
+            final_value = "battlepass"
         elif type == "Cookies":
             unit = "cookies"
-            result = (
-                await Profile.filter(guild_id=message.guild.id, cookies__gt=0)
-                .annotate(final_value=Sum("cookies"))
-                .order_by("-final_value")
-                .values("user_id", "final_value")
-            )
+            result = await Profile.collect_limit(["user_id", "cookies"], "guild_id = $1 AND cookies > 0 ORDER BY cookies DESC", message.guild.id)
             string = "Cookie leaderboard updates every 5 min\n\n"
+            final_value = "cookies"
         else:
             # qhar
             return
@@ -6208,10 +6241,22 @@ async def leaderboards(
         for index, position in enumerate(result):
             if position["user_id"] == interaction.user.id:
                 interactor_placement = index + 1
-                interactor = position["final_value"]
+                interactor = position[final_value]
+                if type == "Battlepass":
+                    if position[final_value] >= len(bp_season):
+                        lv_xp_req = 1500
+                    else:
+                        lv_xp_req = bp_season[int(position[final_value]) - 1]["xp"]
+                    interactor_perc = math.floor((100 / lv_xp_req) * position["progress"])
             if interaction.user != message.user and position["user_id"] == message.user.id:
                 messager_placement = index + 1
-                messager = position["final_value"]
+                messager = position[final_value]
+                if type == "Battlepass":
+                    if position[final_value] >= len(bp_season):
+                        lv_xp_req = 1500
+                    else:
+                        lv_xp_req = bp_season[int(position[final_value]) - 1]["xp"]
+                    messager_perc = math.floor((100 / lv_xp_req) * position["progress"])
 
         if type == "Slow":
             if interactor:
@@ -6226,14 +6271,14 @@ async def leaderboards(
                 messager = round(messager, 3)
 
         # dont show placements if they arent defined
-        if interactor and type in ["Cats", "Slow", "Value", "Cookies"]:
+        if interactor and type != "Fast":
             if interactor <= 0:
                 interactor_placement = 0
             interactor = round(interactor)
         elif interactor and type == "Fast" and interactor >= 99999999999999:
             interactor_placement = 0
 
-        if messager and type in ["Cats", "Slow", "Value", "Cookies"]:
+        if messager and type != "Fast":
             if messager <= 0:
                 messager_placement = 0
             messager = round(messager)
@@ -6248,17 +6293,14 @@ async def leaderboards(
         current = 1
         leader = False
         for i in result[:show_amount]:
-            num = i["final_value"]
+            num = i[final_value]
 
             if type == "Battlepass":
-                bp_season = battle["seasons"][str(full_months_passed)]
-                if i["final_value"] >= len(bp_season):
+                if i[final_value] >= len(bp_season):
                     lv_xp_req = 1500
                 else:
-                    lv_xp_req = bp_season[int(i["final_value"]) - 1]["xp"]
-
+                    lv_xp_req = bp_season[int(position[final_value]) - 1]["xp"]
                 prog_perc = math.floor((100 / lv_xp_req) * i["progress"])
-
                 string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i['user_id']}>\n"
             else:
                 if type == "Slow":
@@ -6284,7 +6326,7 @@ async def leaderboards(
             current += 1
 
         # add the messager and interactor
-        if type != "Battlepass" and (messager_placement > show_amount or interactor_placement > show_amount):
+        if messager_placement > show_amount or interactor_placement > show_amount:
             string = string + "...\n"
 
             # setting up names
@@ -6293,9 +6335,15 @@ async def leaderboards(
             interactor_line = ""
             messager_line = ""
             if include_interactor:
-                interactor_line = f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
+                if type == "Battlepass":
+                    interactor_line = f"{interactor_placement}\\. Level **{interactor}** *({interactor_perc}%)*: {interaction.user.mention}\n"
+                else:
+                    interactor_line = f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
             if include_messager:
-                messager_line = f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: {message.user.mention}\n"
+                if type == "Battlepass":
+                    messager_line = f"{messager_placement}\\. Level **{messager}** *({messager_perc}%)*: {message.user.mention}\n"
+                else:
+                    messager_line = f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: {message.user.mention}\n"
 
             # sort them correctly!
             if messager_placement > interactor_placement:
@@ -6314,7 +6362,7 @@ async def leaderboards(
 
         embedVar = discord.Embed(title=title, description=string.rstrip(), color=0x6E593C).set_footer(text=rain_shill)
 
-        global_user, _ = await User.get_or_create(user_id=message.user.id)
+        global_user = await User.get_or_create(user_id=message.user.id)
 
         if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state.strip()[-4:]:
             embedVar.set_author(name=f"{message.user} has unread news! /news")
@@ -6377,7 +6425,7 @@ async def givecat(message: discord.Interaction, person_id: discord.User, cat_typ
         await message.response.send_message("bro what", ephemeral=True)
         return
 
-    user, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
     user[f"cat_{cat_type}"] += amount
     await user.save()
     embed = discord.Embed(
@@ -6397,53 +6445,32 @@ async def setup_channel(message: discord.Interaction):
         )
         return
 
-    with open("images/cat.png", "rb") as f:
-        try:
-            channel_permissions = await fetch_perms(message)
-            needed_perms = {
-                "View Channel": channel_permissions.view_channel,
-                # "Manage Webhooks": channel_permissions.manage_webhooks,
-                "Send Messages": channel_permissions.send_messages,
-                "Attach Files": channel_permissions.attach_files,
-            }
-            if isinstance(message.channel, discord.Thread):
-                needed_perms["Send Messages in Threads"] = channel_permissions.send_messages_in_threads
+    try:
+        channel_permissions = await fetch_perms(message)
+        needed_perms = {
+            "View Channel": channel_permissions.view_channel,
+            "Send Messages": channel_permissions.send_messages,
+            "Attach Files": channel_permissions.attach_files,
+        }
+        if isinstance(message.channel, discord.Thread):
+            needed_perms["Send Messages in Threads"] = channel_permissions.send_messages_in_threads
 
-            for name, value in needed_perms.copy().items():
-                if value:
-                    needed_perms.pop(name)
+        for name, value in needed_perms.copy().items():
+            if value:
+                needed_perms.pop(name)
 
-            missing_perms = list(needed_perms.keys())
-            if len(missing_perms) != 0:
-                needed_perms = "\n- ".join(missing_perms)
-                await message.response.send_message(
-                    f":x: Missing Permissions! Please give me the following:\n- {needed_perms}\nHint: try setting channel permissions if server ones don't work."
-                )
-                return
-
-            if isinstance(message.channel, discord.Thread):
-                parent = bot.get_channel(message.channel.parent_id)
-                if not isinstance(parent, Union[discord.TextChannel, discord.ForumChannel]):
-                    raise Exception
-                try:
-                    wh = await parent.create_webhook(name="Cat Bot", avatar=f.read())
-                except Exception:
-                    await message.response.send_message(":x: Missing Permissions! Please give me the Manage Webhooks permission.")
-                    return
-                await Channel.create(channel_id=message.channel.id, webhook=wh.url, thread_mappings=True)
-            elif isinstance(
-                message.channel,
-                Union[discord.TextChannel, discord.StageChannel, discord.VoiceChannel],
-            ):
-                try:
-                    wh = await message.channel.create_webhook(name="Cat Bot", avatar=f.read())
-                except Exception:
-                    await message.response.send_message(":x: Missing Permissions! Please give me the Manage Webhooks permission.")
-                    return
-                await Channel.create(channel_id=message.channel.id, webhook=wh.url, thread_mappings=False)
-        except Exception:
-            await message.response.send_message("this channel gives me bad vibes.")
+        missing_perms = list(needed_perms.keys())
+        if len(missing_perms) != 0:
+            needed_perms = "\n- ".join(missing_perms)
+            await message.response.send_message(
+                f":x: Missing Permissions! Please give me the following:\n- {needed_perms}\nHint: try setting channel permissions if server ones don't work."
+            )
             return
+
+        await Channel.create(channel_id=message.channel.id)
+    except Exception:
+        await message.response.send_message("this channel gives me bad vibes.")
+        return
 
     await spawn_cat(str(message.channel.id))
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
@@ -6453,7 +6480,7 @@ async def setup_channel(message: discord.Interaction):
 @discord.app_commands.default_permissions(manage_guild=True)
 async def forget(message: discord.Interaction):
     if channel := await Channel.get_or_none(channel_id=message.channel.id):
-        await unsetup(channel)
+        await channel.delete()
         await message.response.send_message(f"ok, now i wont send cats in <#{message.channel.id}>")
     else:
         await message.response.send_message("your an idiot there is literally no cat setupped in this channel you stupid")
@@ -6530,7 +6557,7 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
         ach_id = ach_titles[ach_id.lower()]
         valid = True
 
-    person, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
+    person = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
 
     if valid and ach_id == "thanksforplaying":
         await message.response.send_message("HAHAHHAHAH\nno", ephemeral=True)
@@ -6577,10 +6604,10 @@ async def reset(message: discord.Interaction, person_id: discord.User):
             await interaction.response.defer()
             try:
                 og = await interaction.original_response()
-                profile, _ = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
+                profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
                 profile.guild_id = og.id
                 await profile.save()
-                async for p in Prism.filter(guild_id=message.guild.id, user_id=person_id.id):
+                async for p in Prism.filter("guild_id = $1 AND user_id = $2", message.guild.id, person_id.id):
                     p.guild_id = og.id
                     await p.save()
                 await interaction.edit_original_response(
@@ -6635,18 +6662,18 @@ async def nuke(message: discord.Interaction):
                 changed_profiles = []
                 changed_prisms = []
 
-                async for i in Profile.filter(guild_id=message.guild.id):
+                async for i in Profile.filter("guild_id = $1", message.guild.id):
                     i.guild_id = interaction.message.id
                     changed_profiles.append(i)
 
-                async for i in Prism.filter(guild_id=message.guild.id):
+                async for i in Prism.filter("guild_id = $1", message.guild.id):
                     i.guild_id = interaction.message.id
                     changed_prisms.append(i)
 
                 if changed_profiles:
-                    await Profile.bulk_update(changed_profiles, fields=["guild_id"])
+                    await Profile.bulk_update(changed_profiles, "guild_id")
                 if changed_prisms:
-                    await Prism.bulk_update(changed_prisms, fields=["guild_id"])
+                    await Prism.bulk_update(changed_prisms, "guild_id")
                 await Profile.create(guild_id=interaction.message.id, user_id=0)
 
                 try:
@@ -6674,7 +6701,7 @@ async def recieve_vote(request):
         return web.Response(text="bad", status=403)
     request_json = await request.json()
 
-    user, _ = await User.get_or_create(user_id=int(request_json["user"]))
+    user = await User.get_or_create(user_id=int(request_json["user"]))
     if user.vote_time_topgg + 43100 > time.time():
         # top.gg is NOT realiable with their webhooks, but we politely pretend they are
         return web.Response(text="you fucking dumb idiot", status=200)
@@ -6741,7 +6768,7 @@ async def check_supporter(request):
         return web.Response(text="bad", status=403)
     request_json = await request.json()
 
-    user, _ = await User.get_or_create(user_id=int(request_json["user"]))
+    user = await User.get_or_create(user_id=int(request_json["user"]))
     return web.Response(text="1" if user.premium else "0", status=200)
 
 
@@ -6794,12 +6821,12 @@ async def setup(bot2):
 async def teardown(bot):
     cookie_updates = []
     for cookie_id, cookies in temp_cookie_storage.items():
-        p, _ = await Profile.get_or_create(guild_id=cookie_id[0], user_id=cookie_id[1])
+        p = await Profile.get_or_create(guild_id=cookie_id[0], user_id=cookie_id[1])
         p.cookies = cookies
         cookie_updates.append(p)
 
     if cookie_updates:
-        await Profile.bulk_update(cookie_updates, fields=["cookies"])
+        await Profile.bulk_update(cookie_updates, "cookies")
 
     if config.WEBHOOK_VERIFY:
         await vote_server.cleanup()

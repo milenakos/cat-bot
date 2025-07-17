@@ -3,13 +3,8 @@ import os
 # discord bot token
 TOKEN = os.environ["TOKEN"]
 
-# database type
-# either SQLITE or POSTGRES
-# SQLITE: a `catbot.db` file in this folder
-# POSTGRES: user - cat_bot, database - cat_bot, ip - localhost, port - default, password see below
-DB_TYPE = "POSTGRES"
-
-# db password if postgres, otherwise set to None
+# db password for postgres
+# user - cat_bot, database - cat_bot, ip - localhost, port - default
 DB_PASS = os.environ["psql_password"]
 
 #
