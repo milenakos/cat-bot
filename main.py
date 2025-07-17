@@ -6212,10 +6212,6 @@ async def leaderboards(
             return
 
         bp_season = battle["seasons"][str(full_months_passed)]
-        if i[final_value] >= len(bp_season):
-            lv_xp_req = 1500
-        else:
-            lv_xp_req = bp_season[int(i[final_value]) - 1]["xp"]
 
         # find the placement of the person who ran the command and optionally the person who pressed the button
         interactor_placement = 0
@@ -6225,11 +6221,19 @@ async def leaderboards(
                 interactor_placement = index + 1
                 interactor = position[final_value]
                 if type == "Battlepass":
+                    if i[final_value] >= len(bp_season):
+                        lv_xp_req = 1500
+                    else:
+                        lv_xp_req = bp_season[int(position[final_value]) - 1]["xp"]
                     interactor_perc = math.floor((100 / lv_xp_req) * position["progress"])
             if interaction.user != message.user and position["user_id"] == message.user.id:
                 messager_placement = index + 1
                 messager = position[final_value]
                 if type == "Battlepass":
+                    if i[final_value] >= len(bp_season):
+                        lv_xp_req = 1500
+                    else:
+                        lv_xp_req = bp_season[int(position[final_value]) - 1]["xp"]
                     messager_perc = math.floor((100 / lv_xp_req) * position["progress"])
 
         if type == "Slow":
@@ -6270,6 +6274,10 @@ async def leaderboards(
             num = i[final_value]
 
             if type == "Battlepass":
+                if i[final_value] >= len(bp_season):
+                    lv_xp_req = 1500
+                else:
+                    lv_xp_req = bp_season[int(position[final_value]) - 1]["xp"]
                 prog_perc = math.floor((100 / lv_xp_req) * i["progress"])
                 string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i['user_id']}>\n"
             else:
