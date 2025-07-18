@@ -4182,7 +4182,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         else:
             second_line = f"{players[current_turn].mention}'s turn"
 
-        await message.response.edit_original_response(content=f"{players[0].mention} (X) vs {players[1].mention} (O)\n{second_line}", view=view)
+        await message.edit_original_response(content=f"{players[0].mention} (X) vs {players[1].mention} (O)\n{second_line}", view=view)
 
     async def play(
         interaction,
