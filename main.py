@@ -4170,10 +4170,10 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
             view.add_item(button)
 
         if wins != [-1]:
-            if board[wins[0]] == "X":
+            if board[wins[0]] == "❌":
                 second_line = f"{players[0].mention} won!"
                 await end_game(0)
-            elif board[wins[0]] == "O":
+            elif board[wins[0]] == "⭕":
                 second_line = f"{players[1].mention} won!"
                 await end_game(1)
         elif tie:
@@ -4184,18 +4184,16 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
         await message.edit_original_response(content=f"{players[0].mention} (X) vs {players[1].mention} (O)\n{second_line}", view=view)
 
-    async def play(
-        interaction,
-    ):
+    async def play(interaction):
         nonlocal current_turn
         cell_num = int(interaction.data["custom_id"])
-        await interaction.response.defer()
         if board[cell_num] is not None:
             await interaction.response.send_message("That spot is already taken!", ephemeral=True)
             return
         if players[current_turn] != interaction.user:
             await interaction.response.send_message("It's not your turn!", ephemeral=True)
             return
+        await interaction.response.defer()
         board[cell_num] = "❌" if current_turn == 0 else "⭕"
         current_turn = 1 - current_turn
         await finish_turn()
