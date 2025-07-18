@@ -1092,7 +1092,13 @@ async def maintaince_loop():
             return
 
         if loop_count % 10 == 0:
-            backup_file = f"/root/backups/backup-{int(time.time())}.dump"
+            backup_file = "/root/backup.dump"
+            try:
+                # delete the previous backup file
+                os.remove(backup_file)
+            except Exception:
+                pass
+
             try:
                 process = await asyncio.create_subprocess_shell(f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -Fc -Z 9 -f {backup_file} cat_bot")
                 await process.wait()
