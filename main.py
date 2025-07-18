@@ -4167,7 +4167,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
                 button.callback = play
             else:
                 button = Button(label=cell, row=cell_num // 3, disabled=True, style=ButtonStyle.green if cell_num in wins else ButtonStyle.gray)
-                view.add_item(button)
+            view.add_item(button)
 
         if wins != [-1]:
             if board[wins[0]] == "X":
