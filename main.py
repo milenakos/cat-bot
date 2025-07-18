@@ -4156,6 +4156,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
     async def finish_turn():
         nonlocal do_edit
+        print("ding dong")
         view = View(timeout=VIEW_TIMEOUT)
         wins = check_win(board)
         tie = True
@@ -4167,6 +4168,8 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
                 button = Button(label=cell, row=cell_num // 3, disabled=True, style=ButtonStyle.green if cell_num in wins else ButtonStyle.gray)
             button.callback = play
             view.add_item(button)
+
+        print("me when")
 
         if wins != [-1]:
             if board[wins[0]] == "❌":
@@ -4181,9 +4184,11 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         else:
             second_line = f"{players[current_turn].mention}'s turn"
 
+        print("i do print debugging")
         if do_edit:
             await message.edit_original_response(content=f"{players[0].mention} (X) vs {players[1].mention} (O)\n{second_line}", view=view)
         else:
+            print("because it makes no sense otherwise")
             await message.response.send_message(f"{players[0].mention} (X) vs {players[1].mention} (O)\n{second_line}", view=view)
             do_edit = True
 
