@@ -4131,6 +4131,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
     players = [message.user, person]
     random.shuffle(players)
+    bot_is_playing = person == bot.user
     current_turn = 0
 
     def check_win(board):
@@ -4154,8 +4155,72 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
         return [-1]
 
+    def minimax(board, depth, is_maximizing, alpha, beta, bot_symbol, human_symbol):
+        wins = check_win(board)
+        if wins != [-1]:
+            if board[wins[0]] == bot_symbol:
+                return 10 - depth  # Bot wins (good for bot)
+            elif board[wins[0]] == human_symbol:
+                return -10 + depth  # Human wins (bad for bot)
+
+        if all(cell is not None for cell in board):
+            return 0
+
+        if is_maximizing:
+            max_eval = float("-inf")
+            for i in range(9):
+                if board[i] is None:
+                    board[i] = bot_symbol
+                    eval = minimax(board, depth + 1, False, alpha, beta, bot_symbol, human_symbol)
+                    board[i] = None
+                    max_eval = max(max_eval, eval)
+                    alpha = max(alpha, eval)
+                    if beta <= alpha:
+                        break
+            return max_eval
+        else:
+            min_eval = float("inf")
+            for i in range(9):
+                if board[i] is None:
+                    board[i] = human_symbol
+                    eval = minimax(board, depth + 1, True, alpha, beta, bot_symbol, human_symbol)
+                    board[i] = None
+                    min_eval = min(min_eval, eval)
+                    beta = min(beta, eval)
+                    if beta <= alpha:
+                        break
+            return min_eval
+
+    def get_best_move(board):
+        best_score = float("-inf")
+        best_move = None
+
+        bot_turn = None
+        human_turn = None
+        for i, player in enumerate(players):
+            if player.bot:
+                bot_turn = i
+            else:
+                human_turn = i
+
+        bot_symbol = "❌" if bot_turn == 0 else "⭕"
+        human_symbol = "❌" if human_turn == 0 else "⭕"
+
+        for i in range(9):
+            if board[i] is None:
+                board[i] = bot_symbol
+                score = minimax(board, 0, False, float("-inf"), float("inf"), bot_symbol, human_symbol)
+                board[i] = None
+
+                if score > best_score:
+                    best_score = score
+                    best_move = i
+
+        return best_move
+
     async def finish_turn():
-        nonlocal do_edit
+        nonlocal do_edit, current_turn
+
         view = View(timeout=VIEW_TIMEOUT)
         wins = check_win(board)
         tie = True
@@ -4170,22 +4235,30 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
         if wins != [-1]:
             if board[wins[0]] == "❌":
-                second_line = f"{players[0].mention} won!"
+                second_line = f"{players[0].mention} (X) won!"
                 await end_game(0)
             elif board[wins[0]] == "⭕":
-                second_line = f"{players[1].mention} won!"
+                second_line = f"{players[1].mention} (O) won!"
                 await end_game(1)
         elif tie:
             second_line = "its a tie!"
             await end_game(-1)
         else:
-            second_line = f"{players[current_turn].mention}'s turn"
+            second_line = f"{players[current_turn].mention}'s turn ({'X' if current_turn == 0 else 'O'})"
 
         if do_edit:
             await message.edit_original_response(content=f"{players[0].mention} (X) vs {players[1].mention} (O)\n{second_line}", view=view)
         else:
             await message.response.send_message(f"{players[0].mention} (X) vs {players[1].mention} (O)\n{second_line}", view=view)
             do_edit = True
+
+        if bot_is_playing and players[current_turn].bot and wins == [-1] and not tie:
+            await asyncio.sleep(1)
+            best_move = get_best_move(board)
+            if best_move is not None:
+                board[best_move] = "❌" if current_turn == 0 else "⭕"
+                current_turn = 1 - current_turn
+                await finish_turn()
 
     async def play(interaction):
         nonlocal current_turn
@@ -4220,6 +4293,12 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         await users[1].save()
         await progress(message, users[0], "ttc")
         await progress(message, users[1], "ttc")
+
+    if bot_is_playing and players[current_turn].bot:
+        best_move = get_best_move(board)
+        if best_move is not None:
+            board[best_move] = "❌" if current_turn == 0 else "⭕"
+            current_turn = 1 - current_turn
 
     await finish_turn()
 
