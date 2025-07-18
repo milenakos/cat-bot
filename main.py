@@ -4126,195 +4126,101 @@ async def ping(message: discord.Interaction):
 @bot.tree.command(description="play a relaxing game of tic tac toe")
 @discord.app_commands.describe(person="who do you want to play with? (choose Cat Bot for ai)")
 async def tictactoe(message: discord.Interaction, person: discord.Member):
-    # WOW this code is bad
-    if person == message.user:
-        await message.response.send_message("you can't play tic tac toe with yourself idiot", ephemeral=True)
-        return
-    if person != bot.user:
-        current_turn = random.choice([message.user, person])
-    else:
-        current_turn = message.user
-    board_state = ["", "", "", "", "", "", "", "", ""]
+    await message.response.send_message("Starting game...")
 
-    def check_winner(board):
-        # Check rows, columns, and diagonals for a winner
-        winning_combinations = [
-            (0, 1, 2),
-            (3, 4, 5),
-            (6, 7, 8),
-            (0, 3, 6),
-            (1, 4, 7),
-            (2, 5, 8),
-            (0, 4, 8),
-            (2, 4, 6),
+    board = [None, None, None, None, None, None, None, None, None]
+
+    players = [message.user, person]
+    random.shuffle(players)
+    current_turn = 0
+
+    def check_win(board):
+        combinations = [
+            # rows
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            # columns
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            # diagonals
+            [0, 4, 8],
+            [2, 4, 6],
         ]
 
-        for a, b, c in winning_combinations:
-            if board[a] == board[b] == board[c] and board[a] != "":
-                return board[a], True, [a, b, c]  # Return the winner and a flag indicating a win
+        for combination in combinations:
+            if board[combination[0]] == board[combination[1]] == board[combination[2]] and board[combination[0]] is not None:
+                return combination
 
-        return None, False, []  # No winner
+        return [-1]
 
-    def minimax(board, depth, is_maximizing):
-        winner, has_winner, _ = check_winner(board)
-
-        if has_winner:
-            return (10 - depth) if winner == "O" else (depth - 10)
-        elif "" not in board:
-            return 0
-
-        if is_maximizing:
-            best_score = float("-inf")
-            for i in range(9):
-                if board[i] == "":
-                    board[i] = "O"
-                    score = minimax(board, depth + 1, False)
-                    board[i] = ""
-                    best_score = max(score, best_score)
-            return best_score
-        else:
-            best_score = float("inf")
-            for i in range(9):
-                if board[i] == "":
-                    board[i] = "X"
-                    score = minimax(board, depth + 1, True)
-                    board[i] = ""
-                    best_score = min(score, best_score)
-            return best_score
-
-    def get_best_move(board):
-        best_score = float("-inf")
-        best_move = -1
-        for i in range(9):
-            if board[i] == "":
-                board[i] = "O"
-                score = minimax(board, 0, False)
-                board[i] = ""
-                if score > best_score:
-                    best_score = score
-                    best_move = i
-        return best_move
-
-    async def gen_board():
-        view = View(timeout=VIEW_TIMEOUT)
-        has_unlocked_tiles = False
-        for num, i in enumerate(board_state):
-            if i == "":
-                button = Button(emoji=get_emoji("empty"), custom_id=str(num))
-                has_unlocked_tiles = True
-            elif i == "X":
-                button = Button(emoji="❌", disabled=True)
-            elif i == "O":
-                button = Button(emoji="⭕", disabled=True)
-
-            button.callback = do_turn
-            button.row = num // 3
-
-            view.add_item(button)
-        if not has_unlocked_tiles:
-            text = f"{message.user.mention} (X) vs {person.mention} (O)\nits a tie!"
-            user1 = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-            user2 = await Profile.get_or_create(guild_id=message.guild.id, user_id=person.id)
-            user1.ttt_played += 1
-            user2.ttt_played += 1
-            user1.ttt_draws += 1
-            user2.ttt_draws += 1
-            await user1.save()
-            await user2.save()
-            await progress(message, user1, "ttc")
-            await progress(message, user2, "ttc")
-        else:
-            text = f"{message.user.mention} (X) vs {person.mention} (O)\ncurrent turn: {current_turn.mention}"
-        return text, view
-
-    async def do_turn(interaction):
+    async def finish_turn():
         nonlocal current_turn
-        if interaction.user.id == current_turn.id:
-            await interaction.response.defer()
+        view = View(timeout=VIEW_TIMEOUT)
+        wins = check_win(board)
+        tie = True
+        for cell_num, cell in enumerate(board):
+            if cell is None:
+                tie = False
+                button = Button(label=" ", custom_id=str(cell_num), row=cell_num // 3, disabled=wins != [-1])
+                button.callback = play
+            else:
+                button = Button(label=cell, row=cell_num // 3, disabled=True, style=ButtonStyle.green if cell_num in wins else ButtonStyle.gray)
+                view.add_item(button)
 
-            turn_spot = int(interaction.data["custom_id"])
-
-            if board_state[turn_spot] != "":
-                await interaction.followup.send("this cell is occupied", ephemeral=True)
-                return
-
-            board_state[turn_spot] = "X" if current_turn == message.user else "O"
-
-            winner, has_winner, check = check_winner(board_state)
-            if winner:
-                view = View(timeout=1)
-                for num, i in enumerate(board_state):
-                    if i == "":
-                        button = Button(emoji=get_emoji("empty"), disabled=True)
-                    elif i == "X":
-                        button = Button(emoji="❌", disabled=True)
-                    elif i == "O":
-                        button = Button(emoji="⭕", disabled=True)
-
-                    if check and num in check:
-                        button.style = ButtonStyle.green
-                    button.row = num // 3
-
-                    view.add_item(button)
-                await interaction.edit_original_response(content=f"{message.user.mention} (X) vs {person.mention} (O)\n{current_turn.mention} wins!", view=view)
-                user1 = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-                user2 = await Profile.get_or_create(guild_id=message.guild.id, user_id=person.id)
-                user1.ttt_played += 1
-                user2.ttt_played += 1
-                if current_turn == message.user:
-                    user1.ttt_won += 1
-                else:
-                    user2.ttt_won += 1
-                await user1.save()
-                await user2.save()
-                await progress(message, user1, "ttc")
-                await progress(message, user2, "ttc")
-                await achemb(message, "ttt_win", "send", current_turn)
-                return
-
-            current_turn = message.user if current_turn == person else person
-
-            if person == bot.user and current_turn == person and "" in board_state:
-                best_move = get_best_move(board_state)
-                board_state[best_move] = "O"
-                current_turn = message.user
-
-                winner, has_winner, check = check_winner(board_state)
-                if winner:
-                    view = View(timeout=1)
-                    for num, i in enumerate(board_state):
-                        if i == "":
-                            button = Button(emoji=get_emoji("empty"), disabled=True)
-                        elif i == "X":
-                            button = Button(emoji="❌", disabled=True)
-                        elif i == "O":
-                            button = Button(emoji="⭕", disabled=True)
-
-                        if check and num in check:
-                            button.style = ButtonStyle.green
-                        button.row = num // 3
-
-                        view.add_item(button)
-                    await interaction.edit_original_response(content=f"{message.user.mention} (X) vs {person.mention} (O)\n{person.mention} wins!", view=view)
-                    user1 = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-                    user2 = await Profile.get_or_create(guild_id=message.guild.id, user_id=person.id)
-                    user1.ttt_played += 1
-                    user2.ttt_played += 1
-                    user2.ttt_won += 1
-                    await user1.save()
-                    await user2.save()
-                    await progress(message, user1, "ttc")
-                    await progress(message, user2, "ttc")
-                    await achemb(message, "ttt_win", "send", person)
-                    return
-
-            text, view = await gen_board()
-            await interaction.edit_original_response(content=text, view=view)
+        if wins != [-1]:
+            if board[wins[0]] == "X":
+                second_line = f"{players[0].mention} won!"
+                await end_game(0)
+            elif board[wins[0]] == "O":
+                second_line = f"{players[1].mention} won!"
+                await end_game(1)
+        elif tie:
+            second_line = "its a tie!"
+            await end_game(-1)
         else:
-            await do_funny(interaction)
+            second_line = f"{players[current_turn].mention}'s turn"
 
-    text, view = await gen_board()
-    await message.response.send_message(text, view=view, allowed_mentions=discord.AllowedMentions(users=True))
+        await message.response.edit_original_response(content=f"{players[0].mention} (X) vs {players[1].mention} (O)\n{second_line}", view=view)
+
+    async def play(
+        interaction,
+    ):
+        nonlocal current_turn
+        cell_num = int(interaction.data["custom_id"])
+        await interaction.response.defer()
+        if board[cell_num] is not None:
+            await interaction.response.send_message("That spot is already taken!", ephemeral=True)
+            return
+        if players[current_turn] != interaction.user:
+            await interaction.response.send_message("It's not your turn!", ephemeral=True)
+            return
+        board[cell_num] = "❌" if current_turn == 0 else "⭕"
+        current_turn = 1 - current_turn
+        await finish_turn()
+
+    async def end_game(winner):
+        if players[0] == players[1]:
+            # self-play
+            user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+            await progress(message, user, "ttc")
+            return
+        users = [
+            await Profile.get_or_create(guild_id=message.guild.id, user_id=players[0].id),
+            await Profile.get_or_create(guild_id=message.guild.id, user_id=players[1].id),
+        ]
+        users[0].ttt_played += 1
+        users[1].ttt_played += 1
+        if winner != "-1":
+            users[winner].ttt_won += 1
+            await achemb(message, "ttt_win", "send", users[winner])
+        await users[0].save()
+        await users[1].save()
+        await progress(message, users[0], "ttc")
+        await progress(message, users[1], "ttc")
+
+    await finish_turn()
 
 
 @bot.tree.command(description="dont select a person to make an everyone vs you game")
