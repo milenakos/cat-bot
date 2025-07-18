@@ -4162,9 +4162,9 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         for cell_num, cell in enumerate(board):
             if cell is None:
                 tie = False
-                button = Button(label=get_emoji("empty"), custom_id=str(cell_num), row=cell_num // 3, disabled=wins != [-1])
+                button = Button(emoji=get_emoji("empty"), custom_id=str(cell_num), row=cell_num // 3, disabled=wins != [-1])
             else:
-                button = Button(label=cell, row=cell_num // 3, disabled=True, style=ButtonStyle.green if cell_num in wins else ButtonStyle.gray)
+                button = Button(emoji=cell, row=cell_num // 3, disabled=True, style=ButtonStyle.green if cell_num in wins else ButtonStyle.gray)
             button.callback = play
             view.add_item(button)
 
