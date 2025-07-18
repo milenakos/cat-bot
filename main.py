@@ -4289,6 +4289,9 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         if winner != -1:
             users[winner].ttt_won += 1
             await achemb(message, "ttt_win", "send", players[winner])
+        else:
+            users[0].ttt_draws += 1
+            users[1].ttt_draws += 1
         await users[0].save()
         await users[1].save()
         await progress(message, users[0], "ttc")
