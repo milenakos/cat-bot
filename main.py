@@ -4126,7 +4126,7 @@ async def ping(message: discord.Interaction):
 @bot.tree.command(description="play a relaxing game of tic tac toe")
 @discord.app_commands.describe(person="who do you want to play with? (choose Cat Bot for ai)")
 async def tictactoe(message: discord.Interaction, person: discord.Member):
-    do_edit = True
+    do_edit = False
     board = [None, None, None, None, None, None, None, None, None]
 
     players = [message.user, person]
@@ -4185,6 +4185,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
             await message.edit_original_response(content=f"{players[0].mention} (X) vs {players[1].mention} (O)\n{second_line}", view=view)
         else:
             await message.response.send_message(f"{players[0].mention} (X) vs {players[1].mention} (O)\n{second_line}", view=view)
+            do_edit = True
 
     async def play(interaction):
         nonlocal current_turn
