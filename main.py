@@ -4294,12 +4294,6 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         await progress(message, users[0], "ttc")
         await progress(message, users[1], "ttc")
 
-    if bot_is_playing and players[current_turn].bot:
-        best_move = get_best_move(board)
-        if best_move is not None:
-            board[best_move] = "❌" if current_turn == 0 else "⭕"
-            current_turn = 1 - current_turn
-
     await finish_turn()
 
 
