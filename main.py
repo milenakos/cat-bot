@@ -1170,7 +1170,7 @@ async def on_ready():
             "Made by **Lia Milenakos**",
             "With contributions from **" + ", ".join(contributors) + "**",
             "Original Cat Image: **pathologicals**",
-            "APIs: **catfact.ninja, blueberry.coffee, wordnik.com, thecatapi.com**",
+            "APIs: **catfact.ninja, weilbyte.dev, wordnik.com, thecatapi.com**",
             "Open Source Projects: **[discord.py](https://github.com/Rapptz/discord.py), [asyncpg](https://github.com/MagicStack/asyncpg), [gateway-proxy](https://github.com/Gelbpunkt/gateway-proxy)**",
             "Art, suggestions, and a lot more: **TheTrashCell**",
             "Testers: **" + ", ".join(tester_users) + "**",
@@ -2667,13 +2667,13 @@ async def tiktok(message: discord.Interaction, text: str):
     async with aiohttp.ClientSession() as session:
         try:
             async with session.post(
-                "https://tiktok-tts.printmechanicalbeltpumpkingutter.workers.dev/api/generation",
+                "https://tiktok-tts.weilnet.workers.dev/api/generation",
                 json={"text": text, "voice": "en_us_001"},
                 headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
             ) as response:
                 stuff = await response.json()
                 with io.BytesIO() as f:
-                    ba = "data:audio/mpeg;base64," + stuff["audio"]
+                    ba = "data:audio/mpeg;base64," + stuff["data"]
                     f.write(base64.b64decode(ba))
                     f.seek(0)
                     await message.followup.send(file=discord.File(fp=f, filename="output.mp3"))
