@@ -3820,7 +3820,7 @@ async def battlepass(message: discord.Interaction):
         if global_user.vote_streak >= 5 and global_user.vote_time_topgg + 24 * 3600 > time.time():
             streak_string = f" (🔥 {global_user.vote_streak}x streak)"
         if user.vote_cooldown != 0:
-            description += f"✅ ~~Vote on Top.gg~~\n - Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>{streak_string}\n"
+            description += f"✅ ~~Vote on Top.gg~~\n- Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>{streak_string}\n"
         else:
             # inform double vote xp during weekends
             is_weekend = now.weekday() >= 4
@@ -3831,9 +3831,9 @@ async def battlepass(message: discord.Interaction):
             description += f"{get_emoji('topgg')} [Vote on Top.gg](https://top.gg/bot/966695034340663367/vote)\n"
 
             if is_weekend:
-                description += f" - Reward: ~~{user.vote_reward}~~ **{user.vote_reward * 2}** XP"
+                description += f"- Reward: ~~{user.vote_reward}~~ **{user.vote_reward * 2}** XP"
             else:
-                description += f" - Reward: {user.vote_reward} XP"
+                description += f"- Reward: {user.vote_reward} XP"
 
             next_streak_data = get_streak_reward(global_user.vote_streak + 1)
             if next_streak_data["reward"] and global_user.vote_time_topgg + 24 * 3600 > time.time():
@@ -3844,7 +3844,7 @@ async def battlepass(message: discord.Interaction):
         # catch
         catch_quest = battle["quests"]["catch"][user.catch_quest]
         if user.catch_cooldown != 0:
-            description += f"✅ ~~{catch_quest['title']}~~\n - Refreshes <t:{int(user.catch_cooldown + 12 * 3600 if user.catch_cooldown + 12 * 3600 < timestamp else timestamp)}:R>\n"
+            description += f"✅ ~~{catch_quest['title']}~~\n- Refreshes <t:{int(user.catch_cooldown + 12 * 3600 if user.catch_cooldown + 12 * 3600 < timestamp else timestamp)}:R>\n"
         else:
             progress_string = ""
             if catch_quest["progress"] != 1:
@@ -3856,17 +3856,17 @@ async def battlepass(message: discord.Interaction):
                     progress_string = f" ({real_progress})"
                 else:
                     progress_string = f" ({user.catch_progress}/{catch_quest['progress']})"
-            description += f"{get_emoji(catch_quest['emoji'])} {catch_quest['title']}{progress_string}\n - Reward: {user.catch_reward} XP\n"
+            description += f"{get_emoji(catch_quest['emoji'])} {catch_quest['title']}{progress_string}\n- Reward: {user.catch_reward} XP\n"
 
         # misc
         misc_quest = battle["quests"]["misc"][user.misc_quest]
         if user.misc_cooldown != 0:
-            description += f"✅ ~~{misc_quest['title']}~~\n - Refreshes <t:{int(user.misc_cooldown + 12 * 3600 if user.misc_cooldown + 12 * 3600 < timestamp else timestamp)}:R>\n\n"
+            description += f"✅ ~~{misc_quest['title']}~~\n- Refreshes <t:{int(user.misc_cooldown + 12 * 3600 if user.misc_cooldown + 12 * 3600 < timestamp else timestamp)}:R>\n\n"
         else:
             progress_string = ""
             if misc_quest["progress"] != 1:
                 progress_string = f" ({user.misc_progress}/{misc_quest['progress']})"
-            description += f"{get_emoji(misc_quest['emoji'])} {misc_quest['title']}{progress_string}\n - Reward: {user.misc_reward} XP\n\n"
+            description += f"{get_emoji(misc_quest['emoji'])} {misc_quest['title']}{progress_string}\n- Reward: {user.misc_reward} XP\n\n"
 
         if user.battlepass >= len(battle["seasons"][str(user.season)]):
             description += f"**Extra Rewards** [{user.progress}/1500 XP]\n"
