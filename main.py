@@ -5523,7 +5523,12 @@ async def pig(message: discord.Interaction):
 
         await interaction.response.defer()
 
-        roll_result = random.randint(1, 6)
+        if score == 0:
+            # dont roll 1 on first roll
+            roll_result = random.randint(2, 6)
+        else:
+            roll_result = random.randint(1, 6)
+
         if roll_result == 1:
             # gg
             last_score = score
