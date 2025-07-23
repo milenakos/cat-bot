@@ -5521,6 +5521,8 @@ async def pig(message: discord.Interaction):
             await do_funny(interaction)
             return
 
+        await interaction.response.defer()
+
         roll = random.randint(1, 6)
         if roll == 1:
             # gg
@@ -5549,6 +5551,8 @@ async def pig(message: discord.Interaction):
         if interaction.user != message.user:
             await do_funny(interaction)
             return
+
+        await interaction.response.defer()
 
         await profile.refresh_from_db()
 
