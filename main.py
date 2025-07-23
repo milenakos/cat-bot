@@ -6166,7 +6166,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies", "Best Pig Score"]],
+    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies", "Pig"]],
     cat_type: Optional[str],
     locked: Optional[bool],
 ):
@@ -6264,7 +6264,7 @@ async def leaderboards(
             result = await Profile.collect_limit(["user_id", "cookies"], "guild_id = $1 AND cookies > 0 ORDER BY cookies DESC", message.guild.id)
             string = "Cookie leaderboard updates every 5 min\n\n"
             final_value = "cookies"
-        elif type == "Best Pig Score":
+        elif type == "Pig":
             unit = "score"
             result = await Profile.collect_limit(
                 ["user_id", "best_pig_score"], "guild_id = $1 AND best_pig_score > 0 ORDER BY best_pig_score DESC", message.guild.id
@@ -6354,7 +6354,7 @@ async def leaderboards(
                     if num >= 99999999999999:
                         break
                     num = round(num, 3)
-                elif type in ["Cookies", "Cats", "Best Pig Score"] and num <= 0:
+                elif type in ["Cookies", "Cats", "Pig"] and num <= 0:
                     break
                 string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
 
@@ -6422,7 +6422,7 @@ async def leaderboards(
                 disabled=locked,
             )
 
-        emojied_options = {"Cats": "🐈", "Value": "🧮", "Fast": "⏱️", "Slow": "💤", "Battlepass": "⬆️", "Cookies": "🍪", "Best Pig Score": "🎲"}
+        emojied_options = {"Cats": "🐈", "Value": "🧮", "Fast": "⏱️", "Slow": "💤", "Battlepass": "⬆️", "Cookies": "🍪", "Pig": "🎲"}
         options = [Option(label=k, emoji=v) for k, v in emojied_options.items()]
         lb_select = Select(
             "lb_type",
