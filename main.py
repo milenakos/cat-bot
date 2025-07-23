@@ -3043,6 +3043,7 @@ async def gen_stats(profile, star):
     stats.append(["❓", "Misc"])
     stats.append(["facts_read", "🧐", f"Facts read: {profile.facts:,}"])
     stats.append(["cookies", "🍪", f"Cookies clicked: {cookies:,}"])
+    stats.append(["pig_high_score", "🎲", f"Pig high score: {profile.best_pig_score:,}"])
     stats.append(["private_embed_clicks", get_emoji("pointlaugh"), f"Private embed clicks: {profile.funny:,}"])
     stats.append(["reminders_set", "⏰", f"Reminders set: {profile.reminders_set:,}{star}"])
     stats.append(["cats_gifted", "🎁", f"Cats gifted: {profile.cats_gifted:,}{star}"])
@@ -5508,6 +5509,78 @@ async def eightball(message: discord.Interaction, question: str):
     await achemb(message, "balling", "send")
 
 
+@bot.tree.command(description="the most engaging boring game")
+async def pig(message: discord.Interaction):
+    score = 0
+
+    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+
+    async def roll(interaction: discord.Interaction):
+        nonlocal score
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+
+        roll = random.randint(1, 6)
+        if roll == 1:
+            # gg
+            last_score = score
+            score = 0
+            view = View(timeout=3600)
+            button = Button(label="Play Again", emoji="🎲", style=ButtonStyle.blurple)
+            button.callback = roll
+            view.add_item(button)
+            await interaction.edit_original_message(
+                content=f"*Oops!*\nYou rolled a **1** and lost your {last_score} score...\nBetter luck next time!", view=view
+            )
+        else:
+            score += roll
+            view = View(timeout=3600)
+            button = Button(label="Roll", emoji="🎲", style=ButtonStyle.blurple)
+            button.callback = roll
+            button2 = Button(label="Finish")
+            button2.callback = finish
+            view.add_item(button)
+            view.add_item(button2)
+            await interaction.edit_original_message(content=f"🎲 +{roll}\nCurrent score: {score:,}", view=view)
+
+    async def finish(interaction: discord.Interaction):
+        nonlocal score
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+
+        await profile.refresh_from_db()
+
+        if score > profile.best_pig_score:
+            profile.best_pig_score = score
+            await profile.save()
+
+        if score >= 20:
+            await progress(message, profile, "pig")
+        if score >= 50:
+            await achemb(interaction, "pig50", "send")
+        if score >= 100:
+            await achemb(interaction, "pig100", "send")
+
+        last_score = score
+        score = 0
+        view = View(timeout=3600)
+        button = Button(label="Play Again", emoji="🎲", style=ButtonStyle.blurple)
+        button.callback = roll
+        view.add_item(button)
+        await interaction.edit_original_message(content=f"*Congrats!*\nYou finished with {last_score} score!", view=view)
+
+    view = View(timeout=3600)
+    button = Button(label="Play!", emoji="🎲", style=ButtonStyle.blurple)
+    button.callback = roll
+    view.add_item(button)
+    await message.response.send_message(
+        f"🎲 Pig is a simple dice game. You repeatedly roll a die. The number it lands on gets added to your score, then you can either roll the die again, or finish and save your current score. However, if you roll a 1, you lose and your score gets voided.\n\nYour current best score is **{profile.best_pig_score:,}**.",
+        view=view,
+    )
+
+
 @bot.tree.command(description="get a reminder in the future (+- 5 minutes)")
 @discord.app_commands.describe(
     days="in how many days",
@@ -6089,7 +6162,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies"]],
+    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies", "Best Pig Score"]],
     cat_type: Optional[str],
     locked: Optional[bool],
 ):
@@ -6187,6 +6260,12 @@ async def leaderboards(
             result = await Profile.collect_limit(["user_id", "cookies"], "guild_id = $1 AND cookies > 0 ORDER BY cookies DESC", message.guild.id)
             string = "Cookie leaderboard updates every 5 min\n\n"
             final_value = "cookies"
+        elif type == "Best Pig Score":
+            unit = "score"
+            result = await Profile.collect_limit(
+                ["user_id", "best_pig_score"], "guild_id = $1 AND best_pig_score > 0 ORDER BY best_pig_score DESC", message.guild.id
+            )
+            final_value = "best_pig_score"
         else:
             # qhar
             return
@@ -6263,8 +6342,6 @@ async def leaderboards(
                     if num <= 0:
                         break
                     num = round(num / 3600, 2)
-                elif type == "Cats" and num <= 0:
-                    break
                 elif type == "Value":
                     if num <= 0:
                         break
@@ -6273,7 +6350,7 @@ async def leaderboards(
                     if num >= 99999999999999:
                         break
                     num = round(num, 3)
-                elif type == "Cookies" and num <= 0:
+                elif type in ["Cookies", "Cats", "Best Pig Score"] and num <= 0:
                     break
                 string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
 
@@ -6341,7 +6418,7 @@ async def leaderboards(
                 disabled=locked,
             )
 
-        emojied_options = {"Cats": "🐈", "Value": "🧮", "Fast": "⏱️", "Slow": "💤", "Battlepass": "⬆️", "Cookies": "🍪"}
+        emojied_options = {"Cats": "🐈", "Value": "🧮", "Fast": "⏱️", "Slow": "💤", "Battlepass": "⬆️", "Cookies": "🍪", "Best Pig Score": "🎲"}
         options = [Option(label=k, emoji=v) for k, v in emojied_options.items()]
         lb_select = Select(
             "lb_type",

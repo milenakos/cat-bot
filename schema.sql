@@ -244,7 +244,8 @@ CREATE TABLE public.profile (
     cookies bigint DEFAULT 0,
     cookieclicker boolean DEFAULT false,
     cookiesclicked boolean DEFAULT false,
-    event_rain_points integer DEFAULT 0
+    event_rain_points integer DEFAULT 0,
+    best_pig_score integer DEFAULT 0
 );
 
 
