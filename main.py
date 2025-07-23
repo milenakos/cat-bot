@@ -5523,8 +5523,8 @@ async def pig(message: discord.Interaction):
 
         await interaction.response.defer()
 
-        roll = random.randint(1, 6)
-        if roll == 1:
+        roll_result = random.randint(1, 6)
+        if roll_result == 1:
             # gg
             last_score = score
             score = 0
@@ -5536,7 +5536,7 @@ async def pig(message: discord.Interaction):
                 content=f"*Oops!*\nYou rolled a **1** and lost your {last_score} score...\nBetter luck next time!", view=view
             )
         else:
-            score += roll
+            score += roll_result
             view = View(timeout=3600)
             button = Button(label="Roll", emoji="🎲", style=ButtonStyle.blurple)
             button.callback = roll
@@ -5544,7 +5544,7 @@ async def pig(message: discord.Interaction):
             button2.callback = finish
             view.add_item(button)
             view.add_item(button2)
-            await interaction.edit_original_response(content=f"🎲 +{roll}\nCurrent score: {score:,}", view=view)
+            await interaction.edit_original_response(content=f"🎲 +{roll_result}\nCurrent score: {score:,}", view=view)
 
     async def finish(interaction: discord.Interaction):
         nonlocal score
