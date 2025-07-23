@@ -4321,7 +4321,6 @@ async def move(
     if amount is None:
         # default the amount to 1
         amount = 1
-    person_id = person.id
 
     if amount <= 0 or person1.id == person2.id:
         # haha skill issue
@@ -4331,10 +4330,10 @@ async def move(
         return
 
     if cat_type in cattypes:
-        user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        user = await Profile.get_or_create(guild_id=message.guild.id, user_id=person1.id)
         # if we even have enough cats
         if user[f"cat_{cat_type}"] >= amount:
-            reciever = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id)
+            reciever = await Profile.get_or_create(guild_id=message.guild.id, user_id=person2.id)
             user[f"cat_{cat_type}"] -= amount
             reciever[f"cat_{cat_type}"] += amount
             try:
@@ -4402,14 +4401,14 @@ async def move(
                 myview.add_item(button)
                 myview.add_item(button2)
 
-                await message.response.send_message(person.mention, embed=embed, view=myview, allowed_mentions=discord.AllowedMentions(users=True))
+                await message.response.send_message(person2.mention, embed=embed, view=myview, allowed_mentions=discord.AllowedMentions(users=True))
             else:
-                await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True), ephemeral=admin)
+                await message.response.send_message(person2.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True), ephemeral=admin)
 
             # handle aches
             if not admin:
                 await achemb(message, "donator", "send")
-                await achemb(message, "anti_donator", "send", person)
+                await achemb(message, "anti_donator", "send", person2)
                 if person2.id == bot.user.id and cat_type == "Ultimate" and int(amount) >= 5:
                     await achemb(message, "rich", "send")
                 if person2.id == bot.user.id:
@@ -4429,8 +4428,8 @@ async def move(
             await message.response.send_message("you can't sacrifice rains", ephemeral=True)
             return
 
-        actual_user = await User.get_or_create(user_id=message.user.id)
-        actual_receiver = await User.get_or_create(user_id=person_id)
+        actual_user = await User.get_or_create(user_id=person1.id)
+        actual_receiver = await User.get_or_create(user_id=person2.id)
         if actual_user.rain_minutes >= amount:
             actual_user.rain_minutes -= amount
             actual_receiver.rain_minutes += amount
@@ -4442,12 +4441,12 @@ async def move(
                 color=0x6E593C,
             )
 
-            await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
+            await message.response.send_message(person2.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
 
             # handle aches
             if not admin:
                 await achemb(message, "donator", "send")
-                await achemb(message, "anti_donator", "send", person)
+                await achemb(message, "anti_donator", "send", person2)
         else:
             await message.response.send_message("no", ephemeral=True)
 
@@ -4459,10 +4458,10 @@ async def move(
     elif cat_type.lower() in [i["name"].lower() for i in pack_data]:
         cat_type = cat_type.lower()
         # packs um also this seems to be repetetive uh
-        user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        user = await Profile.get_or_create(guild_id=message.guild.id, user_id=person1.id)
         # if we even have enough packs
         if user[f"pack_{cat_type}"] >= amount:
-            reciever = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id)
+            reciever = await Profile.get_or_create(guild_id=message.guild.id, user_id=person2.id)
             user[f"pack_{cat_type}"] -= amount
             reciever[f"pack_{cat_type}"] += amount
             await user.save()
@@ -4473,12 +4472,12 @@ async def move(
                 color=0x6E593C,
             )
 
-            await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
+            await message.response.send_message(person2.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
 
             # handle aches
             if not admin:
                 await achemb(message, "donator", "send")
-                await achemb(message, "anti_donator", "send", person)
+                await achemb(message, "anti_donator", "send", person2)
                 if person2.id == bot.user.id:
                     await achemb(message, "sacrifice", "send")
 
