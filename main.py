@@ -5530,7 +5530,7 @@ async def pig(message: discord.Interaction):
             button = Button(label="Play Again", emoji="🎲", style=ButtonStyle.blurple)
             button.callback = roll
             view.add_item(button)
-            await interaction.edit_original_message(
+            await interaction.edit_original_response(
                 content=f"*Oops!*\nYou rolled a **1** and lost your {last_score} score...\nBetter luck next time!", view=view
             )
         else:
@@ -5542,7 +5542,7 @@ async def pig(message: discord.Interaction):
             button2.callback = finish
             view.add_item(button)
             view.add_item(button2)
-            await interaction.edit_original_message(content=f"🎲 +{roll}\nCurrent score: {score:,}", view=view)
+            await interaction.edit_original_response(content=f"🎲 +{roll}\nCurrent score: {score:,}", view=view)
 
     async def finish(interaction: discord.Interaction):
         nonlocal score
@@ -5569,7 +5569,7 @@ async def pig(message: discord.Interaction):
         button = Button(label="Play Again", emoji="🎲", style=ButtonStyle.blurple)
         button.callback = roll
         view.add_item(button)
-        await interaction.edit_original_message(content=f"*Congrats!*\nYou finished with {last_score} score!", view=view)
+        await interaction.edit_original_response(content=f"*Congrats!*\nYou finished with {last_score} score!", view=view)
 
     view = View(timeout=3600)
     button = Button(label="Play!", emoji="🎲", style=ButtonStyle.blurple)
