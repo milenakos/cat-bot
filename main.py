@@ -3512,7 +3512,7 @@ async def store(message: discord.Interaction):
 
 if config.DONOR_CHANNEL_ID:
 
-    @bot.tree.command(description="[SUPPORTER] Customize your profile!")
+    @bot.tree.command(description="(SUPPORTER) Customize your profile!")
     @discord.app_commands.rename(provided_emoji="emoji")
     @discord.app_commands.describe(
         color="Color for your profile in hex form (e.g. #6E593C)",
@@ -6697,7 +6697,7 @@ async def recieve_vote(request):
 
         special_reward = math.ceil(user.vote_streak / 25) * 25
         if special_reward not in range(user.vote_streak, user.vote_streak + 9):
-            streak_progress += f" | {get_streak_reward(special_reward)['emoji']} at {special_reward} streak"
+            streak_progress += f"\nNext Special Reward: {get_streak_reward(special_reward)['emoji']} at {special_reward} streak"
 
         await channeley.send(
             "\n".join(
@@ -6705,9 +6705,8 @@ async def recieve_vote(request):
                     "Thanks for voting! To claim your rewards, run `/battlepass` in every server you want.",
                     f"You can vote again <t:{int(time.time()) + 43200}:R>.",
                     "",
+                    f":fire: **Streak:** {user.vote_streak:,} (expires <t:{int(time.time()) + extend_time * 3600}:R>)",
                     f"{streak_progress}",
-                    f"Streak: {user.vote_streak:,}",
-                    f"Your streak will expire <t:{int(time.time()) + extend_time * 3600}:R>.",
                 ]
             )
         )
