@@ -5538,14 +5538,14 @@ async def pig(message: discord.Interaction):
             button.callback = roll
             view.add_item(button)
             await interaction.edit_original_response(
-                content=f"*Oops!*\nYou rolled a **1** and lost your {last_score} score...\nBetter luck next time!", view=view
+                content=f"*Oops!*\nYou rolled a **1** and lost your {last_score} score...\nFinal score: 0\nBetter luck next time!", view=view
             )
         else:
             score += roll_result
             view = View(timeout=3600)
             button = Button(label="Roll", emoji="🎲", style=ButtonStyle.blurple)
             button.callback = roll
-            button2 = Button(label="Finish")
+            button2 = Button(label="Save & Finish")
             button2.callback = finish
             view.add_item(button)
             view.add_item(button2)

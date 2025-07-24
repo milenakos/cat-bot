@@ -43,7 +43,7 @@
   "sussy": {"title": "Sussy", "description": "call out sus cat for being sussy", "is_hidden": false, "category": "Random"},
   "egril": {"title": "Electronic Grill", "description": "love some eGrills", "is_hidden": false, "category": "Random"},
   "bwomp": {"title": "Bwomp", "description": "bwomp is a funny sound they use on tiktok", "is_hidden": false, "category": "Random"},
-  "pig50": {"title": "Pig Expert", "description": "Get 50+ score in /pig", "is_hidden": false, "category": "Random"},
+  "pig50": {"title": "Pig Expert", "description": "Finish with 50+ score in /pig", "is_hidden": false, "category": "Random"},
 
   "silly": {"title": "Silly", "description": "triple-react!", "is_hidden": false, "category": "Silly"},
   "nice": {"title": "Nice!", "description": "gift 69 nice cats", "is_hidden": false, "category": "Silly"},
@@ -85,7 +85,7 @@
   "big_win_slots": {"title": "Hyper Lucky", "description": "get 777 at the /slots machine", "is_hidden": false, "category": "Hard"},
   "debt": {"title": "Debt Recovery", "description": "gamble away your debts", "is_hidden": false, "category": "Hard"},
   "cookiesclicked": {"title": "Cookies Clicked", "description": "collect 5,000 cookies", "is_hidden": true, "category": "Hard"},
-  "pig100": {"title": "Pig Champion", "description": "Get 100+ score in /pig", "is_hidden": false, "category": "Hard"},
+  "pig100": {"title": "Pig Champion", "description": "Finish with 100+ score in /pig", "is_hidden": false, "category": "Hard"},
 
   "catn": {"title": "Cat'n", "description": "no cat??? :megamind:", "is_hidden": true, "category": "Hidden"},
   "coupon_user": {"title": "Coupon User", "description": "use a coupon for a 10% discount on all cats!!!", "is_hidden": true, "category": "Hidden"},
