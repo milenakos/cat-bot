@@ -2167,7 +2167,7 @@ async def on_message(message: discord.Message):
         stuff = text.split(" ")
         if stuff[1][0] not in "1234567890":
             stuff.insert(1, message.channel.owner_id)
-        user = await User.get_or_create(user_id=stuff[1])
+        user = await User.get_or_create(user_id=int(stuff[1]))
         cat_name = " ".join(stuff[2:])
         if stuff[2] != "None" and message.reference and message.reference.message_id:
             emoji_name = re.sub(r"[^a-zA-Z0-9]", "", cat_name).lower() + "cat"
