@@ -600,7 +600,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
             else:
                 description = f"You got {cat_emojis}!"
                 title = "Bonus Complete!"
-            embed_level_up = discord.Embed(title=title, description=description, color=0xFFF000)
+            embed_level_up = discord.Embed(title=title, description=description, color=0xFFFF00)
 
             if user.battlepass >= len(battle["seasons"][str(user.season)]):
                 new_level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
