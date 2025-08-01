@@ -908,7 +908,6 @@ async def maintaince_loop():
 
     # update cookies
     temp_temp_cookie_storage = temp_cookie_storage.copy()
-    temp_cookie_storage = {}
     cookie_updates = []
     for cookie_id, cookies in temp_temp_cookie_storage.items():
         p = await Profile.get_or_create(guild_id=cookie_id[0], user_id=cookie_id[1])
@@ -916,6 +915,7 @@ async def maintaince_loop():
         cookie_updates.append(p)
     if cookie_updates:
         await Profile.bulk_update(cookie_updates, "cookies")
+    temp_cookie_storage = {}
 
     # temp_belated_storage cleanup
     # clean up anything older than 1 minute
