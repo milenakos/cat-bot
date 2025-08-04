@@ -158,6 +158,7 @@ vote_button_texts = [
     "I know you havent voted ;)",
     "If vote cat will you friend :)",
     "Vote cat for president",
+    "Vote, Or cat bot doesn't love you..",
     "vote = 0.01% to escape basement",
     "vote vote vote vote vote",
     "mrrp mrrow go and vote now",
@@ -172,6 +173,7 @@ vote_button_texts = [
     "lebron james forgot to vote",
     "vote if you like cats",
     "vote if cats > dogs",
+    "Vote because milenakos said so"
     "you should vote for cat NOW!",
 ]
 
@@ -235,6 +237,9 @@ funny = [
     "403 not allowed",
     "stop",
     "get a life",
+    "dis the wrong number",
+    "you dont want to see my dark side",
+    "wrong password",
     "not for you",
     "no",
     "nuh uh",
@@ -2877,6 +2882,19 @@ leave blank to reset.""",
 @bot.tree.command(description="Get ID of a thing")
 async def getid(message: discord.Interaction, thing: discord.User | discord.Role):
     await message.response.send_message(f"The ID of {thing.mention} is {thing.id}\nyou can use it in /changemessage like this: `{thing.mention}`")
+
+
+
+@bot.tree.command(description="Cat Bot Lore")
+async def lore(message: discord.Interaction):
+    await message.respond.send_message("my lore? Well its- (cat bot then gets cut off before he can say anything, his lore remains a mystery for now)")
+
+
+
+@bot.tree.command(description="No Im serious")
+async def DONTCLICK(interaction: discord.Interaction):"gif_url=https://www.google.com/url?sa=i&url=https%3A%2F%2Ftenor.com%2Fsearch%2Frickroll-gifs&psig=AOvVaw1OAsvGb-ta11TdoaT0L1-6&ust=1754435379505000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCOC-tqej8o4DFQAAAAAdAAAAABAE" 
+    await interaction.response.send_message(gif_url)
+
 
 
 @bot.tree.command(description="Get Daily cats")
