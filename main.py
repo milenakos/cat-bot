@@ -53,15 +53,6 @@ logging.basicConfig(level=logging.INFO)
 import discord
 from discord.ext import commands
 
-@bot.tree.command(description= "CatBotIntro")
-async def catbotintro(interaction: discord.Interaction):
-    #send first page with buttons
-    await interaction.response.send_message(
-        content=pages[0],
-        view=CatIntroView(),
-        ephemeral=True #only the user who used this command can see it
-       )
-
 #pages
 pages= [ 
     """🐱 **welcome to The Cat Stand, Home of the Cat Bot!**
