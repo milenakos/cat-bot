@@ -2608,13 +2608,17 @@ thanks for using cat bot!""",
         view = View(timeout=VIEW_TIMEOUT)
 
         # article buttons
-        for num, button in enumerate(buttons[number * 4 : (number + 1) * 4]):
+        if current_page == 0:
+            end = (number + 1) * 4
+        else:
+            end = len(buttons)
+        for num, button in enumerate(buttons[number * 4 : end]):
             if current_page == 0:
                 button.row = num
             view.add_item(button)
 
         # pages buttons
-        if current_page > 0:
+        if current_page != 0:
             button = Button(label="Back", row=4)
             button.callback = prev_page
             view.add_item(button)
@@ -4462,11 +4466,7 @@ async def gift(
                 pass
             await user.save()
             await reciever.save()
-            embed = discord.Embed(
-                title="Success!",
-                description=f"Successfully transfered {amount:,} {cat_type} cats from {message.user.mention} to <@{person_id}>!",
-                color=0x6E593C,
-            )
+            content = f"Successfully transfered {amount:,} {cat_type} cats from {message.user.mention} to <@{person_id}>!"
 
             # handle tax
             if amount >= 5:
@@ -4520,9 +4520,9 @@ async def gift(
                 myview.add_item(button)
                 myview.add_item(button2)
 
-                await message.response.send_message(person.mention, embed=embed, view=myview, allowed_mentions=discord.AllowedMentions(users=True))
+                await message.response.send_message(content, view=myview, allowed_mentions=discord.AllowedMentions(users=True))
             else:
-                await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
+                await message.response.send_message(content, allowed_mentions=discord.AllowedMentions(users=True))
 
             # handle aches
             await achemb(message, "donator", "send")
@@ -4549,13 +4549,9 @@ async def gift(
             actual_receiver.rain_minutes += amount
             await actual_user.save()
             await actual_receiver.save()
-            embed = discord.Embed(
-                title="Success!",
-                description=f"Successfully transfered {amount:,} minutes of rain from {message.user.mention} to <@{person_id}>!",
-                color=0x6E593C,
-            )
+            content = f"Successfully transfered {amount:,} minutes of rain from {message.user.mention} to <@{person_id}>!"
 
-            await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
+            await message.response.send_message(content, allowed_mentions=discord.AllowedMentions(users=True))
 
             # handle aches
             await achemb(message, "donator", "send")
@@ -4579,13 +4575,9 @@ async def gift(
             reciever[f"pack_{cat_type}"] += amount
             await user.save()
             await reciever.save()
-            embed = discord.Embed(
-                title="Success!",
-                description=f"Successfully transfered {amount:,} {cat_type} packs from {message.user.mention} to <@{person_id}>!",
-                color=0x6E593C,
-            )
+            content = f"Successfully transfered {amount:,} {cat_type} packs from {message.user.mention} to <@{person_id}>!"
 
-            await message.response.send_message(person.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
+            await message.response.send_message(content, allowed_mentions=discord.AllowedMentions(users=True))
 
             # handle aches
             await achemb(message, "donator", "send")
@@ -6470,12 +6462,7 @@ async def givecat(message: discord.Interaction, person_id: discord.User, cat_typ
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
     user[f"cat_{cat_type}"] += amount
     await user.save()
-    embed = discord.Embed(
-        title="Success!",
-        description=f"gave {person_id.mention} {amount:,} {cat_type} cats",
-        color=0x6E593C,
-    )
-    await message.response.send_message(person_id.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
+    await message.response.send_message(f"gave {person_id.mention} {amount:,} {cat_type} cats", allowed_mentions=discord.AllowedMentions(users=True))
 
 
 @bot.tree.command(name="setup", description="(ADMIN) Setup cat in current channel")
