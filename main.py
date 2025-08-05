@@ -581,86 +581,87 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
 
     old_xp = user.progress
     perms = await fetch_perms(message)
+    level_complete_embeds = []
     if user.battlepass >= len(battle["seasons"][str(user.season)]):
         level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
         level_text = "Extra Rewards"
     else:
         level_data = battle["seasons"][str(user.season)][user.battlepass]
         level_text = f"Level {user.battlepass + 1}"
-    if current_xp >= level_data["xp"]:
-        user.battlepass += 1
-        user.progress = current_xp - level_data["xp"]
-        cat_emojis = None
-        if level_data["reward"] in cattypes:
-            user[f"cat_{level_data['reward']}"] += level_data["amount"]
-        elif level_data["reward"] == "Rain":
-            user.rain_minutes += level_data["amount"]
-        else:
-            user[f"pack_{level_data['reward'].lower()}"] += 1
-        await user.save()
 
-        if perms.send_messages and perms.embed_links and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
+    if current_xp >= level_data["xp"]:
+        xp_progress = current_xp
+        active_level_data = level_data
+        while xp_progress >= active_level_data["xp"]:
+            user.battlepass += 1
+            xp_progress -= active_level_data["xp"]
+            user.progress = xp_progress
+            cat_emojis = None
+            if active_level_data["reward"] in cattypes:
+                user[f"cat_{active_level_data['reward']}"] += active_level_data["amount"]
+            elif active_level_data["reward"] == "Rain":
+                user.rain_minutes += active_level_data["amount"]
+            else:
+                user[f"pack_{active_level_data['reward'].lower()}"] += 1
+            await user.save()
+
             if not cat_emojis:
-                if level_data["reward"] == "Rain":
-                    description = f"You got ☔ {level_data['amount']} rain minutes!"
-                elif level_data["reward"] in cattypes:
-                    description = f"You got {get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']}!"
+                if active_level_data["reward"] == "Rain":
+                    description = f"You got ☔ {active_level_data['amount']} rain minutes!"
+                elif active_level_data["reward"] in cattypes:
+                    description = f"You got {get_emoji(active_level_data['reward'].lower() + 'cat')} {active_level_data['amount']} {active_level_data['reward']}!"
                 else:
-                    description = f"You got a {get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack! Do /packs to open it!"
+                    description = f"You got a {get_emoji(active_level_data['reward'].lower() + 'pack')} {active_level_data['reward']} pack! Do /packs to open it!"
                 title = f"Level {user.battlepass} Complete!"
             else:
                 description = f"You got {cat_emojis}!"
                 title = "Bonus Complete!"
             embed_level_up = discord.Embed(title=title, description=description, color=Colors.yellow)
+            level_complete_embeds.append(embed_level_up)
 
             if user.battlepass >= len(battle["seasons"][str(user.season)]):
-                new_level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
+                active_level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
                 new_level_text = "Extra Rewards"
             else:
-                new_level_data = battle["seasons"][str(user.season)][user.battlepass]
+                active_level_data = battle["seasons"][str(user.season)][user.battlepass]
                 new_level_text = f"Level {user.battlepass + 1}"
 
-            embed_progress = await progress_embed(
-                message,
-                user,
-                new_level_data,
-                current_xp - level_data["xp"],
-                0,
-                quest_data,
-                current_xp - old_xp,
-                new_level_text,
-            )
+        embed_progress = await progress_embed(
+            message,
+            user,
+            active_level_data,
+            xp_progress,
+            0,
+            quest_data,
+            current_xp - old_xp,
+            new_level_text,
+        )
 
-            if is_belated:
-                embed_progress.set_footer(text="For catching within 3 seconds")
-
-            await message.channel.send(
-                f"<@{user.user_id}>",
-                embeds=[embed_level_up, embed_progress],
-            )
     else:
         user.progress = current_xp
         await user.save()
-        if (
-            perms.view_channel
-            and perms.send_messages
-            and perms.embed_links
-            and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads)
-        ):
-            embed_progress = await progress_embed(
-                message,
-                user,
-                level_data,
-                current_xp,
-                old_xp,
-                quest_data,
-                current_xp - old_xp,
-                level_text,
-            )
+        embed_progress = await progress_embed(
+            message,
+            user,
+            level_data,
+            current_xp,
+            old_xp,
+            quest_data,
+            current_xp - old_xp,
+            level_text,
+        )
 
-            if is_belated:
-                embed_progress.set_footer(text="For catching within 3 seconds")
+    if is_belated:
+        embed_progress.set_footer(text="For catching within 3 seconds")
 
+    if (
+        perms.send_messages
+        and perms.embed_links
+        and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads)
+    ):
+        if level_complete_embeds:
+            await message.channel.send(f"<@{user.user_id}>", embeds=level_complete_embeds + [embed_progress])
+        else:
             await message.channel.send(f"<@{user.user_id}>", embed=embed_progress)
 
 
