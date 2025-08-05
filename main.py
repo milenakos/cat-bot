@@ -6760,13 +6760,18 @@ async def recieve_vote(request):
     try:
         channeley = await bot.fetch_user(int(request_json["user"]))
 
-        streak_progress = ""
-        if user.vote_streak > 0:
-            streak_progress += get_streak_reward(user.vote_streak - 1)["done_emoji"]
-        streak_progress += get_streak_reward(user.vote_streak)["done_emoji"]
+        if user.vote_streak == 1:
+            streak_progress = "🟦⬛⬛⬛⬛⬛⬛⬛⬛⬛\n⬆️"
+        else:
+            streak_progress = ""
+            if user.vote_streak > 0:
+                streak_progress += get_streak_reward(user.vote_streak - 1)["done_emoji"]
+            streak_progress += get_streak_reward(user.vote_streak)["done_emoji"]
 
-        for i in range(user.vote_streak + 1, user.vote_streak + 9):
-            streak_progress += get_streak_reward(i)["emoji"]
+            for i in range(user.vote_streak + 1, user.vote_streak + 9):
+                streak_progress += get_streak_reward(i)["emoji"]
+
+            streak_progress += f"\n{get_emoji('empty')}⬆️"
 
         special_reward = math.ceil(user.vote_streak / 25) * 25
         if special_reward not in range(user.vote_streak, user.vote_streak + 9):
