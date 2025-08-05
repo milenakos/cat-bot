@@ -248,6 +248,17 @@ funny = [
     "you're only making me angrier",
 ]
 
+
+class Colors:
+    brown = 0x6E593C
+    green = 0x007F0E
+    yellow = 0xFFFF00
+    maroon = 0x750F0E
+    demonic = 0xC12929
+    rose = 0xFF81C6
+    red = 0xFF0000
+
+
 # rain shill message for footers
 rain_shill = "☔ Get tons of cats /rain"
 
@@ -375,7 +386,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
 
     if ach_id != "thanksforplaying":
         embed = (
-            discord.Embed(title=ach_data["title"], description=desc, color=0x007F0E)
+            discord.Embed(title=ach_data["title"], description=desc, color=Colors.green)
             .set_author(
                 name="Achievement get!",
                 icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/ach.png",
@@ -387,7 +398,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
             discord.Embed(
                 title="Cataine Addict",
                 description="Defeat the dog mafia\nThanks for playing! ✨",
-                color=0xC12929,
+                color=Colors.demonic,
             )
             .set_author(
                 name="Demonic achievement unlocked! 🌟",
@@ -400,7 +411,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
             discord.Embed(
                 title="Cataine Addict",
                 description="Defeat the dog mafia\nThanks for playing! ✨",
-                color=0xFFFF00,
+                color=Colors.yellow,
             )
             .set_author(
                 name="Demonic achievement unlocked! 🌟",
@@ -600,7 +611,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
             else:
                 description = f"You got {cat_emojis}!"
                 title = "Bonus Complete!"
-            embed_level_up = discord.Embed(title=title, description=description, color=0xFFFF00)
+            embed_level_up = discord.Embed(title=title, description=description, color=Colors.yellow)
 
             if user.battlepass >= len(battle["seasons"][str(user.season)]):
                 new_level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
@@ -681,7 +692,7 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
     return discord.Embed(
         title=f"✅ {title}",
         description=f"{progress_line}\n{current_xp}/{level_data['xp']} XP (+{diff})\nReward: {reward_text}{streak_reward}",
-        color=0x007F0E,
+        color=Colors.green,
     ).set_author(name="/battlepass " + level_text)
 
 
@@ -765,7 +776,7 @@ async def finale(message, user):
             embed=discord.Embed(
                 title="True Ending achieved!",
                 description="You are finally free.",
-                color=0xFF81C6,
+                color=Colors.rose,
             )
             .set_author(
                 name="All achievements complete!",
@@ -1000,7 +1011,7 @@ async def maintaince_loop():
         embed = discord.Embed(
             title=f"{get_emoji(quest_data['emoji'])} {quest_data['title']}",
             description=f"Reward: **{user.catch_reward}** XP",
-            color=0x007F0E,
+            color=Colors.green,
         )
 
         view = View(timeout=VIEW_TIMEOUT)
@@ -1042,7 +1053,7 @@ async def maintaince_loop():
         embed = discord.Embed(
             title=f"{get_emoji(quest_data['emoji'])} {quest_data['title']}",
             description=f"Reward: **{user.misc_reward}** XP",
-            color=0x007F0E,
+            color=Colors.green,
         )
 
         view = View(timeout=VIEW_TIMEOUT)
@@ -1607,7 +1618,7 @@ async def on_message(message: discord.Message):
 
     if text.lower() == "car":
         file = discord.File("images/car.png", filename="car.png")
-        embed = discord.Embed(title="car!", color=0x6E593C).set_image(url="attachment://car.png")
+        embed = discord.Embed(title="car!", color=Colors.brown).set_image(url="attachment://car.png")
         try:
             if perms.send_messages and perms.attach_files and (not message.thread or perms.send_messages_in_threads):
                 await message.reply(file=file, embed=embed)
@@ -1617,7 +1628,7 @@ async def on_message(message: discord.Message):
 
     if text.lower() == "cart":
         file = discord.File("images/cart.png", filename="cart.png")
-        embed = discord.Embed(title="cart!", color=0x6E593C).set_image(url="attachment://cart.png")
+        embed = discord.Embed(title="cart!", color=Colors.brown).set_image(url="attachment://cart.png")
         try:
             if perms.send_messages and perms.attach_files and (not message.thread or perms.send_messages_in_threads):
                 await message.reply(file=file, embed=embed)
@@ -2249,11 +2260,11 @@ async def help(message):
     embed1 = discord.Embed(
         title="How to Setup",
         description="Server moderator (anyone with *Manage Server* permission) needs to run `/setup` in any channel. After that, cats will start to spawn in 2-20 minute intervals inside of that channel.\nYou can customize those intervals with `/changetimings` and change the spawn message with `/changemessage`.\nCat spawns can also be forced by moderators using `/forcespawn` command.\nYou can have unlimited amounts of setupped channels at once.\nYou can stop the spawning in a channel by running `/forget`.",
-        color=0x6E593C,
+        color=Colors.brown,
     ).set_thumbnail(url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png")
 
     embed2 = (
-        discord.Embed(title="How to Play", color=0x6E593C)
+        discord.Embed(title="How to Play", color=Colors.brown)
         .add_field(
             name="Catch Cats",
             value='Whenever a cat spawns you will see a message along the lines of "a cat has appeared", which will also display it\'s type.\nCat types can have varying rarities from 25% for Fine to hundredths of percent for rarest types.\nSo, after saying "cat" the cat will be added to your inventory.',
@@ -2296,7 +2307,7 @@ async def credits(message: discord.Interaction):
 
     await message.response.defer()
 
-    embedVar = discord.Embed(title="Cat Bot", color=0x6E593C, description=gen_credits).set_thumbnail(
+    embedVar = discord.Embed(title="Cat Bot", color=Colors.brown, description=gen_credits).set_thumbnail(
         url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png"
     )
 
@@ -2315,7 +2326,7 @@ def format_timedelta(start_timestamp, end_timestamp):
 
 @bot.tree.command(description="View various bot information and stats")
 async def info(message: discord.Interaction):
-    embed = discord.Embed(title="Cat Bot Info", color=0x6E593C)
+    embed = discord.Embed(title="Cat Bot Info", color=Colors.brown)
     try:
         git_timestamp = int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8"))
     except Exception:
@@ -2349,7 +2360,7 @@ DB Channels: `{await Channel.count():,}`
 
 @bot.tree.command(description="Confused? Check out the Cat Bot Wiki!")
 async def wiki(message: discord.Interaction):
-    embed = discord.Embed(title="Cat Bot Wiki", color=0x6E593C)
+    embed = discord.Embed(title="Cat Bot Wiki", color=Colors.brown)
     embed.description = "\n".join(
         [
             "Main Page: https://wiki.minkos.lol/",
@@ -2408,7 +2419,7 @@ async def news(message: discord.Interaction):
             embed = discord.Embed(
                 title="📜 Cat Bot Survey",
                 description="Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nSurvey is closed!",
-                color=0x6E593C,
+                color=Colors.brown,
                 timestamp=datetime.datetime.fromtimestamp(1731168230),
             )
             await interaction.edit_original_response(content=None, view=view, embed=embed)
@@ -2416,7 +2427,7 @@ async def news(message: discord.Interaction):
             embed = discord.Embed(
                 title="✨ New Cat Rains perks!",
                 description="Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).\nEveryone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have received 10 minutes of Rains as compensation.\n\nThis is a really cool perk and I hope you like it!",
-                color=0x6E593C,
+                color=Colors.brown,
                 timestamp=datetime.datetime.fromtimestamp(1732377932),
             )
             button = discord.ui.Button(label="Cat Bot Store", url="https://catbot.shop")
@@ -2426,7 +2437,7 @@ async def news(message: discord.Interaction):
             embed = discord.Embed(
                 title="☃️ Cat Bot Christmas",
                 description=f"⚡ **Cat Bot Wrapped 2024**\nIn 2024 Cat Bot got...\n- 🖥️ *45777* new servers!\n- 👋 *286607* new profiles!\n- {get_emoji('staring_cat')} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though\n- {get_emoji('cat_throphy')} *1518096* achievements get!\nSee last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).\n\n❓ **New Year Update**\nSomething is coming...",
-                color=0x6E593C,
+                color=Colors.brown,
                 timestamp=datetime.datetime.fromtimestamp(1734458962),
             )
             await interaction.edit_original_response(content=None, embed=embed, view=view)
@@ -2448,7 +2459,7 @@ Don't worry, quests are very easy and to complete the battlepass you will need t
 
 ## will you sell paid battlepass? its joever
 There are currently no plans to sell a paid battlepass.""",
-                color=0x6E593C,
+                color=Colors.brown,
                 timestamp=datetime.datetime.fromtimestamp(1735689601),
             )
             await interaction.edit_original_response(content=None, view=view, embed=embed)
@@ -2460,7 +2471,7 @@ instead of predetermined cat rewards you now unlock Packs! packs have different 
 the rarities are - Wooden {get_emoji("woodenpack")}, Stone {get_emoji("stonepack")}, Bronze {get_emoji("bronzepack")}, Silver {get_emoji("silverpack")}, Gold {get_emoji("goldpack")}, Platinum {get_emoji("platinumpack")}, Diamond {get_emoji("diamondpack")} and Celestial {get_emoji("celestialpack")}!
 the extra reward is now a stone pack instead of 5 random cats too!
 *LETS GO GAMBLING*""",
-                color=0x6E593C,
+                color=Colors.brown,
                 timestamp=datetime.datetime.fromtimestamp(1740787200),
             )
             await interaction.edit_original_response(content=None, view=view, embed=embed)
@@ -2481,7 +2492,7 @@ We are committed to resolving these challenges and aim to have everything back o
 
 Best regards,
 [Your Name]""",
-                color=0x6E593C,
+                color=Colors.brown,
                 timestamp=datetime.datetime.fromtimestamp(1743454803),
             )
             await interaction.edit_original_response(content=None, view=view, embed=embed)
@@ -2497,7 +2508,7 @@ the puzzle pieces say something about having to collect a million of them...
 how interesting!
 
 update: the puzzle piece event has concluded""",
-                color=0x6E593C,
+                color=Colors.brown,
                 timestamp=datetime.datetime.fromtimestamp(1745242856),
             )
             await interaction.edit_original_response(content=None, view=view, embed=embed)
@@ -2522,7 +2533,7 @@ starting june 30th, for the next 5 days you will get points randomly on every ca
 starting june 30th, [catbot.shop](<https://catbot.shop>) will have a sale for the next 5 days! if everything above wasnt enough rain for your fancy you can buy some more with a discount!
 
 aaaaaaaaaaaaaaa""",
-                color=0x6E593C,
+                color=Colors.brown,
                 timestamp=datetime.datetime.fromtimestamp(1751252181),
             )
             button = discord.ui.Button(label="Join our Server", url="https://discord.gg/staring")
@@ -2543,7 +2554,7 @@ it was mostly my fault, but i worked hard to fix everything and i think its most
 as a compensation i will give everyone who voted in the past 3 days 2 free gold packs! you can press the button below to claim them. (note you can only claim it in 1 server, choose wisely)
 
 thanks for using cat bot!""",
-                color=0x6E593C,
+                color=Colors.brown,
                 timestamp=datetime.datetime.fromtimestamp(1752689941),
             )
 
@@ -2862,7 +2873,7 @@ how to do mentions: `@everyone`, `@here`, `<@userid>`, `<@&roleid>`
 to get ids, run `/getid` with the thing you want to mention.
 if it doesnt work make sure the bot has mention permissions.
 leave blank to reset.""",
-        color=0x6E593C,
+        color=Colors.brown,
     )
 
     button1 = Button(label="Appear Message", style=ButtonStyle.blurple)
@@ -2909,7 +2920,7 @@ async def last(message: discord.Interaction):
 
 @bot.tree.command(description="View all the juicy numbers behind cat types")
 async def catalogue(message: discord.Interaction):
-    embed = discord.Embed(title=f"{get_emoji('staring_cat')} The Catalogue", color=0x6E593C)
+    embed = discord.Embed(title=f"{get_emoji('staring_cat')} The Catalogue", color=Colors.brown)
     for cat_type in cattypes:
         in_server = await Profile.sum(f"cat_{cat_type}", f'guild_id = $1 AND "cat_{cat_type}" > 0', message.guild.id)
         title = f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}"
@@ -3081,7 +3092,7 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     if star:
         stats_string += "\n\\*this stat is only tracked since February 2025"
 
-    embedVar = discord.Embed(title=f"{person_id.name}'s Stats", color=0x6E593C, description=stats_string)
+    embedVar = discord.Embed(title=f"{person_id.name}'s Stats", color=Colors.brown, description=stats_string)
     await message.followup.send(embed=embedVar)
 
 
@@ -3318,7 +3329,7 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
 __Highlighted Stat__
 {highlighted_stat[1]} {highlighted_stat[2]}"""
 
-            embed = discord.Embed(title="Edit Profile", description=description, color=0x6E593C)
+            embed = discord.Embed(title="Edit Profile", description=description, color=Colors.brown)
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
@@ -3365,7 +3376,7 @@ As a bonus, you will get access to /editprofile command!
 Fastest times are not saved during rains.
 
 You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
-        color=0x6E593C,
+        color=Colors.brown,
     )
 
     # this is the silly popup when you click the button
@@ -3675,12 +3686,12 @@ async def packs(message: discord.Interaction):
         user[f"pack_{pack.lower()}"] -= 1
         await user.save()
 
-        embed = discord.Embed(title=reward_texts[0], color=0x6E593C)
+        embed = discord.Embed(title=reward_texts[0], color=Colors.brown)
         await interaction.edit_original_response(embed=embed, view=None)
         for reward_text in reward_texts[1:]:
             await asyncio.sleep(1)
             things = reward_text.split("\n", 1)
-            embed = discord.Embed(title=things[0], description=things[1], color=0x6E593C)
+            embed = discord.Embed(title=things[0], description=things[1], color=Colors.brown)
             await interaction.edit_original_response(embed=embed)
         await asyncio.sleep(1)
         await interaction.edit_original_response(view=gen_view(user))
@@ -3732,16 +3743,16 @@ async def packs(message: discord.Interaction):
                 half_result.append(f"{get_emoji(cat.lower() + 'cat')} {results_percat[cat]:,} {cat} cats!")
             final_result = "\n".join(half_result)
 
-        embed = discord.Embed(title=final_header, description=pack_list, color=0x6E593C)
+        embed = discord.Embed(title=final_header, description=pack_list, color=Colors.brown)
         await interaction.edit_original_response(embed=embed, view=None)
         await asyncio.sleep(1)
-        embed = discord.Embed(title=final_header, description=pack_list + "\n\n" + final_result, color=0x6E593C)
+        embed = discord.Embed(title=final_header, description=pack_list + "\n\n" + final_result, color=Colors.brown)
         await interaction.edit_original_response(embed=embed)
         await asyncio.sleep(1)
         await interaction.edit_original_response(view=gen_view(user))
 
     description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n[Chance Info](<https://catbot.minkos.lol/packs>)\n\nClick the buttons below to start opening packs!"
-    embed = discord.Embed(title=f"{get_emoji('bronzepack')} Packs", description=description, color=0x6E593C)
+    embed = discord.Embed(title=f"{get_emoji('bronzepack')} Packs", description=description, color=Colors.brown)
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     await message.response.send_message(embed=embed, view=gen_view(user))
 
@@ -3908,7 +3919,7 @@ async def battlepass(message: discord.Interaction):
         embedVar = discord.Embed(
             title=f"Cattlepass Season {user.season}",
             description=description,
-            color=0x6E593C,
+            color=Colors.brown,
         ).set_footer(text=rain_shill)
         view = View(timeout=VIEW_TIMEOUT)
 
@@ -3938,7 +3949,7 @@ async def battlepass(message: discord.Interaction):
 async def vote(message: discord.Interaction):
     embed = discord.Embed(
         title="Vote for Cat Bot",
-        color=0x6E593C,
+        color=Colors.brown,
         description="Vote for Cat Bot on top.gg!",
     )
     view = View(timeout=1)
@@ -4075,7 +4086,7 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
 
         embed = discord.Embed(
             title=f"{icon} {target} Cat Prisms",
-            color=0x6E593C,
+            color=Colors.brown,
             description="Prisms are a tradeable power-up which occasionally bumps cat rarity up by one. Each prism crafted gives everyone an increased chance to get upgraded, plus additional chance for prism owners.\n\n",
         ).set_footer(
             text=f"{total_count} Total Prisms | Global boost: {round(global_boost * 100, 3)}%\n{person_id.name}'s prisms | Owned: {user_count} | Personal boost: {user_boost}%"
@@ -4367,7 +4378,7 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
         embed = discord.Embed(
             title=f"{clean_name_2} vs {clean_name}",
             description=description,
-            color=0x6E593C,
+            color=Colors.brown,
         )
         await interaction.edit_original_response(content=None, embed=embed, view=None)
 
@@ -4383,7 +4394,7 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
     embed = discord.Embed(
         title=f"{clean_name_2} vs {clean_name}",
         description=description,
-        color=0x6E593C,
+        color=Colors.brown,
     )
     view = View(timeout=24 * 3600)
     for i in ["Rock", "Paper", "Scissors"]:
@@ -4833,7 +4844,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             # no way thats fun
             await achemb(message, "blackhole", "send")
             await achemb(message, "blackhole", "send", person2)
-            return discord.Embed(color=0x6E593C, title="Blackhole", description="How Did We Get Here?"), None
+            return discord.Embed(color=Colors.brown, title="Blackhole", description="How Did We Get Here?"), None
 
         view = View(timeout=VIEW_TIMEOUT)
 
@@ -4853,7 +4864,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         person1name = person1.name.replace("_", "\\_")
         person2name = person2.name.replace("_", "\\_")
         coolembed = discord.Embed(
-            color=0x6E593C,
+            color=Colors.brown,
             title=f"{person1name} and {person2name} trade",
             description="no way",
         )
@@ -5129,7 +5140,7 @@ async def bal(message: discord.Interaction):
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
     file = discord.File("images/money.png", filename="money.png")
-    embed = discord.Embed(title="cat coins", color=0x6E593C).set_image(url="attachment://money.png")
+    embed = discord.Embed(title="cat coins", color=Colors.brown).set_image(url="attachment://money.png")
     await message.response.send_message(file=file, embed=embed)
 
 
@@ -5155,7 +5166,7 @@ async def casino(message: discord.Interaction):
     embed = discord.Embed(
         title="🎲 The Catsino",
         description=f"One spin costs 5 {get_emoji('finecat')} Fine cats\nSo far you gambled {profile.gambles} times.\nAll Cat Bot users gambled {total_sum:,} times.",
-        color=0x750F0E,
+        color=Colors.maroon,
     )
 
     async def spin(interaction):
@@ -5206,7 +5217,7 @@ async def casino(message: discord.Interaction):
         icon = "🎲"
 
         for i in variants:
-            embed = discord.Embed(title=f"{icon} The Catsino", description=f"**{i}**", color=0x750F0E)
+            embed = discord.Embed(title=f"{icon} The Catsino", description=f"**{i}**", color=Colors.maroon)
             try:
                 await interaction.edit_original_response(embed=embed, view=None)
             except Exception:
@@ -5216,7 +5227,7 @@ async def casino(message: discord.Interaction):
         embed = discord.Embed(
             title=f"{icon} The Catsino",
             description=f"You won:\n**{get_emoji('finecat')} {amount} Fine cats**",
-            color=0x750F0E,
+            color=Colors.maroon,
         )
 
         button = Button(label="Spin", style=ButtonStyle.blurple)
@@ -5260,7 +5271,7 @@ async def slots(message: discord.Interaction):
     embed = discord.Embed(
         title=":slot_machine: The Slot Machine",
         description=f"__Your stats__\n{profile.slot_spins:,} spins\n{profile.slot_wins:,} wins\n{profile.slot_big_wins:,} big wins\n\n__Global stats__\n{total_spins:,} spins\n{total_wins:,} wins\n{total_big_wins:,} big wins",
-        color=0x750F0E,
+        color=Colors.maroon,
     )
 
     async def remove_debt(interaction):
@@ -5328,7 +5339,7 @@ async def slots(message: discord.Interaction):
             embed = discord.Embed(
                 title=":slot_machine: The Slot Machine",
                 description=desc,
-                color=0x750F0E,
+                color=Colors.maroon,
             )
             try:
                 await interaction.edit_original_response(embed=embed, view=None)
@@ -5374,7 +5385,7 @@ async def slots(message: discord.Interaction):
 
         slots_lock.remove(message.user.id + message.guild.id)
 
-        embed = discord.Embed(title=":slot_machine: The Slot Machine", description=desc, color=0x750F0E)
+        embed = discord.Embed(title=":slot_machine: The Slot Machine", description=desc, color=Colors.maroon)
 
         try:
             await interaction.edit_original_response(embed=embed, view=myview)
@@ -6029,7 +6040,7 @@ async def achievements(message: discord.Interaction):
         newembed = discord.Embed(
             title=category,
             description=f"Achievements unlocked (total): {unlocked}/{total_achs}{minus_achs}{hidden_suffix}",
-            color=0x6E593C,
+            color=Colors.brown,
         ).set_footer(text=rain_shill)
 
         global_user = await User.get_or_create(user_id=message.user.id)
@@ -6394,7 +6405,7 @@ async def leaderboards(
             title = f"{specific_cat} {title}"
         title = "🏅 " + title
 
-        embedVar = discord.Embed(title=title, description=string.rstrip(), color=0x6E593C).set_footer(text=rain_shill)
+        embedVar = discord.Embed(title=title, description=string.rstrip(), color=Colors.brown).set_footer(text=rain_shill)
 
         global_user = await User.get_or_create(user_id=message.user.id)
 
@@ -6598,13 +6609,13 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
         person[ach_id] = not reverse
         await person.save()
         color, title, icon = (
-            0x007F0E,
+            Colors.green,
             "Achievement forced!",
             "https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/ach.png",
         )
         if reverse:
             color, title, icon = (
-                0xFF0000,
+                Colors.red,
                 "Achievement removed!",
                 "https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/no_ach.png",
             )
