@@ -3550,6 +3550,9 @@ if config.DONOR_CHANNEL_ID:
         do_edit = False
 
         async def toggle_bless(interaction):
+            if interaction.user.id != message.user.id:
+                await do_funny(interaction)
+                return
             nonlocal do_edit, user
             do_edit = True
             await interaction.response.defer()
@@ -3559,6 +3562,9 @@ if config.DONOR_CHANNEL_ID:
             await regen(interaction)
 
         async def toggle_anon(interaction):
+            if interaction.user.id != message.user.id:
+                await do_funny(interaction)
+                return
             nonlocal do_edit, user
             do_edit = True
             await interaction.response.defer()
