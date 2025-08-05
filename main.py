@@ -2891,8 +2891,9 @@ async def lore(message: discord.Interaction):
 
 
 
-@bot.tree.command(description="No Im serious")
-async def DONTCLICK(interaction: discord.Interaction):"gif_url=https://www.google.com/url?sa=i&url=https%3A%2F%2Ftenor.com%2Fsearch%2Frickroll-gifs&psig=AOvVaw1OAsvGb-ta11TdoaT0L1-6&ust=1754435379505000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCOC-tqej8o4DFQAAAAAdAAAAABAE" 
+@bot.tree.command(description="No I'm serious")
+async def DONTCLICK(interaction: discord.Interaction):
+    gif_url ="https://media1.tenor.com/m/x8v1oNUOmg4AAAAd/rickroll-roll.gif"
     await interaction.response.send_message(gif_url)
 
 
