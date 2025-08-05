@@ -2886,8 +2886,10 @@ async def getid(message: discord.Interaction, thing: discord.User | discord.Role
 
 
 @bot.tree.command(description="Cat Bot Lore")
-async def lore(message: discord.Interaction):
-    await message.respond.send_message("my lore? Well its- (cat bot then gets cut off before he can say anything, his lore remains a mystery for now)")
+async def lore(interaction: discord.Interaction):
+    await interaction.response.send_message(
+        "my lore? Well its- (cat bot then gets cut off before he can say anything, his lore remains a mystery for now)"
+    )
 
 
 
