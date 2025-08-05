@@ -88,8 +88,7 @@ class Model:
     async def delete(self) -> None:
         table = self.__class__.__name__.lower()
         query_string = f'DELETE FROM "{table}" WHERE {self._primary_key} = $1;'
-        async with pool.acquire() as conn:
-            await conn.execute(query_string, self.__values[self._primary_key])
+        await pool.execute(query_string, self.__values[self._primary_key])
         self.__dirty_values = []
         self.__values = []
 
@@ -114,12 +113,11 @@ class Model:
         args.append(self.__values[self._primary_key])
 
         # run the query
-        async with pool.acquire() as conn:
-            await conn.execute(query_string, *args)
+        await pool.execute(query_string, *args)
         self.__dirty_values = []
 
     @classmethod
-    async def _get(self, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance:
+    async def _get(self, fields: None | list[str | RawSQL] = None, **kwargs) -> asyncpg.Record:
         table = self.__name__.lower()
         select = "*"
         if fields:
@@ -137,8 +135,7 @@ class Model:
         query_string += " AND ".join(changes) + " LIMIT 1;"
 
         # run the query
-        async with pool.acquire() as conn:
-            return await conn.fetchrow(query_string, *kwargs.values())
+        return await pool.fetchrow(query_string, *kwargs.values())
 
     async def refresh_from_db(self) -> None:
         args = {self._primary_key: self.__values[self._primary_key]}
@@ -165,30 +162,19 @@ class Model:
         table = self.__name__.lower()
         values = kwargs.values()
 
-        # create if doesnt exist
+        # build column names and placeholders
+        columns = list(kwargs.keys())
+        column_names = ", ".join(f'"{col}"' for col in columns)
+        placeholders = ", ".join(f"${i}" for i in range(1, len(columns) + 1))
 
-        query_string = f'INSERT INTO "{table}" ('
-        var_counter = 1
+        # build the upsert updates (no-op updates to trigger RETURNING)
+        updates = ", ".join(f'"{col}" = EXCLUDED."{col}"' for col in columns)
 
-        # add the search parameters
-        changes = []
-        for i in kwargs.keys():
-            changes.append(i)
-            var_counter += 1
-        query_string += ", ".join(changes) + ") VALUES ("
+        # single query: insert or update (with same values) and return
+        query_string = f'INSERT INTO "{table}" ({column_names}) VALUES ({placeholders}) ON CONFLICT ({column_names}) DO UPDATE SET {updates} RETURNING *;'
 
-        # add the var numbers
-        changes2 = ["$" + str(i) for i in range(1, var_counter)]
-        query_string += ", ".join(changes2)
-
-        query_string += ") ON CONFLICT (" + ", ".join(changes) + ") DO NOTHING;"
-
-        # run the query
-        async with pool.acquire() as conn:
-            await conn.execute(query_string, *values)
-
-        # get
-        result = await self._get(**kwargs)
+        # run the query and return the result
+        result = await pool.fetchrow(query_string, *values)
         return self(result)
 
     @classmethod
@@ -209,8 +195,7 @@ class Model:
         # add the var numbers
         changes2 = ["$" + str(i) for i in range(1, var_counter)]
         query_string += ", ".join(changes2) + ");"
-        async with pool.acquire() as conn:
-            await conn.execute(query_string, *values)
+        await pool.execute(query_string, *values)
 
     @classmethod
     async def filter(self, filter: str | RawSQL | None = None, *args, refetch: bool = True, **kwargs) -> AsyncGenerator[ModelInstance]:
@@ -223,8 +208,7 @@ class Model:
         query = f'SELECT {select} FROM "{table}"'
         if filter:
             query += f" WHERE {filter}"
-        async with pool.acquire() as conn:
-            cur = await conn.fetch(query + ";", *args)
+        cur = await pool.fetch(query + ";", *args)
         for row in cur:
             if refetch:
                 val = {self._primary_key: row[self._primary_key]}
@@ -268,8 +252,7 @@ class Model:
         query = f'SELECT {func}({column}) FROM "{table}"'
         if filter:
             query += f" WHERE {filter}"
-        async with pool.acquire() as conn:
-            return await conn.fetchval(query + ";", *args)
+        return await pool.fetchval(query + ";", *args)
 
     @classmethod
     async def sum(self, column: str, filter: str | RawSQL | None = None, *args) -> int:
@@ -309,5 +292,4 @@ class Model:
             data.append(tuple(curr))
 
         # execute the query
-        async with pool.acquire() as conn:
-            await conn.executemany(query, data)
+        await pool.executemany(query, data)
