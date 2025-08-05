@@ -3052,6 +3052,7 @@ async def gen_stats(profile, star):
     stats.append(["supporter", "👑", "Ever bought rains: " + ("Yes" if user.premium else "No")])
     stats.append(["cats_caught_during_rains", "☔", f"Cats caught during rains: {profile.rain_participations:,}{star}"])
     stats.append(["rain_minutes_started", "☔", f"Rain minutes started: {profile.rain_minutes_started:,}{star}"])
+    stats.append(["cats_blessed", "🌠", f"Cats blessed: {user.cats_blessed:,}"])
 
     # gambling
     stats.append(["🎰", "Gambling"])
