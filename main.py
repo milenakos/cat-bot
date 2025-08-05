@@ -49,6 +49,203 @@ from database import Channel, Prism, Profile, Reminder, User
 
 logging.basicConfig(level=logging.INFO)
 
+# Cat Bot introduction (Slash Command)
+import discord
+from discord.ext import commands
+
+@bot.tree.command(description= "CatBotIntro")
+async def catbotintro(interaction: discord.Interaction):
+    #send first page with buttons
+    await interaction.response.send_message(
+        content=pages[0],
+        view=CatIntroView(),
+        ephemeral=True #only the user who used this command can see it
+       )
+
+#pages
+pages= [ 
+    """🐱 **welcome to The Cat Stand, Home of the Cat Bot!**
+    
+    -I'm The one and only Cat Bot, The best and only bot you'll ever need!
+    """,
+    
+    """📚 **How to use**
+    - Use '/' to see my numerous helpful and fun slash commands
+    - Try some of our popular commands like `/battlepass`, `/inventory`, or `/packs`,!
+    """,
+    
+    """⚙ **Commands**
+  
+    - `/battlepass`- shows you the battlepass (up to 30 levels) and 3 daily quests
+    - `/inventory`- shows you the cats you have collected, value of entire collection, ect
+    -`/packs`- shows you the packs you've collected or earned from the battlepass.
+    """,
+
+    """⚙ **Commands List**
+
+    - Theres sooo many commands so i'll list them all
+    - `/battlepass` shows quests and level
+    - `/inventory` shows inventory of cats
+    - `/packs` shows all pack you have
+    - `/rain` shows amount of rain you have
+    - `/news` shows little news subjects on Cat Bot
+    """,
+
+    """⚙ **Commands List 2**
+
+    - `/8ball` ask the 8ball a question
+    - `/achievements` achievements you've unlocked
+    - `/bal` shows your bal
+    - `/bless` bless someone with 2x cats
+    - `/brew` try it (Totally wont say im a teapot)
+    """,
+
+    """⚙ **Commands List 3**
+
+    - `/casino` totally not rigged
+    - `/cat` get a cat image
+    - `/catalogue` shows you all cats, rates of spawn and value
+    - `/catch` catch someone in 4k that is
+    - `/cookie` Mom: but we have cookie clicker at home, cookie clicker at home..
+    """,
+
+    """⚙ **Commands List 4**
+
+    -`/credits` just like a movie
+    -`/cursed` get a cursed cat
+    -`/daily` get daily cats (not)
+    -`/define` define anyword like a dictionary
+    -`/editprofile` supports only
+    """,
+
+    """⚙ **Commands List 5**
+
+    -`/fact` get a random fact about a cat
+    -`/fake` fake out someone with a fake cat image
+    -`/getid` get id name of anyone in the server
+    -`/gift` gift someone somes cats
+    -`/help` help on using catbot so you dont have to do this over and over
+    """,
+
+    """⚙ **Commands List 6**
+
+    -`/info` Information and stats on the bot
+    -`/last` shows last cat caught in channel you used the command in
+    -`/leaderboards` shows whos a sweat and whos not
+    -`/pig` the most engaging boring game
+    -`/ping` shows cat bots delay speed
+    """,
+
+    """⚙ **Commands List 7**
+
+    -`/prism` create a prism once you get 1 of each cat
+    -`/random` get a random cat
+    -`/rate` get a super accurate rating of something
+    -`/remind` get a reminder in the future (+-5 minutes)
+    -`/roll` roll or die roll or die roll or...
+    """,
+
+    """⚙ **Commands List 8**
+
+    -`/rps` ROCK,PAPER,SCISSORS
+    -`/slots` gamble your lifes savings of cats
+    -`/store` buy some rain wont yah
+    -`/tictactoe` pretty self-explanatory
+    -`/tiktok` Read text as Tiktok's TTS women
+    """,
+
+    """⚙ **Commands List 9**
+
+    -`/trade` the good ol' trading system
+    -`/vote` YOU SHOULD VOTE FOR CAT BOT NOW!
+    -`/Wiki` Visit the Offical Cat Bot Wiki
+    """,
+   
+
+    """🐈 **Meet The Cats (Fine - Rare)**
+        
+    - Fine Cat <:finecat:1253369190312706208>: The most common
+    - Nice Cat <:nicecat:1253369188043587594>: He's pretty nice i guess
+    - Good Cat <:goodcat:1253369185422282863>: Such a Good boy (Whoops wrong animal)
+    - Rare Cat <:rarecat:1253369888869974036>: He's Rare
+    """,
+
+    """ **Wild - Sus**
+    
+    - Wild Cat <:wildcat:1253369172847755284>: He's a wild one WATCH OUT
+    - Baby Cat <:babycat:1253369170121199677>: He's only a baby who knows maybe he'll be the next billionare
+    - Epic Cat <:epiccat:1253369167881441338>: Totally so EPIC
+    - Sus Cat <:suscat:1253369181018263714>: I wouldn't trust him...
+    """,
+
+    """ **Brave - Superior**
+    
+    - Brave Cat <:bravecat:1253369177411026964>: Such a Heroic Cat across the Land of Cats!
+    - Rickroll Cat <:rickrollcat:1253369165348081844>: YOU JUST GOT RICk ROLLED HAHAHA!
+    - Reverse Cat <:reversecat:1253369161766277250>: Reverse in talking im
+    - Superior Cat <:superiorcat:1253369159228719135>: He's Superior in his head
+    """,
+
+    """ **Trash - Corrupt**
+    
+    - Trash Cat <:trashcat:1253369886550524055>: He already knows dont keep him 
+    - Legendary Cat <:legendarycat:1253369884189003826>: LEGENDARY
+    - Mythic Cat <:mythiccat:1253369163196661862>: Mythical Such a Soothing word to say
+    - 8bit Cat <:8bitcat:1253369157525966909>: Retro Cat from the 80's coming through!
+    - Corrupt Cat <:corruptcat:1253369155835396136>: He drank expired milk thats why he's like this    
+    """,
+
+    """ **Professor - eGirl** 
+    
+    - Professor Cat <:professorcat:1253369153373343788>: Probably the wisest of the bunch
+    - Divine Cat <:divinecat:1253369151083249664>: God Like
+    - Real Cat <:realcat:1253369148529049735>: Yup, just your ordinary fellow cat
+    - Ultimate Cat <:ultimatecat:1253369146624966718>: Thats an ULTIMATE achievement if you ever get him
+    - eGirl Cat <:egirlcat:1253369144636870796>: Such a Baddie
+    """,
+]
+
+# Create a view with buttons to navigate pages
+class CatIntroView(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.page = 0  # start page at 0
+
+    @discord.ui.button(label="⏪ Back", style=discord.ButtonStyle.secondary)
+    async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.page -= 1
+        if self.page < 0:
+            self.page = len(pages) - 1  # loop to last page
+        await interaction.response.edit_message(content=pages[self.page], view=self)
+
+    @discord.ui.button(label="Next ⏩", style=discord.ButtonStyle.primary)
+    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.page += 1
+        if self.page >= len(pages):
+            self.page = 0  # loop back to first page
+        await interaction.response.edit_message(content=pages[self.page], view=self)
+
+  # Slash command to start the intro
+@bot.tree.command(description="CatBotIntro")
+async def catbotintro(interaction: discord.Interaction):
+    await interaction.response.send_message(
+        content=pages[0],
+        view=CatIntroView(),
+        ephemeral=True  # only the user who used this command can see it
+    )
+
+@bot.event
+async def on_ready():
+    await bot.tree.sync()
+    print(f"Logged in as {bot.user}")
+
+bot.run("YOUR_BOT_TOKEN")
+
+
+
+
+
+    
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
 
@@ -2882,21 +3079,6 @@ leave blank to reset.""",
 @bot.tree.command(description="Get ID of a thing")
 async def getid(message: discord.Interaction, thing: discord.User | discord.Role):
     await message.response.send_message(f"The ID of {thing.mention} is {thing.id}\nyou can use it in /changemessage like this: `{thing.mention}`")
-
-
-
-@bot.tree.command(description="Cat Bot Lore")
-async def lore(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        "my lore? Well its- (cat bot then gets cut off before he can say anything, his lore remains a mystery for now)"
-    )
-
-
-
-@bot.tree.command(description="No I'm serious")
-async def DONTCLICK(interaction: discord.Interaction):
-    gif_url ="https://media1.tenor.com/m/x8v1oNUOmg4AAAAd/rickroll-roll.gif"
-    await interaction.response.send_message(gif_url)
 
 
 
