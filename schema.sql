@@ -305,7 +305,10 @@ CREATE TABLE public."user" (
     total_votes integer DEFAULT 0,
     vote_streak integer DEFAULT 0,
     max_vote_streak integer DEFAULT 0,
-    streak_freezes integer DEFAULT 0
+    streak_freezes integer DEFAULT 0,
+    cats_blessed bigint DEFAULT 0,
+    blessings_enabled boolean DEFAULT false,
+    blessings_anonymous boolean DEFAULT false
 );
 
 

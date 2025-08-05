@@ -1810,6 +1810,23 @@ async def on_message(message: discord.Message):
                     do_time = False
 
                 suffix_string = ""
+                silly_amount = 1
+
+                # add blessings
+                if random.randint(1, 100) == 69:
+                    # woo we got blessed thats pretty cool
+                    silly_amount *= 2
+
+                    blesser = (await User.collect("blessings_enabled = true ORDER BY RANDOM() LIMIT 1"))[0]
+                    blesser.cats_blessed += 1
+                    await blesser.save()
+
+                    if blesser.blessings_anonymous:
+                        blesser_text = "💫 Anonymous Supporter"
+                    else:
+                        blesser_text = f"{blesser.emoji or '💫'} {(await bot.fetch_user(blesser.user_id)).name}"
+
+                    suffix_string += f"\n{blesser_text} blessed your catch and it got doubled!"
 
                 # calculate prism boost
                 total_prisms = await Prism.collect("guild_id = $1", message.guild.id)
@@ -1860,11 +1877,10 @@ async def on_message(message: discord.Message):
 
                 icon = get_emoji(le_emoji.lower() + "cat")
 
-                silly_amount = 1
                 if user.cataine_active > time.time():
                     # cataine is active
-                    silly_amount = 2
-                    suffix_string += "\n🧂 cataine worked! you got 2 cats!"
+                    silly_amount *= 2
+                    suffix_string += "\n🧂 cataine worked! your catch got doubled!"
                     user.cataine_activations += 1
 
                 elif user.cataine_active != 0:
@@ -3527,6 +3543,76 @@ async def store(message: discord.Interaction):
 
 
 if config.DONOR_CHANNEL_ID:
+
+    @bot.tree.command(description="(SUPPORTER) Bless random Cat Bot users with doubled cats!")
+    async def bless(message: discord.Interaction):
+        user = await User.get_or_create(user_id=message.user.id)
+        do_edit = False
+
+        async def toggle_bless(interaction):
+            nonlocal do_edit, user
+            do_edit = True
+            await interaction.response.defer()
+            await user.refresh_from_db()
+            user.blessings_enabled = not user.blessings_enabled
+            await user.save()
+            await regen(interaction)
+
+        async def toggle_anon(interaction):
+            nonlocal do_edit, user
+            do_edit = True
+            await interaction.response.defer()
+            await user.refresh_from_db()
+            user.blessings_anonymous = not user.blessings_anonymous
+            await user.save()
+            await regen(interaction)
+
+        async def regen(interaction):
+            if user.blessings_anonymous:
+                blesser = "💫 Anonymous Supporter"
+            else:
+                blesser = f"{user.emoji or '💫'} {message.user.name}"
+
+            embed = discord.Embed(
+                color=Colors.brown,
+                title="🌠 Cat Blessings",
+                description=f"""When enabled, random Cat Bot users will have their cats blessed by you - and their catches will be doubled!
+
+Blessings are currently **{"enabled" if user.blessings_enabled else "disabled"}**.
+Cats blessed: **{user.cats_blessed}**
+
+Blessing message preview:
+{blesser} blessed your catch and it got doubled!
+""",
+            )
+
+            view = View(timeout=VIEW_TIMEOUT)
+            if not user.premium:
+                button = Button(label="Supporter Required!", url="https://catbot.shop", emoji="👑")
+                view.add_item(button)
+            else:
+                button = Button(
+                    emoji="🌟",
+                    label=f"{'Disable' if user.blessings_enabled else 'Enable'} Blessings",
+                    style=discord.ButtonStyle.red if user.blessings_enabled else discord.ButtonStyle.green,
+                )
+                button.callback = toggle_bless
+                view.add_item(button)
+
+                button = Button(
+                    emoji="🕵️",
+                    label=f"{'Disable' if user.blessings_anonymous else 'Enable'} Anonymity",
+                    style=discord.ButtonStyle.red if user.blessings_anonymous else discord.ButtonStyle.green,
+                )
+                button.callback = toggle_anon
+                view.add_item(button)
+
+            if do_edit:
+                await message.edit_original_response(embed=embed, view=view)
+            else:
+                await message.response.send_message(embed=embed, view=view)
+
+        await regen(message)
 
     @bot.tree.command(description="(SUPPORTER) Customize your profile!")
     @discord.app_commands.rename(provided_emoji="emoji")
