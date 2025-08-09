@@ -2924,7 +2924,10 @@ async def last(message: discord.Interaction):
 
     try:
         lasttime = channel.lastcatches
-        displayedtime = f"<t:{int(lasttime)}:R>"
+        if int(lasttime) == 0:  # unix epoch check
+            displayedtime = "forever ago"
+        else:
+            displayedtime = f"<t:{int(lasttime)}:R>"
     except Exception:
         displayedtime = "forever ago"
 
