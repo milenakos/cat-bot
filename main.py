@@ -3521,14 +3521,10 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             await spawn_cat(str(message.channel.id))
             await asyncio.sleep(random.uniform(2.5, 3))
 
-        await asyncio.sleep(1)
         try:
-            if channel_permissions.send_messages and (not message.thread or channel_permissions.send_messages_in_threads):
-                # this is pretty but i want a delay lmao
-                # await asyncio.gather(*(message.channel.send("h") for _ in range(3)))
-                for _ in range(3):
-                    await message.channel.send("# :bangbang: cat rain has ended")
-                    await asyncio.sleep(0.4)
+            for _ in range(3):
+                await message.channel.send("# :bangbang: cat rain has ended")
+                await asyncio.sleep(0.4)
         except Exception:
             pass
 
