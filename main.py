@@ -1704,27 +1704,23 @@ async def on_message(message: discord.Message):
         else:
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
-            times = [channel.spawn_times_min, channel.spawn_times_max]
+            decided_time = random.uniform(channel.spawn_times_min, channel.spawn_times_max)
+
+            if 0 < channel.cat_rains <= time.time():
+                # rain end
+                temp_rains_storage.append(message.channel.id)
+                channel.cat_rains = 0
+
             if channel.cat_rains != 0:
-                if channel.cat_rains > time.time():
-                    times = [1, 2]
-                else:
-                    temp_rains_storage.append(message.channel.id)
-                    channel.cat_rains = 0
-                    try:
-                        if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                            # this is pretty but i want a delay lmao
-                            # await asyncio.gather(*(message.channel.send("h") for _ in range(3)))
-                            for _ in range(3):
-                                await message.channel.send("# :bangbang: cat rain has ended")
-                                await asyncio.sleep(0.2)
-                    except Exception:
-                        pass
-            decided_time = random.uniform(times[0], times[1])
-            if channel.yet_to_spawn < time.time():
-                channel.yet_to_spawn = time.time() + decided_time + 10
-            elif channel.cat_rains == 0:
+                # we dont schedule next spawn during rains
                 decided_time = 0
+
+            if channel.yet_to_spawn < time.time():
+                # if there isnt already a scheduled spawn
+                channel.yet_to_spawn = time.time() + decided_time + 10
+            else:
+                decided_time = 0
+
             try:
                 current_time = message.created_at.timestamp()
                 channel.lastcatches = current_time
@@ -3504,7 +3500,6 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         channel.cat_rains = time.time() + (rain_length * 60)
         channel.yet_to_spawn = 0
         await channel.save()
-        await spawn_cat(str(message.channel.id))
         if profile.rain_minutes:
             if rain_length > profile.rain_minutes:
                 user.rain_minutes -= rain_length - profile.rain_minutes
@@ -3519,6 +3514,21 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         try:
             ch = bot.get_channel(config.RAIN_CHANNEL_ID)
             await ch.send(f"{interaction.user.id} started {rain_length}m rain in {interaction.channel.id} ({user.rain_minutes} left)")
+        except Exception:
+            pass
+
+        for _ in range(math.ceil(rain_length / 2.75)):
+            await spawn_cat(str(message.channel.id))
+            await asyncio.sleep(random.uniform(2.5, 3))
+
+        await asyncio.sleep(1)
+        try:
+            if channel_permissions.send_messages and (not message.thread or channel_permissions.send_messages_in_threads):
+                # this is pretty but i want a delay lmao
+                # await asyncio.gather(*(message.channel.send("h") for _ in range(3)))
+                for _ in range(3):
+                    await message.channel.send("# :bangbang: cat rain has ended")
+                    await asyncio.sleep(0.4)
         except Exception:
             pass
 
