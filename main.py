@@ -3385,7 +3385,7 @@ async def rain(message: discord.Interaction):
 
     embed = discord.Embed(
         title="☔ Cat Rains",
-        description=f"""Cat Rains are power-ups which spawn cats instantly for a limited amounts of time in channel of your choice.
+        description=f"""Cat Rains are power-ups which spawn cats super fast for a limited amounts of time in channel of your choice.
 
 You can get those by buying them at our [store](<https://catbot.shop>) or by winning them in an event.
 This bot is developed by a single person so buying one would be very appreciated.
@@ -3517,9 +3517,12 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         except Exception:
             pass
 
-        for _ in range(math.ceil(rain_length * 60 / 2.75)):
+        for i in range(math.ceil(rain_length * 60 / 2.75)):
+            if i != 0:
+                await asyncio.sleep(random.uniform(2.5, 3))
             await spawn_cat(str(message.channel.id))
-            await asyncio.sleep(random.uniform(2.5, 3))
+
+        await asyncio.sleep(1)
 
         try:
             for _ in range(3):
