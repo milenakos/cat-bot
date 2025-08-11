@@ -3517,7 +3517,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         except Exception:
             pass
 
-        for _ in range(math.ceil(rain_length / 2.75)):
+        for _ in range(math.ceil(rain_length * 60 / 2.75)):
             await spawn_cat(str(message.channel.id))
             await asyncio.sleep(random.uniform(2.5, 3))
 
