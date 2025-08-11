@@ -260,7 +260,7 @@ class Colors:
 
 
 # rain shill message for footers
-rain_shill = "😺 Cat Day Sale /rain"
+rain_shill = "☔ Get tons of cats /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -609,9 +609,13 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
                 if active_level_data["reward"] == "Rain":
                     description = f"You got ☔ {active_level_data['amount']} rain minutes!"
                 elif active_level_data["reward"] in cattypes:
-                    description = f"You got {get_emoji(active_level_data['reward'].lower() + 'cat')} {active_level_data['amount']} {active_level_data['reward']}!"
+                    description = (
+                        f"You got {get_emoji(active_level_data['reward'].lower() + 'cat')} {active_level_data['amount']} {active_level_data['reward']}!"
+                    )
                 else:
-                    description = f"You got a {get_emoji(active_level_data['reward'].lower() + 'pack')} {active_level_data['reward']} pack! Do /packs to open it!"
+                    description = (
+                        f"You got a {get_emoji(active_level_data['reward'].lower() + 'pack')} {active_level_data['reward']} pack! Do /packs to open it!"
+                    )
                 title = f"Level {user.battlepass} Complete!"
             else:
                 description = f"You got {cat_emojis}!"
@@ -654,11 +658,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
     if is_belated:
         embed_progress.set_footer(text="For catching within 3 seconds")
 
-    if (
-        perms.send_messages
-        and perms.embed_links
-        and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads)
-    ):
+    if perms.send_messages and perms.embed_links and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
         if level_complete_embeds:
             await message.channel.send(f"<@{user.user_id}>", embeds=level_complete_embeds + [embed_progress])
         else:
@@ -1891,7 +1891,7 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n😺 International Cat Day Sale! -20% </rain:{RAIN_ID}>"
+                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
                 if random.randint(0, 19) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
@@ -3531,7 +3531,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
     shopbutton = Button(
         emoji="🛒",
-        label="Store (-20%!)",
+        label="Store",
         url="https://catbot.shop",
     )
 
