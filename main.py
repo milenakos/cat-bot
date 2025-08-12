@@ -297,9 +297,6 @@ rigged_users = []
 # to prevent double catches
 temp_catches_storage = []
 
-# to prevent weird behaviour shortly after a rain
-temp_rains_storage = []
-
 # to prevent double belated battlepass progress and for "faster than 10 seconds" belated bp quest
 temp_belated_storage = {}
 
@@ -1706,11 +1703,6 @@ async def on_message(message: discord.Message):
             temp_catches_storage.append(channel.cat)
             decided_time = random.uniform(channel.spawn_times_min, channel.spawn_times_max)
 
-            if 0 < channel.cat_rains <= time.time():
-                # rain end
-                temp_rains_storage.append(message.channel.id)
-                channel.cat_rains = 0
-
             if channel.cat_rains != 0:
                 # we dont schedule next spawn during rains
                 decided_time = 0
@@ -1803,7 +1795,7 @@ async def on_message(message: discord.Message):
                 except Exception:
                     pass
 
-                if channel.cat_rains + 10 > time.time() or message.channel.id in temp_rains_storage:
+                if channel.cat_rains + 10 > time.time():
                     do_time = False
 
                 suffix_string = ""
@@ -2011,9 +2003,6 @@ async def on_message(message: discord.Message):
                     user.time = time_caught
                 if do_time and time_caught > user.timeslow:
                     user.timeslow = time_caught
-
-                if message.channel.id in temp_rains_storage:
-                    temp_rains_storage.remove(message.channel.id)
 
                 if time_caught > 0 and time_caught == int(time_caught):
                     user.perfection_count += 1
@@ -3460,7 +3449,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             await interaction.response.send_message("please catch the cat in this channel first.", ephemeral=True)
             return
 
-        if channel.cat_rains != 0 or message.channel.id in temp_rains_storage:
+        if channel.cat_rains != 0:
             await interaction.response.send_message("there is already a rain running!", ephemeral=True)
             return
 
@@ -3497,7 +3486,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             return
 
         profile.rain_minutes_started += rain_length
-        channel.cat_rains = time.time() + (rain_length * 60)
+        channel.cat_rains = time.time() + (rain_length * 60) + 10
         channel.yet_to_spawn = 0
         await channel.save()
         if profile.rain_minutes:
@@ -3522,6 +3511,8 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
                 await asyncio.sleep(random.uniform(2.5, 3))
             await spawn_cat(str(message.channel.id))
 
+        await channel.refresh_from_db()
+        channel.cat_rains = 0
         await asyncio.sleep(1)
 
         try:
