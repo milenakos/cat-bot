@@ -1650,7 +1650,7 @@ async def on_message(message: discord.Message):
         if not channel or not channel.cat or channel.cat in temp_catches_storage or user.timeout > time.time():
             # laugh at this user
             # (except if rain is active, we dont have perms or channel isnt setupped, or we laughed way too much already)
-            if channel and channel.cat_rains < time.time() and perms.add_reactions and pointlaugh_ratelimit.get(message.channel.id, 0) < 10:
+            if channel and channel.cat_rains == 0 and perms.add_reactions and pointlaugh_ratelimit.get(message.channel.id, 0) < 10:
                 try:
                     await message.add_reaction(get_emoji("pointlaugh"))
                     pointlaugh_ratelimit[message.channel.id] = pointlaugh_ratelimit.get(message.channel.id, 0) + 1
@@ -1795,7 +1795,7 @@ async def on_message(message: discord.Message):
                 except Exception:
                     pass
 
-                if channel.cat_rains + 10 > time.time():
+                if channel.cat_rains != 0:
                     do_time = False
 
                 suffix_string = ""
@@ -1849,15 +1849,19 @@ async def on_message(message: discord.Message):
                         # :SILENCE:
                         normal_bump = False
                         if not channel.forcespawned:
-                            if channel.cat_rains > time.time():
-                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                                channel.cat_rains += 606
-                            else:
-                                channel.cat_rains = time.time() + 606
+                            channel.cat_rains += math.ceil(600 / 2.75)
                             channel.yet_to_spawn = 0
-                            decided_time = 6
+                            if channel.cat_rains != 0:
+                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                            else:
+
+                                async def background_task(message, channel):
+                                    await asyncio.sleep(6)
+                                    await actually_do_rain(message, channel)
+
+                                bot.loop.create_task(background_task(message, channel))
 
                     if normal_bump:
                         suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
@@ -3353,6 +3357,33 @@ __Highlighted Stat__
         await message.followup.send(embed=embedVar)
 
 
+async def actually_do_rain(message, channel):
+    first_spawn = True
+    while channel.cat_rains != 0:
+        if first_spawn:
+            first_spawn = False
+        else:
+            await asyncio.sleep(random.uniform(2.5, 3))
+        await spawn_cat(str(message.channel.id))
+        await channel.refresh_from_db()
+        channel.cat_rains -= 1
+        await channel.save()
+
+    await asyncio.sleep(1)
+
+    try:
+        for _ in range(3):
+            await message.channel.send("# :bangbang: cat rain has ended")
+            await asyncio.sleep(0.4)
+    except Exception:
+        pass
+
+    # schedule the next normal spawn if needed
+    if 0 < channel.yet_to_spawn < time.time():
+        await asyncio.sleep(random.uniform(channel.spawn_times_min, channel.spawn_times_max))
+        await spawn_cat(str(message.channel.id))
+
+
 @bot.tree.command(description="its raining cats")
 async def rain(message: discord.Interaction):
     user = await User.get_or_create(user_id=message.user.id)
@@ -3486,7 +3517,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             return
 
         profile.rain_minutes_started += rain_length
-        channel.cat_rains = time.time() + (rain_length * 60) + 10
+        channel.cat_rains = math.ceil(rain_length * 60 / 2.75)
         channel.yet_to_spawn = 0
         await channel.save()
         if profile.rain_minutes:
@@ -3499,34 +3530,14 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             user.rain_minutes -= rain_length
         await user.save()
         await profile.save()
-        await interaction.response.send_message(f"{rain_length}m cat rain was started by {interaction.user.mention}, ending <t:{int(channel.cat_rains)}:R>!")
+        await interaction.response.send_message(f"{rain_length}m cat rain was started by {interaction.user.mention}!")
         try:
             ch = bot.get_channel(config.RAIN_CHANNEL_ID)
             await ch.send(f"{interaction.user.id} started {rain_length}m rain in {interaction.channel.id} ({user.rain_minutes} left)")
         except Exception:
             pass
 
-        for i in range(math.ceil(rain_length * 60 / 2.75)):
-            if i != 0:
-                await asyncio.sleep(random.uniform(2.5, 3))
-            await spawn_cat(str(message.channel.id))
-
-        await channel.refresh_from_db()
-        channel.cat_rains = 0
-        await channel.save()
-        await asyncio.sleep(1)
-
-        try:
-            for _ in range(3):
-                await message.channel.send("# :bangbang: cat rain has ended")
-                await asyncio.sleep(0.4)
-        except Exception:
-            pass
-
-        # schedule the next normal spawn if needed
-        if 0 < channel.yet_to_spawn < time.time():
-            await asyncio.sleep(random.uniform(channel.spawn_times_min, channel.spawn_times_max))
-            await spawn_cat(str(message.channel.id))
+        await actually_do_rain(message, channel)
 
     async def rain_modal(interaction):
         modal = RainModal(interaction.user)
