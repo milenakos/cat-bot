@@ -1851,6 +1851,7 @@ async def on_message(message: discord.Message):
                         if not channel.forcespawned:
                             channel.cat_rains += math.ceil(600 / 2.75)
                             channel.yet_to_spawn = 0
+                            await channel.save()
                             if channel.cat_rains != 0:
                                 await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                                 await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
