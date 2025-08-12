@@ -3513,6 +3513,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
         await channel.refresh_from_db()
         channel.cat_rains = 0
+        await channel.save()
         await asyncio.sleep(1)
 
         try:
@@ -3521,6 +3522,11 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
                 await asyncio.sleep(0.4)
         except Exception:
             pass
+
+        # schedule the next normal spawn if needed
+        if 0 < channel.yet_to_spawn < time.time():
+            await asyncio.sleep(random.uniform(channel.spawn_times_min, channel.spawn_times_max))
+            await spawn_cat(str(message.channel.id))
 
     async def rain_modal(interaction):
         modal = RainModal(interaction.user)
