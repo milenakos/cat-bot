@@ -1711,6 +1711,7 @@ async def on_message(message: discord.Message):
                 # if there isnt already a scheduled spawn
                 channel.yet_to_spawn = time.time() + decided_time + 10
             else:
+                channel.yet_to_spawn = 0
                 decided_time = 0
 
             try:
@@ -3365,7 +3366,12 @@ async def actually_do_rain(message, channel):
             first_spawn = False
         else:
             await asyncio.sleep(random.uniform(2.5, 3))
-        await spawn_cat(str(message.channel.id))
+
+        try:
+            await spawn_cat(str(message.channel.id))
+        except Exception:
+            pass
+
         await channel.refresh_from_db()
         channel.cat_rains -= 1
         await channel.save()
