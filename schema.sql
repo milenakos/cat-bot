@@ -246,8 +246,10 @@ CREATE TABLE public.profile (
     cookiesclicked boolean DEFAULT false,
     event_rain_points integer DEFAULT 0,
     best_pig_score integer DEFAULT 0,
-    pig50 boolean default false,
-    pig100 boolean default false
+    pig50 boolean DEFAULT false,
+    pig100 boolean DEFAULT false,
+    sphere_easter_egg smallint DEFAULT 0,
+    sphere_ach boolean DEFAULT false
 );
 
 

@@ -5524,11 +5524,72 @@ async def slots(message: discord.Interaction):
 
 @bot.tree.command(description="roll a dice")
 async def roll(message: discord.Interaction, sides: Optional[int]):
-    if sides is not None and sides < 1:
-        await message.response.send_message("please get a life", ephemeral=True)
-        return
-    if not sides:
+    if sides is None:
         sides = 6
+
+    if sides < 0:
+        await message.response.send_message("???", ephemeral=True)
+        return
+
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+
+    if sides == 0:
+        # ???
+        family_guy_funny_moments = [
+            "your sphere doesn't land",
+            "your sphere floats in air",
+            "your sphere lands and bounces forever",
+            "your sphere breaks",
+            "your sphere gets turned inside out",
+            "your sphere lands in a dumpster",
+            "your sphere gets eaten",
+            "your sphere lands in an active volcano",
+            "your house gets striked down from orbit before your sphere lands",
+            "your sphere lands on the bottom of the Mariana trench",
+            "your sphere lands inside of a frying pan and burns",
+            "your sphere breaks into 0 pieces and the universe throws a runtime error",
+            "your sphere is getting married",
+            "your sphere turns into a pentagonal bipyramid because it's bored",
+            "your sphere defies gravity and floats into the space never to be seen again",
+            "your sphere lands in honey and gets sticky",
+            "your sphere gets compressed into a blackhole",
+            "your sphere became sentient and refused to land",
+            "your sphere lands a pretty good job",
+            "your sphere lands on a 7 somehow",
+            "you try to pick up your sphere but its just a hallucination",
+            'your sphere lands on "WAKE UP"',
+            "your sphere is in a superposition of having landed on 0 and not landed",
+            "your sphere lands on pi (get it?)",
+            "your sphere fell into sulfuric acid and dissolved",
+            "your sphere used slightly a wrong pi and therefore is just barely not a sphere",
+            "your sphere is too fast to be seen",
+            "your sphere's landing is delayed because of poor visibility at the airport",
+            "your sphere turns into a tesseract",
+            "your sphere opens a macdonalds franchise",
+            "your sphere lands in crippling debt",
+            "your sphere lands in court",
+            "your sphere lands in prison",
+            "your sphere has been sentenced to lifetime slavery",
+            "your sphere is a sphere trying its best to become a cube with no avail because of the discrimination of society",
+            "your mom is a sphere",
+            "everything in the world is sphere its a matter of perspective",
+            "did you notice most emojis are spheres?",
+            "why are you still here",
+            "your sphere ran out of jokes",
+            "your sphere finally peacefully lands on the table. you shed a (spherical) tear of happiness.",
+        ]
+
+        if user.sphere_easter_egg < len(family_guy_funny_moments):
+            await message.response.send_message(family_guy_funny_moments[user.sphere_easter_egg], ephemeral=True)
+            user.sphere_easter_egg += 1
+            await user.save()
+
+            if user.sphere_easter_egg == len(family_guy_funny_moments):
+                await achemb(message, "sphere_ach", "send")
+        else:
+            await message.response.send_message(random.choice(family_guy_funny_moments), ephemeral=True)
+
+        return
 
     # loosely based on this wikipedia article
     # https://en.wikipedia.org/wiki/Dice
@@ -5571,7 +5632,6 @@ async def roll(message: discord.Interaction, sides: Optional[int]):
         await message.response.send_message(f"🪙 your coin lands on **{side}** ({coinflipresult})")
     else:
         await message.response.send_message(f"🎲 your {dice} lands on **{random.randint(1, sides)}**")
-    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     await progress(message, user, "roll")
 
 
