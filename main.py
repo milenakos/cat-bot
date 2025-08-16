@@ -5273,14 +5273,6 @@ async def brew(message: discord.Interaction):
 
 @bot.tree.command(description="Gamble your life savings away in our totally-not-rigged catsino!")
 async def casino(message: discord.Interaction):
-    if message.user.id + message.guild.id in casino_lock:
-        await message.response.send_message(
-            "you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe",
-            ephemeral=True,
-        )
-        await achemb(message, "paradoxical_gambler", "send")
-        return
-
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     # funny global gamble counter cus funny
     total_sum = await Profile.sum("gambles", "gambles > 0")
@@ -5300,6 +5292,7 @@ async def casino(message: discord.Interaction):
                 "you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe",
                 ephemeral=True,
             )
+            await achemb(message, "paradoxical_gambler", "send")
             return
 
         await profile.refresh_from_db()
