@@ -5377,7 +5377,13 @@ async def casino(message: discord.Interaction):
 async def slots(message: discord.Interaction):
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     
-    async def slots_stats(interaction)
+    async def slots_stats(interaction):
+        if interaction.user.id != message.user.id:
+            await do_funny(interaction)
+            return
+            
+        await interaction.response.defer()
+        
         total_spins, total_wins, total_big_wins = (
             await Profile.sum("slot_spins", "slot_spins > 0"),
             await Profile.sum("slot_wins", "slot_wins > 0"),
@@ -5399,7 +5405,6 @@ async def slots(message: discord.Interaction):
             await interaction.edit_original_response(embed=embed, view=myview)
         except Exception:
             await interaction.followup.send(embed=embed, view=myview)
-    )
 
     async def remove_debt(interaction):
         nonlocal message
@@ -5498,7 +5503,7 @@ async def slots(message: discord.Interaction):
         button.callback = spin
         myview.add_item(button)
 
-        button = Button(label="Spin", style=ButtonStyle.blurple)
+        button = Button(label="Stats", style=ButtonStyle.blurple)
         button.callback = slots_stats
         myview.add_item(button)
 
@@ -5524,8 +5529,7 @@ async def slots(message: discord.Interaction):
         except Exception:
             await interaction.followup.send(embed=embed, view=myview)
 
-    await message.response.send_message()
-    await slots_stats()
+    await slots_stats(message)
 
 
 @bot.tree.command(description="roll a dice")
