@@ -5376,15 +5376,29 @@ async def casino(message: discord.Interaction):
 @bot.tree.command(description="oh no")
 async def slots(message: discord.Interaction):
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    total_spins, total_wins, total_big_wins = (
-        await Profile.sum("slot_spins", "slot_spins > 0"),
-        await Profile.sum("slot_wins", "slot_wins > 0"),
-        await Profile.sum("slot_big_wins", "slot_big_wins > 0"),
-    )
-    embed = discord.Embed(
-        title=":slot_machine: The Slot Machine",
-        description=f"__Your stats__\n{profile.slot_spins:,} spins\n{profile.slot_wins:,} wins\n{profile.slot_big_wins:,} big wins\n\n__Global stats__\n{total_spins:,} spins\n{total_wins:,} wins\n{total_big_wins:,} big wins",
-        color=Colors.maroon,
+    
+    async def slots_stats(interaction)
+        total_spins, total_wins, total_big_wins = (
+            await Profile.sum("slot_spins", "slot_spins > 0"),
+            await Profile.sum("slot_wins", "slot_wins > 0"),
+            await Profile.sum("slot_big_wins", "slot_big_wins > 0"),
+        )
+        embed = discord.Embed(
+            title=":slot_machine: The Slot Machine",
+            description=f"__Your stats__\n{profile.slot_spins:,} spins\n{profile.slot_wins:,} wins\n{profile.slot_big_wins:,} big wins\n\n__Global stats__\n{total_spins:,} spins\n{total_wins:,} wins\n{total_big_wins:,} big wins",
+            color=Colors.maroon,
+        )
+
+        button = Button(label="Spin", style=ButtonStyle.blurple)
+        button.callback = spin
+    
+        myview = View(timeout=VIEW_TIMEOUT)
+        myview.add_item(button)
+
+        try:
+            await interaction.edit_original_response(embed=embed, view=myview)
+        except Exception:
+            await interaction.followup.send(embed=embed, view=myview)
     )
 
     async def remove_debt(interaction):
@@ -5478,10 +5492,14 @@ async def slots(message: discord.Interaction):
         else:
             desc = "**You lose!**\n\n" + desc
 
+        myview = View(timeout=VIEW_TIMEOUT)
+        
         button = Button(label="Spin", style=ButtonStyle.blurple)
         button.callback = spin
+        myview.add_item(button)
 
-        myview = View(timeout=VIEW_TIMEOUT)
+        button = Button(label="Spin", style=ButtonStyle.blurple)
+        button.callback = slots_stats
         myview.add_item(button)
 
         if big_win:
@@ -5506,13 +5524,8 @@ async def slots(message: discord.Interaction):
         except Exception:
             await interaction.followup.send(embed=embed, view=myview)
 
-    button = Button(label="Spin", style=ButtonStyle.blurple)
-    button.callback = spin
-
-    myview = View(timeout=VIEW_TIMEOUT)
-    myview.add_item(button)
-
-    await message.response.send_message(embed=embed, view=myview)
+    await message.response.send_message()
+    await slots_stats()
 
 
 @bot.tree.command(description="roll a dice")
