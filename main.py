@@ -5762,7 +5762,10 @@ async def pig(message: discord.Interaction):
         button = Button(label="Play Again", emoji="🎲", style=ButtonStyle.blurple)
         button.callback = roll
         view.add_item(button)
-        await interaction.edit_original_response(content=f"*Congrats!*\nYou finished with {last_score} score!\n\nYour current best score is **{profile.best_pig_score:,}**.", view=view)
+        if profile.best_pig_score == last_score:
+            await interaction.edit_original_response(content=f"*Congrats!*\nYou finished with a new high score of {last_score:,}!", view=view)
+        else:
+            await interaction.edit_original_response(content=f"*Congrats!*\nYou finished with **{last_score:,}** score!\n\nYour current best score is **{profile.best_pig_score:,}**.", view=view)
 
     view = View(timeout=3600)
     button = Button(label="Play!", emoji="🎲", style=ButtonStyle.blurple)
