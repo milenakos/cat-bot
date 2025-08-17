@@ -7,6 +7,10 @@ TOKEN = os.environ["TOKEN"]
 # user - cat_bot, database - cat_bot, ip - localhost, port - default
 DB_PASS = os.environ["psql_password"]
 
+# cat spawn emoji type
+# "default", "birthday", "halloween", or "old"
+EMOJI = "default"
+
 #
 # all the following are optional (setting them to None will disable the feature)
 #
