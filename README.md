@@ -30,7 +30,7 @@ Please note that self-hosting is hacky and isn't supported; instructions below a
 
 4. You can add all the emojis you want with `python emojis.py`.
 
-   You can download other optional spawning emojis by setting them to `True` in emojis.py.
+   You can download other optional spawning emojis by setting them to `True` in `emojis.py`.
 
 6. Go inside of the `config.py` file and configure everything to your liking.
 
