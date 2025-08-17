@@ -326,6 +326,10 @@ last_loop_time = 0
 
 def get_emoji(name):
     global emojis
+    prefixes = {"default": "", "birthday": "b_", "halloween": "h_", "old": "o_"}
+    prefix = prefixes[config.EMOJIS]
+    if name in allowedemojis and prefix + name in emojis.keys():
+        return emojis[prefix + name]
     if name in emojis.keys():
         return emojis[name]
     elif name in emoji.EMOJI_DATA:
