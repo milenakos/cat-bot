@@ -28,17 +28,15 @@ Please note that self-hosting is hacky and isn't supported; instructions below a
 
    If you are running a Gateway Proxy, do `pip install -r requirements-gw.txt` instead. This uses a custom fork which contacts `localhost:7878` instead and removes ratelimits and heartbeats.
 
-4. You will need to add all emojis you want to Discord's App Emoji in the Dev Portal.
+4. You can add all the emojis you want with `python emojis.py`.
 
-   If they aren't found there, they will be replaced with a placeholder.
+   You can download other optional spawning emojis by setting them to `True` in emojis.py.
 
-   All emojis can be downloaded [here](https://github.com/staring-cat/emojis/releases/latest/download/emojis.zip).
+6. Go inside of the `config.py` file and configure everything to your liking.
 
-5. Go inside of the `config.py` file and configure everything to your liking.
+7. Run the bot with `python bot.py`.
 
-6. Run the bot with `python bot.py`.
-
-7. Done!
+8. Done!
 
 # License
 
