@@ -7,13 +7,13 @@ TOKEN = os.environ["TOKEN"]
 # user - cat_bot, database - cat_bot, ip - localhost, port - default
 DB_PASS = os.environ["psql_password"]
 
-# cat spawn emoji type
-# "default", "birthday", "halloween", or "old"
-EMOJI = "default"
-
 #
 # all the following are optional (setting them to None will disable the feature)
 #
+
+# cat spawn emoji type, set to None for default
+# can be "birthday", "halloween", or "old"
+EMOJI = None
 
 # channel id for db backups, private extremely recommended
 BACKUP_ID = 1060545763194707998
