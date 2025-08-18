@@ -32,11 +32,11 @@ Please note that self-hosting is hacky and isn't supported; instructions below a
 
    You can download other optional spawning emojis by setting them to `True` in `emojis.py`.
 
-6. Go inside of the `config.py` file and configure everything to your liking.
+5. Go inside of the `config.py` file and configure everything to your liking.
 
-7. Run the bot with `python bot.py`.
+6. Run the bot with `python bot.py`.
 
-8. Done!
+7. Done!
 
 # License
 
