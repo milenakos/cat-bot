@@ -4068,15 +4068,10 @@ async def battlepass(message: discord.Interaction):
 
 @bot.tree.command(description="vote for cat bot")
 async def vote(message: discord.Interaction):
-    embed = discord.Embed(
-        title="Vote for Cat Bot",
-        color=Colors.brown,
-        description="Vote for Cat Bot on top.gg!",
-    )
     view = View(timeout=1)
     button = Button(label="Vote!", url="https://top.gg/bot/966695034340663367/vote", emoji=get_emoji("topgg"))
     view.add_item(button)
-    await message.response.send_message(embed=embed, view=view)
+    await message.response.send_message(view=view)
 
 
 @bot.tree.command(description="cat prisms are a special power up")
