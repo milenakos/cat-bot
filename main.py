@@ -216,6 +216,9 @@ with open("config/aches.json", "r") as f:
 with open("config/battlepass.json", "r", encoding="utf-8") as f:
     battle = json.load(f)
 
+with open("config/cataine.json", "r", encoding="utf-8") as f:
+    cataine_list = json.load(f)
+
 # convert achievement json to a few other things
 ach_names = ach_list.keys()
 ach_titles = {value["title"].lower(): key for (key, value) in ach_list.items()}
@@ -1659,6 +1662,7 @@ async def on_message(message: discord.Message):
 
             # belated battlepass
             if message.channel.id in temp_belated_storage:
+                
                 belated = temp_belated_storage[message.channel.id]
                 if (
                     channel
@@ -1682,6 +1686,7 @@ async def on_message(message: discord.Message):
                         await progress(message, user, "odd", True)
                     if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
                         await progress(message, user, "rare+", True)
+                    await bounty(message, user, channel.cattype)
                     total_count = await Prism.count("guild_id = $1", message.guild.id)
                     user_count = await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id)
                     global_boost = 0.06 * math.log(2 * total_count + 1)
@@ -1802,8 +1807,119 @@ async def on_message(message: discord.Message):
                 suffix_string = ""
                 silly_amount = 1
 
+                # perky!
+                double_chance = 0
+                triple_chance = 0
+                single_chance = 100
+                none_chance = 0
+                double_boost_chance = 0
+                xp_gained = 0
+                purr_all_triple = False
+                double_slow = 99999999
+                packs = []
+                double_boost = False
+                double_first = 0
+                timer_add_chance = 0
+                
+                if user.perks:
+                    if user.cataine_active < time.time() and not user.hibernation:
+                        await level_down(user)
+                    perks = user.perks
+                    perks_info = cataine_list["perks"]
+                    for perk in perks:
+                        h = perk.split("_")
+                        rarity = int(h[0])
+                        type = int(h[1])
+                        if type == 1:
+                            double_chance += perks_info[0]["values"][rarity]
+                            single_chance -= perks_info[0]["values"][rarity]
+                        elif type == 2:
+                            triple_chance += perks_info[1]["values"][rarity]
+                            none_chance += perks_info[1]["values"][rarity]/2
+                            single_chance -= perks_info[1]["values"][rarity]*(1.5)
+                        elif type <= 8:
+                            packs.append((type-3, perks_info[type-1]["values"][rarity]))
+                        elif type == 9:
+                            double_boost_chance += perks_info[8]["values"][rarity]
+                        elif type == 10:
+                            purr_all_triple = True
+                        elif type == 11:
+                            timer_add_chance += perks_info[10]["values"][rarity]
+                        elif type == 13:
+                            double_slow = perks_info[12]["values"][rarity]
+                        elif type == 14:
+                            double_first += perks_info[13]["values"][rarity]
+
+                    for i in packs:
+                        chance = random.random()*100
+                        print(chance, i[1])
+                        if chance <= i[1]:
+                            user[f"pack_{pack_data[i[0]]['name'].lower()}"] += 1
+                            suffix_string += f"\n{get_emoji(f'pack_{pack_data[i[0]]['name'].lower()}')} You got a {pack_data[i[0]]['name']} pack! You now have {user[f'pack_{pack_data[i[0]]['name'].lower()}']:,} packs of this type!"
+
+                    chance = random.random()*100
+                    if chance <= double_boost_chance:
+                        double_boost = True
+                    user.progress += xp_gained
+
+                    chance = random.random()*100
+                    if chance <= timer_add_chance:
+                        user.cataine_active += 300
+                        suffix_string += f"\n{get_emoji('timer')} You got +5 minutes on your cataine timer! It will now expire <t:{user.cataine_active}:R>"
+
+                    if double_first > user.cataine_total_cats:
+                        user.cataine_total_cats += 1
+                        double_chance = 100 - triple_chance
+                        single_chance = 0
+                        none_chance = 0
+
+                    if time_caught > double_slow * 60:
+                        double_chance = 100 - triple_chance
+                        single_chance = 0
+                        none_chance = 0
+
+                    if time_caught > 0 and time_caught == int(time_caught):
+                        user.perfection_count += 1
+                        if purr_all_triple:
+                            triple_chance = 100
+                            double_chance = 0
+                            single_chance = 0
+                            none_chance = 0
+
+                    if "undefined" not in caught_time and time_caught > 0:
+                        raw_digits = "".join(char for char in caught_time[:-1] if char.isdigit())
+                        if len(set(raw_digits)) == 1 and purr_all_triple:
+                            triple_chance = 100
+                            double_chance = 0
+                            single_chance = 0
+                            none_chance = 0
+                    
+                    if single_chance < 0:
+                        single_chance = 0
+                        double_chance = 100 - triple_chance - none_chance
+                    if double_chance < 0:
+                        double_chance = 0
+                        if 100 - triple_chance < 33:
+                            none_chance = 33
+                            triple_chance = 67
+                    if none_chance < 0:
+                        none_chance = 0
+
+                    chance = random.random()*100
+                    if chance <= triple_chance:
+                        silly_amount *= 3
+                        suffix_string += f"\n🧂 cataine worked! your cat was TRIPLED by cataine!1!!1!"
+                    elif chance <= triple_chance + double_chance:
+                        silly_amount *= 2
+                        suffix_string += f"\n🧂 cataine worked! your cat was doubled by cataine!!1!"
+                    elif chance <= triple_chance + double_chance + single_chance:
+                        silly_amount *= 1
+                    elif chance <= triple_chance + double_chance + single_chance + none_chance:
+                        silly_amount *= 0
+                        suffix_string += f"\n🚫 cataine failed! your cat was uncought. tragic."
+
                 # add blessings
-                if random.randint(1, 100) == 69:
+                if random.randint(1, 100) == 101: # BLESSING BYPASS, REMOVE BEFORE THIS GETS TO PROD
                     # woo we got blessed thats pretty cool
                     silly_amount *= 2
 
@@ -1844,7 +1960,10 @@ async def on_message(message: discord.Message):
                     await prism_which_boosted.save()
                     try:
                         le_old_emoji = le_emoji
-                        le_emoji = cattypes[cattypes.index(le_emoji) + 1]
+                        if double_boost:
+                            le_emoji = cattypes[cattypes.index(le_emoji) + 2]
+                        else:
+                            le_emoji = cattypes[cattypes.index(le_emoji) + 1]
                         normal_bump = True
                     except IndexError:
                         # :SILENCE:
@@ -1871,18 +1990,6 @@ async def on_message(message: discord.Message):
                         suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
 
                 icon = get_emoji(le_emoji.lower() + "cat")
-
-                if user.cataine_active > time.time():
-                    # cataine is active
-                    silly_amount *= 2
-                    suffix_string += "\n🧂 cataine worked! your catch got doubled!"
-                    user.cataine_activations += 1
-
-                elif user.cataine_active != 0:
-                    # cataine ran out
-                    user.cataine_active = 0
-                    suffix_string += "\nyour cataine buff has expired. you know where to get a new one 😏"
-
                 if random.randint(0, 7) == 0:
                     # shill rains
                     suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
@@ -1931,7 +2038,7 @@ async def on_message(message: discord.Message):
                     dark_market_followups = [
                         "you walk up to them. the dark voice says:",
                         "**???**: Hello. We have a unique deal for you.",
-                        '**???**: To access our services, press "Hidden" `/achievements` tab 3 times in a row.',
+                        '**???**: To access our services, run /cataine.',
                         "**???**: You won't be disappointed.",
                         "before you manage to process that, the figure disappears. will you figure out whats going on?",
                         "the only choice is to go to that place.",
@@ -2010,11 +2117,15 @@ async def on_message(message: discord.Message):
                 if do_time and time_caught > user.timeslow:
                     user.timeslow = time_caught
 
-                if time_caught > 0 and time_caught == int(time_caught):
-                    user.perfection_count += 1
-
                 if channel.cat_rains != 0:
                     user.rain_participations += 1
+
+                # its not cold im gonna wake up
+                if user.hibernation:
+                    level_data = cataine_list["levels"][user.cataine_level]
+                    duration = level_data["duration"]
+                    user.hibernation = False
+                    user.cataine_active = int(time.time()) + 3600 * duration
 
                 await user.save()
 
@@ -2073,6 +2184,13 @@ async def on_message(message: discord.Message):
                     elif channel.cattype == "Nice" and user.catch_progress in [0, 1]:
                         await progress(message, user, "finenice")
                         await progress(message, user, "finenice")
+
+                
+                # handle cataine bounties
+                await bounty(message, user, channel.cattype)
+            except Exception as e: 
+                print(e)
+                traceback.print_exc()  
             finally:
                 await channel.save()
                 if decided_time:
@@ -5911,250 +6029,504 @@ async def cat_fact(message: discord.Interaction):
         pass
 
 
-async def light_market(message):
-    cataine_prices = [
-        [10, "Fine"],
-        [30, "Fine"],
-        [20, "Good"],
-        [15, "Rare"],
-        [20, "Wild"],
-        [10, "Epic"],
-        [20, "Sus"],
-        [15, "Rickroll"],
-        [7, "Superior"],
-        [5, "Legendary"],
-        [3, "8bit"],
-        [4, "Divine"],
-        [3, "Real"],
-        [2, "Ultimate"],
-        [1, "eGirl"],
-    ]
-    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    if user.cataine_active < int(time.time()):
-        count = user.cataine_week
-        lastweek = user.recent_week
+async def bounty(message, user, cattype):
+    yay = False
+    complete = [False, False, False]
+    completed = [False, False, False]
+    title = ["", "", ""]
+    colored = 0
+    new = False
+    for i in range(user.bounties):
+        if i == 0: 
+            id = user.bounty_id_one
+            progress = user.bounty_progress_one
+            total = user.bounty_total_one
+            type = user.bounty_type_one
+        if i == 1:
+            id = user.bounty_id_two
+            progress = user.bounty_progress_two
+            total = user.bounty_total_two
+            type = user.bounty_type_two
+        if i == 2:
+            id = user.bounty_id_three
+            progress = user.bounty_progress_three
+            total = user.bounty_total_three
+            type = user.bounty_type_three
+        print(progress, total)
+        if progress < total:
+            new = True
+            if id == 0:
+                progress += 1
+                yay = True
+                title = f"Catch {total} cats"
+            if id == 1: 
+                if cattype == type:
+                    progress += 1
+                    yay = True
+                    title = f"Catch {total} {type} cats"
+            if id == 2:
+                if cattypes.index(cattype) >= cattypes.index(type):
+                    progress += 1
+                    yay = True
+                    title = f"Catch {total} {type} or rarer cats"
+        print(progress, total)
+        if i == 0:
+            user.bounty_progress_one = progress
+            if progress == total and new:
+                complete[0] = True
+            if progress == total:
+                completed[0] = True
+        if i == 1:
+            user.bounty_progress_two = progress
+            if progress == total and new:
+                complete[1] = True
+            if progress == total:
+                completed[1] = True
+        if i == 2:
+            user.bounty_progress_three = progress
+            if progress == total and new:
+                complete[2] = True
+            if progress == total:
+                completed[2] = True
+        colored += (progress/total)*10/user.bounties
+        await user.save()
+    for i in complete:
+        if not i:
+            continue
+        level = user.cataine_level
+        progress_line = f"\n{level} " + get_emoji("staring_square") * int(colored) + "⬛" * int(10 - colored) + f" {level+1}"
         embed = discord.Embed(
-            title="The Mafia Hideout",
-            description="you break down the door. the cataine machine lists what it needs.",
-        )
+        title=f"✅ {title}",
+        description=f"{progress_line}\n{sum(completed)}/{user.bounties} Bounties Complete",
+        color=Colors.green,
+        ).set_author(name="Mafia Level " + str(level))
+        await message.channel.send(f"<@{user.user_id}>", embed=embed)
+        await user.save()
+    if yay:
+        await message.add_reaction(get_emoji("✅"))
 
-        if lastweek != datetime.datetime.utcnow().isocalendar()[1]:
-            lastweek = datetime.datetime.utcnow().isocalendar()[1]
-            count = 0
-            user.cataine_week = 0
-            user.recent_week = datetime.datetime.utcnow().isocalendar()[1]
-            await user.save()
 
-        state = random.getstate()
-        random.seed(datetime.datetime.utcnow().isocalendar()[1])
-        deals = []
+async def set_mafia_offer(level, user):
+    level_data = cataine_list["levels"][level]
+    vt = level_data["cost"]
+    cattype = "Fine"
+    for _ in range(100):
+        cattype = random.choice(cattypes)
+        value = sum(type_dict.values()) / type_dict[cattype]
+        if value <= vt:
+            break
+    amount = max(1, round(vt / value))
+    user.cataine_price = cattype
+    user.cataine_amount = amount
 
-        r = range(random.randint(3, 5))
-        for i in r:
-            # 3-5 prices are possible per week
-            deals.append(random.randint(0, 14))
 
-        deals.sort()
+async def set_bounties(level, user):
+    bounties = await get_bounties(level)
+    user.bounties = len(bounties)
+    user.bounty_id_one = bounties[0]["id"] if bounties else None
+    user.bounty_id_two = bounties[1]["id"] if len(bounties) > 1 else None
+    user.bounty_id_three = bounties[2]["id"] if len(bounties) > 2 else None
+    user.bounty_type_one = bounties[0]["cat_type"] if bounties else None
+    user.bounty_type_two = bounties[1]["cat_type"] if len(bounties) > 1 else None
+    user.bounty_type_three = bounties[2]["cat_type"] if len(bounties) > 2 else None
+    user.bounty_total_one = bounties[0]["amount"] if bounties else 1
+    user.bounty_total_two = bounties[1]["amount"] if len(bounties) > 1 else 1
+    user.bounty_total_three = bounties[2]["amount"] if len(bounties) > 2 else 1
+    user.bounty_progress_one = bounties[0]["progress"] if bounties else 0
+    user.bounty_progress_two = bounties[1]["progress"] if len(bounties) > 1 else 0
+    user.bounty_progress_three = bounties[2]["progress"] if len(bounties) > 2 else 0
+    await user.save()
 
-        for i in r:
-            deals[i] = cataine_prices[deals[i]]
 
-        random.setstate(state)
-        if count < len(deals):
-            deal = deals[count]
+async def get_bounties(level):
+    level_data = cataine_list["levels"][level]
+    bounties = []
+    num_bounties = level_data["bounty_amount"]
+    avg_cats_needed = level_data["bounty_difficulty"]
+
+    used_types = set()
+    used_rarities = set()
+    tries = 0
+    max_tries = 20 * num_bounties
+    while len(bounties) < num_bounties and tries < max_tries:
+        tries += 1
+        bounty_type = random.choice(["rarity", "specific", "any"])
+        # to add a bit of randomness
+        variation = random.uniform(0.85, 1.15)
+        if bounty_type == "rarity":
+            margin = 0.2
+            rarity_i = random.randint(2, len(cattypes)-2)
+            while True:
+                rarity = cattypes[rarity_i]
+                eligible_types = cattypes[rarity_i:]
+                prob = sum(type_dict[t] for t in eligible_types) / sum(type_dict.values())
+                if prob == 0:
+                    base_amount = 1
+                else:
+                    base_amount = max(1, round(avg_cats_needed * prob))
+                expected_total = base_amount / prob if prob > 0 else float('inf')
+                if abs(expected_total - avg_cats_needed) / avg_cats_needed <= margin or rarity_i == 0:
+                    break
+                rarity_i -= 1
+            if rarity_i in used_rarities:
+                continue
+            used_rarities.add(rarity_i)
+            amount = max(1, round(base_amount * variation))
+            bounties.append({
+                "id": 2,
+                "progress": 0,
+                "cat_type": rarity,
+                "amount": amount,
+                "desc": f"Catch {amount} cats of {rarity} rarity and above"
+            })
+        elif bounty_type == "any":
+            if any(b["id"] == 0 for b in bounties):
+                continue
+            amount = max(1, round(avg_cats_needed * variation))
+            bounties.append({
+                "id": 0,
+                "progress": 0,
+                "cat_type": '',
+                "amount": amount,
+                "desc": f"Catch {amount} cats of any kind"
+            })
         else:
-            embed = discord.Embed(
-                title="The Mafia Hideout",
-                description="you have used up all of your cataine for the week. please come back later.",
-            )
-            await message.followup.send(embed=embed, ephemeral=True)
+            # pick a specific cat type not already used
+            available_types = [cat for cat in type_dict.keys() if cat not in used_types]
+            if not available_types:
+                continue
+            cat_type = random.choices(available_types, weights=[type_dict[cat] for cat in available_types])[0]
+            prob = type_dict[cat_type] / sum(type_dict.values())
+            base_amount = max(1, round(avg_cats_needed * prob))
+            amount = max(1, round(base_amount * variation))
+            used_types.add(cat_type)
+            bounties.append({
+                "id": 1,
+                "progress": 0,
+                "cat_type": cat_type,
+                "amount": amount,
+                "desc": f"Catch {amount} {get_emoji(cat_type.lower() + 'cat')} cat{'s' if amount > 1 else ''}"
+            })
+    return bounties
+
+
+async def get_perks(level, user):
+    level_data = cataine_list["levels"][level-1]
+    rarities = [r for r in level_data["weights"].keys()]
+    weights = {rarity: level_data["weights"][rarity] for rarity in rarities}
+    perks = cataine_list["perks"]
+
+    current_perks = []
+    used_ids = set()
+    thelist = []
+    if user.perks:
+        for perk in user.perks:
+            p = perk.split("_")
+            thelist.append(perks[int(p[1])-1]["id"])
+    for _ in range(3):
+        luck = random.randint(1, 100)
+        total_weight = 0
+        current_rarity = "common"
+        for rarity, weight in weights.items():
+            total_weight += weight
+            if luck <= total_weight:
+                current_rarity = rarity
+                break
+        tries = 0
+        selected_perk = None
+        while tries < 20:
+            luck = random.randint(1, 100)
+            total_weight = 0
+            for perk in perks:
+                if perk["id"] in used_ids or (perk["exclusive"] == 1 and perk["id"] in thelist): # me when im in thelist
+                    continue
+                if all('pack' in p['id'] for p in current_perks) and 'pack' in perk["id"]:
+                    break
+                total_weight += perk["weight"]
+                if luck <= total_weight:
+                    effect = perk["values"][list(weights.keys()).index(current_rarity)]
+                    if effect == 0:
+                        effect = perks[0]["values"][list(weights.keys()).index(current_rarity)]
+                    selected_perk = {
+                        "id": perk["id"],
+                        "name": perk["name"],
+                        "values": perk["values"],
+                        "rarity": current_rarity,
+                        "uuid": f"{list(weights.keys()).index(current_rarity)}_{perk["num"]}",
+                        "effect": effect,
+                    }
+                    break
+            if selected_perk:
+                break
+            tries += 1
+        if selected_perk:
+            used_ids.add(selected_perk["id"])
+            current_perks.append(selected_perk)
+    return current_perks
+
+
+async def level_down(user):
+    if user.cataine_level == 0:
+        return
+    user.cataine_level -= 1
+    user.cataine_active = 0
+    user.hibernation = True
+    user.bounties = 0
+    user.bounty_id_one = 0
+    user.bounty_id_two = 0
+    user.bounty_id_three = 0
+    user.bounty_type_one = ""
+    user.bounty_type_two = ""
+    user.bounty_type_three = ""
+    user.bounty_total_one = 1
+    user.bounty_total_two = 1
+    user.bounty_total_three = 1
+    user.bounty_progress_one = 0
+    user.bounty_progress_two = 0
+    user.bounty_progress_three = 0
+    h = user.perks.pop()
+    user.perks = h[:]
+    await set_bounties(user.cataine_level, user)
+    await set_mafia_offer(user.cataine_level, user)
+    return
+
+
+@bot.tree.command(description="..?")
+async def cataine(message: discord.Interaction):
+    await message.response.defer(ephemeral=True)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    if not user.dark_market_active:
+        await message.followup.send("You don't have access to the dark market yet. Catch more cats to unlock it!")
+        return
+    if user.cataine_amount == 0: 
+        await set_mafia_offer(user.cataine_level, user)
+    if user.cataine_active < time.time() and not user.hibernation:
+        await level_down(user)
+    level = user.cataine_level
+    level_data = cataine_list["levels"][level]
+    rank = level_data["name"]
+    change = level_data["change"]
+    bounty_data = cataine_list["bounties"]
+    cat_type = user.cataine_price
+    amount = user.cataine_amount
+    quotes = cataine_list["quotes"]
+
+    desc = f"*{random.choice(quotes)}*"
+    if user.hibernation:
+        desc += f"\n\n**The timer for leveling up will not start until you catch your next cat.**"
+    if user.bounties == 0:
+        print("No bounties found, setting new bounties.")
+        await set_bounties(level, user)
+    colored = 0
+    for i in range(user.bounties):
+        # get ready for spaghetti
+        if i == 0:
+            if user.bounty_progress_one == user.bounty_total_one:
+                desc += "\n**Complete!**"
+                colored += 10/user.bounties
+                continue
+            desc += f"\n**{bounty_data[user.bounty_id_one]["desc"]}**".replace("X", str(user.bounty_total_one - user.bounty_progress_one)).replace("type", user.bounty_type_one)
+            colored += (user.bounty_progress_one/user.bounty_total_one)*10/user.bounties
+        if i == 1:
+            if user.bounty_progress_two == user.bounty_total_two:
+                desc += "\n**Complete!**"
+                colored += 10/user.bounties
+                continue
+            desc += f"\n**{bounty_data[user.bounty_id_two]["desc"]}**".replace("X", str(user.bounty_total_two - user.bounty_progress_two)).replace("type", user.bounty_type_two)
+            colored += (user.bounty_progress_two/user.bounty_total_two)*10/user.bounties
+        if i == 2:
+            if user.bounty_progress_three == user.bounty_total_three:
+                desc += "\n**Complete!**"
+                colored += 10/user.bounties
+                continue
+            desc += f"\n**{bounty_data[user.bounty_id_three]["desc"]}**".replace("X", str(user.bounty_total_three - user.bounty_progress_three)).replace("type", user.bounty_type_three)
+            colored += (user.bounty_progress_three/user.bounty_total_three)*10/user.bounties
+    colored = int(colored)
+    desc += f"\n\n**Pay Up! {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed.**"
+    desc += f"\n\n**Level {level}** - {change} and more!"
+    desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level+1}"
+    if not level == 0 or not user.hibernation:
+        if int(time.time()) - user.cataine_active < 1800:
+            desc += f"\n\n**Expires <t:{user.cataine_active}:R>**"
+        elif user.cataine_active > 0:
+            desc += f"\n\nExpires <t:{user.cataine_active}:R>"
+    
+    async def pay_cataine(interaction):
+        global_user = await User.get_or_create(user_id=interaction.user.id)
+        nonlocal user, cat_type, amount
+        if level != user.cataine_level:
+            await interaction.response.send_message("nice try", ephemeral=True)
+            return
+        await user.refresh_from_db()
+        for i in range(user.bounties):
+            if i == 0 and user.bounty_progress_one < user.bounty_total_one:
+                await interaction.response.send_message("You haven't completed your bounties yet!", ephemeral=True)
+                return
+            if i == 1 and user.bounty_progress_two < user.bounty_total_two:
+                await interaction.response.send_message("You haven't completed your bounties yet!", ephemeral=True)
+                return
+            if i == 2 and user.bounty_progress_three < user.bounty_total_three:
+                await interaction.response.send_message("You haven't completed your bounties yet!", ephemeral=True)
+                return
+        if user[f"cat_{cat_type}"] < amount:
+            await interaction.response.send_message("You don't have enough cats!", ephemeral=True)
+            return
+        if not user.perk_selected:
+            await interaction.response.send_message("You haven't selected a perk yet!", ephemeral=True)
             return
 
-        type = deal[1]
-        amount = deal[0]
-        embed.add_field(
-            name="🧂 12h of Cataine",
-            value=f"Price: {get_emoji(type.lower() + 'cat')} {amount} {type}",
-        )
+        user.hibernation = True
+        user[f"cat_{cat_type}"] -= amount
+        user.cataine_active = int(time.time()) + int(3600 * level_data["duration"])
+        perks = user.perks
+        perks_info = cataine_list["perks"]
+        if perks:
+            for perk in perks:
+                h = perk.split("_")
+                rarity = h[0]
+                type = h[1]
+                if type == 12:
+                    cataine_active += global_user.vote_streak * 60
+        user.cataine_level = user.cataine_level + 1 # cataine_week++
+        user.cataine_total_cats = 0
+        await set_bounties(level, user)
+        await set_mafia_offer(user.cataine_level, user)
+        perks = await get_perks(level+1, user)
+        perk_embed = discord.Embed(title="Select a perk!", description="The cataine timer will not start until you catch your next cat.\n\n**Available Perks:**")
+        for i, perk in enumerate(perks):
+            perk_embed.add_field(name=perk.get("rarity", ""), value=f"{perk.get('name', '')}\n{perk.get('desc', '')}".replace("percent", str(perk.get("effect", 0))).replace("triple_none", str(perk.get("effect", 0)/2)).replace("timer_add_streak", str(global_user.vote_streak)))
+        perk_embed.set_footer(text="Select a perk to continue.")
+        user.perk_selected = False
+        user.perk1 = perks[0]["uuid"] if len(perks) > 0 else None
+        user.perk2 = perks[1]["uuid"] if len(perks) > 1 else None
+        user.perk3 = perks[2]["uuid"] if len(perks) > 2 else None
+        await user.save()
 
-        async def make_cataine(interaction):
-            nonlocal message, type, amount
-            await user.refresh_from_db()
-            if user[f"cat_{type}"] < amount or user.cataine_active > time.time():
+        async def select_perk(perk, interaction, user):
+            if user.perk_selected:
                 return
-            user[f"cat_{type}"] -= amount
-            user.cataine_active = int(time.time()) + 43200
-            user.cataine_week += 1
-            user.cataine_bought += 1
+            user.perk_selected = True
+            h = list(user.perks) if user.perks else []
+            h.append(perk["uuid"])
+            user.perks = h[:]  # black magic
+            await interaction.response.send_message(f"You selected {perk['name']}".replace("percent", str(perk.get("effect", 0))).replace("triple_none", str(perk.get("effect", 0)/2)).replace("timer_add_streak", str(global_user.vote_streak))[:-1] + "!", ephemeral=True)
             await user.save()
-            await interaction.response.send_message(
-                "The machine spools down. Your cat catches will be doubled for the next 12 hours.",
-                ephemeral=True,
-            )
+
+        async def perk1(interaction):
+            await select_perk(perks[0], interaction, user)
+
+        async def perk2(interaction):
+            await select_perk(perks[1], interaction, user)
+
+        async def perk3(interaction):
+            await select_perk(perks[2], interaction, user)
 
         myview = View(timeout=VIEW_TIMEOUT)
+        button1 = Button(label="  Choice 1  ", style=ButtonStyle.blurple)
+        button2 = Button(label="  Choice 2  ", style=ButtonStyle.blurple)
+        button3 = Button(label="  Choice 3  ", style=ButtonStyle.blurple)
+        button1.callback = perk1
+        button2.callback = perk2
+        button3.callback = perk3
+        myview.add_item(button1)
+        myview.add_item(button2)
+        myview.add_item(button3)
+        await interaction.response.send_message(embed=perk_embed, view=myview, ephemeral=True)
 
-        if user[f"cat_{type}"] >= amount:
-            button = Button(label="Buy", style=ButtonStyle.blurple)
-        else:
-            button = Button(
-                label="You don't have enough cats!",
-                disabled=True,
-            )
-        button.callback = make_cataine
+    async def view_perks(interaction):
+        global_user = await User.get_or_create(user_id=interaction.user.id)
+        user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
+        await user.refresh_from_db()
+        perks = cataine_list["perks"]
+        rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
+        perk_embed = discord.Embed(title="Your Perks", description="Here are your current perks:")
+        if user.perks:
+            user_perks = user.perks
+            for perk in user_perks:
+                perk_data = perks[int(perk.split('_')[1])-1]
+                effect = perk_data["values"][int(perk.split('_')[0])]
+                perk_embed.add_field(name=perk_data.get("name", "").replace("percent", str(effect)).replace("triple_none", str(effect/2)).replace("timer_add_streak", str(global_user.vote_streak)), value=rarities[int(perk.split('_')[0])] + perk_data.get("desc", ""), inline=False)
+        else: 
+            perk_embed.add_field(name="No Perks", value="You have no perks yet. Pay for your first level of cataine to get one!")
+        await interaction.response.send_message(embed=perk_embed, ephemeral=True)
 
-        myview.add_item(button)
+    async def stupid_idiot(interaction):
+        global_user = await User.get_or_create(user_id=interaction.user.id)
+        user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
+        if user.perk_selected:
+            return
+        perks_data = cataine_list["perks"]
+        try:
+            perks = [user.perk1, user.perk2, user.perk3]
+            perk_embed = discord.Embed(title="Select a perk!", description="The cataine timer will not start until you catch your next cat.\n\n**Available Perks:**")
+            for i, perk in enumerate(perks):
+                perk_data = perks_data[int(perk.split('_')[1])-1]
+                effect = perk_data["values"][int(perk.split('_')[0])]
+                perk_embed.add_field(name=perk_data.get("rarity", ""), value=f"{perk_data.get('name', '')}\n{perk_data.get('desc', '')}".replace("percent", str(effect)).replace("triple_none", str(effect/2)).replace("timer_add_streak", str(global_user.vote_streak)))
+            perk_embed.set_footer(text="Select a perk to continue.")
+            user.perk1 = perks[0]["uuid"] if len(perks) > 0 else None
+            user.perk2 = perks[1]["uuid"] if len(perks) > 1 else None
+            user.perk3 = perks[2]["uuid"] if len(perks) > 2 else None
+            user.perk_selected = True
+        except:
+            perks = await get_perks(level, user)
+            perk_embed = discord.Embed(title="Select a perk!", description="The cataine timer will not start until you catch your next cat.\n\n**Available Perks:**")
+            for perk in perks:
+                perk_data = perks_data[int(perk["uuid"].split('_')[1])-1]
+                effect = perk_data["values"][int(perk["uuid"].split('_')[0])]
+                perk_embed.add_field(name=perk_data.get("rarity", ""), value=f"{perk_data.get('name', '')}\n{perk_data.get('desc', '')}".replace("percent", str(effect)).replace("triple_none", str(effect/2)).replace("timer_add_streak", str(global_user.vote_streak)))
+            perk_embed.set_footer(text="Select a perk to continue.")
+            user.perk1 = perks[0]["uuid"] if len(perks) > 0 else None
+            user.perk2 = perks[1]["uuid"] if len(perks) > 1 else None
+            user.perk3 = perks[2]["uuid"] if len(perks) > 2 else None
+            user.perk_selected = True
+        await user.save()
 
-        await message.followup.send(embed=embed, view=myview, ephemeral=True)
-    else:
-        embed = discord.Embed(
-            title="The Mafia Hideout",
-            description=f"the machine is recovering. you can use machine again <t:{user.cataine_active}:R>.",
-        )
-        await message.followup.send(embed=embed, ephemeral=True)
-
-
-async def dark_market(message):
-    cataine_prices = [
-        [5, "Fine"],
-        [5, "Good"],
-        [4, "Wild"],
-        [4, "Epic"],
-        [3, "Brave"],
-        [3, "Reverse"],
-        [2, "Trash"],
-        [2, "Mythic"],
-        [1, "Corrupt"],
-        [1, "Divine"],
-        [100, "eGirl"],
-    ]
-    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    if user.cataine_active < int(time.time()):
-        level = user.dark_market_level
-        embed = discord.Embed(
-            title="The Dark Market",
-            description="after entering the secret code, they let you in. today's deal is:",
-        )
-        embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/dark-market")
-        deal = cataine_prices[level] if level < len(cataine_prices) else cataine_prices[-1]
-        type = deal[1]
-        amount = deal[0]
-        embed.add_field(
-            name="🧂 12h of Cataine",
-            value=f"Price: {get_emoji(type.lower() + 'cat')} {amount} {type}",
-        )
-
-        async def buy_cataine(interaction):
-            nonlocal message, type, amount
-            await user.refresh_from_db()
-            if user[f"cat_{type}"] < amount or user.cataine_active > time.time():
-                return
-            user[f"cat_{type}"] -= amount
-            user.cataine_active = int(time.time()) + 43200
-            user.dark_market_level += 1
-            user.cataine_bought += 1
+        async def select_perk(perk, interaction, user):
+            user.perk_selected = True
+            h = list(user.perks) if user.perks else []
+            h.append(perk["uuid"])
+            user.perks = h[:]  # black magic
+            await interaction.response.send_message(f"You selected {perk['name']}".replace("percent", str(perk.get("effect", 0))).replace("triple_none", str(perk.get("effect", 0)/2)).replace("timer_add_streak", str(global_user.vote_streak))[:-1] + "!", ephemeral=True)
             await user.save()
-            await interaction.response.send_message(
-                "Thanks for buying! Your cat catches will be doubled for the next 12 hours.",
-                ephemeral=True,
-            )
 
-        debounce = False
+        async def perk1(interaction):
+            await select_perk(perks[0], interaction, user)
 
-        async def complain(interaction):
-            nonlocal debounce
-            if debounce:
-                return
-            debounce = True
+        async def perk2(interaction):
+            await select_perk(perks[1], interaction, user)
 
-            person = interaction.user
-            phrases = [
-                "*Because of my addiction I'm paying them a fortune.*",
-                f"**{person}**: Hey, I'm not fine with those prices.",
-                "**???**: Hmm?",
-                "**???**: Oh.",
-                "**???**: It seems you don't understand.",
-                "**???**: We are the ones setting prices, not you.",
-                f"**{person}**: Give me a more fair price or I will report you to the police.",
-                "**???**: Huh?",
-                "**???**: Well, it seems like you chose...",
-                "# DEATH",
-                "**???**: Better start running :)",
-                "*Uh oh.*",
-            ]
-
-            await interaction.response.send_message("*That's not funny anymore. Those prices are insane.*", ephemeral=True)
-            await asyncio.sleep(5)
-            for i in phrases:
-                await interaction.followup.send(i, ephemeral=True)
-                await asyncio.sleep(5)
-
-            # there is actually no time pressure anywhere but try to imagine there is
-            counter = 0
-
-            async def step(interaction):
-                nonlocal counter
-                counter += 1
-                await interaction.response.defer()
-                if counter == 30:
-                    try:
-                        await interaction.edit_original_response(view=None)
-                    except Exception:
-                        pass
-
-                    final_cutscene_followups = [
-                        "You barely manage to turn around a corner and hide to run away.",
-                        "You quietly get to the police station and tell them everything.",
-                        "## The next day.",
-                        "A nice day outside. You open the news:",
-                        "*Dog Mafia, the biggest cataine distributor, was finally caught after anonymous report.*",
-                        "HUH? It was dogs all along...",
-                    ]
-
-                    for phrase in final_cutscene_followups:
-                        await asyncio.sleep(5)
-                        await interaction.followup.send(phrase, ephemeral=True)
-
-                    await asyncio.sleep(5)
-                    user.story_complete = True
-                    await user.save()
-                    await achemb(interaction, "thanksforplaying", "send")
-
-            run_view = View(timeout=VIEW_TIMEOUT)
-            button = Button(label="RUN", style=ButtonStyle.green)
-            button.callback = step
-            run_view.add_item(button)
-
-            await interaction.followup.send(
-                "RUN!\nSpam the button a lot of times as fast as possible to run away!",
-                view=run_view,
-                ephemeral=True,
-            )
+        async def perk3(interaction):
+            await select_perk(perks[2], interaction, user)
 
         myview = View(timeout=VIEW_TIMEOUT)
+        button1 = Button(label="  Choice 1  ", style=ButtonStyle.blurple)
+        button2 = Button(label="  Choice 2  ", style=ButtonStyle.blurple)
+        button3 = Button(label="  Choice 3  ", style=ButtonStyle.blurple)
+        button1.callback = perk1
+        button2.callback = perk2
+        button3.callback = perk3
+        myview.add_item(button1)
+        myview.add_item(button2)
+        myview.add_item(button3)
+        await interaction.response.send_message(embed=perk_embed, view=myview, ephemeral=True)
 
-        if level >= len(cataine_prices) - 1:
-            button = Button(label="What???", style=ButtonStyle.red)
-            button.callback = complain
-        else:
-            if user[f"cat_{type}"] >= amount:
-                button = Button(label="Buy", style=ButtonStyle.blurple)
-            else:
-                button = Button(
-                    label="You don't have enough cats!",
-                    disabled=True,
-                )
-            button.callback = buy_cataine
-        myview.add_item(button)
+        
 
-        await message.followup.send(embed=embed, view=myview, ephemeral=True)
-    else:
-        embed = discord.Embed(
-            title="The Dark Market",
-            description=f"you already bought from us recently. you can do next purchase <t:{user.cataine_active}:R>.",
-        )
-        await message.followup.send(embed=embed, ephemeral=True)
+    myview = View(timeout=VIEW_TIMEOUT)
+    button = Button(label="Pay Up!", style=ButtonStyle.blurple)
+    button.callback = pay_cataine
+    myview.add_item(button)
+    button1 = Button(label="View Perks", style=ButtonStyle.green)
+    button1.callback = view_perks
+    myview.add_item(button1)
+    if not user.perk_selected:
+        button2 = Button(label="Select Perk", style=ButtonStyle.red)
+        button2.callback = stupid_idiot
+        myview.add_item(button2)
 
+    embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", description=desc)
+    await message.followup.send(embed=embed, view=myview, ephemeral=True)
 
 @bot.tree.command(description="View your achievements")
 async def achievements(message: discord.Interaction):
@@ -6213,6 +6585,24 @@ async def achievements(message: discord.Interaction):
         else:
             hidden_counter = 0
 
+        if hidden_counter == 3:
+            await message.response.send_message("Cataine is now located in /cataine.", ephemeral=True)
+        if hidden_counter == 5:
+            await message.response.send_message("Cataine is now located in /cataine.", ephemeral=True)
+        if hidden_counter == 10:
+            await message.response.send_message("Cataine is now located in /cataine.", ephemeral=True)
+        if hidden_counter == 15:
+            await message.response.send_message("I meant it. Cataine is now located in /cataine.", ephemeral=True)
+        if hidden_counter == 20:
+            await message.response.send_message("I really meant it. Cataine is now located in /cataine.\nOh wait, did you want that achievement?", ephemeral=True)
+            await achemb(message, "darkest_market", "send")
+        if hidden_counter == 50:
+            await message.response.send_message("I really, really meant it. Cataine is now located in /cataine.", ephemeral=True)
+        if hidden_counter == 100:
+            await message.response.send_message("Just go away.", ephemeral=True)
+        if hidden_counter == 1000:
+            await message.response.send_message("911 theres a person who knocked on my door 1000 times get them out please", ephemeral=True)
+
         newembed = discord.Embed(
             title=category,
             description=f"Achievements unlocked (total): {unlocked}/{total_achs}{minus_achs}{hidden_suffix}",
@@ -6268,14 +6658,6 @@ async def achievements(message: discord.Interaction):
                 await interaction.edit_original_response(embed=await gen_new(thing), view=insane_view_generator(thing))
             except Exception:
                 pass
-
-            if hidden_counter == 3 and user.dark_market_active:
-                if not user.story_complete:
-                    # open the totally not suspicious dark market
-                    await dark_market(message)
-                else:
-                    await light_market(message)
-                await achemb(message, "dark_market", "followup")
 
             if hidden_counter == 20:
                 await achemb(interaction, "darkest_market", "send")
