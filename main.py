@@ -3618,7 +3618,7 @@ if config.DONOR_CHANNEL_ID:
             embed = discord.Embed(
                 color=Colors.brown,
                 title="🌠 Cat Blessings",
-                description=f"""When enabled, random Cat Bot users will have their cats blessed by you - and their catches will be doubled!
+                description=f"""When enabled, random Cat Bot users will have their cats blessed by you - and their catches will be doubled! Your bless chance increases by *0.0001%* per minute of rain bought.
 
 Your blessings are currently **{"enabled" if user.blessings_enabled else "disabled"}**.
 Cats you blessed: **{user.cats_blessed:,}**
