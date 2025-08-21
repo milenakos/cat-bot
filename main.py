@@ -1803,12 +1803,14 @@ async def on_message(message: discord.Message):
                 suffix_string = ""
                 silly_amount = 1
 
-                # add blessings
-                if random.randint(1, 100) == 69:
+                # blessings
+                bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001 * 0.01
+                if bless_chance > random.random():
                     # woo we got blessed thats pretty cool
                     silly_amount *= 2
 
-                    blesser = (await User.collect("blessings_enabled = true ORDER BY RANDOM() LIMIT 1"))[0]
+                    blesser_l = await User.collect("blessings_enabled = true AND rain_minutes_bought > 0 ORDER BY -ln(random()) / rain_minutes_bought LIMIT 1")
+                    blesser = blesser_l[0]
                     blesser.cats_blessed += 1
                     await blesser.save()
 
@@ -3610,13 +3612,19 @@ if config.DONOR_CHANNEL_ID:
             else:
                 blesser = f"{user.emoji or '💫'} {message.user.name}"
 
+            user_bless_chance = user.rain_minutes_bought * 0.0001
+            global_bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001
+
             embed = discord.Embed(
                 color=Colors.brown,
                 title="🌠 Cat Blessings",
                 description=f"""When enabled, random Cat Bot users will have their cats blessed by you - and their catches will be doubled!
 
-Blessings are currently **{"enabled" if user.blessings_enabled else "disabled"}**.
-Cats blessed: **{user.cats_blessed}**
+Your blessings are currently **{"enabled" if user.blessings_enabled else "disabled"}**.
+Cats you blessed: **{user.cats_blessed:,}**
+
+Your bless chance is **{user_bless_chance:.4f}%**
+Global bless chance is **{global_bless_chance:.4f}%**
 
 Blessing message preview:
 {blesser} blessed your catch and it got doubled!
