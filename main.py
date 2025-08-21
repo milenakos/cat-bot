@@ -1276,6 +1276,7 @@ async def on_message(message: discord.Message):
             user.rain_minutes += 20
         else:
             user.rain_minutes += int(things[2])
+            user.rain_minutes_bought += int(things[2])
         user.premium = True
         await user.save()
 
@@ -3041,6 +3042,7 @@ async def gen_stats(profile, star):
     stats.append(["☔", "Rains"])
     stats.append(["current_rain_minutes", "☔", f"Current rain minutes: {user.rain_minutes:,}"])
     stats.append(["supporter", "👑", "Ever bought rains: " + ("Yes" if user.premium else "No")])
+    stats.append(["rain_minutes_bought", "☔", f"Rain minutes bought: {user.rain_minutes_bought:,}"])
     stats.append(["cats_caught_during_rains", "☔", f"Cats caught during rains: {profile.rain_participations:,}{star}"])
     stats.append(["rain_minutes_started", "☔", f"Rain minutes started: {profile.rain_minutes_started:,}{star}"])
     stats.append(["cats_blessed", "🌠", f"Cats blessed: {user.cats_blessed:,}"])

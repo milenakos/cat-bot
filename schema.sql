@@ -310,7 +310,8 @@ CREATE TABLE public."user" (
     streak_freezes integer DEFAULT 0,
     cats_blessed bigint DEFAULT 0,
     blessings_enabled boolean DEFAULT false,
-    blessings_anonymous boolean DEFAULT false
+    blessings_anonymous boolean DEFAULT false,
+    rain_minutes_bought integer DEFAULT 0
 );
 
 
