@@ -29,7 +29,8 @@ CREATE TABLE public.channel (
     webhook character varying(255) DEFAULT ''::character varying,
     forcespawned boolean DEFAULT false,
     cattype character varying(20) DEFAULT ''::character varying,
-    cat_rains bigint DEFAULT 0
+    cat_rains bigint DEFAULT 0,
+    rain_should_end bigint DEFAULT 0
 );
 
 

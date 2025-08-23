@@ -1854,6 +1854,10 @@ async def on_message(message: discord.Message):
                         normal_bump = False
                         if not channel.forcespawned:
                             channel.cat_rains += math.ceil(600 / 2.75)
+                            if channel.rain_should_end == 0:
+                                channel.rain_should_end = int(time.time() + 600 * 1.2)
+                            else:
+                                channel.rain_should_end += int(600 * 1.2)
                             channel.yet_to_spawn = 0
                             await channel.save()
                             if channel.cat_rains > math.ceil(600 / 2.75):
@@ -2090,6 +2094,20 @@ async def on_message(message: discord.Message):
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
                     except Exception:
                         pass
+                    if channel.cat_rains and channel.rain_should_end and channel.rain_should_end < time.time():
+                        # revive the rain
+                        print(message.guild.id, channel.cat_rains, channel.yet_to_spawn, channel.rain_should_end)
+
+                        channel.cat_rains += 3  # compensation
+
+                        await message.channel.send(f"oops the rain broke, it will now continue ({channel.cat_rains} cats left)")
+                        channel.rain_should_end = int(time.time() + (channel.cat_rains * 2.75) * 1.2)
+                        channel.yet_to_spawn = 0
+                        await channel.save()
+
+                        await asyncio.sleep(3)
+
+                        await actually_do_rain(message, channel)
 
     if text.lower().startswith("cat!amount") and perms.send_messages and (not message.thread or perms.send_messages_in_threads):
         user = await User.get_or_create(user_id=message.author.id)
@@ -3380,6 +3398,9 @@ async def actually_do_rain(message, channel):
         channel.cat_rains -= 1
         await channel.save()
 
+    channel.rain_should_end = 0
+    await channel.save()
+
     await asyncio.sleep(1)
 
     try:
@@ -3529,6 +3550,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
         profile.rain_minutes_started += rain_length
         channel.cat_rains = math.ceil(rain_length * 60 / 2.75)
+        channel.rain_should_end = int(time.time() + rain_length * 60 * 1.2)
         channel.yet_to_spawn = 0
         await channel.save()
         if profile.rain_minutes:
