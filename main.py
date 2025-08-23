@@ -1704,7 +1704,7 @@ async def on_message(message: discord.Message):
             temp_catches_storage.append(channel.cat)
             decided_time = random.uniform(channel.spawn_times_min, channel.spawn_times_max)
 
-            if channel.cat_rains != 0:
+            if channel.cat_rains > 0:
                 # we dont schedule next spawn during rains
                 decided_time = 0
 
@@ -1797,7 +1797,7 @@ async def on_message(message: discord.Message):
                 except Exception:
                     pass
 
-                if channel.cat_rains != 0:
+                if channel.cat_rains > 0:
                     do_time = False
 
                 suffix_string = ""
@@ -2020,7 +2020,7 @@ async def on_message(message: discord.Message):
                 if time_caught > 0 and time_caught == int(time_caught):
                     user.perfection_count += 1
 
-                if channel.cat_rains != 0:
+                if channel.cat_rains > 0:
                     user.rain_participations += 1
 
                 await user.save()
@@ -2029,7 +2029,7 @@ async def on_message(message: discord.Message):
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT":
                     await achemb(message, "loud_cat", "send")
-                if channel.cat_rains != 0:
+                if channel.cat_rains > 0:
                     await achemb(message, "cat_rain", "send")
 
                 await achemb(message, "first", "send")
@@ -2094,7 +2094,7 @@ async def on_message(message: discord.Message):
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
                     except Exception:
                         pass
-                    if channel.cat_rains and channel.rain_should_end and channel.rain_should_end < time.time():
+                    if channel.cat_rains > 0 and channel.rain_should_end and channel.rain_should_end < time.time():
                         # revive the rain
                         print(message.guild.id, channel.cat_rains, channel.yet_to_spawn, channel.rain_should_end)
 
@@ -3383,7 +3383,7 @@ __Highlighted Stat__
 
 async def actually_do_rain(message, channel):
     first_spawn = True
-    while channel.cat_rains != 0:
+    while channel.cat_rains > 0:
         if first_spawn:
             first_spawn = False
         else:
@@ -3512,7 +3512,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             await interaction.response.send_message("please catch the cat in this channel first.", ephemeral=True)
             return
 
-        if channel.cat_rains != 0:
+        if channel.cat_rains > 0:
             await interaction.response.send_message("there is already a rain running!", ephemeral=True)
             return
 
