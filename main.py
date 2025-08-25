@@ -5555,7 +5555,7 @@ async def roulette(message: discord.Interaction):
 
     # this is the silly popup when you click the button
     class RouletteModel(discord.ui.Modal):
-        def __init__(self, type):
+        def __init__(self):
             super().__init__(
                 title="place a bet idfk",
                 timeout=3600,
@@ -5700,7 +5700,7 @@ async def roulette(message: discord.Interaction):
     embed = discord.Embed(
         color=Colors.maroon,
         title="fucking roulette table",
-        description=f"your balance is **{user.roulette_balance}** cat dollars\nyou can gamble up to **{max(user.roulette_balance, 100)}** cat dollars rn\n\nselect a way to bet",
+        description=f"your balance is **{user.roulette_balance}** cat dollars\n\nyou can gamble up to **{max(user.roulette_balance, 100)}** cat dollars rn",
     )
 
     view = View(timeout=VIEW_TIMEOUT)
