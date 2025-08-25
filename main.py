@@ -3073,6 +3073,8 @@ async def gen_stats(profile, star):
     stats.append(["slot_spins", "🎰", f"Slot spins: {profile.slot_spins:,}"])
     stats.append(["slot_wins", "🎰", f"Slot wins: {profile.slot_wins:,}"])
     stats.append(["slot_big_wins", "🎰", f"Slot big wins: {profile.slot_big_wins:,}"])
+    stats.append(["roulette_spins", "💰", f"Roulette spins: {profile.roulette_spins:,}"])
+    stats.append(["roulette_wins", "💰", f"Roulette wins: {profile.roulette_wins:,}"])
 
     # tic tac toe
     stats.append(["⭕", "Tic Tac Toe"])
@@ -5671,7 +5673,7 @@ async def roulette(message: discord.Interaction):
                 embed = discord.Embed(
                     color=Colors.maroon,
                     title="woo its spinnin",
-                    description=f"your bet: {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**",
+                    description=f"your bet is {self.betamount.value} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**",
                 )
                 await interaction.edit_original_response(embed=embed, view=None)
                 await asyncio.sleep(wait_time)
@@ -5680,7 +5682,7 @@ async def roulette(message: discord.Interaction):
             embed = discord.Embed(
                 color=Colors.maroon,
                 title="winner!!!" if win else "womp womp",
-                description=f"your bet: {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance}** cat dollars",
+                description=f"your bet is {self.betamount.value} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{int(user.roulette_balance) if user.roulette_balance == int(user.roulette_balance) else user.roulette_balance}** cat dollars",
             )
             view = View(timeout=VIEW_TIMEOUT)
             b = Button(label="spin", style=ButtonStyle.blurple)
@@ -6543,7 +6545,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies", "Pig"]],
+    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies", "Pig", "Roulette Dollars"]],
     cat_type: Optional[str],
     locked: Optional[bool],
 ):
@@ -6647,6 +6649,12 @@ async def leaderboards(
                 ["user_id", "best_pig_score"], "guild_id = $1 AND best_pig_score > 0 ORDER BY best_pig_score DESC", message.guild.id
             )
             final_value = "best_pig_score"
+        elif type == "Roulette Dollars":
+            unit = "score"
+            result = await Profile.collect_limit(
+                ["user_id", "roulette_dollars"], "guild_id = $1 AND roulette_dollars != 0 ORDER BY roulette_dollars DESC", message.guild.id
+            )
+            final_value = "roulette_dollars"
         else:
             # qhar
             return
@@ -6733,6 +6741,8 @@ async def leaderboards(
                     num = round(num, 3)
                 elif type in ["Cookies", "Cats", "Pig"] and num <= 0:
                     break
+                elif type == "Roulette Dollars" and num == 0:
+                    break
                 string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
 
             if message.user.id == i["user_id"] and current <= 5:
@@ -6799,7 +6809,7 @@ async def leaderboards(
                 disabled=locked,
             )
 
-        emojied_options = {"Cats": "🐈", "Value": "🧮", "Fast": "⏱️", "Slow": "💤", "Battlepass": "⬆️", "Cookies": "🍪", "Pig": "🎲"}
+        emojied_options = {"Cats": "🐈", "Value": "🧮", "Fast": "⏱️", "Slow": "💤", "Battlepass": "⬆️", "Cookies": "🍪", "Pig": "🎲", "Roulette Dollars": "💰"}
         options = [Option(label=k, emoji=v) for k, v in emojied_options.items()]
         lb_select = Select(
             "lb_type",
