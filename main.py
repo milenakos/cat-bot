@@ -5591,7 +5591,7 @@ async def roulette(message: discord.Interaction):
                 return
 
             try:
-                bet_amount = float(self.betamount.value)
+                bet_amount = int(self.betamount.value)
                 if bet_amount <= 0:
                     await interaction.response.send_message("bet amount must be greater than 0", ephemeral=True)
                     return
@@ -5664,7 +5664,7 @@ async def roulette(message: discord.Interaction):
                     user.roulette_balance += bet_amount * 2
                 user.roulette_wins += 1
                 win = True
-            user.roulette_balance = round(user.roulette_balance, 2)
+            user.roulette_balance = int(round(user.roulette_balance))
             await user.save()
 
             for wait_time in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.5]:
@@ -5673,7 +5673,7 @@ async def roulette(message: discord.Interaction):
                 embed = discord.Embed(
                     color=Colors.maroon,
                     title="woo its spinnin",
-                    description=f"your bet is {self.betamount.value} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**",
+                    description=f"your bet is {int(self.betamount.value):,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**",
                 )
                 await interaction.edit_original_response(embed=embed, view=None)
                 await asyncio.sleep(wait_time)
@@ -5682,7 +5682,7 @@ async def roulette(message: discord.Interaction):
             embed = discord.Embed(
                 color=Colors.maroon,
                 title="winner!!!" if win else "womp womp",
-                description=f"your bet is {self.betamount.value} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{int(user.roulette_balance) if user.roulette_balance == int(user.roulette_balance) else user.roulette_balance}** cat dollars",
+                description=f"your bet was {int(self.betamount.value):,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance:,}** cat dollars",
             )
             view = View(timeout=VIEW_TIMEOUT)
             b = Button(label="spin", style=ButtonStyle.blurple)
@@ -5705,7 +5705,7 @@ async def roulette(message: discord.Interaction):
     embed = discord.Embed(
         color=Colors.maroon,
         title="fucking roulette table",
-        description=f"your balance is **{user.roulette_balance}** cat dollars\n\nyou can gamble up to **{max(user.roulette_balance, 100)}** cat dollars rn",
+        description=f"your balance is **{user.roulette_balance:,}** cat dollars\n\nyou can gamble up to **{max(user.roulette_balance, 100):,}** cat dollars rn",
     )
 
     view = View(timeout=VIEW_TIMEOUT)
