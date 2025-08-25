@@ -5691,6 +5691,7 @@ async def roulette(message: discord.Interaction):
             await interaction.edit_original_response(embed=embed, view=view)
 
             if win:
+                await progress(message, user, "roulette")
                 await achemb(interaction, "roulette_winner", "send")
             if funny_win:
                 await achemb(interaction, "roulette_prodigy", "send")
