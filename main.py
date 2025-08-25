@@ -6652,9 +6652,9 @@ async def leaderboards(
         elif type == "Roulette Dollars":
             unit = "score"
             result = await Profile.collect_limit(
-                ["user_id", "roulette_dollars"], "guild_id = $1 AND roulette_dollars != 0 ORDER BY roulette_dollars DESC", message.guild.id
+                ["user_id", "roulette_balance"], "guild_id = $1 AND roulette_balance != 0 ORDER BY roulette_balance DESC", message.guild.id
             )
-            final_value = "roulette_dollars"
+            final_value = "roulette_balance"
         else:
             # qhar
             return
