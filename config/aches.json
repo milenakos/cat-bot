@@ -27,6 +27,7 @@
   "win_slots": {"title": "Pro Gambler", "description": "win at the /slots machine", "is_hidden": false, "category": "Commands"},
   "define": {"title": "Definer", "description": "find out a definition of a word", "is_hidden": false, "category": "Commands"},
   "cookieclicker": {"title": "Cookie Clicker", "description": "click a cookie", "is_hidden": false, "category": "Commands"},
+  "roulette_winner": {"title": "Roulette Winner", "description": "win at the /roulette game", "is_hidden": false, "category": "Commands"},
 
   "pineapple": {"title": "Pineapple", "description": "you said \"pineapple\". i have no idea why", "is_hidden": false, "category": "Random"},
   "dm": {"title": "DM", "description": "dm cat", "is_hidden": true, "category": "Random"},
@@ -87,6 +88,7 @@
   "cookiesclicked": {"title": "Cookies Clicked", "description": "collect 5,000 cookies", "is_hidden": true, "category": "Hard"},
   "pig100": {"title": "Pig Champion", "description": "finish with 100+ score in /pig", "is_hidden": false, "category": "Hard"},
   "sphere_ach": {"title": "Sphere Roller", "description": "your sphere lands you an ach", "is_hidden": false, "category": "Hard"},
+  "roulette_prodigy": {"title": "Roulette Prodigy", "description": "win with green or number at /roulette", "is_hidden": true, "category": "Hard"},
 
   "catn": {"title": "Cat'n", "description": "no cat??? :megamind:", "is_hidden": true, "category": "Hidden"},
   "coupon_user": {"title": "Coupon User", "description": "use a coupon for a 10% discount on all cats!!!", "is_hidden": true, "category": "Hidden"},

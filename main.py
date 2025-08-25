@@ -5549,6 +5549,168 @@ async def slots(message: discord.Interaction):
     await message.response.send_message(embed=embed, view=myview)
 
 
+@bot.tree.command(description="what")
+async def roulette(message: discord.Interaction):
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+
+    # this is the silly popup when you click the button
+    class RouletteModel(discord.ui.Modal):
+        def __init__(self, type):
+            super().__init__(
+                title="place a bet idfk",
+                timeout=3600,
+            )
+
+            self.bettype = discord.ui.TextInput(
+                min_length=1,
+                max_length=2,
+                label="choose a bet",
+                style=discord.TextStyle.short,
+                required=True,
+                placeholder="red / black / green / 0 / 1 / 2 / 3 / ... / 36",
+            )
+            self.add_item(self.bettype)
+
+            self.betamount = discord.ui.TextInput(
+                min_length=1,
+                max_length=2,
+                label="bet amount (in cat dollars)",
+                style=discord.TextStyle.short,
+                required=True,
+                placeholder="69",
+            )
+            self.add_item(self.betamount)
+
+        async def on_submit(self, interaction: discord.Interaction):
+            await user.refresh_from_db()
+
+            valids = ["red", "black", "green"] + [str(i) for i in range(37)]
+            if self.bettype.value.lower() not in valids:
+                await interaction.response.send_message("invalid bet", ephemeral=True)
+                return
+
+            try:
+                bet_amount = float(self.betamount.value)
+                if bet_amount <= 0:
+                    await interaction.response.send_message("bet amount must be greater than 0", ephemeral=True)
+                    return
+                if bet_amount > max(user.roulette_balance, 100):
+                    await interaction.response.send_message(f"your max bet is {max(user.roulette_balance, 100)}", ephemeral=True)
+                    return
+            except ValueError:
+                await interaction.response.send_message("invalid bet amount", ephemeral=True)
+                return
+
+            await interaction.response.defer()
+
+            # mapping of colors to numbers by indexes
+            colors = [
+                "green",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+            ]
+
+            emoji_map = {
+                "red": "🔴",
+                "black": "⚫",
+                "green": "🟢",
+            }
+
+            final_choice = random.randint(0, 36)
+            user.roulette_balance -= bet_amount
+            user.roulette_spins += 1
+            win = False
+            funny_win = False
+            if str(final_choice) == self.bettype.value or colors[final_choice] == self.bettype.value.lower():
+                if self.bettype.value in [str(i) for i in range(37)] or self.bettype.value.lower() == "green":
+                    user.roulette_balance += bet_amount * 36
+                    funny_win = True
+                else:
+                    user.roulette_balance += bet_amount * 2
+                user.roulette_wins += 1
+                win = True
+            user.roulette_balance = round(user.roulette_balance, 2)
+            await user.save()
+
+            for wait_time in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.5]:
+                choice = random.randint(0, 36)
+                color = colors[choice]
+                embed = discord.Embed(
+                    color=Colors.maroon,
+                    title="woo its spinnin",
+                    description=f"your bet: {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**",
+                )
+                await interaction.edit_original_response(embed=embed, view=None)
+                await asyncio.sleep(wait_time)
+
+            color = colors[final_choice]
+            embed = discord.Embed(
+                color=Colors.maroon,
+                title="winner!!!" if win else "womp womp",
+                description=f"your bet: {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**\n\nyour new balance is **{user.roulette_balance}** cat dollars",
+            )
+            view = View(timeout=VIEW_TIMEOUT)
+            b = Button(label="spin", style=ButtonStyle.blurple)
+            b.callback = modal_select
+            view.add_item(b)
+            await interaction.edit_original_response(embed=embed, view=view)
+
+            if win:
+                await achemb(interaction, "roulette_winner", "send")
+            if funny_win:
+                await achemb(interaction, "roulette_prodigy", "send")
+
+    async def modal_select(interaction: discord.Interaction):
+        await interaction.response.send_modal(RouletteModel())
+
+    embed = discord.Embed(
+        color=Colors.maroon,
+        title="fucking roulette table",
+        description=f"your balance is **{user.roulette_balance}** cat dollars\nyou can gamble up to **{max(user.roulette_balance, 100)}** cat dollars rn\n\nselect a way to bet",
+    )
+
+    view = View(timeout=VIEW_TIMEOUT)
+    b = Button(label="spin", style=ButtonStyle.blurple)
+    b.callback = modal_select
+    view.add_item(b)
+
+    await message.response.send_message(embed=embed, view=view)
+
+
 @bot.tree.command(description="roll a dice")
 async def roll(message: discord.Interaction, sides: Optional[int]):
     if sides is None:

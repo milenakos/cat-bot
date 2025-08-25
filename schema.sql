@@ -250,7 +250,12 @@ CREATE TABLE public.profile (
     pig50 boolean DEFAULT false,
     pig100 boolean DEFAULT false,
     sphere_easter_egg smallint DEFAULT 0,
-    sphere_ach boolean DEFAULT false
+    sphere_ach boolean DEFAULT false,
+    roulette_balance bigint DEFAULT 100,
+    roulette_wins integer DEFAULT 0,
+    roulette_spins integer DEFAULT 0,
+    roulette_winner boolean DEFAULT false,
+    roulette_prodigy boolean DEFAULT false
 );
 
 
