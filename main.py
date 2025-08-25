@@ -6650,9 +6650,9 @@ async def leaderboards(
             )
             final_value = "best_pig_score"
         elif type == "Roulette Dollars":
-            unit = "score"
+            unit = "cat dollars"
             result = await Profile.collect_limit(
-                ["user_id", "roulette_balance"], "guild_id = $1 AND roulette_balance != 0 ORDER BY roulette_balance DESC", message.guild.id
+                ["user_id", "roulette_balance"], "guild_id = $1 AND roulette_balance != 100 ORDER BY roulette_balance DESC", message.guild.id
             )
             final_value = "roulette_balance"
         else:
@@ -6741,7 +6741,7 @@ async def leaderboards(
                     num = round(num, 3)
                 elif type in ["Cookies", "Cats", "Pig"] and num <= 0:
                     break
-                elif type == "Roulette Dollars" and num == 0:
+                elif type == "Roulette Dollars" and num == 100:
                     break
                 string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
 
