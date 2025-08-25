@@ -5704,7 +5704,7 @@ async def roulette(message: discord.Interaction):
 
     embed = discord.Embed(
         color=Colors.maroon,
-        title="fucking roulette table",
+        title="hecking roulette table",
         description=f"your balance is **{user.roulette_balance:,}** cat dollars\n\nyou can gamble up to **{max(user.roulette_balance, 100):,}** cat dollars rn",
     )
 
