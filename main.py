@@ -5694,6 +5694,8 @@ async def roulette(message: discord.Interaction):
                 await achemb(interaction, "roulette_winner", "send")
             if funny_win:
                 await achemb(interaction, "roulette_prodigy", "send")
+            if user.roulette_balance < 0:
+                await achemb(interaction, "failed_gambler", "send")
 
     async def modal_select(interaction: discord.Interaction):
         if interaction.user != message.user:
@@ -5714,6 +5716,9 @@ async def roulette(message: discord.Interaction):
     view.add_item(b)
 
     await message.response.send_message(embed=embed, view=view)
+
+    if user.roulette_balance < 0:
+        await achemb(message, "failed_gambler", "send")
 
 
 @bot.tree.command(description="roll a dice")

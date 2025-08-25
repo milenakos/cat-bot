@@ -45,6 +45,7 @@
   "egril": {"title": "Electronic Grill", "description": "love some eGrills", "is_hidden": false, "category": "Random"},
   "bwomp": {"title": "Bwomp", "description": "bwomp is a funny sound they use on tiktok", "is_hidden": false, "category": "Random"},
   "pig50": {"title": "Pig Expert", "description": "finish with 50+ score in /pig", "is_hidden": false, "category": "Random"},
+  "failed_gambler": {"title": "Failed Gambler", "description": "get to negatives in /roulette", "is_hidden": false, "category": "Random"},
 
   "silly": {"title": "Silly", "description": "triple-react!", "is_hidden": false, "category": "Silly"},
   "nice": {"title": "Nice!", "description": "gift 69 nice cats", "is_hidden": false, "category": "Silly"},
