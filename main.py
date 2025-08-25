@@ -5563,7 +5563,7 @@ async def roulette(message: discord.Interaction):
 
             self.bettype = discord.ui.TextInput(
                 min_length=1,
-                max_length=2,
+                max_length=5,
                 label="choose a bet",
                 style=discord.TextStyle.short,
                 required=True,
@@ -5573,7 +5573,6 @@ async def roulette(message: discord.Interaction):
 
             self.betamount = discord.ui.TextInput(
                 min_length=1,
-                max_length=2,
                 label="bet amount (in cat dollars)",
                 style=discord.TextStyle.short,
                 required=True,
