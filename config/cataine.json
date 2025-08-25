@@ -1,0 +1,53 @@
+{
+    "perks": [
+        {"id": "double", "num": 1, "exclusive": 0, "name":"**percent%** chance of **doubling** cats on catch.", "weight": 25, "values": [5, 7.5, 12.5, 25, 37.5]},
+        {"id": "triple_none", "num": 2, "exclusive": 0, "name":"**percent%** chance of **tripling** cats on catch,\nbut **triple_none**% chance of getting **no** cats on catch.", "weight": 10, "values": [3, 4.5, 7.5, 15, 22.5]},
+        {"id": "wooden_pack", "num": 3, "exclusive": 0, "name":"**percent%** chance of recieving a **wooden pack** on catch.", "weight": 2.5, "values": [1.5, 2.25, 3.75, 7.5, 11.25]},
+        {"id": "stone_pack", "num": 4, "exclusive": 0, "name":"**percent%** chance of recieving a **stone pack** on catch.", "weight": 2.5, "values": [1, 1.5, 2.5, 5, 7.5]},
+        {"id": "bronze_pack", "num": 5, "exclusive": 0, "name":"**percent%** chance of recieving a **bronze pack** on catch.", "weight": 2.5, "values": [0.75, 1.125, 1.875, 3.75, 5.625]},
+        {"id": "silver_pack", "num": 6, "exclusive": 0, "name":"**percent%** chance of recieving a **silver pack** on catch.", "weight": 2.5, "values": [0.5, 0.75, 1.25, 2.5, 3.75]},
+        {"id": "gold_pack", "num": 7, "exclusive": 0, "name":"**percent%** chance of recieving a **gold pack** on catch.", "weight": 2.5, "values": [0.25, 0.375, 0.625, 1.25, 1.875]},
+        {"id": "platinum_pack", "num": 8, "exclusive": 0, "name":"**percent%** chance of recieving a **platinum pack** on catch.", "weight": 2.5, "values": [0.125, 0.1875, 0.3125, 0.625, 0.9375]},
+        {"id": "double_boost", "num": 9, "exclusive": 0, "name":"**percent%** chance of prisms boosting catches by **two rarity levels**.", "weight": 5, "values": [10, 15, 25, 50, 75]},
+        {"id": "ach_triple", "num": 10, "exclusive": 1, "name":"**Purrfection and All The Same** times on catch **triple** cats recieved.", "weight": 10, "values": [100, 0, 0, 0, 0]},
+        {"id": "timer_add", "num": 11, "exclusive": 0, "name":"**percent%** chance of adding **5 minutes** to cataine timer on catch.", "weight": 10, "values": [1, 1.5, 2.5, 5, 7.5]},
+        {"id": "timer_add_streak", "num": 12, "exclusive": 1, "name":"Your vote streak **(timer_add_streak)** boosts cataine duration.", "weight": 5, "values": [0, 0, 0, 0, 100]},
+        {"id": "double_slow", "num": 13, "exclusive": 1, "name":"Cats cought in **percent minutes** or more always **double**.", "weight": 5, "values": [10, 15, 25, 50, 75]},
+        {"id": "double_first", "num": 14, "exclusive": 0, "name":"The first **percent** cats cought each level always **double**.", "weight": 5, "values": [8, 12, 20, 40, 60]}
+    ],
+    "quotes":[
+        "\\* The power of cataine fills you with determination",
+        "cataine is a good 👍👍👍👍😌😌",
+        "99% of cataine users level down before they hit a legendary perk",
+        "cataine is the best",
+        "they trapped me in a basement and forced to write these lines, please help",
+        "you can't help but imagine if that shadow was your imagination or not",
+        "was that shadow... the shadow of my future self?",
+        "Cat rains are powerful power-ups which — oh wait wrong line",
+        "me when the best way to fix an absurdly broken system is to just replace it with something else entirely and call it the same name: :aysm:",
+        "geometry dash item asylum abotminbnr discord bot i think i eat sand sometimes",
+        "these quotes are sourced ethically. probably, i didn't check",
+        "The mysterious shadow is sphere-shaped?",
+        "You sphere lands on a very good cataine deal!",
+        "cat machine > cell machine"
+    ],
+    "bounties":[
+        {"id": 0, "desc": "Catch X cats"},
+        {"id": 1, "desc": "Catch X type cats"},
+        {"id": 2, "desc": "Catch X type or rarer cats"}
+    ],
+    "levels": [
+    {"level": 0, "name": "Newbie", "duration": 0, "cost": 0, "bounty_difficulty": 0, "bounty_amount": 0, "change": "No Change", "weights": {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}},
+    {"level": 1, "name": "Lurker", "duration": 1, "cost": 20, "bounty_difficulty": 2, "bounty_amount": 1, "change": "Cataine.", "weights": {"common": 70, "uncommon": 20, "rare": 10, "epic": 0, "legendary": 0}},
+    {"level": 2, "name": "Associate", "duration": 1, "cost": 50, "bounty_difficulty": 4, "bounty_amount": 1, "change": "Chance of Epic", "weights": {"common": 64, "uncommon": 25, "rare": 10, "epic": 1, "legendary": 0}},
+    {"level": 3, "name": "Soldier", "duration": 1, "cost": 100, "bounty_difficulty": 6, "bounty_amount": 1, "change": "Chance of Legendary", "weights": {"common": 57, "uncommon": 25, "rare": 15, "epic": 2, "legendary": 1}},
+    {"level": 4, "name": "Capo", "duration": 1, "cost": 150, "bounty_difficulty": 10, "bounty_amount": 1, "change": "New Perk", "weights": {"common": 48, "uncommon": 30, "rare": 15, "epic": 5, "legendary": 2}},
+    {"level": 5, "name": "Consigliere", "duration": 1, "cost": 200, "bounty_difficulty": 15, "bounty_amount": 2, "change": "New Bounty", "weights": {"common": 40, "uncommon": 30, "rare": 20, "epic": 6, "legendary": 4}},
+    {"level": 6, "name": "Underboss", "duration": 1.5, "cost": 300, "bounty_difficulty": 25, "bounty_amount": 2, "change": "Higher Duration", "weights": {"common": 30, "uncommon": 30, "rare": 20, "epic": 12, "legendary": 8}},
+    {"level": 7, "name": "Boss", "duration": 1.5, "cost": 400, "bounty_difficulty": 40, "bounty_amount": 2, "change": "More Hibernation", "weights": {"common": 20, "uncommon": 30, "rare": 25, "epic": 15, "legendary": 10}},
+    {"level": 8, "name": "Godfather", "duration": 2, "cost": 600, "bounty_difficulty": 70, "bounty_amount": 2, "change": "New Perk", "weights": {"common": 15, "uncommon": 20, "rare": 30, "epic": 20, "legendary": 15}},
+    {"level": 9, "name": "Kingpin", "duration": 2, "cost": 1000, "bounty_difficulty": 150, "bounty_amount": 3, "change": "New Bounty", "weights": {"common": 5, "uncommon": 10, "rare": 35, "epic": 30, "legendary": 20}},
+    {"level": 10, "name": "El Patrón", "duration": 3, "cost": 2000, "bounty_difficulty": 400, "bounty_amount": 3, "change": "Higher Duration", "weights": {"common": 0, "uncommon": 5, "rare": 35, "epic": 35, "legendary": 25}},
+    {"level": 11, "name": "Most Wanted", "duration": 5, "cost": 5000, "bounty_difficulty": 2000, "bounty_amount": 3, "change": "Higher Duration", "weights": {"common": 0, "uncommon": 0, "rare": 30, "epic": 40, "legendary": 30}}
+    ]
+}
