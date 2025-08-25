@@ -5680,7 +5680,7 @@ async def roulette(message: discord.Interaction):
             embed = discord.Embed(
                 color=Colors.maroon,
                 title="winner!!!" if win else "womp womp",
-                description=f"your bet: {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**\n\nyour new balance is **{user.roulette_balance}** cat dollars",
+                description=f"your bet: {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance}** cat dollars",
             )
             view = View(timeout=VIEW_TIMEOUT)
             b = Button(label="spin", style=ButtonStyle.blurple)
