@@ -5696,6 +5696,10 @@ async def roulette(message: discord.Interaction):
                 await achemb(interaction, "roulette_prodigy", "send")
 
     async def modal_select(interaction: discord.Interaction):
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+
         await interaction.response.send_modal(RouletteModel())
 
     embed = discord.Embed(
