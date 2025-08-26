@@ -1,19 +1,3 @@
-# Cat Bot - A Discord bot about catching cats.
-# Copyright (C) 2025 Lia Milenakos & Cat Bot Contributors
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 import io
 import os
 
@@ -27,7 +11,6 @@ def getsize(font, token):
     # thanks pillow
     left, top, right, bottom = font.getbbox(token)
     return right - left, bottom - top
-
 
 def msg2img(message):
     move = 0
@@ -76,7 +59,7 @@ def msg2img(message):
         lines = []
         pings = []
 
-        pilmoji_inst = Pilmoji(Image.new("RGBA", (1, 1)), emoji_scale_factor=45 / 33)
+        pilmoji_inst = Pilmoji(Image.new("RGBA", (1, 1)), emoji_scale_factor=45/33)
 
         if not text:
             return lines, pings
@@ -102,7 +85,9 @@ def msg2img(message):
                         else:
                             lines.append(part_moved)
                             if not saved_width_of_line:
-                                saved_width_of_line = in_word_width - pilmoji_inst.getsize(i, font)[0] + 7
+                                saved_width_of_line = (
+                                    in_word_width - pilmoji_inst.getsize(i, font)[0] + 7
+                                )
                             in_word_width = 0
                             width_of_line = 0
                             part_moved = ""
@@ -120,6 +105,7 @@ def msg2img(message):
             lines.append(line)
         return lines, pings
 
+    print(os.path.abspath('.'))  # woo debugging
     font = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 32)  # load fonts
     font2 = ImageFont.truetype(os.path.abspath("./fonts/ggsans-Medium.ttf"), 32)  # load fonts
     font3 = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 23)  # load fonts
@@ -153,7 +139,7 @@ def msg2img(message):
     try:
         pfp = requests.get(message.author.display_avatar.url, stream=True).raw
         im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
-    except Exception:  # if the pfp is bit too silly
+    except Exception: # if the pfp is bit too silly
         new_url = "https://cdn.discordapp.com/embed/avatars/0.png"
         pfp = requests.get(new_url, stream=True).raw
         im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
@@ -177,7 +163,9 @@ def msg2img(message):
         )
 
     if is_pinged:
-        pencil.rectangle((0, 0, 0, 65 + the_size_and_stuff), fill=ImageColor.getrgb("#FAA81A"))
+        pencil.rectangle(
+            (0, 0, 0, 65 + the_size_and_stuff), fill=ImageColor.getrgb("#FAA81A")
+        )
 
     pencil.text((122, 8), nick, font=font, fill=color)  # draw author name
     if is_bot:
@@ -203,13 +191,24 @@ def msg2img(message):
         move = getsize(botfont, "APP")[0] + 20
 
     with Pilmoji(new_img) as pilmoji2:
-        pilmoji2.text((122, 55), text.strip(), (255, 255, 255), font2, emoji_scale_factor=45 / 33)
+        pilmoji2.text((122, 55), text.strip(), (255, 255, 255), font2, emoji_scale_factor=45/33)
 
-    twentyfourhour = message.created_at.strftime("%H:%M")
+    now = message.created_at
+    # there is probably easier way than this but ehhh
+    twelvehour = now.strftime("%I:%M")
+    twentyfourhour = now.strftime("%H:%M")
+    if twelvehour == twentyfourhour:
+        suffix = "AM"
+    else:
+        suffix = "PM"
+
+    # 09:34 -> 9:34
+    if twelvehour[0] == "0" and twelvehour[1] != ":":
+        twelvehour = twelvehour[1:]
 
     pencil.text(
         (13 + 122 + getsize(font, nick)[0] + move, 17),
-        f"Today at {twentyfourhour}",
+        f"Today at {twelvehour} {suffix}",
         font=font3,
         fill=ImageColor.getrgb("#A3A4AA"),
     )  # draw time
