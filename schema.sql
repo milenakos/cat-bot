@@ -29,7 +29,8 @@ CREATE TABLE public.channel (
     webhook character varying(255) DEFAULT ''::character varying,
     forcespawned boolean DEFAULT false,
     cattype character varying(20) DEFAULT ''::character varying,
-    cat_rains bigint DEFAULT 0
+    cat_rains bigint DEFAULT 0,
+    rain_should_end bigint DEFAULT 0
 );
 
 
@@ -268,7 +269,13 @@ CREATE TABLE public.profile (
     pig50 boolean DEFAULT false,
     pig100 boolean DEFAULT false,
     sphere_easter_egg smallint DEFAULT 0,
-    sphere_ach boolean DEFAULT false
+    sphere_ach boolean DEFAULT false,
+    roulette_balance bigint DEFAULT 100,
+    roulette_wins integer DEFAULT 0,
+    roulette_spins integer DEFAULT 0,
+    roulette_winner boolean DEFAULT false,
+    roulette_prodigy boolean DEFAULT false,
+    failed_gambler boolean DEFAULT false
 );
 
 
@@ -329,7 +336,8 @@ CREATE TABLE public."user" (
     streak_freezes integer DEFAULT 0,
     cats_blessed bigint DEFAULT 0,
     blessings_enabled boolean DEFAULT false,
-    blessings_anonymous boolean DEFAULT false
+    blessings_anonymous boolean DEFAULT false,
+    rain_minutes_bought integer DEFAULT 0
 );
 
 
