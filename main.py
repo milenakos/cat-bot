@@ -1279,7 +1279,6 @@ async def on_message(message: discord.Message):
             user.rain_minutes += 20
         else:
             user.rain_minutes += int(things[2])
-            user.rain_minutes_bought += int(things[2])
         user.premium = True
         await user.save()
 
@@ -1709,7 +1708,7 @@ async def on_message(message: discord.Message):
             temp_catches_storage.append(channel.cat)
             decided_time = random.uniform(channel.spawn_times_min, channel.spawn_times_max)
 
-            if channel.cat_rains > 0:
+            if channel.cat_rains != 0:
                 # we dont schedule next spawn during rains
                 decided_time = 0
 
@@ -1802,11 +1801,12 @@ async def on_message(message: discord.Message):
                 except Exception:
                     pass
 
-                if channel.cat_rains > 0:
+                if channel.cat_rains != 0:
                     do_time = False
 
                 suffix_string = ""
                 silly_amount = 1
+
                 # perky!
                 double_chance = 0
                 triple_chance = 0
@@ -1823,7 +1823,7 @@ async def on_message(message: discord.Message):
                 
                 if user.perks:
                     if user.cataine_active < time.time() and not user.hibernation:
-                        embed = await level_down(user, message)
+                        await level_down(user, message)
                     perks = user.perks
                     perks_info = cataine_list["perks"]
                     for perk in perks:
@@ -1918,16 +1918,13 @@ async def on_message(message: discord.Message):
                     elif chance <= triple_chance + double_chance + single_chance + none_chance:
                         silly_amount *= 0
                         suffix_string += f"\n🚫 cataine failed! your cat was uncought. tragic."
-                        
-               
-                # blessings
-                bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001 * 0.01
-                if bless_chance > random.random():
+
+                # add blessings
+                if random.randint(1, 100) == 101: # BLESSING BYPASS, REMOVE BEFORE THIS GETS TO PROD
                     # woo we got blessed thats pretty cool
                     silly_amount *= 2
 
-                    blesser_l = await User.collect("blessings_enabled = true AND rain_minutes_bought > 0 ORDER BY -ln(random()) / rain_minutes_bought LIMIT 1")
-                    blesser = blesser_l[0]
+                    blesser = (await User.collect("blessings_enabled = true ORDER BY RANDOM() LIMIT 1"))[0]
                     blesser.cats_blessed += 1
                     await blesser.save()
 
@@ -1974,10 +1971,6 @@ async def on_message(message: discord.Message):
                         normal_bump = False
                         if not channel.forcespawned:
                             channel.cat_rains += math.ceil(600 / 2.75)
-                            if channel.rain_should_end == 0:
-                                channel.rain_should_end = int(time.time() + 600 * 1.3)
-                            else:
-                                channel.rain_should_end += int(600 * 1.3)
                             channel.yet_to_spawn = 0
                             await channel.save()
                             if channel.cat_rains > math.ceil(600 / 2.75):
@@ -2125,18 +2118,25 @@ async def on_message(message: discord.Message):
                 if do_time and time_caught > user.timeslow:
                     user.timeslow = time_caught
 
-                if time_caught > 0 and time_caught == int(time_caught):
-                    user.perfection_count += 1
-
                 if channel.cat_rains != 0:
                     user.rain_participations += 1
 
                 # its not cold im gonna wake up
+                global_user = await User.get_or_create(user_id=message.user.id)
                 if user.hibernation:
                     level_data = cataine_list["levels"][user.cataine_level]
                     duration = level_data["duration"]
                     user.hibernation = False
-                    user.cataine_active = int(time.time()) + 3600 * duration
+                    duration_bonus = 0
+                    perks = cataine_list["perks"]
+                    if user.perks:
+                        for perk in user.perks:
+                            perk_data = perks[int(perk.split('_')[1])-1]
+                            if perk_data["num"] == 12:
+                                duration_bonus = global_user.vote_streak * 60
+                                if duration_bonus > 100:
+                                    duration_bonus = min(100 + math.log10(duration_bonus-100) * 5, duration_bonus)
+                    user.cataine_active = int(time.time()) + 3600 * duration + duration_bonus
 
                 await user.save()
 
@@ -2144,7 +2144,7 @@ async def on_message(message: discord.Message):
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT":
                     await achemb(message, "loud_cat", "send")
-                if channel.cat_rains > 0:
+                if channel.cat_rains != 0:
                     await achemb(message, "cat_rain", "send")
 
                 await achemb(message, "first", "send")
@@ -2213,20 +2213,6 @@ async def on_message(message: discord.Message):
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
                     except Exception:
                         pass
-                    if channel.cat_rains > 0 and channel.rain_should_end and channel.rain_should_end < time.time():
-                        # revive the rain
-                        print(message.guild.id, channel.cat_rains, channel.yet_to_spawn, channel.rain_should_end)
-
-                        channel.cat_rains += 3  # compensation
-
-                        await message.channel.send(f"oops the rain broke, it will now continue ({channel.cat_rains} cats left)")
-                        channel.rain_should_end = int(time.time() + (channel.cat_rains * 2.75) * 1.3)
-                        channel.yet_to_spawn = 0
-                        await channel.save()
-
-                        await asyncio.sleep(3)
-
-                        await actually_do_rain(message, channel)
 
     if text.lower().startswith("cat!amount") and perms.send_messages and (not message.thread or perms.send_messages_in_threads):
         user = await User.get_or_create(user_id=message.author.id)
@@ -3186,7 +3172,6 @@ async def gen_stats(profile, star):
     stats.append(["☔", "Rains"])
     stats.append(["current_rain_minutes", "☔", f"Current rain minutes: {user.rain_minutes:,}"])
     stats.append(["supporter", "👑", "Ever bought rains: " + ("Yes" if user.premium else "No")])
-    stats.append(["rain_minutes_bought", "☔", f"Rain minutes bought: {user.rain_minutes_bought:,}"])
     stats.append(["cats_caught_during_rains", "☔", f"Cats caught during rains: {profile.rain_participations:,}{star}"])
     stats.append(["rain_minutes_started", "☔", f"Rain minutes started: {profile.rain_minutes_started:,}{star}"])
     stats.append(["cats_blessed", "🌠", f"Cats blessed: {user.cats_blessed:,}"])
@@ -3197,8 +3182,6 @@ async def gen_stats(profile, star):
     stats.append(["slot_spins", "🎰", f"Slot spins: {profile.slot_spins:,}"])
     stats.append(["slot_wins", "🎰", f"Slot wins: {profile.slot_wins:,}"])
     stats.append(["slot_big_wins", "🎰", f"Slot big wins: {profile.slot_big_wins:,}"])
-    stats.append(["roulette_spins", "💰", f"Roulette spins: {profile.roulette_spins:,}"])
-    stats.append(["roulette_wins", "💰", f"Roulette wins: {profile.roulette_wins:,}"])
 
     # tic tac toe
     stats.append(["⭕", "Tic Tac Toe"])
@@ -3509,7 +3492,7 @@ __Highlighted Stat__
 
 async def actually_do_rain(message, channel):
     first_spawn = True
-    while channel.cat_rains > 0:
+    while channel.cat_rains != 0:
         if first_spawn:
             first_spawn = False
         else:
@@ -3523,9 +3506,6 @@ async def actually_do_rain(message, channel):
         await channel.refresh_from_db()
         channel.cat_rains -= 1
         await channel.save()
-
-    channel.rain_should_end = 0
-    await channel.save()
 
     await asyncio.sleep(1)
 
@@ -3638,7 +3618,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             await interaction.response.send_message("please catch the cat in this channel first.", ephemeral=True)
             return
 
-        if channel.cat_rains > 0:
+        if channel.cat_rains != 0:
             await interaction.response.send_message("there is already a rain running!", ephemeral=True)
             return
 
@@ -3676,7 +3656,6 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
         profile.rain_minutes_started += rain_length
         channel.cat_rains = math.ceil(rain_length * 60 / 2.75)
-        channel.rain_should_end = int(time.time() + rain_length * 60 * 1.3)
         channel.yet_to_spawn = 0
         await channel.save()
         if profile.rain_minutes:
@@ -3760,19 +3739,13 @@ if config.DONOR_CHANNEL_ID:
             else:
                 blesser = f"{user.emoji or '💫'} {message.user.name}"
 
-            user_bless_chance = user.rain_minutes_bought * 0.0001
-            global_bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001
-
             embed = discord.Embed(
                 color=Colors.brown,
                 title="🌠 Cat Blessings",
-                description=f"""When enabled, random Cat Bot users will have their cats blessed by you - and their catches will be doubled! Your bless chance increases by *0.0001%* per minute of rain bought.
+                description=f"""When enabled, random Cat Bot users will have their cats blessed by you - and their catches will be doubled!
 
-Your blessings are currently **{"enabled" if user.blessings_enabled else "disabled"}**.
-Cats you blessed: **{user.cats_blessed:,}**
-
-Your bless chance is **{user_bless_chance:.4f}%**
-Global bless chance is **{global_bless_chance:.4f}%**
+Blessings are currently **{"enabled" if user.blessings_enabled else "disabled"}**.
+Cats blessed: **{user.cats_blessed}**
 
 Blessing message preview:
 {blesser} blessed your catch and it got doubled!
@@ -5675,177 +5648,6 @@ async def slots(message: discord.Interaction):
     await message.response.send_message(embed=embed, view=myview)
 
 
-@bot.tree.command(description="what")
-async def roulette(message: discord.Interaction):
-    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-
-    # this is the silly popup when you click the button
-    class RouletteModel(discord.ui.Modal):
-        def __init__(self):
-            super().__init__(
-                title="place a bet idfk",
-                timeout=3600,
-            )
-
-            self.bettype = discord.ui.TextInput(
-                min_length=1,
-                max_length=5,
-                label="choose a bet",
-                style=discord.TextStyle.short,
-                required=True,
-                placeholder="red / black / green / 0 / 1 / 2 / 3 / ... / 36",
-            )
-            self.add_item(self.bettype)
-
-            self.betamount = discord.ui.TextInput(
-                min_length=1,
-                label="bet amount (in cat dollars)",
-                style=discord.TextStyle.short,
-                required=True,
-                placeholder="69",
-            )
-            self.add_item(self.betamount)
-
-        async def on_submit(self, interaction: discord.Interaction):
-            await user.refresh_from_db()
-
-            valids = ["red", "black", "green"] + [str(i) for i in range(37)]
-            if self.bettype.value.lower() not in valids:
-                await interaction.response.send_message("invalid bet", ephemeral=True)
-                return
-
-            try:
-                bet_amount = int(self.betamount.value)
-                if bet_amount <= 0:
-                    await interaction.response.send_message("bet amount must be greater than 0", ephemeral=True)
-                    return
-                if bet_amount > max(user.roulette_balance, 100):
-                    await interaction.response.send_message(f"your max bet is {max(user.roulette_balance, 100)}", ephemeral=True)
-                    return
-            except ValueError:
-                await interaction.response.send_message("invalid bet amount", ephemeral=True)
-                return
-
-            await interaction.response.defer()
-
-            # mapping of colors to numbers by indexes
-            colors = [
-                "green",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-            ]
-
-            emoji_map = {
-                "red": "🔴",
-                "black": "⚫",
-                "green": "🟢",
-            }
-
-            final_choice = random.randint(0, 36)
-            user.roulette_balance -= bet_amount
-            user.roulette_spins += 1
-            win = False
-            funny_win = False
-            if str(final_choice) == self.bettype.value or colors[final_choice] == self.bettype.value.lower():
-                if self.bettype.value in [str(i) for i in range(37)] or self.bettype.value.lower() == "green":
-                    user.roulette_balance += bet_amount * 36
-                    funny_win = True
-                else:
-                    user.roulette_balance += bet_amount * 2
-                user.roulette_wins += 1
-                win = True
-            user.roulette_balance = int(round(user.roulette_balance))
-            await user.save()
-
-            for wait_time in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.5]:
-                choice = random.randint(0, 36)
-                color = colors[choice]
-                embed = discord.Embed(
-                    color=Colors.maroon,
-                    title="woo its spinnin",
-                    description=f"your bet is {int(self.betamount.value):,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**",
-                )
-                await interaction.edit_original_response(embed=embed, view=None)
-                await asyncio.sleep(wait_time)
-
-            color = colors[final_choice]
-            embed = discord.Embed(
-                color=Colors.maroon,
-                title="winner!!!" if win else "womp womp",
-                description=f"your bet was {int(self.betamount.value):,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance:,}** cat dollars",
-            )
-            view = View(timeout=VIEW_TIMEOUT)
-            b = Button(label="spin", style=ButtonStyle.blurple)
-            b.callback = modal_select
-            view.add_item(b)
-            await interaction.edit_original_response(embed=embed, view=view)
-
-            if win:
-                await progress(message, user, "roulette")
-                await achemb(interaction, "roulette_winner", "send")
-            if funny_win:
-                await achemb(interaction, "roulette_prodigy", "send")
-            if user.roulette_balance < 0:
-                await achemb(interaction, "failed_gambler", "send")
-
-    async def modal_select(interaction: discord.Interaction):
-        if interaction.user != message.user:
-            await do_funny(interaction)
-            return
-
-        await interaction.response.send_modal(RouletteModel())
-
-    embed = discord.Embed(
-        color=Colors.maroon,
-        title="hecking roulette table",
-        description=f"your balance is **{user.roulette_balance:,}** cat dollars\n\nyou can gamble up to **{max(user.roulette_balance, 100):,}** cat dollars rn",
-    )
-
-    view = View(timeout=VIEW_TIMEOUT)
-    b = Button(label="spin", style=ButtonStyle.blurple)
-    b.callback = modal_select
-    view.add_item(b)
-
-    await message.response.send_message(embed=embed, view=view)
-
-    if user.roulette_balance < 0:
-        await achemb(message, "failed_gambler", "send")
-
-
 @bot.tree.command(description="roll a dice")
 async def roll(message: discord.Interaction, sides: Optional[int]):
     if sides is None:
@@ -6577,6 +6379,7 @@ async def cataine(message: discord.Interaction):
     
     async def pay_cataine(interaction):
         nonlocal user, cat_type, amount
+        global_user = await User.get_or_create(user_id=interaction.user.id)
         if level != user.cataine_level:
             await interaction.response.send_message("nice try", ephemeral=True)
             return
@@ -6601,7 +6404,6 @@ async def cataine(message: discord.Interaction):
         user.perk_selected = False
         user.hibernation = True
         user[f"cat_{cat_type}"] -= amount
-        user.cataine_active = int(time.time()) + int(3600 * level_data["duration"])
         user.cataine_level += 1
         user.cataine_bought += 1
         if user.cataine_level > user.highest_cataine_level:
@@ -6954,7 +6756,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies", "Pig", "Roulette Dollars"]],
+    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies", "Pig"]],
     cat_type: Optional[str],
     locked: Optional[bool],
 ):
@@ -7058,12 +6860,6 @@ async def leaderboards(
                 ["user_id", "best_pig_score"], "guild_id = $1 AND best_pig_score > 0 ORDER BY best_pig_score DESC", message.guild.id
             )
             final_value = "best_pig_score"
-        elif type == "Roulette Dollars":
-            unit = "cat dollars"
-            result = await Profile.collect_limit(
-                ["user_id", "roulette_balance"], "guild_id = $1 AND roulette_balance != 100 ORDER BY roulette_balance DESC", message.guild.id
-            )
-            final_value = "roulette_balance"
         else:
             # qhar
             return
@@ -7150,8 +6946,6 @@ async def leaderboards(
                     num = round(num, 3)
                 elif type in ["Cookies", "Cats", "Pig"] and num <= 0:
                     break
-                elif type == "Roulette Dollars" and num == 100:
-                    break
                 string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
 
             if message.user.id == i["user_id"] and current <= 5:
@@ -7218,7 +7012,7 @@ async def leaderboards(
                 disabled=locked,
             )
 
-        emojied_options = {"Cats": "🐈", "Value": "🧮", "Fast": "⏱️", "Slow": "💤", "Battlepass": "⬆️", "Cookies": "🍪", "Pig": "🎲", "Roulette Dollars": "💰"}
+        emojied_options = {"Cats": "🐈", "Value": "🧮", "Fast": "⏱️", "Slow": "💤", "Battlepass": "⬆️", "Cookies": "🍪", "Pig": "🎲"}
         options = [Option(label=k, emoji=v) for k, v in emojied_options.items()]
         lb_select = Select(
             "lb_type",
