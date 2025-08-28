@@ -1,9 +1,10 @@
 aiohttp[speedups]
-discord.py @ git+https://github.com/Rapptz/discord.py@master
-Pillow==9.5.0
+discord.py[speed]
+Pillow
 Pilmoji
 emoji==1.7
 requests
 discord-emoji
-peewee
-uvloop
+winuvloop
+psutil
+asyncpg

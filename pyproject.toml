@@ -1,3 +1,0 @@
-[tool.basedpyright]
-typeCheckingMode = "basic"
-reportOptionalMemberAccess = false
