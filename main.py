@@ -1662,7 +1662,6 @@ async def on_message(message: discord.Message):
 
             # belated battlepass
             if message.channel.id in temp_belated_storage:
-                
                 belated = temp_belated_storage[message.channel.id]
                 if (
                     channel
@@ -2122,7 +2121,6 @@ async def on_message(message: discord.Message):
                     user.rain_participations += 1
 
                 # its not cold im gonna wake up
-                global_user = await User.get_or_create(user_id=message.user.id)
                 if user.hibernation:
                     level_data = cataine_list["levels"][user.cataine_level]
                     duration = level_data["duration"]
@@ -2133,7 +2131,7 @@ async def on_message(message: discord.Message):
                         for perk in user.perks:
                             perk_data = perks[int(perk.split('_')[1])-1]
                             if perk_data["num"] == 12:
-                                duration_bonus = global_user.vote_streak * 60
+                                duration_bonus = vote_time_user.vote_streak * 60
                                 if duration_bonus > 100:
                                     duration_bonus = min(100 + math.log10(duration_bonus-100) * 5, duration_bonus)
                     user.cataine_active = int(time.time()) + 3600 * duration + duration_bonus
@@ -6285,7 +6283,7 @@ async def get_perks(level, user):
     return current_perks
 
 
-async def level_down(user, message):
+async def level_down(user, message, ephemeral=False):
     if user.cataine_level == 0:
         return
     user.cataine_level -= 1
@@ -6303,6 +6301,7 @@ async def level_down(user, message):
     user.bounty_progress_one = 0
     user.bounty_progress_two = 0
     user.bounty_progress_three = 0
+    user.cataine_total_cats = 0
     h = list(user.perks) if user.perks else []
     h.pop()
     user.perks = h[:]
@@ -6314,7 +6313,7 @@ async def level_down(user, message):
         color=Colors.red,
         description=f"Level {user.cataine_level + 1} failed.\nMoving down to level {user.cataine_level}..."
         ).set_author(name="Mafia Level " + str(user.cataine_level + 1))
-    await message.channel.send(f"<@{user.user_id}>", embed=embed)
+    await message.channel.send(f"<@{user.user_id}>", embed=embed, ephemeral=ephemeral)
 
 
 @bot.tree.command(description="..?")
@@ -6325,7 +6324,7 @@ async def cataine(message: discord.Interaction):
         await message.followup.send("You don't have access to the dark market yet. Catch more cats to unlock it!")
         return
     if user.cataine_active < time.time() and not user.hibernation:
-        await level_down(user, message)
+        await level_down(user, message, True)
     if user.cataine_amount == 0: 
         await set_mafia_offer(user.cataine_level, user)
     if user.bounties == 0:
@@ -6380,10 +6379,10 @@ async def cataine(message: discord.Interaction):
     async def pay_cataine(interaction):
         nonlocal user, cat_type, amount
         global_user = await User.get_or_create(user_id=interaction.user.id)
+        await user.refresh_from_db()
         if level != user.cataine_level:
             await interaction.response.send_message("nice try", ephemeral=True)
             return
-        await user.refresh_from_db()
         for i in range(user.bounties):
             if i == 0 and user.bounty_progress_one < user.bounty_total_one:
                 await interaction.response.send_message("You haven't completed your bounties yet!", ephemeral=True)
@@ -6406,6 +6405,7 @@ async def cataine(message: discord.Interaction):
         user[f"cat_{cat_type}"] -= amount
         user.cataine_level += 1
         user.cataine_bought += 1
+        user.cataine_total_cats = 0
         if user.cataine_level > user.highest_cataine_level:
             user.highest_cataine_level = user.cataine_level
         await user.save()
