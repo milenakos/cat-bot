@@ -319,44 +319,4 @@
       "roulette": {"emoji": "🎰", "title": "Win a /roulette bet", "xp_min": 175, "xp_max": 225, "progress": 1}
     }
   }
-  "levels": [
-    {"req": "catch", "req_data": 2, "reward": "Nice", "reward_amount": 1},
-    {"req": "catch_fast", "req_data": 15, "reward": "Fine", "reward_amount": 3},
-    {"req": "catch_type", "req_data": "Rare", "reward": "Rare", "reward_amount": 1},
-    {"req": "catch", "req_data": 5, "reward": "Wild", "reward_amount": 1},
-    {"req": "catch_fast", "req_data": 10, "reward": "Nice", "reward_amount": 3},
-
-    {"req": "catch_type", "req_data": "Epic", "reward": "Nice", "reward_amount": 5},
-    {"req": "catch_fast", "req_data": 7, "reward": "Good", "reward_amount": 4},
-    {"req": "catch", "req_data": 7, "reward": "Epic", "reward_amount": 1},
-    {"req": "catch_type", "req_data": "Fine", "reward": "Fine", "reward_amount": 1},
-    {"req": "catch_fast", "req_data": 6, "reward": "Epic", "reward_amount": 3},
-
-    {"req": "catch", "req_data": 9, "reward": "Good", "reward_amount": 6},
-    {"req": "catch_type", "req_data": "Good", "reward": "Nice", "reward_amount": 2},
-    {"req": "catch_fast", "req_data": 69, "reward": "Nice", "reward_amount": 1},
-    {"req": "catch", "req_data": 11, "reward": "Epic", "reward_amount": 2},
-    {"req": "catch_type", "req_data": "Sus", "reward": "Rickroll", "reward_amount": 1},
-
-    {"req": "catch_fast", "req_data": 5, "reward": "Baby", "reward_amount": 3},
-    {"req": "catch", "req_data": 5, "reward": "Nice", "reward_amount": 2},
-    {"req": "catch_type", "req_data": "Rickroll", "reward": "Sus", "reward_amount": 2},
-    {"req": "catch_fast", "req_data": 5, "reward": "Epic", "reward_amount": 2},
-    {"req": "catch", "req_data": 7, "reward": "Reverse", "reward_amount": 2},
-
-    {"req": "catch_type", "req_data": "Reverse", "reward": "Reverse", "reward_amount": 1},
-    {"req": "catch_fast", "req_data": 4, "reward": "Sus", "reward_amount": 2},
-    {"req": "catch", "req_data": 12, "reward": "Superior", "reward_amount": 1},
-    {"req": "catch_type", "req_data": "TheTrashCell", "reward": "Superior", "reward_amount": 3},
-    {"req": "catch_fast", "req_data": 3, "reward": "8bit", "reward_amount": 1},
-
-    {"req": "catch_type", "req_data": "Mythic", "reward": "Corrupt", "reward_amount": 1},
-    {"req": "catch_fast", "req_data": 2.5, "reward": "Corrupt", "reward_amount": 2},
-    {"req": "catch", "req_data": 17, "reward": "Professor", "reward_amount": 1},
-    {"req": "catch_type", "req_data": "Professor", "reward": "Divine", "reward_amount": 1},
-    {"req": "catch_fast", "req_data": 1, "reward": "Prisms", "reward_amount": 1},
-
-    {"req": "nothing", "req_data": "0", "reward": "Fine", "reward_amount": 0},
-    {"req": "nothing2", "req_data": "0", "reward": "Fine", "reward_amount": 0}
- ]
 }
