@@ -1437,9 +1437,10 @@ async def on_message(message: discord.Message):
             const_perc = len(text) / (len(text) - total_vow)
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
             try:
-                if perms.add_reactions:
+                if perms.add_reactions and reactions_ratelimit.get(message.guild.id, 0) < 100:
                     await message.add_reaction(get_emoji("staring_cat"))
                     react_count += 1
+                    reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
             except Exception:
                 pass
 
@@ -1546,7 +1547,7 @@ async def on_message(message: discord.Message):
 
     if perms.add_reactions:
         for r in reactions:
-            if r[0] in text.lower() and reactions_ratelimit.get(message.author.id, 0) < 20:
+            if r[0] in text.lower() and reactions_ratelimit.get(message.guild.id, 0) < 100:
                 if r[1] == "custom":
                     em = get_emoji(r[2])
                 elif r[1] == "vanilla":
@@ -1555,7 +1556,7 @@ async def on_message(message: discord.Message):
                 try:
                     await message.add_reaction(em)
                     react_count += 1
-                    reactions_ratelimit[message.author.id] = reactions_ratelimit.get(message.author.id, 0) + 1
+                    reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
                 except Exception:
                     pass
 
@@ -1573,9 +1574,10 @@ async def on_message(message: discord.Message):
                     pass
 
     try:
-        if message.author in message.mentions and perms.add_reactions:
+        if message.author in message.mentions and perms.add_reactions and reactions_ratelimit.get(message.guild.id, 0) < 100:
             await message.add_reaction(get_emoji("staring_cat"))
             react_count += 1
+            reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
     except Exception:
         pass
 
