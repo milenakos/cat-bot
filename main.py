@@ -39,7 +39,7 @@ import psutil
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
-from discord.ui import Button, View, Modal, LayoutView, Container, TextDisplay, Separator, Section, TextInput
+from discord.ui import Button, View, Modal, LayoutView, TextDisplay, Separator, TextInput, Thumbnail
 from PIL import Image
 
 import config
@@ -3662,18 +3662,13 @@ if config.DONOR_CHANNEL_ID:
 
             view = LayoutView(timeout=VIEW_TIMEOUT)
             container = Container(
-                TextDisplay("## :stars: Cat Blessings"),
-                TextDisplay(
-                    "When enabled, random Cat Bot users will have their cats blessed by you - and their catches will be doubled! Your bless chance increases by *0.0001%* per minute of rain bought."
-                ),
-                Separator(),
-                TextDisplay(
-                    f"Cats you blessed: **{user.cats_blessed:,}**\nYour bless chance is **{user_bless_chance:.4f}%**\nGlobal bless chance is **{global_bless_chance:.4f}%**"
-                ),
-                Separator(),
-                Section(f"Your blessings are currently **{'enabled' if user.blessings_enabled else 'disabled'}**.", accessory=bbutton),
-                Section(f"{'' if user.blessings_enabled else '*(disabled)* '}{blesser} blessed your catch and it got doubled!", accessory=abutton),
-                accent_color=Colors.brown,
+                "## :stars: Cat Blessings",
+                "When enabled, random Cat Bot users will have their cats blessed by you - and their catches will be doubled! Your bless chance increases by *0.0001%* per minute of rain bought.",
+                "===",
+                f"Cats you blessed: **{user.cats_blessed:,}**\nYour bless chance is **{user_bless_chance:.4f}%**\nGlobal bless chance is **{global_bless_chance:.4f}%**",
+                "===",
+                Section(bbutton, f"Your blessings are currently **{'enabled' if user.blessings_enabled else 'disabled'}**."),
+                Section(abutton, f"{'' if user.blessings_enabled else '*(disabled)* '}{blesser} blessed your catch and it got doubled!"),
             )
             view.add_item(container)
 
@@ -7305,3 +7300,38 @@ class Select(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         if self.on_select is not None and callable(self.on_select):
             await self.on_select(interaction, self.values[0])
+
+
+class Container(discord.ui.Container):
+    def __init__(self, *children, **kwargs):
+        if "accent_color" not in kwargs:
+            kwargs["accent_color"] = Colors.brown
+
+        new_children = []
+
+        for child in children:
+            if isinstance(child, str):
+                if child == "===":
+                    new_children.append(Separator())
+                else:
+                    new_children.append(TextDisplay(child))
+            else:
+                new_children.append(child)
+
+        super().__init__(*new_children, **kwargs)
+
+
+class Section(discord.ui.Section):
+    def __init__(self, *children, **kwargs):
+        if "accessory" not in kwargs:
+            new_children = []
+
+            for child in children:
+                if isinstance(child, Button) or isinstance(child, Thumbnail):
+                    kwargs["accessory"] = child
+                else:
+                    new_children.append(child)
+
+            super().__init__(*new_children, **kwargs)
+        else:
+            super().__init__(*children, **kwargs)
