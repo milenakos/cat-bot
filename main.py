@@ -2429,7 +2429,7 @@ async def news(message: discord.Interaction):
         async def go_back(back_interaction: discord.Interaction):
             await back_interaction.response.defer()
             await regen_buttons()
-            await back_interaction.edit_original_response(content="Choose an article:", view=generate_page(current_page), embed=None)
+            await back_interaction.edit_original_response(view=generate_page(current_page))
 
         await interaction.response.defer()
 
@@ -2454,17 +2454,17 @@ async def news(message: discord.Interaction):
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(content=None, view=view)
+            await interaction.edit_original_response(view=view)
         elif news_id == 1:
             embed = Container(
                 "## ✨ New Cat Rains perks!",
                 "Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).\nEveryone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have received 10 minutes of Rains as compensation.\n\nThis is a really cool perk and I hope you like it!",
-                "-# <t:1732377932>",
                 Button(label="Cat Bot Store", url="https://catbot.shop"),
+                "-# <t:1732377932>",
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(content=None, view=view)
+            await interaction.edit_original_response(view=view)
         elif news_id == 2:
             embed = Container(
                 "## ☃️ Cat Bot Christmas",
@@ -2473,7 +2473,7 @@ async def news(message: discord.Interaction):
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(content=None, view=view)
+            await interaction.edit_original_response(view=view)
         elif news_id == 3:
             embed = Container(
                 "## Battlepass is getting an update!",
@@ -2496,7 +2496,7 @@ There are currently no plans to sell a paid battlepass.""",
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(content=None, view=view)
+            await interaction.edit_original_response(view=view)
         elif news_id == 4:
             embed = Container(
                 f"## {get_emoji('goldpack')} Packs!",
@@ -2509,7 +2509,7 @@ the extra reward is now a stone pack instead of 5 random cats too!
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(content=None, view=view)
+            await interaction.edit_original_response(view=view)
         elif news_id == 5:
             embed = Container(
                 "## Important Message from CEO of Cat Bot",
@@ -2531,7 +2531,7 @@ Best regards,
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(content=None, view=view)
+            await interaction.edit_original_response(view=view)
         elif news_id == 6:
             embed = Container(
                 "## 🥳 Cat Bot Turns 3",
@@ -2548,7 +2548,7 @@ update: the puzzle piece event has concluded""",
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(content=None, view=view)
+            await interaction.edit_original_response(view=view)
         elif news_id == 7:
             embed = Container(
                 "## 🎉 100,000 SERVERS WHAT",
@@ -2570,15 +2570,15 @@ starting june 30th, for the next 5 days you will get points randomly on every ca
 starting june 30th, [catbot.shop](<https://catbot.shop>) will have a sale for the next 5 days! if everything above wasnt enough rain for your fancy you can buy some more with a discount!
 
 aaaaaaaaaaaaaaa""",
-                "-# <t:1751252181>",
                 ActionRow(
                     Button(label="Join our Server", url="https://discord.gg/staring"),
                     Button(label="Cat Bot Store", url="https://catbot.shop"),
                 ),
+                "-# <t:1751252181>",
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(content=None, view=view)
+            await interaction.edit_original_response(view=view)
 
         elif news_id == 8:
             embed = Container(
@@ -2592,12 +2592,12 @@ it was mostly my fault, but i worked hard to fix everything and i think its most
 as a compensation i will give everyone who voted in the past 3 days 2 free gold packs! you can press the button below to claim them. (note you can only claim it in 1 server, choose wisely)
 
 thanks for using cat bot!""",
-                "-# <t:1752689941>",
                 Button(label="Expired!", disabled=True),
+                "-# <t:1752689941>",
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(content=None, view=view)
+            await interaction.edit_original_response(view=view)
 
     async def regen_buttons():
         nonlocal buttons
@@ -2653,7 +2653,8 @@ thanks for using cat bot!""",
         await interaction.response.edit_message(view=generate_page(current_page))
 
     def generate_page(number):
-        view = View(timeout=VIEW_TIMEOUT)
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        view.add_item(TextDisplay("Choose an article:"))
 
         # article buttons
         if current_page == 0:
@@ -2663,32 +2664,30 @@ thanks for using cat bot!""",
         for num, button in enumerate(buttons[number * 4 : end]):
             if current_page == 0:
                 button.row = num
-            view.add_item(button)
+            view.add_item(ActionRow(button))
+
+        last_row = ActionRow()
 
         # pages buttons
         if current_page != 0:
-            button = Button(label="Back", row=4)
+            button = Button(label="Back")
             button.callback = prev_page
-            view.add_item(button)
+            last_row.add_item(button)
 
-        button = Button(
-            label="Mark all as read",
-            row=4,
-        )
+        button = Button(label="Mark all as read")
         button.callback = mark_all_as_read
-        view.add_item(button)
+        last_row.add_item(button)
 
         if current_page == 0:
-            button = Button(
-                label="Archive",
-                row=4,
-            )
+            button = Button(label="Archive")
             button.callback = next_page
-            view.add_item(button)
+            last_row.add_item(button)
+
+        view.add_item(last_row)
 
         return view
 
-    await message.response.send_message("Choose an article:", view=generate_page(current_page))
+    await message.response.send_message(view=generate_page(current_page))
     await achemb(message, "news", "send")
 
 
@@ -7321,6 +7320,8 @@ class Container(discord.ui.Container):
                     new_children.append(Separator())
                 else:
                     new_children.append(TextDisplay(child))
+            elif isinstance(child, Button):
+                new_children.append(ActionRow(child))
             else:
                 new_children.append(child)
 
