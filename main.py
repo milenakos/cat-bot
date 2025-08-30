@@ -39,7 +39,7 @@ import psutil
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
-from discord.ui import Button, View, Modal, LayoutView, TextDisplay, Separator, TextInput, Thumbnail
+from discord.ui import Button, View, Modal, LayoutView, TextDisplay, Separator, TextInput, Thumbnail, ActionRow
 from PIL import Image
 
 import config
@@ -2441,41 +2441,43 @@ async def news(message: discord.Interaction):
         profile = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         await progress(interaction, profile, "news")
 
-        view = View(timeout=VIEW_TIMEOUT)
+        view = LayoutView(timeout=VIEW_TIMEOUT)
         back_button = Button(emoji="⬅️", label="Back")
         back_button.callback = go_back
-        view.add_item(back_button)
+        back_row = ActionRow(back_button)
 
         if news_id == 0:
-            embed = discord.Embed(
-                title="📜 Cat Bot Survey",
-                description="Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nSurvey is closed!",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1731168230),
+            embed = Container(
+                "## 📜 Cat Bot Survey",
+                "Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nSurvey is closed!",
+                "-# <t:1731168230>",
             )
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(content=None, view=view)
         elif news_id == 1:
-            embed = discord.Embed(
-                title="✨ New Cat Rains perks!",
-                description="Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).\nEveryone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have received 10 minutes of Rains as compensation.\n\nThis is a really cool perk and I hope you like it!",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1732377932),
+            embed = Container(
+                "## ✨ New Cat Rains perks!",
+                "Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).\nEveryone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have received 10 minutes of Rains as compensation.\n\nThis is a really cool perk and I hope you like it!",
+                "-# <t:1732377932>",
+                Button(label="Cat Bot Store", url="https://catbot.shop"),
             )
-            button = Button(label="Cat Bot Store", url="https://catbot.shop")
-            view.add_item(button)
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(content=None, view=view)
         elif news_id == 2:
-            embed = discord.Embed(
-                title="☃️ Cat Bot Christmas",
-                description=f"⚡ **Cat Bot Wrapped 2024**\nIn 2024 Cat Bot got...\n- 🖥️ *45777* new servers!\n- 👋 *286607* new profiles!\n- {get_emoji('staring_cat')} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though\n- {get_emoji('cat_throphy')} *1518096* achievements get!\nSee last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).\n\n❓ **New Year Update**\nSomething is coming...",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1734458962),
+            embed = Container(
+                "## ☃️ Cat Bot Christmas",
+                f"⚡ **Cat Bot Wrapped 2024**\nIn 2024 Cat Bot got...\n- 🖥️ *45777* new servers!\n- 👋 *286607* new profiles!\n- {get_emoji('staring_cat')} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though\n- {get_emoji('cat_throphy')} *1518096* achievements get!\nSee last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).\n\n❓ **New Year Update**\nSomething is coming...",
+                "-# <t:1734458962>",
             )
-            await interaction.edit_original_response(content=None, embed=embed, view=view)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(content=None, view=view)
         elif news_id == 3:
-            embed = discord.Embed(
-                title="Battlepass is getting an update!",
-                description="""## qhar?
+            embed = Container(
+                "## Battlepass is getting an update!",
+                """### qhar?
 - Huge stuff!
 - Battlepass will now reset every month
 - You will have 3 quests, including voting
@@ -2485,31 +2487,33 @@ async def news(message: discord.Interaction):
 - Prism crafting/true ending no longer require battlepass progress.
 - More fun stuff to do each day and better rewards!
 
-## oh no what if i hate grinding?
+### oh no what if i hate grinding?
 Don't worry, quests are very easy and to complete the battlepass you will need to complete less than 3 easy quests a day.
 
-## will you sell paid battlepass? its joever
+### will you sell paid battlepass? its joever
 There are currently no plans to sell a paid battlepass.""",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1735689601),
+                "-# <t:1735689601>",
             )
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(content=None, view=view)
         elif news_id == 4:
-            embed = discord.Embed(
-                title=f"{get_emoji('goldpack')} Packs!",
-                description=f"""you want more gambling? we heard you!
+            embed = Container(
+                f"## {get_emoji('goldpack')} Packs!",
+                f"""you want more gambling? we heard you!
 instead of predetermined cat rewards you now unlock Packs! packs have different rarities and have a 30% chance to upgrade a rarity when opening, then 30% for one more upgrade and so on. this means even the most common packs have a small chance to upgrade to the rarest one!
 the rarities are - Wooden {get_emoji("woodenpack")}, Stone {get_emoji("stonepack")}, Bronze {get_emoji("bronzepack")}, Silver {get_emoji("silverpack")}, Gold {get_emoji("goldpack")}, Platinum {get_emoji("platinumpack")}, Diamond {get_emoji("diamondpack")} and Celestial {get_emoji("celestialpack")}!
 the extra reward is now a stone pack instead of 5 random cats too!
 *LETS GO GAMBLING*""",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1740787200),
+                "-# <t:1740787200>",
             )
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(content=None, view=view)
         elif news_id == 5:
-            embed = discord.Embed(
-                title="Important Message from CEO of Cat Bot",
-                description="""(April Fools 2025)
+            embed = Container(
+                "## Important Message from CEO of Cat Bot",
+                """(April Fools 2025)
 
 Dear Cat Bot users,
 
@@ -2523,14 +2527,15 @@ We are committed to resolving these challenges and aim to have everything back o
 
 Best regards,
 [Your Name]""",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1743454803),
+                "-# <t:1743454803>",
             )
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(content=None, view=view)
         elif news_id == 6:
-            embed = discord.Embed(
-                title="🥳 Cat Bot Turns 3",
-                description="""april 21st is a special day for cat bot! on this day is its birthday, and in 2025 its turning three!
+            embed = Container(
+                "## 🥳 Cat Bot Turns 3",
+                """april 21st is a special day for cat bot! on this day is its birthday, and in 2025 its turning three!
 happy birthda~~
 ...
 hold on...
@@ -2539,14 +2544,15 @@ the puzzle pieces say something about having to collect a million of them...
 how interesting!
 
 update: the puzzle piece event has concluded""",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1745242856),
+                "-# <t:1745242856>",
             )
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(content=None, view=view)
         elif news_id == 7:
-            embed = discord.Embed(
-                title="🎉 100,000 SERVERS WHAT",
-                description="""wow! cat bot has reached 100,000 servers! this beyond insane i never thought this would happen thanks everyone
+            embed = Container(
+                "## 🎉 100,000 SERVERS WHAT",
+                """wow! cat bot has reached 100,000 servers! this beyond insane i never thought this would happen thanks everyone
 giving away a whole bunch of rain as celebration!
 
 1. cat stand giveaway (ENDED)
@@ -2564,19 +2570,20 @@ starting june 30th, for the next 5 days you will get points randomly on every ca
 starting june 30th, [catbot.shop](<https://catbot.shop>) will have a sale for the next 5 days! if everything above wasnt enough rain for your fancy you can buy some more with a discount!
 
 aaaaaaaaaaaaaaa""",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1751252181),
+                "-# <t:1751252181>",
+                ActionRow(
+                    Button(label="Join our Server", url="https://discord.gg/staring"),
+                    Button(label="Cat Bot Store", url="https://catbot.shop"),
+                ),
             )
-            button = Button(label="Join our Server", url="https://discord.gg/staring")
-            view.add_item(button)
-            button2 = Button(label="Cat Bot Store", url="https://catbot.shop")
-            view.add_item(button2)
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(content=None, view=view)
 
         elif news_id == 8:
-            embed = discord.Embed(
-                title="Regarding recent instabilities",
-                description="""hello!
+            embed = Container(
+                "## Regarding recent instabilities",
+                """hello!
 
 stuff has been kinda broken the past few days, and the past 24 hours in paricular.
 
@@ -2585,13 +2592,12 @@ it was mostly my fault, but i worked hard to fix everything and i think its most
 as a compensation i will give everyone who voted in the past 3 days 2 free gold packs! you can press the button below to claim them. (note you can only claim it in 1 server, choose wisely)
 
 thanks for using cat bot!""",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1752689941),
+                "-# <t:1752689941>",
+                Button(label="Expired!", disabled=True),
             )
-
-            button = Button(label="Expired!", disabled=True)
-            view.add_item(button)
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(content=None, view=view)
 
     async def regen_buttons():
         nonlocal buttons
