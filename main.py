@@ -2661,10 +2661,15 @@ thanks for using cat bot!""",
             end = (number + 1) * 4
         else:
             end = len(buttons)
+            row = ActionRow()
         for num, button in enumerate(buttons[number * 4 : end]):
             if current_page == 0:
-                button.row = num
-            view.add_item(ActionRow(button))
+                view.add_item(ActionRow(button))
+            else:
+                row.add_item(button)
+                if num % 5 == 4:
+                    view.add_item(row)
+                    row = ActionRow()
 
         last_row = ActionRow()
 
