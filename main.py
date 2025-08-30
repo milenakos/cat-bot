@@ -4399,17 +4399,18 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
     async def finish_turn():
         nonlocal do_edit, current_turn
 
-        view = View(timeout=VIEW_TIMEOUT)
+        view = LayoutView(timeout=VIEW_TIMEOUT)
         wins = check_win(board)
         tie = True
+        rows = [ActionRow(), ActionRow(), ActionRow()]
         for cell_num, cell in enumerate(board):
             if cell is None:
                 tie = False
-                button = Button(emoji=get_emoji("empty"), custom_id=str(cell_num), row=cell_num // 3, disabled=wins != [-1])
+                button = Button(emoji=get_emoji("empty"), custom_id=str(cell_num), disabled=wins != [-1])
             else:
-                button = Button(emoji=cell, row=cell_num // 3, disabled=True, style=ButtonStyle.green if cell_num in wins else ButtonStyle.gray)
+                button = Button(emoji=cell, disabled=True, style=ButtonStyle.green if cell_num in wins else ButtonStyle.gray)
             button.callback = play
-            view.add_item(button)
+            rows[cell_num // 3].add_item(button)
 
         if wins != [-1]:
             if board[wins[0]] == "❌":
@@ -4424,10 +4425,13 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         else:
             second_line = f"{players[current_turn].mention}'s turn ({'X' if current_turn == 0 else 'O'})"
 
+        container = Container(f"## {players[0].mention} (X) vs {players[1].mention} (O)", second_line, rows[0], rows[1], rows[2])
+        view.add_item(container)
+
         if do_edit:
-            await message.edit_original_response(content=f"{players[0].mention} (X) vs {players[1].mention} (O)\n{second_line}", view=view)
+            await message.edit_original_response(view=view)
         else:
-            await message.response.send_message(f"{players[0].mention} (X) vs {players[1].mention} (O)\n{second_line}", view=view)
+            await message.response.send_message(view=view)
             do_edit = True
 
         if bot_is_playing and players[current_turn].bot and wins == [-1] and not tie:
