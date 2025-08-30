@@ -2667,7 +2667,7 @@ thanks for using cat bot!""",
                 view.add_item(ActionRow(button))
             else:
                 row.add_item(button)
-                if num % 5 == 4:
+                if len(row.children) == 5:
                     view.add_item(row)
                     row = ActionRow()
 
