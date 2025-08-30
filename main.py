@@ -39,7 +39,7 @@ import psutil
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
-from discord.ui import Button, View
+from discord.ui import Button, View, Modal, LayoutView, Container, TextDisplay, Separator, Section, TextInput
 from PIL import Image
 
 import config
@@ -2461,7 +2461,7 @@ async def news(message: discord.Interaction):
                 color=Colors.brown,
                 timestamp=datetime.datetime.fromtimestamp(1732377932),
             )
-            button = discord.ui.Button(label="Cat Bot Store", url="https://catbot.shop")
+            button = Button(label="Cat Bot Store", url="https://catbot.shop")
             view.add_item(button)
             await interaction.edit_original_response(content=None, view=view, embed=embed)
         elif news_id == 2:
@@ -2567,9 +2567,9 @@ aaaaaaaaaaaaaaa""",
                 color=Colors.brown,
                 timestamp=datetime.datetime.fromtimestamp(1751252181),
             )
-            button = discord.ui.Button(label="Join our Server", url="https://discord.gg/staring")
+            button = Button(label="Join our Server", url="https://discord.gg/staring")
             view.add_item(button)
-            button2 = discord.ui.Button(label="Cat Bot Store", url="https://catbot.shop")
+            button2 = Button(label="Cat Bot Store", url="https://catbot.shop")
             view.add_item(button2)
             await interaction.edit_original_response(content=None, view=view, embed=embed)
 
@@ -2589,7 +2589,7 @@ thanks for using cat bot!""",
                 timestamp=datetime.datetime.fromtimestamp(1752689941),
             )
 
-            button = discord.ui.Button(label="Expired!", disabled=True)
+            button = Button(label="Expired!", disabled=True)
             view.add_item(button)
             await interaction.edit_original_response(content=None, view=view, embed=embed)
 
@@ -2801,7 +2801,7 @@ async def changemessage(message: discord.Interaction):
         return
 
     # this is the silly popup when you click the button
-    class InputModal(discord.ui.Modal):
+    class InputModal(Modal):
         def __init__(self, type):
             super().__init__(
                 title=f"Change {type} Message",
@@ -2810,7 +2810,7 @@ async def changemessage(message: discord.Interaction):
 
             self.type = type
 
-            self.input = discord.ui.TextInput(
+            self.input = TextInput(
                 min_length=0,
                 max_length=1000,
                 label="Input",
@@ -3377,7 +3377,7 @@ __Highlighted Stat__
 
     if person_id.id == message.user.id:
         view = View(timeout=VIEW_TIMEOUT)
-        btn = Button(emoji="📝", label="Edit", style=discord.ButtonStyle.blurple)
+        btn = Button(emoji="📝", label="Edit", style=ButtonStyle.blurple)
         btn.callback = edit_profile
         view.add_item(btn)
         await message.followup.send(embed=embedVar, view=view)
@@ -3453,14 +3453,14 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
     )
 
     # this is the silly popup when you click the button
-    class RainModal(discord.ui.Modal):
+    class RainModal(Modal):
         def __init__(self, type):
             super().__init__(
                 title="Start a Cat Rain!",
                 timeout=3600,
             )
 
-            self.input = discord.ui.TextInput(
+            self.input = TextInput(
                 min_length=1,
                 max_length=2,
                 label="Duration in minutes",
@@ -3616,6 +3616,8 @@ if config.DONOR_CHANNEL_ID:
             do_edit = True
             await interaction.response.defer()
             await user.refresh_from_db()
+            if not user.premium:
+                return
             user.blessings_enabled = not user.blessings_enabled
             await user.save()
             await regen(interaction)
@@ -3641,47 +3643,44 @@ if config.DONOR_CHANNEL_ID:
             user_bless_chance = user.rain_minutes_bought * 0.0001
             global_bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001
 
-            embed = discord.Embed(
-                color=Colors.brown,
-                title="🌠 Cat Blessings",
-                description=f"""When enabled, random Cat Bot users will have their cats blessed by you - and their catches will be doubled! Your bless chance increases by *0.0001%* per minute of rain bought.
-
-Your blessings are currently **{"enabled" if user.blessings_enabled else "disabled"}**.
-Cats you blessed: **{user.cats_blessed:,}**
-
-Your bless chance is **{user_bless_chance:.4f}%**
-Global bless chance is **{global_bless_chance:.4f}%**
-
-Blessing message preview:
-{blesser} blessed your catch and it got doubled!
-""",
+            abutton = Button(
+                emoji="🕵️",
+                label=f"{'Disable' if user.blessings_anonymous else 'Enable'} Anonymity",
+                style=ButtonStyle.red if user.blessings_anonymous else ButtonStyle.green,
             )
+            abutton.callback = toggle_anon
 
-            view = View(timeout=VIEW_TIMEOUT)
             if not user.premium:
-                button = Button(label="Supporter Required!", url="https://catbot.shop", emoji="👑")
-                view.add_item(button)
+                bbutton = Button(label="Supporter Required!", url="https://catbot.shop", emoji="👑")
             else:
-                button = Button(
+                bbutton = Button(
                     emoji="🌟",
                     label=f"{'Disable' if user.blessings_enabled else 'Enable'} Blessings",
-                    style=discord.ButtonStyle.red if user.blessings_enabled else discord.ButtonStyle.green,
+                    style=ButtonStyle.red if user.blessings_enabled else ButtonStyle.green,
                 )
-                button.callback = toggle_bless
-                view.add_item(button)
+                bbutton.callback = toggle_bless
 
-                button = Button(
-                    emoji="🕵️",
-                    label=f"{'Disable' if user.blessings_anonymous else 'Enable'} Anonymity",
-                    style=discord.ButtonStyle.red if user.blessings_anonymous else discord.ButtonStyle.green,
-                )
-                button.callback = toggle_anon
-                view.add_item(button)
+            view = LayoutView(timeout=VIEW_TIMEOUT)
+            container = Container(
+                TextDisplay("## :stars: Cat Blessings"),
+                TextDisplay(
+                    "When enabled, random Cat Bot users will have their cats blessed by you - and their catches will be doubled! Your bless chance increases by *0.0001%* per minute of rain bought."
+                ),
+                Separator(),
+                TextDisplay(
+                    f"Cats you blessed: **{user.cats_blessed:,}**\nYour bless chance is **{user_bless_chance:.4f}%**\nGlobal bless chance is **{global_bless_chance:.4f}%**"
+                ),
+                Separator(),
+                Section(f"Your blessings are currently **{'enabled' if user.blessings_enabled else 'disabled'}**.", accessory=bbutton),
+                Section(f"{'' if user.blessings_enabled else '*(disabled)* '}{blesser} blessed your catch and it got doubled!", accessory=abutton),
+                accent_color=Colors.brown,
+            )
+            view.add_item(container)
 
             if do_edit:
-                await message.edit_original_response(embed=embed, view=view)
+                await message.edit_original_response(view=view)
             else:
-                await message.response.send_message(embed=embed, view=view)
+                await message.response.send_message(view=view)
 
         await regen(message)
 
@@ -3739,7 +3738,7 @@ Blessing message preview:
 @bot.tree.command(description="View and open packs")
 async def packs(message: discord.Interaction):
     def gen_view(user):
-        view = discord.ui.View(timeout=VIEW_TIMEOUT)
+        view = View(timeout=VIEW_TIMEOUT)
         empty = True
         total_amount = 0
         for pack in pack_data:
@@ -3748,7 +3747,7 @@ async def packs(message: discord.Interaction):
             empty = False
             amount = user[f"pack_{pack['name'].lower()}"]
             total_amount += amount
-            button = discord.ui.Button(
+            button = Button(
                 emoji=get_emoji(pack["name"].lower() + "pack"),
                 label=f"{pack['name']} ({amount:,})",
                 style=ButtonStyle.blurple,
@@ -3757,9 +3756,9 @@ async def packs(message: discord.Interaction):
             button.callback = open_pack
             view.add_item(button)
         if empty:
-            view.add_item(discord.ui.Button(label="No packs left!", disabled=True))
+            view.add_item(Button(label="No packs left!", disabled=True))
         if total_amount > 10:
-            button = discord.ui.Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.blurple)
+            button = Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.blurple)
             button.callback = open_all_packs
             view.add_item(button)
         return view
@@ -5079,7 +5078,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             await achemb(message, "blackhole", "send", person2)
 
     # lets go add cats modal thats fun
-    class TradeModal(discord.ui.Modal):
+    class TradeModal(Modal):
         def __init__(self, currentuser):
             super().__init__(
                 title="Add to the trade",
@@ -5087,13 +5086,13 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             )
             self.currentuser = currentuser
 
-            self.cattype = discord.ui.TextInput(
+            self.cattype = TextInput(
                 label='Cat or Pack Type, Prism Name or "Rain"',
                 placeholder="Fine / Wooden / Alpha / Rain",
             )
             self.add_item(self.cattype)
 
-            self.amount = discord.ui.TextInput(label="Amount to offer", placeholder="1", required=False)
+            self.amount = TextInput(label="Amount to offer", placeholder="1", required=False)
             self.add_item(self.amount)
 
         # this is ran when user submits
@@ -5558,14 +5557,14 @@ async def roulette(message: discord.Interaction):
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
     # this is the silly popup when you click the button
-    class RouletteModel(discord.ui.Modal):
+    class RouletteModel(Modal):
         def __init__(self):
             super().__init__(
                 title="place a bet idfk",
                 timeout=3600,
             )
 
-            self.bettype = discord.ui.TextInput(
+            self.bettype = TextInput(
                 min_length=1,
                 max_length=5,
                 label="choose a bet",
@@ -5575,7 +5574,7 @@ async def roulette(message: discord.Interaction):
             )
             self.add_item(self.bettype)
 
-            self.betamount = discord.ui.TextInput(
+            self.betamount = TextInput(
                 min_length=1,
                 label="bet amount (in cat dollars)",
                 style=discord.TextStyle.short,
