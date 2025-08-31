@@ -303,6 +303,9 @@ temp_belated_storage = {}
 # to prevent weird cookie things without destroying the database with load
 temp_cookie_storage = {}
 
+# i dont even know naymore
+temp_rain_storage = []
+
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
 
@@ -1799,8 +1802,10 @@ async def on_message(message: discord.Message):
                 except Exception:
                     pass
 
-                if channel.cat_rains > 0:
+                if channel.cat_rains > 0 or message.channel.id in temp_rain_storage:
                     do_time = False
+                    if message.channel.id in temp_rain_storage:
+                        temp_rain_storage.remove(message.channel.id)
 
                 suffix_string = ""
                 silly_amount = 1
@@ -3415,6 +3420,7 @@ async def actually_do_rain(message, channel):
         channel.cat_rains -= 1
         await channel.save()
 
+    temp_rain_storage.append(message.channel.id)
     channel.rain_should_end = 0
     await channel.save()
 
