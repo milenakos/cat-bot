@@ -2107,7 +2107,11 @@ async def on_message(message: discord.Message):
 
                         channel.cat_rains += 3  # compensation
 
-                        await message.channel.send(f"oops the rain broke, it will now continue ({channel.cat_rains} cats left)")
+                        try:
+                            if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
+                                await message.channel.send(f"oops the rain broke, it will now continue ({channel.cat_rains} cats left)")
+                        except Exception:
+                            pass
                         channel.rain_should_end = int(time.time() + (channel.cat_rains * 2.75) * 1.3)
                         channel.yet_to_spawn = 0
                         await channel.save()
