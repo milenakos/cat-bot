@@ -39,7 +39,7 @@ import psutil
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
-from discord.ui import Button, View, Modal, LayoutView, TextDisplay, Separator, TextInput, Thumbnail, ActionRow
+from discord.ui import Button, View, Modal, LayoutView, TextDisplay, Separator, TextInput, Thumbnail, ActionRow, File
 from PIL import Image
 
 import config
@@ -943,9 +943,7 @@ async def maintaince_loop():
                 r = await session.post(
                     f"https://top.gg/api/bots/{bot.user.id}/stats",
                     headers={"Authorization": config.TOP_GG_TOKEN},
-                    json={
-                        "server_count": len(bot.guilds),
-                    },
+                    json={"server_count": len(bot.guilds)},
                 )
                 r.close()
             except Exception:
@@ -1103,7 +1101,7 @@ async def maintaince_loop():
         ):
             return
 
-        if loop_count % 10 == 0:
+        if loop_count % 12 == 0:
             backup_file = "/root/backup.dump"
             try:
                 # delete the previous backup file
@@ -2610,6 +2608,34 @@ thanks for using cat bot!""",
             view.add_item(embed)
             view.add_item(back_row)
             await interaction.edit_original_response(view=view)
+        elif news_id == 9:
+            # we hijack the cookie system to store the yippee count
+            cookie_id = (9, bot.user.id)
+            if cookie_id not in temp_cookie_storage.keys():
+                cookie_user = await Profile.get_or_create(guild_id=9, user_id=bot.user.id)
+                temp_cookie_storage[cookie_id] = cookie_user.cookies
+
+            async def add_yippee(interaction):
+                await interaction.response.defer()
+                temp_cookie_storage[cookie_id] += 1
+                await send_yippee(interaction)
+
+            async def send_yippee(interaction):
+                btn = Button(label=f"yippee! ({temp_cookie_storage[cookie_id]:,})", emoji=get_emoji("yippee"), style=ButtonStyle.primary)
+                btn.callback = add_yippee
+                embed = Container(
+                    "## cat bot is now top 5 on top.gg",
+                    "thanks for voting",
+                    File(discord.UnfurledMediaItem()),
+                    "===",
+                    btn,
+                    "-# <t:0>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+
+            await send_yippee(interaction)
 
     async def regen_buttons():
         nonlocal buttons
