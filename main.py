@@ -2744,7 +2744,7 @@ thanks for using cat bot!""",
     await achemb(message, "news", "send")
 
 
-@bot.tree.command(description="Read text as TikTok's TTS woman")
+@bot.tree.command(description="Read text as TikTok TTS woman")
 @discord.app_commands.describe(text="The text to be read! (300 characters max)")
 async def tiktok(message: discord.Interaction, text: str):
     perms = await fetch_perms(message)
