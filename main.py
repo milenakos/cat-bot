@@ -3511,7 +3511,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
             self.input = TextInput(
                 min_length=1,
-                max_length=2,
+                max_length=5,
                 label="Duration in minutes",
                 style=discord.TextStyle.short,
                 required=True,
@@ -3546,8 +3546,8 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             await interaction.response.send_message("the bot is about to stop. please try again later.", ephemeral=True)
             return
 
-        if rain_length < 1 or rain_length > 60:
-            await interaction.response.send_message("pls input a number 1-60", ephemeral=True)
+        if rain_length < 1:
+            await interaction.response.send_message("last time i checked weather can not change for a negative amount of time", ephemeral=True)
             return
 
         if rain_length > user.rain_minutes + profile.rain_minutes or user.rain_minutes < 0:
