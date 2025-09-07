@@ -936,16 +936,26 @@ async def maintaince_loop():
         if id < baseflake:
             del temp_belated_storage[id]
 
-    if config.TOP_GG_TOKEN and (not config.MIN_SERVER_SEND or len(bot.guilds) > config.MIN_SERVER_SEND):
+    if config.TOP_GG_TOKEN:
         async with aiohttp.ClientSession() as session:
-            # send server count to top.gg
             try:
+                if not config.MIN_SERVER_SEND or len(bot.guilds) > config.MIN_SERVER_SEND:
+                    # send server count to top.gg
+                    r = await session.post(
+                        f"https://top.gg/api/bots/{bot.user.id}/stats",
+                        headers={"Authorization": config.TOP_GG_TOKEN},
+                        json={"server_count": len(bot.guilds)},
+                    )
+                    r.close()
+
+                # post commands to top.gg
                 r = await session.post(
-                    f"https://top.gg/api/bots/{bot.user.id}/stats",
+                    "https://top.gg/api/v1/projects/@me/commands",
                     headers={"Authorization": config.TOP_GG_TOKEN},
-                    json={"server_count": len(bot.guilds)},
+                    json=[command.to_dict(bot.tree) for command in bot.tree._get_all_commands(guild=None)],
                 )
                 r.close()
+
             except Exception:
                 print("Posting to top.gg failed.")
 
