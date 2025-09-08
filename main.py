@@ -5098,7 +5098,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 elif k == "rains":
                     # rains
                     valuestr += f"☔ {v:,}m of Cat Rains\n"
-                    valuenum += 500 * v
+                    valuenum += 900 * v
                 elif k in cattypes:
                     # cats
                     valuenum += (sum(type_dict.values()) / type_dict[k]) * v
