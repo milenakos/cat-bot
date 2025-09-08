@@ -90,6 +90,7 @@
   "pig100": {"title": "Pig Champion", "description": "finish with 100+ score in /pig", "is_hidden": false, "category": "Hard"},
   "sphere_ach": {"title": "Sphere Roller", "description": "your sphere lands you an ach", "is_hidden": false, "category": "Hard"},
   "roulette_prodigy": {"title": "Roulette Prodigy", "description": "win with green or number at /roulette", "is_hidden": true, "category": "Hard"},
+  "certified_yapper": {"title": "Certified Yapper", "description": "have 3 or more extra lines at the end of your catch", "is_hidden": true, "category": "Hard"},
 
   "catn": {"title": "Cat'n", "description": "no cat??? :megamind:", "is_hidden": true, "category": "Hidden"},
   "coupon_user": {"title": "Coupon User", "description": "use a coupon for a 10% discount on all cats!!!", "is_hidden": true, "category": "Hidden"},
