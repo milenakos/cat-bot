@@ -5364,14 +5364,6 @@ async def brew(message: discord.Interaction):
 
 @bot.tree.command(description="Gamble your life savings away in our totally-not-rigged catsino!")
 async def casino(message: discord.Interaction):
-    if message.user.id + message.guild.id in casino_lock:
-        await message.response.send_message(
-            "you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe",
-            ephemeral=True,
-        )
-        await achemb(message, "paradoxical_gambler", "send")
-        return
-
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     # funny global gamble counter cus funny
     total_sum = await Profile.sum("gambles", "gambles > 0")
@@ -5391,6 +5383,7 @@ async def casino(message: discord.Interaction):
                 "you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe",
                 ephemeral=True,
             )
+            await achemb(message, "paradoxical_gambler", "send")
             return
 
         await profile.refresh_from_db()
@@ -5466,25 +5459,36 @@ async def casino(message: discord.Interaction):
 
 @bot.tree.command(description="oh no")
 async def slots(message: discord.Interaction):
-    if message.user.id + message.guild.id in slots_lock:
-        await message.response.send_message(
-            "you get kicked from the slot machine because you are already there, and two of you playing at once would cause a glitch in the universe",
-            ephemeral=True,
-        )
-        await achemb(message, "paradoxical_gambler", "send")
-        return
-
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    total_spins, total_wins, total_big_wins = (
-        await Profile.sum("slot_spins", "slot_spins > 0"),
-        await Profile.sum("slot_wins", "slot_wins > 0"),
-        await Profile.sum("slot_big_wins", "slot_big_wins > 0"),
-    )
-    embed = discord.Embed(
-        title=":slot_machine: The Slot Machine",
-        description=f"__Your stats__\n{profile.slot_spins:,} spins\n{profile.slot_wins:,} wins\n{profile.slot_big_wins:,} big wins\n\n__Global stats__\n{total_spins:,} spins\n{total_wins:,} wins\n{total_big_wins:,} big wins",
-        color=Colors.maroon,
-    )
+    
+    async def slots_stats(interaction):
+        if interaction.user.id != message.user.id:
+            await do_funny(interaction)
+            return
+            
+        await interaction.response.defer()
+        
+        total_spins, total_wins, total_big_wins = (
+            await Profile.sum("slot_spins", "slot_spins > 0"),
+            await Profile.sum("slot_wins", "slot_wins > 0"),
+            await Profile.sum("slot_big_wins", "slot_big_wins > 0"),
+        )
+        embed = discord.Embed(
+            title=":slot_machine: The Slot Machine",
+            description=f"__Your stats__\n{profile.slot_spins:,} spins\n{profile.slot_wins:,} wins\n{profile.slot_big_wins:,} big wins\n\n__Global stats__\n{total_spins:,} spins\n{total_wins:,} wins\n{total_big_wins:,} big wins",
+            color=Colors.maroon,
+        )
+
+        button = Button(label="Spin", style=ButtonStyle.blurple)
+        button.callback = spin
+    
+        myview = View(timeout=VIEW_TIMEOUT)
+        myview.add_item(button)
+
+        try:
+            await interaction.edit_original_response(embed=embed, view=myview)
+        except Exception:
+            await interaction.followup.send(embed=embed, view=myview)
 
     async def remove_debt(interaction):
         nonlocal message
@@ -5511,6 +5515,7 @@ async def slots(message: discord.Interaction):
                 "you get kicked from the slot machine because you are already there, and two of you playing at once would cause a glitch in the universe",
                 ephemeral=True,
             )
+            await achemb(message, "paradoxical_gambler", "send")
             return
         await profile.refresh_from_db()
 
@@ -5576,10 +5581,14 @@ async def slots(message: discord.Interaction):
         else:
             desc = "**You lose!**\n\n" + desc
 
+        myview = View(timeout=VIEW_TIMEOUT)
+        
         button = Button(label="Spin", style=ButtonStyle.blurple)
         button.callback = spin
+        myview.add_item(button)
 
-        myview = View(timeout=VIEW_TIMEOUT)
+        button = Button(label="Stats", style=ButtonStyle.blurple)
+        button.callback = slots_stats
         myview.add_item(button)
 
         if big_win:
@@ -5604,13 +5613,7 @@ async def slots(message: discord.Interaction):
         except Exception:
             await interaction.followup.send(embed=embed, view=myview)
 
-    button = Button(label="Spin", style=ButtonStyle.blurple)
-    button.callback = spin
-
-    myview = View(timeout=VIEW_TIMEOUT)
-    myview.add_item(button)
-
-    await message.response.send_message(embed=embed, view=myview)
+    await slots_stats(message)
 
 
 @bot.tree.command(description="what")
@@ -5984,7 +5987,7 @@ async def pig(message: discord.Interaction):
             button.callback = roll
             view.add_item(button)
             await interaction.edit_original_response(
-                content=f"*Oops!* You rolled a **1** and lost your {last_score} score...\nFinal score: 0\nBetter luck next time!", view=view
+                content=f"*Oops!* You rolled a **1** and lost your **{last_score:,}** score...\nFinal score: **0**\nBetter luck next time!\n\nYour current best score is **{profile.best_pig_score:,}**.", view=view
             )
         else:
             score += roll_result
@@ -6024,7 +6027,10 @@ async def pig(message: discord.Interaction):
         button = Button(label="Play Again", emoji="🎲", style=ButtonStyle.blurple)
         button.callback = roll
         view.add_item(button)
-        await interaction.edit_original_response(content=f"*Congrats!*\nYou finished with {last_score} score!", view=view)
+        if profile.best_pig_score == last_score:
+            await interaction.edit_original_response(content=f"*Congrats!*\nYou finished with a new high score of **{last_score:,}**!", view=view)
+        else:
+            await interaction.edit_original_response(content=f"*Congrats!*\nYou finished with **{last_score:,}** score!\n\nYour current best score is **{profile.best_pig_score:,}**.", view=view)
 
     view = View(timeout=3600)
     button = Button(label="Play!", emoji="🎲", style=ButtonStyle.blurple)
