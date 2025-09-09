@@ -2069,6 +2069,9 @@ async def on_message(message: discord.Message):
                     if len(set(raw_digits)) == 1:
                         await achemb(message, "all_the_same", "send")
 
+                if suffix_string.count("\n") >= 3:
+                    await achemb(message, "certified_yapper", "send")
+
                 # handle battlepass
                 await progress(message, user, "3cats")
                 if channel.cattype == "Fine":
