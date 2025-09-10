@@ -187,7 +187,7 @@ def msg2img(message: discord.Message, member: discord.Member):
     pencil.text((122, 8), nick, font=font, fill=color)  # draw author name
 
     icon_offset = 0
-    if member.display_icon and isinstance(member.display_icon, discord.Asset):
+    if isinstance(member, discord.Member) and member.display_icon and isinstance(member.display_icon, discord.Asset):
         try:
             pfp = requests.get(member.display_icon.url, stream=True).raw
             im2 = Image.open(pfp).resize((30, 30), Image.Resampling.LANCZOS).convert("RGBA")
@@ -196,7 +196,7 @@ def msg2img(message: discord.Message, member: discord.Member):
         except Exception:
             pass
 
-    if is_bot or member.primary_guild:
+    if is_bot or (member.primary_guild and member.primary_guild.tag):
         botfont = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 20)
 
         letters = "APP" if is_bot else member.primary_guild.tag
