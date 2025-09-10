@@ -3705,13 +3705,6 @@ if config.DONOR_CHANNEL_ID:
             user_bless_chance = user.rain_minutes_bought * 0.0001
             global_bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001
 
-            abutton = Button(
-                emoji="🕵️",
-                label=f"{'Disable' if user.blessings_anonymous else 'Enable'} Anonymity",
-                style=ButtonStyle.red if user.blessings_anonymous else ButtonStyle.green,
-            )
-            abutton.callback = toggle_anon
-
             if not user.premium:
                 bbutton = Button(label="Supporter Required!", url="https://catbot.shop", emoji="👑")
             else:
@@ -3730,8 +3723,18 @@ if config.DONOR_CHANNEL_ID:
                 f"Cats you blessed: **{user.cats_blessed:,}**\nYour bless chance is **{user_bless_chance:.4f}%**\nGlobal bless chance is **{global_bless_chance:.4f}%**",
                 "===",
                 Section(bbutton, f"Your blessings are currently **{'enabled' if user.blessings_enabled else 'disabled'}**."),
-                Section(abutton, f"{'' if user.blessings_enabled else '*(disabled)* '}{blesser} blessed your catch and it got doubled!"),
             )
+
+            if user.premium:
+                abutton = Button(
+                    emoji="🕵️",
+                    label=f"{'Disable' if user.blessings_anonymous else 'Enable'} Anonymity",
+                    style=ButtonStyle.red if user.blessings_anonymous else ButtonStyle.green,
+                )
+                abutton.callback = toggle_anon
+
+                container.add_item(Section(abutton, f"{'' if user.blessings_enabled else '*(disabled)* '}{blesser} blessed your catch and it got doubled!"))
+
             view.add_item(container)
 
             if do_edit:
