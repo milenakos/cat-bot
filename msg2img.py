@@ -196,27 +196,29 @@ def msg2img(message: discord.Message, member: discord.Member):
         except Exception:
             pass
 
-    if is_bot:
+    if is_bot or member.primary_guild:
         botfont = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 20)
+
+        letters = "APP" if is_bot else member.primary_guild.tag
 
         pencil.rounded_rectangle(
             (
                 129 + getsize(font, nick)[0] + 5 + icon_offset,
                 8 + 5,
-                129 + getsize(font, nick)[0] + 14 + getsize(botfont, "APP")[0] + icon_offset,
+                129 + getsize(font, nick)[0] + 14 + getsize(botfont, letters)[0] + icon_offset,
                 10 + 6 + 25,
             ),
-            fill=(88, 101, 242),
+            fill=(88, 101, 242) if is_bot else (70, 70, 77),
             radius=3,
         )
 
         pencil.text(
             (131 + getsize(font, nick)[0] + 8 + icon_offset, 10 + 4),
-            "APP",
+            letters,
             font=botfont,
             fill=(255, 255, 255),
         )
-        move = getsize(botfont, "APP")[0] + 20
+        move = getsize(botfont, letters)[0] + 20
 
     with Pilmoji(new_img) as pilmoji2:
         pilmoji2.text((122, 55), text.strip(), (255, 255, 255), font2, emoji_scale_factor=45 / 33)
