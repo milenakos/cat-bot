@@ -167,7 +167,7 @@ def msg2img(message: discord.Message, member: discord.Member):
         try:
             pfp = requests.get(member.avatar_decoration.url, stream=True).raw
             im2 = Image.open(pfp).resize((100, 100), Image.Resampling.LANCZOS).convert("RGBA")
-            new_img.paste(im2, (5, 5))
+            new_img.paste(im2, (5, 5), im2)
         except Exception:
             pass
 
