@@ -256,7 +256,8 @@ CREATE TABLE public.profile (
     roulette_spins integer DEFAULT 0,
     roulette_winner boolean DEFAULT false,
     roulette_prodigy boolean DEFAULT false,
-    failed_gambler boolean DEFAULT false
+    failed_gambler boolean DEFAULT false,
+    certified_yapper boolean DEFAULT false
 );
 
 
