@@ -4298,7 +4298,7 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
         embed = discord.Embed(
             title=f"{icon} {target} Cat Prisms",
             color=Colors.brown,
-            description="Prisms are a tradeable power-up which occasionally bumps cat rarity up by one. Each prism crafted gives the entire server an increased chance to get upgraded, plus additional chance for prism crafter.\n\n",
+            description="Prisms are a tradeable power-up which occasionally bumps cat rarity up by one. Each prism crafted gives the entire server an increased chance to get upgraded, plus additional chance for prism owner.\n\n",
         ).set_footer(
             text=f"{total_count} Total Prisms | Server boost: {round(global_boost * 100, 3)}%\n{person_id.name}'s prisms | Owned: {user_count} | Personal boost: {user_boost}%"
         )
