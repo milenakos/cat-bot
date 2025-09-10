@@ -161,13 +161,13 @@ def msg2img(message: discord.Message, member: discord.Member):
     newer_img = Image.new("RGBA", (800, 800), bg_color)
     newer_img.paste(im2, (0, 0), mask_im)  # apply mask to avatar
     newer_img = newer_img.resize((80, 80), Image.Resampling.LANCZOS)
-    new_img.paste(newer_img, (10, 10), newer_img)
+    new_img.paste(newer_img, (12, 12), newer_img)
 
     if member.avatar_decoration:
         try:
             pfp = requests.get(member.avatar_decoration.url, stream=True).raw
             im2 = Image.open(pfp).resize((96, 96), Image.Resampling.LANCZOS).convert("RGBA")
-            new_img.paste(im2, (2, 2), im2)
+            new_img.paste(im2, (4, 4), im2)
         except Exception:
             pass
 
@@ -185,14 +185,25 @@ def msg2img(message: discord.Message, member: discord.Member):
         pencil.rectangle((0, 0, 0, 65 + the_size_and_stuff), fill=ImageColor.getrgb("#FAA81A"))
 
     pencil.text((122, 8), nick, font=font, fill=color)  # draw author name
+
+    icon_offset = 0
+    if member.display_icon and isinstance(member.display_icon, discord.Asset):
+        try:
+            pfp = requests.get(member.display_icon.url, stream=True).raw
+            im2 = Image.open(pfp).resize((25, 25), Image.Resampling.LANCZOS).convert("RGBA")
+            new_img.paste(im2, (13 + 122 + getsize(font, nick)[0] + move, 17), im2)
+            icon_offset = 30
+        except Exception:
+            pass
+
     if is_bot:
         botfont = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 20)
 
         pencil.rounded_rectangle(
             (
-                129 + getsize(font, nick)[0] + 5,
+                129 + getsize(font, nick)[0] + 5 + icon_offset,
                 8 + 5,
-                129 + getsize(font, nick)[0] + 14 + getsize(botfont, "APP")[0],
+                129 + getsize(font, nick)[0] + 14 + getsize(botfont, "APP")[0] + icon_offset,
                 10 + 6 + 25,
             ),
             fill=(88, 101, 242),
@@ -200,7 +211,7 @@ def msg2img(message: discord.Message, member: discord.Member):
         )
 
         pencil.text(
-            (131 + getsize(font, nick)[0] + 8, 10 + 4),
+            (131 + getsize(font, nick)[0] + 8 + icon_offset, 10 + 4),
             "APP",
             font=botfont,
             fill=(255, 255, 255),
@@ -213,7 +224,7 @@ def msg2img(message: discord.Message, member: discord.Member):
     twentyfourhour = message.created_at.strftime("%H:%M")
 
     pencil.text(
-        (13 + 122 + getsize(font, nick)[0] + move, 17),
+        (13 + 122 + getsize(font, nick)[0] + move + icon_offset, 17),
         twentyfourhour,
         font=font3,
         fill=ImageColor.getrgb("#A3A4AA"),
