@@ -190,9 +190,9 @@ def msg2img(message: discord.Message, member: discord.Member):
     if member.display_icon and isinstance(member.display_icon, discord.Asset):
         try:
             pfp = requests.get(member.display_icon.url, stream=True).raw
-            im2 = Image.open(pfp).resize((25, 25), Image.Resampling.LANCZOS).convert("RGBA")
-            new_img.paste(im2, (13 + 122 + getsize(font, nick)[0] + move, 17), im2)
-            icon_offset = 30
+            im2 = Image.open(pfp).resize((30, 30), Image.Resampling.LANCZOS).convert("RGBA")
+            new_img.paste(im2, (10 + 122 + getsize(font, nick)[0] + move, 13), im2)
+            icon_offset = 35
         except Exception:
             pass
 
