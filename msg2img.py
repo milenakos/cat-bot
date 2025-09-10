@@ -166,8 +166,8 @@ def msg2img(message: discord.Message, member: discord.Member):
     if member.avatar_decoration:
         try:
             pfp = requests.get(member.avatar_decoration.url, stream=True).raw
-            im2 = Image.open(pfp).resize((100, 100), Image.Resampling.LANCZOS).convert("RGBA")
-            new_img.paste(im2, (5, 5), im2)
+            im2 = Image.open(pfp).resize((96, 96), Image.Resampling.LANCZOS).convert("RGBA")
+            new_img.paste(im2, (2, 2), im2)
         except Exception:
             pass
 
@@ -214,7 +214,7 @@ def msg2img(message: discord.Message, member: discord.Member):
 
     pencil.text(
         (13 + 122 + getsize(font, nick)[0] + move, 17),
-        f"Today at {twentyfourhour}",
+        twentyfourhour,
         font=font3,
         fill=ImageColor.getrgb("#A3A4AA"),
     )  # draw time
