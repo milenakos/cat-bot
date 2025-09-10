@@ -29,22 +29,19 @@ def getsize(font, token):
     return right - left, bottom - top
 
 
-def msg2img(message):
+def msg2img(message: discord.Message, member: discord.Member):
     move = 0
-    is_bot = message.author.bot
+    is_bot = member.bot
     is_pinged = message.mention_everyone
     text = message.clean_content
     if not text:
         text = message.system_content
-    try:
-        nick = message.author.nick
-    except Exception:
-        nick = message.author.global_name
-    color = (message.author.color.r, message.author.color.g, message.author.color.b)
+    nick = member.display_name
+    color = (member.color.r, member.color.g, member.color.b)
     if color == (0, 0, 0):
         color = (255, 255, 255)
     if not nick:
-        nick = message.author.name
+        nick = member.name
 
     custom_image = None
     for i in message.attachments:
@@ -151,7 +148,7 @@ def msg2img(message):
     new_img = Image.new("RGBA", (1067, 75 + the_size_and_stuff), bg_color)
     pencil = ImageDraw.Draw(new_img)
     try:
-        pfp = requests.get(message.author.display_avatar.url, stream=True).raw
+        pfp = requests.get(member.display_avatar.url, stream=True).raw
         im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
     except Exception:  # if the pfp is bit too silly
         new_url = "https://cdn.discordapp.com/embed/avatars/0.png"
@@ -165,6 +162,14 @@ def msg2img(message):
     newer_img.paste(im2, (0, 0), mask_im)  # apply mask to avatar
     newer_img = newer_img.resize((80, 80), Image.Resampling.LANCZOS)
     new_img.paste(newer_img, (10, 10), newer_img)
+
+    if member.avatar_decoration:
+        try:
+            pfp = requests.get(member.avatar_decoration.url, stream=True).raw
+            im2 = Image.open(pfp).resize((100, 100), Image.Resampling.LANCZOS).convert("RGBA")
+            new_img.paste(im2, (5, 5))
+        except Exception:
+            pass
 
     if custom_image:
         new_img.paste(custom_image, (122, previous_size), custom_image)

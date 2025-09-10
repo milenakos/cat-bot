@@ -6590,7 +6590,11 @@ async def catch(message: discord.Interaction, msg: discord.Message):
     await message.response.defer()
 
     event_loop = asyncio.get_event_loop()
-    result = await event_loop.run_in_executor(None, msg2img.msg2img, msg)
+    try:
+        member = await message.guild.fetch_member(msg.author.id)
+    except Exception:
+        member = msg.author
+    result = await event_loop.run_in_executor(None, msg2img.msg2img, msg, member)
 
     await message.followup.send("cought in 4k", file=result)
 
