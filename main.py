@@ -7217,11 +7217,20 @@ async def recieve_vote(request):
 
     user.reminder_vote = 1
     user.total_votes += 1
+    freeze_note = ""
     if user.vote_time_topgg + extend_time * 3600 <= time.time():
         # streak end
-        if user.max_vote_streak < user.vote_streak:
-            user.max_vote_streak = user.vote_streak
-        user.vote_streak = 1
+        if user.streak_freezes < 1:
+            if user.max_vote_streak < user.vote_streak:
+                user.max_vote_streak = user.vote_streak
+            user.vote_streak = 1
+        else:
+            # i initially wanted streak freezes to not increase up
+            # but that could result in unexpected repeated milestone rewards
+            user.vote_streak += 1
+
+            user.streak_freezes -= 1
+            freeze_note = "\n🧊 Streak Freeze Used!"
     else:
         user.vote_streak += 1
     user.vote_time_topgg = time.time()
@@ -7252,7 +7261,7 @@ async def recieve_vote(request):
                     "Thanks for voting! To claim your rewards, run `/battlepass` in every server you want.",
                     f"You can vote again <t:{int(time.time()) + 43200}:R>.",
                     "",
-                    f":fire: **Streak:** {user.vote_streak:,} (expires <t:{int(time.time()) + extend_time * 3600}:R>)",
+                    f":fire: **Streak:** {user.vote_streak:,} (expires <t:{int(time.time()) + extend_time * 3600}:R>){freeze_note}",
                     f"{streak_progress}",
                 ]
             )
