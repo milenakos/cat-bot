@@ -2640,7 +2640,7 @@ thanks for using cat bot!""",
                 embed = Container(
                     "## cat bot is now top 5 on top.gg",
                     "thanks for voting",
-                    File(discord.File("images/number5.png", filename="number5.png")),
+                    discord.ui.MediaGallery(discord.MediaGalleryItem(discord.File("images/number5.png"))),
                     "also pls still [go vote](https://top.gg/bot/966695034340663367/vote) incase OwO will rebeat us!!",
                     "===",
                     btn,
