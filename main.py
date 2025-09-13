@@ -4049,7 +4049,7 @@ async def battlepass(message: discord.Interaction):
 
         # vote
         streak_string = ""
-        if global_user.vote_streak >= 5 and global_user.vote_time_topgg + 24 * 3600 > time.time():
+        if global_user.vote_streak >= 5:
             streak_string = f" (🔥 {global_user.vote_streak}x streak)"
         if user.vote_cooldown != 0:
             description += f"✅ ~~Vote on Top.gg~~\n- Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>{streak_string}\n"
