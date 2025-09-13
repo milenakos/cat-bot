@@ -11,6 +11,9 @@ DB_PASS = os.environ["psql_password"]
 # all the following are optional (setting them to None will disable the feature)
 #
 
+# dsn of a sentry-compatible service for error logging
+SENTRY_DSN = os.environ["sentry_dsn"]
+
 # channel id for db backups, private extremely recommended
 BACKUP_ID = 1060545763194707998
 

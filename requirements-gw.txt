@@ -8,3 +8,4 @@ discord-emoji
 winuvloop
 psutil
 asyncpg
+sentry-sdk

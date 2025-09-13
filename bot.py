@@ -19,14 +19,57 @@ import importlib
 import time
 
 import discord
+import sentry_sdk
 import winuvloop
 from discord.ext import commands
 
+import catpg
 import config
 import database
-import catpg
 
 winuvloop.install()
+
+filtered_errors = [
+    # inactionable/junk discord api errors
+    "Too Many Requests",
+    "You are being rate limited",
+    "Invalid Webhook Token",
+    "Unknown Interaction",
+    "Unknown Webhook",
+    "Failed to convert",
+    "CommandNotFound",
+    "CommandAlreadyRegistered",
+    "Cannot send an empty message",
+    # connection errors and warnings
+    "ClientConnectorError",
+    "DiscordServerError",
+    "WSServerHandshakeError",
+    "ConnectionClosed",
+    "ConnectionResetError",
+    "TimeoutError",
+    "ServerDisconnectedError",
+    "ClientOSError",
+    "TransferEncodingError",
+    "Request Timeout",
+    "Session is closed",
+    "Unclosed connection",
+    "unable to perform operation on",
+    "503 Service Unavailable",
+]
+
+
+def before_send(event, hint):
+    if "exc_info" not in hint:
+        return event
+    for i in filtered_errors:
+        if i in str(hint["exc_info"][0]) + str(hint["exc_info"][1]):
+            return None
+    return event
+
+
+if config.SENTRY_DSN:
+    sentry_sdk.init(dsn=config.SENTRY_DSN, before_send=before_send)
+
 
 bot = commands.AutoShardedBot(
     command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
