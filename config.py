@@ -21,7 +21,7 @@ WEBHOOK_VERIFY = os.environ["webhook_verify"]
 TOP_GG_TOKEN = os.environ["top_gg_token"]
 
 # only post stats if server count is above this, to prevent wrong stats
-MIN_SERVER_SEND = 100_000
+MIN_SERVER_SEND = 125_000
 
 # wordnik api key for /define command
 WORDNIK_API_KEY = os.environ["wordnik_api_key"]
