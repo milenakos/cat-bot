@@ -2640,7 +2640,7 @@ thanks for using cat bot!""",
                 embed = Container(
                     "## cat bot is now top 5 on top.gg",
                     "thanks for voting",
-                    File(discord.File("images/number5.png")),
+                    File("attachment://number5.png"),
                     "also pls still [go vote](https://top.gg/bot/966695034340663367/vote) incase OwO will rebeat us!!",
                     "===",
                     btn,
@@ -2648,7 +2648,7 @@ thanks for using cat bot!""",
                 )
                 view.add_item(embed)
                 view.add_item(back_row)
-                await interaction.edit_original_response(view=view)
+                await interaction.edit_original_response(view=view, file=discord.File("images/number5.png"))
 
             await send_yippee(interaction)
 
