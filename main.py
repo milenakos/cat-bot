@@ -357,6 +357,7 @@ news_list = [
     {"title": "Cat Bot Turns 3", "emoji": "🥳"},
     {"title": "100,000 SERVERS WHAT", "emoji": "🎉"},
     {"title": "Regarding recent instabilities", "emoji": "🗒️"},
+    {"title": "cat bot reached #5 on top.gg", "emoji": "yippee"},
 ]
 
 
@@ -2639,11 +2640,11 @@ thanks for using cat bot!""",
                 embed = Container(
                     "## cat bot is now top 5 on top.gg",
                     "thanks for voting",
-                    File(discord.UnfurledMediaItem()),
+                    File(discord.UnfurledMediaItem("https://i.imgur.com/MSZF3ly.png")),
                     "also pls still [go vote](https://top.gg/bot/966695034340663367/vote) incase OwO will rebeat us!!",
                     "===",
                     btn,
-                    "-# <t:0>",
+                    "-# <t:1757794211>",
                 )
                 view.add_item(embed)
                 view.add_item(back_row)
