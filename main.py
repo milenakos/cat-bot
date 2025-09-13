@@ -2631,7 +2631,11 @@ thanks for using cat bot!""",
 
             async def add_yippee(interaction):
                 await interaction.response.defer()
-                temp_cookie_storage[cookie_id] += 1
+                try:
+                    temp_cookie_storage[cookie_id] += 1
+                except KeyError:
+                    await cookie_user.refresh_from_db()
+                    temp_cookie_storage[cookie_id] = cookie_user.cookies
                 await send_yippee(interaction)
 
             async def send_yippee(interaction):
