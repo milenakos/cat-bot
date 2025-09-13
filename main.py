@@ -2635,6 +2635,7 @@ thanks for using cat bot!""",
                 await send_yippee(interaction)
 
             async def send_yippee(interaction):
+                view = LayoutView(timeout=VIEW_TIMEOUT)
                 btn = Button(label=f"yippee! ({temp_cookie_storage[cookie_id]:,})", emoji=get_emoji("yippee"), style=ButtonStyle.primary)
                 btn.callback = add_yippee
                 embed = Container(
