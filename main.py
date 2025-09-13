@@ -2640,6 +2640,7 @@ thanks for using cat bot!""",
                     "## cat bot is now top 5 on top.gg",
                     "thanks for voting",
                     File(discord.UnfurledMediaItem()),
+                    "also pls still [go vote](https://top.gg/bot/966695034340663367/vote) incase OwO will rebeat us!!",
                     "===",
                     btn,
                     "-# <t:0>",
@@ -4782,6 +4783,8 @@ async def gift(
             # handle aches
             await achemb(message, "donator", "send")
             await achemb(message, "anti_donator", "send", person)
+            user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+            await progress(message, user, "gift")
         else:
             await message.response.send_message("no", ephemeral=True)
 
