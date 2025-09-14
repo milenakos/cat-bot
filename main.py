@@ -2448,7 +2448,7 @@ async def news(message: discord.Interaction):
             return
 
         async def go_back(back_interaction: discord.Interaction):
-            if interaction.user != message.user:
+            if back_interaction.user != message.user:
                 await do_funny(back_interaction)
                 return
             await back_interaction.response.defer()
