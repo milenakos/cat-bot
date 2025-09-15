@@ -1823,6 +1823,7 @@ async def on_message(message: discord.Message):
                 if user.perks:
                     if user.cataine_active < time.time() and not user.hibernation:
                         await level_down(user, message)
+                        await user.refresh_from_db()
                     perks = user.perks
                     perks_info = cataine_list["perks"]
                     for perk in perks:
@@ -6313,7 +6314,9 @@ async def level_down(user, message, ephemeral=False):
         color=Colors.red,
         description=f"Level {user.cataine_level + 1} failed.\nMoving down to level {user.cataine_level}..."
         ).set_author(name="Mafia Level " + str(user.cataine_level + 1))
-    await message.channel.send(f"<@{user.user_id}>", embed=embed, ephemeral=ephemeral)
+    if ephemeral:
+        return embed
+    await message.channel.send(f"<@{user.user_id}>", embed=embed)
 
 
 @bot.tree.command(description="..?")
@@ -6324,8 +6327,9 @@ async def cataine(message: discord.Interaction):
         await message.followup.send("You don't have access to the dark market yet. Catch more cats to unlock it!")
         return
     if user.cataine_active < time.time() and not user.hibernation:
-        await level_down(user, message, True)
-    if user.cataine_amount == 0: 
+        embed = await level_down(user, message, True)
+        await message.followup.send(f"<@{user.user_id}>", embed=embed, ephemeral=True)
+    if user.cataine_amount == 0:
         await set_mafia_offer(user.cataine_level, user)
     if user.bounties == 0:
         await set_bounties(user.cataine_level, user)
@@ -6393,16 +6397,17 @@ async def cataine(message: discord.Interaction):
             if i == 2 and user.bounty_progress_three < user.bounty_total_three:
                 await interaction.response.send_message("You haven't completed your bounties yet!", ephemeral=True)
                 return
-        if user[f"cat_{cat_type}"] < amount:
-            await interaction.response.send_message("You don't have enough cats!", ephemeral=True)
-            return
+        if cat_type:
+            if user[f"cat_{cat_type}"] < amount:
+                await interaction.response.send_message("You don't have enough cats!", ephemeral=True)
+                return
+            user[f"cat_{cat_type}"] -= amount
         if not user.perk_selected:
             await interaction.response.send_message("You haven't selected a perk yet!", ephemeral=True)
             return
 
         user.perk_selected = False
         user.hibernation = True
-        user[f"cat_{cat_type}"] -= amount
         user.cataine_level += 1
         user.cataine_bought += 1
         user.cataine_total_cats = 0

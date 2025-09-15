@@ -79,7 +79,7 @@ CREATE TABLE public.profile (
     cataine_level smallint DEFAULT 0,
     cataine_total_cats integer DEFAULT 0,
     hibernation boolean DEFAULT false,
-    cataine_price character varying(30) DEFAULT ''::character varying,
+    cataine_price character varying(30) DEFAULT 'Fine'::character varying,
     cataine_amount integer DEFAULT 0,
     bounty_id_one smallint DEFAULT 0,
     bounty_id_two smallint DEFAULT 0,
