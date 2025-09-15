@@ -29,22 +29,19 @@ def getsize(font, token):
     return right - left, bottom - top
 
 
-def msg2img(message):
+def msg2img(message: discord.Message, member: discord.Member):
     move = 0
-    is_bot = message.author.bot
+    is_bot = member.bot
     is_pinged = message.mention_everyone
     text = message.clean_content
     if not text:
         text = message.system_content
-    try:
-        nick = message.author.nick
-    except Exception:
-        nick = message.author.global_name
-    color = (message.author.color.r, message.author.color.g, message.author.color.b)
+    nick = member.display_name
+    color = (member.color.r, member.color.g, member.color.b)
     if color == (0, 0, 0):
         color = (255, 255, 255)
     if not nick:
-        nick = message.author.name
+        nick = member.name
 
     custom_image = None
     for i in message.attachments:
@@ -151,7 +148,7 @@ def msg2img(message):
     new_img = Image.new("RGBA", (1067, 75 + the_size_and_stuff), bg_color)
     pencil = ImageDraw.Draw(new_img)
     try:
-        pfp = requests.get(message.author.display_avatar.url, stream=True).raw
+        pfp = requests.get(member.display_avatar.url, stream=True).raw
         im2 = Image.open(pfp).resize((800, 800)).convert("RGBA")  # resize user avatar
     except Exception:  # if the pfp is bit too silly
         new_url = "https://cdn.discordapp.com/embed/avatars/0.png"
@@ -164,7 +161,15 @@ def msg2img(message):
     newer_img = Image.new("RGBA", (800, 800), bg_color)
     newer_img.paste(im2, (0, 0), mask_im)  # apply mask to avatar
     newer_img = newer_img.resize((80, 80), Image.Resampling.LANCZOS)
-    new_img.paste(newer_img, (10, 10), newer_img)
+    new_img.paste(newer_img, (12, 12), newer_img)
+
+    if member.avatar_decoration:
+        try:
+            pfp = requests.get(member.avatar_decoration.url, stream=True).raw
+            im2 = Image.open(pfp).resize((96, 96), Image.Resampling.LANCZOS).convert("RGBA")
+            new_img.paste(im2, (4, 4), im2)
+        except Exception:
+            pass
 
     if custom_image:
         new_img.paste(custom_image, (122, previous_size), custom_image)
@@ -180,27 +185,40 @@ def msg2img(message):
         pencil.rectangle((0, 0, 0, 65 + the_size_and_stuff), fill=ImageColor.getrgb("#FAA81A"))
 
     pencil.text((122, 8), nick, font=font, fill=color)  # draw author name
-    if is_bot:
+
+    icon_offset = 0
+    if isinstance(member, discord.Member) and member.display_icon and isinstance(member.display_icon, discord.Asset):
+        try:
+            pfp = requests.get(member.display_icon.url, stream=True).raw
+            im2 = Image.open(pfp).resize((30, 30), Image.Resampling.LANCZOS).convert("RGBA")
+            new_img.paste(im2, (10 + 122 + getsize(font, nick)[0] + move, 13), im2)
+            icon_offset = 35
+        except Exception:
+            pass
+
+    if is_bot or (member.primary_guild and member.primary_guild.tag):
         botfont = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 20)
+
+        letters = "APP" if is_bot else member.primary_guild.tag
 
         pencil.rounded_rectangle(
             (
-                129 + getsize(font, nick)[0] + 5,
+                129 + getsize(font, nick)[0] + 5 + icon_offset,
                 8 + 5,
-                129 + getsize(font, nick)[0] + 14 + getsize(botfont, "APP")[0],
+                129 + getsize(font, nick)[0] + 14 + getsize(botfont, letters)[0] + icon_offset,
                 10 + 6 + 25,
             ),
-            fill=(88, 101, 242),
+            fill=(88, 101, 242) if is_bot else (70, 70, 77),
             radius=3,
         )
 
         pencil.text(
-            (131 + getsize(font, nick)[0] + 8, 10 + 4),
-            "APP",
+            (131 + getsize(font, nick)[0] + 8 + icon_offset, 10 + 4),
+            letters,
             font=botfont,
             fill=(255, 255, 255),
         )
-        move = getsize(botfont, "APP")[0] + 20
+        move = getsize(botfont, letters)[0] + 20
 
     with Pilmoji(new_img) as pilmoji2:
         pilmoji2.text((122, 55), text.strip(), (255, 255, 255), font2, emoji_scale_factor=45 / 33)
@@ -208,8 +226,8 @@ def msg2img(message):
     twentyfourhour = message.created_at.strftime("%H:%M")
 
     pencil.text(
-        (13 + 122 + getsize(font, nick)[0] + move, 17),
-        f"Today at {twentyfourhour}",
+        (13 + 122 + getsize(font, nick)[0] + move + icon_offset, 17),
+        twentyfourhour,
         font=font3,
         fill=ImageColor.getrgb("#A3A4AA"),
     )  # draw time

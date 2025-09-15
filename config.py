@@ -21,12 +21,21 @@ CRASH_MODE = "RAISE"
 # all the following are optional (setting them to None will disable the feature)
 #
 
-# top.gg voting key
+
+# dsn of a sentry-compatible service for error logging
+SENTRY_DSN = os.environ["sentry_dsn"]
+
+# channel id for db backups, private extremely recommended
+BACKUP_ID = 1060545763194707998
+
+# top.gg vote webhook verification key, setting this to None disables all voting stuff
 WEBHOOK_VERIFY = os.environ["webhook_verify"]
 
 # top.gg api token because they use ancient technology and you need to post server count manually smh
 TOP_GG_TOKEN = os.environ["top_gg_token"]
 
+# only post stats if server count is above this, to prevent wrong stats
+MIN_SERVER_SEND = 125_000
 # bots.gg api token for the same reason
 BOTS_GG_TOKEN = os.environ["bots_gg_token"]
 

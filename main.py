@@ -39,7 +39,7 @@ import psutil
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
-from discord.ui import Button, View
+from discord.ui import Button, View, Modal, LayoutView, TextDisplay, Separator, TextInput, Thumbnail, ActionRow, File
 from PIL import Image
 
 import config
@@ -306,6 +306,9 @@ temp_belated_storage = {}
 # to prevent weird cookie things without destroying the database with load
 temp_cookie_storage = {}
 
+# i dont even know naymore
+temp_rain_storage = []
+
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
 
@@ -357,6 +360,7 @@ news_list = [
     {"title": "Cat Bot Turns 3", "emoji": "🥳"},
     {"title": "100,000 SERVERS WHAT", "emoji": "🎉"},
     {"title": "Regarding recent instabilities", "emoji": "🗒️"},
+    {"title": "cat bot reached #5 on top.gg", "emoji": "yippee"},
 ]
 
 
@@ -936,18 +940,26 @@ async def maintaince_loop():
         if id < baseflake:
             del temp_belated_storage[id]
 
-    if config.TOP_GG_TOKEN and (not config.MIN_SERVER_SEND or len(bot.guilds) > config.MIN_SERVER_SEND):
+    if config.TOP_GG_TOKEN:
         async with aiohttp.ClientSession() as session:
-            # send server count to top.gg
             try:
+                if not config.MIN_SERVER_SEND or len(bot.guilds) > config.MIN_SERVER_SEND:
+                    # send server count to top.gg
+                    r = await session.post(
+                        f"https://top.gg/api/bots/{bot.user.id}/stats",
+                        headers={"Authorization": config.TOP_GG_TOKEN},
+                        json={"server_count": len(bot.guilds)},
+                    )
+                    r.close()
+
+                # post commands to top.gg
                 r = await session.post(
-                    f"https://top.gg/api/bots/{bot.user.id}/stats",
+                    "https://top.gg/api/v1/projects/@me/commands",
                     headers={"Authorization": config.TOP_GG_TOKEN},
-                    json={
-                        "server_count": len(bot.guilds),
-                    },
+                    json=[command.to_dict(bot.tree) for command in bot.tree._get_all_commands(guild=None)],
                 )
                 r.close()
+
             except Exception:
                 print("Posting to top.gg failed.")
 
@@ -1103,7 +1115,7 @@ async def maintaince_loop():
         ):
             return
 
-        if loop_count % 10 == 0:
+        if loop_count % 12 == 0:
             backup_file = "/root/backup.dump"
             try:
                 # delete the previous backup file
@@ -1439,9 +1451,10 @@ async def on_message(message: discord.Message):
             const_perc = len(text) / (len(text) - total_vow)
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
             try:
-                if perms.add_reactions:
+                if perms.add_reactions and reactions_ratelimit.get(message.guild.id, 0) < 100:
                     await message.add_reaction(get_emoji("staring_cat"))
                     react_count += 1
+                    reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
             except Exception:
                 pass
 
@@ -1548,7 +1561,7 @@ async def on_message(message: discord.Message):
 
     if perms.add_reactions:
         for r in reactions:
-            if r[0] in text.lower() and reactions_ratelimit.get(message.author.id, 0) < 20:
+            if r[0] in text.lower() and reactions_ratelimit.get(message.guild.id, 0) < 100:
                 if r[1] == "custom":
                     em = get_emoji(r[2])
                 elif r[1] == "vanilla":
@@ -1557,7 +1570,7 @@ async def on_message(message: discord.Message):
                 try:
                     await message.add_reaction(em)
                     react_count += 1
-                    reactions_ratelimit[message.author.id] = reactions_ratelimit.get(message.author.id, 0) + 1
+                    reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
                 except Exception:
                     pass
 
@@ -1575,9 +1588,10 @@ async def on_message(message: discord.Message):
                     pass
 
     try:
-        if message.author in message.mentions and perms.add_reactions:
+        if message.author in message.mentions and perms.add_reactions and reactions_ratelimit.get(message.guild.id, 0) < 100:
             await message.add_reaction(get_emoji("staring_cat"))
             react_count += 1
+            reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
     except Exception:
         pass
 
@@ -1802,6 +1816,8 @@ async def on_message(message: discord.Message):
 
                 if channel.cat_rains != 0:
                     do_time = False
+                    if message.channel.id in temp_rain_storage:
+                        temp_rain_storage.remove(message.channel.id)
 
                 suffix_string = ""
                 silly_amount = 1
@@ -2168,6 +2184,9 @@ async def on_message(message: discord.Message):
                     if len(set(raw_digits)) == 1:
                         await achemb(message, "all_the_same", "send")
 
+                if suffix_string.count("\n") >= 3:
+                    await achemb(message, "certified_yapper", "send")
+
                 # handle battlepass
                 await progress(message, user, "3cats")
                 if channel.cattype == "Fine":
@@ -2212,6 +2231,25 @@ async def on_message(message: discord.Message):
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
                     except Exception:
                         pass
+                    if channel.cat_rains > 0 and channel.rain_should_end and channel.rain_should_end < time.time():
+                        # revive the rain
+                        print(message.guild.id, channel.cat_rains, channel.yet_to_spawn, channel.rain_should_end)
+
+                        channel.cat_rains += 3  # compensation
+
+                        try:
+                            if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
+                                await message.channel.send(f"oops the rain broke, it will now continue ({channel.cat_rains} cats left)")
+                        except Exception:
+                            pass
+                        channel.rain_should_end = int(time.time() + (channel.cat_rains * 2.75) * 1.3)
+                        channel.yet_to_spawn = 0
+                        await channel.save()
+
+                        await asyncio.sleep(3)
+
+                        await actually_do_rain(message, channel)
+
 
     if text.lower().startswith("cat!amount") and perms.send_messages and (not message.thread or perms.send_messages_in_threads):
         user = await User.get_or_create(user_id=message.author.id)
@@ -2529,9 +2567,12 @@ async def news(message: discord.Interaction):
             return
 
         async def go_back(back_interaction: discord.Interaction):
+            if back_interaction.user != message.user:
+                await do_funny(back_interaction)
+                return
             await back_interaction.response.defer()
             await regen_buttons()
-            await back_interaction.edit_original_response(content="Choose an article:", view=generate_page(current_page), embed=None)
+            await back_interaction.edit_original_response(view=generate_page(current_page))
 
         await interaction.response.defer()
 
@@ -2543,41 +2584,43 @@ async def news(message: discord.Interaction):
         profile = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         await progress(interaction, profile, "news")
 
-        view = View(timeout=VIEW_TIMEOUT)
+        view = LayoutView(timeout=VIEW_TIMEOUT)
         back_button = Button(emoji="⬅️", label="Back")
         back_button.callback = go_back
-        view.add_item(back_button)
+        back_row = ActionRow(back_button)
 
         if news_id == 0:
-            embed = discord.Embed(
-                title="📜 Cat Bot Survey",
-                description="Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nSurvey is closed!",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1731168230),
+            embed = Container(
+                "## 📜 Cat Bot Survey",
+                "Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nSurvey is closed!",
+                "-# <t:1731168230>",
             )
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
         elif news_id == 1:
-            embed = discord.Embed(
-                title="✨ New Cat Rains perks!",
-                description="Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).\nEveryone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have received 10 minutes of Rains as compensation.\n\nThis is a really cool perk and I hope you like it!",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1732377932),
+            embed = Container(
+                "## ✨ New Cat Rains perks!",
+                "Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).\nEveryone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have received 10 minutes of Rains as compensation.\n\nThis is a really cool perk and I hope you like it!",
+                Button(label="Cat Bot Store", url="https://catbot.shop"),
+                "-# <t:1732377932>",
             )
-            button = discord.ui.Button(label="Cat Bot Store", url="https://catbot.shop")
-            view.add_item(button)
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
         elif news_id == 2:
-            embed = discord.Embed(
-                title="☃️ Cat Bot Christmas",
-                description=f"⚡ **Cat Bot Wrapped 2024**\nIn 2024 Cat Bot got...\n- 🖥️ *45777* new servers!\n- 👋 *286607* new profiles!\n- {get_emoji('staring_cat')} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though\n- {get_emoji('cat_throphy')} *1518096* achievements get!\nSee last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).\n\n❓ **New Year Update**\nSomething is coming...",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1734458962),
+            embed = Container(
+                "## ☃️ Cat Bot Christmas",
+                f"⚡ **Cat Bot Wrapped 2024**\nIn 2024 Cat Bot got...\n- 🖥️ *45777* new servers!\n- 👋 *286607* new profiles!\n- {get_emoji('staring_cat')} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though\n- {get_emoji('cat_throphy')} *1518096* achievements get!\nSee last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).\n\n❓ **New Year Update**\nSomething is coming...",
+                "-# <t:1734458962>",
             )
-            await interaction.edit_original_response(content=None, embed=embed, view=view)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
         elif news_id == 3:
-            embed = discord.Embed(
-                title="Battlepass is getting an update!",
-                description="""## qhar?
+            embed = Container(
+                "## Battlepass is getting an update!",
+                """### qhar?
 - Huge stuff!
 - Battlepass will now reset every month
 - You will have 3 quests, including voting
@@ -2587,31 +2630,33 @@ async def news(message: discord.Interaction):
 - Prism crafting/true ending no longer require battlepass progress.
 - More fun stuff to do each day and better rewards!
 
-## oh no what if i hate grinding?
+### oh no what if i hate grinding?
 Don't worry, quests are very easy and to complete the battlepass you will need to complete less than 3 easy quests a day.
 
-## will you sell paid battlepass? its joever
+### will you sell paid battlepass? its joever
 There are currently no plans to sell a paid battlepass.""",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1735689601),
+                "-# <t:1735689601>",
             )
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
         elif news_id == 4:
-            embed = discord.Embed(
-                title=f"{get_emoji('goldpack')} Packs!",
-                description=f"""you want more gambling? we heard you!
+            embed = Container(
+                f"## {get_emoji('goldpack')} Packs!",
+                f"""you want more gambling? we heard you!
 instead of predetermined cat rewards you now unlock Packs! packs have different rarities and have a 30% chance to upgrade a rarity when opening, then 30% for one more upgrade and so on. this means even the most common packs have a small chance to upgrade to the rarest one!
 the rarities are - Wooden {get_emoji("woodenpack")}, Stone {get_emoji("stonepack")}, Bronze {get_emoji("bronzepack")}, Silver {get_emoji("silverpack")}, Gold {get_emoji("goldpack")}, Platinum {get_emoji("platinumpack")}, Diamond {get_emoji("diamondpack")} and Celestial {get_emoji("celestialpack")}!
 the extra reward is now a stone pack instead of 5 random cats too!
 *LETS GO GAMBLING*""",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1740787200),
+                "-# <t:1740787200>",
             )
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
         elif news_id == 5:
-            embed = discord.Embed(
-                title="Important Message from CEO of Cat Bot",
-                description="""(April Fools 2025)
+            embed = Container(
+                "## Important Message from CEO of Cat Bot",
+                """(April Fools 2025)
 
 Dear Cat Bot users,
 
@@ -2625,14 +2670,15 @@ We are committed to resolving these challenges and aim to have everything back o
 
 Best regards,
 [Your Name]""",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1743454803),
+                "-# <t:1743454803>",
             )
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
         elif news_id == 6:
-            embed = discord.Embed(
-                title="🥳 Cat Bot Turns 3",
-                description="""april 21st is a special day for cat bot! on this day is its birthday, and in 2025 its turning three!
+            embed = Container(
+                "## 🥳 Cat Bot Turns 3",
+                """april 21st is a special day for cat bot! on this day is its birthday, and in 2025 its turning three!
 happy birthda~~
 ...
 hold on...
@@ -2641,14 +2687,15 @@ the puzzle pieces say something about having to collect a million of them...
 how interesting!
 
 update: the puzzle piece event has concluded""",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1745242856),
+                "-# <t:1745242856>",
             )
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
         elif news_id == 7:
-            embed = discord.Embed(
-                title="🎉 100,000 SERVERS WHAT",
-                description="""wow! cat bot has reached 100,000 servers! this beyond insane i never thought this would happen thanks everyone
+            embed = Container(
+                "## 🎉 100,000 SERVERS WHAT",
+                """wow! cat bot has reached 100,000 servers! this beyond insane i never thought this would happen thanks everyone
 giving away a whole bunch of rain as celebration!
 
 1. cat stand giveaway (ENDED)
@@ -2666,19 +2713,20 @@ starting june 30th, for the next 5 days you will get points randomly on every ca
 starting june 30th, [catbot.shop](<https://catbot.shop>) will have a sale for the next 5 days! if everything above wasnt enough rain for your fancy you can buy some more with a discount!
 
 aaaaaaaaaaaaaaa""",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1751252181),
+                ActionRow(
+                    Button(label="Join our Server", url="https://discord.gg/staring"),
+                    Button(label="Cat Bot Store", url="https://catbot.shop"),
+                ),
+                "-# <t:1751252181>",
             )
-            button = discord.ui.Button(label="Join our Server", url="https://discord.gg/staring")
-            view.add_item(button)
-            button2 = discord.ui.Button(label="Cat Bot Store", url="https://catbot.shop")
-            view.add_item(button2)
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
 
         elif news_id == 8:
-            embed = discord.Embed(
-                title="Regarding recent instabilities",
-                description="""hello!
+            embed = Container(
+                "## Regarding recent instabilities",
+                """hello!
 
 stuff has been kinda broken the past few days, and the past 24 hours in paricular.
 
@@ -2687,13 +2735,46 @@ it was mostly my fault, but i worked hard to fix everything and i think its most
 as a compensation i will give everyone who voted in the past 3 days 2 free gold packs! you can press the button below to claim them. (note you can only claim it in 1 server, choose wisely)
 
 thanks for using cat bot!""",
-                color=Colors.brown,
-                timestamp=datetime.datetime.fromtimestamp(1752689941),
+                Button(label="Expired!", disabled=True),
+                "-# <t:1752689941>",
             )
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
+        elif news_id == 9:
+            # we hijack the cookie system to store the yippee count
+            cookie_id = (9, bot.user.id)
+            if cookie_id not in temp_cookie_storage.keys():
+                cookie_user = await Profile.get_or_create(guild_id=9, user_id=bot.user.id)
+                temp_cookie_storage[cookie_id] = cookie_user.cookies
 
-            button = discord.ui.Button(label="Expired!", disabled=True)
-            view.add_item(button)
-            await interaction.edit_original_response(content=None, view=view, embed=embed)
+            async def add_yippee(interaction):
+                await interaction.response.defer()
+                try:
+                    temp_cookie_storage[cookie_id] += 1
+                except KeyError:
+                    await cookie_user.refresh_from_db()
+                    temp_cookie_storage[cookie_id] = cookie_user.cookies
+                await send_yippee(interaction)
+
+            async def send_yippee(interaction):
+                view = LayoutView(timeout=VIEW_TIMEOUT)
+                btn = Button(label=f"yippee! ({temp_cookie_storage[cookie_id]:,})", emoji=get_emoji("yippee"), style=ButtonStyle.primary)
+                btn.callback = add_yippee
+                embed = Container(
+                    "## cat bot is now top 5 on top.gg",
+                    "thanks for voting",
+                    discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/MSZF3ly.png")),
+                    "also pls still [go vote](https://top.gg/bot/966695034340663367/vote) incase OwO will rebeat us!!",
+                    "===",
+                    btn,
+                    "-# <t:1757794211>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+
+            await send_yippee(interaction)
 
     async def regen_buttons():
         nonlocal buttons
@@ -2749,46 +2830,50 @@ thanks for using cat bot!""",
         await interaction.response.edit_message(view=generate_page(current_page))
 
     def generate_page(number):
-        view = View(timeout=VIEW_TIMEOUT)
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        view.add_item(TextDisplay("Choose an article:"))
 
         # article buttons
         if current_page == 0:
             end = (number + 1) * 4
         else:
             end = len(buttons)
+            row = ActionRow()
         for num, button in enumerate(buttons[number * 4 : end]):
             if current_page == 0:
-                button.row = num
-            view.add_item(button)
+                view.add_item(ActionRow(button))
+            else:
+                row.add_item(button)
+                if len(row.children) == 5:
+                    view.add_item(row)
+                    row = ActionRow()
+
+        last_row = ActionRow()
 
         # pages buttons
         if current_page != 0:
-            button = Button(label="Back", row=4)
+            button = Button(label="Back")
             button.callback = prev_page
-            view.add_item(button)
+            last_row.add_item(button)
 
-        button = Button(
-            label="Mark all as read",
-            row=4,
-        )
+        button = Button(label="Mark all as read")
         button.callback = mark_all_as_read
-        view.add_item(button)
+        last_row.add_item(button)
 
         if current_page == 0:
-            button = Button(
-                label="Archive",
-                row=4,
-            )
+            button = Button(label="Archive")
             button.callback = next_page
-            view.add_item(button)
+            last_row.add_item(button)
+
+        view.add_item(last_row)
 
         return view
 
-    await message.response.send_message("Choose an article:", view=generate_page(current_page))
+    await message.response.send_message(view=generate_page(current_page))
     await achemb(message, "news", "send")
 
 
-@bot.tree.command(description="Read text as TikTok's TTS woman")
+@bot.tree.command(description="Read text as TikTok TTS woman")
 @discord.app_commands.describe(text="The text to be read! (300 characters max)")
 async def tiktok(message: discord.Interaction, text: str):
     perms = await fetch_perms(message)
@@ -2903,7 +2988,7 @@ async def changemessage(message: discord.Interaction):
         return
 
     # this is the silly popup when you click the button
-    class InputModal(discord.ui.Modal):
+    class InputModal(Modal):
         def __init__(self, type):
             super().__init__(
                 title=f"Change {type} Message",
@@ -2912,7 +2997,7 @@ async def changemessage(message: discord.Interaction):
 
             self.type = type
 
-            self.input = discord.ui.TextInput(
+            self.input = TextInput(
                 min_length=0,
                 max_length=1000,
                 label="Input",
@@ -3481,7 +3566,7 @@ __Highlighted Stat__
 
     if person_id.id == message.user.id:
         view = View(timeout=VIEW_TIMEOUT)
-        btn = Button(emoji="📝", label="Edit", style=discord.ButtonStyle.blurple)
+        btn = Button(emoji="📝", label="Edit", style=ButtonStyle.blurple)
         btn.callback = edit_profile
         view.add_item(btn)
         await message.followup.send(embed=embedVar, view=view)
@@ -3505,6 +3590,10 @@ async def actually_do_rain(message, channel):
         await channel.refresh_from_db()
         channel.cat_rains -= 1
         await channel.save()
+
+    temp_rain_storage.append(message.channel.id)
+    channel.rain_should_end = 0
+    await channel.save()
 
     await asyncio.sleep(1)
 
@@ -3554,16 +3643,16 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
     )
 
     # this is the silly popup when you click the button
-    class RainModal(discord.ui.Modal):
+    class RainModal(Modal):
         def __init__(self, type):
             super().__init__(
                 title="Start a Cat Rain!",
                 timeout=3600,
             )
 
-            self.input = discord.ui.TextInput(
+            self.input = TextInput(
                 min_length=1,
-                max_length=2,
+                max_length=5,
                 label="Duration in minutes",
                 style=discord.TextStyle.short,
                 required=True,
@@ -3598,8 +3687,8 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             await interaction.response.send_message("the bot is about to stop. please try again later.", ephemeral=True)
             return
 
-        if rain_length < 1 or rain_length > 60:
-            await interaction.response.send_message("pls input a number 1-60", ephemeral=True)
+        if rain_length < 1:
+            await interaction.response.send_message("last time i checked weather can not change for a negative amount of time", ephemeral=True)
             return
 
         if rain_length > user.rain_minutes + profile.rain_minutes or user.rain_minutes < 0:
@@ -3716,6 +3805,8 @@ if config.DONOR_CHANNEL_ID:
             do_edit = True
             await interaction.response.defer()
             await user.refresh_from_db()
+            if not user.premium:
+                return
             user.blessings_enabled = not user.blessings_enabled
             await user.save()
             await regen(interaction)
@@ -3738,6 +3829,9 @@ if config.DONOR_CHANNEL_ID:
             else:
                 blesser = f"{user.emoji or '💫'} {message.user.name}"
 
+            user_bless_chance = user.rain_minutes_bought * 0.0001
+            global_bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001
+
             embed = discord.Embed(
                 color=Colors.brown,
                 title="🌠 Cat Blessings",
@@ -3753,29 +3847,41 @@ Blessing message preview:
 
             view = View(timeout=VIEW_TIMEOUT)
             if not user.premium:
-                button = Button(label="Supporter Required!", url="https://catbot.shop", emoji="👑")
-                view.add_item(button)
+                bbutton = Button(label="Supporter Required!", url="https://catbot.shop", emoji="👑")
             else:
-                button = Button(
+                bbutton = Button(
                     emoji="🌟",
                     label=f"{'Disable' if user.blessings_enabled else 'Enable'} Blessings",
-                    style=discord.ButtonStyle.red if user.blessings_enabled else discord.ButtonStyle.green,
+                    style=ButtonStyle.red if user.blessings_enabled else ButtonStyle.green,
                 )
-                button.callback = toggle_bless
-                view.add_item(button)
+                bbutton.callback = toggle_bless
 
-                button = Button(
+            view = LayoutView(timeout=VIEW_TIMEOUT)
+            container = Container(
+                "## :stars: Cat Blessings",
+                "When enabled, random Cat Bot users will have their cats blessed by you - and their catches will be doubled! Your bless chance increases by *0.0001%* per minute of rain bought.",
+                "===",
+                f"Cats you blessed: **{user.cats_blessed:,}**\nYour bless chance is **{user_bless_chance:.4f}%**\nGlobal bless chance is **{global_bless_chance:.4f}%**",
+                "===",
+                Section(bbutton, f"Your blessings are currently **{'enabled' if user.blessings_enabled else 'disabled'}**."),
+            )
+
+            if user.premium:
+                abutton = Button(
                     emoji="🕵️",
                     label=f"{'Disable' if user.blessings_anonymous else 'Enable'} Anonymity",
-                    style=discord.ButtonStyle.red if user.blessings_anonymous else discord.ButtonStyle.green,
+                    style=ButtonStyle.red if user.blessings_anonymous else ButtonStyle.green,
                 )
-                button.callback = toggle_anon
-                view.add_item(button)
+                abutton.callback = toggle_anon
+
+                container.add_item(Section(abutton, f"{'' if user.blessings_enabled else '*(disabled)* '}{blesser} blessed your catch and it got doubled!"))
+
+            view.add_item(container)
 
             if do_edit:
-                await message.edit_original_response(embed=embed, view=view)
+                await message.edit_original_response(view=view)
             else:
-                await message.response.send_message(embed=embed, view=view)
+                await message.response.send_message(view=view)
 
         await regen(message)
 
@@ -3833,7 +3939,7 @@ Blessing message preview:
 @bot.tree.command(description="View and open packs")
 async def packs(message: discord.Interaction):
     def gen_view(user):
-        view = discord.ui.View(timeout=VIEW_TIMEOUT)
+        view = View(timeout=VIEW_TIMEOUT)
         empty = True
         total_amount = 0
         for pack in pack_data:
@@ -3842,7 +3948,7 @@ async def packs(message: discord.Interaction):
             empty = False
             amount = user[f"pack_{pack['name'].lower()}"]
             total_amount += amount
-            button = discord.ui.Button(
+            button = Button(
                 emoji=get_emoji(pack["name"].lower() + "pack"),
                 label=f"{pack['name']} ({amount:,})",
                 style=ButtonStyle.blurple,
@@ -3851,9 +3957,9 @@ async def packs(message: discord.Interaction):
             button.callback = open_pack
             view.add_item(button)
         if empty:
-            view.add_item(discord.ui.Button(label="No packs left!", disabled=True))
+            view.add_item(Button(label="No packs left!", disabled=True))
         if total_amount > 10:
-            button = discord.ui.Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.blurple)
+            button = Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.blurple)
             button.callback = open_all_packs
             view.add_item(button)
         return view
@@ -4084,7 +4190,7 @@ async def battlepass(message: discord.Interaction):
 
         # vote
         streak_string = ""
-        if global_user.vote_streak >= 5 and global_user.vote_time_topgg + 24 * 3600 > time.time():
+        if global_user.vote_streak >= 5:
             streak_string = f" (🔥 {global_user.vote_streak}x streak)"
         if user.vote_cooldown != 0:
             description += f"✅ ~~Vote on Top.gg~~\n- Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>{streak_string}\n"
@@ -4333,9 +4439,9 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
         embed = discord.Embed(
             title=f"{icon} {target} Cat Prisms",
             color=Colors.brown,
-            description="Prisms are a tradeable power-up which occasionally bumps cat rarity up by one. Each prism crafted gives everyone an increased chance to get upgraded, plus additional chance for prism owners.\n\n",
+            description="Prisms are a tradeable power-up which occasionally bumps cat rarity up by one. Each prism crafted gives the entire server an increased chance to get upgraded, plus additional chance for prism owner.\n\n",
         ).set_footer(
-            text=f"{total_count} Total Prisms | Global boost: {round(global_boost * 100, 3)}%\n{person_id.name}'s prisms | Owned: {user_count} | Personal boost: {user_boost}%"
+            text=f"{total_count} Total Prisms | Server boost: {round(global_boost * 100, 3)}%\n{person_id.name}'s prisms | Owned: {user_count} | Personal boost: {user_boost}%"
         )
 
         embed.description += "\n".join(prism_texts[page_number * 26 : (page_number + 1) * 26])
@@ -4489,17 +4595,18 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
     async def finish_turn():
         nonlocal do_edit, current_turn
 
-        view = View(timeout=VIEW_TIMEOUT)
+        view = LayoutView(timeout=VIEW_TIMEOUT)
         wins = check_win(board)
         tie = True
+        rows = [ActionRow(), ActionRow(), ActionRow()]
         for cell_num, cell in enumerate(board):
             if cell is None:
                 tie = False
-                button = Button(emoji=get_emoji("empty"), custom_id=str(cell_num), row=cell_num // 3, disabled=wins != [-1])
+                button = Button(emoji=get_emoji("empty"), custom_id=str(cell_num), disabled=wins != [-1])
             else:
-                button = Button(emoji=cell, row=cell_num // 3, disabled=True, style=ButtonStyle.green if cell_num in wins else ButtonStyle.gray)
+                button = Button(emoji=cell, disabled=True, style=ButtonStyle.green if cell_num in wins else ButtonStyle.gray)
             button.callback = play
-            view.add_item(button)
+            rows[cell_num // 3].add_item(button)
 
         if wins != [-1]:
             if board[wins[0]] == "❌":
@@ -4514,10 +4621,13 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         else:
             second_line = f"{players[current_turn].mention}'s turn ({'X' if current_turn == 0 else 'O'})"
 
+        container = Container(f"## {players[0].mention} (X) vs {players[1].mention} (O)", second_line, rows[0], rows[1], rows[2])
+        view.add_item(container)
+
         if do_edit:
-            await message.edit_original_response(content=f"{players[0].mention} (X) vs {players[1].mention} (O)\n{second_line}", view=view)
+            await message.edit_original_response(view=view)
         else:
-            await message.response.send_message(f"{players[0].mention} (X) vs {players[1].mention} (O)\n{second_line}", view=view)
+            await message.response.send_message(view=view)
             do_edit = True
 
         if bot_is_playing and players[current_turn].bot and wins == [-1] and not tie:
@@ -4813,6 +4923,8 @@ async def gift(
             # handle aches
             await achemb(message, "donator", "send")
             await achemb(message, "anti_donator", "send", person)
+            user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+            await progress(message, user, "gift")
         else:
             await message.response.send_message("no", ephemeral=True)
 
@@ -5173,7 +5285,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             await achemb(message, "blackhole", "send", person2)
 
     # lets go add cats modal thats fun
-    class TradeModal(discord.ui.Modal):
+    class TradeModal(Modal):
         def __init__(self, currentuser):
             super().__init__(
                 title="Add to the trade",
@@ -5181,13 +5293,13 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             )
             self.currentuser = currentuser
 
-            self.cattype = discord.ui.TextInput(
+            self.cattype = TextInput(
                 label='Cat or Pack Type, Prism Name or "Rain"',
                 placeholder="Fine / Wooden / Alpha / Rain",
             )
             self.add_item(self.cattype)
 
-            self.amount = discord.ui.TextInput(label="Amount to offer", placeholder="1", required=False)
+            self.amount = TextInput(label="Amount to offer", placeholder="1", required=False)
             self.add_item(self.amount)
 
         # this is ran when user submits
@@ -5647,6 +5759,177 @@ async def slots(message: discord.Interaction):
     await message.response.send_message(embed=embed, view=myview)
 
 
+@bot.tree.command(description="what")
+async def roulette(message: discord.Interaction):
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+
+    # this is the silly popup when you click the button
+    class RouletteModel(Modal):
+        def __init__(self):
+            super().__init__(
+                title="place a bet idfk",
+                timeout=3600,
+            )
+
+            self.bettype = TextInput(
+                min_length=1,
+                max_length=5,
+                label="choose a bet",
+                style=discord.TextStyle.short,
+                required=True,
+                placeholder="red / black / green / 0 / 1 / 2 / 3 / ... / 36",
+            )
+            self.add_item(self.bettype)
+
+            self.betamount = TextInput(
+                min_length=1,
+                label="bet amount (in cat dollars)",
+                style=discord.TextStyle.short,
+                required=True,
+                placeholder="69",
+            )
+            self.add_item(self.betamount)
+
+        async def on_submit(self, interaction: discord.Interaction):
+            await user.refresh_from_db()
+
+            valids = ["red", "black", "green"] + [str(i) for i in range(37)]
+            if self.bettype.value.lower() not in valids:
+                await interaction.response.send_message("invalid bet", ephemeral=True)
+                return
+
+            try:
+                bet_amount = int(self.betamount.value)
+                if bet_amount <= 0:
+                    await interaction.response.send_message("bet amount must be greater than 0", ephemeral=True)
+                    return
+                if bet_amount > max(user.roulette_balance, 100):
+                    await interaction.response.send_message(f"your max bet is {max(user.roulette_balance, 100)}", ephemeral=True)
+                    return
+            except ValueError:
+                await interaction.response.send_message("invalid bet amount", ephemeral=True)
+                return
+
+            await interaction.response.defer()
+
+            # mapping of colors to numbers by indexes
+            colors = [
+                "green",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+                "black",
+                "red",
+            ]
+
+            emoji_map = {
+                "red": "🔴",
+                "black": "⚫",
+                "green": "🟢",
+            }
+
+            final_choice = random.randint(0, 36)
+            user.roulette_balance -= bet_amount
+            user.roulette_spins += 1
+            win = False
+            funny_win = False
+            if str(final_choice) == self.bettype.value or colors[final_choice] == self.bettype.value.lower():
+                if self.bettype.value in [str(i) for i in range(37)] or self.bettype.value.lower() == "green":
+                    user.roulette_balance += bet_amount * 36
+                    funny_win = True
+                else:
+                    user.roulette_balance += bet_amount * 2
+                user.roulette_wins += 1
+                win = True
+            user.roulette_balance = int(round(user.roulette_balance))
+            await user.save()
+
+            for wait_time in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.5]:
+                choice = random.randint(0, 36)
+                color = colors[choice]
+                embed = discord.Embed(
+                    color=Colors.maroon,
+                    title="woo its spinnin",
+                    description=f"your bet is {int(self.betamount.value):,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**",
+                )
+                await interaction.edit_original_response(embed=embed, view=None)
+                await asyncio.sleep(wait_time)
+
+            color = colors[final_choice]
+            embed = discord.Embed(
+                color=Colors.maroon,
+                title="winner!!!" if win else "womp womp",
+                description=f"your bet was {int(self.betamount.value):,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance:,}** cat dollars",
+            )
+            view = View(timeout=VIEW_TIMEOUT)
+            b = Button(label="spin", style=ButtonStyle.blurple)
+            b.callback = modal_select
+            view.add_item(b)
+            await interaction.edit_original_response(embed=embed, view=view)
+
+            if win:
+                await progress(message, user, "roulette")
+                await achemb(interaction, "roulette_winner", "send")
+            if funny_win:
+                await achemb(interaction, "roulette_prodigy", "send")
+            if user.roulette_balance < 0:
+                await achemb(interaction, "failed_gambler", "send")
+
+    async def modal_select(interaction: discord.Interaction):
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+
+        await interaction.response.send_modal(RouletteModel())
+
+    embed = discord.Embed(
+        color=Colors.maroon,
+        title="hecking roulette table",
+        description=f"your balance is **{user.roulette_balance:,}** cat dollars\n\nyou can gamble up to **{max(user.roulette_balance, 100):,}** cat dollars rn",
+    )
+
+    view = View(timeout=VIEW_TIMEOUT)
+    b = Button(label="spin", style=ButtonStyle.blurple)
+    b.callback = modal_select
+    view.add_item(b)
+
+    await message.response.send_message(embed=embed, view=view)
+
+    if user.roulette_balance < 0:
+        await achemb(message, "failed_gambler", "send")
+
+        
 @bot.tree.command(description="roll a dice")
 async def roll(message: discord.Interaction, sides: Optional[int]):
     if sides is None:
@@ -6731,7 +7014,11 @@ async def catch(message: discord.Interaction, msg: discord.Message):
     await message.response.defer()
 
     event_loop = asyncio.get_event_loop()
-    result = await event_loop.run_in_executor(None, msg2img.msg2img, msg)
+    try:
+        member = await message.guild.fetch_member(msg.author.id)
+    except Exception:
+        member = msg.author
+    result = await event_loop.run_in_executor(None, msg2img.msg2img, msg, member)
 
     await message.followup.send("cought in 4k", file=result)
 
@@ -7346,11 +7633,20 @@ async def recieve_vote(request):
 
     user.reminder_vote = 1
     user.total_votes += 1
+    freeze_note = ""
     if user.vote_time_topgg + extend_time * 3600 <= time.time():
         # streak end
-        if user.max_vote_streak < user.vote_streak:
-            user.max_vote_streak = user.vote_streak
-        user.vote_streak = 1
+        if user.streak_freezes < 1:
+            if user.max_vote_streak < user.vote_streak:
+                user.max_vote_streak = user.vote_streak
+            user.vote_streak = 1
+        else:
+            # i initially wanted streak freezes to not increase up
+            # but that could result in unexpected repeated milestone rewards
+            user.vote_streak += 1
+
+            user.streak_freezes -= 1
+            freeze_note = "\n🧊 Streak Freeze Used!"
     else:
         user.vote_streak += 1
     user.vote_time_topgg = time.time()
@@ -7381,7 +7677,7 @@ async def recieve_vote(request):
                     "Thanks for voting! To claim your rewards, run `/battlepass` in every server you want.",
                     f"You can vote again <t:{int(time.time()) + 43200}:R>.",
                     "",
-                    f":fire: **Streak:** {user.vote_streak:,} (expires <t:{int(time.time()) + extend_time * 3600}:R>)",
+                    f":fire: **Streak:** {user.vote_streak:,} (expires <t:{int(time.time()) + extend_time * 3600}:R>){freeze_note}",
                     f"{streak_progress}",
                 ]
             )
@@ -7502,3 +7798,40 @@ class Select(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         if self.on_select is not None and callable(self.on_select):
             await self.on_select(interaction, self.values[0])
+
+
+class Container(discord.ui.Container):
+    def __init__(self, *children, **kwargs):
+        if "accent_color" not in kwargs:
+            kwargs["accent_color"] = Colors.brown
+
+        new_children = []
+
+        for child in children:
+            if isinstance(child, str):
+                if child == "===":
+                    new_children.append(Separator())
+                else:
+                    new_children.append(TextDisplay(child))
+            elif isinstance(child, Button):
+                new_children.append(ActionRow(child))
+            else:
+                new_children.append(child)
+
+        super().__init__(*new_children, **kwargs)
+
+
+class Section(discord.ui.Section):
+    def __init__(self, *children, **kwargs):
+        if "accessory" not in kwargs:
+            new_children = []
+
+            for child in children:
+                if isinstance(child, Button) or isinstance(child, Thumbnail):
+                    kwargs["accessory"] = child
+                else:
+                    new_children.append(child)
+
+            super().__init__(*new_children, **kwargs)
+        else:
+            super().__init__(*children, **kwargs)
