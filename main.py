@@ -401,7 +401,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
         embed = (
             discord.Embed(
                 title="Cataine Addict",
-                description="Defeat the dog mafia\nThanks for playing! ✨",
+                description="Uncover the mafia's truth\nThanks for playing! ✨",
                 color=Colors.demonic,
             )
             .set_author(
@@ -6602,6 +6602,68 @@ async def level_down(user, message, ephemeral=False):
     await message.channel.send(f"<@{user.user_id}>", embed=embed)
 
 
+async def mafia_cutscene(interaction: discord.Interaction):
+    # YAPPATRON
+    text1 = "You feel satisfied with yourself. I just defeated the Godfather, Bailey! I'm on top of the world now!\n \
+Little did you know, it was foolish to believe it was over just yet.\n \
+You stare Bailey down, and realize just how bizarre he is. He's very large for a cat… he wags his tail… he just feels wrong. But then, you hear it.\n \
+*Bark! Bark!*\n \
+Oh no."
+    text2 = "You immediately run. You know that he will probably be able to outpace you, but you do have a bit of a head start.\n \
+There's a split in the alley.\n \
+Left would lead to the hideout, but you'll never get there in time.\n \
+Right, however, leads to a dead end.\n \
+Which way do you go?"
+    text3a = "You dash to the left. You can see the cat door ahead, but you'll never make it out in time.\n \
+You call out for help, and think back to all of those people you defeated.\n \
+Whiskers, the Lucians, Jinx, Jeremy, Sofia.\n \
+Would any of them be willing to save you?"
+    text3b = "You dash to the right. As you turn the corner and approach the dead end, you realize that while he may go faster, you can jump higher.\n \
+You back up against the wall, wait for him to approach… and jump.\n \
+You get over him, and run the other way. With a head start, you can get into the hideout.\n \
+But Bailey isn't done yet.\n \
+He's trying to break in. You think back to all of those people you defeated.\n \
+Whiskers, the Lucians, Jinx, Jeremy, Sofia.\n \
+Would any of them be willing to save you?"
+    text4 = "You see Jinx come out first. Whiskers is just behind him.\n \
+Jeremy doesn't take much longer. The Lucians come out too, though reluctantly.\n \
+Finally, Sofia scowls and approaches.\n \
+Bailey knew he could take down one cat. Two wouldn't be that hard. But seven..?\n \
+\"This isn't the end of this...\"\n \
+Bailey puts his head down, and scampers off. But you aren't done.\n \
+You and your crew chase after him. He runs, until you corner him. He goes into the building behind him… but it's the Cat Police Station.\n \
+As you return to your hideout, you hear a howl in the distance."
+    async def button3_callback(interaction: discord.Interaction):
+        await interaction.response.send_message(content=text4, ephemeral=True)
+        await achemb(interaction, "thanksforplaying", "send")
+    async def button2a_callback(interaction: discord.Interaction):
+        myview3 = View(timeout=VIEW_TIMEOUT)
+        button3 = Button(label="Next", style=ButtonStyle.blurple)
+        button3.callback = button3_callback
+        myview3.add_item(button3)
+        await interaction.response.send_message(content=text3a, view=myview3, ephemeral=True)
+    async def button2b_callback(interaction: discord.Interaction):
+        myview3 = View(timeout=VIEW_TIMEOUT)
+        button3 = Button(label="Next", style=ButtonStyle.blurple)
+        button3.callback = button3_callback
+        myview3.add_item(button3)
+        await interaction.response.send_message(content=text3b, view=myview3, ephemeral=True)
+    async def button1_callback(interaction: discord.Interaction):
+        myview2 = View(timeout=VIEW_TIMEOUT)
+        button2a = Button(label="Left", style=ButtonStyle.red)
+        button2b = Button(label="Right", style=ButtonStyle.green)
+        button2a.callback = button2a_callback
+        button2b.callback = button2b_callback
+        myview2.add_item(button2a)
+        myview2.add_item(button2b)
+        await interaction.response.send_message(content=text2, view=myview2, ephemeral=True)
+    myview1 = View(timeout=VIEW_TIMEOUT)
+    button1 = Button(label="RUN!", style=ButtonStyle.blurple)
+    button1.callback = button1_callback
+    myview1.add_item(button1)
+    await interaction.response.send_message(content=text1, view=myview1, ephemeral=True)
+
+
 @bot.tree.command(description="..?")
 async def cataine(message: discord.Interaction):
     await message.response.defer(ephemeral=True)
@@ -6623,9 +6685,10 @@ async def cataine(message: discord.Interaction):
     bounty_data = cataine_list["bounties"]
     cat_type = user.cataine_price
     amount = user.cataine_amount
-    quotes = cataine_list["quotes"]
-
-    desc = f"*{random.choice(quotes)}*"
+    quote_list = cataine_list["quotes"][level-1]["quotes"]
+    all_complete = True
+    
+    desc = ""
     if user.hibernation:
         desc += f"\n\n**The timer for leveling up will not start until you catch your next cat.**"
     if user.cataine_level > 0 and user.cataine_level < 11:
@@ -6639,6 +6702,7 @@ async def cataine(message: discord.Interaction):
                     continue
                 desc += f"\n**{bounty_data[user.bounty_id_one]["desc"]}**".replace("X", str(user.bounty_total_one - user.bounty_progress_one)).replace("type", f"{get_emoji(user.bounty_type_one.lower() + 'cat')} {user.bounty_type_one}")
                 colored += (user.bounty_progress_one/user.bounty_total_one)*10/user.bounties
+                all_complete = False
             if i == 1:
                 if user.bounty_progress_two == user.bounty_total_two:
                     desc += "\n**Complete!**"
@@ -6646,6 +6710,7 @@ async def cataine(message: discord.Interaction):
                     continue
                 desc += f"\n**{bounty_data[user.bounty_id_two]["desc"]}**".replace("X", str(user.bounty_total_two - user.bounty_progress_two)).replace("type", f"{get_emoji(user.bounty_type_two.lower() + 'cat')} {user.bounty_type_two}")
                 colored += (user.bounty_progress_two/user.bounty_total_two)*10/user.bounties
+                all_complete = False
             if i == 2:
                 if user.bounty_progress_three == user.bounty_total_three:
                     desc += "\n**Complete!**"
@@ -6653,6 +6718,7 @@ async def cataine(message: discord.Interaction):
                     continue
                 desc += f"\n**{bounty_data[user.bounty_id_three]["desc"]}**".replace("X", str(user.bounty_total_three - user.bounty_progress_three)).replace("type", f"{get_emoji(user.bounty_type_three.lower() + 'cat')} {user.bounty_type_three}")
                 colored += (user.bounty_progress_three/user.bounty_total_three)*10/user.bounties
+                all_complete = False
         colored = int(colored)
         desc += f"\n\n**Pay Up! {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed.**"
         desc += f"\n\n**Level {level}** - {change} and more!"
@@ -6662,6 +6728,17 @@ async def cataine(message: discord.Interaction):
             desc += f"\n\n**Expires <t:{user.cataine_active}:R>**"
         elif user.cataine_active > 0:
             desc += f"\n\nExpires <t:{user.cataine_active}:R>"
+
+    if not user.first_quote_seen:
+        quote = quote_list["first"]
+        user.first_quote_seen = True
+        await user.save()
+    elif all_complete:
+        quote = random.choice(quote_list["levelup"])
+    else:
+        quote = random.choice(quote_list["normal"])
+    name = cataine_list["quotes"][level-1]["name"]
+    desc = f"**{name}**: *{quote}*" + desc
     
     async def pay_cataine(interaction):
         nonlocal user, cat_type, amount
@@ -6699,6 +6776,8 @@ async def cataine(message: discord.Interaction):
         await user.save()
         await set_bounties(user.cataine_level, user)
         await set_mafia_offer(user.cataine_level, user)
+        if user.cataine_level == 8:
+            await mafia_cutscene(interaction)
         await perk_screen(interaction)
 
     async def view_perks(interaction):
@@ -6897,24 +6976,6 @@ async def achievements(message: discord.Interaction):
         else:
             hidden_counter = 0
 
-        if hidden_counter == 3:
-            await message.response.send_message("Cataine is now located in /cataine.", ephemeral=True)
-        if hidden_counter == 5:
-            await message.response.send_message("Cataine is now located in /cataine.", ephemeral=True)
-        if hidden_counter == 10:
-            await message.response.send_message("Cataine is now located in /cataine.", ephemeral=True)
-        if hidden_counter == 15:
-            await message.response.send_message("I meant it. Cataine is now located in /cataine.", ephemeral=True)
-        if hidden_counter == 20:
-            await message.response.send_message("I really meant it. Cataine is now located in /cataine.\nOh wait, did you want that achievement?", ephemeral=True)
-            await achemb(message, "darkest_market", "send")
-        if hidden_counter == 50:
-            await message.response.send_message("I really, really meant it. Cataine is now located in /cataine.", ephemeral=True)
-        if hidden_counter == 100:
-            await message.response.send_message("Just go away.", ephemeral=True)
-        if hidden_counter == 1000:
-            await message.response.send_message("911 theres a person who knocked on my door 1000 times get them out please", ephemeral=True)
-
         newembed = discord.Embed(
             title=category,
             description=f"Achievements unlocked (total): {unlocked}/{total_achs}{minus_achs}{hidden_suffix}",
@@ -6971,8 +7032,23 @@ async def achievements(message: discord.Interaction):
             except Exception:
                 pass
 
+            if hidden_counter == 3:
+                await interaction.followup.send("Cataine is now located in /cataine.", ephemeral=True)
+            if hidden_counter == 5:
+                await interaction.followup.send("Cataine is now located in /cataine.", ephemeral=True)
+            if hidden_counter == 10:
+                await interaction.followup.send("Cataine is now located in /cataine.", ephemeral=True)
+            if hidden_counter == 15:
+                await interaction.followup.send("I meant it. Cataine is now located in /cataine.", ephemeral=True)
             if hidden_counter == 20:
-                await achemb(interaction, "darkest_market", "send")
+                await interaction.followup.send("I really meant it. Cataine is now located in /cataine.\nOh wait, did you want that achievement?", ephemeral=True)
+                await achemb(message, "darkest_market", "send")
+            if hidden_counter == 50:
+                await interaction.followup.send("I really, really meant it. Cataine is now located in /cataine.", ephemeral=True)
+            if hidden_counter == 100:
+                await interaction.followup.send("Just go away.", ephemeral=True)
+            if hidden_counter == 1000:
+                await interaction.followup.send("911 theres a person who knocked on my door 1000 times get them out please", ephemeral=True)
 
         for num, i in enumerate(["Cat Hunt", "Commands", "Random", "Silly", "Hard", "Hidden"]):
             if category == i:

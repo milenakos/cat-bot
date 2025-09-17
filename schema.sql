@@ -99,6 +99,7 @@ CREATE TABLE public.profile (
     perk1 character varying(30) DEFAULT ''::character varying,
     perk2 character varying(30) DEFAULT ''::character varying,
     perk3 character varying(30) DEFAULT ''::character varying,
+    first_quote_seen boolean DEFAULT false,
     funny integer DEFAULT 0,
     facts integer DEFAULT 0,
     gambles smallint DEFAULT 0,
