@@ -1699,7 +1699,8 @@ async def on_message(message: discord.Message):
                         await progress(message, user, "odd", True)
                     if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
                         await progress(message, user, "rare+", True)
-                    await bounty(message, user, channel.cattype)
+                    if user.cataine_active >= time.time() or user.hibernation:    
+                        await bounty(message, user, channel.cattype)
                     total_count = await Prism.count("guild_id = $1", message.guild.id)
                     user_count = await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id)
                     global_boost = 0.06 * math.log(2 * total_count + 1)
@@ -6586,6 +6587,7 @@ async def level_down(user, message, ephemeral=False):
     user.bounty_progress_two = 0
     user.bounty_progress_three = 0
     user.cataine_total_cats = 0
+    user.first_quote_seen = False
     h = list(user.perks) if user.perks else []
     h.pop()
     user.perks = h[:]
@@ -6671,7 +6673,7 @@ async def cataine(message: discord.Interaction):
     if not user.dark_market_active:
         await message.followup.send("You don't have access to the dark market yet. Catch more cats to unlock it!")
         return
-    if user.cataine_active < time.time() and not user.hibernation:
+    if user.cataine_active < time.time() and not user.hibernation and user.cataine_level > 0:
         embed = await level_down(user, message, True)
         await message.followup.send(f"<@{user.user_id}>", embed=embed, ephemeral=True)
     if user.cataine_amount == 0:
@@ -6690,7 +6692,7 @@ async def cataine(message: discord.Interaction):
     
     desc = ""
     if user.hibernation:
-        desc += f"\n\n**The timer for leveling up will not start until you catch your next cat.**"
+        desc += f"\n\n**The timer for leveling up will not start until you catch your next cat.**\n"
     if user.cataine_level > 0 and user.cataine_level < 11:
         colored = 0
         for i in range(user.bounties):
@@ -6729,16 +6731,17 @@ async def cataine(message: discord.Interaction):
         elif user.cataine_active > 0:
             desc += f"\n\nExpires <t:{user.cataine_active}:R>"
 
-    if not user.first_quote_seen:
-        quote = quote_list["first"]
-        user.first_quote_seen = True
-        await user.save()
-    elif all_complete:
-        quote = random.choice(quote_list["levelup"])
-    else:
-        quote = random.choice(quote_list["normal"])
-    name = cataine_list["quotes"][level-1]["name"]
-    desc = f"**{name}**: *{quote}*" + desc
+    if user.cataine_level:
+        if not user.first_quote_seen:
+            quote = quote_list["first"]
+            user.first_quote_seen = True
+            await user.save()
+        elif all_complete:
+            quote = random.choice(quote_list["levelup"])
+        else:
+            quote = random.choice(quote_list["normal"])
+        name = cataine_list["quotes"][level-1]["name"]
+        desc = f"**{name}**: *{quote}*" + desc
     
     async def pay_cataine(interaction):
         nonlocal user, cat_type, amount
@@ -6771,6 +6774,7 @@ async def cataine(message: discord.Interaction):
         user.cataine_level += 1
         user.cataine_bought += 1
         user.cataine_total_cats = 0
+        user.first_quote_seen = False
         if user.cataine_level > user.highest_cataine_level:
             user.highest_cataine_level = user.cataine_level
         await user.save()
@@ -6914,10 +6918,13 @@ async def cataine(message: discord.Interaction):
         button3 = Button(label="Select Perk", style=ButtonStyle.red)
         button3.callback = perk_screen
         myview.add_item(button3)
-
-    file = discord.File(f'images/mafia/{name}.png', filename=f'{name}.png')
-    embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc).set_thumbnail(url=f"attachment://{name}.png")
-    await message.followup.send(embed=embed, file=file, view=myview, ephemeral=True)
+    try:
+        file = discord.File(f'images/mafia/{name}.png', filename=f'{name}.png')
+        embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc).set_thumbnail(url=f"attachment://{name}.png")
+        await message.followup.send(embed=embed, file=file, view=myview, ephemeral=True)
+    except Exception:
+        embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc)
+        await message.followup.send(embed=embed, view=myview, ephemeral=True)
 
 
 @bot.tree.command(description="View your achievements")
