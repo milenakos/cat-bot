@@ -6915,8 +6915,9 @@ async def cataine(message: discord.Interaction):
         button3.callback = perk_screen
         myview.add_item(button3)
 
-    embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc)
-    await message.followup.send(embed=embed, view=myview, ephemeral=True)
+    file = discord.File(f'images/mafia/Whiskers.png', filename=f'Whiskers.png')
+    embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc).set_thumbnail(url=f"attachment://Whiskers.png")
+    await message.followup.send(embed=embed, files=[file], view=myview)
 
 
 @bot.tree.command(description="View your achievements")
