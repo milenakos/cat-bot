@@ -16,20 +16,17 @@
     {"id": "double_first", "num": 14, "exclusive": 0, "name": "Speedrunner", "desc":"The first **percent** cats cought each level always **double**.", "weight": 5, "values": [8, 12, 20, 40, 60]}
     ],
     "quotes":[
-        "\\* The power of cataine fills you with determination",
-        "cataine is a good 👍👍👍👍😌😌",
-        "99% of cataine users level down before they hit a legendary perk",
-        "cataine is the best",
-        "they trapped me in a basement and forced to write these lines, please help",
-        "you can't help but imagine if that shadow was your imagination or not",
-        "was that shadow... the shadow of my future self?",
-        "Cat rains are powerful power-ups which — oh wait wrong line",
-        "me when the best way to fix an absurdly broken system is to just replace it with something else entirely and call it the same name: :aysm:",
-        "geometry dash item asylum abotminbnr discord bot i think i eat sand sometimes",
-        "these quotes are sourced ethically. probably, i didn't check",
-        "The mysterious shadow is sphere-shaped?",
-        "You sphere lands on a very good cataine deal!",
-        "cat machine > cell machine"
+        {"level": 1,  "name":"Whiskers", "quotes":{"first":"test", "normal":["test1", "test2", "test3"], "levelup":["levelup!", "levelup!!"]}},
+        {"level": 2,  "name":"Whiskers", "quotes":{"first":"test", "normal":["test1", "test2", "test3"], "levelup":["levelup!", "levelup!!"]}},
+        {"level": 3,  "name":"Whiskers", "quotes":{"first":"test", "normal":["test1", "test2", "test3"], "levelup":["levelup!", "levelup!!"]}},
+        {"level": 4,  "name":"Whiskers", "quotes":{"first":"test", "normal":["test1", "test2", "test3"], "levelup":["levelup!", "levelup!!"]}},
+        {"level": 5,  "name":"Whiskers", "quotes":{"first":"test", "normal":["test1", "test2", "test3"], "levelup":["levelup!", "levelup!!"]}},
+        {"level": 6,  "name":"Whiskers", "quotes":{"first":"test", "normal":["test1", "test2", "test3"], "levelup":["levelup!", "levelup!!"]}},
+        {"level": 7,  "name":"Whiskers", "quotes":{"first":"test", "normal":["test1", "test2", "test3"], "levelup":["levelup!", "levelup!!"]}},
+        {"level": 8,  "name":"Whiskers", "quotes":{"first":"test", "normal":["test1", "test2", "test3"], "levelup":["levelup!", "levelup!!"]}},
+        {"level": 9,  "name":"Whiskers", "quotes":{"first":"test", "normal":["test1", "test2", "test3"], "levelup":["levelup!", "levelup!!"]}},
+        {"level": 10, "name":"Whiskers", "quotes":{"first":"test", "normal":["test1", "test2", "test3"], "levelup":["levelup!", "levelup!!"]}},
+        {"level": 11, "name":"Whiskers", "quotes":{"first":"test", "normal":["test1", "test2", "test3"], "levelup":["levelup!", "levelup!!"]}}
     ],
     "bounties":[
         {"id": 0, "desc": "Catch X cats"},
