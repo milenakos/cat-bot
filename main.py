@@ -2825,7 +2825,7 @@ async def preventcatch(message: discord.Interaction, person: discord.User, timeo
 async def changeavatar(message: discord.Interaction, avatar: Optional[discord.Attachment]):
     await message.response.defer()
 
-    if avatar.content_type not in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
+    if avatar and avatar.content_type not in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
         await message.followup.send("Invalid file type! Please upload a PNG, JPEG, GIF, or WebP image.", ephemeral=True)
         return
 
