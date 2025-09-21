@@ -2171,7 +2171,10 @@ async def on_message(message: discord.Message):
         user.premium = True
         await user.save()
     if text.lower().startswith("cat!restart"):
-        await message.reply("restarting!")
+        try:
+            await message.reply("restarting!")
+        except Exception:
+            pass
         os.system("git pull")
         if config.WEBHOOK_VERIFY:
             await vote_server.cleanup()
