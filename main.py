@@ -676,13 +676,13 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
     title = quest_data["title"] if "top.gg" not in quest_data["title"] else "Vote on Top.gg"
 
     if level_data["reward"] == "Rain":
-        reward_text = f"☔ {level_data['amount']}m of Rain"
+        reward_text = get_emoji(str(level_data["amount"]) + "rain")
     elif level_data["reward"] == "random cats":
-        reward_text = f"❓ {level_data['amount']} random cats"
+        reward_text = f"{level_data['amount']}x ❓"
     elif level_data["reward"] in cattypes:
-        reward_text = f"{get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']}"
+        reward_text = f"{level_data['amount']}x {get_emoji(level_data['reward'].lower() + 'cat')}"
     else:
-        reward_text = f"{get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack"
+        reward_text = get_emoji(level_data["reward"].lower() + "pack")
 
     global_user = await User.get_or_create(user_id=user.user_id)
     streak_data = get_streak_reward(global_user.vote_streak)
@@ -693,7 +693,7 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
 
     return discord.Embed(
         title=f"✅ {title}",
-        description=f"{progress_line}\n{current_xp}/{level_data['xp']} XP (+{diff})\nReward: {reward_text}{streak_reward}",
+        description=f"{progress_line} {reward_text}\n{current_xp}/{level_data['xp']} XP (+{diff}){streak_reward}",
         color=Colors.green,
     ).set_author(name="/battlepass " + level_text)
 
