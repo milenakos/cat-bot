@@ -2631,6 +2631,7 @@ thanks for using cat bot!""",
 
             async def add_yippee(interaction):
                 await interaction.response.defer()
+                cookie_id = (9, bot.user.id)
                 try:
                     temp_cookie_storage[cookie_id] += 1
                 except KeyError:
