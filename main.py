@@ -2822,7 +2822,7 @@ async def changeavatar(message: discord.Interaction, avatar: Optional[discord.At
     await message.response.defer()
 
     if avatar:
-        avatar_value = await avatar.read()
+        avatar_value = discord.utils._bytes_to_base64_data(await avatar.read())
     else:
         avatar_value = None
 
