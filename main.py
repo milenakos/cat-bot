@@ -3805,7 +3805,7 @@ if config.DONOR_CHANNEL_ID:
             match = re.search(r"^#(?:[0-9a-fA-F]{3}){1,2}$", color)
             if match:
                 user.color = match.group(0)
-        if image:
+        if image and image.content_type not in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
             # reupload image
             channeley = bot.get_channel(config.DONOR_CHANNEL_ID)
             file = await image.to_file()
