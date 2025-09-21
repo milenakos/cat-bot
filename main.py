@@ -39,7 +39,7 @@ import psutil
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
-from discord.ui import Button, View, Modal, LayoutView, TextDisplay, Separator, TextInput, Thumbnail, ActionRow, File
+from discord.ui import Button, View, Modal, LayoutView, TextDisplay, Separator, TextInput, Thumbnail, ActionRow
 from PIL import Image
 
 import config
@@ -2813,6 +2813,23 @@ async def preventcatch(message: discord.Interaction, person: discord.User, timeo
     await message.response.send_message(
         person.name.replace("_", r"\_") + (f" can't catch cats until <t:{timestamp}:R>" if timeout > 0 else " can now catch cats again.")
     )
+
+
+@bot.tree.command(description="(ADMIN) Change Cat Bot avatar")
+@discord.app_commands.default_permissions(manage_guild=True)
+@discord.app_commands.describe(avatar="The avatar to use (leave empty to reset)")
+async def changeavatar(message: discord.Interaction, avatar: Optional[discord.Attachment]):
+    await message.response.defer()
+
+    if avatar:
+        avatar_value = await avatar.read()
+    else:
+        avatar_value = None
+
+    # this isnt supported by discord.py yet
+    await bot.http.request(discord.http.Route("PATCH", f"/guilds/{message.guild.id}/members/@me"), json={"avatar": avatar_value})
+
+    await message.followup.send("Avatar changed successfully!")
 
 
 @bot.tree.command(description="(ADMIN) Change the cat appear timings")
