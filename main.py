@@ -2821,15 +2821,22 @@ async def preventcatch(message: discord.Interaction, person: discord.User, timeo
 async def changeavatar(message: discord.Interaction, avatar: Optional[discord.Attachment]):
     await message.response.defer()
 
+    if avatar.content_type not in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
+        await message.followup.send("Invalid file type! Please upload a PNG, JPEG, GIF, or WebP image.", ephemeral=True)
+        return
+
     if avatar:
         avatar_value = discord.utils._bytes_to_base64_data(await avatar.read())
     else:
         avatar_value = None
 
-    # this isnt supported by discord.py yet
-    await bot.http.request(discord.http.Route("PATCH", f"/guilds/{message.guild.id}/members/@me"), json={"avatar": avatar_value})
-
-    await message.followup.send("Avatar changed successfully!")
+    try:
+        # this isnt supported by discord.py yet
+        await bot.http.request(discord.http.Route("PATCH", f"/guilds/{message.guild.id}/members/@me"), json={"avatar": avatar_value})
+        await message.followup.send("Avatar changed successfully!")
+    except Exception:
+        await message.followup.send("Failed to change avatar! Your image is too big or you are changing avatars too quickly.", ephemeral=True)
+        return
 
 
 @bot.tree.command(description="(ADMIN) Change the cat appear timings")
