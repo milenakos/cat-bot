@@ -2644,11 +2644,10 @@ thanks for using cat bot!""",
 
             async def add_yippee(interaction):
                 await interaction.response.defer()
-                cookie_id = (9, bot.user.id)
                 try:
                     temp_cookie_storage[cookie_id] += 1
                 except KeyError:
-                    await cookie_user.refresh_from_db()
+                    cookie_user = await Profile.get_or_create(guild_id=9, user_id=bot.user.id)
                     temp_cookie_storage[cookie_id] = cookie_user.cookies
                 await send_yippee(interaction)
 
