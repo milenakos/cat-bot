@@ -29,7 +29,7 @@
 
 winuvloop.install()
 
-filtered_errors = [
+filtered_errors #= [
     # inactionable/junk discord api errors
     "Too Many Requests",
     "You are being rate limited",
