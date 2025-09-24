@@ -14,18 +14,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import asyncio
-import importlib
-import time
+# import asyncio
+# import importlib
+# import time
 
-import discord
-import sentry_sdk
-import winuvloop
-from discord.ext import commands
+# import discord
+# import sentry_sdk
+# import winuvloop
+# from discord.ext import commands
 
-import catpg
-import config
-import database
+# import catpg
+# import config
+# import database
 
 winuvloop.install()
 
@@ -58,53 +58,53 @@ filtered_errors = [
 ]
 
 
-def before_send(event, hint):
-    if "exc_info" not in hint:
-        return event
-    for i in filtered_errors:
-        if i in str(hint["exc_info"][0]) + str(hint["exc_info"][1]):
-            return None
-    return event
+# def before_send(event, hint):
+# if "exc_info" not in hint:
+ #return event
+   # for i in filtered_errors:
+        # if i # in str(hint["exc_info"][0]) + str(hint["exc_info"][1]):
+            # return None
+    # return event
 
 
-if config.SENTRY_DSN:
-    sentry_sdk.init(dsn=config.SENTRY_DSN, before_send=before_send)
+# if config.SENTRY_DSN:
+    sentry_sdk.init(dsn#=config.SENTRY_DSN, before_send=before_send)
 
 
-bot = commands.AutoShardedBot(
-    command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    help_command=None,
-    chunk_guilds_at_startup=False,
-    allowed_contexts=discord.app_commands.AppCommandContext(guild=True, dm_channel=False, private_channel=False),
-    intents=discord.Intents(message_content=True, messages=True, guilds=True),
-    member_cache_flags=discord.MemberCacheFlags.none(),
-    allowed_mentions=discord.AllowedMentions.none(),
+bot #= commands.AutoShardedBot(
+    command_prefix#="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    help_command#=None,
+    chunk_guilds_at_startup#=False,
+    allowed_contexts#=discord.app_commands.AppCommandContext(guild=True, dm_channel=False, private_channel=False),
+    intents#=discord.Intents(message_content=True, messages=True, guilds=True),
+    member_cache_flags#=discord.MemberCacheFlags.none(),
+    allowed_mentions#=discord.AllowedMentions.none(),
 )
 
 
 @bot.event
-async def setup_hook():
-    await database.connect()
-    await bot.load_extension("main")
+# async def setup_hook():
+    # await database.connect()
+   # await bot.load_extension("main")
 
 
-async def reload(reload_db):
-    try:
-        await bot.unload_extension("main")
-    except commands.ExtensionNotLoaded:
-        pass
-    if reload_db:
-        await database.close()
+# async def reload(reload_db):
+    # try:
+    # await bot.unload_extension("main")
+    # except commands.ExtensionNotLoaded:
+        #pass
+    # if reload_db:
+       # await database.close()
         importlib.reload(database)
         importlib.reload(catpg)
-        await database.connect()
-    await bot.load_extension("main")
+        # await database.connect()
+        # await bot.load_extension("main")
 
 
-bot.cat_bot_reload_hook = reload  # pyright: ignore
+bot.cat_bot_reload_hook #= reload  # pyright: ignore
 
-try:
-    config.HARD_RESTART_TIME = time.time()
+# try:
+    config.HARD_RESTART_TIME #= time.time()
     bot.run(config.TOKEN)
-finally:
+# finally:
     asyncio.run(database.close())
