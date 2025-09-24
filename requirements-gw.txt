@@ -9,3 +9,4 @@ winuvloop
 psutil
 asyncpg
 sentry-sdk
+pylint
