@@ -1839,9 +1839,10 @@ async def on_message(message: discord.Message):
                 
                 if user.perks:
                     if user.cataine_active < time.time() and not user.hibernation:
-                        await level_down(user, message)
-                        await user.refresh_from_db()
-                    perks = user.perks
+                        suffix_string += "\n🧂 Your cataine expired! Run /cataine to get more."
+                        perks = []
+                    else:
+                        perks = user.perks
                     perks_info = cataine_list["perks"]
                     for perk in perks:
                         h = perk.split("_")
@@ -2137,22 +2138,6 @@ async def on_message(message: discord.Message):
 
                 if channel.cat_rains != 0:
                     user.rain_participations += 1
-
-                # its not cold im gonna wake up
-                if user.hibernation:
-                    level_data = cataine_list["levels"][user.cataine_level]
-                    duration = level_data["duration"]
-                    user.hibernation = False
-                    duration_bonus = 0
-                    perks = cataine_list["perks"]
-                    if user.perks:
-                        for perk in user.perks:
-                            perk_data = perks[int(perk.split('_')[1])-1]
-                            if perk_data["num"] == 12:
-                                duration_bonus = vote_time_user.vote_streak * 60
-                                if duration_bonus > 100:
-                                    duration_bonus = min(100 + math.log10(duration_bonus-100) * 5, duration_bonus)
-                    user.cataine_active = int(time.time()) + 3600 * duration + duration_bonus
 
                 await user.save()
 
@@ -6326,6 +6311,8 @@ async def cat_fact(message: discord.Interaction):
 
 
 async def bounty(message, user, cattype):
+    if user.hibernation:
+        return
     complete = 0
     completed = 0
     title = []
@@ -6587,6 +6574,7 @@ async def level_down(user, message, ephemeral=False):
     user.bounty_progress_two = 0
     user.bounty_progress_three = 0
     user.cataine_total_cats = 0
+    user.bounty_active = False
     user.first_quote_seen = False
     h = list(user.perks) if user.perks else []
     h.pop()
@@ -6899,10 +6887,35 @@ async def cataine(message: discord.Interaction):
         help_embed = discord.Embed(title="Cataine Help", color=Colors.brown, description=desc)
         await interaction.response.send_message(embed=help_embed, ephemeral=True)
 
+    async def begin_bounties(interaction):
+        if not user.hibernation:
+            await interaction.response.send_message("nice try", ephemeral=True)
+            return
+        level_data = cataine_list["levels"][user.cataine_level]
+        duration = level_data["duration"]
+        user.hibernation = False
+        duration_bonus = 0
+        perks = cataine_list["perks"]
+        if user.perks:
+            for perk in user.perks:
+                perk_data = perks[int(perk.split('_')[1])-1]
+                if perk_data["num"] == 12:
+                    global_user = await User.get_or_create(user_id=interaction.user.id)
+                    duration_bonus = global_user.vote_streak * 60
+                    if duration_bonus > 100:
+                        duration_bonus = min(100 + math.log10(duration_bonus-100) * 5, duration_bonus)
+        user.cataine_active = int(time.time()) + 3600 * duration + duration_bonus
+        await user.save()
+        await interaction.response.send_message("Bounties started!", ephemeral=True)
+
     myview = View(timeout=VIEW_TIMEOUT)
     if user.cataine_level == 0:
         button = Button(label="Begin.", style=ButtonStyle.blurple)
         button.callback = pay_cataine
+        myview.add_item(button)
+    elif user.hibernation:
+        button = Button(label="Begin Bounties", style=ButtonStyle.blurple)
+        button.callback = begin_bounties
         myview.add_item(button)
     elif user.cataine_level < 11:
         button = Button(label="Pay Up!", style=ButtonStyle.blurple)
