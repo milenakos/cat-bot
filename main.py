@@ -1734,7 +1734,6 @@ async def on_message(message: discord.Message):
                         cat_cought_rain[channel.channel_id]["rare_catches"][channel.cattype].append(f"<@{user.user_id}>")
                 except Exception:
                     pass
-                    await message.channel.send(f"UH OH - {Exception}")
 
             if channel.yet_to_spawn < time.time():
                 # if there isnt already a scheduled spawn
@@ -3530,6 +3529,7 @@ async def actually_do_rain(message, channel):
     if 0 < channel.yet_to_spawn < time.time():
         await asyncio.sleep(random.uniform(channel.spawn_times_min, channel.spawn_times_max))
         await spawn_cat(str(message.channel.id))
+    # cat overview
     embed = discord.Embed(
         title="Rain overview",
         color=discord.Colour.from_str("#053BAF"),
