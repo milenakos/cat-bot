@@ -1725,13 +1725,10 @@ async def on_message(message: discord.Message):
                 # we dont schedule next spawn during rains
                 decided_time = 0
                 try:
-                    if channel.cattype not in cat_cought_rain[channel.channel_id].keys():
-                        cat_cought_rain[channel.channel_id][channel.cattype] = 0
-                    cat_cought_rain[channel.channel_id][channel.cattype] += 1
-                    if type_dict[channel.cattype] < 40: # rare cats only
-                        if channel.cattype not in cat_cought_rain[channel.channel_id]["rare_catches"]:
-                            cat_cought_rain[channel.channel_id]["rare_catches"][channel.cattype] = []
-                        cat_cought_rain[channel.channel_id]["rare_catches"][channel.cattype].append(f"<@{user.user_id}>")
+                    rain_server = cat_cought_rain[channel.channel_id]
+                    if channel.cattype not in rain_server.keys():
+                        rain_server[channel.cattype] = []
+                    rain_server[channel.cattype].append(f"<@{user.user_id}>")
                 except Exception:
                     pass
 
@@ -3496,7 +3493,7 @@ __Highlighted Stat__
 
 async def actually_do_rain(message, channel):
     first_spawn = True
-    cat_cought_rain[channel.channel_id] = {"rare_catches": {}}
+    cat_cought_rain[channel.channel_id] = {}
     while channel.cat_rains > 0:
         if first_spawn:
             first_spawn = False
@@ -3530,24 +3527,21 @@ async def actually_do_rain(message, channel):
         await asyncio.sleep(random.uniform(channel.spawn_times_min, channel.spawn_times_max))
         await spawn_cat(str(message.channel.id))
     # cat overview
-    embed = discord.Embed(
-        title="Rain overview",
-        color=discord.Colour.from_str("#053BAF"),
-        description=""
-    )
+    rain_msg = "## Rain Overview\n"
+    rain_server = cat_cought_rain[channel.channel_id]
     for cat_type in cattypes:
-        if cat_type not in cat_cought_rain[channel.channel_id].keys() or cat_type == "rare_catches":
+        if cat_type not in rain_server.keys():
             continue
-        if type_dict[cat_type] < 40:
-            list_cought = ""
-            for who_cought in cat_cought_rain[channel.channel_id]["rare_catches"][cat_type]:
-                list_cought += f" {who_cought}"
-            embed.description += f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}:{list_cought}\n"
+        if len(rain_server[cat_type]) >= 4:
+            rain_msg += f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}: **{len(rain_server[cat_type])}**\n"
             continue
-        embed.description += f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}: **{cat_cought_rain[channel.channel_id][cat_type]}**\n"
+        list_cought = ""
+        for who_cought in rain_server[cat_type]:
+            list_cought += f" {who_cought}"
+        rain_msg += f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}:{list_cought}\n"
 
 
-    await message.followup.send(embed=embed)
+    await message.channel.send(rain_msg)
 
 
 @bot.tree.command(description="its raining cats")
