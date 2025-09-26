@@ -7,5 +7,5 @@ requests
 discord-emoji
 winuvloop
 psutil
-asyncpg
 sentry-sdk
+asyncpg
