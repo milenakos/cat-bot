@@ -3538,77 +3538,78 @@ async def actually_do_rain(message, channel):
     await asyncio.sleep(1)
 
     # rain summary
-    rain_server = cat_cought_rain[channel.channel_id]
+    try:
+        rain_server = cat_cought_rain[channel.channel_id]
 
-    part_one = "## Rain Summary\n\n**Top 10 Catchers:**\n"
-    reverse_mapping = {}
+        part_one = "## Rain Summary\n\n**Top 10 Catchers:**\n"
+        reverse_mapping = {}
 
-    for cat_type, user_ids in rain_server.items():
-        for user_id in user_ids:
-            if user_id not in reverse_mapping:
-                reverse_mapping[user_id] = []
-            reverse_mapping[user_id].append(cat_type)
+        for cat_type, user_ids in rain_server.items():
+            for user_id in user_ids:
+                if user_id not in reverse_mapping:
+                    reverse_mapping[user_id] = []
+                reverse_mapping[user_id].append(cat_type)
 
-    total_catches = sum(len(cat_types) for cat_types in reverse_mapping.values())
+        total_catches = sum(len(cat_types) for cat_types in reverse_mapping.values())
 
-    if total_catches > 90:
-        # we wont be able to accomdadate all catches with emojis
-        amount_used = 0
-        ok_types = []
-        for cat_type in cattypes[::-1]:
-            if amount_used > 90:
-                break
-            if cat_type in rain_server:
-                amount_used += len(rain_server[cat_type])
-            ok_types.append(cat_type)
+        if total_catches > 90:
+            # we wont be able to accomdadate all catches with emojis
+            amount_used = 0
+            ok_types = []
+            for cat_type in cattypes[::-1]:
+                if amount_used > 90:
+                    break
+                if cat_type in rain_server:
+                    amount_used += len(rain_server[cat_type])
+                ok_types.append(cat_type)
 
-        for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1])):
-            show_cats = ""
-            shortened_types = False
-            for cat_type in cat_types:
-                if cat_type not in ok_types:
-                    shortened_types = True
-                    continue
-                show_cats += get_emoji(cat_type.lower() + "cat")
-            if show_cats != "":
-                if shortened_types:
-                    show_cats = ": ..." + show_cats
-                else:
-                    show_cats = ": " + show_cats
-            part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
-    else:
-        for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1])):
-            part_one += f"{user_id} ({len(cat_types)}): {''.join([get_emoji(cat_type.lower() + 'cat') for cat_type in cat_types])}\n"
-
-    part_two = "**Per Cat Type:**\n"
-    for cat_type in cattypes:
-        if cat_type not in rain_server.keys():
-            continue
-        if len(rain_server[cat_type]) > 5:
-            part_two += f"{get_emoji(cat_type.lower() + 'cat')} *{len(rain_server[cat_type])} catches*\n"
+            for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1])):
+                show_cats = ""
+                shortened_types = False
+                for cat_type in cat_types:
+                    if cat_type not in ok_types:
+                        shortened_types = True
+                        continue
+                    show_cats += get_emoji(cat_type.lower() + "cat")
+                if show_cats != "":
+                    if shortened_types:
+                        show_cats = ": ..." + show_cats
+                    else:
+                        show_cats = ": " + show_cats
+                part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
         else:
-            part_two += f"{get_emoji(cat_type.lower() + 'cat')} {' '.join(rain_server[cat_type])}\n"
+            for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1])):
+                part_one += f"{user_id} ({len(cat_types)}): {''.join([get_emoji(cat_type.lower() + 'cat') for cat_type in cat_types])}\n"
 
-    cat_cought_rain[channel.channel_id] = {}
+        part_two = "**Per Cat Type:**\n"
+        for cat_type in cattypes:
+            if cat_type not in rain_server.keys():
+                continue
+            if len(rain_server[cat_type]) > 5:
+                part_two += f"{get_emoji(cat_type.lower() + 'cat')} *{len(rain_server[cat_type])} catches*\n"
+            else:
+                part_two += f"{get_emoji(cat_type.lower() + 'cat')} {' '.join(rain_server[cat_type])}\n"
 
-    if not lock_success:
-        part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
+        cat_cought_rain[channel.channel_id] = {}
 
-    for rain_msg in [part_one, part_two]:
-        # this is to bypass character limit up to 4k
-        v = LayoutView()
-        v.add_item(TextDisplay(rain_msg))
-        await message.channel.send(view=v)
+        if not lock_success:
+            part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
 
-    await asyncio.sleep(2)
+        for rain_msg in [part_one, part_two]:
+            # this is to bypass character limit up to 4k
+            v = LayoutView()
+            v.add_item(TextDisplay(rain_msg))
+            await message.channel.send(view=v)
 
-    if lock_success:
-        await message.channel.set_permissions(message.guild.default_role, send_messages=None)
+        await asyncio.sleep(2)
+    finally:
+        if lock_success:
+            await message.channel.set_permissions(message.guild.default_role, send_messages=None)
 
-    # schedule the next normal spawn if needed
-    if 0 < channel.yet_to_spawn < time.time():
-        await asyncio.sleep(random.uniform(channel.spawn_times_min, channel.spawn_times_max))
-        await spawn_cat(str(message.channel.id))
+        # schedule the next normal spawn if needed
+        if 0 < channel.yet_to_spawn < time.time():
+            await asyncio.sleep(random.uniform(channel.spawn_times_min, channel.spawn_times_max))
+            await spawn_cat(str(message.channel.id))
 
 
 @bot.tree.command(description="its raining cats")
