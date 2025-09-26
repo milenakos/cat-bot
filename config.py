@@ -1,32 +1,22 @@
 import os
 
 # discord bot token
-TOKEN = os.environ['token']
+TOKEN = os.environ["TOKEN"]
 
-# database type
-# either SQLITE or POSTGRES
-DB_TYPE = "POSTGRES"
-
-# db pass if postgres (user is cat_bot)
+# db password for postgres
+# user - cat_bot, database - cat_bot, ip - localhost, port - default
 DB_PASS = os.environ["psql_password"]
 
-# channel id for db backups, private extremely recommended
-# temporarily doesnt actually backup, just sends stats.
-BACKUP_ID = 1060545763194707998
-
-# what to do when there is a crash
-CRASH_MODE = "RAISE"
-
 #
-# all the following are optional (setting them to None or not having the variable will disable the feature)
+# all the following are optional (setting them to None will disable the feature)
 #
 
-try:
+try: 
     env_vars = [
         os.environ["sentry_dsn"],
         os.environ["webhook_verify"],
         os.environ["top_gg_token"],
-        os.environ["bots_gg_token"]
+        os.environ["wordnik_api_key"]
     ]
 except KeyError:
     env_vars = [None, None, None, None]
@@ -37,11 +27,11 @@ SENTRY_DSN = env_vars[0]
 # top.gg vote webhook verification key, setting this to None disables all voting stuff
 WEBHOOK_VERIFY = env_vars[1]
 
-# top.gg api token because they use ancient technology and you need to post server count manually smh
+# top.gg api token to occasionally post stats
 TOP_GG_TOKEN = env_vars[2]
 
-# bots.gg api token for the same reason
-BOTS_GG_TOKEN = env_vars[3]
+# wordnik api key for /define command
+WORDNIK_API_KEY = env_vars[3]
 
 # only post stats if server count is above this, to prevent wrong stats
 MIN_SERVER_SEND = 125_000
@@ -49,14 +39,9 @@ MIN_SERVER_SEND = 125_000
 # channel id for db backups, private extremely recommended
 BACKUP_ID = 1060545763194707998
 
-# all messages in this channel will be sent to all setupped channels, use wisely
-NEWS_CHANNEL_ID = 1301220787352764457
-
-# this will automatically restart the bot if message in GITHUB_CHANNEL_ID is sent, you can use a github webhook for that
-GITHUB_CHANNEL_ID = 1060965767044149249
-
-# all messages in this channel will be interpreted as user ids to give premium access to
+# channel to store supporter images, can also be used for moderation purposes
 DONOR_CHANNEL_ID = 1249343008890028144
 
-# all messages in this channel are allowed to be cat!rain commands
+# cat bot will also log all rain uses/movements here
+# cat!rain commands here can be used without author check and will dm reciever a thanks message
 RAIN_CHANNEL_ID = 1278705994536321157
