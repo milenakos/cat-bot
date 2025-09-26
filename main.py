@@ -326,6 +326,9 @@ loop_count = 0
 # loops in dpy can randomly break, i check if is been over X minutes since last loop to restart it
 last_loop_time = 0
 
+# keep track of cat cought in rain
+cat_cought_rain = {}
+
 
 def get_emoji(name):
     global emojis
@@ -1721,6 +1724,13 @@ async def on_message(message: discord.Message):
             if channel.cat_rains > 0:
                 # we dont schedule next spawn during rains
                 decided_time = 0
+                try:
+                    rain_server = cat_cought_rain[channel.channel_id]
+                    if channel.cattype not in rain_server.keys():
+                        rain_server[channel.cattype] = []
+                    rain_server[channel.cattype].append(f"<@{user.user_id}>")
+                except Exception:
+                    pass
 
             if channel.yet_to_spawn < time.time():
                 # if there isnt already a scheduled spawn
@@ -3483,6 +3493,7 @@ __Highlighted Stat__
 
 async def actually_do_rain(message, channel):
     first_spawn = True
+    cat_cought_rain[channel.channel_id] = {}
     while channel.cat_rains > 0:
         if first_spawn:
             first_spawn = False
@@ -3515,6 +3526,22 @@ async def actually_do_rain(message, channel):
     if 0 < channel.yet_to_spawn < time.time():
         await asyncio.sleep(random.uniform(channel.spawn_times_min, channel.spawn_times_max))
         await spawn_cat(str(message.channel.id))
+    # cat overview
+    rain_msg = "## Rain Overview\n"
+    rain_server = cat_cought_rain[channel.channel_id]
+    for cat_type in cattypes:
+        if cat_type not in rain_server.keys():
+            continue
+        if len(rain_server[cat_type]) >= 4:
+            rain_msg += f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}: **{len(rain_server[cat_type])}**\n"
+            continue
+        list_cought = ""
+        for who_cought in rain_server[cat_type]:
+            list_cought += f" {who_cought}"
+        rain_msg += f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}:{list_cought}\n"
+
+
+    await message.channel.send(rain_msg)
 
 
 @bot.tree.command(description="its raining cats")
