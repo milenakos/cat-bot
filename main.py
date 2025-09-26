@@ -1909,14 +1909,12 @@ async def on_message(message: discord.Message):
                     user.cataine_active = 0
                     suffix_string += "\nyour cataine buff has expired. you know where to get a new one 😏"
 
-                try:
-                    rain_server = cat_cought_rain[channel.channel_id]
-                    if channel.cattype not in rain_server.keys():
-                        rain_server[le_emoji] = []
-                    for _ in range(silly_amount):
-                        rain_server[le_emoji].append(f"<@{user.user_id}>")
-                except Exception:
-                    pass
+                rain_server = cat_cought_rain[channel.channel_id]
+                if le_emoji not in rain_server.keys():
+                    rain_server[le_emoji] = []
+                for _ in range(silly_amount):
+                    rain_server[le_emoji].append(f"<@{user.user_id}>")
+                cat_cought_rain[channel.channel_id] = rain_server
 
                 if random.randint(0, 7) == 0:
                     # shill rains
