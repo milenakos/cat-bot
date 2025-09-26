@@ -39,7 +39,7 @@ import psutil
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
-from discord.ui import Button, View, Modal, LayoutView, TextDisplay, Separator, TextInput, Thumbnail, ActionRow, File
+from discord.ui import Button, View, Modal, LayoutView, TextDisplay, Separator, TextInput, Thumbnail, ActionRow
 from PIL import Image
 
 import config
@@ -328,6 +328,9 @@ loop_count = 0
 
 # loops in dpy can randomly break, i check if is been over X minutes since last loop to restart it
 last_loop_time = 0
+
+# keep track of cat cought in rain
+cat_cought_rain = {}
 
 
 def get_emoji(name):
@@ -679,13 +682,13 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
     title = quest_data["title"] if "top.gg" not in quest_data["title"] else "Vote on Top.gg"
 
     if level_data["reward"] == "Rain":
-        reward_text = f"☔ {level_data['amount']}m of Rain"
+        reward_text = get_emoji(str(level_data["amount"]) + "rain")
     elif level_data["reward"] == "random cats":
-        reward_text = f"❓ {level_data['amount']} random cats"
+        reward_text = f"{level_data['amount']}x ❓"
     elif level_data["reward"] in cattypes:
-        reward_text = f"{get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']}"
+        reward_text = f"{level_data['amount']}x {get_emoji(level_data['reward'].lower() + 'cat')}"
     else:
-        reward_text = f"{get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack"
+        reward_text = get_emoji(level_data["reward"].lower() + "pack")
 
     global_user = await User.get_or_create(user_id=user.user_id)
     streak_data = get_streak_reward(global_user.vote_streak)
@@ -696,7 +699,7 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
 
     return discord.Embed(
         title=f"✅ {title}",
-        description=f"{progress_line}\n{current_xp}/{level_data['xp']} XP (+{diff})\nReward: {reward_text}{streak_reward}",
+        description=f"{progress_line} {reward_text}\n{current_xp}/{level_data['xp']} XP (+{diff}){streak_reward}",
         color=Colors.green,
     ).set_author(name="/battlepass " + level_text)
 
@@ -2009,6 +2012,12 @@ async def on_message(message: discord.Message):
                         suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
 
                 icon = get_emoji(le_emoji.lower() + "cat")
+                
+                if channel.channel_id in cat_cought_rain:
+                    if le_emoji not in cat_cought_rain[channel.channel_id]:
+                        cat_cought_rain[channel.channel_id][le_emoji] = []
+                    for _ in range(silly_amount):
+                        cat_cought_rain[channel.channel_id][le_emoji].append(f"<@{user.user_id}>")
                 if random.randint(0, 7) == 0:
                     # shill rains
                     suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
@@ -2276,7 +2285,10 @@ async def on_message(message: discord.Message):
         user.premium = True
         await user.save()
     if text.lower().startswith("cat!restart"):
-        await message.reply("restarting!")
+        try:
+            await message.reply("restarting!")
+        except Exception:
+            pass
         os.system("git pull")
         if config.WEBHOOK_VERIFY:
             await vote_server.cleanup()
@@ -2739,7 +2751,7 @@ thanks for using cat bot!""",
                 try:
                     temp_cookie_storage[cookie_id] += 1
                 except KeyError:
-                    await cookie_user.refresh_from_db()
+                    cookie_user = await Profile.get_or_create(guild_id=9, user_id=bot.user.id)
                     temp_cookie_storage[cookie_id] = cookie_user.cookies
                 await send_yippee(interaction)
 
@@ -2918,6 +2930,30 @@ async def preventcatch(message: discord.Interaction, person: discord.User, timeo
     await message.response.send_message(
         person.name.replace("_", r"\_") + (f" can't catch cats until <t:{timestamp}:R>" if timeout > 0 else " can now catch cats again.")
     )
+
+
+@bot.tree.command(description="(ADMIN) Change Cat Bot avatar")
+@discord.app_commands.default_permissions(manage_guild=True)
+@discord.app_commands.describe(avatar="The avatar to use (leave empty to reset)")
+async def changeavatar(message: discord.Interaction, avatar: Optional[discord.Attachment]):
+    await message.response.defer()
+
+    if avatar and avatar.content_type not in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
+        await message.followup.send("Invalid file type! Please upload a PNG, JPEG, GIF, or WebP image.", ephemeral=True)
+        return
+
+    if avatar:
+        avatar_value = discord.utils._bytes_to_base64_data(await avatar.read())
+    else:
+        avatar_value = None
+
+    try:
+        # this isnt supported by discord.py yet
+        await bot.http.request(discord.http.Route("PATCH", f"/guilds/{message.guild.id}/members/@me"), json={"avatar": avatar_value})
+        await message.followup.send("Avatar changed successfully!")
+    except Exception:
+        await message.followup.send("Failed to change avatar! Your image is too big or you are changing avatars too quickly.", ephemeral=True)
+        return
 
 
 @bot.tree.command(description="(ADMIN) Change the cat appear timings")
@@ -3562,7 +3598,8 @@ __Highlighted Stat__
 
 async def actually_do_rain(message, channel):
     first_spawn = True
-    while channel.cat_rains != 0:
+    cat_cought_rain[channel.channel_id] = {}
+    while channel.cat_rains > 0:
         if first_spawn:
             first_spawn = False
         else:
@@ -3590,10 +3627,104 @@ async def actually_do_rain(message, channel):
     except Exception:
         pass
 
-    # schedule the next normal spawn if needed
-    if 0 < channel.yet_to_spawn < time.time():
-        await asyncio.sleep(random.uniform(channel.spawn_times_min, channel.spawn_times_max))
-        await spawn_cat(str(message.channel.id))
+    channel_permissions = await fetch_perms(message)
+    lock_success = False
+    try:
+        me_overwrites = message.channel.overwrites_for(message.guild.me)
+        me_overwrites.send_messages = True
+
+        everyone_overwrites = message.channel.overwrites_for(message.guild.default_role)
+        current_perm = everyone_overwrites.send_messages
+        everyone_overwrites.send_messages = False
+
+        if channel_permissions.manage_roles:
+            await asyncio.gather(
+                message.channel.set_permissions(message.guild.default_role, everyone_overwrites),
+                message.channel.set_permissions(message.guild.me, me_overwrites),
+            )
+            lock_success = True
+    except Exception:
+        pass
+
+    await asyncio.sleep(1)
+
+    # rain summary
+    try:
+        rain_server = cat_cought_rain[channel.channel_id]
+
+        part_one = "## Rain Summary\n\n**Top 10 Catchers:**\n"
+        reverse_mapping = {}
+
+        for cat_type, user_ids in rain_server.items():
+            for user_id in user_ids:
+                if user_id not in reverse_mapping:
+                    reverse_mapping[user_id] = []
+                reverse_mapping[user_id].append(cat_type)
+
+        total_catches = sum(len(cat_types) for cat_types in reverse_mapping.values())
+
+        if total_catches > 90:
+            # we wont be able to accomdadate all catches with emojis
+            amount_used = 0
+            ok_types = []
+            for cat_type in cattypes[::-1]:
+                if amount_used > 90:
+                    break
+                if cat_type in rain_server:
+                    amount_used += len(rain_server[cat_type])
+                ok_types.append(cat_type)
+
+            for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
+                show_cats = ""
+                shortened_types = False
+                cat_types.sort(reverse=True, key=lambda x: type_dict[x])
+                for cat_type in cat_types:
+                    if cat_type not in ok_types:
+                        shortened_types = True
+                        continue
+                    show_cats += get_emoji(cat_type.lower() + "cat")
+                if show_cats != "":
+                    if shortened_types:
+                        show_cats = ": ..." + show_cats
+                    else:
+                        show_cats = ": " + show_cats
+                part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
+        else:
+            for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
+                cat_types.sort(reverse=True, key=lambda x: type_dict[x])
+                part_one += f"{user_id} ({len(cat_types)}): {''.join([get_emoji(cat_type.lower() + 'cat') for cat_type in cat_types])}\n"
+
+        part_two = "**Per Cat Type:**\n"
+        for cat_type in cattypes:
+            if cat_type not in rain_server.keys():
+                continue
+            if len(rain_server[cat_type]) > 5:
+                part_two += f"{get_emoji(cat_type.lower() + 'cat')} *{len(rain_server[cat_type])} catches*\n"
+            else:
+                part_two += f"{get_emoji(cat_type.lower() + 'cat')} {' '.join(rain_server[cat_type])}\n"
+
+        cat_cought_rain[channel.channel_id] = {}
+
+        if not lock_success:
+            part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
+
+        for rain_msg in [part_one, part_two]:
+            # this is to bypass character limit up to 4k
+            v = LayoutView()
+            v.add_item(TextDisplay(rain_msg))
+            await message.channel.send(view=v)
+
+        await asyncio.sleep(2)
+    finally:
+        if lock_success:
+            everyone_overwrites = message.channel.overwrites_for(message.guild.default_role)
+            everyone_overwrites.send_messages = current_perm
+            await message.channel.set_permissions(message.guild.default_role, everyone_overwrites)
+
+        # schedule the next normal spawn if needed
+        if 0 < channel.yet_to_spawn < time.time():
+            await asyncio.sleep(random.uniform(channel.spawn_times_min, channel.spawn_times_max))
+            await spawn_cat(str(message.channel.id))
 
 
 @bot.tree.command(description="its raining cats")
@@ -3901,7 +4032,7 @@ Blessing message preview:
             match = re.search(r"^#(?:[0-9a-fA-F]{3}){1,2}$", color)
             if match:
                 user.color = match.group(0)
-        if image:
+        if image and image.content_type in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
             # reupload image
             channeley = bot.get_channel(config.DONOR_CHANNEL_ID)
             file = await image.to_file()
