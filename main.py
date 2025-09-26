@@ -3545,7 +3545,7 @@ async def actually_do_rain(message, channel):
     try:
         rain_server = cat_cought_rain[channel.channel_id]
 
-        part_one = "## Rain Summary\n\n**Top 10 Catchers:**\n"
+        part_one = "## Rain Summary\n\n**Top Catchers:**\n"
         reverse_mapping = {}
 
         for cat_type, user_ids in rain_server.items():
