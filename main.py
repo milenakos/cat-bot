@@ -3534,11 +3534,8 @@ async def actually_do_rain(message, channel):
             continue
         if len(rain_server[cat_type]) >= 4:
             rain_msg += f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}: **{len(rain_server[cat_type])}**\n"
-            continue
-        list_cought = ""
-        for who_cought in rain_server[cat_type]:
-            list_cought += f" {who_cought}"
-        rain_msg += f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}:{list_cought}\n"
+        else:
+            rain_msg += f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}: {' '.join(rain_server[cat_type])}\n"
 
 
     await message.channel.send(rain_msg)
