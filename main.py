@@ -3532,8 +3532,8 @@ async def actually_do_rain(message, channel):
 
         if channel_permissions.manage_roles:
             await asyncio.gather(
-                message.channel.set_permissions(message.guild.default_role, everyone_overwrites),
-                message.channel.set_permissions(message.guild.me, me_overwrites),
+                message.channel.set_permissions(message.guild.default_role, overwrite=everyone_overwrites),
+                message.channel.set_permissions(message.guild.me, overwrite=me_overwrites),
             )
             lock_success = True
     except Exception:
@@ -3582,37 +3582,44 @@ async def actually_do_rain(message, channel):
                     else:
                         show_cats = ": " + show_cats
                 part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
+
+                part_two = "**Per Cat Type:**\n"
+                for cat_type in cattypes:
+                    if cat_type not in rain_server.keys():
+                        continue
+                    if len(rain_server[cat_type]) > 5:
+                        part_two += f"{get_emoji(cat_type.lower() + 'cat')} *{len(rain_server[cat_type])} catches*\n"
+                    else:
+                        part_two += f"{get_emoji(cat_type.lower() + 'cat')} {' '.join(rain_server[cat_type])}\n"
+
+                if not lock_success:
+                    part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
+
+                for rain_msg in [part_one, part_two]:
+                    # this is to bypass character limit up to 4k
+                    v = LayoutView()
+                    v.add_item(TextDisplay(rain_msg))
+                    await message.channel.send(view=v)
         else:
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 cat_types.sort(reverse=True, key=lambda x: type_dict[x])
                 part_one += f"{user_id} ({len(cat_types)}): {''.join([get_emoji(cat_type.lower() + 'cat') for cat_type in cat_types])}\n"
 
-        part_two = "**Per Cat Type:**\n"
-        for cat_type in cattypes:
-            if cat_type not in rain_server.keys():
-                continue
-            if len(rain_server[cat_type]) > 5:
-                part_two += f"{get_emoji(cat_type.lower() + 'cat')} *{len(rain_server[cat_type])} catches*\n"
-            else:
-                part_two += f"{get_emoji(cat_type.lower() + 'cat')} {' '.join(rain_server[cat_type])}\n"
+            if not lock_success:
+                part_one += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
+
+            v = LayoutView()
+            v.add_item(TextDisplay(part_one))
+            await message.channel.send(view=v)
 
         cat_cought_rain[channel.channel_id] = {}
-
-        if not lock_success:
-            part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
-
-        for rain_msg in [part_one, part_two]:
-            # this is to bypass character limit up to 4k
-            v = LayoutView()
-            v.add_item(TextDisplay(rain_msg))
-            await message.channel.send(view=v)
 
         await asyncio.sleep(2)
     finally:
         if lock_success:
             everyone_overwrites = message.channel.overwrites_for(message.guild.default_role)
             everyone_overwrites.send_messages = current_perm
-            await message.channel.set_permissions(message.guild.default_role, everyone_overwrites)
+            await message.channel.set_permissions(message.guild.default_role, overwrite=everyone_overwrites)
 
         # schedule the next normal spawn if needed
         if 0 < channel.yet_to_spawn < time.time():
