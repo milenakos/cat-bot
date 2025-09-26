@@ -3523,10 +3523,17 @@ async def actually_do_rain(message, channel):
     channel_permissions = await fetch_perms(message)
     lock_success = False
     try:
+        me_overwrites = message.channel.overwrites_for(message.guild.me)
+        me_overwrites.send_messages = True
+
+        everyone_overwrites = message.channel.overwrites_for(message.guild.default_role)
+        current_perm = everyone_overwrites.send_messages
+        everyone_overwrites.send_messages = False
+
         if channel_permissions.manage_roles:
             await asyncio.gather(
-                message.channel.set_permissions(message.guild.default_role, send_messages=False),
-                message.channel.set_permissions(message.guild.me, send_messages=True),
+                message.channel.set_permissions(message.guild.default_role, everyone_overwrites),
+                message.channel.set_permissions(message.guild.me, me_overwrites),
             )
             lock_success = True
     except Exception:
@@ -3603,7 +3610,9 @@ async def actually_do_rain(message, channel):
         await asyncio.sleep(2)
     finally:
         if lock_success:
-            await message.channel.set_permissions(message.guild.default_role, send_messages=None)
+            everyone_overwrites = message.channel.overwrites_for(message.guild.default_role)
+            everyone_overwrites.send_messages = current_perm
+            await message.channel.set_permissions(message.guild.default_role, everyone_overwrites)
 
         # schedule the next normal spawn if needed
         if 0 < channel.yet_to_spawn < time.time():
