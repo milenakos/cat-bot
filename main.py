@@ -3540,14 +3540,17 @@ async def actually_do_rain(message, channel):
     # rain summary
     rain_server = cat_cought_rain[channel.channel_id]
 
-    part_one = "## Rain Summary\n\nTop 10 Catchers:\n"
+    part_one = "## Rain Summary\n\n**Top 10 Catchers:**\n"
     reverse_mapping = {}
+
     for cat_type, user_ids in rain_server.items():
         for user_id in user_ids:
             if user_id not in reverse_mapping:
                 reverse_mapping[user_id] = []
             reverse_mapping[user_id].append(cat_type)
+
     total_catches = sum(len(cat_types) for cat_types in reverse_mapping.values())
+
     if total_catches > 90:
         # we wont be able to accomdadate all catches with emojis
         amount_used = 0
@@ -3555,7 +3558,8 @@ async def actually_do_rain(message, channel):
         for cat_type in cattypes[::-1]:
             if amount_used > 90:
                 break
-            amount_used += len(rain_server[cat_type])
+            if cat_type in rain_server:
+                amount_used += len(rain_server[cat_type])
             ok_types.append(cat_type)
 
         for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1])):
@@ -3574,9 +3578,9 @@ async def actually_do_rain(message, channel):
             part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
     else:
         for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1])):
-            part_one += f"{user_id} ({len(cat_types)}): {', '.join(cat_types)}\n"
+            part_one += f"{user_id} ({len(cat_types)}): {''.join([get_emoji(cat_type.lower() + 'cat') for cat_type in cat_types])}\n"
 
-    part_two = "Per Cat Type:\n"
+    part_two = "**Per Cat Type:**\n"
     for cat_type in cattypes:
         if cat_type not in rain_server.keys():
             continue
@@ -3590,16 +3594,11 @@ async def actually_do_rain(message, channel):
     if not lock_success:
         part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
 
-    if len(part_one + part_two) < 3995:
-        rain_msg = part_one + "\n" + part_two
+    for rain_msg in [part_one, part_two]:
+        # this is to bypass character limit up to 4k
         v = LayoutView()
         v.add_item(TextDisplay(rain_msg))
         await message.channel.send(view=v)
-    else:
-        for rain_msg in [part_one, part_two]:
-            v = LayoutView()
-            v.add_item(TextDisplay(rain_msg))
-            await message.channel.send(view=v)
 
     await asyncio.sleep(2)
 
