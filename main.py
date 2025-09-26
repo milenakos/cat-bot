@@ -3563,7 +3563,7 @@ async def actually_do_rain(message, channel):
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 show_cats = ""
                 shortened_types = False
-                cat_types.sort(key=lambda x: type_dict[x])
+                cat_types.sort(reverse=True, key=lambda x: type_dict[x])
                 for cat_type in cat_types:
                     if cat_type not in ok_types:
                         shortened_types = True
@@ -3577,7 +3577,7 @@ async def actually_do_rain(message, channel):
                 part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
         else:
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
-                cat_types.sort(key=lambda x: type_dict[x])
+                cat_types.sort(reverse=True, key=lambda x: type_dict[x])
                 part_one += f"{user_id} ({len(cat_types)}): {''.join([get_emoji(cat_type.lower() + 'cat') for cat_type in cat_types])}\n"
 
         part_two = "**Per Cat Type:**\n"
