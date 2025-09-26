@@ -18,26 +18,36 @@ BACKUP_ID = 1060545763194707998
 CRASH_MODE = "RAISE"
 
 #
-# all the following are optional (setting them to None will disable the feature)
+# all the following are optional (setting them to None or not having the variable will disable the feature)
 #
 
+try:
+    env_vars = [
+        os.environ["sentry_dsn"],
+        os.environ["webhook_verify"],
+        os.environ["top_gg_token"],
+        os.environ["bots_gg_token"]
+    ]
+except KeyError:
+    env_vars = [None, None, None, None]
 
 # dsn of a sentry-compatible service for error logging
-SENTRY_DSN = os.environ["sentry_dsn"]
-
-# channel id for db backups, private extremely recommended
-BACKUP_ID = 1060545763194707998
+SENTRY_DSN = env_vars[0]
 
 # top.gg vote webhook verification key, setting this to None disables all voting stuff
-WEBHOOK_VERIFY = os.environ["webhook_verify"]
+WEBHOOK_VERIFY = env_vars[1]
 
 # top.gg api token because they use ancient technology and you need to post server count manually smh
-TOP_GG_TOKEN = os.environ["top_gg_token"]
+TOP_GG_TOKEN = env_vars[2]
+
+# bots.gg api token for the same reason
+BOTS_GG_TOKEN = env_vars[3]
 
 # only post stats if server count is above this, to prevent wrong stats
 MIN_SERVER_SEND = 125_000
-# bots.gg api token for the same reason
-BOTS_GG_TOKEN = os.environ["bots_gg_token"]
+
+# channel id for db backups, private extremely recommended
+BACKUP_ID = 1060545763194707998
 
 # all messages in this channel will be sent to all setupped channels, use wisely
 NEWS_CHANNEL_ID = 1301220787352764457
