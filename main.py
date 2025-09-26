@@ -197,6 +197,7 @@ hints = [
     "Cat Bot has reached top #12 on top.gg in March 2025",
     "Cat Bot has reached top #9 on top.gg in April 2025",
     "Cat Bot has reached top #7 on top.gg in May 2025",
+    "Cat Bot has reached top #5 on top.gg in September 2025",
     "Most Cat Bot features were made within 2 weeks",
     "Cat Bot was initially made for only one server",
     "Cat Bot is made in Python with discord.py",
@@ -3583,23 +3584,23 @@ async def actually_do_rain(message, channel):
                         show_cats = ": " + show_cats
                 part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
 
-                part_two = "**Per Cat Type:**\n"
-                for cat_type in cattypes:
-                    if cat_type not in rain_server.keys():
-                        continue
-                    if len(rain_server[cat_type]) > 5:
-                        part_two += f"{get_emoji(cat_type.lower() + 'cat')} *{len(rain_server[cat_type])} catches*\n"
-                    else:
-                        part_two += f"{get_emoji(cat_type.lower() + 'cat')} {' '.join(rain_server[cat_type])}\n"
+            part_two = "**Per Cat Type:**\n"
+            for cat_type in cattypes:
+                if cat_type not in rain_server.keys():
+                    continue
+                if len(rain_server[cat_type]) > 5:
+                    part_two += f"{get_emoji(cat_type.lower() + 'cat')} *{len(rain_server[cat_type])} catches*\n"
+                else:
+                    part_two += f"{get_emoji(cat_type.lower() + 'cat')} {' '.join(rain_server[cat_type])}\n"
 
-                if not lock_success:
-                    part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
+            if not lock_success:
+                part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
 
-                for rain_msg in [part_one, part_two]:
-                    # this is to bypass character limit up to 4k
-                    v = LayoutView()
-                    v.add_item(TextDisplay(rain_msg))
-                    await message.channel.send(view=v)
+            for rain_msg in [part_one, part_two]:
+                # this is to bypass character limit up to 4k
+                v = LayoutView()
+                v.add_item(TextDisplay(rain_msg))
+                await message.channel.send(view=v)
         else:
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 cat_types.sort(reverse=True, key=lambda x: type_dict[x])
