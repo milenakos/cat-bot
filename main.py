@@ -3546,7 +3546,7 @@ async def actually_do_rain(message, channel):
     try:
         rain_server = cat_cought_rain[channel.channel_id]
 
-        part_one = "## Rain Summary\n\n**Top Catchers:**\n"
+        part_one = "## Rain Summary\n"
         reverse_mapping = {}
 
         for cat_type, user_ids in rain_server.items():
@@ -3562,10 +3562,10 @@ async def actually_do_rain(message, channel):
             amount_used = 0
             ok_types = []
             for cat_type in cattypes[::-1]:
-                if amount_used > 90:
-                    break
                 if cat_type in rain_server:
                     amount_used += len(rain_server[cat_type])
+                if amount_used > 90:
+                    break
                 ok_types.append(cat_type)
 
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
@@ -3584,7 +3584,7 @@ async def actually_do_rain(message, channel):
                         show_cats = ": " + show_cats
                 part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
 
-            part_two = "**Per Cat Type:**\n"
+            part_two = ""
             for cat_type in cattypes:
                 if cat_type not in rain_server.keys():
                     continue
@@ -3597,6 +3597,8 @@ async def actually_do_rain(message, channel):
                 part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
 
             for rain_msg in [part_one, part_two]:
+                if "cat:" not in rain_msg:
+                    continue
                 # this is to bypass character limit up to 4k
                 v = LayoutView()
                 v.add_item(TextDisplay(rain_msg))
@@ -3616,6 +3618,8 @@ async def actually_do_rain(message, channel):
         cat_cought_rain[channel.channel_id] = {}
 
         await asyncio.sleep(2)
+    except discord.Forbidden:
+        pass
     finally:
         if lock_success:
             everyone_overwrites = message.channel.overwrites_for(message.guild.default_role)
