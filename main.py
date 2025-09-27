@@ -857,9 +857,9 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         if not channel:
             raise Exception
     except Exception:
-        return
+        return False
     if channel.cat or channel.yet_to_spawn > time.time() + 10:
-        return
+        return False
 
     if not localcat:
         localcat = random.choices(cattypes, weights=type_dict.values())[0]
@@ -873,7 +873,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
 
     if channel.cat:
         # its never too late to return
-        return
+        return False
 
     try:
         message_is_sus = await channeley.send(
@@ -883,18 +883,19 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         )
     except discord.Forbidden:
         await channel.delete()
-        return
+        return False
     except discord.NotFound:
         await channel.delete()
-        return
+        return False
     except Exception:
-        return
+        return False
 
     channel.cat = message_is_sus.id
     channel.yet_to_spawn = 0
     channel.forcespawned = bool(force_spawn)
     channel.cattype = localcat
     await channel.save()
+    return True
 
 
 async def postpone_reminder(interaction):
@@ -3500,13 +3501,14 @@ async def actually_do_rain(message, channel):
             await asyncio.sleep(random.uniform(2.5, 3))
 
         try:
-            await spawn_cat(str(message.channel.id))
+            success = await spawn_cat(str(message.channel.id))
         except Exception:
             pass
 
-        await channel.refresh_from_db()
-        channel.cat_rains -= 1
-        await channel.save()
+        if success:
+            await channel.refresh_from_db()
+            channel.cat_rains -= 1
+            await channel.save()
 
     temp_rain_storage.append(message.channel.id)
     channel.rain_should_end = 0
