@@ -3655,7 +3655,7 @@ async def rain(message: discord.Interaction):
 
     embed = discord.Embed(
         title="☔ Cat Rains",
-        description=f"""Cat Rains are power-ups which spawn cats super fast for a limited amounts of time in channel of your choice.
+        description=f"""Cat Rains are power-ups which spawn cats super fast for a limited amounts of time in a channel of your choice.
 
 You can get those by buying them at our [store](<https://catbot.shop>) or by winning them in an event.
 This bot is developed by a single person so buying one would be very appreciated.
