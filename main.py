@@ -47,6 +47,11 @@ import msg2img
 from catpg import RawSQL
 from database import Channel, Prism, Profile, Reminder, User
 
+try:
+    import exportbackup
+except ImportError:
+    exportbackup = None
+
 logging.basicConfig(level=logging.INFO)
 
 # trigger warning, base64 encoded for your convinience
@@ -1128,7 +1133,14 @@ async def maintaince_loop():
             try:
                 process = await asyncio.create_subprocess_shell(f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -Fc -Z 9 -f {backup_file} cat_bot")
                 await process.wait()
-                await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.", file=discord.File(backup_file))
+
+                if exportbackup:
+                    event_loop = asyncio.get_event_loop()
+                    await event_loop.run_in_executor(None, exportbackup.export)
+
+                    await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.\nBackup exported.")
+                else:
+                    await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.", file=discord.File(backup_file))
             except Exception as e:
                 print(f"Error during backup: {e}")
         else:
