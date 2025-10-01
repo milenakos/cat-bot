@@ -306,6 +306,9 @@ rigged_users = []
 # to prevent double catches
 temp_catches_storage = []
 
+# to prevent double spawns
+temp_spawns_storage = []
+
 # to prevent double belated battlepass progress and for "faster than 10 seconds" belated bp quest
 temp_belated_storage = {}
 
@@ -507,7 +510,7 @@ async def generate_quest(user: Profile, quest_type: str):
 async def refresh_quests(user):
     await user.refresh_from_db()
     start_date = datetime.datetime(2024, 12, 1)
-    current_date = datetime.datetime.utcnow()
+    current_date = datetime.datetime.utcnow() + datetime.timedelta(hours=4)
     full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
     if current_date.day < start_date.day:
         full_months_passed -= 1
@@ -879,9 +882,10 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
 
     appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
 
-    if channel.cat:
-        # its never too late to return
+    if int(ch_id) in temp_spawns_storage:
         return False
+
+    temp_spawns_storage.append(int(ch_id))
 
     try:
         message_is_sus = await channeley.send(
@@ -891,11 +895,14 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         )
     except discord.Forbidden:
         await channel.delete()
+        temp_spawns_storage.remove(int(ch_id))
         return False
     except discord.NotFound:
         await channel.delete()
+        temp_spawns_storage.remove(int(ch_id))
         return False
     except Exception:
+        temp_spawns_storage.remove(int(ch_id))
         return False
 
     channel.cat = message_is_sus.id
@@ -903,6 +910,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     channel.forcespawned = bool(force_spawn)
     channel.cattype = localcat
     await channel.save()
+    temp_spawns_storage.remove(int(ch_id))
     return True
 
 
@@ -4320,12 +4328,14 @@ async def battlepass(message: discord.Interaction):
         await user.refresh_from_db()
 
         # season end
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=4)
 
         if now.month == 12:
             next_month = datetime.datetime(now.year + 1, 1, 1)
         else:
             next_month = datetime.datetime(now.year, now.month + 1, 1)
+
+        next_month -= datetime.timedelta(hours=4)
 
         timestamp = int(time.mktime(next_month.timetuple()))
 
@@ -7385,7 +7395,7 @@ async def leaderboards(
             final_value = "timeslow"
         elif type == "Battlepass":
             start_date = datetime.datetime(2024, 12, 1)
-            current_date = datetime.datetime.utcnow()
+            current_date = datetime.datetime.utcnow() + datetime.timedelta(hours=4)
             full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
             bp_season = battle["seasons"][str(full_months_passed)]
             if current_date.day < start_date.day:
