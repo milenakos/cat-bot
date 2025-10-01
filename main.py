@@ -879,10 +879,10 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
 
     appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
 
-    if channel.channel_id in temp_spawns_storage:
+    if int(ch_id) in temp_spawns_storage:
         return False
 
-    temp_spawns_storage.append(channel.channel_id)
+    temp_spawns_storage.append(int(ch_id))
 
     try:
         message_is_sus = await channeley.send(
@@ -892,14 +892,14 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         )
     except discord.Forbidden:
         await channel.delete()
-        temp_spawns_storage.remove(channel.channel_id)
+        temp_spawns_storage.remove(int(ch_id))
         return False
     except discord.NotFound:
         await channel.delete()
-        temp_spawns_storage.remove(channel.channel_id)
+        temp_spawns_storage.remove(int(ch_id))
         return False
     except Exception:
-        temp_spawns_storage.remove(channel.channel_id)
+        temp_spawns_storage.remove(int(ch_id))
         return False
 
     channel.cat = message_is_sus.id
@@ -907,7 +907,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     channel.forcespawned = bool(force_spawn)
     channel.cattype = localcat
     await channel.save()
-    temp_spawns_storage.remove(channel.channel_id)
+    temp_spawns_storage.remove(int(ch_id))
     return True
 
 
