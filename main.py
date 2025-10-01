@@ -504,7 +504,7 @@ async def generate_quest(user: Profile, quest_type: str):
 async def refresh_quests(user):
     await user.refresh_from_db()
     start_date = datetime.datetime(2024, 12, 1)
-    current_date = datetime.datetime.utcnow()
+    current_date = datetime.datetime.utcnow() + datetime.timedelta(hours=4)
     full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
     if current_date.day < start_date.day:
         full_months_passed -= 1
@@ -1736,8 +1736,7 @@ async def on_message(message: discord.Message):
             decided_time = random.uniform(channel.spawn_times_min, channel.spawn_times_max)
 
             if channel.cat_rains > 0:
-                # we dont schedule next spawn during rains
-                decided_time = 0
+                decided_time = random.uniform(1, 2)
 
             if channel.yet_to_spawn < time.time():
                 # if there isnt already a scheduled spawn
@@ -4200,7 +4199,7 @@ async def battlepass(message: discord.Interaction):
         await user.refresh_from_db()
 
         # season end
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=4)
 
         if now.month == 12:
             next_month = datetime.datetime(now.year + 1, 1, 1)
@@ -6871,7 +6870,7 @@ async def leaderboards(
             final_value = "timeslow"
         elif type == "Battlepass":
             start_date = datetime.datetime(2024, 12, 1)
-            current_date = datetime.datetime.utcnow()
+            current_date = datetime.datetime.utcnow() + datetime.timedelta(hours=4)
             full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
             bp_season = battle["seasons"][str(full_months_passed)]
             if current_date.day < start_date.day:
