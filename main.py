@@ -4207,6 +4207,8 @@ async def battlepass(message: discord.Interaction):
         else:
             next_month = datetime.datetime(now.year, now.month + 1, 1)
 
+        next_month -= datetime.timedelta(hours=4)
+
         timestamp = int(time.mktime(next_month.timetuple()))
 
         description = f"Season ends <t:{timestamp}:R>\n\n"
