@@ -1736,7 +1736,8 @@ async def on_message(message: discord.Message):
             decided_time = random.uniform(channel.spawn_times_min, channel.spawn_times_max)
 
             if channel.cat_rains > 0:
-                decided_time = random.uniform(1, 2)
+                # we dont schedule next spawn during rains
+                decided_time = 0
 
             if channel.yet_to_spawn < time.time():
                 # if there isnt already a scheduled spawn
