@@ -47,6 +47,11 @@ import msg2img
 from catpg import RawSQL
 from database import Channel, Prism, Profile, Reminder, User
 
+try:
+    import exportbackup
+except ImportError:
+    exportbackup = None
+
 logging.basicConfig(level=logging.INFO)
 
 # trigger warning, base64 encoded for your convinience
@@ -197,6 +202,7 @@ hints = [
     "Cat Bot has reached top #12 on top.gg in March 2025",
     "Cat Bot has reached top #9 on top.gg in April 2025",
     "Cat Bot has reached top #7 on top.gg in May 2025",
+    "Cat Bot has reached top #5 on top.gg in September 2025",
     "Most Cat Bot features were made within 2 weeks",
     "Cat Bot was initially made for only one server",
     "Cat Bot is made in Python with discord.py",
@@ -859,9 +865,9 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         if not channel:
             raise Exception
     except Exception:
-        return
+        return False
     if channel.cat or channel.yet_to_spawn > time.time() + 10:
-        return
+        return False
 
     if not localcat:
         localcat = random.choices(cattypes, weights=type_dict.values())[0]
@@ -875,7 +881,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
 
     if channel.cat:
         # its never too late to return
-        return
+        return False
 
     try:
         message_is_sus = await channeley.send(
@@ -885,18 +891,19 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         )
     except discord.Forbidden:
         await channel.delete()
-        return
+        return False
     except discord.NotFound:
         await channel.delete()
-        return
+        return False
     except Exception:
-        return
+        return False
 
     channel.cat = message_is_sus.id
     channel.yet_to_spawn = 0
     channel.forcespawned = bool(force_spawn)
     channel.cattype = localcat
     await channel.save()
+    return True
 
 
 async def postpone_reminder(interaction):
@@ -1129,7 +1136,14 @@ async def maintaince_loop():
             try:
                 process = await asyncio.create_subprocess_shell(f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -Fc -Z 9 -f {backup_file} cat_bot")
                 await process.wait()
-                await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.", file=discord.File(backup_file))
+
+                if exportbackup:
+                    event_loop = asyncio.get_event_loop()
+                    await event_loop.run_in_executor(None, exportbackup.export)
+
+                    await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.\nBackup exported.")
+                else:
+                    await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.", file=discord.File(backup_file))
             except Exception as e:
                 print(f"Error during backup: {e}")
         else:
@@ -3606,13 +3620,14 @@ async def actually_do_rain(message, channel):
             await asyncio.sleep(random.uniform(2.5, 3))
 
         try:
-            await spawn_cat(str(message.channel.id))
+            success = await spawn_cat(str(message.channel.id))
         except Exception:
             pass
 
-        await channel.refresh_from_db()
-        channel.cat_rains -= 1
-        await channel.save()
+        if success:
+            await channel.refresh_from_db()
+            channel.cat_rains -= 1
+            await channel.save()
 
     temp_rain_storage.append(message.channel.id)
     channel.rain_should_end = 0
@@ -3639,8 +3654,8 @@ async def actually_do_rain(message, channel):
 
         if channel_permissions.manage_roles:
             await asyncio.gather(
-                message.channel.set_permissions(message.guild.default_role, everyone_overwrites),
-                message.channel.set_permissions(message.guild.me, me_overwrites),
+                message.channel.set_permissions(message.guild.default_role, overwrite=everyone_overwrites),
+                message.channel.set_permissions(message.guild.me, overwrite=me_overwrites),
             )
             lock_success = True
     except Exception:
@@ -3652,7 +3667,7 @@ async def actually_do_rain(message, channel):
     try:
         rain_server = cat_cought_rain[channel.channel_id]
 
-        part_one = "## Rain Summary\n\n**Top 10 Catchers:**\n"
+        part_one = "## Rain Summary\n"
         reverse_mapping = {}
 
         for cat_type, user_ids in rain_server.items():
@@ -3668,10 +3683,10 @@ async def actually_do_rain(message, channel):
             amount_used = 0
             ok_types = []
             for cat_type in cattypes[::-1]:
-                if amount_used > 90:
-                    break
                 if cat_type in rain_server:
                     amount_used += len(rain_server[cat_type])
+                if amount_used > 90:
+                    break
                 ok_types.append(cat_type)
 
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
@@ -3689,37 +3704,48 @@ async def actually_do_rain(message, channel):
                     else:
                         show_cats = ": " + show_cats
                 part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
+
+            part_two = ""
+            for cat_type in cattypes:
+                if cat_type not in rain_server.keys():
+                    continue
+                if len(rain_server[cat_type]) > 5:
+                    part_two += f"{get_emoji(cat_type.lower() + 'cat')} *{len(rain_server[cat_type])} catches*\n"
+                else:
+                    part_two += f"{get_emoji(cat_type.lower() + 'cat')} {' '.join(rain_server[cat_type])}\n"
+
+            if not lock_success:
+                part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
+
+            for rain_msg in [part_one, part_two]:
+                if "cat:" not in rain_msg:
+                    continue
+                # this is to bypass character limit up to 4k
+                v = LayoutView()
+                v.add_item(TextDisplay(rain_msg))
+                await message.channel.send(view=v)
         else:
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 cat_types.sort(reverse=True, key=lambda x: type_dict[x])
                 part_one += f"{user_id} ({len(cat_types)}): {''.join([get_emoji(cat_type.lower() + 'cat') for cat_type in cat_types])}\n"
 
-        part_two = "**Per Cat Type:**\n"
-        for cat_type in cattypes:
-            if cat_type not in rain_server.keys():
-                continue
-            if len(rain_server[cat_type]) > 5:
-                part_two += f"{get_emoji(cat_type.lower() + 'cat')} *{len(rain_server[cat_type])} catches*\n"
-            else:
-                part_two += f"{get_emoji(cat_type.lower() + 'cat')} {' '.join(rain_server[cat_type])}\n"
+            if not lock_success:
+                part_one += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
+
+            v = LayoutView()
+            v.add_item(TextDisplay(part_one))
+            await message.channel.send(view=v)
 
         cat_cought_rain[channel.channel_id] = {}
 
-        if not lock_success:
-            part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
-
-        for rain_msg in [part_one, part_two]:
-            # this is to bypass character limit up to 4k
-            v = LayoutView()
-            v.add_item(TextDisplay(rain_msg))
-            await message.channel.send(view=v)
-
         await asyncio.sleep(2)
+    except discord.Forbidden:
+        pass
     finally:
         if lock_success:
             everyone_overwrites = message.channel.overwrites_for(message.guild.default_role)
             everyone_overwrites.send_messages = current_perm
-            await message.channel.set_permissions(message.guild.default_role, everyone_overwrites)
+            await message.channel.set_permissions(message.guild.default_role, overwrite=everyone_overwrites)
 
         # schedule the next normal spawn if needed
         if 0 < channel.yet_to_spawn < time.time():
@@ -3748,7 +3774,7 @@ async def rain(message: discord.Interaction):
 
     embed = discord.Embed(
         title="☔ Cat Rains",
-        description=f"""Cat Rains are power-ups which spawn cats super fast for a limited amounts of time in channel of your choice.
+        description=f"""Cat Rains are power-ups which spawn cats super fast for a limited amounts of time in a channel of your choice.
 
 You can get those by buying them at our [store](<https://catbot.shop>) or by winning them in an event.
 This bot is developed by a single person so buying one would be very appreciated.

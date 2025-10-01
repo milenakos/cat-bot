@@ -62,7 +62,7 @@ def before_send(event, hint):
     if "exc_info" not in hint:
         return event
     for i in filtered_errors:
-        if i in str(hint["exc_info"][0]) + str(hint["exc_info"][1]):
+        if i.lower() in str(hint["exc_info"][0]).lower() + str(hint["exc_info"][1]).lower():
             return None
     return event
 
