@@ -1899,15 +1899,15 @@ async def on_message(message: discord.Message):
                         normal_bump = False
                         if not channel.forcespawned:
                             channel.cat_rains += math.ceil(600 / 2.75)
-                            decided_time = random.uniform(1, 2)
-                            channel.rain_should_end = int(time.time() + decided_time)
-                            channel.yet_to_spawn = 0
-                            await channel.save()
                             if channel.cat_rains > math.ceil(600 / 2.75):
                                 await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                                 await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                                 await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                             else:
+                                decided_time = random.uniform(1, 2)
+                                channel.rain_should_end = int(time.time() + decided_time)
+                                channel.yet_to_spawn = 0
+                                cat_cought_rain[channel.channel_id] = {}
                                 bot.loop.create_task(rain_recovery_loop(channel))
 
                     if normal_bump:
@@ -3493,7 +3493,6 @@ __Highlighted Stat__
 
 
 async def rain_recovery_loop(channel):
-    cat_cought_rain[channel.channel_id] = {}
     while True:
         await asyncio.sleep(10)
         await channel.refresh_from_db()
@@ -3772,6 +3771,8 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         except Exception:
             pass
 
+        cat_cought_rain[channel.channel_id] = {}
+        await spawn_cat(str(interaction.channel.id))
         await rain_recovery_loop(channel)
 
     async def rain_modal(interaction):
