@@ -48,7 +48,7 @@ from catpg import RawSQL
 from database import Channel, Prism, Profile, Reminder, User
 
 try:
-    import exportbackup
+    import exportbackup # type: ignore
 except ImportError:
     exportbackup = None
 
