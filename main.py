@@ -6818,7 +6818,7 @@ async def cataine(message: discord.Interaction):
     
     desc = ""
     if user.hibernation:
-        desc += f"\n\n**The timer for leveling up will not start until you catch your next cat.**\n"
+        desc += f"\n\n**The timer for leveling up will not start until you start your bounties.**\n"
     if user.cataine_level > 0 and user.cataine_level < 11:
         colored = 0
         for i in range(user.bounties):
