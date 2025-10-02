@@ -3494,7 +3494,7 @@ __Highlighted Stat__
 
 async def rain_recovery_loop(channel):
     while True:
-        await asyncio.sleep(10)
+        await asyncio.sleep(5)
         await channel.refresh_from_db()
         if channel.cat_rains <= 0:
             break
@@ -3954,7 +3954,7 @@ async def packs(message: discord.Interaction):
             view.add_item(button)
         if empty:
             view.add_item(Button(label="No packs left!", disabled=True))
-        if total_amount > 10:
+        if total_amount > 5:
             button = Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.blurple)
             button.callback = open_all_packs
             view.add_item(button)
