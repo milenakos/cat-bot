@@ -1238,7 +1238,7 @@ async def on_message(message: discord.Message):
 
     if time.time() > last_loop_time + 300:
         last_loop_time = time.time()
-        await maintaince_loop()
+        bot.loop.create_task(maintaince_loop())
 
     if message.guild is None:
         if text.startswith("disable"):
@@ -1747,9 +1747,14 @@ async def on_message(message: discord.Message):
             temp_catches_storage.append(channel.cat)
             decided_time = random.uniform(channel.spawn_times_min, channel.spawn_times_max)
 
-            if channel.cat_rains != 0:
-                # we dont schedule next spawn during rains
-                decided_time = 0
+
+            cat_rain_end = False
+            if channel.cat_rains > 0:
+                decided_time = random.uniform(1, 2)
+                channel.rain_should_end = int(time.time() + decided_time)
+                channel.cat_rains -= 1
+                if channel.cat_rains == 0:
+                    cat_rain_end = True
 
             if channel.yet_to_spawn < time.time():
                 # if there isnt already a scheduled spawn
@@ -2014,19 +2019,16 @@ async def on_message(message: discord.Message):
                         normal_bump = False
                         if not channel.forcespawned:
                             channel.cat_rains += math.ceil(600 / 2.75)
-                            channel.yet_to_spawn = 0
-                            await channel.save()
                             if channel.cat_rains > math.ceil(600 / 2.75):
                                 await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                                 await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                                 await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
                             else:
-
-                                async def background_task(message, channel):
-                                    await asyncio.sleep(6)
-                                    await actually_do_rain(message, channel)
-
-                                bot.loop.create_task(background_task(message, channel))
+                                decided_time = random.uniform(1, 2)
+                                channel.rain_should_end = int(time.time() + decided_time)
+                                channel.yet_to_spawn = 0
+                                cat_cought_rain[channel.channel_id] = {}
+                                bot.loop.create_task(rain_recovery_loop(channel))
 
                     if normal_bump:
                         suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
@@ -2243,29 +2245,13 @@ async def on_message(message: discord.Message):
                     except Exception:
                         pass
                     await spawn_cat(str(message.channel.id))
+                    if cat_rain_end:
+                        bot.loop.create_task(rain_end(message, channel))
                 else:
                     try:
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
                     except Exception:
                         pass
-                    if channel.cat_rains > 0 and channel.rain_should_end and channel.rain_should_end < time.time():
-                        # revive the rain
-                        print(message.guild.id, channel.cat_rains, channel.yet_to_spawn, channel.rain_should_end)
-
-                        channel.cat_rains += 3  # compensation
-
-                        try:
-                            if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                                await message.channel.send(f"oops the rain broke, it will now continue ({channel.cat_rains} cats left)")
-                        except Exception:
-                            pass
-                        channel.rain_should_end = int(time.time() + (channel.cat_rains * 2.75) * 1.3)
-                        channel.yet_to_spawn = 0
-                        await channel.save()
-
-                        await asyncio.sleep(3)
-
-                        await actually_do_rain(message, channel)
 
 
     if text.lower().startswith("cat!amount") and perms.send_messages and (not message.thread or perms.send_messages_in_threads):
@@ -3618,31 +3604,19 @@ __Highlighted Stat__
         await message.followup.send(embed=embedVar)
 
 
-async def actually_do_rain(message, channel):
-    first_spawn = True
-    cat_cought_rain[channel.channel_id] = {}
-    while channel.cat_rains > 0:
-        if first_spawn:
-            first_spawn = False
-        else:
-            await asyncio.sleep(random.uniform(2.5, 3))
-
-        try:
-            success = await spawn_cat(str(message.channel.id))
-        except Exception:
-            pass
-
-        if success:
-            await channel.refresh_from_db()
+async def rain_recovery_loop(channel):
+    while True:
+        await asyncio.sleep(10)
+        await channel.refresh_from_db()
+        if channel.cat_rains <= 0:
+            break
+        if channel.cat_rains and not channel.cat and time.time() - channel.rain_should_end > 5:
+            await spawn_cat(str(channel.channel_id))
             channel.cat_rains -= 1
             await channel.save()
 
-    temp_rain_storage.append(message.channel.id)
-    channel.rain_should_end = 0
-    await channel.save()
 
-    await asyncio.sleep(1)
-
+async def rain_end(message, channel):
     try:
         for _ in range(3):
             await message.channel.send("# :bangbang: cat rain has ended")
@@ -3754,11 +3728,6 @@ async def actually_do_rain(message, channel):
             everyone_overwrites = message.channel.overwrites_for(message.guild.default_role)
             everyone_overwrites.send_messages = current_perm
             await message.channel.set_permissions(message.guild.default_role, overwrite=everyone_overwrites)
-
-        # schedule the next normal spawn if needed
-        if 0 < channel.yet_to_spawn < time.time():
-            await asyncio.sleep(random.uniform(channel.spawn_times_min, channel.spawn_times_max))
-            await spawn_cat(str(message.channel.id))
 
 
 @bot.tree.command(description="its raining cats")
@@ -3914,7 +3883,9 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         except Exception:
             pass
 
-        await actually_do_rain(message, channel)
+        cat_cought_rain[channel.channel_id] = {}
+        await spawn_cat(str(interaction.channel.id))
+        await rain_recovery_loop(channel)
 
     async def rain_modal(interaction):
         modal = RainModal(interaction.user)
