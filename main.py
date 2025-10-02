@@ -1235,7 +1235,7 @@ async def on_message(message: discord.Message):
 
     if time.time() > last_loop_time + 300:
         last_loop_time = time.time()
-        await maintaince_loop()
+        bot.loop.create_task(maintaince_loop())
 
     if message.guild is None:
         if text.startswith("disable"):
