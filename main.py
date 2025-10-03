@@ -4488,7 +4488,7 @@ async def ping(message: discord.Interaction):
                             if "NaN" in line:
                                 continue
                             if f'shard="{message.guild.shard_id}"' in line:
-                                shard_latency = float(line.split(" ")[1])
+                                shard_latency = int(float(line.split(" ")[1]) * 1000)
                             try:
                                 total_latencies += float(line.split(" ")[1])
                                 total_shards += 1
