@@ -370,6 +370,7 @@ news_list = [
     {"title": "100,000 SERVERS WHAT", "emoji": "🎉"},
     {"title": "Regarding recent instabilities", "emoji": "🗒️"},
     {"title": "cat bot reached #5 on top.gg", "emoji": "yippee"},
+    {"title": "nominate cat bot for top.gg awards", "emoji": "🏆"},
 ]
 
 
@@ -2670,6 +2671,18 @@ thanks for using cat bot!""",
                 await interaction.edit_original_response(view=view)
 
             await send_yippee(interaction)
+        elif news_id == 10:
+            embed = Container(
+                "## 🏆 nominate cat bot for top.gg awards",
+                "holy cat top.gg is doing annual awards now",
+                "you know [what to do](https://top.gg/bot/966695034340663367)...\nyou can also leave a review while you are there if you havent yet :3",
+                discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/YgQ0flQ.png")),
+                Button(label="Nominate Cat Bot", url="https://top.gg/bot/966695034340663367", emoji="🏆"),
+                "-# <t:1759513848>",
+            )
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
 
     async def regen_buttons():
         nonlocal buttons
