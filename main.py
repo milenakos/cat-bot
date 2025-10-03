@@ -1967,12 +1967,14 @@ async def on_message(message: discord.Message):
                         silly_amount *= 0
                         suffix_string += f"\n🚫 cataine failed! your cat was uncought. tragic."
 
-                # add blessings
-                if random.randint(1, 100) == 101: # BLESSING BYPASS, REMOVE BEFORE THIS GETS TO PROD
+                # blessings
+                bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001 * 0.01
+                if bless_chance > random.random():
                     # woo we got blessed thats pretty cool
                     silly_amount *= 2
 
-                    blesser = (await User.collect("blessings_enabled = true ORDER BY RANDOM() LIMIT 1"))[0]
+                    blesser_l = await User.collect("blessings_enabled = true AND rain_minutes_bought > 0 ORDER BY -ln(random()) / rain_minutes_bought LIMIT 1")
+                    blesser = blesser_l[0]
                     blesser.cats_blessed += 1
                     await blesser.save()
 
@@ -2170,7 +2172,7 @@ async def on_message(message: discord.Message):
                 if do_time and time_caught > user.timeslow:
                     user.timeslow = time_caught
 
-                if channel.cat_rains != 0:
+                if channel.cat_rains > 0:
                     user.rain_participations += 1
 
                 await user.save()
@@ -2179,7 +2181,7 @@ async def on_message(message: discord.Message):
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT":
                     await achemb(message, "loud_cat", "send")
-                if channel.cat_rains != 0:
+                if channel.cat_rains > 0:
                     await achemb(message, "cat_rain", "send")
 
                 await achemb(message, "first", "send")
@@ -3287,6 +3289,7 @@ async def gen_stats(profile, star):
     stats.append(["☔", "Rains"])
     stats.append(["current_rain_minutes", "☔", f"Current rain minutes: {user.rain_minutes:,}"])
     stats.append(["supporter", "👑", "Ever bought rains: " + ("Yes" if user.premium else "No")])
+    stats.append(["rain_minutes_bought", "☔", f"Rain minutes bought: {user.rain_minutes_bought:,}"])
     stats.append(["cats_caught_during_rains", "☔", f"Cats caught during rains: {profile.rain_participations:,}{star}"])
     stats.append(["rain_minutes_started", "☔", f"Rain minutes started: {profile.rain_minutes_started:,}{star}"])
     stats.append(["cats_blessed", "🌠", f"Cats blessed: {user.cats_blessed:,}"])
@@ -3297,6 +3300,8 @@ async def gen_stats(profile, star):
     stats.append(["slot_spins", "🎰", f"Slot spins: {profile.slot_spins:,}"])
     stats.append(["slot_wins", "🎰", f"Slot wins: {profile.slot_wins:,}"])
     stats.append(["slot_big_wins", "🎰", f"Slot big wins: {profile.slot_big_wins:,}"])
+    stats.append(["roulette_spins", "💰", f"Roulette spins: {profile.roulette_spins:,}"])
+    stats.append(["roulette_wins", "💰", f"Roulette wins: {profile.roulette_wins:,}"])
 
     # tic tac toe
     stats.append(["⭕", "Tic Tac Toe"])
@@ -3827,7 +3832,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             await interaction.response.send_message("please catch the cat in this channel first.", ephemeral=True)
             return
 
-        if channel.cat_rains != 0:
+        if channel.cat_rains > 0:
             await interaction.response.send_message("there is already a rain running!", ephemeral=True)
             return
 
@@ -3954,19 +3959,6 @@ if config.DONOR_CHANNEL_ID:
 
             user_bless_chance = user.rain_minutes_bought * 0.0001
             global_bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001
-
-            embed = discord.Embed(
-                color=Colors.brown,
-                title="🌠 Cat Blessings",
-                description=f"""When enabled, random Cat Bot users will have their cats blessed by you - and their catches will be doubled!
-
-Blessings are currently **{"enabled" if user.blessings_enabled else "disabled"}**.
-Cats blessed: **{user.cats_blessed}**
-
-Blessing message preview:
-{blesser} blessed your catch and it got doubled!
-""",
-            )
 
             view = View(timeout=VIEW_TIMEOUT)
             if not user.premium:
@@ -6054,7 +6046,7 @@ async def roulette(message: discord.Interaction):
     if user.roulette_balance < 0:
         await achemb(message, "failed_gambler", "send")
 
-        
+  
 @bot.tree.command(description="roll a dice")
 async def roll(message: discord.Interaction, sides: Optional[int]):
     if sides is None:
@@ -7286,7 +7278,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies", "Pig"]],
+    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies", "Pig", "Roulette Dollars"]],
     cat_type: Optional[str],
     locked: Optional[bool],
 ):
@@ -7542,7 +7534,7 @@ async def leaderboards(
                 disabled=locked,
             )
 
-        emojied_options = {"Cats": "🐈", "Value": "🧮", "Fast": "⏱️", "Slow": "💤", "Battlepass": "⬆️", "Cookies": "🍪", "Pig": "🎲"}
+        emojied_options = {"Cats": "🐈", "Value": "🧮", "Fast": "⏱️", "Slow": "💤", "Battlepass": "⬆️", "Cookies": "🍪", "Pig": "🎲", "Roulette Dollars": "💰"}
         options = [Option(label=k, emoji=v) for k, v in emojied_options.items()]
         lb_select = Select(
             "lb_type",
