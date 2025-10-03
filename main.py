@@ -315,9 +315,6 @@ temp_belated_storage = {}
 # to prevent weird cookie things without destroying the database with load
 temp_cookie_storage = {}
 
-# i dont even know naymore
-temp_rain_storage = []
-
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
 
@@ -339,7 +336,10 @@ loop_count = 0
 last_loop_time = 0
 
 # keep track of cat cought in rain
-cat_cought_rain = {}
+config.cat_cought_rain = {}
+
+# keep track of who started the rain
+config.rain_starter = {}
 
 
 def get_emoji(name):
@@ -1845,10 +1845,8 @@ async def on_message(message: discord.Message):
                 except Exception:
                     pass
 
-                if channel.cat_rains != 0:
+                if channel.cat_rains > 0 or cat_rain_end:
                     do_time = False
-                    if message.channel.id in temp_rain_storage:
-                        temp_rain_storage.remove(message.channel.id)
 
                 suffix_string = ""
                 silly_amount = 1
@@ -2027,7 +2025,8 @@ async def on_message(message: discord.Message):
                                 decided_time = random.uniform(1, 2)
                                 channel.rain_should_end = int(time.time() + decided_time)
                                 channel.yet_to_spawn = 0
-                                cat_cought_rain[channel.channel_id] = {}
+                                config.cat_cought_rain[channel.channel_id] = {}
+                                config.rain_starter[channel.channel_id] = message.author.id
                                 bot.loop.create_task(rain_recovery_loop(channel))
 
                     if normal_bump:
@@ -2036,12 +2035,13 @@ async def on_message(message: discord.Message):
                         suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
 
                 icon = get_emoji(le_emoji.lower() + "cat")
-                
-                if channel.channel_id in cat_cought_rain:
-                    if le_emoji not in cat_cought_rain[channel.channel_id]:
-                        cat_cought_rain[channel.channel_id][le_emoji] = []
+
+                if channel.channel_id in config.cat_cought_rain:
+                    if le_emoji not in config.cat_cought_rain[channel.channel_id]:
+                        config.cat_cought_rain[channel.channel_id][le_emoji] = []
                     for _ in range(silly_amount):
-                        cat_cought_rain[channel.channel_id][le_emoji].append(f"<@{user.user_id}>")
+                        config.cat_cought_rain[channel.channel_id][le_emoji].append(f"<@{user.user_id}>")
+                        
                 if random.randint(0, 7) == 0:
                     # shill rains
                     suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
@@ -3606,7 +3606,7 @@ __Highlighted Stat__
 
 async def rain_recovery_loop(channel):
     while True:
-        await asyncio.sleep(10)
+        await asyncio.sleep(5)
         await channel.refresh_from_db()
         if channel.cat_rains <= 0:
             break
@@ -3647,7 +3647,9 @@ async def rain_end(message, channel):
 
     # rain summary
     try:
-        rain_server = cat_cought_rain[channel.channel_id]
+        if channel.channel_id not in config.rain_starter or channel.channel_id not in config.cat_cought_rain:
+            return
+        rain_server = config.cat_cought_rain[channel.channel_id]
 
         part_one = "## Rain Summary\n"
         reverse_mapping = {}
@@ -3685,6 +3687,8 @@ async def rain_end(message, channel):
                         show_cats = ": ..." + show_cats
                     else:
                         show_cats = ": " + show_cats
+                if str(config.rain_starter[channel.channel_id]) in str(user_id):
+                    part_one += "☔ "
                 part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
 
             part_two = ""
@@ -3709,6 +3713,8 @@ async def rain_end(message, channel):
         else:
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 cat_types.sort(reverse=True, key=lambda x: type_dict[x])
+                if str(config.rain_starter[channel.channel_id]) in str(user_id):
+                    part_one += "☔ "
                 part_one += f"{user_id} ({len(cat_types)}): {''.join([get_emoji(cat_type.lower() + 'cat') for cat_type in cat_types])}\n"
 
             if not lock_success:
@@ -3718,7 +3724,8 @@ async def rain_end(message, channel):
             v.add_item(TextDisplay(part_one))
             await message.channel.send(view=v)
 
-        cat_cought_rain[channel.channel_id] = {}
+        del config.cat_cought_rain[channel.channel_id]
+        del config.rain_starter[channel.channel_id]
 
         await asyncio.sleep(2)
     except discord.Forbidden:
@@ -3883,7 +3890,8 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         except Exception:
             pass
 
-        cat_cought_rain[channel.channel_id] = {}
+        config.cat_cought_rain[channel.channel_id] = {}
+        config.rain_starter[channel.channel_id] = interaction.user.id
         await spawn_cat(str(interaction.channel.id))
         await rain_recovery_loop(channel)
 
@@ -4080,7 +4088,7 @@ async def packs(message: discord.Interaction):
             view.add_item(button)
         if empty:
             view.add_item(Button(label="No packs left!", disabled=True))
-        if total_amount > 10:
+        if total_amount > 5:
             button = Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.blurple)
             button.callback = open_all_packs
             view.add_item(button)
@@ -4599,6 +4607,7 @@ async def ping(message: discord.Interaction):
     if latency == 0:
         # probably using gateway proxy, try fetching latency from metrics
         async with aiohttp.ClientSession() as session:
+            shard_latency = 0
             try:
                 async with session.get("http://localhost:7878/metrics") as response:
                     data = await response.text()
@@ -4608,6 +4617,8 @@ async def ping(message: discord.Interaction):
                         if line.startswith("gateway_shard_latency{shard="):
                             if "NaN" in line:
                                 continue
+                            if f'shard="{message.guild.shard_id}"' in line:
+                                shard_latency = int(float(line.split(" ")[1]) * 1000)
                             try:
                                 total_latencies += float(line.split(" ")[1])
                                 total_shards += 1
@@ -4616,7 +4627,12 @@ async def ping(message: discord.Interaction):
                     latency = round((total_latencies / total_shards) * 1000)
             except Exception:
                 pass
-    await message.response.send_message(f"🏓 cat has brain delay of {latency} ms {get_emoji('staring_cat')}")
+        postfix = ""
+        if shard_latency:
+            postfix = f"\nthe neuron for this server has a delay of {shard_latency} ms {get_emoji('staring_cat')}{get_emoji('staring_cat')}"
+        await message.response.send_message(f"🏓 cat has global brain delay of {latency} ms {get_emoji('staring_cat')}{postfix}")
+    else:
+        await message.response.send_message(f"🏓 cat has brain delay of {latency} ms {get_emoji('staring_cat')}")
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     await progress(message, user, "ping")
 
