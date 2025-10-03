@@ -3574,7 +3574,6 @@ async def rain_end(message, channel):
                         show_cats = ": ..." + show_cats
                     else:
                         show_cats = ": " + show_cats
-                print(config.rain_starter[channel.channel_id], user_id)
                 if str(config.rain_starter[channel.channel_id]) in str(user_id):
                     part_one += "☔ "
                 part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
@@ -3601,6 +3600,8 @@ async def rain_end(message, channel):
         else:
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 cat_types.sort(reverse=True, key=lambda x: type_dict[x])
+                if str(config.rain_starter[channel.channel_id]) in str(user_id):
+                    part_one += "☔ "
                 part_one += f"{user_id} ({len(cat_types)}): {''.join([get_emoji(cat_type.lower() + 'cat') for cat_type in cat_types])}\n"
 
             if not lock_success:
