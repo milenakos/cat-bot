@@ -333,7 +333,10 @@ loop_count = 0
 last_loop_time = 0
 
 # keep track of cat cought in rain
-cat_cought_rain = {}
+config.cat_cought_rain = {}
+
+# keep track of who started the rain
+config.rain_starter = {}
 
 
 def get_emoji(name):
@@ -1902,7 +1905,8 @@ async def on_message(message: discord.Message):
                                 decided_time = random.uniform(1, 2)
                                 channel.rain_should_end = int(time.time() + decided_time)
                                 channel.yet_to_spawn = 0
-                                cat_cought_rain[channel.channel_id] = {}
+                                config.cat_cought_rain[channel.channel_id] = {}
+                                config.rain_starter[channel.channel_id] = message.author.id
                                 bot.loop.create_task(rain_recovery_loop(channel))
 
                     if normal_bump:
@@ -1923,11 +1927,11 @@ async def on_message(message: discord.Message):
                     user.cataine_active = 0
                     suffix_string += "\nyour cataine buff has expired. you know where to get a new one 😏"
 
-                if channel.channel_id in cat_cought_rain:
-                    if le_emoji not in cat_cought_rain[channel.channel_id]:
-                        cat_cought_rain[channel.channel_id][le_emoji] = []
+                if channel.channel_id in config.cat_cought_rain:
+                    if le_emoji not in config.cat_cought_rain[channel.channel_id]:
+                        config.cat_cought_rain[channel.channel_id][le_emoji] = []
                     for _ in range(silly_amount):
-                        cat_cought_rain[channel.channel_id][le_emoji].append(f"<@{user.user_id}>")
+                        config.cat_cought_rain[channel.channel_id][le_emoji].append(f"<@{user.user_id}>")
 
                 if random.randint(0, 7) == 0:
                     # shill rains
@@ -3530,7 +3534,7 @@ async def rain_end(message, channel):
 
     # rain summary
     try:
-        rain_server = cat_cought_rain[channel.channel_id]
+        rain_server = config.cat_cought_rain[channel.channel_id]
 
         part_one = "## Rain Summary\n"
         reverse_mapping = {}
@@ -3568,6 +3572,8 @@ async def rain_end(message, channel):
                         show_cats = ": ..." + show_cats
                     else:
                         show_cats = ": " + show_cats
+                if str(config.rain_starter[message.channel.id]) in str(user_id):
+                    part_one += "☔ "
                 part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
 
             part_two = ""
@@ -3601,7 +3607,7 @@ async def rain_end(message, channel):
             v.add_item(TextDisplay(part_one))
             await message.channel.send(view=v)
 
-        cat_cought_rain[channel.channel_id] = {}
+        config.cat_cought_rain[channel.channel_id] = {}
 
         await asyncio.sleep(2)
     except discord.Forbidden:
@@ -3766,7 +3772,8 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         except Exception:
             pass
 
-        cat_cought_rain[channel.channel_id] = {}
+        config.cat_cought_rain[channel.channel_id] = {}
+        config.rain_starter[channel.channel_id] = interaction.user.id
         await spawn_cat(str(interaction.channel.id))
         await rain_recovery_loop(channel)
 
