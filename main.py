@@ -3574,7 +3574,8 @@ async def rain_end(message, channel):
                         show_cats = ": ..." + show_cats
                     else:
                         show_cats = ": " + show_cats
-                if str(config.rain_starter[message.channel.id]) in str(user_id):
+                if str(config.rain_starter[channel.channel_id]) in str(user_id):
+                    print(config.rain_starter[channel.channel_id], user_id)
                     part_one += "☔ "
                 part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
 
@@ -3609,7 +3610,8 @@ async def rain_end(message, channel):
             v.add_item(TextDisplay(part_one))
             await message.channel.send(view=v)
 
-        config.cat_cought_rain[channel.channel_id] = {}
+        del config.cat_cought_rain[channel.channel_id]
+        del config.rain_starter[channel.channel_id]
 
         await asyncio.sleep(2)
     except discord.Forbidden:
