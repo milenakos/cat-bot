@@ -4473,6 +4473,7 @@ async def ping(message: discord.Interaction):
     if latency == 0:
         # probably using gateway proxy, try fetching latency from metrics
         async with aiohttp.ClientSession() as session:
+            shard_latency = 0
             try:
                 async with session.get("http://localhost:7878/metrics") as response:
                     data = await response.text()
@@ -4482,6 +4483,8 @@ async def ping(message: discord.Interaction):
                         if line.startswith("gateway_shard_latency{shard="):
                             if "NaN" in line:
                                 continue
+                            if f'shard="{message.guild.shard_id}"' in line:
+                                shard_latency = float(line.split(" ")[1])
                             try:
                                 total_latencies += float(line.split(" ")[1])
                                 total_shards += 1
@@ -4490,7 +4493,12 @@ async def ping(message: discord.Interaction):
                     latency = round((total_latencies / total_shards) * 1000)
             except Exception:
                 pass
-    await message.response.send_message(f"🏓 cat has brain delay of {latency} ms {get_emoji('staring_cat')}")
+        postfix = ""
+        if shard_latency:
+            postfix = f"\nthe neuron for this server has a delay of {shard_latency} ms {get_emoji('staring_cat')}{get_emoji('staring_cat')}"
+        await message.response.send_message(f"🏓 cat has global brain delay of {latency} ms {get_emoji('staring_cat')}{postfix}")
+    else:
+        await message.response.send_message(f"🏓 cat has brain delay of {latency} ms {get_emoji('staring_cat')}")
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     await progress(message, user, "ping")
 
