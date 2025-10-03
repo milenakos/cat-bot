@@ -3574,8 +3574,8 @@ async def rain_end(message, channel):
                         show_cats = ": ..." + show_cats
                     else:
                         show_cats = ": " + show_cats
+                print(config.rain_starter[channel.channel_id], user_id)
                 if str(config.rain_starter[channel.channel_id]) in str(user_id):
-                    print(config.rain_starter[channel.channel_id], user_id)
                     part_one += "☔ "
                 part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
 
