@@ -11,13 +11,8 @@ DB_PASS = os.environ["psql_password"]
 # all the following are optional (setting them to None will disable the feature)
 #
 
-try: 
-    env_vars = [
-        os.environ["sentry_dsn"],
-        os.environ["webhook_verify"],
-        os.environ["top_gg_token"],
-        os.environ["wordnik_api_key"]
-    ]
+try:
+    env_vars = [os.environ["sentry_dsn"], os.environ["webhook_verify"], os.environ["top_gg_token"], os.environ["wordnik_api_key"]]
 except KeyError:
     env_vars = [None, None, None, None]
 
