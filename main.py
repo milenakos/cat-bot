@@ -1877,25 +1877,26 @@ async def on_message(message: discord.Message):
                         h = perk.split("_")
                         rarity = int(h[0])
                         type = int(h[1])
+                        id = perks_info[type - 1]["id"]
 
-                        if type == 1:
+                        if id == "double":
                             double_chance += perks_info[0]["values"][rarity]
                             single_chance -= perks_info[0]["values"][rarity]
-                        elif type == 2:
+                        elif id == "triple_none":
                             triple_chance += perks_info[1]["values"][rarity]
                             none_chance += perks_info[1]["values"][rarity] / 2
                             single_chance -= perks_info[1]["values"][rarity] * (1.5)
-                        elif type <= 8:
+                        elif "pack" in id:
                             packs.append((type - 3, perks_info[type - 1]["values"][rarity]))
-                        elif type == 9:
+                        elif id == "double_boost":
                             double_boost_chance += perks_info[8]["values"][rarity]
-                        elif type == 10:
+                        elif id == "triple_ach":
                             purr_all_triple = True
-                        elif type == 11:
+                        elif id == "timer_add":
                             timer_add_chance += perks_info[10]["values"][rarity]
-                        elif type == 13:
+                        elif id == "double_slow":
                             double_slow = perks_info[12]["values"][rarity]
-                        elif type == 14:
+                        elif id == "double_first":
                             double_first += perks_info[13]["values"][rarity]
 
                     for i in packs:
@@ -7156,7 +7157,7 @@ async def cataine(message: discord.Interaction):
         if user.perks:
             for perk in user.perks:
                 perk_data = perks[int(perk.split("_")[1]) - 1]
-                if perk_data["num"] == 12:
+                if perk_data["id"] == "timer_add_streak":
                     global_user = await User.get_or_create(user_id=interaction.user.id)
                     duration_bonus = global_user.vote_streak * 60
                     if duration_bonus > 100:
