@@ -2016,6 +2016,7 @@ async def on_message(message: discord.Message):
                         normal_bump = True
                     except IndexError:
                         # :SILENCE:
+                        le_emoji = "eGirl"
                         normal_bump = False
                         if not channel.forcespawned:
                             channel.cat_rains += math.ceil(600 / 2.75)
