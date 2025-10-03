@@ -3534,6 +3534,8 @@ async def rain_end(message, channel):
 
     # rain summary
     try:
+        if channel.channel_id not in config.rain_starter or channel.channel_id not in config.cat_cought_rain:
+            return
         rain_server = config.cat_cought_rain[channel.channel_id]
 
         part_one = "## Rain Summary\n"
