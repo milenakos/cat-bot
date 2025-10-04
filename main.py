@@ -6283,17 +6283,14 @@ if config.WORDNIK_API_KEY:
 
                     # lazily filter some things
                     text = (await response.text()).lower()
-                    for test in ["vulgar", "slur", "offensive", "profane", "insult", "abusive", "derogatory"]:
-                        if test in text:
-                            await message.response.send_message(f"__{message.user.name}__\na stupid idiot (result was filtered)", ephemeral=True)
-                            return
 
                     # sometimes the api returns results without definitions, so we search for the first one which has a definition
                     for i in data:
                         if "text" in i.keys():
                             clean_data = re.sub(re.compile("<.*?>"), "", i["text"])
                             await message.response.send_message(
-                                f"__{word}__\n{clean_data}\n-# [{i['attributionText']}](<{i['attributionUrl']}>) Powered by [Wordnik](<{i['wordnikUrl']}>)"
+                                f"__{word}__\n{clean_data}\n-# [{i['attributionText']}](<{i['attributionUrl']}>) Powered by [Wordnik](<{i['wordnikUrl']}>)",
+                                ephemeral=any([test in text for test in ["vulgar", "slur", "offensive", "profane", "insult", "abusive", "derogatory"]]),
                             )
                             await achemb(message, "define", "send")
                             return
