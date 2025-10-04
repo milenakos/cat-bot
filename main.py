@@ -42,6 +42,7 @@ from discord.ext import commands
 from discord.ui import Button, View, Modal, LayoutView, TextDisplay, Separator, TextInput, Thumbnail, ActionRow
 from PIL import Image
 
+from unidecode import unidecode
 import config
 import msg2img
 from catpg import RawSQL
@@ -1507,7 +1508,7 @@ async def on_message(message: discord.Message):
         ):
             await achemb(message, ach[2], "reply")
 
-    if text.lower() in [
+    if unidecode(text.lower()) in [
         "mace",
         "katu",
         "kot",
