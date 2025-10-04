@@ -3762,17 +3762,6 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             )
             return
 
-        if not isinstance(
-            message.channel,
-            Union[
-                discord.TextChannel,
-                discord.StageChannel,
-                discord.VoiceChannel,
-                discord.Thread,
-            ],
-        ):
-            return
-
         profile.rain_minutes_started += rain_length
         channel.cat_rains = math.ceil(rain_length * 60 / 2.75)
         channel.yet_to_spawn = 0
@@ -3948,7 +3937,8 @@ if config.DONOR_CHANNEL_ID:
                     discord.Thread,
                 ],
             ):
-                raise ValueError
+                await message.response.send_message("temporary error. please try again in a few minutes")
+                return
             msg = await channeley.send(file=file)
             user.image = msg.attachments[0].url
         await user.save()
@@ -4376,17 +4366,6 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
 
         if await Prism.count("guild_id = $1", interaction.guild.id) >= len(prism_names):
             await interaction.followup.send("This server has reached the prism limit.", ephemeral=True)
-            return
-
-        if not isinstance(
-            message.channel,
-            Union[
-                discord.TextChannel,
-                discord.VoiceChannel,
-                discord.StageChannel,
-                discord.Thread,
-            ],
-        ):
             return
 
         # determine the next name
@@ -6326,17 +6305,6 @@ async def cat_fact(message: discord.Interaction):
                 else:
                     await message.followup.send("failed to fetch a cat fact.")
 
-    if not isinstance(
-        message.channel,
-        Union[
-            discord.TextChannel,
-            discord.StageChannel,
-            discord.VoiceChannel,
-            discord.Thread,
-        ],
-    ):
-        return
-
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     user.facts += 1
     await user.save()
@@ -7162,16 +7130,6 @@ async def fake(message: discord.Interaction):
     file = discord.File("images/australian cat.png", filename="australian cat.png")
     icon = get_emoji("egirlcat")
     perms = await fetch_perms(message)
-    if not isinstance(
-        message.channel,
-        Union[
-            discord.TextChannel,
-            discord.VoiceChannel,
-            discord.StageChannel,
-            discord.Thread,
-        ],
-    ):
-        return
     fakecooldown[message.user.id] = time.time()
     try:
         if not perms.send_messages or not perms.attach_files:
