@@ -2752,10 +2752,13 @@ thanks for using cat bot!""",
             if current_page == 0:
                 view.add_item(ActionRow(button))
             else:
-                row.add_item(button)
                 if len(row.children) == 5:
                     view.add_item(row)
                     row = ActionRow()
+                row.add_item(button)
+
+        if len(row.children) > 0:
+            view.add_item(row)
 
         last_row = ActionRow()
 
