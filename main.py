@@ -36,10 +36,11 @@ import discord
 import discord_emoji
 import emoji
 import psutil
+import unidecode
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
-from discord.ui import Button, View, Modal, LayoutView, TextDisplay, Separator, TextInput, Thumbnail, ActionRow
+from discord.ui import ActionRow, Button, LayoutView, Modal, Separator, TextDisplay, TextInput, Thumbnail, View
 from PIL import Image
 
 import config
@@ -1507,7 +1508,7 @@ async def on_message(message: discord.Message):
         ):
             await achemb(message, ach[2], "reply")
 
-    if text.lower() in [
+    if unidecode.unidecode(text).lower().strip() in [
         "mace",
         "katu",
         "kot",
