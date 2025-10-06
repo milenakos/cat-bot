@@ -3622,6 +3622,8 @@ async def rain_end(message, channel):
                 v.add_item(TextDisplay(rain_msg))
                 await message.channel.send(view=v)
 
+            break
+
         del config.cat_cought_rain[channel.channel_id]
         del config.rain_starter[channel.channel_id]
 
