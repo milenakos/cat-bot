@@ -3556,7 +3556,7 @@ async def rain_end(message, channel):
         rain_server = config.cat_cought_rain[channel.channel_id]
 
         # you can throw out the name of the emoji to save on characters
-        funny_emojis = {k: re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(v.lower() + "cat"), count=1) for k, v in rain_server.items()}
+        funny_emojis = {k: re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(k.lower() + "cat"), count=1) for k in rain_server.keys()}
 
         reverse_mapping = {}
 
