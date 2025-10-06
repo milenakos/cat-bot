@@ -36,10 +36,11 @@ import discord
 import discord_emoji
 import emoji
 import psutil
+import unidecode
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
-from discord.ui import Button, View, Modal, LayoutView, TextDisplay, Separator, TextInput, Thumbnail, ActionRow
+from discord.ui import ActionRow, Button, LayoutView, Modal, Separator, TextDisplay, TextInput, Thumbnail, View
 from PIL import Image
 
 import config
@@ -1509,7 +1510,7 @@ async def on_message(message: discord.Message):
         ):
             await achemb(message, ach[2], "reply")
 
-    if text.lower() in [
+    if unidecode.unidecode(text).lower().strip() in [
         "mace",
         "katu",
         "kot",
@@ -2865,10 +2866,13 @@ thanks for using cat bot!""",
             if current_page == 0:
                 view.add_item(ActionRow(button))
             else:
-                row.add_item(button)
                 if len(row.children) == 5:
                     view.add_item(row)
                     row = ActionRow()
+                row.add_item(button)
+
+        if current_page != 0 and len(row.children) > 0:
+            view.add_item(row)
 
         last_row = ActionRow()
 
@@ -3877,17 +3881,6 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             )
             return
 
-        if not isinstance(
-            message.channel,
-            Union[
-                discord.TextChannel,
-                discord.StageChannel,
-                discord.VoiceChannel,
-                discord.Thread,
-            ],
-        ):
-            return
-
         profile.rain_minutes_started += rain_length
         channel.cat_rains = math.ceil(rain_length * 60 / 2.75)
         channel.yet_to_spawn = 0
@@ -4064,7 +4057,8 @@ if config.DONOR_CHANNEL_ID:
                     discord.Thread,
                 ],
             ):
-                raise ValueError
+                await message.response.send_message("temporary error. please try again in a few minutes")
+                return
             msg = await channeley.send(file=file)
             user.image = msg.attachments[0].url
         await user.save()
@@ -4492,17 +4486,6 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
 
         if await Prism.count("guild_id = $1", interaction.guild.id) >= len(prism_names):
             await interaction.followup.send("This server has reached the prism limit.", ephemeral=True)
-            return
-
-        if not isinstance(
-            message.channel,
-            Union[
-                discord.TextChannel,
-                discord.VoiceChannel,
-                discord.StageChannel,
-                discord.Thread,
-            ],
-        ):
             return
 
         # determine the next name
@@ -6403,17 +6386,14 @@ if config.WORDNIK_API_KEY:
 
                     # lazily filter some things
                     text = (await response.text()).lower()
-                    for test in ["vulgar", "slur", "offensive", "profane", "insult", "abusive", "derogatory"]:
-                        if test in text:
-                            await message.response.send_message(f"__{message.user.name}__\na stupid idiot (result was filtered)", ephemeral=True)
-                            return
 
                     # sometimes the api returns results without definitions, so we search for the first one which has a definition
                     for i in data:
                         if "text" in i.keys():
                             clean_data = re.sub(re.compile("<.*?>"), "", i["text"])
                             await message.response.send_message(
-                                f"__{word}__\n{clean_data}\n-# [{i['attributionText']}](<{i['attributionUrl']}>) Powered by [Wordnik](<{i['wordnikUrl']}>)"
+                                f"__{word}__\n{clean_data}\n-# [{i['attributionText']}](<{i['attributionUrl']}>) Powered by [Wordnik](<{i['wordnikUrl']}>)",
+                                ephemeral=any([test in text for test in ["vulgar", "slur", "offensive", "profane", "insult", "abusive", "derogatory"]]),
                             )
                             await achemb(message, "define", "send")
                             return
@@ -6444,17 +6424,6 @@ async def cat_fact(message: discord.Interaction):
                     await message.followup.send(data["fact"])
                 else:
                     await message.followup.send("failed to fetch a cat fact.")
-
-    if not isinstance(
-        message.channel,
-        Union[
-            discord.TextChannel,
-            discord.StageChannel,
-            discord.VoiceChannel,
-            discord.Thread,
-        ],
-    ):
-        return
 
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     user.facts += 1
@@ -7770,16 +7739,6 @@ async def fake(message: discord.Interaction):
     file = discord.File("images/australian cat.png", filename="australian cat.png")
     icon = get_emoji("egirlcat")
     perms = await fetch_perms(message)
-    if not isinstance(
-        message.channel,
-        Union[
-            discord.TextChannel,
-            discord.VoiceChannel,
-            discord.StageChannel,
-            discord.Thread,
-        ],
-    ):
-        return
     fakecooldown[message.user.id] = time.time()
     try:
         if not perms.send_messages or not perms.attach_files:
