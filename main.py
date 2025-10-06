@@ -3555,7 +3555,9 @@ async def rain_end(message, channel):
             return
         rain_server = config.cat_cought_rain[channel.channel_id]
 
-        part_one = "## Rain Summary\n"
+        # you can throw out the name of the emoji to save on characters
+        funny_emojis = {k: re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(v.lower() + "cat"), count=1) for k, v in rain_server.items()}
+
         reverse_mapping = {}
 
         for cat_type, user_ids in rain_server.items():
@@ -3564,28 +3566,20 @@ async def rain_end(message, channel):
                     reverse_mapping[user_id] = []
                 reverse_mapping[user_id].append(cat_type)
 
-        total_catches = sum(len(cat_types) for cat_types in reverse_mapping.values())
-
-        if total_catches > 90:
-            # we wont be able to accomdadate all catches with emojis
-            amount_used = 0
-            ok_types = []
-            for cat_type in cattypes[::-1]:
-                if cat_type in rain_server:
-                    amount_used += len(rain_server[cat_type])
-                if amount_used > 90:
-                    break
-                ok_types.append(cat_type)
+        evil_types = []
+        epic_fail = False
+        for cat_type in cattypes:
+            part_one = "## Rain Summary\n"
 
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 show_cats = ""
                 shortened_types = False
                 cat_types.sort(reverse=True, key=lambda x: type_dict[x])
                 for cat_type in cat_types:
-                    if cat_type not in ok_types:
+                    if cat_type in evil_types:
                         shortened_types = True
                         continue
-                    show_cats += get_emoji(cat_type.lower() + "cat")
+                    show_cats += funny_emojis[cat_type]
                 if show_cats != "":
                     if shortened_types:
                         show_cats = ": ..." + show_cats
@@ -3595,38 +3589,38 @@ async def rain_end(message, channel):
                     part_one += "☔ "
                 part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
 
-            part_two = ""
-            for cat_type in cattypes:
-                if cat_type not in rain_server.keys():
-                    continue
-                if len(rain_server[cat_type]) > 5:
-                    part_two += f"{get_emoji(cat_type.lower() + 'cat')} *{len(rain_server[cat_type])} catches*\n"
-                else:
-                    part_two += f"{get_emoji(cat_type.lower() + 'cat')} {' '.join(rain_server[cat_type])}\n"
+            if not lock_success and not epic_fail:
+                part_one += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
 
-            if not lock_success:
-                part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
+            if len(part_one) > 4000:
+                evil_types.append(cat_type)
+                epic_fail = True
+                continue
 
-            for rain_msg in [part_one, part_two]:
-                if "cat:" not in rain_msg:
+            parts = [part_one]
+
+            if epic_fail:
+                part_two = ""
+                for cat_type in cattypes:
+                    if cat_type not in rain_server.keys():
+                        continue
+                    if len(rain_server[cat_type]) > 5:
+                        part_two += f"{funny_emojis[cat_type]} *{len(rain_server[cat_type])} catches*\n"
+                    else:
+                        part_two += f"{funny_emojis[cat_type]} {' '.join(rain_server[cat_type])}\n"
+
+                if not lock_success:
+                    part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
+
+                parts.append(part_two)
+
+            for rain_msg in parts:
+                if ":i:" not in rain_msg:
                     continue
                 # this is to bypass character limit up to 4k
                 v = LayoutView()
                 v.add_item(TextDisplay(rain_msg))
                 await message.channel.send(view=v)
-        else:
-            for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
-                cat_types.sort(reverse=True, key=lambda x: type_dict[x])
-                if str(config.rain_starter[channel.channel_id]) in str(user_id):
-                    part_one += "☔ "
-                part_one += f"{user_id} ({len(cat_types)}): {''.join([get_emoji(cat_type.lower() + 'cat') for cat_type in cat_types])}\n"
-
-            if not lock_success:
-                part_one += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
-
-            v = LayoutView()
-            v.add_item(TextDisplay(part_one))
-            await message.channel.send(view=v)
 
         del config.cat_cought_rain[channel.channel_id]
         del config.rain_starter[channel.channel_id]
