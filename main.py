@@ -3575,11 +3575,11 @@ async def rain_end(message, channel):
                 show_cats = ""
                 shortened_types = False
                 cat_types.sort(reverse=True, key=lambda x: type_dict[x])
-                for cat_type in cat_types:
-                    if cat_type in evil_types:
+                for cat_type_two in cat_types:
+                    if cat_type_two in evil_types:
                         shortened_types = True
                         continue
-                    show_cats += funny_emojis[cat_type]
+                    show_cats += funny_emojis[cat_type_two]
                 if show_cats != "":
                     if shortened_types:
                         show_cats = ": ..." + show_cats
