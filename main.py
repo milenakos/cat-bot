@@ -1014,7 +1014,12 @@ async def maintaince_loop():
 
         try:
             user_dm = await bot.fetch_user(user.user_id)
-            await user_dm.send("You can vote now!" if user.vote_streak < 10 else f"Vote now to keep your {user.vote_streak} streak going!", view=view)
+            await user_dm.send(
+                "You can vote now! [unsubscribe](<https://catbot.minkos.lol/unsub>)"
+                if user.vote_streak < 10
+                else f"Vote now to keep your {user.vote_streak} streak going! [unsubscribe](<https://catbot.minkos.lol/unsub>)",
+                view=view,
+            )
         except Exception:
             pass
         # no repeat reminers for now
@@ -1055,9 +1060,11 @@ async def maintaince_loop():
         else:
             guild_name = guild.name
 
+        unsub_url = f"[unsubscribe](<https://catbot.minkos.lol/unsub?server_id={user.guild_id}&server_name={guild_name}>)"
+
         try:
             user_dm = await bot.fetch_user(user.user_id)
-            await user_dm.send(f"A new quest is available in {guild_name}!", embed=embed, view=view)
+            await user_dm.send(f"A new quest is available in {guild_name}! {unsub_url}", embed=embed, view=view)
         except Exception:
             pass
         user.reminder_catch = 0
@@ -1097,9 +1104,11 @@ async def maintaince_loop():
         else:
             guild_name = guild.name
 
+        unsub_url = f"[unsubscribe](<https://catbot.minkos.lol/unsub?server_id={user.guild_id}&server_name={guild_name}>)"
+
         try:
             user_dm = await bot.fetch_user(user.user_id)
-            await user_dm.send(f"A new quest is available in {guild_name}!", embed=embed, view=view)
+            await user_dm.send(f"A new quest is available in {guild_name}! {unsub_url}", embed=embed, view=view)
         except Exception:
             pass
         user.reminder_misc = 0
@@ -1243,13 +1252,19 @@ async def on_message(message: discord.Message):
         if text.startswith("disable"):
             # disable reminders
             try:
-                user = await Profile.get_or_create(guild_id=int(text.split(" ")[1]), user_id=message.author.id)
+                where = text.split(" ")[1]
+                if where == "all":
+                    async for profile in Profile.filter(user_id=message.author.id, reminders_enabled=True):
+                        profile.reminders_enabled = False
+                        await profile.save()
+                else:
+                    user = await Profile.get_or_create(guild_id=int(where), user_id=message.author.id)
+                    user.reminders_enabled = False
+                    await user.save()
+                await message.channel.send("reminders disabled")
             except Exception:
                 await message.channel.send("failed. check if your guild id is correct")
                 return
-            user.reminders_enabled = False
-            await user.save()
-            await message.channel.send("reminders disabled")
         elif text == "lol_i_have_dmed_the_cat_bot_and_got_an_ach":
             await message.channel.send('which part of "send in server" was unclear?')
         else:
