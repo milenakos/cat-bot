@@ -1867,7 +1867,7 @@ async def on_message(message: discord.Message):
                 timer_add_chance = 0
 
                 if user.perks:
-                    if user.cataine_active < time.time() and not user.hibernation:
+                    if user.cataine_active < time.time() or user.hibernation:
                         suffix_string += "\n🧂 Your cataine expired! Run /cataine to get more."
                         perks = []
                     else:
@@ -1888,7 +1888,12 @@ async def on_message(message: discord.Message):
                             none_chance += perks_info[1]["values"][rarity] / 2
                             single_chance -= perks_info[1]["values"][rarity] * (1.5)
                         elif "pack" in id:
-                            packs.append((type - 3, perks_info[type - 1]["values"][rarity]))
+                            no = False
+                            for pack in packs:
+                                if pack[0] == type - 3:
+                                    no = True
+                            if not no:
+                                packs.append((type - 3, perks_info[type - 1]["values"][rarity]))
                         elif id == "double_boost":
                             double_boost_chance += perks_info[8]["values"][rarity]
                         elif id == "triple_ach":
@@ -3691,7 +3696,7 @@ async def rain_end(message, channel):
 
         total_catches = sum(len(cat_types) for cat_types in reverse_mapping.values())
         
-        if total_catches > 90:
+        if total_catches > 80:
             # we wont be able to accommodate all catches with emojis
             amount_used = 0
             ok_types = []
@@ -3706,7 +3711,7 @@ async def rain_end(message, channel):
             for cat_type in cattypes[::-1]:
                 if cat_type in rain_server:
                     amount_used += len(rain_server[cat_type])
-                if amount_used > 90:
+                if amount_used > 80:
                     break
                 ok_types.append(cat_type)
 
@@ -3737,7 +3742,14 @@ async def rain_end(message, channel):
                         show_cats = ": " + show_cats
                 if str(config.rain_starter[channel.channel_id]) in str(user_id):
                     part_one += "☔ "
-                part_one += f"{user_id} ({len(all_types)}){show_cats}\n"
+                cat_len = 0
+                for i in all_types:
+                    if i in cattypes:
+                        cat_len += 1
+                if len(all_types) == cat_len:
+                    part_one += f"{user_id} ({len(all_types)}){show_cats}\n"
+                else:
+                    part_one += f"{user_id} ({cat_len} {get_emoji("finecat")}, {len(all_types) - cat_len} {get_emoji("woodenpack")}){show_cats}\n"
 
             part_two = ""
             all_types = cattypes + [p["name"] for p in pack_data]
@@ -3776,10 +3788,16 @@ async def rain_end(message, channel):
                         -combined_values[x] if x not in cattypes else combined_values[x]
                     )
                 )
+                cat_len = 0
+                for i in all_types:
+                    if i in cattypes:
+                        cat_len += 1
                 if str(config.rain_starter[channel.channel_id]) in str(user_id):
                     part_one += "☔ "
-                part_one += f"{user_id} ({len(all_types)}): {''.join([get_emoji(cat_type.lower() + ('cat' if cat_type in cattypes else 'pack')) for cat_type in all_types])}\n"
-
+                if len(all_types) == cat_len:
+                    part_one += f"{user_id} ({len(all_types)}){show_cats}\n"
+                else:
+                    part_one += f"{user_id} ({cat_len} {get_emoji("finecat")}, {len(all_types) - cat_len} {get_emoji("woodenpack")}): {''.join([get_emoji(cat_type.lower() + ('cat' if cat_type in cattypes else 'pack')) for cat_type in all_types])}\n"
 
             if not lock_success:
                 part_one += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
@@ -6705,10 +6723,12 @@ async def get_perks(level, user):
         tries = 0
         selected_perk = None
 
-        while tries < 20:
+        while tries < 100:
             luck = random.randint(1, 100)
             total_weight = 0
+            i = 0
             for perk in perks:
+                i += 1
                 total_weight += perk["weight"]
 
                 if perk["id"] in used_ids or (perk["exclusive"] == 1 and perk["id"] in thelist):  # me when im in thelist
@@ -6727,7 +6747,7 @@ async def get_perks(level, user):
                         "name": perk["name"],
                         "values": perk["values"],
                         "rarity": current_rarity,
-                        "uuid": f"{list(weights.keys()).index(current_rarity)}_{perk['num']}",
+                        "uuid": f"{list(weights.keys()).index(current_rarity)}_{i}",
                         "effect": effect,
                     }
 
@@ -6895,40 +6915,34 @@ async def cataine(message: discord.Interaction):
         for i in range(user.bounties):
             # get ready for spaghetti
             if i == 0:
-                if user.bounty_progress_one == user.bounty_total_one:
-                    desc += "\n**Complete!**"
-                    colored += 10 / user.bounties
-                    continue
-
                 desc += f"\n**{bounty_data[user.bounty_id_one]['desc']}**".replace("X", str(user.bounty_total_one - user.bounty_progress_one)).replace(
                     "type", f"{get_emoji(user.bounty_type_one.lower() + 'cat')} {user.bounty_type_one}"
                 )
 
                 colored += (user.bounty_progress_one / user.bounty_total_one) * 10 / user.bounties
+                if user.bounty_progress_one == user.bounty_total_one:
+                    desc += "\n**Complete!**"
+                    continue
                 all_complete = False
             if i == 1:
-                if user.bounty_progress_two == user.bounty_total_two:
-                    desc += "\n**Complete!**"
-                    colored += 10 / user.bounties
-                    continue
-
                 desc += f"\n**{bounty_data[user.bounty_id_two]['desc']}**".replace("X", str(user.bounty_total_two - user.bounty_progress_two)).replace(
                     "type", f"{get_emoji(user.bounty_type_two.lower() + 'cat')} {user.bounty_type_two}"
                 )
 
                 colored += (user.bounty_progress_two / user.bounty_total_two) * 10 / user.bounties
+                if user.bounty_progress_two == user.bounty_total_two:
+                    desc += "\n**Complete!**"
+                    continue
                 all_complete = False
             if i == 2:
-                if user.bounty_progress_three == user.bounty_total_three:
-                    desc += "\n**Complete!**"
-                    colored += 10 / user.bounties
-                    continue
-
                 desc += f"\n**{bounty_data[user.bounty_id_three]['desc']}**".replace("X", str(user.bounty_total_three - user.bounty_progress_three)).replace(
                     "type", f"{get_emoji(user.bounty_type_three.lower() + 'cat')} {user.bounty_type_three}"
                 )
 
                 colored += (user.bounty_progress_three / user.bounty_total_three) * 10 / user.bounties
+                if user.bounty_progress_three == user.bounty_total_three:
+                    desc += "\n**Complete!**"
+                    continue
                 all_complete = False
 
         colored = int(colored)
