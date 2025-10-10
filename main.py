@@ -1868,7 +1868,9 @@ async def on_message(message: discord.Message):
 
                 if user.perks:
                     if user.cataine_active < time.time() or user.hibernation:
-                        suffix_string += "\n🧂 Your cataine expired! Run /cataine to get more."
+                        if user.cataine_active > 1:
+                            user.cataine_active = 1
+                            suffix_string += "\n🧂 Your cataine expired! Run /cataine to get more."
                         perks = []
                     else:
                         perks = user.perks
