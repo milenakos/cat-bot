@@ -29,6 +29,7 @@ import subprocess
 import sys
 import time
 import traceback
+import urllib
 from typing import Literal, Optional, Union
 
 import aiohttp
@@ -1015,9 +1016,9 @@ async def maintaince_loop():
         try:
             user_dm = await bot.fetch_user(user.user_id)
             await user_dm.send(
-                "You can vote now! [unsubscribe](<https://catbot.minkos.lol/unsub>)"
+                "You can vote now! [unsub](<https://catbot.minkos.lol/unsub>)"
                 if user.vote_streak < 10
-                else f"Vote now to keep your {user.vote_streak} streak going! [unsubscribe](<https://catbot.minkos.lol/unsub>)",
+                else f"Vote now to keep your {user.vote_streak} streak going! [unsub](<https://catbot.minkos.lol/unsub>)",
                 view=view,
             )
         except Exception:
@@ -1060,7 +1061,7 @@ async def maintaince_loop():
         else:
             guild_name = guild.name
 
-        unsub_url = f"[unsubscribe](<https://catbot.minkos.lol/unsub?server_id={user.guild_id}&server_name={guild_name}>)"
+        unsub_url = f"[unsub](<https://catbot.minkos.lol/unsub?server_id={user.guild_id}&server_name={urllib.parse.quote(guild_name)}>)"
 
         try:
             user_dm = await bot.fetch_user(user.user_id)
@@ -1104,7 +1105,7 @@ async def maintaince_loop():
         else:
             guild_name = guild.name
 
-        unsub_url = f"[unsubscribe](<https://catbot.minkos.lol/unsub?server_id={user.guild_id}&server_name={guild_name}>)"
+        unsub_url = f"[unsub](<https://catbot.minkos.lol/unsub?server_id={user.guild_id}&server_name={urllib.parse.quote(guild_name)}>)"
 
         try:
             user_dm = await bot.fetch_user(user.user_id)
