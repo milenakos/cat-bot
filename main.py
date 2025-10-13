@@ -3088,6 +3088,9 @@ async def last(message: discord.Interaction):
         times = [channel.spawn_times_min, channel.spawn_times_max]
         nextpossible = f"\nthe next cat will spawn between <t:{int(lasttime) + times[0]}:R> and <t:{int(lasttime) + times[1]}:R>"
 
+    if channel and channel.cat_rains:
+        nextpossible += f"\ncat rain! {channel.cat_rains} cats remaining..."
+
     await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.{nextpossible}")
 
 
