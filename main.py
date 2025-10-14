@@ -1247,14 +1247,9 @@ async def on_message(message: discord.Message):
             # disable reminders
             try:
                 where = text.split(" ")[1]
-                if where == "all":
-                    async for profile in Profile.filter(user_id=message.author.id, reminders_enabled=True):
-                        profile.reminders_enabled = False
-                        await profile.save()
-                else:
-                    user = await Profile.get_or_create(guild_id=int(where), user_id=message.author.id)
-                    user.reminders_enabled = False
-                    await user.save()
+                user = await Profile.get_or_create(guild_id=int(where), user_id=message.author.id)
+                user.reminders_enabled = False
+                await user.save()
                 await message.channel.send("reminders disabled")
             except Exception:
                 await message.channel.send("failed. check if your guild id is correct")
