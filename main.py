@@ -183,7 +183,7 @@ vote_button_texts = [
 
 # various hints/fun facts
 hints = [
-    "Cat Bot has a wiki! <https://wiki.minkos.lol>",
+    "Cat Bot has a wiki! <https://catbot.wiki>",
     "Cat Bot is open source! <https://github.com/milenakos/cat-bot>",
     "View all cats and rarities with /catalogue",
     "Cat Bot's birthday is on the 21st of April",
@@ -2354,7 +2354,7 @@ async def help(message):
         )
         .add_field(
             name="Other features",
-            value="Cat Bot has extra fun commands which you will discover along the way.\nAnything unclear? Check out [our wiki](https://wiki.minkos.lol) or drop us a line at our [Discord server](https://discord.gg/staring).",
+            value="Cat Bot has extra fun commands which you will discover along the way.\nAnything unclear? Check out [our wiki](https://catbot.wiki) or drop us a line at our [Discord server](https://discord.gg/staring).",
             inline=False,
         )
         .set_footer(
@@ -2435,19 +2435,19 @@ async def wiki(message: discord.Interaction):
     embed = discord.Embed(title="Cat Bot Wiki", color=Colors.brown)
     embed.description = "\n".join(
         [
-            "Main Page: https://wiki.minkos.lol/",
+            "Main Page: https://catbot.wiki/",
             "",
-            "[Cat Bot](https://wiki.minkos.lol/cat-bot)",
-            "[Cat Spawning](https://wiki.minkos.lol/spawning)",
-            "[Commands](https://wiki.minkos.lol/commands)",
-            "[Cat Types](https://wiki.minkos.lol/cat-types)",
-            "[Cattlepass](https://wiki.minkos.lol/cattlepass)",
-            "[Achievements](https://wiki.minkos.lol/achievements)",
-            "[Packs](https://wiki.minkos.lol/packs)",
-            "[Trading](https://wiki.minkos.lol/trading)",
-            "[Gambling](https://wiki.minkos.lol/gambling)",
-            "[The Dark Market](https://wiki.minkos.lol/dark-market)",
-            "[Prisms](https://wiki.minkos.lol/prisms)",
+            "[Cat Bot](https://catbot.wiki/cat-bot)",
+            "[Cat Spawning](https://catbot.wiki/spawning)",
+            "[Commands](https://catbot.wiki/commands)",
+            "[Cat Types](https://catbot.wiki/cat-types)",
+            "[Cattlepass](https://catbot.wiki/cattlepass)",
+            "[Achievements](https://catbot.wiki/achievements)",
+            "[Packs](https://catbot.wiki/packs)",
+            "[Trading](https://catbot.wiki/trading)",
+            "[Gambling](https://catbot.wiki/gambling)",
+            "[The Dark Market](https://catbot.wiki/dark-market)",
+            "[Prisms](https://catbot.wiki/prisms)",
         ]
     )
     await message.response.send_message(embed=embed)
@@ -6446,7 +6446,7 @@ async def dark_market(message):
             title="The Dark Market",
             description="after entering the secret code, they let you in. today's deal is:",
         )
-        embed.set_author(name="Click here to open Wiki", url="https://wiki.minkos.lol/en/dark-market")
+        embed.set_author(name="Click here to open Wiki", url="https://catbot.wiki/en/dark-market")
         deal = cataine_prices[level] if level < len(cataine_prices) else cataine_prices[-1]
         type = deal[1]
         amount = deal[0]
