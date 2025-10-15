@@ -2319,13 +2319,6 @@ async def on_guild_join(guild):
     except Exception:
         pass
 
-    if guild.self_role:
-        if guild.self_role.permissions.read_message_history:
-            source = "top.gg"
-        else:
-            source = "direct"
-        print(f"New guild: {guild.id} - {source}")
-
 
 @bot.tree.command(description="Learn to use the bot")
 async def help(message):
