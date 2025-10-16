@@ -2078,6 +2078,8 @@ async def on_message(message: discord.Message):
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT":
                     await achemb(message, "loud_cat", "send")
+                if bot.user in message.mentions:
+                    await achemb(message, "ping_reply", "send")
                 if channel.cat_rains > 0:
                     await achemb(message, "cat_rain", "send")
 
