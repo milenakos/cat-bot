@@ -952,10 +952,9 @@ async def maintaince_loop():
 
     # temp_belated_storage cleanup
     # clean up anything older than 1 minute
-    baseflake = discord.utils.time_snowflake(datetime.datetime.utcnow() - datetime.timedelta(minutes=1))
-    for id in temp_belated_storage.copy().keys():
-        if id < baseflake:
-            del temp_belated_storage[id]
+    for channel in temp_belated_storage.copy().keys():
+        if time.time() - 60 > temp_belated_storage[channel]["catch"]["catchtime"]:
+            del temp_belated_storage[channel]
 
     if config.TOP_GG_TOKEN:
         async with aiohttp.ClientSession() as session:
@@ -1705,45 +1704,45 @@ async def on_message(message: discord.Message):
 
             # belated battlepass
             if message.channel.id in temp_belated_storage:
-                belated = temp_belated_storage[message.channel.id]
-                if (
-                    channel
-                    and "users" in belated
-                    and "time" in belated
-                    and channel.lastcatches + 3 > int(time.time())
-                    and message.author.id not in belated["users"]
-                ):
-                    belated["users"].append(message.author.id)
-                    temp_belated_storage[message.channel.id] = belated
-                    await progress(message, user, "3cats", True)
-                    if channel.cattype == "Fine":
-                        await progress(message, user, "2fine", True)
-                    if channel.cattype == "Good":
-                        await progress(message, user, "good", True)
-                    if belated.get("time", 10) + int(time.time()) - channel.lastcatches < 10:
-                        await progress(message, user, "under10", True)
-                    if random.randint(0, 1) == 0:
-                        await progress(message, user, "even", True)
-                    else:
-                        await progress(message, user, "odd", True)
-                    if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
-                        await progress(message, user, "rare+", True)
-                    total_count = await Prism.count("guild_id = $1", message.guild.id)
-                    user_count = await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id)
-                    global_boost = 0.06 * math.log(2 * total_count + 1)
-                    prism_boost = global_boost + 0.03 * math.log(2 * user_count + 1)
-                    if prism_boost > random.random():
-                        await progress(message, user, "prism", True)
-                    if user.catch_quest == "finenice":
-                        # 0 none
-                        # 1 fine
-                        # 2 nice
-                        # 3 both
-                        if channel.cattype == "Fine" and user.catch_progress in [0, 2]:
-                            await progress(message, user, "finenice", True)
-                        elif channel.cattype == "Nice" and user.catch_progress in [0, 1]:
-                            await progress(message, user, "finenice", True)
-                            await progress(message, user, "finenice", True)
+                try: 
+                    belated = temp_belated_storage[message.channel.id]
+                    if (
+                        message.author.id not in belated["users"]
+                        and belated["catch"]["catchtime"] + 3 > message.created_at.timestamp()
+                    ):
+                        belated["users"].append(message.author.id)
+                        await progress(message, user, "3cats", True)
+                        if belated["catch"]["cat"] == "Fine":
+                            await progress(message, user, "2fine", True)
+                        if belated["catch"]["cat"] == "Good":
+                            await progress(message, user, "good", True)
+                        if message.created_at.timestamp() - belated["catch"]["spawntime"] < 10:
+                            await progress(message, user, "under10", True)
+                        if random.randint(0, 1) == 0:
+                            await progress(message, user, "even", True)
+                        else:
+                            await progress(message, user, "odd", True)
+                        if belated["catch"]["cat"] not in ["Fine", "Nice", "Good"]:
+                            await progress(message, user, "rare+", True)
+                        total_count = await Prism.count("guild_id = $1", message.guild.id)
+                        user_count = await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id)
+                        global_boost = 0.06 * math.log(2 * total_count + 1)
+                        prism_boost = global_boost + 0.03 * math.log(2 * user_count + 1)
+                        if prism_boost > random.random():
+                            await progress(message, user, "prism", True)
+                        if user.catch_quest == "finenice":
+                            # 0 none
+                            # 1 fine
+                            # 2 nice
+                            # 3 both
+                            if belated["catch"]["cat"] == "Fine" and user.catch_progress in [0, 2]:
+                                await progress(message, user, "finenice", True)
+                            elif belated["catch"]["cat"] == "Nice" and user.catch_progress in [0, 1]:
+                                await progress(message, user, "finenice", True)
+                                await progress(message, user, "finenice", True)
+                # Likely a key error. No idea how.
+                except:
+                    pass
         else:
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
@@ -1765,17 +1764,17 @@ async def on_message(message: discord.Message):
                 decided_time = 0
 
             try:
-                current_time = message.created_at.timestamp()
-                channel.lastcatches = current_time
+                catch_time = message.created_at.timestamp()
+                channel.lastcatches = catch_time
                 cat_temp = channel.cat
                 channel.cat = 0
                 try:
                     if channel.cattype != "":
-                        catchtime = discord.utils.snowflake_time(cat_temp)
+                        spawn_time = discord.utils.snowflake_time(cat_temp).timestamp()
                         le_emoji = channel.cattype
                     elif perms.read_message_history:
                         var = await message.channel.fetch_message(cat_temp)
-                        catchtime = var.created_at
+                        spawn_time = var.created_at.timestamp()
                         catchcontents = var.content
 
                         partial_type = None
@@ -1804,12 +1803,23 @@ async def on_message(message: discord.Message):
                     except Exception:
                         pass
                     return
-
+                
+                # We now hopefully have cat type, spawn time, and catch time
+                try:
+                    if time_caught >= 0:
+                        temp_belated_storage[message.channel.id] = {
+                            "catch": 
+                                {"cat":le_emoji, 
+                                "spawntime": spawn_time,
+                                "catchtime": catch_time }, 
+                            "users": [message.author.id]
+                        }
+                except Exception:
+                    pass
                 send_target = message.channel
                 try:
                     # some math to make time look cool
-                    then = catchtime.timestamp()
-                    time_caught = round(abs(current_time - then), 3)  # cry about it
+                    time_caught = round(abs(catch_time - spawn_time), 3)  # cry about it
                     if time_caught >= 1:
                         time_caught = round(time_caught, 2)
 
@@ -1839,12 +1849,6 @@ async def on_message(message: discord.Message):
                     # if some of the above explodes just give up
                     do_time = False
                     caught_time = "undefined amounts of time "
-
-                try:
-                    if time_caught >= 0:
-                        temp_belated_storage[message.channel.id] = {"time": time_caught, "users": [message.author.id]}
-                except Exception:
-                    pass
 
                 if channel.cat_rains > 0 or cat_rain_end:
                     do_time = False
