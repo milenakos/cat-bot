@@ -598,8 +598,12 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
     perms = await fetch_perms(message)
     level_complete_embeds = []
     if user.battlepass >= len(battle["seasons"][str(user.season)]):
-        level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
-        level_text = "Extra Rewards"
+        if user.battlepass == 49:
+            level_data = {"xp": 1500, "reward": "Celestial", "amount": 1}
+            level_text = "Level 50"
+        else:
+            level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
+            level_text = "Extra Rewards"
     else:
         level_data = battle["seasons"][str(user.season)][user.battlepass]
         level_text = f"Level {user.battlepass + 1}"
@@ -639,8 +643,10 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
             level_complete_embeds.append(embed_level_up)
 
             if user.battlepass >= len(battle["seasons"][str(user.season)]):
-                active_level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
-                new_level_text = "Extra Rewards"
+                if user.battlepass == 49:
+                    level_data = {"xp": 1500, "reward": "Celestial", "amount": 1}
+                else:
+                    level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
             else:
                 active_level_data = battle["seasons"][str(user.season)][user.battlepass]
                 new_level_text = f"Level {user.battlepass + 1}"
