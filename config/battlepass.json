@@ -384,7 +384,7 @@
       "tiktok": {"emoji": "sillycat", "title": "Use /tiktok TTS", "xp_min": 130, "xp_max": 210, "progress": 1},
       "wiki": {"emoji": "🤓", "title": "Check out /wiki", "xp_min": 120, "xp_max": 200, "progress": 1},
       "pig": {"emoji": "🎲", "title": "Get 20+ score in /pig", "xp_min": 200, "xp_max": 250, "progress": 1},
-      "roulette": {"emoji": "🎰", "title": "Win a /roulette bet", "xp_min": 175, "xp_max": 225, "progress": 1}
+      "roulette": {"emoji": "🎰", "title": "Win a /roulette bet", "xp_min": 180, "xp_max": 220, "progress": 1}
     }
   }
 }
