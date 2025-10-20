@@ -6566,9 +6566,9 @@ async def bounty(message, user, cattype):
         user.bounties_complete += 1
         if user.bounties_complete == 5:
             await achemb(message, "bounty_novice", "send")
-        if user.bounties_complete == 25:
+        if user.bounties_complete == 19: # we do a little trolling
             await achemb(message, "bounty_hunter", "send")
-        if user.bounties_complete == 150:
+        if user.bounties_complete == 100:
             await achemb(message, "bounty_lord", "send")
         await message.channel.send(f"<@{user.user_id}>", embed=embed)
         await user.save()
