@@ -13,6 +13,8 @@
   "achiever": {"title": "Achiever", "description": "get 15 achievements", "is_hidden": false, "category": "Cat Hunt"},
   "leader": {"title": "Leader", "description": "reach top 5 in any leaderboard", "is_hidden": false, "category": "Cat Hunt"},
   "dark_market": {"title": "Shady Corner", "description": "follow the shadow", "is_hidden": true, "category": "Cat Hunt"},
+  "bounty_novice": {"title": "Bounty Novice", "description": "complete 5 bounties", "is_hidden": true, "category": "Cat Hunt"},
+  "bounty_hunter": {"title": "Bounty Hunter", "description": "complete 25 bounties", "is_hidden": true, "category": "Cat Hunt"},
   "news": {"title": "That's quite new", "description": "read the news", "is_hidden": false, "category": "Cat Hunt"},
   "boosted": {"title": "Boosted", "description": "get boosted by a prism", "is_hidden": false, "category": "Cat Hunt"},
 
@@ -91,12 +93,14 @@
   "sphere_ach": {"title": "Sphere Roller", "description": "your sphere lands you an ach", "is_hidden": false, "category": "Hard"},
   "roulette_prodigy": {"title": "Roulette Prodigy", "description": "win with green or number at /roulette", "is_hidden": true, "category": "Hard"},
   "certified_yapper": {"title": "Certified Yapper", "description": "have 3 or more extra lines at the end of your catch", "is_hidden": true, "category": "Hard"},
+  "bounty_lord": {"title": "Bounty Lord", "description": "complete 150 bounties", "is_hidden": true, "category": "Hard"},
 
   "catn": {"title": "Cat'n", "description": "no cat??? :megamind:", "is_hidden": true, "category": "Hidden"},
   "coupon_user": {"title": "Coupon User", "description": "use a coupon for a 10% discount on all cats!!!", "is_hidden": true, "category": "Hidden"},
   "dataminer": {"title": "Dataminer", "description": "say `cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6`", "is_hidden": true, "category": "Hidden"},
   "blackhole": {"title": "Blackhole", "description": "WHERE THE FU ARE WE", "is_hidden": true, "category": "Hidden"},
   "cat_rain": {"title": "It's Raining Cats", "description": "participate in a cat rain", "is_hidden": true, "category": "Hidden"},
+  "mafia_win": {"title": "Mafia Destroyer", "description": "Complete the story... More.", "is_hidden": true, "category": "Hidden"},
 
   "thanksforplaying": {"title": "Thanks For Playing", "description": "Complete the story", "is_hidden": false, "category": "Cat Hunt"}
 }

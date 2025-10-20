@@ -6564,6 +6564,12 @@ async def bounty(message, user, cattype):
             description = f"{progress_line}\n{completed}/{user.bounties} Bounties Complete"
         embed = discord.Embed(title=f"✅ {title[i]}", color=Colors.green, description=description).set_author(name="Mafia Level " + str(level))
         user.bounties_complete += 1
+        if user.bounties_complete == 5:
+            await achemb(message, "bounty_novice", "send")
+        if user.bounties_complete == 25:
+            await achemb(message, "bounty_hunter", "send")
+        if user.bounties_complete == 150:
+            await achemb(message, "bounty_lord", "send")
         await message.channel.send(f"<@{user.user_id}>", embed=embed)
         await user.save()
 
@@ -6879,6 +6885,51 @@ As you return to your hideout, you hear a howl in the distance."
     myview1.add_item(button1)
     await interaction.response.send_message(content=text1, view=myview1, ephemeral=True)
 
+async def mafia_cutscene2(interaction: discord.Interaction):
+    text1 = "Why? What do you gain from this? What's the point?\n \
+You've gone too far. You defeated Bailey, and I was proud of you for that.\n \
+But you kept going. Just for slightly more cats.\n \
+You never cared about the people. It was all for you."
+    text2 = "I got too greedy myself. I took over the mafia far too young.\n \
+I wanted more, and more, and more. But I never went as far as you did.\n \
+I took over cataine production, and took so much for myself.\n \
+Eventually, though, someone took away my cataine. \n \
+And I realized how I had taken so much cataine, that the whole world was limited to about 4 doses a week."
+    text3 = "But you. You've left nothing for the others. You've made the most powerful cataine, but at what cost?\n \
+I can't stop you. No one can. I guess the only question is: will you stay here to torment us? Or fight on, against the world itself?\n \
+[More content coming soon! Congrats on actually making it to level 10, that's quite a feat.]"
+    text4a = "...Really? I thought you would continue your path of destruction.\n \
+So fine. Continue to torment us. You've won. Are you happy now?"
+    text4b = "woa you looked at the code! crazy. btw stella is cute"
+
+    async def button3a_callback(interaction: discord.Interaction):
+        await interaction.response.send_message(content=text4a, ephemeral=True)
+
+    async def button3b_callback(interaction: discord.Interaction):
+        await interaction.response.send_message(content=text4b, ephemeral=True)
+
+    async def button2_callback(interaction: discord.Interaction):
+        myview3 = View(timeout=VIEW_TIMEOUT)
+        button3a = Button(label="Stay", style=ButtonStyle.red)
+        button3b = Button(label="Continue", style=ButtonStyle.green, disabled=True)
+        button3a.callback = button3a_callback
+        button3b.callback = button3b_callback
+        myview3.add_item(button3a)
+        myview3.add_item(button3b)
+        await interaction.response.send_message(content=text3, view=myview3, ephemeral=True)
+
+    async def button1_callback(interaction: discord.Interaction):
+        myview2 = View(timeout=VIEW_TIMEOUT)
+        button2 = Button(label="Next", style=ButtonStyle.blurple)
+        button2.callback = button2_callback
+        myview2.add_item(button2)
+        await interaction.response.send_message(content=text2, view=myview2, ephemeral=True)
+
+    myview1 = View(timeout=VIEW_TIMEOUT)
+    button1 = Button(label="RUN!", style=ButtonStyle.blurple)
+    button1.callback = button1_callback
+    myview1.add_item(button1)
+    await interaction.response.send_message(content=text1, view=myview1, ephemeral=True)
 
 @bot.tree.command(description="..?")
 async def cataine(message: discord.Interaction):
@@ -6995,9 +7046,11 @@ async def cataine(message: discord.Interaction):
             await interaction.response.send_message("You haven't selected a perk yet!", ephemeral=True)
             return
 
+        if user.cataine_level != 10:
+            user.cataine_level += 1
+            await achemb(interaction, "mafia_win", "send")
         user.perk_selected = False
         user.hibernation = True
-        user.cataine_level += 1
         user.cataine_bought += 1
         user.cataine_total_cats = 0
         user.first_quote_seen = False
@@ -7221,7 +7274,7 @@ async def cataine(message: discord.Interaction):
     try:
         if name == "Lucian II":
             name = "LucianII"  # i hate file name conventions
-        if name == "Jeremy" and math.floor(math.random()*1000) == 1:
+        if name == "Jeremy" and math.floor(math.random()*100) == 1:
             name = "sus"
         file = discord.File(f"images/mafia/{name}.png", filename=f"{name}.png")
         embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc).set_thumbnail(url=f"attachment://{name}.png")

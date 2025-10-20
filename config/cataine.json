@@ -35,13 +35,13 @@
     },
     {
       "level": 2,
-      "name": "Lucian",
+      "name": "Lucian II",
       "quotes": {
         "first": "Ha! You will never defeat me! I am the best cat-catcher in a long line of professional catchers!",
         "normal": [
           "FEAR ME! I am the agent of your demise. This app on my phone told me so.",
           "I have bested hundreds. No. Thousands of cat catchers, before you. You can never win. Who are they? uhhhhhhh",
-          "I'm the best cat catcher ever! [NOT CLICKBAIT]"
+          "Cats are mine. No catch . Mine."
         ],
         "levelup": [
           "I have a family... please, don't do this to me...",
@@ -82,17 +82,17 @@
     },
     {
       "level": 5,
-      "name": "Lucian II",
+      "name": "Lucian",
       "quotes": {
-        "first": "Hello. My name is Lucian the Second. You beat my father. Prepare to die.",
+        "first": "Hello. My name is Lucian. You beat my son. Prepare to die.",
         "normal": [
-          "You couldnt have beat my father. YOU CHEATER!!",
+          "You couldnt have beat my son. YOU CHEATER!!",
           "Im mad that you here. Go.",
-          "Cats are mine. No catch . Mine.",
-          "I train my whole life for this. You no win."
+          "I'm the best cat catcher ever! [NOT CLICKBAIT]",
+          "FEAR ME! I am the agent of your demise. This app on my phone told me so."
         ],
         "levelup": [
-          "Father… I'm sorry. I'm so sorry."
+          "Son… I'm sorry. I'm so sorry."
         ]
       }
     },
@@ -135,7 +135,8 @@
         "normal": [
           "It's not always about the money… it's about the PAWS BABY LOVE THE PAWS COME ON HIT A HOME RUN",
           "Back in the day we just scammed people and made them pay higher and higher prices for cataine. Some people even paid 100 eGirl cats!",
-          "Cataine really depends on who makes it and what they put into it. We here at the top? We get the best stuff. Those people at the bottom get basically nothing."
+          "Cataine really depends on who makes it and what they put into it. We here at the top? We get the best stuff. Those people at the bottom get basically nothing.",
+          "Why are you even trying to go any further? Don't you have enough already?"
         ],
         "levelup": [
           "Oh, you actually beat me? Whatever. I'm still the kingpin in all the other people's dimensions.",
@@ -154,6 +155,23 @@
     },
     {
       "level": 10,
+      "name": "Whiskers",
+      "quotes": {
+        "first": "Well done. You've destroyed everything I made. Are you happy?",
+        "normal": [
+          "Was it really worth it?",
+          "I built this mafia from the ground up. I thought you would save it, not destroy it.",
+          "I knew you could go a long way. But I didn't expect you to get here.",
+          "Why did you go further? You defeated the dog. That should've been enough."
+        ],
+        "levelup": [
+          "I should've expected this.",
+          "You refuse to fall."
+        ]
+      }
+    },
+    {
+      "level": 11,
       "name": "Catgirl",
       "quotes": {
         "first": "i made this world. why did you have to break it?",
@@ -165,23 +183,6 @@
           "mrrrrow",
           "nyaaaaaa~!",
           "purrrrrrrrrrrrrrrrrrrr"
-        ],
-        "levelup": [
-          "the creation has destroyed the maker, huh? poetic.",
-          "fine. go, see the final level. you've earned it."
-        ]
-      }
-    },
-    {
-      "level": 11,
-      "name": "Whiskers",
-      "quotes": {
-        "first": "Well done. You've come so far, that there is nowhere left to go.",
-        "normal": [
-          "Was it really worth it?",
-          "You probably cheated to get here. Or maybe you just looked at this line in the code.",
-          "I knew you could go a long way. But I didn't expect you to get here.",
-          "The people who made this place didn't even code a higher level. Because no one can get here. No one should get here."
         ],
         "levelup": [
           "Nice job looking at the code.",
