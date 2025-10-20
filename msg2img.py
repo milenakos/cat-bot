@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import datetime
 import io
 import os
 
@@ -223,7 +224,10 @@ def msg2img(message: discord.Message, member: discord.Member):
     with Pilmoji(new_img) as pilmoji2:
         pilmoji2.text((122, 55), text.strip(), (255, 255, 255), font2, emoji_scale_factor=45 / 33)
 
-    twentyfourhour = message.created_at.strftime("%H:%M")
+    if message.created_at.date() == datetime.datetime.now().date():
+        twentyfourhour = message.created_at.strftime("%H:%M")
+    else:
+        twentyfourhour = message.created_at.strftime("%d.%m.%Y, %H:%M")
 
     pencil.text(
         (13 + 122 + getsize(font, nick)[0] + move + icon_offset, 17),

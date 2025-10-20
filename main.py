@@ -183,7 +183,7 @@ vote_button_texts = [
 
 # various hints/fun facts
 hints = [
-    "Cat Bot has a wiki! <https://wiki.minkos.lol>",
+    "Cat Bot has a wiki! <https://catbot.wiki>",
     "Cat Bot is open source! <https://github.com/milenakos/cat-bot>",
     "View all cats and rarities with /catalogue",
     "Cat Bot's birthday is on the 21st of April",
@@ -1017,7 +1017,10 @@ async def maintaince_loop():
 
         try:
             user_dm = await bot.fetch_user(user.user_id)
-            await user_dm.send("You can vote now!" if user.vote_streak < 10 else f"Vote now to keep your {user.vote_streak} streak going!", view=view)
+            await user_dm.send(
+                "You can vote now!" if user.vote_streak < 10 else f"Vote now to keep your {user.vote_streak} streak going!",
+                view=view,
+            )
         except Exception:
             pass
         # no repeat reminers for now
@@ -1246,13 +1249,14 @@ async def on_message(message: discord.Message):
         if text.startswith("disable"):
             # disable reminders
             try:
-                user = await Profile.get_or_create(guild_id=int(text.split(" ")[1]), user_id=message.author.id)
+                where = text.split(" ")[1]
+                user = await Profile.get_or_create(guild_id=int(where), user_id=message.author.id)
+                user.reminders_enabled = False
+                await user.save()
+                await message.channel.send("reminders disabled")
             except Exception:
                 await message.channel.send("failed. check if your guild id is correct")
                 return
-            user.reminders_enabled = False
-            await user.save()
-            await message.channel.send("reminders disabled")
         elif text == "lol_i_have_dmed_the_cat_bot_and_got_an_ach":
             await message.channel.send('which part of "send in server" was unclear?')
         else:
@@ -2198,6 +2202,8 @@ async def on_message(message: discord.Message):
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT":
                     await achemb(message, "loud_cat", "send")
+                if bot.user in message.mentions and message.reference.message_id == cat_temp:
+                    await achemb(message, "ping_reply", "send")
                 if channel.cat_rains > 0:
                     await achemb(message, "cat_rain", "send")
 
@@ -2442,13 +2448,6 @@ async def on_guild_join(guild):
     except Exception:
         pass
 
-    if guild.self_role:
-        if guild.self_role.permissions.read_message_history:
-            source = "top.gg"
-        else:
-            source = "direct"
-        print(f"New guild: {guild.id} - {source}")
-
 
 @bot.tree.command(description="Learn to use the bot")
 async def help(message):
@@ -2477,7 +2476,7 @@ async def help(message):
         )
         .add_field(
             name="Other features",
-            value="Cat Bot has extra fun commands which you will discover along the way.\nAnything unclear? Check out [our wiki](https://wiki.minkos.lol) or drop us a line at our [Discord server](https://discord.gg/staring).",
+            value="Cat Bot has extra fun commands which you will discover along the way.\nAnything unclear? Check out [our wiki](https://catbot.wiki) or drop us a line at our [Discord server](https://discord.gg/staring).",
             inline=False,
         )
         .set_footer(
@@ -2558,19 +2557,19 @@ async def wiki(message: discord.Interaction):
     embed = discord.Embed(title="Cat Bot Wiki", color=Colors.brown)
     embed.description = "\n".join(
         [
-            "Main Page: https://wiki.minkos.lol/",
+            "Main Page: https://catbot.wiki/",
             "",
-            "[Cat Bot](https://wiki.minkos.lol/cat-bot)",
-            "[Cat Spawning](https://wiki.minkos.lol/spawning)",
-            "[Commands](https://wiki.minkos.lol/commands)",
-            "[Cat Types](https://wiki.minkos.lol/cat-types)",
-            "[Cattlepass](https://wiki.minkos.lol/cattlepass)",
-            "[Achievements](https://wiki.minkos.lol/achievements)",
-            "[Packs](https://wiki.minkos.lol/packs)",
-            "[Trading](https://wiki.minkos.lol/trading)",
-            "[Gambling](https://wiki.minkos.lol/gambling)",
-            "[The Dark Market](https://wiki.minkos.lol/dark-market)",
-            "[Prisms](https://wiki.minkos.lol/prisms)",
+            "[Cat Bot](https://catbot.wiki/cat-bot)",
+            "[Cat Spawning](https://catbot.wiki/spawning)",
+            "[Commands](https://catbot.wiki/commands)",
+            "[Cat Types](https://catbot.wiki/cat-types)",
+            "[Cattlepass](https://catbot.wiki/cattlepass)",
+            "[Achievements](https://catbot.wiki/achievements)",
+            "[Packs](https://catbot.wiki/packs)",
+            "[Trading](https://catbot.wiki/trading)",
+            "[Gambling](https://catbot.wiki/gambling)",
+            "[The Dark Market](https://catbot.wiki/dark-market)",
+            "[Prisms](https://catbot.wiki/prisms)",
         ]
     )
     await message.response.send_message(embed=embed)
@@ -3199,6 +3198,9 @@ async def last(message: discord.Interaction):
         times = [channel.spawn_times_min, channel.spawn_times_max]
         nextpossible = f"\nthe next cat will spawn between <t:{int(lasttime) + times[0]}:R> and <t:{int(lasttime) + times[1]}:R>"
 
+    if channel and channel.cat_rains:
+        nextpossible += f"\ncat rain! {channel.cat_rains} cats remaining..."
+
     await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.{nextpossible}")
 
 
@@ -3687,7 +3689,9 @@ async def rain_end(message, channel):
             return
         rain_server = config.cat_cought_rain[channel.channel_id]
 
-        part_one = "## Rain Summary\n"
+        # you can throw out the name of the emoji to save on characters
+        funny_emojis = {k: re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(k.lower() + "cat"), count=1) for k in rain_server.keys()}
+
         reverse_mapping = {}
 
         for cat_type, user_ids in rain_server.items():
@@ -3720,6 +3724,7 @@ async def rain_end(message, channel):
             for user_id, all_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 show_cats = ""
                 shortened_types = False
+
                 combined_values = {p["name"]: p["value"] for p in pack_data}
                 combined_values.update(type_dict)
 
@@ -3753,6 +3758,7 @@ async def rain_end(message, channel):
                 else:
                     part_one += f"{user_id} ({cat_len} {get_emoji("finecat")}, {len(all_types) - cat_len} {get_emoji("woodenpack")}){show_cats}\n"
 
+
             part_two = ""
             all_types = cattypes + [p["name"] for p in pack_data]
             for thing_type in all_types:
@@ -3769,11 +3775,23 @@ async def rain_end(message, channel):
                     else:
                         part_two += f"{get_emoji(thing_type.lower() + 'pack')} {' '.join(rain_server[thing_type])}\n"
 
-            if not lock_success:
-                part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
+            if epic_fail:
+                part_two = ""
+                for cat_type in cattypes:
+                    if cat_type not in rain_server.keys():
+                        continue
+                    if len(rain_server[cat_type]) > 5:
+                        part_two += f"{funny_emojis[cat_type]} *{len(rain_server[cat_type])} catches*\n"
+                    else:
+                        part_two += f"{funny_emojis[cat_type]} {' '.join(rain_server[cat_type])}\n"
 
-            for rain_msg in [part_one, part_two]:
-                if "cat:" not in rain_msg:
+                if not lock_success:
+                    part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
+
+                parts.append(part_two)
+
+            for rain_msg in parts:
+                if ":i:" not in rain_msg:
                     continue
                 # this is to bypass character limit up to 4k
                 v = LayoutView()
@@ -3801,12 +3819,8 @@ async def rain_end(message, channel):
                 else:
                     part_one += f"{user_id} ({cat_len} {get_emoji("finecat")}, {len(all_types) - cat_len} {get_emoji("woodenpack")}): {''.join([get_emoji(cat_type.lower() + ('cat' if cat_type in cattypes else 'pack')) for cat_type in all_types])}\n"
 
-            if not lock_success:
-                part_one += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
 
-            v = LayoutView()
-            v.add_item(TextDisplay(part_one))
-            await message.channel.send(view=v)
+            break
 
         del config.cat_cought_rain[channel.channel_id]
         del config.rain_starter[channel.channel_id]
@@ -7096,10 +7110,11 @@ async def cataine(message: discord.Interaction):
         global_user = await User.get_or_create(user_id=interaction.user.id)
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
 
+
         if user.perk_selected:
             await interaction.response.send_message("You have already selected a perk.", ephemeral=True)
             return
-
+          
         perks_data = cataine_list["perks"]
         rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
         perknames = []
