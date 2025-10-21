@@ -148,9 +148,9 @@
       "level": 9,
       "name": "Placeholder",
       "quotes": {
-        "first": "",
-        "normal": [],
-        "levelup": []
+        "first": "staring",
+        "normal": ["im placeholding"],
+        "levelup": ["woah"]
       }
     },
     {

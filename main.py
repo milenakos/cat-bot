@@ -1869,10 +1869,11 @@ async def on_message(message: discord.Message):
                 double_boost = False
                 double_first = 0
                 timer_add_chance = 0
+                packs_gained = []
 
                 if user.perks:
-                    if user.cataine_active < time.time() or user.hibernation:
-                        if user.cataine_active > 1:
+                    if user.cataine_active < time.time():
+                        if user.cataine_active != 1:
                             user.cataine_active = 1
                             suffix_string += "\n🧂 Your cataine expired! Run /cataine to get more."
                         perks = []
@@ -1911,7 +1912,6 @@ async def on_message(message: discord.Message):
                         elif id == "double_first":
                             double_first += perks_info[13]["values"][rarity]
 
-                    packs_gained = []
                     for i in packs:
                         chance = random.random() * 100
                         if chance <= i[1]:
@@ -1986,7 +1986,10 @@ async def on_message(message: discord.Message):
                 bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001 * 0.01
                 if bless_chance > random.random():
                     # woo we got blessed thats pretty cool
-                    silly_amount *= 2
+                    if silly_amount == 0:
+                        silly_amount += 1
+                    else: 
+                        silly_amount *= 2
 
                     blesser_l = await User.collect("blessings_enabled = true AND rain_minutes_bought > 0 ORDER BY -ln(random()) / rain_minutes_bought LIMIT 1")
                     blesser = blesser_l[0]
@@ -1998,7 +2001,10 @@ async def on_message(message: discord.Message):
                     else:
                         blesser_text = f"{blesser.emoji or '💫'} {(await bot.fetch_user(blesser.user_id)).name}"
 
-                    suffix_string += f"\n{blesser_text} blessed your catch and it got doubled!"
+                    if silly_amount > 1:
+                        suffix_string += f"\n{blesser_text} blessed your catch and it got doubled!"
+                    else:
+                        suffix_string += f"\n{blesser_text} blessed your catch and it got saved!"
 
                 # calculate prism boost
                 total_prisms = await Prism.collect("guild_id = $1", message.guild.id)
@@ -3696,7 +3702,9 @@ async def rain_end(message, channel):
             return
         rain_server = config.cat_cought_rain[channel.channel_id]
 
-        part_one = "## Rain Summary\n"
+        # you can throw out the name of the emoji to save on characters
+        funny_emojis = {k: re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(k.lower() + "cat"), count=1) for k in rain_server.keys()}
+
         reverse_mapping = {}
 
         for cat_type, user_ids in rain_server.items():
@@ -3705,47 +3713,20 @@ async def rain_end(message, channel):
                     reverse_mapping[user_id] = []
                 reverse_mapping[user_id].append(cat_type)
 
-        total_catches = sum(len(cat_types) for cat_types in reverse_mapping.values())
-        
-        if total_catches > 80:
-            # we wont be able to accommodate all catches with emojis
-            amount_used = 0
-            ok_types = []
-            
-            for pack_type in [p["name"] for p in pack_data][::-1]:
-                if pack_type in rain_server:
-                    amount_used += len(rain_server[pack_type])
-                if amount_used > 30: # thats certainly a rain of all time
-                    break
-                ok_types.append(pack_type)
+        evil_types = []
+        epic_fail = False
+        for cat_type in cattypes:
+            part_one = "## Rain Summary\n"
 
-            for cat_type in cattypes[::-1]:
-                if cat_type in rain_server:
-                    amount_used += len(rain_server[cat_type])
-                if amount_used > 80:
-                    break
-                ok_types.append(cat_type)
-
-            for user_id, all_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
+            for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 show_cats = ""
                 shortened_types = False
-                combined_values = {p["name"]: p["value"] for p in pack_data}
-                combined_values.update(type_dict)
-
-                all_types.sort(
-                    key=lambda x: (
-                        x in cattypes,  # False (packs) come before True (cats)
-                        -combined_values[x] if x not in cattypes else combined_values[x]
-                    )
-                )
-                for thing_type in all_types:
-                    if thing_type not in ok_types:
+                cat_types.sort(reverse=True, key=lambda x: type_dict[x])
+                for cat_type_two in cat_types:
+                    if cat_type_two in evil_types:
                         shortened_types = True
                         continue
-                    if "pack" in thing_type:
-                        show_cats += get_emoji(thing_type.lower() + "pack")
-                    else:
-                        show_cats += get_emoji(thing_type.lower() + "cat")
+                    show_cats += funny_emojis[cat_type_two]
                 if show_cats != "":
                     if shortened_types:
                         show_cats = ": ..." + show_cats
@@ -3753,69 +3734,42 @@ async def rain_end(message, channel):
                         show_cats = ": " + show_cats
                 if str(config.rain_starter[channel.channel_id]) in str(user_id):
                     part_one += "☔ "
-                cat_len = 0
-                for i in all_types:
-                    if i in cattypes:
-                        cat_len += 1
-                if len(all_types) == cat_len:
-                    part_one += f"{user_id} ({len(all_types)}){show_cats}\n"
-                else:
-                    part_one += f"{user_id} ({cat_len} {get_emoji("finecat")}, {len(all_types) - cat_len} {get_emoji("woodenpack")}){show_cats}\n"
+                part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
 
-            part_two = ""
-            all_types = cattypes + [p["name"] for p in pack_data]
-            for thing_type in all_types:
-                if thing_type not in rain_server.keys():
-                    continue
-                if len(rain_server[thing_type]) > 5:
-                    if thing_type in cattypes:
-                        part_two += f"{get_emoji(thing_type.lower() + 'cat')} *{len(rain_server[thing_type])} catches*\n"
+            if not lock_success and not epic_fail:
+                part_one += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
+
+            if len(part_one) > 4000:
+                evil_types.append(cat_type)
+                epic_fail = True
+                continue
+
+            parts = [part_one]
+
+            if epic_fail:
+                part_two = ""
+                for cat_type in cattypes:
+                    if cat_type not in rain_server.keys():
+                        continue
+                    if len(rain_server[cat_type]) > 5:
+                        part_two += f"{funny_emojis[cat_type]} *{len(rain_server[cat_type])} catches*\n"
                     else:
-                        part_two += f"{get_emoji(thing_type.lower() + 'pack')} *{len(rain_server[thing_type])} catches*\n"
-                else:
-                    if thing_type in cattypes:
-                        part_two += f"{get_emoji(thing_type.lower() + 'cat')} {' '.join(rain_server[thing_type])}\n"
-                    else:
-                        part_two += f"{get_emoji(thing_type.lower() + 'pack')} {' '.join(rain_server[thing_type])}\n"
+                        part_two += f"{funny_emojis[cat_type]} {' '.join(rain_server[cat_type])}\n"
 
-            if not lock_success:
-                part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
+                if not lock_success:
+                    part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
 
-            for rain_msg in [part_one, part_two]:
-                if "cat:" not in rain_msg:
+                parts.append(part_two)
+
+            for rain_msg in parts:
+                if ":i:" not in rain_msg:
                     continue
                 # this is to bypass character limit up to 4k
                 v = LayoutView()
                 v.add_item(TextDisplay(rain_msg))
                 await message.channel.send(view=v)
-        else:
-            for user_id, all_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
-                combined_values = {p["name"]: p["value"] for p in pack_data}
-                combined_values.update(type_dict)
 
-                all_types.sort(
-                    key=lambda x: (
-                        x in cattypes,  # False (packs) come before True (cats)
-                        -combined_values[x] if x not in cattypes else combined_values[x]
-                    )
-                )
-                cat_len = 0
-                for i in all_types:
-                    if i in cattypes:
-                        cat_len += 1
-                if str(config.rain_starter[channel.channel_id]) in str(user_id):
-                    part_one += "☔ "
-                if len(all_types) == cat_len:
-                    part_one += f"{user_id} ({len(all_types)}){show_cats}\n"
-                else:
-                    part_one += f"{user_id} ({cat_len} {get_emoji("finecat")}, {len(all_types) - cat_len} {get_emoji("woodenpack")}): {''.join([get_emoji(cat_type.lower() + ('cat' if cat_type in cattypes else 'pack')) for cat_type in all_types])}\n"
-
-            if not lock_success:
-                part_one += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
-
-            v = LayoutView()
-            v.add_item(TextDisplay(part_one))
-            await message.channel.send(view=v)
+            break
 
         del config.cat_cought_rain[channel.channel_id]
         del config.rain_starter[channel.channel_id]
@@ -6728,7 +6682,7 @@ async def get_perks(level, user):
             thelist.append(perks[int(p[1]) - 1]["id"])
 
     for _ in range(3):
-        luck = random.randint(1, 100)
+        luck = random.randint(1, 1000)/10
         total_weight = 0
         current_rarity = "common"
         for rarity, weight in weights.items():
@@ -7063,8 +7017,10 @@ async def cataine(message: discord.Interaction):
 
         if user.cataine_level != 10:
             user.cataine_level += 1
-        user.perk_selected = False
-        user.hibernation = True
+            user.perk_selected = False
+            user.hibernation = True
+        else:
+            user.cataine_active += 86400
         user.cataine_bought += 1
         user.cataine_total_cats = 0
         user.first_quote_seen = False
@@ -7079,7 +7035,10 @@ async def cataine(message: discord.Interaction):
         if user.cataine_level == 8:
             await mafia_cutscene(interaction)
 
-        await perk_screen(interaction)
+        if user.cataine_level != 10:
+            await perk_screen(interaction)
+        else:
+            await mafia_cutscene2(interaction)
 
     async def view_perks(interaction):
         global_user = await User.get_or_create(user_id=interaction.user.id)
@@ -7099,10 +7058,10 @@ async def cataine(message: discord.Interaction):
             perk_data = perks[int(perk.split("_")[1]) - 1]
             effect = perk_data["values"][int(perk.split("_")[0])]
             perk_embed.add_field(
-                name=f"\n{perk_data.get('name', '')}\n{perk_data.get('desc', '')}".replace("percent", str(effect))
+                name=f"\n{perk_data.get('name', '')} ({rarities[int(perk.split("_")[0])]})",
+                value=perk_data.get('desc', '').replace("percent", str(effect))
                 .replace("triple_none", str(effect / 2))
                 .replace("timer_add_streak", str(global_user.vote_streak)),
-                value=rarities[int(perk.split("_")[0])],
                 inline=False,
             )
         await interaction.response.send_message(embed=perk_embed, ephemeral=True)
@@ -7289,11 +7248,13 @@ async def cataine(message: discord.Interaction):
         if name == "Lucian Jr":
             name = "LucianJr"  # i hate file name conventions
         file = discord.File(f"images/mafia/{name}.png", filename=f"{name}.png")
+        embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc).set_thumbnail(url=f"attachment://{name}.png")
         if name == "Whiskers" and user.cataine_level == 10:
-            file = discord.File("images/mafia/Whiskers2.png", filename="Whiskers2.png")
+            file = discord.File("images/mafia/WhiskersII.png", filename="WhiskersII.png")
+            embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc).set_thumbnail(url=f"attachment://WhiskersII.png")
         if name == "Jeremy" and math.floor(math.random()*100) == 1:
             file = discord.File("images/mafia/sus.png", filename="sus.png")
-        embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc).set_thumbnail(url=f"attachment://{name}.png")
+            embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc).set_thumbnail(url=f"attachment://sus.png")
         await message.followup.send(embed=embed, file=file, view=myview, ephemeral=True)
     except Exception:
         embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc)
