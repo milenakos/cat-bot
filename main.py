@@ -6971,11 +6971,15 @@ async def cataine(message: discord.Interaction):
     quote_list = cataine_list["quotes"][level - 1]["quotes"]
     all_complete = True
 
-    desc = ""
+    desc = "\n"
     if user.hibernation:
-        desc += "\n\n**The timer for leveling up will not start until you start your bounties.**\n"
+        desc += "\nThe timer for leveling up will **not start** until you begin your bounties.**\n"
+    
+    desc += "\n**__Bounties:__**"
     if user.cataine_level > 0 and user.cataine_level < 11:
         colored = 0
+        # TODO: refactor
+
         for i in range(user.bounties):
             # get ready for spaghetti
             if i == 0:
@@ -7011,14 +7015,18 @@ async def cataine(message: discord.Interaction):
 
         colored = int(colored)
 
-        desc += f"\n\n**Pay Up! {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed.**"
+        if not all_complete:
+            desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} after completing your bounties."
+        else:
+            desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed."
+        
         desc += f"\n\n**Level {level}** - {change} and more!"
         desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
     if not level == 0 and not user.hibernation:
         if int(time.time()) - user.cataine_active < 1800:
-            desc += f"\n\n**Expires <t:{user.cataine_active}:R>** ({duration}h total)"
+            desc += f"\n\n**Hurry!** Levels down <t:{user.cataine_active}:R> ({duration}h total)"
         elif user.cataine_active > 0:
-            desc += f"\n\nExpires <t:{user.cataine_active}:R> ({duration}h total)"
+            desc += f"\n\nLevels down <t:{user.cataine_active}:R> ({duration}h total)"
 
     if user.cataine_level:
         if not user.first_quote_seen:
@@ -7083,22 +7091,23 @@ async def cataine(message: discord.Interaction):
         await user.refresh_from_db()
         perks = cataine_list["perks"]
         rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
-        if user.perks:
-            perk_embed = discord.Embed(title="Your Perks", color=Colors.brown, description="Here are your current perks:")
-            user_perks = user.perks
-            for perk in user_perks:
-                perk_data = perks[int(perk.split("_")[1]) - 1]
-                effect = perk_data["values"][int(perk.split("_")[0])]
-                perk_embed.add_field(
-                    name=f"\n{perk_data.get('name', '')}\n{perk_data.get('desc', '')}".replace("percent", str(effect))
-                    .replace("triple_none", str(effect / 2))
-                    .replace("timer_add_streak", str(global_user.vote_streak)),
-                    value=rarities[int(perk.split("_")[0])],
-                    inline=False,
-                )
-        else:
-            perk_embed = discord.Embed(
+        if not user.perks:
+            await interaction.response.send_message(embed=discord.Embed(
                 title="Your Perks", color=Colors.brown, description="You have no perks yet. Pay for your first level of cataine to get one!"
+            ), ephemeral=True)
+            return
+
+        perk_embed = discord.Embed(title="Your Perks", color=Colors.brown, description="Here are your current perks:")
+        user_perks = user.perks
+        for perk in user_perks:
+            perk_data = perks[int(perk.split("_")[1]) - 1]
+            effect = perk_data["values"][int(perk.split("_")[0])]
+            perk_embed.add_field(
+                name=f"\n{perk_data.get('name', '')}\n{perk_data.get('desc', '')}".replace("percent", str(effect))
+                .replace("triple_none", str(effect / 2))
+                .replace("timer_add_streak", str(global_user.vote_streak)),
+                value=rarities[int(perk.split("_")[0])],
+                inline=False,
             )
         await interaction.response.send_message(embed=perk_embed, ephemeral=True)
 
@@ -7115,19 +7124,21 @@ async def cataine(message: discord.Interaction):
         rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
         perknames = []
 
+        perk_embed = discord.Embed(
+            title="Select one of these perks!",
+            color=Colors.green,
+        )
+        perk_embed.set_footer(text="The cataine timer will not start until you begin your bounties.")
+
         try:
             perks = [user.perk1, user.perk2, user.perk3]
-            perk_embed = discord.Embed(
-                title="Select a perk!",
-                color=Colors.green,
-                description="The cataine timer will not start until you catch your next cat.",
-            )
             for i, perk in enumerate(perks):
                 perk_data = perks_data[int(perk.split("_")[1]) - 1]
                 effect = perk_data["values"][int(perk.split("_")[0])]
+
                 perk_embed.add_field(
-                    name=rarities[int(perk.split("_")[0])],
-                    value=f"{perk_data.get('name', '')}\n{perk_data.get('desc', '')}".replace("percent", str(effect))
+                    name=f"{perk_data.get('name', '')} ({rarities[int(perk.split("_")[0])]})",
+                    value=f"{perk_data.get('desc', '')}".replace("percent", str(effect))
                     .replace("triple_none", str(effect / 2))
                     .replace("timer_add_streak", str(global_user.vote_streak)),
                 )
@@ -7142,19 +7153,13 @@ async def cataine(message: discord.Interaction):
         except Exception:
             perks = await get_perks(level, user)
 
-            perk_embed = discord.Embed(
-                title="Select a perk!",
-                color=Colors.green,
-                description="The cataine timer will not start until you catch your next cat.",
-            )
-
             for perk in perks:
                 perk_data = perks_data[int(perk["uuid"].split("_")[1]) - 1]
                 effect = perk_data["values"][int(perk["uuid"].split("_")[0])]
 
                 perk_embed.add_field(
-                    name=rarities[int(perk["uuid"].split("_")[0])],
-                    value=f"{perk_data.get('name', '')}\n{perk_data.get('desc', '')}".replace("percent", str(effect))
+                    name=f"{perk_data.get('name', '')} ({rarities[int(perk["uuid"].split("_")[0])]})",
+                    value=f"{perk_data.get('desc', '')}".replace("percent", str(effect))
                     .replace("triple_none", str(effect / 2))
                     .replace("timer_add_streak", str(global_user.vote_streak)),
                 )
@@ -7163,7 +7168,6 @@ async def cataine(message: discord.Interaction):
         user.perk1 = perks[0]["uuid"] if len(perks) > 0 else None
         user.perk2 = perks[1]["uuid"] if len(perks) > 1 else None
         user.perk3 = perks[2]["uuid"] if len(perks) > 2 else None
-        perk_embed.set_footer(text="The cataine timer will not start until you begin your bounties.")
         await user.save()
 
         async def select_perk(perk, interaction, user):
@@ -7257,6 +7261,12 @@ async def cataine(message: discord.Interaction):
         await interaction.response.send_message("Bounties started!", ephemeral=True)
 
     myview = View(timeout=VIEW_TIMEOUT)
+
+    if not user.perk_selected:
+        button3 = Button(label="Select Perk", style=ButtonStyle.red)
+        button3.callback = perk_screen
+        myview.add_item(button3)
+
     if user.cataine_level == 0:
         button = Button(label="Begin.", style=ButtonStyle.blurple)
         button.callback = pay_cataine
@@ -7268,6 +7278,7 @@ async def cataine(message: discord.Interaction):
     elif user.cataine_level < 11:
         button = Button(label="Pay Up!", style=ButtonStyle.blurple)
         button.callback = pay_cataine
+        button.disabled = all_complete
         myview.add_item(button)
 
     button2 = Button(label="💡 Help", style=ButtonStyle.gray)
@@ -7278,11 +7289,6 @@ async def cataine(message: discord.Interaction):
         button1 = Button(label="View Perks", style=ButtonStyle.gray)
         button1.callback = view_perks
         myview.add_item(button1)
-
-    if not user.perk_selected:
-        button3 = Button(label="Select Perk", style=ButtonStyle.red)
-        button3.callback = perk_screen
-        myview.add_item(button3)
     try:
         if name == "Lucian Jr":
             name = "LucianJr"  # i hate file name conventions
