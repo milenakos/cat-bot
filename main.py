@@ -5894,10 +5894,15 @@ async def roulette(message: discord.Interaction):
                 await asyncio.sleep(wait_time)
 
             color = colors[final_choice]
+
+            broke_suffix = ""
+            if user.roulette_balance <= 0:
+                broke_suffix = "\ndebt is allowed - you can still gamble up to **100** cat dollars"
+
             embed = discord.Embed(
                 color=Colors.maroon,
                 title="winner!!!" if win else "womp womp",
-                description=f"your bet was {int(self.betamount.value):,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance:,}** cat dollars",
+                description=f"your bet was {int(self.betamount.value):,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance:,}** cat dollars{broke_suffix}",
             )
             view = View(timeout=VIEW_TIMEOUT)
             b = Button(label="spin", style=ButtonStyle.blurple)
@@ -5920,10 +5925,14 @@ async def roulette(message: discord.Interaction):
 
         await interaction.response.send_modal(RouletteModel())
 
+    broke_suffix = ""
+    if user.roulette_balance <= 0:
+        broke_suffix = "\n\ndebt is allowed - you can still gamble up to **100** cat dollars"
+
     embed = discord.Embed(
         color=Colors.maroon,
         title="hecking roulette table",
-        description=f"your balance is **{user.roulette_balance:,}** cat dollars\n\nyou can gamble up to **{max(user.roulette_balance, 100):,}** cat dollars rn",
+        description=f"your balance is **{user.roulette_balance:,}** cat dollars{broke_suffix}",
     )
 
     view = View(timeout=VIEW_TIMEOUT)
