@@ -6973,7 +6973,7 @@ async def cataine(message: discord.Interaction):
 
     desc = "\n"
     if user.hibernation:
-        desc += "\nThe timer for leveling up will **not start** until you begin your bounties.**\n"
+        desc += "\nThe timer for leveling up will **not start** until you begin your bounties.\n"
     
     desc += "\n**__Bounties:__**"
     if user.cataine_level > 0 and user.cataine_level < 11:
@@ -6993,9 +6993,9 @@ async def cataine(message: discord.Interaction):
                 all_complete = False
             
             if bounty_progress != 0:
-                desc += f"**{bounty_data[bounty_id]['desc']}**".replace("X", str(bounty_total))
+                desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total))
             else:
-                desc += f"**{bounty_data[bounty_id]['desc']}**".replace("X", str(bounty_total - bounty_progress) + " more")
+                desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total - bounty_progress) + " more")
             
             desc = desc.replace("type", f"{get_emoji(bounty_type.lower() + 'cat')} {bounty_type}")
 
