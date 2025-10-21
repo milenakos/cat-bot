@@ -7278,7 +7278,7 @@ async def cataine(message: discord.Interaction):
         if name == "Whiskers" and user.cataine_level == 10:
             file = discord.File("images/mafia/WhiskersII.png", filename="WhiskersII.png")
             embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc).set_thumbnail(url=f"attachment://WhiskersII.png")
-        if name == "Jeremy" and math.floor(math.random()*100) == 1:
+        if name == "Jeremy" and random.randint(1, 100) == 1:
             file = discord.File("images/mafia/sus.png", filename="sus.png")
             embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc).set_thumbnail(url=f"attachment://sus.png")
         await message.followup.send(embed=embed, file=file, view=myview, ephemeral=True)
