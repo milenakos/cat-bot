@@ -6818,9 +6818,13 @@ async def level_down(user, message, ephemeral=False):
     await set_mafia_offer(user.cataine_level, user)
     await user.save()
 
+    # TODO: add quotes per person, or just remove this change
+    name = cataine_list["levels"][user.cataine_level]["name"]
+    quote = random.choice(["womp womp", "try completing your bounties next time", "unlucky", "you can do better"])
+
     embed = discord.Embed(
-        title="❌ Mafia Level Failed", color=Colors.red, description=f"Level {user.cataine_level + 1} failed.\nMoving down to level {user.cataine_level}..."
-    ).set_author(name="Mafia Level " + str(user.cataine_level + 1))
+        title="❌ Mafia Level Failed", color=Colors.red, description=f"**{name}**: *{quote}*\n\nLevel {user.cataine_level + 1} failed!\nYou're now on level {user.cataine_level}."
+    )
 
     if ephemeral:
         return embed
@@ -6975,8 +6979,8 @@ async def cataine(message: discord.Interaction):
     if user.hibernation:
         desc += "\nThe timer for leveling up will **not start** until you begin your bounties.\n"
     
-    desc += "\n**__Bounties:__**"
     if user.cataine_level > 0 and user.cataine_level < 11:
+        desc += "\n**__Bounties:__**"
         colored = 0
 
         def format_bounty(bounty_numstr):
@@ -6992,11 +6996,14 @@ async def cataine(message: discord.Interaction):
             else:
                 all_complete = False
             
-            if bounty_progress != 0:
+            if bounty_progress == 0:
                 desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total))
             else:
                 desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total - bounty_progress) + " more")
             
+            if bounty_total - bounty_progress == 1:
+                desc = desc.replace("cats", "cat")
+
             desc = desc.replace("type", f"{get_emoji(bounty_type.lower() + 'cat')} {bounty_type}")
 
             colored += (bounty_progress / bounty_total) * 10 / user.bounties
@@ -7093,18 +7100,19 @@ async def cataine(message: discord.Interaction):
             ), ephemeral=True)
             return
 
-        perk_embed = discord.Embed(title="Your Perks", color=Colors.brown, description="Here are your current perks:")
+        perk_embed = discord.Embed(title="Your Perks", color=Colors.brown)
         user_perks = user.perks
         for perk in user_perks:
             perk_data = perks[int(perk.split("_")[1]) - 1]
             effect = perk_data["values"][int(perk.split("_")[0])]
             perk_embed.add_field(
-                name=f"\n{perk_data.get('name', '')}\n{perk_data.get('desc', '')}".replace("percent", str(effect))
+                name=f"{perk_data.get('name', '')} ({rarities[int(perk.split("_")[0])]})",
+                value=f"{perk_data.get('desc', '')}".replace("percent", str(effect))
                 .replace("triple_none", str(effect / 2))
-                .replace("timer_add_streak", str(global_user.vote_streak)),
-                value=rarities[int(perk.split("_")[0])],
+                .replace("timer_add_streak", str(global_user.vote_streak))",
                 inline=False,
             )
+        perk_embed.set_footer(text="The last perk in this list will be removed if you level down.")
         await interaction.response.send_message(embed=perk_embed, ephemeral=True)
 
     async def perk_screen(interaction):
@@ -7180,15 +7188,15 @@ async def cataine(message: discord.Interaction):
 
             for i in range(user.bounties):
                 if i == 0:
-                    text += f"\n**{bounty_data[user.bounty_id_one]['desc']}**".replace("X", str(user.bounty_total_one - user.bounty_progress_one)).replace(
+                    text += f"\n- {bounty_data[user.bounty_id_one]['desc']}".replace("X", str(user.bounty_total_one - user.bounty_progress_one)).replace(
                         "type", user.bounty_type_one
                     )
                 if i == 1:
-                    text += f"\n**{bounty_data[user.bounty_id_two]['desc']}**".replace("X", str(user.bounty_total_two - user.bounty_progress_two)).replace(
+                    text += f"\n- {bounty_data[user.bounty_id_two]['desc']}".replace("X", str(user.bounty_total_two - user.bounty_progress_two)).replace(
                         "type", user.bounty_type_two
                     )
                 if i == 2:
-                    text += f"\n**{bounty_data[user.bounty_id_three]['desc']}**".replace(
+                    text += f"\n- {bounty_data[user.bounty_id_three]['desc']}".replace(
                         "X", str(user.bounty_total_three - user.bounty_progress_three)
                     ).replace("type", user.bounty_type_three)
 
