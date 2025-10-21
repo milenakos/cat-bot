@@ -6973,7 +6973,7 @@ async def cataine(message: discord.Interaction):
 
     desc = "\n"
     if user.hibernation:
-        desc += "\nThe timer for leveling up will **not start** until you begin your bounties.**\n"
+        desc += "\nThe timer for leveling up will **not start** until you begin your bounties.\n"
     
     desc += "\n**__Bounties:__**"
     if user.cataine_level > 0 and user.cataine_level < 11:
