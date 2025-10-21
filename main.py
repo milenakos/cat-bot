@@ -2036,11 +2036,15 @@ async def on_message(message: discord.Message):
                         le_emoji = "eGirl"
                         normal_bump = False
                         if not channel.forcespawned:
-                            channel.cat_rains += math.ceil(600 / 2.75)
-                            if channel.cat_rains > math.ceil(600 / 2.75):
-                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
-                                await message.channel.send("# ‼️‼️ RAIN EXTENDED BY 10 MINUTES ‼️‼️")
+                            if double_boost:
+                                rainboost = 1200
+                            else:
+                                rainboost = 600
+                            channel.cat_rains += math.ceil(rainboost / 2.75)
+                            if channel.cat_rains > math.ceil(rainboost / 2.75):
+                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {rainboost/60} MINUTES ‼️‼️")
+                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {rainboost/60} MINUTES ‼️‼️")
+                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {rainboost/60} MINUTES ‼️‼️")
                             else:
                                 decided_time = random.uniform(1, 2)
                                 channel.rain_should_end = int(time.time() + decided_time)
@@ -2050,7 +2054,10 @@ async def on_message(message: discord.Message):
                                 bot.loop.create_task(rain_recovery_loop(channel))
 
                     if normal_bump:
-                        suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
+                        if double_boost:
+                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch twice from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
+                        else:
+                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
                     elif not channel.forcespawned:
                         suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
 
@@ -2125,7 +2132,7 @@ async def on_message(message: discord.Message):
                         await interaction.followup.send(phrase, ephemeral=True)
 
                 vote_time_user = await User.get_or_create(user_id=message.author.id)
-                if random.randint(0, 10) == 0 and user.cat_Fine >= 20 and not user.dark_market_active:
+                if random.randint(0, 10) == 0 and user.total_catches > 100 and not user.dark_market_active:
                     button = Button(label="You see a shadow...", style=ButtonStyle.red)
                     button.callback = dark_market_cutscene
                 elif config.WEBHOOK_VERIFY and vote_time_user.vote_time_topgg + 43200 < time.time():
@@ -3689,9 +3696,7 @@ async def rain_end(message, channel):
             return
         rain_server = config.cat_cought_rain[channel.channel_id]
 
-        # you can throw out the name of the emoji to save on characters
-        funny_emojis = {k: re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(k.lower() + "cat"), count=1) for k in rain_server.keys()}
-
+        part_one = "## Rain Summary\n"
         reverse_mapping = {}
 
         for cat_type, user_ids in rain_server.items():
@@ -3724,7 +3729,6 @@ async def rain_end(message, channel):
             for user_id, all_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 show_cats = ""
                 shortened_types = False
-
                 combined_values = {p["name"]: p["value"] for p in pack_data}
                 combined_values.update(type_dict)
 
@@ -3758,7 +3762,6 @@ async def rain_end(message, channel):
                 else:
                     part_one += f"{user_id} ({cat_len} {get_emoji("finecat")}, {len(all_types) - cat_len} {get_emoji("woodenpack")}){show_cats}\n"
 
-
             part_two = ""
             all_types = cattypes + [p["name"] for p in pack_data]
             for thing_type in all_types:
@@ -3775,23 +3778,11 @@ async def rain_end(message, channel):
                     else:
                         part_two += f"{get_emoji(thing_type.lower() + 'pack')} {' '.join(rain_server[thing_type])}\n"
 
-            if epic_fail:
-                part_two = ""
-                for cat_type in cattypes:
-                    if cat_type not in rain_server.keys():
-                        continue
-                    if len(rain_server[cat_type]) > 5:
-                        part_two += f"{funny_emojis[cat_type]} *{len(rain_server[cat_type])} catches*\n"
-                    else:
-                        part_two += f"{funny_emojis[cat_type]} {' '.join(rain_server[cat_type])}\n"
+            if not lock_success:
+                part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
 
-                if not lock_success:
-                    part_two += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
-
-                parts.append(part_two)
-
-            for rain_msg in parts:
-                if ":i:" not in rain_msg:
+            for rain_msg in [part_one, part_two]:
+                if "cat:" not in rain_msg:
                     continue
                 # this is to bypass character limit up to 4k
                 v = LayoutView()
@@ -3819,8 +3810,12 @@ async def rain_end(message, channel):
                 else:
                     part_one += f"{user_id} ({cat_len} {get_emoji("finecat")}, {len(all_types) - cat_len} {get_emoji("woodenpack")}): {''.join([get_emoji(cat_type.lower() + ('cat' if cat_type in cattypes else 'pack')) for cat_type in all_types])}\n"
 
+            if not lock_success:
+                part_one += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
 
-            break
+            v = LayoutView()
+            v.add_item(TextDisplay(part_one))
+            await message.channel.send(view=v)
 
         del config.cat_cought_rain[channel.channel_id]
         del config.rain_starter[channel.channel_id]
@@ -6918,6 +6913,7 @@ So fine. Continue to torment us. You've won. Are you happy now?"
 
     async def button3a_callback(interaction: discord.Interaction):
         await interaction.response.send_message(content=text4a, ephemeral=True)
+        achemb(interaction, "mafia_win", "send")
 
     async def button3b_callback(interaction: discord.Interaction):
         await interaction.response.send_message(content=text4b, ephemeral=True)
@@ -6968,6 +6964,7 @@ async def cataine(message: discord.Interaction):
     level_data = cataine_list["levels"][level]
     rank = level_data["name"]
     change = level_data["change"]
+    duration = level_data["duration"]
     bounty_data = cataine_list["bounties"]
     cat_type = user.cataine_price
     amount = user.cataine_amount
@@ -7019,9 +7016,9 @@ async def cataine(message: discord.Interaction):
         desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
     if not level == 0 and not user.hibernation:
         if int(time.time()) - user.cataine_active < 1800:
-            desc += f"\n\n**Expires <t:{user.cataine_active}:R>**"
+            desc += f"\n\n**Expires <t:{user.cataine_active}:R>** ({duration}h total)"
         elif user.cataine_active > 0:
-            desc += f"\n\nExpires <t:{user.cataine_active}:R>"
+            desc += f"\n\nExpires <t:{user.cataine_active}:R> ({duration}h total)"
 
     if user.cataine_level:
         if not user.first_quote_seen:
@@ -7062,7 +7059,6 @@ async def cataine(message: discord.Interaction):
 
         if user.cataine_level != 10:
             user.cataine_level += 1
-            await achemb(interaction, "mafia_win", "send")
         user.perk_selected = False
         user.hibernation = True
         user.cataine_bought += 1
@@ -7124,7 +7120,7 @@ async def cataine(message: discord.Interaction):
             perk_embed = discord.Embed(
                 title="Select a perk!",
                 color=Colors.green,
-                description="The cataine timer will not start until you catch your next cat.\n\n**Available Perks:**",
+                description="The cataine timer will not start until you catch your next cat.",
             )
             for i, perk in enumerate(perks):
                 perk_data = perks_data[int(perk.split("_")[1]) - 1]
@@ -7149,7 +7145,7 @@ async def cataine(message: discord.Interaction):
             perk_embed = discord.Embed(
                 title="Select a perk!",
                 color=Colors.green,
-                description="The cataine timer will not start until you catch your next cat.\n\n**Available Perks:**",
+                description="The cataine timer will not start until you catch your next cat.",
             )
 
             for perk in perks:
@@ -7167,7 +7163,7 @@ async def cataine(message: discord.Interaction):
         user.perk1 = perks[0]["uuid"] if len(perks) > 0 else None
         user.perk2 = perks[1]["uuid"] if len(perks) > 1 else None
         user.perk3 = perks[2]["uuid"] if len(perks) > 2 else None
-        perk_embed.set_footer(text="Select a perk to continue.")
+        perk_embed.set_footer(text="The cataine timer will not start until you begin your bounties.")
         await user.save()
 
         async def select_perk(perk, interaction, user):
@@ -7274,24 +7270,27 @@ async def cataine(message: discord.Interaction):
         button.callback = pay_cataine
         myview.add_item(button)
 
-    button2 = Button(label="💡 Help", style=ButtonStyle.blurple)
+    button2 = Button(label="💡 Help", style=ButtonStyle.gray)
     button2.callback = help_screen
     myview.add_item(button2)
 
-    button1 = Button(label="View Perks", style=ButtonStyle.green)
-    button1.callback = view_perks
-    myview.add_item(button1)
+    if user.cataine_level > 0:
+        button1 = Button(label="View Perks", style=ButtonStyle.gray)
+        button1.callback = view_perks
+        myview.add_item(button1)
 
     if not user.perk_selected:
         button3 = Button(label="Select Perk", style=ButtonStyle.red)
         button3.callback = perk_screen
         myview.add_item(button3)
     try:
-        if name == "Lucian II":
-            name = "LucianII"  # i hate file name conventions
-        if name == "Jeremy" and math.floor(math.random()*100) == 1:
-            name = "sus"
+        if name == "Lucian Jr":
+            name = "LucianJr"  # i hate file name conventions
         file = discord.File(f"images/mafia/{name}.png", filename=f"{name}.png")
+        if name == "Whiskers" and user.cataine_level == 10:
+            file = discord.File("images/mafia/Whiskers2.png", filename="Whiskers2.png")
+        if name == "Jeremy" and math.floor(math.random()*100) == 1:
+            file = discord.File("images/mafia/sus.png", filename="sus.png")
         embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc).set_thumbnail(url=f"attachment://{name}.png")
         await message.followup.send(embed=embed, file=file, view=myview, ephemeral=True)
     except Exception:
