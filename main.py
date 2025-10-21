@@ -372,6 +372,7 @@ news_list = [
     {"title": "Regarding recent instabilities", "emoji": "🗒️"},
     {"title": "cat bot reached #5 on top.gg", "emoji": "yippee"},
     {"title": "nominate cat bot for top.gg awards", "emoji": "🏆"},
+    {"title": "something is coming", "emoji": "🧂"},
 ]
 
 
@@ -2679,6 +2680,17 @@ thanks for using cat bot!""",
                 discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/YgQ0flQ.png")),
                 Button(label="Nominate Cat Bot", url="https://top.gg/bot/966695034340663367", emoji="🏆"),
                 "-# <t:1759513848>",
+            )
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
+        elif news_id == 11:
+            embed = Container(
+                "## something is coming",
+                "i have been told by a trusted source that the mafia is changing.",
+                "we don't know why, or what's happening, but it's happening on the 24th.",
+                "be prepared.",
+                "-# <t:1761069203>",
             )
             view.add_item(embed)
             view.add_item(back_row)
