@@ -6978,40 +6978,36 @@ async def cataine(message: discord.Interaction):
     desc += "\n**__Bounties:__**"
     if user.cataine_level > 0 and user.cataine_level < 11:
         colored = 0
-        # TODO: refactor
+
+        def format_bounty(bounty_numstr):
+            nonlocal desc, all_complete, colored, user, bounty_data
+            bounty_id = user[f"bounty_id_{bounty_numstr}"]
+            bounty_type = user[f"bounty_type_{bounty_numstr}"]
+            bounty_total = user[f"bounty_total_{bounty_numstr}"]
+            bounty_progress = user[f"bounty_progress_{bounty_numstr}"]
+
+            desc += "\n- "
+            if bounty_progress == bounty_total:
+                desc += "✅ "
+            else:
+                all_complete = False
+            
+            if bounty_progress != 0:
+                desc += f"**{bounty_data[bounty_id]['desc']}**".replace("X", str(bounty_total))
+            else:
+                desc += f"**{bounty_data[bounty_id]['desc']}**".replace("X", str(bounty_total - bounty_progress) + " more")
+            
+            desc = desc.replace("type", f"{get_emoji(bounty_type.lower() + 'cat')} {bounty_type}")
+
+            colored += (bounty_progress / bounty_total) * 10 / user.bounties
 
         for i in range(user.bounties):
-            # get ready for spaghetti
             if i == 0:
-                desc += f"\n**{bounty_data[user.bounty_id_one]['desc']}**".replace("X", str(user.bounty_total_one - user.bounty_progress_one)).replace(
-                    "type", f"{get_emoji(user.bounty_type_one.lower() + 'cat')} {user.bounty_type_one}"
-                )
-
-                colored += (user.bounty_progress_one / user.bounty_total_one) * 10 / user.bounties
-                if user.bounty_progress_one == user.bounty_total_one:
-                    desc += "\n**Complete!**"
-                    continue
-                all_complete = False
+                format_bounty("one")
             if i == 1:
-                desc += f"\n**{bounty_data[user.bounty_id_two]['desc']}**".replace("X", str(user.bounty_total_two - user.bounty_progress_two)).replace(
-                    "type", f"{get_emoji(user.bounty_type_two.lower() + 'cat')} {user.bounty_type_two}"
-                )
-
-                colored += (user.bounty_progress_two / user.bounty_total_two) * 10 / user.bounties
-                if user.bounty_progress_two == user.bounty_total_two:
-                    desc += "\n**Complete!**"
-                    continue
-                all_complete = False
+                format_bounty("two")
             if i == 2:
-                desc += f"\n**{bounty_data[user.bounty_id_three]['desc']}**".replace("X", str(user.bounty_total_three - user.bounty_progress_three)).replace(
-                    "type", f"{get_emoji(user.bounty_type_three.lower() + 'cat')} {user.bounty_type_three}"
-                )
-
-                colored += (user.bounty_progress_three / user.bounty_total_three) * 10 / user.bounties
-                if user.bounty_progress_three == user.bounty_total_three:
-                    desc += "\n**Complete!**"
-                    continue
-                all_complete = False
+                format_bounty("three")
 
         colored = int(colored)
 
@@ -7062,7 +7058,7 @@ async def cataine(message: discord.Interaction):
                 return
             user[f"cat_{cat_type}"] -= amount
         if not user.perk_selected:
-            await interaction.response.send_message("You haven't selected a perk yet!", ephemeral=True)
+            await interaction.response.send_message("You haven't selected a perk from your previous level yet!", ephemeral=True)
             return
 
         if user.cataine_level != 10:
