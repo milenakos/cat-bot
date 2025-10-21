@@ -7274,7 +7274,7 @@ async def cataine(message: discord.Interaction):
     elif user.cataine_level < 11:
         button = Button(label="Pay Up!", style=ButtonStyle.blurple)
         button.callback = pay_cataine
-        button.disabled = all_complete
+        button.disabled = not all_complete
         myview.add_item(button)
 
     button2 = Button(label="💡 Help", style=ButtonStyle.gray)
