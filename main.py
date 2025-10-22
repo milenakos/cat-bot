@@ -7235,8 +7235,8 @@ async def cataine(message: discord.Interaction):
                 if perk_data["id"] == "timer_add_streak":
                     global_user = await User.get_or_create(user_id=interaction.user.id)
                     duration_bonus = global_user.vote_streak * 60
-                    if duration_bonus > 100:
-                        duration_bonus = min(100 + math.log10(duration_bonus - 100) * 5, duration_bonus)
+                    if duration_bonus > 6000:
+                        duration_bonus = min(100 + math.log10(duration_bonus/60 - 100) * 5, duration_bonus) * 60
         user.cataine_active = int(time.time()) + 3600 * duration + duration_bonus
         await user.save()
         await interaction.response.send_message("Bounties started!", ephemeral=True)
