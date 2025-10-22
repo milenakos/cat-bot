@@ -6829,7 +6829,7 @@ As you return to your hideout, you hear a howl in the distance."""
 
     async def button3_callback(interaction: discord.Interaction):
         await interaction.response.defer()
-        await interaction.edit_original_response(content=text4, ephemeral=True)
+        await interaction.edit_original_response(content=text4, view=None)
         await achemb(interaction, "thanksforplaying", "send")
 
     async def button2a_callback(interaction: discord.Interaction):
@@ -6838,14 +6838,14 @@ As you return to your hideout, you hear a howl in the distance."""
         button3.callback = button3_callback
         myview3.add_item(button3)
         await interaction.response.defer()
-        await interaction.edit_original_response(content=text3a, view=myview3, ephemeral=True)
+        await interaction.edit_original_response(content=text3a, view=myview3)
 
     async def button2b_callback(interaction: discord.Interaction):
         myview3 = View(timeout=VIEW_TIMEOUT)
         button3 = Button(label="Next", style=ButtonStyle.blurple)
         button3.callback = button3_callback
         myview3.add_item(button3)
-        await interaction.response.send_message(content=text3b, view=myview3, ephemeral=True)
+        await interaction.response.send_message(content=text3b, view=myview3)
 
     async def button1_callback(interaction: discord.Interaction):
         myview2 = View(timeout=VIEW_TIMEOUT)
@@ -6856,7 +6856,7 @@ As you return to your hideout, you hear a howl in the distance."""
         myview2.add_item(button2a)
         myview2.add_item(button2b)
         await interaction.response.defer()
-        await interaction.edit_original_response(content=text2, view=myview2, ephemeral=True)
+        await interaction.edit_original_response(content=text2, view=myview2)
 
     myview1 = View(timeout=VIEW_TIMEOUT)
     button1 = Button(label="RUN!", style=ButtonStyle.blurple)
@@ -6883,12 +6883,13 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
     text4b = """woa you looked at the code! crazy. btw stella is cute"""
 
     async def button3a_callback(interaction: discord.Interaction):
-        await interaction.response.send_message(content=text4a, ephemeral=True)
+        await interaction.response.defer()
+        await interaction.edit_original_response(content=text4a, view=None)
         await achemb(interaction, "mafia_win", "send")
 
     async def button3b_callback(interaction: discord.Interaction):
         await interaction.response.defer()
-        await interaction.edit_original_response(content=text4b, ephemeral=True)
+        await interaction.edit_original_response(content=text4b, view=None)
 
     async def button2_callback(interaction: discord.Interaction):
         myview3 = View(timeout=VIEW_TIMEOUT)
@@ -6899,7 +6900,7 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
         myview3.add_item(button3a)
         myview3.add_item(button3b)
         await interaction.response.defer()
-        await interaction.edit_original_response(content=text3, view=myview3, ephemeral=True)
+        await interaction.edit_original_response(content=text3, view=myview3)
 
     async def button1_callback(interaction: discord.Interaction):
         myview2 = View(timeout=VIEW_TIMEOUT)
@@ -6907,7 +6908,7 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
         button2.callback = button2_callback
         myview2.add_item(button2)
         await interaction.response.defer()
-        await interaction.edit_original_response(content=text2, view=myview2, ephemeral=True)
+        await interaction.edit_original_response(content=text2, view=myview2)
 
     myview1 = View(timeout=VIEW_TIMEOUT)
     button1 = Button(label="RUN!", style=ButtonStyle.blurple)
@@ -6952,7 +6953,7 @@ async def catnip(message: discord.Interaction):
     desc = "\n"
     if user.hibernation:
         desc += "\nThe timer for leveling up will **not start** until you begin your bounties.\n"
-    
+
     if user.catnip_level > 0 and user.catnip_level < 11:
         desc += "\n**__Bounties:__**"
         colored = 0
@@ -6969,12 +6970,12 @@ async def catnip(message: discord.Interaction):
                 desc += "✅ "
             else:
                 all_complete = False
-            
+
             if bounty_progress == 0:
                 desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total))
             else:
                 desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total - bounty_progress) + " more")
-            
+
             if bounty_total - bounty_progress == 1:
                 desc = desc.replace("cats", "cat")
 
@@ -6996,7 +6997,7 @@ async def catnip(message: discord.Interaction):
             desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} after completing your bounties."
         else:
             desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed."
-        
+
         desc += f"\n\n**Level {level}** - {change} and more!"
         desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
     if not level == 0 and not user.hibernation:
@@ -7466,9 +7467,7 @@ async def achievements(message: discord.Interaction):
             if hidden_counter == 15:
                 await interaction.followup.send("I meant it. catnip is now located in /catnip.", ephemeral=True)
             if hidden_counter == 20:
-                await interaction.followup.send(
-                    "I really meant it. catnip is now located in /catnip.\nOh wait, did you want that achievement?", ephemeral=True
-                )
+                await interaction.followup.send("I really meant it. catnip is now located in /catnip.\nOh wait, did you want that achievement?", ephemeral=True)
                 await achemb(message, "darkest_market", "send")
             if hidden_counter == 50:
                 await interaction.followup.send("I really, really meant it. catnip is now located in /catnip.", ephemeral=True)
