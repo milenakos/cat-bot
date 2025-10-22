@@ -94,7 +94,7 @@ CREATE TABLE public.profile (
     bounty_progress_two integer DEFAULT 0,
     bounty_progress_three integer DEFAULT 0,
     bounties smallint DEFAULT 0,
-    perks character varying[] DEFAULT ARRAY[''],
+    perks character varying[] DEFAULT ARRAY[],
     perk_selected boolean DEFAULT true,
     perk1 character varying(30) DEFAULT ''::character varying,
     perk2 character varying(30) DEFAULT ''::character varying,
@@ -281,7 +281,10 @@ CREATE TABLE public.profile (
     roulette_winner boolean DEFAULT false,
     roulette_prodigy boolean DEFAULT false,
     failed_gambler boolean DEFAULT false,
-    certified_yapper boolean DEFAULT false
+    certified_yapper boolean DEFAULT false,
+    ping_reply boolean DEFAULT false,
+    highest_cataine_level integer DEFAULT 0,
+    bounties_complete integer DEFAULT 0
 );
 
 
