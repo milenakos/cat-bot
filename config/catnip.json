@@ -10,8 +10,8 @@
     {"id": "platinum_pack", "exclusive": false, "name": "Pack Catcher - Platinum", "desc":"**percent%** chance of getting a **platinum pack** on catch.", "weight": 2.5, "values": [0.125, 0.1875, 0.3125, 0.625, 0.9375]},
     {"id": "double_boost", "exclusive": false, "name": "Bright Catcher", "desc":"**percent%** chance of prisms boosting catches by **two rarity levels**.", "weight": 5, "values": [10, 15, 25, 50, 75]},
     {"id": "triple_ach", "exclusive": true, "name": "Precise Catcher", "desc":"Getting **Purrfection or All The Same** times on catch **triples** cats recieved.", "weight": 10, "values": [100, 0, 0, 0, 0]},
-    {"id": "timer_add", "exclusive": false, "name": "Time Manipulator", "desc":"**percent%** chance of adding **5 minutes** to cataine timer on catch.", "weight": 10, "values": [1, 1.5, 2.5, 5, 7.5]},
-    {"id": "timer_add_streak", "exclusive": true, "name": "Voting Booster", "desc":"Your vote streak **(timer_add_streak)** boosts cataine duration.", "weight": 5, "values": [0, 0, 0, 0, 100]},
+    {"id": "timer_add", "exclusive": false, "name": "Time Manipulator", "desc":"**percent%** chance of adding **5 minutes** to catnip timer on catch.", "weight": 10, "values": [1, 1.5, 2.5, 5, 7.5]},
+    {"id": "timer_add_streak", "exclusive": true, "name": "Voting Booster", "desc":"Your vote streak **(timer_add_streak)** boosts catnip duration.", "weight": 5, "values": [0, 0, 0, 0, 100]},
     {"id": "double_slow", "exclusive": true, "name": "Slow Catcher", "desc":"Cats cought in **percent minutes** or more always **double**.", "weight": 5, "values": [10, 15, 25, 50, 75]},
     {"id": "double_first", "exclusive": false, "name": "Speedrunner", "desc":"The first **percent** cats cought each level always **double**.", "weight": 5, "values": [8, 12, 20, 40, 60]}
   ],
@@ -53,15 +53,15 @@
       "level": 3,
       "name": "Jinx",
       "quotes": {
-        "first": "Heyyy! It's you! I've heard a lot about you. Good luck beating me, though.",
+        "first": "heyyy! it's you! i've heard a lot about you. good luck beating me, though.",
         "normal": [
-          "You aren't going to beat me by sitting here refreshing my quotes.",
-          "There's people ahead of me that- well, you'll see",
-          "You can't trust anyone here. Not even me."
+          "you aren't going to beat me by sitting here refreshing my quotes.",
+          "there's people ahead of me that- well, you'll see",
+          "you can't trust anyone here. not even me."
         ],
         "levelup": [
-          "Well, you did it. I'm impressed. Just be warned. The next guy is really weird...",
-          "You're pretty good at this. Don't let it go to your head."
+          "well, you did it. i'm impressed. just be warned. the next guy is really weird...",
+          "you're pretty good at this. don't let it go to your head."
         ]
       }
     },
@@ -134,8 +134,8 @@
         "first": "That guy was a dog? Yeah, that checks out.",
         "normal": [
           "It's not always about the money… it's about the PAWS BABY LOVE THE PAWS COME ON HIT A HOME RUN",
-          "Back in the day we just scammed people and made them pay higher and higher prices for cataine. Some people even paid 100 eGirl cats!",
-          "Cataine really depends on who makes it and what they put into it. We here at the top? We get the best stuff. Those people at the bottom get basically nothing.",
+          "Back in the day we just scammed people and made them pay higher and higher prices for catnip. Some people even paid 100 eGirl cats!",
+          "catnip really depends on who makes it and what they put into it. We here at the top? We get the best stuff. Those people at the bottom get basically nothing.",
           "Why are you even trying to go any further? Don't you have enough already?"
         ],
         "levelup": [
