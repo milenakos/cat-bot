@@ -7305,7 +7305,7 @@ async def catnip(message: discord.Interaction):
         if name == "Jeremy" and random.randint(1, 100) == 1:
             filename = "images/mafia/sus.png"
 
-        filename = "https://wsrv.nl/?url=raw.githubusercontent.com/NatalieCrazy/cat-bot-catnip-plus/refs/heads/main/" + filename
+        filename = "https://wsrv.nl/?url=raw.githubusercontent.com/NatalieCrazy/cat-bot-cataine-plus/refs/heads/main/" + filename
 
         embed = Container(Section(f"# Mafia - {rank} (Lv{level})", desc, Thumbnail(filename)))
         action_row = ActionRow()
