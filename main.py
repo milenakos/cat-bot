@@ -427,8 +427,8 @@ async def achemb(message, ach_id, send_type, author_string=None):
 
         embed2 = (
             discord.Embed(
-                title="Catnip Addict",
-                description="Defeat the dog mafia\nThanks for playing! ✨",
+                title="catnip Addict",
+                description="Uncover the mafia's truth\nThanks for playing! ✨",
                 color=Colors.yellow,
             )
             .set_author(
@@ -1915,7 +1915,7 @@ async def on_message(message: discord.Message):
                     for i in packs:
                         chance = random.random() * 100
                         if chance <= i[1]:
-                            packs_gained.append(pack_data[i[0]]['name'])
+                            packs_gained.append(pack_data[i[0]]["name"])
                             user[f"pack_{pack_data[i[0]]['name'].lower()}"] += 1
                             suffix_string += f"\n{get_emoji(pack_data[i[0]]['name'].lower() + 'pack')} You got a {pack_data[i[0]]['name']} pack! You now have {user[f'pack_{pack_data[i[0]]["name"].lower()}']:,} packs of this type!"
 
@@ -1988,7 +1988,7 @@ async def on_message(message: discord.Message):
                     # woo we got blessed thats pretty cool
                     if silly_amount == 0:
                         silly_amount += 1
-                    else: 
+                    else:
                         silly_amount *= 2
 
                     blesser_l = await User.collect("blessings_enabled = true AND rain_minutes_bought > 0 ORDER BY -ln(random()) / rain_minutes_bought LIMIT 1")
@@ -2048,9 +2048,9 @@ async def on_message(message: discord.Message):
                                 rainboost = 600
                             channel.cat_rains += math.ceil(rainboost / 2.75)
                             if channel.cat_rains > math.ceil(rainboost / 2.75):
-                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {rainboost/60} MINUTES ‼️‼️")
-                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {rainboost/60} MINUTES ‼️‼️")
-                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {rainboost/60} MINUTES ‼️‼️")
+                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {rainboost / 60} MINUTES ‼️‼️")
+                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {rainboost / 60} MINUTES ‼️‼️")
+                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {rainboost / 60} MINUTES ‼️‼️")
                             else:
                                 decided_time = random.uniform(1, 2)
                                 channel.rain_should_end = int(time.time() + decided_time)
@@ -3703,8 +3703,8 @@ async def rain_end(message, channel):
         rain_server = config.cat_cought_rain[channel.channel_id]
 
         # you can throw out the name of the emoji to save on characters
-        pack_names = ["Wooden","Stone","Bronze","Silver","Gold","Platinum","Diamond","Celestial"]
-        pack_yeah = {"Wooden":1,"Stone":0.9,"Bronze":0.8,"Silver":0.7,"Gold":0.6,"Platinum":0.5,"Diamond":0.4,"Celestial":0.3}
+        pack_names = ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]
+        pack_yeah = {"Wooden": 1, "Stone": 0.9, "Bronze": 0.8, "Silver": 0.7, "Gold": 0.6, "Platinum": 0.5, "Diamond": 0.4, "Celestial": 0.3}
         rain_packs = []
         rain_cats = []
         for key in rain_server.keys():
@@ -3750,7 +3750,7 @@ async def rain_end(message, channel):
                         show_cats = ": " + show_cats
                 if str(config.rain_starter[channel.channel_id]) in str(user_id):
                     part_one += "☔ "
-                part_one += f"{user_id} ({len(cat_types)-pack_amount} {funny_emojis["Fine"]}, {pack_amount} {funny_emojis["Wooden"]}){show_cats}\n"
+                part_one += f"{user_id} ({len(cat_types) - pack_amount} {funny_emojis['Fine']}, {pack_amount} {funny_emojis['Wooden']}){show_cats}\n"
 
             if not lock_success and not epic_fail:
                 part_one += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
@@ -6538,14 +6538,14 @@ async def bounty(message, user, cattype):
         level = user.catnip_level
         progress_line = f"\n{level} " + get_emoji("staring_square") * int(colored) + "⬛" * int(10 - colored) + f" {level + 1}"
         if completed == user.bounties:
-            description = f"{progress_line}\nAll Bounties Complete!"
+            description = f"{progress_line}\nAll Bounties Complete!\nGo to `/catnip` to pay up and pick a perk!"
         else:
             description = f"{progress_line}\n{completed}/{user.bounties} Bounties Complete"
         embed = discord.Embed(title=f"✅ {title[i]}", color=Colors.green, description=description).set_author(name="Mafia Level " + str(level))
         user.bounties_complete += 1
         if user.bounties_complete == 5:
             await achemb(message, "bounty_novice", "send")
-        if user.bounties_complete == 19: # we do a little trolling
+        if user.bounties_complete == 19:  # we do a little trolling (???)
             await achemb(message, "bounty_hunter", "send")
         if user.bounties_complete == 100:
             await achemb(message, "bounty_lord", "send")
@@ -6699,7 +6699,7 @@ async def get_perks(level, user):
             thelist.append(perks[int(p[1]) - 1]["id"])
 
     for _ in range(3):
-        luck = random.randint(1, 1000)/10
+        luck = random.randint(1, 1000) / 10
         total_weight = 0
         current_rarity = "common"
         for rarity, weight in weights.items():
@@ -6760,21 +6760,11 @@ async def level_down(user, message, ephemeral=False):
 
     user.hibernation = True
 
-    user.bounty_id_one = 0
-    user.bounty_id_two = 0
-    user.bounty_id_three = 0
-
-    user.bounty_type_one = ""
-    user.bounty_type_two = ""
-    user.bounty_type_three = ""
-
-    user.bounty_total_one = 1
-    user.bounty_total_two = 1
-    user.bounty_total_three = 1
-
-    user.bounty_progress_one = 0
-    user.bounty_progress_two = 0
-    user.bounty_progress_three = 0
+    for number in ["one", "two", "three"]:
+        user[f"bounty_id_{number}"] = 0
+        user[f"bounty_type_{number}"] = ""
+        user[f"bounty_total_{number}"] = 1
+        user[f"bounty_progress_{number}"] = 0
 
     user.catnip_total_cats = 0
 
@@ -6794,7 +6784,9 @@ async def level_down(user, message, ephemeral=False):
     quote = random.choice(["womp womp", "try completing your bounties next time", "unlucky", "you can do better"])
 
     embed = discord.Embed(
-        title="❌ Mafia Level Failed", color=Colors.red, description=f"**{name}**: *{quote}*\n\nLevel {user.catnip_level + 1} failed!\nYou're now on level {user.catnip_level}."
+        title="❌ Mafia Level Failed",
+        color=Colors.red,
+        description=f"**{name}**: *{quote}*\n\nLevel {user.catnip_level + 1} failed!\nYou're now on level {user.catnip_level}.",
     )
 
     if ephemeral:
@@ -6805,38 +6797,39 @@ async def level_down(user, message, ephemeral=False):
 
 async def mafia_cutscene(interaction: discord.Interaction):
     # YAPPATRON
-    text1 = "You feel satisfied with yourself. I just defeated the Godfather, Bailey! I'm on top of the world now!\n \
-Little did you know, it was foolish to believe it was over just yet.\n \
-You stare Bailey down, and realize just how bizarre he is. He's very large for a cat… he wags his tail… he just feels wrong. But then, you hear it.\n \
-*Bark! Bark!*\n \
-Oh no."
-    text2 = "You immediately run. You know that he will probably be able to outpace you, but you do have a bit of a head start.\n \
-There's a split in the alley.\n \
-Left would lead to the hideout, but you'll never get there in time.\n \
-Right, however, leads to a dead end.\n \
-Which way do you go?"
-    text3a = "You dash to the left. You can see the cat door ahead, but you'll never make it out in time.\n \
-You call out for help, and think back to all of those people you defeated.\n \
-Whiskers, the Lucians, Jinx, Jeremy, Sofia.\n \
-Would any of them be willing to save you?"
-    text3b = "You dash to the right. As you turn the corner and approach the dead end, you realize that while he may go faster, you can jump higher.\n \
-You back up against the wall, wait for him to approach… and jump.\n \
-You get over him, and run the other way. With a head start, you can get into the hideout.\n \
-But Bailey isn't done yet.\n \
-He's trying to break in. You think back to all of those people you defeated.\n \
-Whiskers, the Lucians, Jinx, Jeremy, Sofia.\n \
-Would any of them be willing to save you?"
-    text4 = "You see Jinx come out first. Whiskers is just behind him.\n \
-Jeremy doesn't take much longer. The Lucians come out too, though reluctantly.\n \
-Finally, Sofia scowls and approaches.\n \
-Bailey knew he could take down one cat. Two wouldn't be that hard. But seven..?\n \
-\"This isn't the end of this...\"\n \
-Bailey puts his head down, and scampers off. But you aren't done.\n \
-You and your crew chase after him. He runs, until you corner him. He goes into the building behind him… but it's the Cat Police Station.\n \
-As you return to your hideout, you hear a howl in the distance."
+    text1 = """You feel satisfied with yourself. I just defeated the Godfather, Bailey! I'm on top of the world now!
+Little did you know, it was foolish to believe it was over just yet.
+You stare Bailey down, and realize just how bizarre he is. He's very large for a cat… he wags his tail… he just feels wrong. But then, you hear it.
+*Bark! Bark!*
+Oh no."""
+    text2 = """You immediately run. You know that he will probably be able to outpace you, but you do have a bit of a head start.
+There's a split in the alley.
+Left would lead to the hideout, but you'll never get there in time.
+Right, however, leads to a dead end.
+Which way do you go?"""
+    text3a = """You dash to the left. You can see the cat door ahead, but you'll never make it out in time.
+You call out for help, and think back to all of those people you defeated.
+Whiskers, the Lucians, Jinx, Jeremy, Sofia.
+Would any of them be willing to save you?"""
+    text3b = """You dash to the right. As you turn the corner and approach the dead end, you realize that while he may go faster, you can jump higher.
+You back up against the wall, wait for him to approach… and jump.
+You get over him, and run the other way. With a head start, you can get into the hideout.
+But Bailey isn't done yet.
+He's trying to break in. You think back to all of those people you defeated.
+Whiskers, the Lucians, Jinx, Jeremy, Sofia.
+Would any of them be willing to save you?"""
+    text4 = """You see Jinx come out first. Whiskers is just behind him.
+Jeremy doesn't take much longer. The Lucians come out too, though reluctantly.
+Finally, Sofia scowls and approaches.
+Bailey knew he could take down one cat. Two wouldn't be that hard. But seven..?
+\"This isn't the end of this...\"
+Bailey puts his head down, and scampers off. But you aren't done.
+You and your crew chase after him. He runs, until you corner him. He goes into the building behind him… but it's the Cat Police Station.
+As you return to your hideout, you hear a howl in the distance."""
 
     async def button3_callback(interaction: discord.Interaction):
-        await interaction.response.send_message(content=text4, ephemeral=True)
+        await interaction.response.defer()
+        await interaction.edit_original_response(content=text4, ephemeral=True)
         await achemb(interaction, "thanksforplaying", "send")
 
     async def button2a_callback(interaction: discord.Interaction):
@@ -6844,7 +6837,8 @@ As you return to your hideout, you hear a howl in the distance."
         button3 = Button(label="Next", style=ButtonStyle.blurple)
         button3.callback = button3_callback
         myview3.add_item(button3)
-        await interaction.response.send_message(content=text3a, view=myview3, ephemeral=True)
+        await interaction.response.defer()
+        await interaction.edit_original_response(content=text3a, view=myview3, ephemeral=True)
 
     async def button2b_callback(interaction: discord.Interaction):
         myview3 = View(timeout=VIEW_TIMEOUT)
@@ -6861,7 +6855,8 @@ As you return to your hideout, you hear a howl in the distance."
         button2b.callback = button2b_callback
         myview2.add_item(button2a)
         myview2.add_item(button2b)
-        await interaction.response.send_message(content=text2, view=myview2, ephemeral=True)
+        await interaction.response.defer()
+        await interaction.edit_original_response(content=text2, view=myview2, ephemeral=True)
 
     myview1 = View(timeout=VIEW_TIMEOUT)
     button1 = Button(label="RUN!", style=ButtonStyle.blurple)
@@ -6869,29 +6864,31 @@ As you return to your hideout, you hear a howl in the distance."
     myview1.add_item(button1)
     await interaction.response.send_message(content=text1, view=myview1, ephemeral=True)
 
+
 async def mafia_cutscene2(interaction: discord.Interaction):
-    text1 = "Why? What do you gain from this? What's the point?\n \
-You've gone too far. You defeated Bailey, and I was proud of you for that.\n \
-But you kept going. Just for slightly more cats.\n \
-You never cared about the people. It was all for you."
-    text2 = "I got too greedy myself. I took over the mafia far too young.\n \
-I wanted more, and more, and more. But I never went as far as you did.\n \
-I took over catnip production, and took so much for myself.\n \
-Eventually, though, someone took away my catnip. \n \
-And I realized how I had taken so much catnip, that the whole world was limited to about 4 doses a week."
-    text3 = "But you. You've left nothing for the others. You've made the most powerful catnip, but at what cost?\n \
-I can't stop you. No one can. I guess the only question is: will you stay here to torment us? Or fight on, against the world itself?\n \
-[More content coming soon! Congrats on actually making it to level 10, that's quite a feat.]"
-    text4a = "...Really? I thought you would continue your path of destruction.\n \
-So fine. Continue to torment us. You've won. Are you happy now?"
-    text4b = "woa you looked at the code! crazy. btw stella is cute"
+    text1 = """Why? What do you gain from this? What's the point?
+You've gone too far. You defeated Bailey, and I was proud of you for that.
+But you kept going. Just for slightly more cats.
+You never cared about the people. It was all for you."""
+    text2 = """I got too greedy myself. I took over the mafia far too young.
+I wanted more, and more, and more. But I never went as far as you did.
+I took over catnip production, and took so much for myself.
+Eventually, though, someone took away my catnip.
+And I realized how I had taken so much catnip, that the whole world was limited to about 4 doses a week."""
+    text3 = """But you. You've left nothing for the others. You've made the most powerful catnip, but at what cost?
+I can't stop you. No one can. I guess the only question is: will you stay here to torment us? Or fight on, against the world itself?
+[More content coming soon! Congrats on actually making it to level 10, that's quite a feat.]"""
+    text4a = """...Really? I thought you would continue your path of destruction.
+So fine. Continue to torment us. You've won. Are you happy now?"""
+    text4b = """woa you looked at the code! crazy. btw stella is cute"""
 
     async def button3a_callback(interaction: discord.Interaction):
         await interaction.response.send_message(content=text4a, ephemeral=True)
-        achemb(interaction, "mafia_win", "send")
+        await achemb(interaction, "mafia_win", "send")
 
     async def button3b_callback(interaction: discord.Interaction):
-        await interaction.response.send_message(content=text4b, ephemeral=True)
+        await interaction.response.defer()
+        await interaction.edit_original_response(content=text4b, ephemeral=True)
 
     async def button2_callback(interaction: discord.Interaction):
         myview3 = View(timeout=VIEW_TIMEOUT)
@@ -6901,20 +6898,23 @@ So fine. Continue to torment us. You've won. Are you happy now?"
         button3b.callback = button3b_callback
         myview3.add_item(button3a)
         myview3.add_item(button3b)
-        await interaction.response.send_message(content=text3, view=myview3, ephemeral=True)
+        await interaction.response.defer()
+        await interaction.edit_original_response(content=text3, view=myview3, ephemeral=True)
 
     async def button1_callback(interaction: discord.Interaction):
         myview2 = View(timeout=VIEW_TIMEOUT)
         button2 = Button(label="Next", style=ButtonStyle.blurple)
         button2.callback = button2_callback
         myview2.add_item(button2)
-        await interaction.response.send_message(content=text2, view=myview2, ephemeral=True)
+        await interaction.response.defer()
+        await interaction.edit_original_response(content=text2, view=myview2, ephemeral=True)
 
     myview1 = View(timeout=VIEW_TIMEOUT)
     button1 = Button(label="RUN!", style=ButtonStyle.blurple)
     button1.callback = button1_callback
     myview1.add_item(button1)
     await interaction.response.send_message(content=text1, view=myview1, ephemeral=True)
+
 
 @bot.tree.command(description="..?")
 async def catnip(message: discord.Interaction):
@@ -6934,6 +6934,9 @@ async def catnip(message: discord.Interaction):
 
     if user.bounties == 0:
         await set_bounties(user.catnip_level, user)
+
+    async def pay_catnip(interaction):
+        nonlocal user
 
     level = user.catnip_level
     level_data = catnip_list["levels"][level]
@@ -7021,20 +7024,18 @@ async def catnip(message: discord.Interaction):
             await interaction.response.send_message("nice try", ephemeral=True)
             return
         for i in range(user.bounties):
-            if i == 0 and user.bounty_progress_one < user.bounty_total_one:
+            if (
+                (i == 0 and user.bounty_progress_one < user.bounty_total_one)
+                or (i == 1 and user.bounty_progress_two < user.bounty_total_two)
+                or (i == 2 and user.bounty_progress_three < user.bounty_total_three)
+            ):
                 await interaction.response.send_message("You haven't completed your bounties yet!", ephemeral=True)
                 return
-            if i == 1 and user.bounty_progress_two < user.bounty_total_two:
-                await interaction.response.send_message("You haven't completed your bounties yet!", ephemeral=True)
-                return
-            if i == 2 and user.bounty_progress_three < user.bounty_total_three:
-                await interaction.response.send_message("You haven't completed your bounties yet!", ephemeral=True)
-                return
-        if cat_type:
-            if user[f"cat_{cat_type}"] < amount:
+        if user.catnip_price:
+            if user[f"cat_{user.catnip_price}"] < user.catnip_amount:
                 await interaction.response.send_message("You don't have enough cats!", ephemeral=True)
                 return
-            user[f"cat_{cat_type}"] -= amount
+            user[f"cat_{user.catnip_price}"] -= user.catnip_amount
         if not user.perk_selected:
             await interaction.response.send_message("You haven't selected a perk from your previous level yet!", ephemeral=True)
             return
@@ -7060,11 +7061,10 @@ async def catnip(message: discord.Interaction):
 
         if user.catnip_level == 8:
             await mafia_cutscene(interaction)
-
-        if user.catnip_level != 10:
-            await perk_screen(interaction)
-        else:
+        elif user.catnip_level == 10:
             await mafia_cutscene2(interaction)
+        else:
+            await perk_screen(interaction)
 
     async def view_perks(interaction):
         global_user = await User.get_or_create(user_id=interaction.user.id)
@@ -7073,9 +7073,12 @@ async def catnip(message: discord.Interaction):
         perks = catnip_list["perks"]
         rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
         if not user.perks:
-            await interaction.response.send_message(embed=discord.Embed(
-                title="Your Perks", color=Colors.brown, description="You have no perks yet. Pay for your first level of catnip to get one!"
-            ), ephemeral=True)
+            await interaction.response.send_message(
+                embed=discord.Embed(
+                    title="Your Perks", color=Colors.brown, description="You have no perks yet. Pay for your first level of catnip to get one!"
+                ),
+                ephemeral=True,
+            )
             return
 
         perk_embed = discord.Embed(title="Your Perks", color=Colors.brown)
@@ -7084,7 +7087,7 @@ async def catnip(message: discord.Interaction):
             perk_data = perks[int(perk.split("_")[1]) - 1]
             effect = perk_data["values"][int(perk.split("_")[0])]
             perk_embed.add_field(
-                name=f"{perk_data.get('name', '')} ({rarities[int(perk.split("_")[0])]})",
+                name=f"{perk_data.get('name', '')} ({rarities[int(perk.split('_')[0])]})",
                 value=f"{perk_data.get('desc', '')}".replace("percent", str(effect))
                 .replace("triple_none", str(effect / 2))
                 .replace("timer_add_streak", str(global_user.vote_streak)),
@@ -7094,116 +7097,78 @@ async def catnip(message: discord.Interaction):
         await interaction.response.send_message(embed=perk_embed, ephemeral=True)
 
     async def perk_screen(interaction):
+        await interaction.response.defer()
         global_user = await User.get_or_create(user_id=interaction.user.id)
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
 
+        async def select_perk(interaction):
+            await user.refresh_from_db()
+            if user.perk_selected:
+                await interaction.response.send_message("You have already selected a perk.", ephemeral=True)
+                return
+
+            await interaction.response.defer()
+
+            user.perk_selected = True
+            h = list(user.perks) if user.perks else []
+            h.append(interaction.data["custom_id"])
+            user.perks = h[:]  # black magic
+
+            user.perk1 = ""
+            user.perk2 = ""
+            user.perk3 = ""
+            await user.save()
+
+            await interaction.edit_original_response(view=await gen_main())
 
         if user.perk_selected:
             await interaction.response.send_message("You have already selected a perk.", ephemeral=True)
             return
-          
+
         perks_data = catnip_list["perks"]
         rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
-        perknames = []
 
-        perk_embed = discord.Embed(
-            title="Select one of these perks!",
-            color=Colors.green,
-        )
-        perk_embed.set_footer(text="The catnip timer will not start until you begin your bounties.")
+        myview = LayoutView(timeout=VIEW_TIMEOUT)
 
-        try:
+        perk_embed = Container("# Select one of these perks!")
+
+        if user.perk1 and user.perk2 and user.perk3:
             perks = [user.perk1, user.perk2, user.perk3]
-            for i, perk in enumerate(perks):
-                perk_data = perks_data[int(perk.split("_")[1]) - 1]
-                effect = perk_data["values"][int(perk.split("_")[0])]
+        else:
+            perks = [p["uuid"] for p in await get_perks(user.catnip_level, user)]
 
-                perk_embed.add_field(
-                    name=f"{perk_data.get('name', '')} ({rarities[int(perk.split("_")[0])]})",
-                    value=f"{perk_data.get('desc', '')}".replace("percent", str(effect))
+        for i, perk in enumerate(perks):
+            perk_data = perks_data[int(perk.split("_")[1]) - 1]
+            effect = perk_data["values"][int(perk.split("_")[0])]
+
+            button = Button(label="Select", style=ButtonStyle.blurple, custom_id=perk)
+            button.callback = select_perk
+
+            perk_embed.add_item(
+                Section(
+                    f"## {perk_data.get('name', '')} ({rarities[int(perk.split('_')[0])]})",
+                    f"{perk_data.get('desc', '')}".replace("percent", str(effect))
                     .replace("triple_none", str(effect / 2))
                     .replace("timer_add_streak", str(global_user.vote_streak)),
+                    button,
                 )
-                perks[i] = {
-                    "uuid": perk,
-                    "name": perk_data.get("name", ""),
-                    "desc": perk_data.get("desc", ""),
-                    "rarity": perk_data.get("rarity", ""),
-                    "effect": effect,
-                }
-                perknames.append(perk_data.get("name", ""))
-        except Exception:
-            perks = await get_perks(level, user)
-
-            for perk in perks:
-                perk_data = perks_data[int(perk["uuid"].split("_")[1]) - 1]
-                effect = perk_data["values"][int(perk["uuid"].split("_")[0])]
-
-                perk_embed.add_field(
-                    name=f"{perk_data.get('name', '')} ({rarities[int(perk["uuid"].split("_")[0])]})",
-                    value=f"{perk_data.get('desc', '')}".replace("percent", str(effect))
-                    .replace("triple_none", str(effect / 2))
-                    .replace("timer_add_streak", str(global_user.vote_streak)),
-                )
-                perknames.append(perk_data.get("name", ""))
+            )
+            perks[i] = {
+                "uuid": perk,
+                "name": perk_data.get("name", ""),
+                "desc": perk_data.get("desc", ""),
+                "rarity": perk_data.get("rarity", ""),
+                "effect": effect,
+            }
 
         user.perk1 = perks[0]["uuid"] if len(perks) > 0 else None
         user.perk2 = perks[1]["uuid"] if len(perks) > 1 else None
         user.perk3 = perks[2]["uuid"] if len(perks) > 2 else None
         await user.save()
 
-        async def select_perk(perk, interaction, user):
-            await user.refresh_from_db()
-            if user.perk_selected:
-                await interaction.response.send_message("You have already selected a perk.", ephemeral=True)
-                return
-
-            user.perk_selected = True
-            h = list(user.perks) if user.perks else []
-            h.append(perk["uuid"])
-            user.perks = h[:]  # black magic
-            text = f"You selected {perk['name']}!\nYour new bounties are:"
-
-            for i in range(user.bounties):
-                if i == 0:
-                    text += f"\n- {bounty_data[user.bounty_id_one]['desc']}".replace("X", str(user.bounty_total_one - user.bounty_progress_one)).replace(
-                        "type", user.bounty_type_one
-                    )
-                if i == 1:
-                    text += f"\n- {bounty_data[user.bounty_id_two]['desc']}".replace("X", str(user.bounty_total_two - user.bounty_progress_two)).replace(
-                        "type", user.bounty_type_two
-                    )
-                if i == 2:
-                    text += f"\n- {bounty_data[user.bounty_id_three]['desc']}".replace(
-                        "X", str(user.bounty_total_three - user.bounty_progress_three)
-                    ).replace("type", user.bounty_type_three)
-
-            await interaction.response.send_message(text, ephemeral=True)
-            user.perk1 = ""
-            user.perk2 = ""
-            user.perk3 = ""
-            await user.save()
-
-        async def perk1(interaction):
-            await select_perk(perks[0], interaction, user)
-
-        async def perk2(interaction):
-            await select_perk(perks[1], interaction, user)
-
-        async def perk3(interaction):
-            await select_perk(perks[2], interaction, user)
-
-        myview = View(timeout=VIEW_TIMEOUT)
-        button1 = Button(label=perknames[0], style=ButtonStyle.blurple)
-        button2 = Button(label=perknames[1], style=ButtonStyle.blurple)
-        button3 = Button(label=perknames[2], style=ButtonStyle.blurple)
-        button1.callback = perk1
-        button2.callback = perk2
-        button3.callback = perk3
-        myview.add_item(button1)
-        myview.add_item(button2)
-        myview.add_item(button3)
-        await interaction.response.send_message(embed=perk_embed, view=myview, ephemeral=True)
+        perk_embed.add_item(TextDisplay("-# The catnip timer will not start until you begin your bounties."))
+        myview.add_item(perk_embed)
+        await interaction.edit_original_response(view=myview)
 
     async def help_screen(interaction):
         desc = "Catnip is a prestige system where you pay cats to join your mafia and get perks and bounties."
@@ -7225,67 +7190,158 @@ async def catnip(message: discord.Interaction):
         if not user.hibernation:
             await interaction.response.send_message("nice try", ephemeral=True)
             return
+
+        await interaction.response.defer()
         level_data = catnip_list["levels"][user.catnip_level]
         duration = level_data["duration"]
         user.hibernation = False
         duration_bonus = 0
         perks = catnip_list["perks"]
+
         if user.perks:
             for perk in user.perks:
                 perk_data = perks[int(perk.split("_")[1]) - 1]
                 if perk_data["id"] == "timer_add_streak":
                     global_user = await User.get_or_create(user_id=interaction.user.id)
                     duration_bonus = global_user.vote_streak * 60
-                    if duration_bonus > 100:
-                        duration_bonus = min(100 + math.log10(duration_bonus - 100) * 5, duration_bonus)
+                    if duration_bonus > 6000:
+                        duration_bonus = min(100 + math.log10(duration_bonus / 60 - 100) * 5, duration_bonus) * 60
+
         user.catnip_active = int(time.time()) + 3600 * duration + duration_bonus
         await user.save()
-        await interaction.response.send_message("Bounties started!", ephemeral=True)
 
-    myview = View(timeout=VIEW_TIMEOUT)
+        await interaction.edit_original_response(view=await gen_main())
 
-    if not user.perk_selected:
-        button3 = Button(label="Select Perk", style=ButtonStyle.red)
-        button3.callback = perk_screen
-        myview.add_item(button3)
+    async def gen_main():
+        await user.refresh_from_db()
+        level = user.catnip_level
+        level_data = catnip_list["levels"][level]
+        rank = level_data["name"]
+        change = level_data["change"]
+        duration = level_data["duration"]
+        bounty_data = catnip_list["bounties"]
+        cat_type = user.catnip_price
+        amount = user.catnip_amount
+        quote_list = catnip_list["quotes"][level - 1]["quotes"]
+        all_complete = True
 
-    if user.catnip_level == 0:
-        button = Button(label="Begin.", style=ButtonStyle.blurple)
-        button.callback = pay_catnip
-        myview.add_item(button)
-    elif user.hibernation:
-        button = Button(label="Begin Bounties", style=ButtonStyle.blurple)
-        button.callback = begin_bounties
-        myview.add_item(button)
-    elif user.catnip_level < 11:
-        button = Button(label="Pay Up!", style=ButtonStyle.blurple)
-        button.callback = pay_catnip
-        button.disabled = not all_complete
-        myview.add_item(button)
+        desc = "\n"
+        if user.hibernation:
+            desc += "\nThe timer for leveling up will **not start** until you begin your bounties.\n"
 
-    button2 = Button(label="💡 Help", style=ButtonStyle.gray)
-    button2.callback = help_screen
-    myview.add_item(button2)
+        if user.catnip_level > 0 and user.catnip_level < 11:
+            desc += "\n**__Bounties:__**"
+            colored = 0
 
-    if user.catnip_level > 0:
-        button1 = Button(label="View Perks", style=ButtonStyle.gray)
-        button1.callback = view_perks
-        myview.add_item(button1)
-    try:
+            def format_bounty(bounty_numstr):
+                nonlocal desc, all_complete, colored, user, bounty_data
+                bounty_id = user[f"bounty_id_{bounty_numstr}"]
+                bounty_type = user[f"bounty_type_{bounty_numstr}"]
+                bounty_total = user[f"bounty_total_{bounty_numstr}"]
+                bounty_progress = user[f"bounty_progress_{bounty_numstr}"]
+
+                desc += "\n- "
+                if bounty_progress == bounty_total:
+                    desc += "✅ "
+                else:
+                    all_complete = False
+
+                if bounty_progress == 0:
+                    desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total))
+                else:
+                    desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total - bounty_progress) + " more")
+
+                if bounty_total - bounty_progress == 1:
+                    desc = desc.replace("cats", "cat")
+
+                desc = desc.replace("type", f"{get_emoji(bounty_type.lower() + 'cat')} {bounty_type}")
+
+                colored += (bounty_progress / bounty_total) * 10 / user.bounties
+
+            for i in range(user.bounties):
+                if i == 0:
+                    format_bounty("one")
+                if i == 1:
+                    format_bounty("two")
+                if i == 2:
+                    format_bounty("three")
+
+            colored = int(colored)
+
+            if not all_complete:
+                desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} after completing your bounties."
+            else:
+                desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed."
+
+            desc += f"\n\n**Level {level}** - {change} and more!"
+            desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
+        if not level == 0 and not user.hibernation:
+            if int(time.time()) - user.catnip_active < 1800:
+                desc += f"\n\n**Hurry!** Levels down <t:{user.catnip_active}:R> ({duration}h total)"
+            elif user.catnip_active > 0:
+                desc += f"\n\nLevels down <t:{user.catnip_active}:R> ({duration}h total)"
+
+        if user.catnip_level:
+            if not user.first_quote_seen:
+                quote = quote_list["first"]
+                user.first_quote_seen = True
+                await user.save()
+            elif all_complete:
+                quote = random.choice(quote_list["levelup"])
+            else:
+                quote = random.choice(quote_list["normal"])
+            name = catnip_list["quotes"][level - 1]["name"]
+            desc = f"**{name}**: *{quote}*" + desc
+
+        myview = LayoutView(timeout=VIEW_TIMEOUT)
+
         if name == "Lucian Jr":
             name = "LucianJr"  # i hate file name conventions
-        file = discord.File(f"images/mafia/{name}.png", filename=f"{name}.png")
-        embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc).set_thumbnail(url=f"attachment://{name}.png")
+        filename = f"images/mafia/{name}.png"
+
         if name == "Whiskers" and user.catnip_level == 10:
-            file = discord.File("images/mafia/WhiskersII.png", filename="WhiskersII.png")
-            embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc).set_thumbnail(url=f"attachment://WhiskersII.png")
-        if name == "Jeremy" and math.floor(math.random()*100) == 1:
-            file = discord.File("images/mafia/sus.png", filename="sus.png")
-            embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc).set_thumbnail(url=f"attachment://sus.png")
-        await message.followup.send(embed=embed, file=file, view=myview, ephemeral=True)
-    except Exception:
-        embed = discord.Embed(title=f"Mafia - {rank} (Lv{level})", color=Colors.brown, description=desc)
-        await message.followup.send(embed=embed, view=myview, ephemeral=True)
+            filename = "images/mafia/WhiskersII.png"
+        if name == "Jeremy" and random.randint(1, 100) == 1:
+            filename = "images/mafia/sus.png"
+
+        filename = "https://wsrv.nl/?url=raw.githubusercontent.com/NatalieCrazy/cat-bot-catnip-plus/refs/heads/main/" + filename
+
+        embed = Container(Section(f"# Mafia - {rank} (Lv{level})", desc, Thumbnail(filename)))
+        action_row = ActionRow()
+
+        if not user.perk_selected:
+            button3 = Button(label="Select Perk", style=ButtonStyle.red)
+            button3.callback = perk_screen
+            action_row.add_item(button3)
+
+        if user.catnip_level == 0:
+            button = Button(label="Begin.", style=ButtonStyle.blurple)
+            button.callback = pay_catnip
+            action_row.add_item(button)
+        elif user.hibernation:
+            button = Button(label="Begin Bounties", style=ButtonStyle.blurple)
+            button.callback = begin_bounties
+            action_row.add_item(button)
+        elif user.catnip_level < 11:
+            button = Button(label="Pay Up!", style=ButtonStyle.blurple)
+            button.callback = pay_catnip
+            button.disabled = not all_complete
+            action_row.add_item(button)
+
+        if user.catnip_level > 0:
+            button1 = Button(label="View Perks", style=ButtonStyle.gray)
+            button1.callback = view_perks
+            action_row.add_item(button1)
+
+        button2 = Button(emoji="💡", label="Help", style=ButtonStyle.gray)
+        button2.callback = help_screen
+        action_row.add_item(button2)
+
+        embed.add_item(action_row)
+        myview.add_item(embed)
+        return myview
+
+    await message.followup.send(view=await gen_main(), ephemeral=True)
 
 
 @bot.tree.command(description="View your achievements")
