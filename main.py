@@ -7122,9 +7122,20 @@ async def catnip(message: discord.Interaction):
         help_embed = discord.Embed(title="Catnip Help", color=Colors.brown, description=desc)
         await interaction.response.send_message(embed=help_embed, ephemeral=True)
 
-    async def begin_bounties(interaction):
+    async def begin_bounties(interaction, override=False):
         if not user.hibernation:
             await interaction.response.send_message("nice try", ephemeral=True)
+            return
+
+        async def callbacks_are_so_fun(interaction):
+            await begin_bounties(interaction, override=True)
+
+        if user.catnip_active > time.time() and not override:
+            myview = View(timeout=VIEW_TIMEOUT)
+            button = Button(label="Begin Anyway", style=ButtonStyle.red)
+            button.callback = callbacks_are_so_fun
+            myview.add_item(button)
+            await interaction.response.send_message(f"Your catnip expires <t:{user.catnip_active}:R>.\nAre you sure you want to start your bounties now?\nThis will remove the remaining catnip time you have.", view=myview, ephemeral=True)
             return
 
         await interaction.response.defer()
