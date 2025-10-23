@@ -6995,7 +6995,7 @@ async def catnip(message: discord.Interaction):
 
             colored += (bounty_progress / bounty_total) * 10 / user.bounties
         
-        if user.hibernation:
+        if not user.hibernation:
             desc += "Press **Begin Bounties** to see your bounties!"
         else:
             desc += "\n**__Bounties:__**"
