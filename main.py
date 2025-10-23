@@ -7065,6 +7065,7 @@ async def catnip(message: discord.Interaction):
 
         perks_data = catnip_list["perks"]
         rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
+        rarity_colors = ["⬜","🟩","🟦","🟪","🟨"]
 
         myview = LayoutView(timeout=VIEW_TIMEOUT)
 
@@ -7084,7 +7085,7 @@ async def catnip(message: discord.Interaction):
 
             perk_embed.add_item(
                 Section(
-                    f"## {perk_data.get('name', '')} ({rarities[int(perk.split('_')[0])]})",
+                    f"## {rarity_colors[int(perk.split('_')[0])]} {perk_data.get('name', '')} ({rarities[int(perk.split('_')[0])]})",
                     f"{perk_data.get('desc', '')}".replace("percent", str(effect))
                     .replace("triple_none", str(effect / 2))
                     .replace("timer_add_streak", str(global_user.vote_streak)),
@@ -7159,7 +7160,7 @@ async def catnip(message: discord.Interaction):
         user.catnip_active = int(time.time()) + 3600 * duration + duration_bonus
         await user.save()
 
-        await interaction.edit_original_response(view=await gen_main())
+        await interaction.message.interaction_metadata.original_response_message.edit(view=await gen_main())
 
     async def gen_main():
         await user.refresh_from_db()
@@ -7182,14 +7183,15 @@ async def catnip(message: discord.Interaction):
         if user.catnip_level > 0 and user.catnip_level < 11:
             colored = 0
 
-            def format_bounty(bounty_numstr):
+            def format_bounty(bounty_numstr, single=False):
                 nonlocal desc, all_complete, colored, user, bounty_data
                 bounty_id = user[f"bounty_id_{bounty_numstr}"]
                 bounty_type = user[f"bounty_type_{bounty_numstr}"]
                 bounty_total = user[f"bounty_total_{bounty_numstr}"]
                 bounty_progress = user[f"bounty_progress_{bounty_numstr}"]
 
-                desc += "\n- "
+                if not single:
+                    desc += "\n- "
                 if bounty_progress == bounty_total:
                     desc += "✅ "
                 else:
@@ -7208,21 +7210,26 @@ async def catnip(message: discord.Interaction):
                 colored += (bounty_progress / bounty_total) * 10 / user.bounties
 
             if not user.hibernation:
-                desc += "\n**__Bounties:__**"
+                single = False
+                if user.bounties == 1:
+                    desc += "\n**__Bounty:__** "
+                else:
+                    desc += "\n**__Bounty:__**"
                 for i in range(user.bounties):
                     if i == 0:
-                        format_bounty("one")
+                        format_bounty("one", single)
                     if i == 1:
                         format_bounty("two")
                     if i == 2:
                         format_bounty("three")
 
                 colored = int(colored)
-
+                if not single:
+                    desc += '\n'
                 if not all_complete:
-                    desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} after completing your bounties."
+                    desc += f"\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} after completing your bounties."
                 else:
-                    desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed."
+                    desc += f"\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed."
             else:
                 desc += "\nPress **Begin Bounties** to view your bounties and cost!"
                 all_complete = False
