@@ -6836,10 +6836,12 @@ Bailey puts his head down, and scampers off. But you aren't done.
 You and your crew chase after him. He runs, until you corner him. He goes into the building behind him… but it's the Cat Police Station.
 As you return to your hideout, you hear a howl in the distance."""
 
-    async def button3_callback(interaction: discord.Interaction):
+    async def button3_callback(interaction: discord.Interaction, user):
         await interaction.response.defer()
         await interaction.edit_original_response(content=text4, view=None)
         await achemb(interaction, "thanksforplaying", "send")
+        user.cutscene = 1
+        await user.save()
 
     async def button2a_callback(interaction: discord.Interaction):
         myview3 = View(timeout=VIEW_TIMEOUT)
@@ -6874,7 +6876,7 @@ As you return to your hideout, you hear a howl in the distance."""
     await interaction.response.send_message(content=text1, view=myview1, ephemeral=True)
 
 
-async def mafia_cutscene2(interaction: discord.Interaction):
+async def mafia_cutscene2(interaction: discord.Interaction, user):
     text1 = """Why? What do you gain from this? What's the point?
 You've gone too far. You defeated Bailey, and I was proud of you for that.
 But you kept going. Just for slightly more cats.
@@ -6895,6 +6897,8 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
         await interaction.response.defer()
         await interaction.edit_original_response(content=text4a, view=None)
         await achemb(interaction, "mafia_win", "send")
+        user.cutscene = 2
+        await user.save()
 
     async def button3b_callback(interaction: discord.Interaction):
         await interaction.response.defer()
@@ -7053,10 +7057,12 @@ async def catnip(message: discord.Interaction):
 
         if user.catnip_level != 10:
             user.catnip_level += 1
-            user.perk_selected = False
             user.hibernation = True
             if user.catnip_level == 1:
                 user.catnip_active = int(time.time()) + 3600
+                user.perk_selected = True
+            else:
+                user.perk_selected = False
         else:
             user.catnip_active += 86400
         user.catnip_bought += 1
@@ -7070,11 +7076,11 @@ async def catnip(message: discord.Interaction):
         await set_bounties(user.catnip_level, user)
         await set_mafia_offer(user.catnip_level, user)
 
-        if user.catnip_level == 8:
-            await mafia_cutscene(interaction)
-        elif user.catnip_level == 10:
-            await mafia_cutscene2(interaction)
-        else:
+        if user.catnip_level == 8 and user.cutscene == 0:
+            await mafia_cutscene(interaction, user)
+        elif user.catnip_level == 10 and user.cutscene == 1:
+            await mafia_cutscene2(interaction, user)
+        elif user.catnip_level > 1:
             await perk_screen(interaction)
 
     async def view_perks(interaction):
