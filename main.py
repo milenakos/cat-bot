@@ -1875,7 +1875,7 @@ async def on_message(message: discord.Message):
                     if user.catnip_active < time.time():
                         if user.catnip_active != 1:
                             user.catnip_active = 1
-                            suffix_string += f"\n{get_emoji("catnip")} Your catnip expired! Run /catnip to get more."
+                            suffix_string += f"\n{get_emoji('catnip')} Your catnip expired! Run /catnip to get more."
                         perks = []
                     else:
                         perks = user.perks
@@ -1970,11 +1970,11 @@ async def on_message(message: discord.Message):
                     chance = random.random() * 100
                     if chance <= triple_chance:
                         silly_amount *= 3
-                        suffix_string += f"\n{get_emoji("catnip")} catnip worked! your cat was TRIPLED by catnip!1!!1!"
+                        suffix_string += f"\n{get_emoji('catnip')} catnip worked! your cat was TRIPLED by catnip!1!!1!"
                         user.catnip_activations += 2
                     elif chance <= triple_chance + double_chance:
                         silly_amount *= 2
-                        suffix_string += f"\n{get_emoji("catnip")} catnip worked! your cat was doubled by catnip!!1!"
+                        suffix_string += f"\n{get_emoji('catnip')} catnip worked! your cat was doubled by catnip!!1!"
                         user.catnip_activations += 1
                     elif chance <= triple_chance + double_chance + single_chance:
                         silly_amount *= 1
@@ -6789,8 +6789,7 @@ async def level_down(user, message, ephemeral=False):
         perk_type = int(removed_perk.split("_")[1])
         perk_data = catnip_list["perks"][perk_type - 1]
 
-        removed_line = f"\nYou lost your **{perk_data["name"]} ({rarities[perk_rarity]})** perk."
-
+        removed_line = f"\nYou lost your **{perk_data['name']} ({rarities[perk_rarity]})** perk."
 
     embed = discord.Embed(
         title="❌ Mafia Level Failed",
@@ -6981,7 +6980,7 @@ async def catnip(message: discord.Interaction):
             user.hibernation = True
             if user.catnip_level == 1:
                 user.catnip_active = int(time.time()) + 3600
-                user.perk_selected = True # we do a bit of lying 
+                user.perk_selected = True  # we do a bit of lying
             else:
                 user.perk_selected = False
         else:
@@ -7057,7 +7056,7 @@ async def catnip(message: discord.Interaction):
             user.perk3 = ""
             await user.save()
 
-            await interaction.edit_original_response(view=await gen_main())
+            await main_message.edit(view=await gen_main())
 
         if user.perk_selected:
             await interaction.response.send_message("You have already selected a perk.", ephemeral=True)
@@ -7065,7 +7064,7 @@ async def catnip(message: discord.Interaction):
 
         perks_data = catnip_list["perks"]
         rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
-        rarity_colors = ["⬜","🟩","🟦","🟪","🟨"]
+        rarity_colors = ["⬜", "🟩", "🟦", "🟪", "🟨"]
 
         myview = LayoutView(timeout=VIEW_TIMEOUT)
 
@@ -7107,7 +7106,7 @@ async def catnip(message: discord.Interaction):
 
         perk_embed.add_item(TextDisplay("-# The catnip timer will not start until you begin your bounties."))
         myview.add_item(perk_embed)
-        await interaction.edit_original_response(view=myview)
+        await main_message.edit(view=myview)
 
     async def help_screen(interaction):
         desc = "Catnip is a prestige system where you pay cats to join your mafia and get perks and bounties!"
@@ -7130,16 +7129,22 @@ async def catnip(message: discord.Interaction):
 
         async def callbacks_are_so_fun(interaction2):
             nonlocal interaction
+            await interaction2.response.defer()
             await begin_bounties(interaction, override=True)
+            await interaction2.delete_original_response()
 
         if user.catnip_active > time.time() and not override:
             myview = View(timeout=VIEW_TIMEOUT)
             button = Button(label="Begin Anyway", style=ButtonStyle.red)
             button.callback = callbacks_are_so_fun
             myview.add_item(button)
-            await interaction.response.send_message(f"Your catnip expires <t:{user.catnip_active}:R>.\nAre you sure you want to start your bounties now?\nThis will remove the remaining catnip time you have.", view=myview, ephemeral=True)
+            await interaction.response.send_message(
+                f"Your catnip expires <t:{user.catnip_active}:R>.\nAre you sure you want to start your bounties now?\nThis will remove the remaining catnip time you have.",
+                view=myview,
+                ephemeral=True,
+            )
             return
-        
+
         if not override:
             await interaction.response.defer()
         level_data = catnip_list["levels"][user.catnip_level]
@@ -7160,7 +7165,7 @@ async def catnip(message: discord.Interaction):
         user.catnip_active = int(time.time()) + 3600 * duration + duration_bonus
         await user.save()
 
-        await interaction.message.interaction_metadata.original_response_message.edit(view=await gen_main())
+        await main_message.edit(view=await gen_main())
 
     async def gen_main():
         await user.refresh_from_db()
@@ -7225,7 +7230,7 @@ async def catnip(message: discord.Interaction):
 
                 colored = int(colored)
                 if not single:
-                    desc += '\n'
+                    desc += "\n"
                 if not all_complete:
                     desc += f"\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} after completing your bounties."
                 else:
@@ -7267,7 +7272,10 @@ async def catnip(message: discord.Interaction):
 
         filename = "https://wsrv.nl/?url=raw.githubusercontent.com/NatalieCrazy/cat-bot-cataine-plus/refs/heads/main/" + filename
 
-        embed = Container(Section(f"# Mafia - {rank} (Lv{level})", desc, Thumbnail(filename)))
+        if not desc or desc == "\n":
+            embed = Container(f"# Mafia - {rank} (Lv{level})")
+        else:
+            embed = Container(Section(f"# Mafia - {rank} (Lv{level})", desc, Thumbnail(filename)))
         action_row = ActionRow()
 
         if not user.perk_selected:
@@ -7302,7 +7310,7 @@ async def catnip(message: discord.Interaction):
         myview.add_item(embed)
         return myview
 
-    await message.followup.send(view=await gen_main(), ephemeral=True)
+    main_message = await message.followup.send(view=await gen_main(), ephemeral=True, wait=True)
 
 
 @bot.tree.command(description="View your achievements")
