@@ -6772,7 +6772,7 @@ async def level_down(user, message, ephemeral=False):
     user.first_quote_seen = False
 
     h = list(user.perks) if user.perks else []
-    h.pop()
+    removed_perk = h.pop()
     user.perks = h[:]
 
     await set_bounties(user.catnip_level, user)
@@ -6780,13 +6780,23 @@ async def level_down(user, message, ephemeral=False):
     await user.save()
 
     # TODO: add quotes per person, or just remove this change
-    name = catnip_list["levels"][user.catnip_level]["name"]
+    name = catnip_list["quotes"][user.catnip_level]["name"]
     quote = random.choice(["womp womp", "try completing your bounties next time", "unlucky", "you can do better"])
+    removed_line = ""
+
+    if removed_perk:
+        rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
+        perk_rarity = int(removed_perk.split("_")[0])
+        perk_type = int(removed_perk.split("_")[1])
+        perk_data = catnip_list["perks"][perk_type - 1]
+
+        removed_line = f"\nYou lost your **{perk_data["name"]} ({rarities[perk_rarity]})** perk."
+
 
     embed = discord.Embed(
         title="❌ Mafia Level Failed",
         color=Colors.red,
-        description=f"**{name}**: *{quote}*\n\nLevel {user.catnip_level + 1} failed!\nYou're now on level {user.catnip_level}.",
+        description=f"**{name}**: *{quote}*\n\nLevel {user.catnip_level + 1} bounties failed!\nYou're now on level {user.catnip_level}.{removed_line}",
     )
 
     if ephemeral:
