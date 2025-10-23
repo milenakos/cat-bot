@@ -6968,7 +6968,6 @@ async def catnip(message: discord.Interaction):
         desc += "\nThe timer for leveling up will **not start** until you begin your bounties.\n"
 
     if user.catnip_level > 0 and user.catnip_level < 11:
-        desc += "\n**__Bounties:__**"
         colored = 0
 
         def format_bounty(bounty_numstr):
@@ -6995,21 +6994,25 @@ async def catnip(message: discord.Interaction):
             desc = desc.replace("type", f"{get_emoji(bounty_type.lower() + 'cat')} {bounty_type}")
 
             colored += (bounty_progress / bounty_total) * 10 / user.bounties
-
-        for i in range(user.bounties):
-            if i == 0:
-                format_bounty("one")
-            if i == 1:
-                format_bounty("two")
-            if i == 2:
-                format_bounty("three")
-
-        colored = int(colored)
-
-        if not all_complete:
-            desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} after completing your bounties."
+        
+        if user.hibernation:
+            desc += "Press **Begin Bounties** to see your bounties!"
         else:
-            desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed."
+            desc += "\n**__Bounties:__**"
+            for i in range(user.bounties):
+                if i == 0:
+                    format_bounty("one")
+                if i == 1:
+                    format_bounty("two")
+                if i == 2:
+                    format_bounty("three")
+
+            colored = int(colored)
+
+            if not all_complete:
+                desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} after completing your bounties."
+            else:
+                desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed."
 
         desc += f"\n\n**Level {level}** - {change} and more!"
         desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
@@ -7060,7 +7063,7 @@ async def catnip(message: discord.Interaction):
             user.hibernation = True
             if user.catnip_level == 1:
                 user.catnip_active = int(time.time()) + 3600
-                user.perk_selected = True
+                user.perk_selected = True # we do a bit of lying 
             else:
                 user.perk_selected = False
         else:
@@ -7188,18 +7191,16 @@ async def catnip(message: discord.Interaction):
         await interaction.edit_original_response(view=myview)
 
     async def help_screen(interaction):
-        desc = "Catnip is a prestige system where you pay cats to join your mafia and get perks and bounties."
-        desc += "\n\n**How it works:**"
-        desc += '\n- Press the "Begin" button to join the mafia and get your first perk and bounties'
-        desc += "\n- Complete your bounties and pay the fee again to level up and get more perks and better bounties"
-        desc += "\n- If you fail to pay in time, you will level down and lose your most recent perk"
-        desc += "\n- The timer only starts after you catch a cat while in the mafia"
-        desc += "\n\n**Perks:**"
+        desc = "Catnip is a prestige system where you pay cats to join your mafia and get perks and bounties!"
+        desc += "\n\n❓ **How it works:**"
+        desc += '\n- Press the "Begin" button to join the mafia and get your first perk and bounties.'
+        desc += "\n- Complete your bounties and pay the fee again to level up and get more perks and better bounties!"
+        desc += "\n- If you fail to pay in time, you will level down and lose your most recent perk."
+        desc += "\n- The timer only starts after you press 'Begin Bounties'."
+        desc += "\n\n⭐ **Perks:**"
         desc += "\nPerks give you various bonuses like a chance to double cats cought, a chance of getting packs, etc. You can view your current perks with the 'View Perks' button."
-        desc += "\n\n**Bounties:**"
-        desc += "\nBounties are tasks you need to complete before you can pay the catnip fee again. They usually involve catching a certain number of cats of specific types or rarities. You can view your current bounties in the catnip menu."
-        desc += "\n\n**Hibernation:**"
-        desc += "\nWhen you first join the mafia or level up, you enter hibernation mode. This means the timer for paying the catnip fee does not start until you catch your next cat. This gives you time to complete your bounties without rushing."
+        desc += "\n\n⬆️ **Bounties:**"
+        desc += "\nBounties are tasks you need to complete before you can level up. They involve catching a certain number of cats of specific types or rarities. You can view your current bounties in the catnip menu."
         help_embed = discord.Embed(title="Catnip Help", color=Colors.brown, description=desc)
         await interaction.response.send_message(embed=help_embed, ephemeral=True)
 
