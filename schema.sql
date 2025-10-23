@@ -284,7 +284,8 @@ CREATE TABLE public.profile (
     certified_yapper boolean DEFAULT false,
     ping_reply boolean DEFAULT false,
     highest_cataine_level integer DEFAULT 0,
-    bounties_complete integer DEFAULT 0
+    bounties_complete integer DEFAULT 0,
+    cutscene smallint DEFAULT 0
 );
 
 
