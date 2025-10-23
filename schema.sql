@@ -20,8 +20,8 @@ SET default_table_access_method = heap;
 CREATE TABLE public.channel (
     channel_id bigint NOT NULL,
     cat bigint DEFAULT 0,
-    spawn_times_min bigint DEFAULT 120,
-    spawn_times_max bigint DEFAULT 1200,
+    spawn_times_min bigint DEFAULT 60,
+    spawn_times_max bigint DEFAULT 600,
     lastcatches bigint DEFAULT 0,
     yet_to_spawn bigint DEFAULT 0,
     appear character varying(4000) DEFAULT ''::character varying,

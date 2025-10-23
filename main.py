@@ -3027,8 +3027,8 @@ async def changetimings(
 
     if not minimum_time and not maximum_time:
         # reset
-        channel.spawn_times_min = 120
-        channel.spawn_times_max = 1200
+        channel.spawn_times_min = 60
+        channel.spawn_times_max = 600
         await channel.save()
         await message.response.send_message("Success! This channel is now reset back to usual spawning intervals.")
     elif minimum_time and maximum_time:
