@@ -7002,6 +7002,8 @@ async def catnip(message: discord.Interaction):
             await mafia_cutscene2(interaction, user)
         elif user.catnip_level > 1:
             await perk_screen(interaction)
+        else:
+            await interaction.response.send_message("Catnip started!", ephemeral=True)
 
     async def view_perks(interaction):
         global_user = await User.get_or_create(user_id=interaction.user.id)
