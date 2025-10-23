@@ -7076,7 +7076,7 @@ async def catnip(message: discord.Interaction):
 
         perks_data = catnip_list["perks"]
         rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
-        rarity_colors = ["⬜", "🟩", "🟦", "🟪", "🟨"]
+        rarity_colors = [get_emoji("common"), get_emoji("uncommon"), get_emoji("rare"), get_emoji("epic"), get_emoji("legendary")]
 
         myview = LayoutView(timeout=VIEW_TIMEOUT)
 
