@@ -6950,7 +6950,6 @@ async def catnip(message: discord.Interaction):
         await set_bounties(user.catnip_level, user)
 
     level = user.catnip_level
-    level_data = catnip_list["levels"][level]
     cat_type = user.catnip_price
     amount = user.catnip_amount
 
@@ -7168,7 +7167,6 @@ async def catnip(message: discord.Interaction):
             desc += "\nThe timer for leveling up will **not start** until you begin your bounties.\n"
 
         if user.catnip_level > 0 and user.catnip_level < 11:
-            desc += "\n**__Bounties:__**"
             colored = 0
 
             def format_bounty(bounty_numstr):
@@ -7196,20 +7194,24 @@ async def catnip(message: discord.Interaction):
 
                 colored += (bounty_progress / bounty_total) * 10 / user.bounties
 
-            for i in range(user.bounties):
-                if i == 0:
-                    format_bounty("one")
-                if i == 1:
-                    format_bounty("two")
-                if i == 2:
-                    format_bounty("three")
+            if not user.hibernation:
+                desc += "\n**__Bounties:__**"
+                for i in range(user.bounties):
+                    if i == 0:
+                        format_bounty("one")
+                    if i == 1:
+                        format_bounty("two")
+                    if i == 2:
+                        format_bounty("three")
 
-            colored = int(colored)
+                colored = int(colored)
 
-            if not all_complete:
-                desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} after completing your bounties."
+                if not all_complete:
+                    desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} after completing your bounties."
+                else:
+                    desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed."
             else:
-                desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed."
+                desc += "\nPress **Begin Bounties** to view your bounties and cost!"
 
             desc += f"\n\n**Level {level}** - {change} and more!"
             desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
