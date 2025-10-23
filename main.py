@@ -7004,6 +7004,7 @@ async def catnip(message: discord.Interaction):
             await perk_screen(interaction)
         else:
             await interaction.response.send_message("Catnip started!", ephemeral=True)
+            await main_message.edit(view=await gen_main())
 
     async def view_perks(interaction):
         global_user = await User.get_or_create(user_id=interaction.user.id)
