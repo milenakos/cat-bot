@@ -7234,9 +7234,9 @@ async def catnip(message: discord.Interaction):
                 if not single:
                     desc += "\n"
                 if not all_complete:
-                    desc += f"\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} after completing your bounties."
+                    desc += f"\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} after completing your bounties"
                 else:
-                    desc += f"\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed."
+                    desc += f"\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed"
             else:
                 desc += "\nPress **Begin Bounties** to view your bounties and cost!"
                 all_complete = False
