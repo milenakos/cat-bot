@@ -12,7 +12,7 @@
     {"id": "triple_ach", "exclusive": true, "name": "Precise Catcher", "desc":"Getting **Purrfection or All The Same** times on catch **triples** cats recieved.", "weight": 10, "values": [100, 0, 0, 0, 0]},
     {"id": "timer_add", "exclusive": false, "name": "Time Manipulator", "desc":"**percent%** chance of adding **5 minutes** to catnip timer on catch.", "weight": 10, "values": [1, 1.5, 2.5, 5, 7.5]},
     {"id": "timer_add_streak", "exclusive": true, "name": "Voting Booster", "desc":"Your vote streak **(timer_add_streak)** boosts catnip duration.", "weight": 5, "values": [0, 0, 0, 0, 100]},
-    {"id": "double_slow", "exclusive": true, "name": "Slow Catcher", "desc":"Cats cought in **percent minutes** or more always **double**.", "weight": 5, "values": [10, 15, 25, 50, 75]},
+    {"id": "double_slow", "exclusive": true, "name": "Slow Catcher", "desc":"Cats cought in **percent minutes** or more always **double**.", "weight": 5, "values": [75, 50, 25, 15, 10]},
     {"id": "double_first", "exclusive": false, "name": "Speedrunner", "desc":"The first **percent** cats cought each level always **double**.", "weight": 5, "values": [8, 12, 20, 40, 60]}
   ],
 
@@ -30,7 +30,8 @@
         "levelup": [
           "Make me proud. Go on. You've won.",
           "You deserve this. No need to worry about me."
-        ]
+        ],
+        "leveldown": "you had to get like 2 cats how did you mess this up"
       }
     },
     {
@@ -46,7 +47,8 @@
         "levelup": [
           "I have a family... please, don't do this to me...",
           "How could this happen..."
-        ]
+        ],
+        "leveldown": "Ha! I knew I'd beat you."
       }
     },
     {
@@ -62,7 +64,8 @@
         "levelup": [
           "well, you did it. i'm impressed. just be warned. the next guy is really weird...",
           "you're pretty good at this. don't let it go to your head."
-        ]
+        ],
+        "leveldown": "try actually completing your bounties next time"
       }
     },
     {
@@ -77,7 +80,8 @@
         ],
         "levelup": [
           "hi my name is almost dead, my life is hanging on a thread"
-        ]
+        ],
+        "leveldown": "<:jeremysus:1430898400588464138>"
       }
     },
     {
@@ -93,7 +97,8 @@
         ],
         "levelup": [
           "Son… I'm sorry. I'm so sorry."
-        ]
+        ],
+        "leveldown": "gg ez"
       }
     },
     {
@@ -108,7 +113,8 @@
         ],
         "levelup": [
           "...You've won. The one above me… he's not like the others. He's not normal."
-        ]
+        ],
+        "leveldown": "Serves you right. People like you aren't meant to be here."
       }
     },
     {
@@ -124,7 +130,8 @@
         "levelup": [
           "Everyone else you defeated gave up. I will not be so gracious.",
           "This isn't where my story ends. Not today."
-        ]
+        ],
+        "leveldown": "Heh. I'm the superior species after all- wait i mean uhhh"
       }
     },
     {
@@ -135,13 +142,14 @@
         "normal": [
           "It's not always about the money… it's about the PAWS BABY LOVE THE PAWS COME ON HIT A HOME RUN",
           "Back in the day we just scammed people and made them pay higher and higher prices for catnip. Some people even paid 100 eGirl cats!",
-          "catnip really depends on who makes it and what they put into it. We here at the top? We get the best stuff. Those people at the bottom get basically nothing.",
+          "Catnip really depends on who makes it and what they put into it. We here at the top? We get the best stuff. Those people at the bottom get basically nothing.",
           "Why are you even trying to go any further? Don't you have enough already?"
         ],
         "levelup": [
           "Oh, you actually beat me? Whatever. I'm still the kingpin in all the other people's dimensions.",
           "I don't care if you beat me. I'm still in charge for every other player."
-        ]
+        ],
+        "leveldown": "I wasn't even trying how did you lose 💀"
       }
     },
     {
@@ -150,7 +158,8 @@
       "quotes": {
         "first": "staring",
         "normal": ["im placeholding"],
-        "levelup": ["woah"]
+        "levelup": ["woah"],
+        "leveldown": "staring cat"
       }
     },
     {
@@ -167,28 +176,8 @@
         "levelup": [
           "I should've expected this.",
           "You refuse to fall."
-        ]
-      }
-    },
-    {
-      "level": 11,
-      "name": "Catgirl",
-      "quotes": {
-        "first": "i made this world. why did you have to break it?",
-        "normal": [
-          "you being here is destroying the system. you need to be removed.",
-          "what's ahead of this? nothing. stop catching cats. you don't need another perk. you don't need this. go back.",
-          "do you really need that one last perk? 30% rare, 40% epic, 30% legendary. that's what this is all for. why?",
-          "nya mrrp mrrow~",
-          "mrrrrow",
-          "nyaaaaaa~!",
-          "purrrrrrrrrrrrrrrrrrrr"
         ],
-        "levelup": [
-          "Nice job looking at the code.",
-          "It's literally impossible to see this! woaaaaah",
-          "stella is cute"
-        ]
+        "leveldown": "Finally. You have fallen. I get to rebuild what you destroyed."
       }
     }
   ],

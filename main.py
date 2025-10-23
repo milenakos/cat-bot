@@ -1875,7 +1875,7 @@ async def on_message(message: discord.Message):
                     if user.catnip_active < time.time():
                         if user.catnip_active != 1:
                             user.catnip_active = 1
-                            suffix_string += "\n🧂 Your catnip expired! Run /catnip to get more."
+                            suffix_string += f"\n{get_emoji("catnip")} Your catnip expired! Run /catnip to get more."
                         perks = []
                     else:
                         perks = user.perks
@@ -1970,11 +1970,11 @@ async def on_message(message: discord.Message):
                     chance = random.random() * 100
                     if chance <= triple_chance:
                         silly_amount *= 3
-                        suffix_string += "\n🧂 catnip worked! your cat was TRIPLED by catnip!1!!1!"
+                        suffix_string += f"\n{get_emoji("catnip")} catnip worked! your cat was TRIPLED by catnip!1!!1!"
                         user.catnip_activations += 2
                     elif chance <= triple_chance + double_chance:
                         silly_amount *= 2
-                        suffix_string += "\n🧂 catnip worked! your cat was doubled by catnip!!1!"
+                        suffix_string += f"\n{get_emoji("catnip")} catnip worked! your cat was doubled by catnip!!1!"
                         user.catnip_activations += 1
                     elif chance <= triple_chance + double_chance + single_chance:
                         silly_amount *= 1
@@ -3264,9 +3264,9 @@ async def gen_stats(profile, star):
     stats.append(["boosted_catches", get_emoji("prism"), f"Prism-boosted catches: {profile.boosted_catches:,}{star}"])
 
     # catnip
-    stats.append(["🧂", "catnip"])
-    stats.append(["catnip_activations", "🧂", f"Cats gained from catnip: {profile.catnip_activations:,}"])
-    stats.append(["catnip_bought", "🧂", f"catnip levels reached: {profile.catnip_bought:,}"])
+    stats.append([get_emoji("catnip"), "catnip"])
+    stats.append(["catnip_activations", get_emoji("catnip"), f"Cats gained from catnip: {profile.catnip_activations:,}"])
+    stats.append(["catnip_bought", get_emoji("catnip"), f"catnip levels reached: {profile.catnip_bought:,}"])
     stats.append(["highest_catnip_level", "⬆️", f"Highest catnip level: {profile.highest_catnip_level:,}"])
     stats.append(["bounties_complete", "🎯", f"Bounties completed: {profile.bounties_complete:,}"])
 
@@ -6779,9 +6779,8 @@ async def level_down(user, message, ephemeral=False):
     await set_mafia_offer(user.catnip_level, user)
     await user.save()
 
-    # TODO: add quotes per person, or just remove this change
     name = catnip_list["quotes"][user.catnip_level]["name"]
-    quote = random.choice(["womp womp", "try completing your bounties next time", "unlucky", "you can do better"])
+    quote = catnip_list["quotes"][user.catnip_level]["quotes"]["leveldown"]
     removed_line = ""
 
     if removed_perk:
@@ -6855,7 +6854,7 @@ As you return to your hideout, you hear a howl in the distance."""
         button3 = Button(label="Next", style=ButtonStyle.blurple)
         button3.callback = button3_callback
         myview3.add_item(button3)
-        await interaction.response.send_message(content=text3b, view=myview3)
+        await interaction.edit_original_response(content=text3b, view=myview3)
 
     async def button1_callback(interaction: discord.Interaction):
         myview2 = View(timeout=VIEW_TIMEOUT)
@@ -7012,9 +7011,10 @@ async def catnip(message: discord.Interaction):
         desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
     if not level == 0 and not user.hibernation:
         if int(time.time()) - user.catnip_active < 1800:
-            desc += f"\n\n**Hurry!** Levels down <t:{user.catnip_active}:R> ({duration}h total)"
+            desc += f"\n\n**Hurry!** You have <t:{user.catnip_active}:R> to complete your bounties! ({duration}h total)"
         elif user.catnip_active > 0:
             desc += f"\n\nLevels down <t:{user.catnip_active}:R> ({duration}h total)"
+        desc += f"-# Failing to do so will move you down to level {user.catnip_level - 1}"
 
     if user.catnip_level:
         if not user.first_quote_seen:
