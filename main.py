@@ -7225,6 +7225,7 @@ async def catnip(message: discord.Interaction):
         amount = user.catnip_amount
         quote_list = catnip_list["quotes"][level - 1]["quotes"]
         all_complete = True
+        name = ""
 
         desc = "\n"
         if user.hibernation:
@@ -7277,9 +7278,9 @@ async def catnip(message: discord.Interaction):
             desc += f"\n\n**Level {level}** - {change} and more!"
             desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
         if not level == 0 and not user.hibernation:
-            if int(time.time()) - user.catnip_active < 1800:
+            if user.catnip_active - int(time.time()) < 1800:
                 desc += f"\n\n**Hurry!** Levels down <t:{user.catnip_active}:R> ({duration}h total)"
-            elif user.catnip_active > 0:
+            elif user.catnip_active > time.time():
                 desc += f"\n\nLevels down <t:{user.catnip_active}:R> ({duration}h total)"
 
         if user.catnip_level:
