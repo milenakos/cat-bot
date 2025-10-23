@@ -7127,7 +7127,8 @@ async def catnip(message: discord.Interaction):
             await interaction.response.send_message("nice try", ephemeral=True)
             return
 
-        async def callbacks_are_so_fun(interaction):
+        async def callbacks_are_so_fun(interaction2):
+            nonlocal interaction
             await begin_bounties(interaction, override=True)
 
         if user.catnip_active > time.time() and not override:
@@ -7137,8 +7138,9 @@ async def catnip(message: discord.Interaction):
             myview.add_item(button)
             await interaction.response.send_message(f"Your catnip expires <t:{user.catnip_active}:R>.\nAre you sure you want to start your bounties now?\nThis will remove the remaining catnip time you have.", view=myview, ephemeral=True)
             return
-
-        await interaction.response.defer()
+        
+        if not override:
+            await interaction.response.defer()
         level_data = catnip_list["levels"][user.catnip_level]
         duration = level_data["duration"]
         user.hibernation = False
@@ -7223,6 +7225,7 @@ async def catnip(message: discord.Interaction):
                     desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed."
             else:
                 desc += "\nPress **Begin Bounties** to view your bounties and cost!"
+                all_complete = False
 
             desc += f"\n\n**Level {level}** - {change} and more!"
             desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
