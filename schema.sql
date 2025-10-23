@@ -283,7 +283,7 @@ CREATE TABLE public.profile (
     failed_gambler boolean DEFAULT false,
     certified_yapper boolean DEFAULT false,
     ping_reply boolean DEFAULT false,
-    highest_cataine_level integer DEFAULT 0,
+    highest_catnip_level integer DEFAULT 0,
     bounties_complete integer DEFAULT 0,
     cutscene smallint DEFAULT 0
 );
