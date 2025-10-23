@@ -7240,6 +7240,7 @@ async def catnip(message: discord.Interaction):
                     desc += f"\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed"
             else:
                 desc += "\nPress **Begin Bounties** to view your bounties and cost!"
+                desc += f"\nPerks expire <t:{user.catnip_active}:R>"
                 all_complete = False
 
             desc += f"\n\n**Level {level}** - {change} and more!"
