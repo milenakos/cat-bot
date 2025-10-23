@@ -6949,91 +6949,10 @@ async def catnip(message: discord.Interaction):
     if user.bounties == 0:
         await set_bounties(user.catnip_level, user)
 
-    async def pay_catnip(interaction):
-        nonlocal user
-
     level = user.catnip_level
     level_data = catnip_list["levels"][level]
-    rank = level_data["name"]
-    change = level_data["change"]
-    duration = level_data["duration"]
-    bounty_data = catnip_list["bounties"]
     cat_type = user.catnip_price
     amount = user.catnip_amount
-    quote_list = catnip_list["quotes"][level - 1]["quotes"]
-    all_complete = True
-
-    desc = "\n"
-    if user.hibernation:
-        desc += "\nThe timer for leveling up will **not start** until you begin your bounties.\n"
-
-    if user.catnip_level > 0 and user.catnip_level < 11:
-        colored = 0
-
-        def format_bounty(bounty_numstr):
-            nonlocal desc, all_complete, colored, user, bounty_data
-            bounty_id = user[f"bounty_id_{bounty_numstr}"]
-            bounty_type = user[f"bounty_type_{bounty_numstr}"]
-            bounty_total = user[f"bounty_total_{bounty_numstr}"]
-            bounty_progress = user[f"bounty_progress_{bounty_numstr}"]
-
-            desc += "\n- "
-            if bounty_progress == bounty_total:
-                desc += "✅ "
-            else:
-                all_complete = False
-
-            if bounty_progress == 0:
-                desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total))
-            else:
-                desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total - bounty_progress) + " more")
-
-            if bounty_total - bounty_progress == 1:
-                desc = desc.replace("cats", "cat")
-
-            desc = desc.replace("type", f"{get_emoji(bounty_type.lower() + 'cat')} {bounty_type}")
-
-            colored += (bounty_progress / bounty_total) * 10 / user.bounties
-        
-        if not user.hibernation:
-            desc += "Press **Begin Bounties** to see your bounties!"
-        else:
-            desc += "\n**__Bounties:__**"
-            for i in range(user.bounties):
-                if i == 0:
-                    format_bounty("one")
-                if i == 1:
-                    format_bounty("two")
-                if i == 2:
-                    format_bounty("three")
-
-            colored = int(colored)
-
-            if not all_complete:
-                desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} after completing your bounties."
-            else:
-                desc += f"\n\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} to proceed."
-
-        desc += f"\n\n**Level {level}** - {change} and more!"
-        desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
-    if not level == 0 and not user.hibernation:
-        if int(time.time()) - user.catnip_active < 1800:
-            desc += f"\n\n**Hurry!** You have <t:{user.catnip_active}:R> to complete your bounties! ({duration}h total)"
-        elif user.catnip_active > 0:
-            desc += f"\n\nLevels down <t:{user.catnip_active}:R> ({duration}h total)"
-        desc += f"-# Failing to do so will move you down to level {user.catnip_level - 1}"
-
-    if user.catnip_level:
-        if not user.first_quote_seen:
-            quote = quote_list["first"]
-            user.first_quote_seen = True
-            await user.save()
-        elif all_complete:
-            quote = random.choice(quote_list["levelup"])
-        else:
-            quote = random.choice(quote_list["normal"])
-        name = catnip_list["quotes"][level - 1]["name"]
-        desc = f"**{name}**: *{quote}*" + desc
 
     async def pay_catnip(interaction):
         nonlocal user, cat_type, amount
