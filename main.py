@@ -7178,7 +7178,7 @@ async def catnip(message: discord.Interaction):
             await begin_bounties(interaction, override=True)
             await interaction2.delete_original_response()
 
-        if user.catnip_active > time.time() and not override:
+        if user.catnip_active > time.time() and user.catnip_level >= 2 and not override:
             myview = View(timeout=VIEW_TIMEOUT)
             button = Button(label="Begin Anyway", style=ButtonStyle.red)
             button.callback = callbacks_are_so_fun
