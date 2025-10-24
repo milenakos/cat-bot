@@ -23,12 +23,12 @@
       "quotes": {
         "first": "Welcome to the Mafia. You can't trust anyone here.",
         "normal": [
-          "I know you can do this. I'm old. You can easily get more cats than me.",
-          "It's not very difficult. Just get a few more cats, and you'll have beaten me.",
-          "Not much longer. You can easily get more cats than me."
+          "Oh, I’ve seen many great things. You couldn’t even imagine the places I’ve been to. Good ol’ times.",
+          "Just get those cats, okay? My days are numbered, it’s about time I retire.",
+          "You seem to be an odd fellow… but you have good intentions, right? Then catch those cats and get moving!"
         ],
         "levelup": [
-          "Make me proud. Go on. You've won.",
+          "You’ve won! Go on and conquer. Make me proud.",
           "You deserve this. No need to worry about me."
         ],
         "leveldown": "you had to get like 2 cats how did you mess this up"
@@ -38,48 +38,47 @@
       "level": 2,
       "name": "Lucian Jr",
       "quotes": {
-        "first": "Ha! You will never defeat me! I am the best cat-catcher in a long line of professional catchers!",
+        "first": "Ha! You will never defeat me! I am the best cat catcher of all my ancestors!",
         "normal": [
           "FEAR ME! I am the agent of your demise. This app on my phone told me so.",
-          "I have bested hundreds. No. Thousands of cat catchers, before you. You can never win. Who are they? uhhhhhhh",
-          "Cats are mine. No catch . Mine."
+          "You will never win. I have bested hundreds, no, THOUSANDS of cat catchers before you. Who are they? uhhhhhhh",
+          "Cat spawn. No catch. I grab. All cat mine."
         ],
         "levelup": [
-          "I have a family... please, don't do this to me...",
-          "How could this happen..."
+          "WHAT?! How could this be…",
+          "I have failed you, dad… I’m sorry…"
         ],
-        "leveldown": "Ha! I knew I'd beat you."
+        "leveldown": "Ha! Never even doubted my skills."
       }
     },
     {
       "level": 3,
       "name": "Jinx",
       "quotes": {
-        "first": "heyyy! it's you! i've heard a lot about you. good luck beating me, though.",
+        "first": "heyyy. been hearing a lot about you. welcome, welcome",
         "normal": [
-          "you aren't going to beat me by sitting here refreshing my quotes.",
-          "there's people ahead of me that- well, you'll see",
-          "you can't trust anyone here. not even me."
+          "bro you ever try any of this catnip stuff yourself? u gotta give it a shot, i tell ya, it’s something else",
+          "the whole mafia thing is ridiculous, don’t even get involved. i’m just here for cheaper catnip lol",
+          "dude the other day i had this green fella, he took too much, ended up going crazy. me?? nah come on ill be fine"
         ],
         "levelup": [
-          "well, you did it. i'm impressed. just be warned. the next guy is really weird...",
-          "you're pretty good at this. don't let it go to your head."
+          "leaving already? aw. come back anytime"
         ],
-        "leveldown": "try actually completing your bounties next time"
+        "leveldown": "dw bro maybe next time"
       }
     },
     {
       "level": 4,
       "name": "Jeremy",
       "quotes": {
-        "first": "i love cat bot it is great, now there is a new update",
+        "first": "I LOVE CAT BOT IT IS GREAT NOW THERE IS A NEW UPDATE!!!!!",
         "normal": [
-          "hi my name is jeremy, my parents left when i was three",
-          "there is just a single rule, jeremy is really cool",
-          "i am cool and i am green, better at first than i may seem"
+          "YO MY NAME IS JEREMY MY PARENTS LEFT WHEN I WAS THREE!!!!",
+          "THERE IS JUST A SINGLE RULE JEREMY IS REALLY COOL!!!!!!!",
+          "I AM COOL AND I AM GREEN BETTER THAN AT FIRST IT MAY SEEM!!!!!!"
         ],
         "levelup": [
-          "hi my name is almost dead, my life is hanging on a thread"
+          "HI MY NAME IS ALMOST DEAD MY LIFE HANGING ON A THREAD"
         ],
         "leveldown": "<:jeremysus:1430898400588464138>"
       }
@@ -91,9 +90,9 @@
         "first": "Hello. My name is Lucian. You beat my son. Prepare to die.",
         "normal": [
           "You couldnt have beat my son. YOU CHEATER!!",
-          "Im mad that you here. Go.",
+          "I have been here for ALL ETERNITY! Almost as if I'm hard-coded… by some developer…",
           "I'm the best cat catcher ever! [NOT CLICKBAIT]",
-          "FEAR ME! I am the agent of your demise. This app on my phone told me so."
+          "FEAR ME! I am the uhhhhhh okay the phone app isn't working"
         ],
         "levelup": [
           "Son… I'm sorry. I'm so sorry."
@@ -105,16 +104,16 @@
       "level": 6,
       "name": "Sofia",
       "quotes": {
-        "first": "Another one? Why do you cats keep trying? You're just a waste of my time.",
+        "first": "Another one? Why do you commoners keep trying? You're just a waste of my time.",
         "normal": [
-          "Ugh. Just give up already.",
-          "You're so naïve. People like you don't get past me.",
-          "I've been here forever. It's almost like I'm hard-coded by some developer to be in this position forever."
+          "Ugh, give up already!",
+          "Oh, please. You’re pathetic.",
+          "You're so naïve thinking you even have a chance to pass me."
         ],
         "levelup": [
-          "...You've won. The one above me… he's not like the others. He's not normal."
+          "This can’t be possible! NO! Guards, seize them!! NOOOOO!!!"
         ],
-        "leveldown": "Serves you right. People like you aren't meant to be here."
+        "leveldown": "Serves you right. Those like you don’t deserve my attention"
       }
     },
     {
@@ -128,10 +127,9 @@
           "Dogs are really bad, right? Yeah! I hate dogs!"
         ],
         "levelup": [
-          "Everyone else you defeated gave up. I will not be so gracious.",
-          "This isn't where my story ends. Not today."
+          "...This isn't where my story ends. Not today."
         ],
-        "leveldown": "Heh. I'm the superior species after all- wait i mean uhhh"
+        "leveldown": "Seems like I’m the superior species after all."
       }
     },
     {
@@ -156,10 +154,18 @@
       "level": 9,
       "name": "Lalo",
       "quotes": {
-        "first": "staring",
-        "normal": ["im placeholding"],
-        "levelup": ["woah"],
-        "leveldown": "staring cat"
+        "first": "Oh hey! You're here. Right on time. You will love this to death!",
+        "normal": [
+          "You ever heard of that cat, Whiskers? Well he’s back in business. What’s he up to man, what’s he doing...",
+          "I’m here to make sure business is running in order. You’re pushing it with the mafia overtake.",
+          "Relentlessly moving up and defeating everyone on the way, I want to know, what is your goal here? I just wanna hear the story.",
+          "And your bail will be… 7 million fine cats!",
+          "Yeah, I never sleep much. With these bounties, neither will you."
+      ],
+        "levelup": [
+          "hahahashahhashaHSHAHAHSHAHSAHAAH"
+        ],
+        "leveldown": "And look who we have here! The one and only. Too bad your perks don’t give you armor."
       }
     },
     {
