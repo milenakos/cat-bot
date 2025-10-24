@@ -6790,7 +6790,7 @@ async def level_down(user, message, ephemeral=False):
     await user.save()
 
     name = catnip_list["quotes"][user.catnip_level]["name"]
-    quote = catnip_list["quotes"][user.catnip_level]["quotes"]["leveldown"]
+    quote = catnip_list["quotes"][user.catnip_level]["quotes"]["leveldown"].replace("jeremysus", get_emoji("jeremysus"))
     removed_line = ""
 
     if removed_perk:
