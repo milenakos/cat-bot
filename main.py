@@ -270,7 +270,7 @@ class Colors:
 
 
 # rain shill message for footers
-rain_shill = "☔ Get tons of cats /rain"
+rain_shill = "🎃 Halloween Sale! -20% /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -345,7 +345,9 @@ config.rain_starter = {}
 
 def get_emoji(name):
     global emojis
-    if name in emojis.keys():
+    if name in allowedemojis:
+        return "p_" + emojis[name]
+    elif name in emojis.keys():
         return emojis[name]
     elif name in emoji.EMOJI_DATA:
         return name
@@ -375,6 +377,7 @@ news_list = [
     {"title": "Regarding recent instabilities", "emoji": "🗒️"},
     {"title": "cat bot reached #5 on top.gg", "emoji": "yippee"},
     {"title": "nominate cat bot for top.gg awards", "emoji": "🏆"},
+    {"title": "Welcome to the Cat Mafia", "emoji": "catnip"},
 ]
 
 
@@ -2081,7 +2084,7 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
+                    suffix_string += f"\n🎃 Halloween Sale! -20%! </rain:{RAIN_ID}>"
                 if random.randint(0, 19) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
@@ -2819,6 +2822,35 @@ thanks for using cat bot!""",
                 discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/YgQ0flQ.png")),
                 Button(label="Nominate Cat Bot", url="https://top.gg/bot/966695034340663367", emoji="🏆"),
                 "-# <t:1759513848>",
+            )
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
+        elif news_id == 11:
+            embed = Container(
+                f"## {get_emoji('catnip')} Welcome to the Cat Mafia",
+                f"""after the dog mafia got arrested for selling cataine, cats got inspired and started their own mafia!
+
+- cataine is replaced by {get_emoji("catnip")} catnip
+- the biggest update ever (probably)
+- this is a new late-game complex mechanic with *leveling, bounties and perks*
+- it can be accessed and managed via /catnip
+- discover **10 new cats** - the members of the mafia who have tough challenges for you
+- getting through all of it is a very tough challenge, **the hardest thing in cat bot**
+- old cataine is completely gone, all process you had in it will be reset
+
+👉 okay now let me explain:
+at each level you will have some bounties you have to complete within a time frame. if you complete the bounties and pay the price, you will be able to choose one of 3 different perks of random rarities {get_emoji("common")}{get_emoji("uncommon")}{get_emoji("rare")}{get_emoji("epic")}{get_emoji("legendary")}. the perks will stack while catnip is active! failing to complete the bounties will bring you one level down and you will lose your last perk. higher levels are harder but give you better perks!
+
+🎃 __cat bot halloween starts now!__
+until the end of the month rains on the cat bot store are over 20% off!
+☔ [**catbot.shop**](<https://catbot.shop>)
+☔ [**catbot.shop**](<https://catbot.shop>)
+☔ [**catbot.shop**](<https://catbot.shop>)""",
+                ActionRow(
+                    Button(label="Cat Bot Store", url="https://catbot.shop"),
+                ),
+                "-# <t:1761325200>",
             )
             view.add_item(embed)
             view.add_item(back_row)
@@ -3956,7 +3988,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
     shopbutton = Button(
         emoji="🛒",
-        label="Store",
+        label="Store (-20%!)",
         url="https://catbot.shop",
     )
 
