@@ -6780,9 +6780,10 @@ async def level_down(user, message, ephemeral=False):
     user.bounty_active = False
     user.first_quote_seen = False
 
-    h = list(user.perks) if user.perks else []
-    removed_perk = h.pop()
-    user.perks = h[:]
+    if user.perks:
+        h = list(user.perks)
+        removed_perk = h.pop()
+        user.perks = h[:]
 
     await set_bounties(user.catnip_level, user)
     await set_mafia_offer(user.catnip_level, user)
@@ -7201,7 +7202,7 @@ async def catnip(message: discord.Interaction):
             colored = 0
 
             def format_bounty(bounty_numstr, single=False):
-                nonlocal desc, all_complete, colored, user, bounty_data
+                nonlocal desc, all_complete, colored
                 bounty_id = user[f"bounty_id_{bounty_numstr}"]
                 bounty_type = user[f"bounty_type_{bounty_numstr}"]
                 bounty_total = user[f"bounty_total_{bounty_numstr}"]
