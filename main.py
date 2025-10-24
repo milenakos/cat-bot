@@ -6812,7 +6812,7 @@ async def level_down(user, message, ephemeral=False):
     await message.channel.send(f"<@{user.user_id}>", embed=embed)
 
 
-async def mafia_cutscene(interaction: discord.Interaction):
+async def mafia_cutscene(interaction: discord.Interaction, user):
     # YAPPATRON
     text1 = """You feel satisfied with yourself. I just defeated the Godfather, Bailey! I'm on top of the world now!
 Little did you know, it was foolish to believe it was over just yet.
@@ -6914,8 +6914,8 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
 
     async def button2_callback(interaction: discord.Interaction):
         myview3 = View(timeout=VIEW_TIMEOUT)
-        button3a = Button(label="Stay", style=ButtonStyle.red)
-        button3b = Button(label="Continue", style=ButtonStyle.green, disabled=True)
+        button3a = Button(label="Stay", style=ButtonStyle.green)
+        button3b = Button(label="Continue", style=ButtonStyle.red, disabled=True)
         button3a.callback = button3a_callback
         button3b.callback = button3b_callback
         myview3.add_item(button3a)
@@ -6932,7 +6932,7 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
         await interaction.edit_original_response(content=text2, view=myview2)
 
     myview1 = View(timeout=VIEW_TIMEOUT)
-    button1 = Button(label="RUN!", style=ButtonStyle.blurple)
+    button1 = Button(label="'uhhhh'", style=ButtonStyle.blurple)
     button1.callback = button1_callback
     myview1.add_item(button1)
     await interaction.response.send_message(content=text1, view=myview1, ephemeral=True)
@@ -7007,7 +7007,7 @@ async def catnip(message: discord.Interaction):
 
         if user.catnip_level == 8 and user.cutscene == 0:
             await mafia_cutscene(interaction, user)
-        elif user.catnip_level == 10 and user.cutscene == 1:
+        elif user.catnip_level == 10 and user.cutscene <= 1:
             await mafia_cutscene2(interaction, user)
         elif user.catnip_level > 1:
             await perk_screen(interaction)
