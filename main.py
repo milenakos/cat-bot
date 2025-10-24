@@ -3789,7 +3789,7 @@ async def rain_end(message, channel):
                     part_one += "☔ "
                 disambig = f"({len(cat_types)})"
                 if pack_amount:
-                    disambig = f"({len(cat_types) - pack_amount} {funny_emojis['Fine']}, {pack_amount} {funny_emojis['Wooden']})"
+                    disambig = f"({len(cat_types) - pack_amount} {get_emoji('finecat')}, {pack_amount} {get_emoji('woodenpack')})"
                 part_one += f"{user_id} {disambig}{show_cats}\n"
 
             if not lock_success and not epic_fail:
