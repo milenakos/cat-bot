@@ -2077,10 +2077,10 @@ async def on_message(message: discord.Message):
                         config.cat_cought_rain[channel.channel_id][le_emoji] = []
                     for _ in range(silly_amount):
                         config.cat_cought_rain[channel.channel_id][le_emoji].append(f"<@{user.user_id}>")
-                    # for i in packs_gained:
-                    #     if i not in config.cat_cought_rain[channel.channel_id]:
-                    #         config.cat_cought_rain[channel.channel_id][i] = []
-                    #     config.cat_cought_rain[channel.channel_id][i].append(f"<@{user.user_id}>")
+                    for i in packs_gained:
+                        if i not in config.cat_cought_rain[channel.channel_id]:
+                            config.cat_cought_rain[channel.channel_id][i] = []
+                        config.cat_cought_rain[channel.channel_id][i].append(f"<@{user.user_id}>")
 
                 if random.randint(0, 7) == 0:
                     # shill rains
@@ -3735,29 +3735,48 @@ async def rain_end(message, channel):
         rain_server = config.cat_cought_rain[channel.channel_id]
 
         # you can throw out the name of the emoji to save on characters
-        funny_emojis = {k: re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(k.lower() + "cat"), count=1) for k in rain_server.keys()}
+        pack_names = ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]
+        pack_yeah = {"Wooden": 1, "Stone": 0.9, "Bronze": 0.8, "Silver": 0.7, "Gold": 0.6, "Platinum": 0.5, "Diamond": 0.4, "Celestial": 0.3}
+        rain_packs = []
+        rain_cats = []
+
+        for key in rain_server.keys():
+            if key in cattypes:
+                rain_cats.append(key)
+            if key in pack_names:
+                rain_packs.append(key)
+
+        funny_cat_emojis = {k: re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(k.lower() + "cat"), count=1) for k in rain_cats}
+        funny_pack_emojis = {k: re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(k.lower() + "pack"), count=1) for k in rain_packs}
+
+        funny_emojis = funny_cat_emojis | funny_pack_emojis
 
         reverse_mapping = {}
 
-        for cat_type, user_ids in rain_server.items():
+        for thing_type, user_ids in rain_server.items():
             for user_id in user_ids:
                 if user_id not in reverse_mapping:
                     reverse_mapping[user_id] = []
-                reverse_mapping[user_id].append(cat_type)
+                reverse_mapping[user_id].append(thing_type)
 
         evil_types = []
         epic_fail = False
-        for cat_type in cattypes:
+        thingtypes = cattypes + pack_names
+        for cat_type in thingtypes:
             part_one = "## Rain Summary\n"
 
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 show_cats = ""
                 shortened_types = False
-                cat_types.sort(reverse=True, key=lambda x: type_dict[x])
+                dictdict = type_dict | pack_yeah
+                cat_types.sort(reverse=True, key=lambda x: dictdict[x])
+                pack_amount = 0
                 for cat_type_two in cat_types:
                     if cat_type_two in evil_types:
                         shortened_types = True
                         continue
+                    if cat_type_two in pack_names:
+                        pack_amount += 1
                     show_cats += funny_emojis[cat_type_two]
                 if show_cats != "":
                     if shortened_types:
@@ -3766,7 +3785,10 @@ async def rain_end(message, channel):
                         show_cats = ": " + show_cats
                 if str(config.rain_starter[channel.channel_id]) in str(user_id):
                     part_one += "☔ "
-                part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
+                disambig = f"({len(cat_types)})"
+                if pack_amount:
+                    disambig = f"({len(cat_types) - pack_amount} {funny_emojis['Fine']}, {pack_amount} {funny_emojis['Wooden']})"
+                part_one += f"{user_id} {disambig}{show_cats}\n"
 
             if not lock_success and not epic_fail:
                 part_one += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
@@ -3780,7 +3802,7 @@ async def rain_end(message, channel):
 
             if epic_fail:
                 part_two = ""
-                for cat_type in cattypes:
+                for cat_type in thingtypes:
                     if cat_type not in rain_server.keys():
                         continue
                     if len(rain_server[cat_type]) > 5:
@@ -6861,7 +6883,7 @@ Bailey puts his head down, and scampers off. But you aren't done.
 You and your crew chase after him. He runs, until you corner him. He goes into the building behind him… but it's the Cat Police Station.
 As you return to your hideout, you hear a howl in the distance."""
 
-    async def button3_callback(interaction: discord.Interaction, user):
+    async def button3_callback(interaction: discord.Interaction):
         await interaction.response.defer()
         await interaction.edit_original_response(content=text4, view=None)
         await achemb(interaction, "thanksforplaying", "send")
@@ -6961,7 +6983,7 @@ async def catnip(message: discord.Interaction):
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
     if not user.dark_market_active:
-        await message.followup.send("You don't have access to the dark market yet. Catch more cats to unlock it!")
+        await message.followup.send("You don't have access to the catnip yet. Catch more cats to unlock it!")
         return
 
     if user.catnip_active < time.time() and not user.hibernation and user.catnip_level > 0:
