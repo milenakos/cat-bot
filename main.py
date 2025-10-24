@@ -2140,6 +2140,8 @@ async def on_message(message: discord.Message):
                         await asyncio.sleep(5)
                         await interaction.followup.send(phrase, ephemeral=True)
 
+                    await achemb(message, "dark_market", "send")
+
                 vote_time_user = await User.get_or_create(user_id=message.author.id)
                 if random.randint(0, 10) == 0 and user.total_catches > 50 and not user.dark_market_active:
                     button = Button(label="You see a shadow...", style=ButtonStyle.red)
@@ -5827,6 +5829,8 @@ async def slots(message: discord.Interaction):
         await achemb(message, "paradoxical_gambler", "send")
         return
 
+    await message.interaction.defer()
+
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     total_spins, total_wins, total_big_wins = (
         await Profile.sum("slot_spins", "slot_spins > 0"),
@@ -5963,7 +5967,7 @@ async def slots(message: discord.Interaction):
     myview = View(timeout=VIEW_TIMEOUT)
     myview.add_item(button)
 
-    await message.response.send_message(embed=embed, view=myview)
+    await message.followup.send(embed=embed, view=myview)
 
 
 @bot.tree.command(description="what")
@@ -6996,6 +7000,8 @@ async def catnip(message: discord.Interaction):
     if user.bounties == 0:
         await set_bounties(user.catnip_level, user)
 
+    await achemb(message, "dark_market", "send")
+
     level = user.catnip_level
     cat_type = user.catnip_price
     amount = user.catnip_amount
@@ -7091,11 +7097,11 @@ async def catnip(message: discord.Interaction):
 
         async def select_perk(interaction):
             await user.refresh_from_db()
-            if user.perk_selected:
-                await interaction.response.send_message("You have already selected a perk.", ephemeral=True)
-                return
-
             await interaction.response.defer()
+
+            if user.perk_selected:
+                await interaction.followup.send("You have already selected a perk.", ephemeral=True)
+                return
 
             user.perk_selected = True
             h = list(user.perks) if user.perks else []
@@ -7174,11 +7180,11 @@ async def catnip(message: discord.Interaction):
         await interaction.response.send_message(embed=help_embed, ephemeral=True)
 
     async def begin_bounties(interaction, override=False):
+        if not override:
+            await interaction.response.defer()
+
         if not user.hibernation:
-            if not override:
-                await interaction.response.send_message("nice try", ephemeral=True)
-            else:
-                await interaction.followup.send("nice try", ephemeral=True)
+            await interaction.followup.send("nice try", ephemeral=True)
             return
 
         async def callbacks_are_so_fun(interaction2):
@@ -7192,15 +7198,13 @@ async def catnip(message: discord.Interaction):
             button = Button(label="Begin Anyway", style=ButtonStyle.red)
             button.callback = callbacks_are_so_fun
             myview.add_item(button)
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"Your catnip expires <t:{user.catnip_active}:R>.\nAre you sure you want to start your bounties now?\nThis will remove the remaining catnip time you have.",
                 view=myview,
                 ephemeral=True,
             )
             return
 
-        if not override:
-            await interaction.response.defer()
         level_data = catnip_list["levels"][user.catnip_level]
         duration = level_data["duration"]
         user.hibernation = False
