@@ -5829,7 +5829,7 @@ async def slots(message: discord.Interaction):
         await achemb(message, "paradoxical_gambler", "send")
         return
 
-    await message.interaction.defer()
+    await message.response.defer()
 
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     total_spins, total_wins, total_big_wins = (
