@@ -7683,9 +7683,15 @@ async def leaderboards(
                 ["user_id", "best_pig_score"], "guild_id = $1 AND best_pig_score > 0 ORDER BY best_pig_score DESC", message.guild.id
             )
             final_value = "best_pig_score"
+        elif type == "Roulette Dollars":
+            unit = "cat dollars"
+            result = await Profile.collect_limit(
+                ["user_id", "roulette_balance"], "guild_id = $1 AND roulette_balance != 100 ORDER BY roulette_balance DESC", message.guild.id
+            )
+            final_value = "roulette_balance"
         else:
             # qhar
-            return
+            raise ValueError("Invalid leaderboard type")
 
         # find the placement of the person who ran the command and optionally the person who pressed the button
         interactor_placement = 0
@@ -7768,6 +7774,8 @@ async def leaderboards(
                         break
                     num = round(num, 3)
                 elif type in ["Cookies", "Cats", "Pig"] and num <= 0:
+                    break
+                elif type == "Roulette Dollars" and num == 100:
                     break
                 string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
 
