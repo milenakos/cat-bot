@@ -6606,7 +6606,7 @@ async def bounty(message, user, cattype):
 
 async def set_mafia_offer(level, user):
     if user.catnip_level == 0:
-        user.catnip_ampun = 0
+        user.catnip_amount = 0
         return
     level_data = catnip_list["levels"][level]
     vt = level_data["cost"]
