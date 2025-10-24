@@ -2077,10 +2077,10 @@ async def on_message(message: discord.Message):
                         config.cat_cought_rain[channel.channel_id][le_emoji] = []
                     for _ in range(silly_amount):
                         config.cat_cought_rain[channel.channel_id][le_emoji].append(f"<@{user.user_id}>")
-                    for i in packs_gained:
-                        if i not in config.cat_cought_rain[channel.channel_id]:
-                            config.cat_cought_rain[channel.channel_id][i] = []
-                        config.cat_cought_rain[channel.channel_id][i].append(f"<@{user.user_id}>")
+                    # for i in packs_gained:
+                    #     if i not in config.cat_cought_rain[channel.channel_id]:
+                    #         config.cat_cought_rain[channel.channel_id][i] = []
+                    #     config.cat_cought_rain[channel.channel_id][i].append(f"<@{user.user_id}>")
 
                 if random.randint(0, 7) == 0:
                     # shill rains
@@ -7153,7 +7153,10 @@ async def catnip(message: discord.Interaction):
 
     async def begin_bounties(interaction, override=False):
         if not user.hibernation:
-            await interaction.response.send_message("nice try", ephemeral=True)
+            if not override:
+                await interaction.response.send_message("nice try", ephemeral=True)
+            else:
+                await interaction.followup.send("nice try", ephemeral=True)
             return
 
         async def callbacks_are_so_fun(interaction2):
