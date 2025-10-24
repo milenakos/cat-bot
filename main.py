@@ -3735,45 +3735,29 @@ async def rain_end(message, channel):
         rain_server = config.cat_cought_rain[channel.channel_id]
 
         # you can throw out the name of the emoji to save on characters
-        pack_names = ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]
-        pack_yeah = {"Wooden": 1, "Stone": 0.9, "Bronze": 0.8, "Silver": 0.7, "Gold": 0.6, "Platinum": 0.5, "Diamond": 0.4, "Celestial": 0.3}
-        rain_packs = []
-        rain_cats = []
-        for key in rain_server.keys():
-            if key in cattypes:
-                rain_cats.append(key)
-            if key in pack_names:
-                rain_packs.append(key)
-        funny_cat_emojis = {k: re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(k.lower() + "cat"), count=1) for k in rain_cats}
-        funny_pack_emojis = {k: re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(k.lower() + "pack"), count=1) for k in rain_packs}
-        funny_emojis = funny_cat_emojis | funny_pack_emojis
+        funny_emojis = {k: re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(k.lower() + "cat"), count=1) for k in rain_server.keys()}
 
         reverse_mapping = {}
 
-        for thing_type, user_ids in rain_server.items():
+        for cat_type, user_ids in rain_server.items():
             for user_id in user_ids:
                 if user_id not in reverse_mapping:
                     reverse_mapping[user_id] = []
-                reverse_mapping[user_id].append(thing_type)
+                reverse_mapping[user_id].append(cat_type)
 
         evil_types = []
         epic_fail = False
-        thingtypes = cattypes + pack_names
-        for cat_type in thingtypes:
+        for cat_type in cattypes:
             part_one = "## Rain Summary\n"
 
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 show_cats = ""
                 shortened_types = False
-                dictdict = type_dict | pack_yeah
-                cat_types.sort(reverse=True, key=lambda x: dictdict[x])
-                pack_amount = 0
+                cat_types.sort(reverse=True, key=lambda x: type_dict[x])
                 for cat_type_two in cat_types:
                     if cat_type_two in evil_types:
                         shortened_types = True
                         continue
-                    if cat_type_two in pack_names:
-                        pack_amount += 1
                     show_cats += funny_emojis[cat_type_two]
                 if show_cats != "":
                     if shortened_types:
@@ -3782,7 +3766,7 @@ async def rain_end(message, channel):
                         show_cats = ": " + show_cats
                 if str(config.rain_starter[channel.channel_id]) in str(user_id):
                     part_one += "☔ "
-                part_one += f"{user_id} ({len(cat_types) - pack_amount} {funny_emojis['Fine']}, {pack_amount} {funny_emojis['Wooden']}){show_cats}\n"
+                part_one += f"{user_id} ({len(cat_types)}){show_cats}\n"
 
             if not lock_success and not epic_fail:
                 part_one += "-# 💡 Cat Bot will automatically lock the channel for a few seconds after a rain if you give it `Manage Permissions`"
@@ -3796,7 +3780,7 @@ async def rain_end(message, channel):
 
             if epic_fail:
                 part_two = ""
-                for cat_type in thingtypes:
+                for cat_type in cattypes:
                     if cat_type not in rain_server.keys():
                         continue
                     if len(rain_server[cat_type]) > 5:
@@ -7433,7 +7417,7 @@ async def achievements(message: discord.Interaction):
                     if user[k]:
                         newembed.add_field(
                             name=str(get_emoji("demonic_ach")) + " Catnip Addict",
-                            value="Defeat the dog mafia",
+                            value="Defeat the cat mafia",
                             inline=True,
                         )
                     else:
