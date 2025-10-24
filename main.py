@@ -1875,7 +1875,7 @@ async def on_message(message: discord.Message):
                     if user.catnip_active < time.time():
                         if user.catnip_active != 1:
                             user.catnip_active = 1
-                            suffix_string += f"\n{get_emoji('catnip')} Your catnip expired! Run /catnip to get more."
+                            suffix_string += f"\n{get_emoji('catnip_disabled')} Your catnip expired! Run /catnip to get more."
                         perks = []
                     else:
                         perks = user.perks
