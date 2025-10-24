@@ -6997,7 +6997,7 @@ async def catnip(message: discord.Interaction):
     async def pay_catnip(interaction):
         nonlocal user, cat_type, amount
         await user.refresh_from_db()
-        if level != user.catnip_level or user.cataine_active + 120 < time.time():
+        if level != user.catnip_level:
             await interaction.response.send_message("nice try", ephemeral=True)
             return
         for i in range(user.bounties):
