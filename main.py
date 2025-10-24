@@ -6835,7 +6835,7 @@ async def level_down(user, message, ephemeral=False):
     quote = catnip_list["quotes"][user.catnip_level]["quotes"]["leveldown"].replace("jeremysus", get_emoji("jeremysus"))
     removed_line = ""
 
-    if removed_perk:
+    if user.perks and removed_perk:
         rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
         perk_rarity = int(removed_perk.split("_")[0])
         perk_type = int(removed_perk.split("_")[1])
