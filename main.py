@@ -6892,9 +6892,10 @@ As you return to your hideout, you hear a howl in the distance."""
     async def button3_callback(interaction: discord.Interaction):
         await interaction.response.defer()
         await interaction.edit_original_response(content=text4, view=None)
-        await achemb(interaction, "thanksforplaying", "send")
+        user.thanksforplaying = False
         user.cutscene = 1
         await user.save()
+        await achemb(interaction, "thanksforplaying", "send")
 
     async def button2a_callback(interaction: discord.Interaction):
         myview3 = View(timeout=VIEW_TIMEOUT)
@@ -6921,6 +6922,9 @@ As you return to your hideout, you hear a howl in the distance."""
         myview2.add_item(button2b)
         await interaction.response.defer()
         await interaction.edit_original_response(content=text2, view=myview2)
+
+    user.thanksforplaying = True
+    await user.save()
 
     myview1 = View(timeout=VIEW_TIMEOUT)
     button1 = Button(label="RUN!", style=ButtonStyle.blurple)
@@ -6949,9 +6953,10 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
     async def button3a_callback(interaction: discord.Interaction):
         await interaction.response.defer()
         await interaction.edit_original_response(content=text4a, view=None)
-        await achemb(interaction, "mafia_win", "send")
+        user.mafia_win = False
         user.cutscene = 2
         await user.save()
+        await achemb(interaction, "mafia_win", "send")
 
     async def button3b_callback(interaction: discord.Interaction):
         await interaction.response.defer()
@@ -6975,6 +6980,9 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
         myview2.add_item(button2)
         await interaction.response.defer()
         await interaction.edit_original_response(content=text2, view=myview2)
+
+    user.mafia_win = True
+    await user.save()
 
     myview1 = View(timeout=VIEW_TIMEOUT)
     button1 = Button(label="'uhhhh'", style=ButtonStyle.blurple)
@@ -7003,11 +7011,6 @@ async def catnip(message: discord.Interaction):
         await set_bounties(user.catnip_level, user)
 
     await achemb(message, "dark_market", "send")
-
-    if user.highest_catnip_level >= 8:
-        await achemb(message, "thanksforplaying", "send")
-    if user.highest_catnip_level == 10:
-        await achemb(message, "mafia_win", "send")
 
     level = user.catnip_level
     cat_type = user.catnip_price
