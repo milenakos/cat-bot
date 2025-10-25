@@ -7076,6 +7076,7 @@ async def catnip(message: discord.Interaction):
         await user.refresh_from_db()
         perks = catnip_list["perks"]
         rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
+        rarity_colors = [get_emoji("common"), get_emoji("uncommon"), get_emoji("rare"), get_emoji("epic"), get_emoji("legendary")]
         if not user.perks:
             await interaction.response.send_message(
                 embed=discord.Embed(
@@ -7088,10 +7089,11 @@ async def catnip(message: discord.Interaction):
         perk_embed = discord.Embed(title="Your Perks", color=Colors.brown)
         user_perks = user.perks
         for perk in user_perks:
+            perk_rarity = int(perk.split("_")[0])
             perk_data = perks[int(perk.split("_")[1]) - 1]
             effect = perk_data["values"][int(perk.split("_")[0])]
             perk_embed.add_field(
-                name=f"{perk_data.get('name', '')} ({rarities[int(perk.split('_')[0])]})",
+                name=f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')} ({rarities[perk_rarity]})",
                 value=f"{perk_data.get('desc', '')}".replace("percent", str(effect))
                 .replace("triple_none", str(effect / 2))
                 .replace("timer_add_streak", str(global_user.vote_streak)),
