@@ -7730,14 +7730,14 @@ async def leaderboards(
 
         # dont show placements if they arent defined
         if interactor and type != "Fast":
-            if interactor <= 0:
+            if interactor <= 0 and type != "Roulette Dollars":
                 interactor_placement = 0
             interactor = round(interactor)
         elif interactor and type == "Fast" and interactor >= 99999999999999:
             interactor_placement = 0
 
         if messager and type != "Fast":
-            if messager <= 0:
+            if messager <= 0 and type != "Roulette Dollars":
                 messager_placement = 0
             messager = round(messager)
         elif messager and type == "Fast" and messager >= 99999999999999:
