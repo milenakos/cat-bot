@@ -430,7 +430,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
 
         embed2 = (
             discord.Embed(
-                title="catnip Addict",
+                title="Catnip Addict",
                 description="Uncover the mafia's truth\nThanks for playing! ✨",
                 color=Colors.yellow,
             )
@@ -7456,7 +7456,7 @@ async def achievements(message: discord.Interaction):
                     if user[k]:
                         newembed.add_field(
                             name=str(get_emoji("demonic_ach")) + " Catnip Addict",
-                            value="Defeat the cat mafia",
+                            value="Uncover the mafia's truth",
                             inline=True,
                         )
                     else:
