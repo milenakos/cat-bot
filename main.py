@@ -1325,6 +1325,7 @@ async def on_message(message: discord.Message):
             user.rain_minutes += 20
         else:
             user.rain_minutes += int(things[2])
+            user.rain_minutes_bought += int(things[2])
         user.premium = True
         await user.save()
 
