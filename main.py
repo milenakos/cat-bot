@@ -7117,7 +7117,7 @@ async def catnip(message: discord.Interaction):
             await main_message.edit(view=await gen_main())
 
         if user.perk_selected:
-            await interaction.response.send_message("You have already selected a perk.", ephemeral=True)
+            await interaction.followup.send("You have already selected a perk.", ephemeral=True)
             return
 
         perks_data = catnip_list["perks"]
