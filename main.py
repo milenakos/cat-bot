@@ -6910,6 +6910,7 @@ As you return to your hideout, you hear a howl in the distance."""
         button3 = Button(label="Next", style=ButtonStyle.blurple)
         button3.callback = button3_callback
         myview3.add_item(button3)
+        await interaction.response.defer()
         await interaction.edit_original_response(content=text3b, view=myview3)
 
     async def button1_callback(interaction: discord.Interaction):
