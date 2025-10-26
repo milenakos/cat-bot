@@ -7058,6 +7058,7 @@ async def catnip(message: discord.Interaction):
         else:
             user.catnip_active += 86400
             trigger_cutscene = True
+            user.max_level_completions += 1
         user.catnip_bought += 1
         user.catnip_total_cats = 0
         user.first_quote_seen = False
