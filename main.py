@@ -7013,6 +7013,11 @@ async def catnip(message: discord.Interaction):
 
     await achemb(message, "dark_market", "send")
 
+    if user.cutscene >= 1:
+        await achemb(message, "thanksforplaying", "send")
+    if user.cutscene == 2:
+        await achemb(message, "mafia_win", "send")
+
     level = user.catnip_level
     cat_type = user.catnip_price
     amount = user.catnip_amount
