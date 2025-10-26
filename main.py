@@ -7039,6 +7039,7 @@ async def catnip(message: discord.Interaction):
             await interaction.response.send_message("You haven't selected a perk from your previous level yet!", ephemeral=True)
             return
 
+        trigger_cutscene = False
         if user.catnip_level != 10:
             user.catnip_level += 1
             user.hibernation = True
@@ -7049,6 +7050,7 @@ async def catnip(message: discord.Interaction):
                 user.perk_selected = False
         else:
             user.catnip_active += 86400
+            trigger_cutscene = True
         user.catnip_bought += 1
         user.catnip_total_cats = 0
         user.first_quote_seen = False
@@ -7062,7 +7064,7 @@ async def catnip(message: discord.Interaction):
 
         if user.catnip_level == 8 and user.cutscene == 0:
             await mafia_cutscene(interaction, user)
-        elif user.catnip_level == 10 and user.cutscene <= 1:
+        elif trigger_cutscene and user.cutscene <= 1:
             await mafia_cutscene2(interaction, user)
         elif user.catnip_level > 1:
             await perk_screen(interaction)
