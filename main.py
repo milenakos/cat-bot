@@ -6595,11 +6595,11 @@ async def bounty(message, user, cattype):
             description = f"{progress_line}\n{completed}/{user.bounties} Bounties Complete"
         embed = discord.Embed(title=f"✅ {title[i]}", color=Colors.green, description=description).set_author(name="Mafia Level " + str(level))
         user.bounties_complete += 1
-        if user.bounties_complete == 5:
+        if user.bounties_complete >= 5:
             await achemb(message, "bounty_novice", "send")
-        if user.bounties_complete == 19:  # we do a little trolling (???)
+        if user.bounties_complete >= 19:  # we do a little trolling (???)
             await achemb(message, "bounty_hunter", "send")
-        if user.bounties_complete == 100:
+        if user.bounties_complete >= 100:
             await achemb(message, "bounty_lord", "send")
         await message.channel.send(f"<@{user.user_id}>", embed=embed)
         await user.save()
