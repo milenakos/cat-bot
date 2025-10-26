@@ -7341,7 +7341,7 @@ async def catnip(message: discord.Interaction):
 
         if name == "Whiskers" and user.catnip_level == 10:
             filename = "images/mafia/WhiskersII.png"
-        if name == "Jeremy" and random.randint(1, 100) == 1:
+        if name == "Jeremy" and random.randint(1, 100) == 69:
             filename = "images/mafia/sus.png"
 
         filename = "https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/refs/heads/main/" + filename
@@ -7460,13 +7460,13 @@ async def achievements(message: discord.Interaction):
                     if user[k]:
                         newembed.add_field(
                             name=str(get_emoji("demonic_ach")) + " Catnip Addict",
-                            value="Uncover the mafia's truth",
+                            value="uncover the mafia's truth",
                             inline=True,
                         )
                     else:
                         newembed.add_field(
                             name=str(get_emoji("no_demonic_ach")) + " Thanks For Playing",
-                            value="Complete the story",
+                            value="complete the story",
                             inline=True,
                         )
                     continue

@@ -101,7 +101,7 @@
   "dataminer": {"title": "Dataminer", "description": "say `cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6`", "is_hidden": true, "category": "Hidden"},
   "blackhole": {"title": "Blackhole", "description": "WHERE THE FU ARE WE", "is_hidden": true, "category": "Hidden"},
   "cat_rain": {"title": "It's Raining Cats", "description": "participate in a cat rain", "is_hidden": true, "category": "Hidden"},
-  "mafia_win": {"title": "Mafia Destroyer", "description": "Complete the story... More.", "is_hidden": true, "category": "Hidden"},
+  "mafia_win": {"title": "Mafia Destroyer", "description": "complete the story... more", "is_hidden": true, "category": "Hidden"},
 
-  "thanksforplaying": {"title": "Thanks For Playing", "description": "Complete the story", "is_hidden": false, "category": "Cat Hunt"}
+  "thanksforplaying": {"title": "Thanks For Playing", "description": "complete the story", "is_hidden": false, "category": "Cat Hunt"}
 }
