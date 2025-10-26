@@ -5240,6 +5240,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
 
         if blackhole:
             await update_trade_embed(interaction)
+            return
 
         if person1accept and person2accept:
             blackhole = True
