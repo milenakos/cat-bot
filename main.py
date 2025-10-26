@@ -2587,7 +2587,7 @@ async def wiki(message: discord.Interaction):
             "[Packs](https://catbot.wiki/packs)",
             "[Trading](https://catbot.wiki/trading)",
             "[Gambling](https://catbot.wiki/gambling)",
-            "[The Dark Market](https://catbot.wiki/dark-market)",
+            "[Catnip](https://catbot.wiki/catnip)",
             "[Prisms](https://catbot.wiki/prisms)",
         ]
     )
