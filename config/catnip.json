@@ -205,8 +205,8 @@
     {"level": 6, "name": "Underboss", "duration": 4, "cost": 300, "bounty_difficulty": 25, "bounty_amount": 2, "change": "Higher Duration", "max_amount": 20, "weights": {"common": 30, "uncommon": 30, "rare": 20, "epic": 12, "legendary": 8}},
     {"level": 7, "name": "Boss", "duration": 6, "cost": 400, "bounty_difficulty": 50, "bounty_amount": 2, "change": "Better Perks", "max_amount": 30, "weights": {"common": 20, "uncommon": 30, "rare": 25, "epic": 15, "legendary": 10}},
     {"level": 8, "name": "Godfather", "duration": 8, "cost": 600, "bounty_difficulty": 70, "bounty_amount": 2, "change": "New Bounty", "max_amount": 40, "weights": {"common": 15, "uncommon": 20, "rare": 30, "epic": 20, "legendary": 15}},
-    {"level": 9, "name": "Kingpin", "duration": 12, "cost": 1000, "bounty_difficulty": 150, "bounty_amount": 3, "change": "Better Perks", "max_amount": 50, "weights": {"common": 5, "uncommon": 10, "rare": 35, "epic": 30, "legendary": 20}},
-    {"level": 10, "name": "El Patrón", "duration": 24, "cost": 2000, "bounty_difficulty": 400, "bounty_amount": 3, "change": "Amazing Perks", "max_amount": 9999, "weights": {"common": 0, "uncommon": 5, "rare": 35, "epic": 35, "legendary": 25}},
+    {"level": 9, "name": "Kingpin", "duration": 12, "cost": 1000, "bounty_difficulty": 150, "bounty_amount": 3, "change": "Better Perks\nIt might be time to stop.", "max_amount": 50, "weights": {"common": 5, "uncommon": 10, "rare": 35, "epic": 30, "legendary": 20}},
+    {"level": 10, "name": "El Patrón", "duration": 24, "cost": 2000, "bounty_difficulty": 400, "bounty_amount": 3, "change": "Literally Nothing\nReally, you shouldn't do this.", "max_amount": 9999, "weights": {"common": 0, "uncommon": 5, "rare": 35, "epic": 35, "legendary": 25}},
     {"level": 11, "name": "Most Wanted", "duration": 24, "cost": 5000, "bounty_difficulty": 2000, "bounty_amount": 3, "change": "???", "max_amount": 9999, "weights": {"common": 0, "uncommon": 0, "rare": 30, "epic": 40, "legendary": 30}}
   ]
 }
