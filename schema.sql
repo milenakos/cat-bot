@@ -347,7 +347,8 @@ CREATE TABLE public."user" (
     cats_blessed bigint DEFAULT 0,
     blessings_enabled boolean DEFAULT false,
     blessings_anonymous boolean DEFAULT false,
-    rain_minutes_bought integer DEFAULT 0
+    rain_minutes_bought integer DEFAULT 0,
+    username character varying(255) DEFAULT ''::character varying
 );
 
 
@@ -380,21 +381,6 @@ ALTER TABLE ONLY public."user"
 
 CREATE INDEX idx_guild_id ON public.profile USING btree (guild_id);
 
-CREATE INDEX idx_prism_guild_i_2a2071 ON public.prism USING btree (guild_id);
-
-
-CREATE INDEX idx_prism_user_id_bfacf7 ON public.prism USING btree (user_id, guild_id);
-
-
-CREATE INDEX idx_profile_guild_i_ae5642 ON public.profile USING btree (guild_id);
-
-
-CREATE INDEX idx_profile_user_id_c9cc1c ON public.profile USING btree (user_id, guild_id);
-
-
-CREATE INDEX idx_reminder_time_b3a9a4 ON public.reminder USING btree ("time");
-
-
 CREATE INDEX prism_guild_id ON public.prism USING btree (guild_id);
 
 CREATE INDEX prism_user_id_guild_id ON public.prism USING btree (user_id, guild_id);
@@ -402,5 +388,7 @@ CREATE INDEX prism_user_id_guild_id ON public.prism USING btree (user_id, guild_
 CREATE UNIQUE INDEX profile_user_id_guild_id ON public.profile USING btree (user_id, guild_id);
 
 CREATE INDEX reminder_time ON public.reminder USING btree ("time");
+
+CREATE INDEX idx_partial_blessings ON public."user" (rain_minutes_bought) WHERE blessings_enabled = true;
 
 REVOKE USAGE ON SCHEMA public FROM PUBLIC;

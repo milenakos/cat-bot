@@ -1998,12 +1998,14 @@ async def on_message(message: discord.Message):
                     blesser_l = await User.collect("blessings_enabled = true AND rain_minutes_bought > 0 ORDER BY -ln(random()) / rain_minutes_bought LIMIT 1")
                     blesser = blesser_l[0]
                     blesser.cats_blessed += 1
-                    await blesser.save()
+                    if not blesser.username:
+                        blesser.username = (await bot.fetch_user(blesser.user_id)).name
+                    asyncio.create_task(blesser.save())
 
                     if blesser.blessings_anonymous:
                         blesser_text = "💫 Anonymous Supporter"
                     else:
-                        blesser_text = f"{blesser.emoji or '💫'} {(await bot.fetch_user(blesser.user_id)).name}"
+                        blesser_text = f"{blesser.emoji or '💫'} {blesser.username}"
 
                     if silly_amount > 1:
                         suffix_string += f"\n{blesser_text} blessed your catch and it got doubled!"
@@ -2033,7 +2035,7 @@ async def on_message(message: discord.Message):
                     did_boost = True
                     user.boosted_catches += 1
                     prism_which_boosted.catches_boosted += 1
-                    await prism_which_boosted.save()
+                    asyncio.create_task(prism_which_boosted.save())
                     try:
                         le_old_emoji = le_emoji
                         if double_boost:
@@ -3299,9 +3301,9 @@ async def gen_stats(profile, star):
     stats.append(["boosted_catches", get_emoji("prism"), f"Prism-boosted catches: {profile.boosted_catches:,}{star}"])
 
     # catnip
-    stats.append([get_emoji("catnip"), "catnip"])
+    stats.append([get_emoji("catnip"), "Catnip"])
     stats.append(["catnip_activations", get_emoji("catnip"), f"Cats gained from catnip: {profile.catnip_activations:,}"])
-    stats.append(["catnip_bought", get_emoji("catnip"), f"catnip levels reached: {profile.catnip_bought:,}"])
+    stats.append(["catnip_bought", get_emoji("catnip"), f"Catnip levels reached: {profile.catnip_bought:,}"])
     stats.append(["highest_catnip_level", "⬆️", f"Highest catnip level: {profile.highest_catnip_level:,}"])
     stats.append(["bounties_complete", "🎯", f"Bounties completed: {profile.bounties_complete:,}"])
 
@@ -4020,6 +4022,10 @@ if config.DONOR_CHANNEL_ID:
         user = await User.get_or_create(user_id=message.user.id)
         do_edit = False
 
+        if user.blessings_enabled and user.username != message.user.name:
+            user.username = message.user.name
+            await user.save()
+
         async def toggle_bless(interaction):
             if interaction.user.id != message.user.id:
                 await do_funny(interaction)
@@ -4031,6 +4037,7 @@ if config.DONOR_CHANNEL_ID:
             if not user.premium:
                 return
             user.blessings_enabled = not user.blessings_enabled
+            user.username = message.user.name
             await user.save()
             await regen(interaction)
 
@@ -7039,7 +7046,7 @@ async def catnip(message: discord.Interaction):
                 return
         if user.catnip_price:
             if user[f"cat_{user.catnip_price}"] < user.catnip_amount:
-                await interaction.response.send_message("You don't have enough cats!", ephemeral=True)
+                await interaction.response.send_message("You don't have enough cats to pay up!", ephemeral=True)
                 return
             user[f"cat_{user.catnip_price}"] -= user.catnip_amount
         if not user.perk_selected:
