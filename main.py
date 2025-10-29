@@ -179,6 +179,7 @@ vote_button_texts = [
     "vote if you like cats",
     "vote if cats > dogs",
     "you should vote for cat NOW!",
+    "I'd vote if I were you",
 ]
 
 # various hints/fun facts
@@ -211,7 +212,7 @@ hints = [
     "Looking at Cat's code won't make you regret your life choices!",
     "Cats aren't shared between servers to make it more fair and fun",
     "Cat Bot can go offline! Don't panic if it does",
-    "By default, cats spawn 2-20 minutes apart",
+    "By default, cats spawn 1-10 minutes apart",
     "View the last catch as well as the next one with /last",
     "Make sure to leave Cat Bot [a review on top.gg](<https://top.gg/bot/966695034340663367#reviews>)!",
 ]
@@ -256,6 +257,8 @@ funny = [
     "aw dangit",
     "why don't you press buttons from your commands",
     "you're only making me angrier",
+    "why are you like this",
+    "legends say you get something for clicking it 1000 times",
 ]
 
 
