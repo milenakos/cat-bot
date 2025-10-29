@@ -7327,7 +7327,7 @@ async def catnip(message: discord.Interaction):
                     desc += f"\nPerks expire <t:{user.catnip_active}:R>"
                 all_complete = False
 
-            desc += f"\n\n**Level {level}** - {change} and more!"
+            desc += f"\n\n**Level {level}** - {change}"
             desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
         if not level == 0 and not user.hibernation:
             if user.catnip_active - int(time.time()) < 1800:
