@@ -7606,7 +7606,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies", "Pig", "Roulette Dollars"]],
+    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies", "Pig", "Roulette Dollars", "Prisms"]],
     cat_type: Optional[str],
     locked: Optional[bool],
 ):
@@ -7716,6 +7716,12 @@ async def leaderboards(
                 ["user_id", "roulette_balance"], "guild_id = $1 AND roulette_balance != 100 ORDER BY roulette_balance DESC", message.guild.id
             )
             final_value = "roulette_balance"
+        elif type == "Prisms":
+            unit = "prisms"
+            result = await Prism.collect_limit(
+                ["user_id", RawSQL("COUNT(*) as prism_count")], "guild_id = $1 GROUP BY user_id ORDER BY prism_count DESC", message.guild.id
+            )
+            final_value = "prism_count"
         else:
             # qhar
             raise ValueError("Invalid leaderboard type")
@@ -7800,7 +7806,7 @@ async def leaderboards(
                     if num >= 99999999999999:
                         break
                     num = round(num, 3)
-                elif type in ["Cookies", "Cats", "Pig"] and num <= 0:
+                elif type in ["Cookies", "Cats", "Pig", "Prisms"] and num <= 0:
                     break
                 elif type == "Roulette Dollars" and num == 100:
                     break
@@ -7870,7 +7876,17 @@ async def leaderboards(
                 disabled=locked,
             )
 
-        emojied_options = {"Cats": "🐈", "Value": "🧮", "Fast": "⏱️", "Slow": "💤", "Battlepass": "⬆️", "Cookies": "🍪", "Pig": "🎲", "Roulette Dollars": "💰"}
+        emojied_options = {
+            "Cats": "🐈",
+            "Value": "🧮",
+            "Fast": "⏱️",
+            "Slow": "💤",
+            "Battlepass": "⬆️",
+            "Cookies": "🍪",
+            "Pig": "🎲",
+            "Roulette Dollars": "💰",
+            "Prisms": get_emoji("prism"),
+        }
         options = [Option(label=k, emoji=v) for k, v in emojied_options.items()]
         lb_select = Select(
             "lb_type",
