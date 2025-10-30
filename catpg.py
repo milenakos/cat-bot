@@ -123,7 +123,7 @@ class Model:
         if fields:
             if self._primary_key not in fields:
                 fields.append(self._primary_key)
-            select = ", ".join(i if isinstance(i, RawSQL) else f'"{i}"' for i in fields)
+            select = ", ".join(i if i.__class__.__name__ == "RawSQL" else f'"{i}"' for i in fields)
         query_string = f'SELECT {select} FROM "{table}" WHERE '
         var_counter = 1
 
@@ -206,7 +206,7 @@ class Model:
         if "fields" in kwargs:
             if add_primary_key and self._primary_key not in kwargs["fields"]:
                 kwargs["fields"].append(self._primary_key)
-            select = ", ".join(i if isinstance(i, RawSQL) else f'"{i}"' for i in kwargs["fields"])
+            select = ", ".join(i if i.__class__.__name__ == "RawSQL" else f'"{i}"' for i in kwargs["fields"])
         query = f'SELECT {select} FROM "{table}"'
         if filter:
             query += f" WHERE {filter}"
