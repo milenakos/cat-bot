@@ -7719,7 +7719,10 @@ async def leaderboards(
         elif type == "Prisms":
             unit = "prisms"
             result = await Prism.collect_limit(
-                ["user_id", RawSQL("COUNT(*) as prism_count")], "guild_id = $1 GROUP BY user_id ORDER BY prism_count DESC", message.guild.id
+                ["user_id", RawSQL("COUNT(*) as prism_count")],
+                "guild_id = $1 GROUP BY user_id ORDER BY prism_count DESC",
+                message.guild.id,
+                add_primary_key=False,
             )
             final_value = "prism_count"
         else:

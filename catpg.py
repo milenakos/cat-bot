@@ -198,11 +198,13 @@ class Model:
         await pool.execute(query_string, *values)
 
     @classmethod
-    async def filter(self, filter: str | RawSQL | None = None, *args, refetch: bool = True, **kwargs) -> AsyncGenerator[ModelInstance]:
+    async def filter(
+        self, filter: str | RawSQL | None = None, *args, refetch: bool = True, add_primary_key: bool = True, **kwargs
+    ) -> AsyncGenerator[ModelInstance]:
         table = self.__name__.lower()
         select = "*"
         if "fields" in kwargs:
-            if self._primary_key not in kwargs["fields"]:
+            if add_primary_key and self._primary_key not in kwargs["fields"]:
                 kwargs["fields"].append(self._primary_key)
             select = ", ".join(i if isinstance(i, RawSQL) else f'"{i}"' for i in kwargs["fields"])
         query = f'SELECT {select} FROM "{table}"'
@@ -224,11 +226,16 @@ class Model:
 
     @classmethod
     async def limit(
-        self, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, *args, refetch: bool = True
+        self,
+        fields: str | RawSQL | None | list[str | RawSQL] = None,
+        filter: str | RawSQL | None = None,
+        *args,
+        refetch: bool = True,
+        add_primary_key: bool = True,
     ) -> AsyncGenerator[ModelInstance]:
         if isinstance(fields, str):
             fields = [fields]
-        async for row in self.filter(filter, refetch=refetch, *args, fields=fields):
+        async for row in self.filter(filter, refetch=refetch, add_primary_key=add_primary_key, *args, fields=fields):
             yield row
 
     @classmethod
@@ -237,12 +244,14 @@ class Model:
             yield row
 
     @classmethod
-    async def collect(self, filter: str | RawSQL | None = None, *args) -> list[ModelInstance]:
-        return [i async for i in self.filter(filter, *args, refetch=False)]
+    async def collect(self, filter: str | RawSQL | None = None, *args, add_primary_key: bool = True) -> list[ModelInstance]:
+        return [i async for i in self.filter(filter, *args, refetch=False, add_primary_key=add_primary_key)]
 
     @classmethod
-    async def collect_limit(self, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, *args) -> list[ModelInstance]:
-        return [i async for i in self.limit(fields, filter, *args, refetch=False)]
+    async def collect_limit(
+        self, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, *args, add_primary_key: bool = True
+    ) -> list[ModelInstance]:
+        return [i async for i in self.limit(fields, filter, *args, refetch=False, add_primary_key=add_primary_key)]
 
     @classmethod
     async def __do_function(self, func: str, column: str, filter: str | RawSQL | None = None, *args) -> Any:
