@@ -12,7 +12,7 @@
     {"id": "triple_ach", "exclusive": true, "name": "Precise Catcher", "desc":"Getting **Purrfection or All The Same** times on catch **triples** cats recieved.", "weight": 10, "values": [100, 0, 0, 0, 0]},
     {"id": "timer_add", "exclusive": false, "name": "Time Manipulator", "desc":"**percent%** chance of adding **5 minutes** to catnip timer on catch.", "weight": 10, "values": [1, 1.5, 2.5, 5, 7.5]},
     {"id": "timer_add_streak", "exclusive": true, "name": "Voting Booster", "desc":"Your vote streak **(timer_add_streak)** boosts catnip duration.", "weight": 5, "values": [0, 0, 0, 0, 100]},
-    {"id": "rain_boost", "exclusive": false, "name": "Rainy Catcher", "desc":"**percent%** chance of starting a rain with **10** cats.", "weight": 5, "values": [0.33, 0.5, 0.83, 1.5, 2.33]},
+    {"id": "rain_boost", "exclusive": false, "name": "Rainy Catcher", "desc":"**percent%** chance of starting a rain with **10** cats.", "weight": 5, "values": [0.33, 0.5, 0.83, 1.66, 2.5]},
     {"id": "double_first", "exclusive": false, "name": "Speedrunner", "desc":"The first **percent** cats cought each level always **double**.", "weight": 5, "values": [8, 12, 20, 40, 60]}
   ],
 

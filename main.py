@@ -1962,23 +1962,21 @@ async def on_message(message: discord.Message):
                         double_chance = 100 - triple_chance - none_chance
                     if double_chance < 0:
                         double_chance = 0
-                        if 100 - triple_chance < 33:
-                            none_chance = 33
-                            triple_chance = 67
+                        if 100 - triple_chance < 25:
+                            none_chance = 25
+                            triple_chance = 75
                     if none_chance < 0:
                         none_chance = 0
 
                     if random.random() * 100 < rain_chance:
-                        channel.cat_rains += 10
-                        decided_time = random.uniform(1, 2)
-                        channel.rain_should_end = int(time.time() + decided_time)
-                        channel.yet_to_spawn = 0
-                        config.cat_cought_rain[channel.channel_id] = {}
-                        config.rain_starter[channel.channel_id] = message.author.id
-                        bot.loop.create_task(rain_recovery_loop(channel))
-                        if channel.cat_rains != 10:
-                            suffix_string += "☔ Catnip made the rain longer! 10 more cats will spawn."
-                        else:
+                        if channel.cat_rains == 0:
+                            channel.cat_rains = 10
+                            decided_time = random.uniform(1, 2)
+                            channel.rain_should_end = int(time.time() + decided_time)
+                            channel.yet_to_spawn = 0
+                            config.cat_cought_rain[channel.channel_id] = {}
+                            config.rain_starter[channel.channel_id] = message.author.id
+                            bot.loop.create_task(rain_recovery_loop(channel))
                             suffix_string += "☔ Catnip started a short rain! 10 cats will spawn."
 
                     chance = random.random() * 100
