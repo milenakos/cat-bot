@@ -2253,7 +2253,7 @@ async def on_message(message: discord.Message):
                     if len(set(raw_digits)) == 1:
                         await achemb(message, "all_the_same", "send")
 
-                if suffix_string.count("\n") >= 3:
+                if suffix_string.count("\n") >= 4:
                     await achemb(message, "certified_yapper", "send")
 
                 # handle battlepass
