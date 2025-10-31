@@ -9,11 +9,11 @@
     {"id": "gold_pack", "exclusive": false, "name": "Pack Catcher - Gold", "desc":"**percent%** chance of getting a **gold pack** on catch.", "weight": 2.5, "values": [0.25, 0.375, 0.625, 1.25, 1.875]},
     {"id": "platinum_pack", "exclusive": false, "name": "Pack Catcher - Platinum", "desc":"**percent%** chance of getting a **platinum pack** on catch.", "weight": 2.5, "values": [0.125, 0.1875, 0.3125, 0.625, 0.9375]},
     {"id": "double_boost", "exclusive": false, "name": "Bright Catcher", "desc":"**percent%** chance of prisms boosting catches by **two rarity levels**.", "weight": 5, "values": [10, 15, 25, 50, 75]},
-    {"id": "triple_ach", "exclusive": true, "name": "Precise Catcher", "desc":"Getting **Purrfection or All The Same** times on catch **triples** cats recieved.", "weight": 10, "values": [100, 0, 0, 0, 0]},
-    {"id": "timer_add", "exclusive": false, "name": "Time Manipulator", "desc":"**percent%** chance of adding **5 minutes** to catnip timer on catch.", "weight": 10, "values": [1, 1.5, 2.5, 5, 7.5]},
+    {"id": "triple_ach", "exclusive": true, "name": "Purrcise Catcher", "desc":"Getting **Purrfection or All The Same** times on catch **triples** cats recieved.", "weight": 7.5, "values": [100, 0, 0, 0, 0]},
+    {"id": "timer_add", "exclusive": false, "name": "Time Manipulator", "desc":"**percent%** chance of adding **5 minutes** to catnip timer on catch.", "weight": 12.5, "values": [1, 1.5, 2.5, 5, 7.5]},
     {"id": "timer_add_streak", "exclusive": true, "name": "Voting Booster", "desc":"Your vote streak **(timer_add_streak)** boosts catnip duration.", "weight": 5, "values": [0, 0, 0, 0, 100]},
     {"id": "rain_boost", "exclusive": false, "name": "Rainy Catcher", "desc":"**percent%** chance of starting a rain with **10** cats.", "weight": 5, "values": [0.33, 0.5, 0.83, 1.66, 2.5]},
-    {"id": "double_first", "exclusive": false, "name": "Speedrunner", "desc":"The first **percent** cats cought each level always **double**.", "weight": 5, "values": [8, 12, 20, 40, 60]}
+    {"id": "double_first", "exclusive": false, "name": "Speedrunner", "desc":"The first **percent** cats cought each level always **double**.", "weight": 5, "valalsues": [8, 12, 20, 40, 60]}
   ],
 
   "quotes": [
