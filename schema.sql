@@ -88,7 +88,7 @@ CREATE TABLE public.profile (
     bounty_type_one character varying(30) DEFAULT ''::character varying,
     bounty_type_two character varying(30) DEFAULT ''::character varying,
     bounty_type_three character varying(30) DEFAULT ''::character varying,
-    bounty_id_bonus character varying(30) DEFAULT ''::character varying,
+    bounty_type_bonus character varying(30) DEFAULT ''::character varying,
     bounty_total_one integer DEFAULT 0,
     bounty_total_two integer DEFAULT 0,
     bounty_total_three integer DEFAULT 0,

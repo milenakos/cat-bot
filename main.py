@@ -7180,6 +7180,8 @@ async def catnip(message: discord.Interaction):
             desc = perk_data.get('desc', '').replace("percent", str(effect)).replace("triple_none", str(effect / 2)).replace("timer_add_streak", str(global_user.vote_streak))
             full_desc += f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')} ({rarities[perk_rarity]})\n{desc}\n\n"
 
+        if not user_perks:
+            full_desc = "You have no perks!"
         myview = LayoutView(timeout=VIEW_TIMEOUT)
         perk_embed = Container("# Your Perks", full_desc)
         myview.add_item(perk_embed)
