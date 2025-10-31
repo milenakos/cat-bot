@@ -261,6 +261,7 @@ funny = [
 
 class Colors:
     brown = 0x6E593C
+    gray = 0xCCCCCC 
     green = 0x007F0E
     yellow = 0xFFFF00
     maroon = 0x750F0E
@@ -346,7 +347,7 @@ config.rain_starter = {}
 def get_emoji(name):
     global emojis
     if name in allowedemojis:
-        return emojis["p_" + name]
+        return emojis[name]
     elif name in emojis.keys():
         return emojis[name]
     elif name in emoji.EMOJI_DATA:
@@ -1866,9 +1867,8 @@ async def on_message(message: discord.Message):
                 single_chance = 100
                 none_chance = 0
                 double_boost_chance = 0
-                xp_gained = 0
+                rain_chance = 0
                 purr_all_triple = False
-                double_slow = 99999999
                 packs = []
                 double_boost = False
                 double_first = 0
@@ -1911,8 +1911,8 @@ async def on_message(message: discord.Message):
                             purr_all_triple = True
                         elif id == "timer_add":
                             timer_add_chance += perks_info[10]["values"][rarity]
-                        elif id == "double_slow":
-                            double_slow = perks_info[12]["values"][rarity]
+                        elif id == "rain_boost":
+                            rain_chance += perks_info[12]["values"][rarity]
                         elif id == "double_first":
                             double_first += perks_info[13]["values"][rarity]
 
@@ -1926,7 +1926,6 @@ async def on_message(message: discord.Message):
                     chance = random.random() * 100
                     if chance <= double_boost_chance:
                         double_boost = True
-                    user.progress += xp_gained
 
                     chance = random.random() * 100
                     if chance <= timer_add_chance:
@@ -1935,11 +1934,6 @@ async def on_message(message: discord.Message):
 
                     if double_first > user.catnip_total_cats:
                         user.catnip_total_cats += 1
-                        double_chance = 100 - triple_chance
-                        single_chance = 0
-                        none_chance = 0
-
-                    if time_caught > double_slow * 60:
                         double_chance = 100 - triple_chance
                         single_chance = 0
                         none_chance = 0
@@ -1970,6 +1964,19 @@ async def on_message(message: discord.Message):
                             triple_chance = 67
                     if none_chance < 0:
                         none_chance = 0
+
+                    if random.random() * 100 < rain_chance:
+                        channel.cat_rains += 10
+                        decided_time = random.uniform(1, 2)
+                        channel.rain_should_end = int(time.time() + decided_time)
+                        channel.yet_to_spawn = 0
+                        config.cat_cought_rain[channel.channel_id] = {}
+                        config.rain_starter[channel.channel_id] = message.author.id
+                        bot.loop.create_task(rain_recovery_loop(channel))
+                        if channel.cat_rains != 10:
+                            suffix_string += "☔ Catnip made the rain longer! 10 more cats will spawn."
+                        else:
+                            suffix_string += "☔ Catnip started a short rain! 10 cats will spawn."
 
                     chance = random.random() * 100
                     if chance <= triple_chance:
@@ -2054,9 +2061,9 @@ async def on_message(message: discord.Message):
                                 rainboost = 600
                             channel.cat_rains += math.ceil(rainboost / 2.75)
                             if channel.cat_rains > math.ceil(rainboost / 2.75):
-                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {rainboost / 60} MINUTES ‼️‼️")
-                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {rainboost / 60} MINUTES ‼️‼️")
-                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {rainboost / 60} MINUTES ‼️‼️")
+                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
+                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
+                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
                             else:
                                 decided_time = random.uniform(1, 2)
                                 channel.rain_should_end = int(time.time() + decided_time)
@@ -2071,7 +2078,10 @@ async def on_message(message: discord.Message):
                         else:
                             suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
                     elif not channel.forcespawned:
-                        suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
+                        if double_boost:
+                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 20m rain will start!"
+                        else:
+                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
 
                 icon = get_emoji(le_emoji.lower() + "cat")
 
@@ -6594,6 +6604,26 @@ async def bounty(message, user, cattype):
                 completed += 1
         colored += (progress / total) * 10 / user.bounties
         await user.save()
+    if catnip_list["levels"][user.catnip_level]["bonus"]:
+        bonus_title = ""
+        if user.bounty_progress_bonus < user.bounty_total_bonus:
+            if user.bounty_id_bonus == 0:
+                user.bounty_progress_bonus += 1
+                bonus_title = f"Catch {user.bounty_total_bonus} cats"
+            elif user.bounty_id_bonus == 1:
+                if cattype == user.bounty_type_bonus:
+                    user.bounty_progress_bonus += 1
+                bonus_title = f"Catch {user.bounty_total_bonus} {cattype} cats"
+            else:
+                if cattypes.index(cattype) >= cattypes.index(user.bounty_type_bonus):
+                    user.bounty_progress_bonus += 1
+                bonus_title = f"Catch {user.bounty_total_bonus} {cattype} or rarer cats"
+            if user.bounty_progress_bonus == user.bounty_total_bonus:
+                description = "Bonus Bounty Complete!\nGo to `/catnip` to reroll a perk!"
+                embed = discord.Embed(title=f"✅ {bonus_title}", color=Colors.green, description=description).set_author(name="Mafia Level " + str(user.catnip_level))
+                await message.channel.send(f"<@{user.user_id}>", embed=embed)
+                user.reroll = False
+            await user.save()
     for i in range(complete):
         level = user.catnip_level
         progress_line = f"\n{level} " + get_emoji("staring_square") * int(colored) + "⬛" * int(10 - colored) + f" {level + 1}"
@@ -6636,7 +6666,15 @@ async def set_bounties(level, user):
         user.bounties = 0
         return
     bounties = await get_bounties(level)
-
+    bonus_check = catnip_list["levels"][level + 1]["bonus"]
+    if bonus_check:
+        bonus = bounties.pop()
+        user.bounty_id_bonus = bonus["id"]
+        user.bounty_type_bonus = bonus["cat_type"]
+        user.bounty_total_bonus = bonus["amount"]
+        user.bounty_progress_bonus = bonus["progress"]
+    else:
+        bounties = bounties[:-1]
     user.bounties = len(bounties)
 
     user.bounty_id_one = bounties[0]["id"] if bounties else None
@@ -6669,12 +6707,14 @@ async def get_bounties(level):
     used_rarities = set()
     tries = 0
     max_tries = 100 * num_bounties
-    while len(bounties) < num_bounties and tries < max_tries:
+    while len(bounties) < num_bounties + 1 and tries < max_tries:
         tries += 1
         bounty_type = random.choice(["rarity", "specific", "any"])
 
         # to add a bit of randomness
         variation = random.uniform(0.85, 1.15)
+        if len(bounties) == num_bounties:
+            variation *= 1.5
         if bounty_type == "rarity":
             margin = 0.2
             rarity_i = random.randint(2, len(cattypes) - 2)
@@ -7086,6 +7126,39 @@ async def catnip(message: discord.Interaction):
             await interaction.response.send_message("Catnip started!", ephemeral=True)
             await main_message.edit(view=await gen_main())
 
+    async def reroll(interaction):
+        global_user = await User.get_or_create(user_id=interaction.user.id)
+        user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
+        await user.refresh_from_db()
+        perks = catnip_list["perks"]
+        rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
+        rarity_colors = [get_emoji("common"), get_emoji("uncommon"), get_emoji("rare"), get_emoji("epic"), get_emoji("legendary")]
+        emojied_options = {}
+        user_perks = user.perks
+        full_desc = ""
+
+        for index, perk in enumerate(user_perks):
+            perk_rarity = int(perk.split("_")[0])
+            perk_data = perks[int(perk.split("_")[1]) - 1]
+            effect = perk_data["values"][int(perk.split("_")[0])]
+            desc = perk_data.get('desc', '').replace("percent", str(effect)).replace("triple_none", str(effect / 2)).replace("timer_add_streak", str(global_user.vote_streak))
+            full_desc += f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')} ({rarities[perk_rarity]})\n{desc}\n\n"
+            emojied_options[index+1] = (f"{perk_data.get('name', '')} ({rarities[perk_rarity]})", rarity_colors[perk_rarity], desc.replace("**", ""))
+
+        myview = LayoutView(timeout=VIEW_TIMEOUT)
+        options = [Option(label=f"Lv{k}: {t}", emoji=e, description=d, value=str(k)) for k, (t, e, d) in emojied_options.items()]
+        perk_select = Select(
+            "rr_type",
+            placeholder="Select a perk to reroll",
+            opts=options,
+            on_select=lambda interaction, level: perk_screen(interaction, int(level), True),
+        )
+        perk_embed = Container("# Your Perks", full_desc)
+        myview.add_item(perk_embed)
+        action_row = ActionRow(perk_select)
+        myview.add_item(action_row)
+        await main_message.edit(view=myview)
+
     async def view_perks(interaction):
         global_user = await User.get_or_create(user_id=interaction.user.id)
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
@@ -7093,32 +7166,22 @@ async def catnip(message: discord.Interaction):
         perks = catnip_list["perks"]
         rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
         rarity_colors = [get_emoji("common"), get_emoji("uncommon"), get_emoji("rare"), get_emoji("epic"), get_emoji("legendary")]
-        if not user.perks:
-            await interaction.response.send_message(
-                embed=discord.Embed(
-                    title="Your Perks", color=Colors.brown, description="You have no perks yet. Pay for your first level of catnip to get one!"
-                ),
-                ephemeral=True,
-            )
-            return
-
-        perk_embed = discord.Embed(title="Your Perks", color=Colors.brown)
         user_perks = user.perks
+        full_desc = ""
+
         for perk in user_perks:
             perk_rarity = int(perk.split("_")[0])
             perk_data = perks[int(perk.split("_")[1]) - 1]
             effect = perk_data["values"][int(perk.split("_")[0])]
-            perk_embed.add_field(
-                name=f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')} ({rarities[perk_rarity]})",
-                value=f"{perk_data.get('desc', '')}".replace("percent", str(effect))
-                .replace("triple_none", str(effect / 2))
-                .replace("timer_add_streak", str(global_user.vote_streak)),
-                inline=False,
-            )
-        perk_embed.set_footer(text="The last perk in this list will be removed if you level down.")
-        await interaction.response.send_message(embed=perk_embed, ephemeral=True)
+            desc = perk_data.get('desc', '').replace("percent", str(effect)).replace("triple_none", str(effect / 2)).replace("timer_add_streak", str(global_user.vote_streak))
+            full_desc += f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')} ({rarities[perk_rarity]})\n{desc}\n\n"
 
-    async def perk_screen(interaction):
+        myview = LayoutView(timeout=VIEW_TIMEOUT)
+        perk_embed = Container("# Your Perks", full_desc)
+        myview.add_item(perk_embed)
+        await interaction.response.send_message(view=myview, ephemeral=True)
+
+    async def perk_screen(interaction, level=0, reroll=False):
         await interaction.response.defer()
         global_user = await User.get_or_create(user_id=interaction.user.id)
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
@@ -7127,13 +7190,20 @@ async def catnip(message: discord.Interaction):
             await user.refresh_from_db()
             await interaction.response.defer()
 
-            if user.perk_selected:
+            if user.perk_selected and not reroll:
                 await interaction.followup.send("You have already selected a perk.", ephemeral=True)
+                return
+            if reroll and user.reroll:
+                await interaction.followup.send("your die rerolls through the floor", ephemeral=True)
                 return
 
             user.perk_selected = True
             h = list(user.perks) if user.perks else []
-            h.append(interaction.data["custom_id"])
+            if reroll:
+                h[level-1] = interaction.data["custom_id"]
+                user.reroll = True
+            else:    
+                h.append(interaction.data["custom_id"])
             user.perks = h[:]  # black magic
 
             user.perk1 = ""
@@ -7143,8 +7213,11 @@ async def catnip(message: discord.Interaction):
 
             await main_message.edit(view=await gen_main())
 
-        if user.perk_selected:
+        if user.perk_selected and not reroll:
             await interaction.followup.send("You have already selected a perk.", ephemeral=True)
+            return
+        if reroll and user.reroll:
+            await interaction.followup.send("your die rerolls through the floor", ephemeral=True)
             return
 
         perks_data = catnip_list["perks"]
@@ -7157,6 +7230,8 @@ async def catnip(message: discord.Interaction):
 
         if user.perk1 and user.perk2 and user.perk3:
             perks = [user.perk1, user.perk2, user.perk3]
+        elif level:
+            perks = [p["uuid"] for p in await get_perks(level, user)]
         else:
             perks = [p["uuid"] for p in await get_perks(user.catnip_level, user)]
 
@@ -7245,8 +7320,15 @@ async def catnip(message: discord.Interaction):
                 if perk_data["id"] == "timer_add_streak":
                     global_user = await User.get_or_create(user_id=interaction.user.id)
                     duration_bonus = global_user.vote_streak * 60
-                    if duration_bonus > 6000:
-                        duration_bonus = min(100 + math.log10(duration_bonus / 60 - 100) * 5, duration_bonus) * 60
+                    for i in range(int(global_user.vote_streak / 100)+1):
+                        if i == 0:
+                            continue
+                        if int(global_user.vote_streak / (100 * i)) > 0:
+                            duration_bonus -= 6000
+                            duration_bonus += 6000/(i+1)
+                        duration_bonus -= (global_user.vote_streak % (100 * i) * 60)
+                        duration_bonus += (global_user.vote_streak % (100 * i) * 60)/i
+
 
         user.catnip_active = int(time.time()) + 3600 * duration + duration_bonus
         await user.save()
@@ -7260,11 +7342,13 @@ async def catnip(message: discord.Interaction):
         rank = level_data["name"]
         change = level_data["change"]
         duration = level_data["duration"]
+        bonus = level_data["bonus"]
         bounty_data = catnip_list["bounties"]
         cat_type = user.catnip_price
         amount = user.catnip_amount
         quote_list = catnip_list["quotes"][level - 1]["quotes"]
         all_complete = True
+        bonus_complete = False
         name = ""
 
         desc = "\n"
@@ -7275,17 +7359,18 @@ async def catnip(message: discord.Interaction):
             colored = 0
 
             def format_bounty(bounty_numstr, single=False):
-                nonlocal desc, all_complete, colored
+                nonlocal desc, all_complete, colored, bonus_complete
                 bounty_id = user[f"bounty_id_{bounty_numstr}"]
                 bounty_type = user[f"bounty_type_{bounty_numstr}"]
                 bounty_total = user[f"bounty_total_{bounty_numstr}"]
                 bounty_progress = user[f"bounty_progress_{bounty_numstr}"]
 
-                if not single:
-                    desc += "\n- "
+                desc += "\n- "
                 if bounty_progress == bounty_total:
                     desc += "✅ "
-                else:
+                    if bounty_numstr == "bonus":
+                        bonus_complete = True
+                elif bounty_numstr != "bonus":
                     all_complete = False
 
                 if bounty_progress == 0:
@@ -7297,26 +7382,27 @@ async def catnip(message: discord.Interaction):
                     desc = desc.replace("cats", "cat")
 
                 desc = desc.replace("type", f"{get_emoji(bounty_type.lower() + 'cat')} {bounty_type}")
-
-                colored += (bounty_progress / bounty_total) * 10 / user.bounties
+                if bounty_numstr != "bonus":
+                    colored += (bounty_progress / bounty_total) * 10 / user.bounties
 
             if not user.hibernation:
-                single = False
                 if user.bounties == 1:
-                    desc += "\n**__Bounty:__** "
-                else:
                     desc += "\n**__Bounty:__**"
+                else:
+                    desc += "\n**__Bounties:__**"
                 for i in range(user.bounties):
                     if i == 0:
-                        format_bounty("one", single)
+                        format_bounty("one")
                     if i == 1:
                         format_bounty("two")
                     if i == 2:
                         format_bounty("three")
+                if bonus:
+                    desc += "\n**__Bonus Bounty:__**"
+                    format_bounty("bonus")
 
                 colored = int(colored)
-                if not single:
-                    desc += "\n"
+                desc += "\n"
                 if not all_complete:
                     desc += f"\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} after completing your bounties"
                 else:
@@ -7371,6 +7457,10 @@ async def catnip(message: discord.Interaction):
             button3.callback = perk_screen
             action_row.add_item(button3)
 
+        if bonus_complete and not user.reroll:
+            button4 = Button(label="Reroll Perk!", style=ButtonStyle.green)
+            button4.callback = reroll
+            action_row.add_item(button4)
         if user.catnip_level == 0:
             button = Button(label="Begin.", style=ButtonStyle.blurple)
             button.callback = pay_catnip
@@ -8317,10 +8407,11 @@ async def teardown(bot):
 
 # Reusable UI components
 class Option:
-    def __init__(self, label, emoji, value=None):
+    def __init__(self, label, emoji, description=None, value=None):
         self.label = label
         self.emoji = emoji
         self.value = value if value is not None else label
+        self.description = description
 
 
 class Select(discord.ui.Select):
@@ -8340,7 +8431,7 @@ class Select(discord.ui.Select):
             self.on_select = on_select
 
         for opt in opts:
-            options.append(discord.SelectOption(label=opt.label, value=opt.value, emoji=opt.emoji, default=opt.value == selected))
+            options.append(discord.SelectOption(label=opt.label, description=opt.description, value=opt.value, emoji=opt.emoji, default=opt.value == selected))
 
         super().__init__(
             placeholder=placeholder,
