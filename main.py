@@ -179,6 +179,7 @@ vote_button_texts = [
     "vote if you like cats",
     "vote if cats > dogs",
     "you should vote for cat NOW!",
+    "I'd vote if I were you",
 ]
 
 # various hints/fun facts
@@ -211,7 +212,7 @@ hints = [
     "Looking at Cat's code won't make you regret your life choices!",
     "Cats aren't shared between servers to make it more fair and fun",
     "Cat Bot can go offline! Don't panic if it does",
-    "By default, cats spawn 2-20 minutes apart",
+    "By default, cats spawn 1-10 minutes apart",
     "View the last catch as well as the next one with /last",
     "Make sure to leave Cat Bot [a review on top.gg](<https://top.gg/bot/966695034340663367#reviews>)!",
 ]
@@ -256,6 +257,8 @@ funny = [
     "aw dangit",
     "why don't you press buttons from your commands",
     "you're only making me angrier",
+    "why are you like this",
+    "legends say you get something for clicking it 1000 times",
 ]
 
 
@@ -2260,7 +2263,7 @@ async def on_message(message: discord.Message):
                     if len(set(raw_digits)) == 1:
                         await achemb(message, "all_the_same", "send")
 
-                if suffix_string.count("\n") >= 3:
+                if suffix_string.count("\n") >= 4:
                     await achemb(message, "certified_yapper", "send")
 
                 # handle battlepass
@@ -7413,7 +7416,7 @@ async def catnip(message: discord.Interaction):
                     desc += f"\nPerks expire <t:{user.catnip_active}:R>"
                 all_complete = False
 
-            desc += f"\n\n**Level {level}** - {change} and more!"
+            desc += f"\n\n**Level {level}** - {change}"
             desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
         if not level == 0 and not user.hibernation:
             if user.catnip_active - int(time.time()) < 1800:
@@ -7696,7 +7699,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies", "Pig", "Roulette Dollars"]],
+    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies", "Pig", "Roulette Dollars", "Prisms"]],
     cat_type: Optional[str],
     locked: Optional[bool],
 ):
@@ -7806,6 +7809,15 @@ async def leaderboards(
                 ["user_id", "roulette_balance"], "guild_id = $1 AND roulette_balance != 100 ORDER BY roulette_balance DESC", message.guild.id
             )
             final_value = "roulette_balance"
+        elif type == "Prisms":
+            unit = "prisms"
+            result = await Prism.collect_limit(
+                ["user_id", RawSQL("COUNT(*) as prism_count")],
+                "guild_id = $1 GROUP BY user_id ORDER BY prism_count DESC",
+                message.guild.id,
+                add_primary_key=False,
+            )
+            final_value = "prism_count"
         else:
             # qhar
             raise ValueError("Invalid leaderboard type")
@@ -7890,7 +7902,7 @@ async def leaderboards(
                     if num >= 99999999999999:
                         break
                     num = round(num, 3)
-                elif type in ["Cookies", "Cats", "Pig"] and num <= 0:
+                elif type in ["Cookies", "Cats", "Pig", "Prisms"] and num <= 0:
                     break
                 elif type == "Roulette Dollars" and num == 100:
                     break
@@ -7960,7 +7972,17 @@ async def leaderboards(
                 disabled=locked,
             )
 
-        emojied_options = {"Cats": "🐈", "Value": "🧮", "Fast": "⏱️", "Slow": "💤", "Battlepass": "⬆️", "Cookies": "🍪", "Pig": "🎲", "Roulette Dollars": "💰"}
+        emojied_options = {
+            "Cats": "🐈",
+            "Value": "🧮",
+            "Fast": "⏱️",
+            "Slow": "💤",
+            "Battlepass": "⬆️",
+            "Cookies": "🍪",
+            "Pig": "🎲",
+            "Roulette Dollars": "💰",
+            "Prisms": get_emoji("prism"),
+        }
         options = [Option(label=k, emoji=v) for k, v in emojied_options.items()]
         lb_select = Select(
             "lb_type",
