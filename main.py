@@ -2053,7 +2053,6 @@ async def on_message(message: discord.Message):
                         normal_bump = True
                     except IndexError:
                         # :SILENCE:
-                        le_emoji = "eGirl"
                         normal_bump = False
                         if not channel.forcespawned:
                             if double_boost:
@@ -6668,6 +6667,8 @@ async def set_bounties(level, user):
         return
     bounties = await get_bounties(level)
     bonus_check = catnip_list["levels"][level + 1]["bonus"]
+    if level == 10 and user.bounty_progress_bonus != user.bounty_total_bonus:
+        bonus_check = False
     if bonus_check:
         bonus = bounties.pop()
         user.bounty_id_bonus = bonus["id"]
@@ -6716,6 +6717,8 @@ async def get_bounties(level):
         variation = random.uniform(0.85, 1.15)
         if len(bounties) == num_bounties:
             variation *= 1.5
+            if level == 10:
+                variation *= 10
         if bounty_type == "rarity":
             margin = 0.2
             rarity_i = random.randint(2, len(cattypes) - 2)
