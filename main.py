@@ -6667,7 +6667,7 @@ async def set_bounties(level, user):
         return
     bounties = await get_bounties(level)
     bonus_check = catnip_list["levels"][level + 1]["bonus"]
-    if level == 10 and user.bounty_progress_bonus != user.bounty_total_bonus:
+    if level == 10 and user.bounty_progress_bonus != user.bounty_total_bonus and user.catnip_active > 86400:
         bonus_check = False
     if bonus_check:
         bonus = bounties.pop()
@@ -6708,7 +6708,7 @@ async def get_bounties(level):
     used_types = set()
     used_rarities = set()
     tries = 0
-    max_tries = 100 * num_bounties
+    max_tries = 1000 * num_bounties
     while len(bounties) < num_bounties + 1 and tries < max_tries:
         tries += 1
         bounty_type = random.choice(["rarity", "specific", "any"])
@@ -7202,6 +7202,9 @@ async def catnip(message: discord.Interaction):
             if reroll and user.reroll:
                 await interaction.followup.send("your die rerolls through the floor", ephemeral=True)
                 return
+            if reroll and user.reroll_level and user.reroll_level != level:
+                await interaction.followup.send(f"you already chose to reroll level {user.reroll_level}", ephemeral=True)
+                return
 
             user.perk_selected = True
             h = list(user.perks) if user.perks else []
@@ -7268,6 +7271,8 @@ async def catnip(message: discord.Interaction):
         user.perk1 = perks[0]["uuid"] if len(perks) > 0 else None
         user.perk2 = perks[1]["uuid"] if len(perks) > 1 else None
         user.perk3 = perks[2]["uuid"] if len(perks) > 2 else None
+        if reroll:
+            user.reroll_level = level
         await user.save()
 
         perk_embed.add_item(TextDisplay("-# The catnip timer will not start until you begin your bounties."))
