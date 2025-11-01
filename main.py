@@ -1977,7 +1977,7 @@ async def on_message(message: discord.Message):
                             config.cat_cought_rain[channel.channel_id] = {}
                             config.rain_starter[channel.channel_id] = message.author.id
                             bot.loop.create_task(rain_recovery_loop(channel))
-                            suffix_string += "☔ Catnip started a short rain! 10 cats will spawn."
+                            suffix_string += "\n☔ Catnip started a short rain! 10 cats will spawn."
 
                     chance = random.random() * 100
                     if chance <= triple_chance:
