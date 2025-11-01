@@ -104,6 +104,7 @@ CREATE TABLE public.profile (
     perk2 character varying(30) DEFAULT ''::character varying,
     perk3 character varying(30) DEFAULT ''::character varying,
     reroll boolean DEFAULT false,
+    reroll_level smallint DEFAULT 0,
     first_quote_seen boolean DEFAULT false,
     funny integer DEFAULT 0,
     facts integer DEFAULT 0,

@@ -6623,6 +6623,7 @@ async def bounty(message, user, cattype):
                 embed = discord.Embed(title=f"✅ {bonus_title}", color=Colors.green, description=description).set_author(name="Mafia Level " + str(user.catnip_level))
                 await message.channel.send(f"<@{user.user_id}>", embed=embed)
                 user.reroll = False
+                user.reroll_level = 0
             await user.save()
     for i in range(complete):
         level = user.catnip_level
