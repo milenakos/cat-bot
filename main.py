@@ -2055,7 +2055,7 @@ async def on_message(message: discord.Message):
                         # :SILENCE:
                         normal_bump = False
                         if not channel.forcespawned:
-                            if double_boost:
+                            if double_boost and le_emoji == "eGirl":
                                 rainboost = 1200
                             else:
                                 rainboost = 600
