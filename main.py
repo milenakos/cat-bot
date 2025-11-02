@@ -185,9 +185,9 @@ vote_button_texts = [
     "*someone* hasn't voted yet :)",
     "idk about you but I've voted today",
     "vote if you like gambling",
-    "take the red pill, and you'll have voted",
-    "whats that i smell.? oh you haven't voted",
-    "don't like this button? go and vote to get rid of it!",
+    "click the button and you'll have voted",
+    "whats that smell? you haven't voted!",
+    "don't like this button? go vote!",
 ]
 
 # various hints/fun facts
@@ -223,7 +223,7 @@ hints = [
     "By default, cats spawn 1-10 minutes apart",
     "View the last catch as well as the next one with /last",
     "Make sure to leave Cat Bot [a review on top.gg](<https://top.gg/bot/966695034340663367#reviews>)!",
-    "You can get your own custom cat at our official Discord server!",
+    "You can get your own custom cat at our official Discord server! (if you're a supporter of course)",
     "There are currently 5 hidden achs. Good luck finding them!",
 ]
 
