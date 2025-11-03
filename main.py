@@ -7207,11 +7207,11 @@ async def catnip(message: discord.Interaction):
                 await interaction.followup.send(f"you already chose to reroll level {user.reroll_level}", ephemeral=True)
                 return
 
-            user.perk_selected = True
             h = list(user.perks) if user.perks else []
             if reroll:
                 h[level-1] = interaction.data["custom_id"]
                 user.reroll = True
+                user.perk_selected = True
             else:    
                 h.append(interaction.data["custom_id"])
             user.perks = h[:]  # black magic
