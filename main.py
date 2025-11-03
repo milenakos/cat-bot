@@ -2855,16 +2855,7 @@ thanks for using cat bot!""",
 - old cataine is completely gone, all process you had in it will be reset
 
 👉 okay now let me explain:
-at each level you will have some bounties you have to complete within a time frame. if you complete the bounties and pay the price, you will be able to choose one of 3 different perks of random rarities {get_emoji("common")}{get_emoji("uncommon")}{get_emoji("rare")}{get_emoji("epic")}{get_emoji("legendary")}. the perks will stack while catnip is active! failing to complete the bounties will bring you one level down and you will lose your last perk. higher levels are harder but give you better perks!
-
-🎃 __cat bot halloween starts now!__
-until the end of the month rains on the cat bot store are over 20% off!
-☔ [**catbot.shop**](<https://catbot.shop>)
-☔ [**catbot.shop**](<https://catbot.shop>)
-☔ [**catbot.shop**](<https://catbot.shop>)""",
-                ActionRow(
-                    Button(label="Cat Bot Store", url="https://catbot.shop"),
-                ),
+at each level you will have some bounties you have to complete within a time frame. if you complete the bounties and pay the price, you will be able to choose one of 3 different perks of random rarities {get_emoji("common")}{get_emoji("uncommon")}{get_emoji("rare")}{get_emoji("epic")}{get_emoji("legendary")}. the perks will stack while catnip is active! failing to complete the bounties will bring you one level down and you will lose your last perk. higher levels are harder but give you better perks!""",
                 "-# <t:1761325200>",
             )
             view.add_item(embed)
@@ -7223,7 +7214,7 @@ async def catnip(message: discord.Interaction):
             if reroll:
                 h[level - 1] = interaction.data["custom_id"]
                 user.reroll = True
-            else:    
+            else:
                 user.perk_selected = True
                 h.append(interaction.data["custom_id"])
             user.perks = h[:]  # black magic
