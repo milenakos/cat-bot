@@ -7223,8 +7223,8 @@ async def catnip(message: discord.Interaction):
             if reroll:
                 h[level - 1] = interaction.data["custom_id"]
                 user.reroll = True
-                user.perk_selected = True
             else:    
+                user.perk_selected = True
                 h.append(interaction.data["custom_id"])
             user.perks = h[:]  # black magic
 
