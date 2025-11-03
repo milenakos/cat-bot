@@ -2055,7 +2055,7 @@ async def on_message(message: discord.Message):
                         # :SILENCE:
                         normal_bump = False
                         if not channel.forcespawned:
-                            if double_boost:
+                            if double_boost and le_emoji == "eGirl":
                                 rainboost = 1200
                             else:
                                 rainboost = 600
@@ -7219,12 +7219,12 @@ async def catnip(message: discord.Interaction):
                 await interaction.followup.send(f"you already chose to reroll level {user.reroll_level}", ephemeral=True)
                 return
 
-            user.perk_selected = True
             h = list(user.perks) if user.perks else []
             if reroll:
                 h[level - 1] = interaction.data["custom_id"]
                 user.reroll = True
-            else:
+                user.perk_selected = True
+            else:    
                 h.append(interaction.data["custom_id"])
             user.perks = h[:]  # black magic
 
