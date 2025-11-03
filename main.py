@@ -7073,6 +7073,14 @@ async def catnip(message: discord.Interaction):
     if user.cutscene == 2:
         await achemb(message, "mafia_win", "send")
 
+    if len(user.perks) + 1 < user.catnip_level:
+        user.perk_selected = False
+        await user.save()
+    
+    if len(user.perks) + 1 > user.catnip_level:
+        user.perks = user.perks[:-1]
+        await user.save()
+
     level = user.catnip_level
     cat_type = user.catnip_price
     amount = user.catnip_amount
