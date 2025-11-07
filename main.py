@@ -1766,7 +1766,7 @@ async def on_message(message: discord.Message):
                 channel.cat_rains -= 1
                 if channel.cat_rains == 0:
                     cat_rain_end = True
-                else:
+                else:  
                     decided_time = random.uniform(1, 2)
                     channel.rain_should_end = int(time.time() + decided_time)
 
@@ -6609,7 +6609,7 @@ async def bounty(message, user, cattype):
             else:
                 if cattypes.index(cattype) >= cattypes.index(user.bounty_type_bonus):
                     user.bounty_progress_bonus += 1
-                bonus_title = f"Catch {user.bounty_total_bonus} {cattype} or rarer cats"
+                bonus_title = f"Catch {user.bounty_total_bonus} {user.bounty_type_bonus} or rarer cats"
             if user.bounty_progress_bonus == user.bounty_total_bonus:
                 description = "Bonus Bounty Complete!\nGo to `/catnip` to reroll a perk!"
                 embed = discord.Embed(title=f"✅ {bonus_title}", color=Colors.green, description=description).set_author(
@@ -7099,6 +7099,10 @@ async def catnip(message: discord.Interaction):
         if not user.perk_selected:
             await interaction.response.send_message("You haven't selected a perk from your previous level yet!", ephemeral=True)
             return
+        if user.bounty_progress_bonus == user.bounty_total_bonus and user.catnip_level >= 7 and not user.reroll:
+            await interaction.response.send_message("You haven't rerolled a perk yet!")
+            return
+
 
         trigger_cutscene = False
         if user.catnip_level != 10:
