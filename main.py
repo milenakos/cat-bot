@@ -1763,11 +1763,12 @@ async def on_message(message: discord.Message):
 
             cat_rain_end = False
             if channel.cat_rains > 0:
-                decided_time = random.uniform(1, 2)
-                channel.rain_should_end = int(time.time() + decided_time)
                 channel.cat_rains -= 1
                 if channel.cat_rains == 0:
                     cat_rain_end = True
+                else:
+                    decided_time = random.uniform(1, 2)
+                    channel.rain_should_end = int(time.time() + decided_time)
 
             if channel.yet_to_spawn < time.time():
                 # if there isnt already a scheduled spawn
