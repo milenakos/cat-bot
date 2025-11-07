@@ -2296,14 +2296,14 @@ async def on_message(message: discord.Message):
             finally:
                 await channel.save()
                 if decided_time:
+                    if cat_rain_end:
+                        bot.loop.create_task(rain_end(message, channel))    
                     await asyncio.sleep(decided_time)
                     try:
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
                     except Exception:
                         pass
                     await spawn_cat(str(message.channel.id))
-                    if cat_rain_end:
-                        bot.loop.create_task(rain_end(message, channel))
                 else:
                     try:
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
