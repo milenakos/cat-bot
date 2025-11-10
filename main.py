@@ -4138,6 +4138,11 @@ if config.DONOR_CHANNEL_ID:
             # reupload image
             channeley = bot.get_channel(config.DONOR_CHANNEL_ID)
             file = await image.to_file()
+            if "." in file.filename:
+                ext = file.filename[file.filename.rfind(".") :]
+                file.filename = "i" + ext
+            else:
+                file.filename = "i"
             if not isinstance(
                 channeley,
                 Union[
