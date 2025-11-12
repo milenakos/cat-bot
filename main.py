@@ -7134,6 +7134,13 @@ async def catnip(message: discord.Interaction):
 
         if user.catnip_level == 8 and user.cutscene == 0:
             await mafia_cutscene(interaction, user)
+        elif user.catnip_level == 10 and not trigger_cutscene:
+            text = """The point of catnip IS NOT TO KEEP LEVELLING UP FOREVER. 
+You are meant to go up and down levels. 
+You get absolutely no benefit from completing level 10.
+You can stop. That's okay. Seriously.
+"""
+            await interaction.response.send_message(content=text, ephemeral=True)
         elif trigger_cutscene and user.cutscene <= 1:
             await mafia_cutscene2(interaction, user)
         elif user.catnip_level > 1:
