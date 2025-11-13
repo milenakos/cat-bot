@@ -227,6 +227,9 @@ with open("config/battlepass.json", "r", encoding="utf-8") as f:
 with open("config/catnip.json", "r", encoding="utf-8") as f:
     catnip_list = json.load(f)
 
+with open("facts.txt") as f:
+    cat_facts_list = f.read().split("\n")
+
 # convert achievement json to a few other things
 ach_names = ach_list.keys()
 ach_titles = {value["title"].lower(): key for (key, value) in ach_list.items()}
@@ -1766,7 +1769,7 @@ async def on_message(message: discord.Message):
                 channel.cat_rains -= 1
                 if channel.cat_rains == 0:
                     cat_rain_end = True
-                else:  
+                else:
                     decided_time = random.uniform(1, 2)
                     channel.rain_should_end = int(time.time() + decided_time)
 
@@ -2297,7 +2300,7 @@ async def on_message(message: discord.Message):
                 await channel.save()
                 if decided_time:
                     if cat_rain_end:
-                        bot.loop.create_task(rain_end(message, channel))    
+                        bot.loop.create_task(rain_end(message, channel))
                     await asyncio.sleep(decided_time)
                     try:
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
@@ -6519,18 +6522,11 @@ async def cat_fact(message: discord.Interaction):
         "cats are the best",
     ]
 
-    # give a fact from the list or the API
+    # give a fact from the list or the file
     if random.randint(0, 10) == 0:
         await message.response.send_message(random.choice(facts))
     else:
-        await message.response.defer()
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://catfact.ninja/fact", headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    await message.followup.send(data["fact"])
-                else:
-                    await message.followup.send("failed to fetch a cat fact.")
+        await message.response.send_message(random.choice(cat_facts_list))
 
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     user.facts += 1
@@ -7073,7 +7069,7 @@ async def catnip(message: discord.Interaction):
     if len(user.perks) + 1 < user.catnip_level:
         user.perk_selected = False
         await user.save()
-    
+
     if len(user.perks) + 1 > user.catnip_level:
         user.perks = user.perks[:-1]
         await user.save()
@@ -7108,7 +7104,6 @@ async def catnip(message: discord.Interaction):
             await interaction.response.send_message("You haven't rerolled a perk yet!")
             return
 
-
         trigger_cutscene = False
         if user.catnip_level != 10:
             user.catnip_level += 1
@@ -7135,8 +7130,8 @@ async def catnip(message: discord.Interaction):
         if user.catnip_level == 8 and user.cutscene == 0:
             await mafia_cutscene(interaction, user)
         elif user.catnip_level == 10 and not trigger_cutscene:
-            text = """The point of catnip IS NOT TO KEEP LEVELLING UP FOREVER. 
-You are meant to go up and down levels. 
+            text = """The point of catnip IS NOT TO KEEP LEVELLING UP FOREVER.
+You are meant to go up and down levels.
 You get absolutely no benefit from completing level 10.
 You can stop. That's okay. Seriously.
 """
@@ -7239,7 +7234,7 @@ You can stop. That's okay. Seriously.
             if reroll:
                 h[level - 1] = interaction.data["custom_id"]
                 user.reroll = True
-            else:    
+            else:
                 user.perk_selected = True
                 h.append(interaction.data["custom_id"])
             user.perks = h[:]  # black magic
