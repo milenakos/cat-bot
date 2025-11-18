@@ -277,7 +277,7 @@ class Colors:
 
 
 # rain shill message for footers
-rain_shill = "☔ Get tons of cats -20% /rain"
+rain_shill = "☔ Get tons of cats /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -5387,7 +5387,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                 await achemb(message, "capitalism", "send")
                 await achemb(message, "capitalism", "send", person2)
 
-            if cat_count == 0:
+            if person2value + person1value == 0:
                 await achemb(message, "absolutely_nothing", "send")
                 await achemb(message, "absolutely_nothing", "send", person2)
 
