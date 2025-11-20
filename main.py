@@ -2198,25 +2198,36 @@ async def on_message(message: discord.Message):
                     except Exception:
                         pass
 
-                async def send_confirm():
+                async def send_confirm(do_edit):
                     try:
                         kwargs = {}
                         if view:
                             kwargs["view"] = view
 
-                        await send_target.send(
+                        text = (
                             coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
                             .replace("{emoji}", str(icon))
                             .replace("{type}", le_emoji)
                             .replace("{count}", f"{new_count:,}")
                             .replace("{time}", caught_time[:-1])
-                            + suffix_string,
-                            **kwargs,
+                            + suffix_string
                         )
+
+                        try:
+                            if do_edit:
+                                cat_spawn = send_target.get_partial_message(cat_temp)
+                                await cat_spawn.edit(content=text, attachments=[], **kwargs)
+                                return
+                        except Exception:
+                            pass
+                        await send_target.send(text, **kwargs)
                     except Exception:
                         pass
 
-                await asyncio.gather(delete_cat(), send_confirm())
+                if time_caught > 60:
+                    await asyncio.gather(delete_cat(), send_confirm(False))
+                else:
+                    await send_confirm(True)
 
                 user.total_catches += 1
                 if do_time:
