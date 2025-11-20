@@ -343,11 +343,33 @@ loop_count = 0
 # loops in dpy can randomly break, i check if is been over X minutes since last loop to restart it
 last_loop_time = 0
 
-# keep track of cat cought in rain
-config.cat_cought_rain = {}
 
-# keep track of who started the rain
-config.rain_starter = {}
+async def worker():
+    config.worker_on = True
+    while True:
+        try:
+            start_time = time.perf_counter()
+
+            for _ in range(40):
+                _, task = await config.request_queue.get()
+                await task
+                config.request_queue.task_done()
+
+            elapsed_time = time.perf_counter() - start_time
+            await asyncio.sleep(max(0, 1 - elapsed_time))
+        except Exception:
+            pass
+
+
+async def add_queue(task, priority=None):
+    priority_mappings = {"delete": 1, "rain": 2, "end": 3, "spawn": 4, "react": 5}
+
+    if priority in priority_mappings:
+        priority = priority_mappings[priority]
+
+    if not priority:
+        priority = 10
+    await config.request_queue.put((priority, task))
 
 
 def get_emoji(name):
@@ -362,13 +384,11 @@ def get_emoji(name):
         return "🔳"
 
 
-async def fetch_perms(message: discord.Message | discord.Interaction) -> discord.Permissions:
-    # this is mainly for threads where the parent isnt cached
-    if isinstance(message.channel, discord.Thread) and not message.channel.parent:
-        parent = message.guild.get_channel(message.channel.parent_id) or await message.guild.fetch_channel(message.channel.parent_id)
-        return parent.permissions_for(message.guild.me)
-    else:
+def fetch_perms(message: discord.Message | discord.Interaction) -> discord.Permissions:
+    try:
         return message.channel.permissions_for(message.guild.me)
+    except Exception:
+        return discord.Permissions.all()  # if it errors pretend we have all permissions
 
 
 # news stuff
@@ -450,7 +470,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
 
     try:
         result = None
-        perms = await fetch_perms(message)
+        perms = fetch_perms(message)
         correct_perms = perms.send_messages and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads)
         if send_type == "reply" and correct_perms:
             result = await message.reply(embed=embed)
@@ -608,7 +628,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
     user.quests_completed += 1
 
     old_xp = user.progress
-    perms = await fetch_perms(message)
+    perms = fetch_perms(message)
     level_complete_embeds = []
     if user.battlepass >= len(battle["seasons"][str(user.season)]):
         level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
@@ -788,7 +808,7 @@ async def finale(message, user):
 
     user.finale_seen = True
     await user.save()
-    perms = await fetch_perms(message)
+    perms = fetch_perms(message)
     if perms.send_messages and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
         try:
             author_string = message.author
@@ -995,8 +1015,7 @@ async def maintaince_loop():
 
     # revive dead catch loops
     async for channel in Channel.limit(["channel_id"], "yet_to_spawn < $1 AND cat = 0", time.time(), refetch=False):
-        await spawn_cat(str(channel.channel_id))
-        await asyncio.sleep(0.1)
+        await add_queue(spawn_cat(str(channel.channel_id)), "spawn")
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
     #
@@ -1273,7 +1292,7 @@ async def on_message(message: discord.Message):
             await message.channel.send('good job! please send "lol_i_have_dmed_the_cat_bot_and_got_an_ach" in server to get your ach!')
         return
 
-    perms = await fetch_perms(message)
+    perms = fetch_perms(message)
 
     achs = [
         ["cat?", "startswith", "???"],
@@ -1494,7 +1513,7 @@ async def on_message(message: discord.Message):
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
             try:
                 if perms.add_reactions and reactions_ratelimit.get(message.guild.id, 0) < 100:
-                    await message.add_reaction(get_emoji("staring_cat"))
+                    await add_queue(message.add_reaction(get_emoji("staring_cat")), "react")
                     react_count += 1
                     reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
             except Exception:
@@ -1610,7 +1629,7 @@ async def on_message(message: discord.Message):
                     em = r[2]
 
                 try:
-                    await message.add_reaction(em)
+                    await add_queue(message.add_reaction(em), "react")
                     react_count += 1
                     reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
                 except Exception:
@@ -1631,7 +1650,7 @@ async def on_message(message: discord.Message):
 
     try:
         if message.author in message.mentions and perms.add_reactions and reactions_ratelimit.get(message.guild.id, 0) < 100:
-            await message.add_reaction(get_emoji("staring_cat"))
+            await add_queue(message.add_reaction(get_emoji("staring_cat")), "react")
             react_count += 1
             reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
     except Exception:
@@ -1711,7 +1730,7 @@ async def on_message(message: discord.Message):
             # (except if rain is active, we dont have perms or channel isnt setupped, or we laughed way too much already)
             if channel and channel.cat_rains == 0 and perms.add_reactions and pointlaugh_ratelimit.get(message.channel.id, 0) < 10:
                 try:
-                    await message.add_reaction(get_emoji("pointlaugh"))
+                    await add_queue(message.add_reaction(get_emoji("pointlaugh")), "react")
                     pointlaugh_ratelimit[message.channel.id] = pointlaugh_ratelimit.get(message.channel.id, 0) + 1
                 except Exception:
                     pass
@@ -1775,7 +1794,7 @@ async def on_message(message: discord.Message):
 
             if channel.yet_to_spawn < time.time():
                 # if there isnt already a scheduled spawn
-                channel.yet_to_spawn = time.time() + decided_time + 10
+                channel.yet_to_spawn = time.time() + decided_time + 30
             else:
                 channel.yet_to_spawn = 0
                 decided_time = 0
@@ -2198,36 +2217,26 @@ async def on_message(message: discord.Message):
                     except Exception:
                         pass
 
-                async def send_confirm(do_edit):
+                async def send_confirm():
                     try:
                         kwargs = {}
                         if view:
                             kwargs["view"] = view
 
-                        text = (
+                        await send_target.send(
                             coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
                             .replace("{emoji}", str(icon))
                             .replace("{type}", le_emoji)
                             .replace("{count}", f"{new_count:,}")
                             .replace("{time}", caught_time[:-1])
-                            + suffix_string
+                            + suffix_string,
+                            **kwargs,
                         )
-
-                        try:
-                            if do_edit:
-                                cat_spawn = send_target.get_partial_message(cat_temp)
-                                await cat_spawn.edit(content=text, attachments=[], **kwargs)
-                                return
-                        except Exception:
-                            pass
-                        await send_target.send(text, **kwargs)
                     except Exception:
                         pass
 
-                if time_caught > 60:
-                    await asyncio.gather(delete_cat(), send_confirm(False))
-                else:
-                    await send_confirm(True)
+                await add_queue(delete_cat(), "delete")
+                await add_queue(send_confirm(), "end")
 
                 user.total_catches += 1
                 if do_time:
@@ -2317,7 +2326,7 @@ async def on_message(message: discord.Message):
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
                     except Exception:
                         pass
-                    await spawn_cat(str(message.channel.id))
+                    await add_queue(spawn_cat(str(message.channel.id)), "spawn" if channel.cat_rains == 0 else "rain")
                 else:
                     try:
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
@@ -2980,7 +2989,7 @@ at each level you will have some bounties you have to complete within a time fra
 @bot.tree.command(description="Read text as TikTok TTS woman")
 @discord.app_commands.describe(text="The text to be read! (300 characters max)")
 async def tiktok(message: discord.Interaction, text: str):
-    perms = await fetch_perms(message)
+    perms = fetch_perms(message)
     if not perms.attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
@@ -3715,7 +3724,7 @@ async def rain_recovery_loop(channel):
         if channel.cat_rains <= 0:
             break
         if channel.cat_rains and not channel.cat and time.time() - channel.rain_should_end > 5:
-            await spawn_cat(str(channel.channel_id))
+            await add_queue(spawn_cat(str(channel.channel_id)), "rain")
             channel.cat_rains -= 1
             await channel.save()
 
@@ -3728,7 +3737,7 @@ async def rain_end(message, channel):
     except Exception:
         pass
 
-    channel_permissions = await fetch_perms(message)
+    channel_permissions = fetch_perms(message)
     lock_success = False
     try:
         me_overwrites = message.channel.overwrites_for(message.guild.me)
@@ -3959,7 +3968,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             await interaction.response.send_message("there is already a rain running!", ephemeral=True)
             return
 
-        channel_permissions = await fetch_perms(message)
+        channel_permissions = fetch_perms(message)
         needed_perms = {
             "View Channel": channel_permissions.view_channel,
             "Send Messages": channel_permissions.send_messages,
@@ -4003,7 +4012,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
         config.cat_cought_rain[channel.channel_id] = {}
         config.rain_starter[channel.channel_id] = interaction.user.id
-        await spawn_cat(str(interaction.channel.id))
+        await add_queue(spawn_cat(str(interaction.channel.id)), "rain")
         await rain_recovery_loop(channel)
 
     async def rain_modal(interaction):
@@ -5704,7 +5713,7 @@ async def cat(message: discord.Interaction, cat_type: Optional[str]):
         await message.response.send_message("bro what", ephemeral=True)
         return
 
-    perms = await fetch_perms(message)
+    perms = fetch_perms(message)
     if not perms.attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
@@ -5722,7 +5731,7 @@ async def cat(message: discord.Interaction, cat_type: Optional[str]):
 
 @bot.tree.command(description="Get Cursed Cat")
 async def cursed(message: discord.Interaction):
-    perms = await fetch_perms(message)
+    perms = fetch_perms(message)
     if not perms.attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
@@ -5732,7 +5741,7 @@ async def cursed(message: discord.Interaction):
 
 @bot.tree.command(description="Get Your balance")
 async def bal(message: discord.Interaction):
-    perms = await fetch_perms(message)
+    perms = fetch_perms(message)
     if not perms.attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
@@ -7367,9 +7376,9 @@ You can stop. That's okay. Seriously.
                     global_user = await User.get_or_create(user_id=interaction.user.id)
                     duration_bonus = 0
                     for i in range(int(global_user.vote_streak / 100)):
-                        i = i+1
-                        duration_bonus += 6000/i 
-                    duration_bonus += 60 * (global_user.vote_streak % 100)/(int(global_user.vote_streak / 100)+1)
+                        i = i + 1
+                        duration_bonus += 6000 / i
+                    duration_bonus += 60 * (global_user.vote_streak % 100) / (int(global_user.vote_streak / 100) + 1)
 
         user.catnip_active = int(time.time()) + 3600 * duration + duration_bonus
         await user.save()
@@ -7693,7 +7702,7 @@ async def catch_tip(message: discord.Interaction):
 
 
 async def catch(message: discord.Interaction, msg: discord.Message):
-    perms = await fetch_perms(message)
+    perms = fetch_perms(message)
     if not perms.attach_files:
         await message.response.send_message("i cant attach files here!", ephemeral=True)
         return
@@ -8076,7 +8085,7 @@ async def setup_channel(message: discord.Interaction):
         return
 
     try:
-        channel_permissions = await fetch_perms(message)
+        channel_permissions = fetch_perms(message)
         needed_perms = {
             "View Channel": channel_permissions.view_channel,
             "Send Messages": channel_permissions.send_messages,
@@ -8102,7 +8111,7 @@ async def setup_channel(message: discord.Interaction):
         await message.response.send_message("this channel gives me bad vibes.")
         return
 
-    await spawn_cat(str(message.channel.id))
+    await add_queue(spawn_cat(str(message.channel.id)), "spawn")
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
 
 
@@ -8123,7 +8132,7 @@ async def fake(message: discord.Interaction):
         return
     file = discord.File("images/australian cat.png", filename="australian cat.png")
     icon = get_emoji("egirlcat")
-    perms = await fetch_perms(message)
+    perms = fetch_perms(message)
     fakecooldown[message.user.id] = time.time()
     try:
         if not perms.send_messages or not perms.attach_files:
@@ -8157,7 +8166,7 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
         return
     ch.yet_to_spawn = 0
     await ch.save()
-    await spawn_cat(str(message.channel.id), cat_type, True)
+    await add_queue(spawn_cat(str(message.channel.id), cat_type, True), "spawn")
     await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this")
 
 
