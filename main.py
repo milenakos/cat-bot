@@ -8456,6 +8456,9 @@ async def setup(bot2):
         if i.name == "rain":
             RAIN_ID = i.id
 
+    if not config.worker_on:
+        bot.loop.create_task(worker())
+
     if bot.is_ready() and not on_ready_debounce:
         await on_ready()
 
