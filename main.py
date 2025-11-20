@@ -1014,8 +1014,8 @@ async def maintaince_loop():
                 print("Posting to top.gg failed.")
 
     # revive dead catch loops
-    async for channel in Channel.limit(["channel_id"], "yet_to_spawn < $1 AND cat = 0", time.time(), refetch=False):
-        await add_queue(spawn_cat(str(channel.channel_id)), "spawn")
+    # async for channel in Channel.limit(["channel_id"], "yet_to_spawn < $1 AND cat = 0", time.time(), refetch=False):
+    #    await add_queue(spawn_cat(str(channel.channel_id)), "spawn")
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
     #
