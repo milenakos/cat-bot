@@ -7354,15 +7354,11 @@ You can stop. That's okay. Seriously.
                 perk_data = perks[int(perk.split("_")[1]) - 1]
                 if perk_data["id"] == "timer_add_streak":
                     global_user = await User.get_or_create(user_id=interaction.user.id)
-                    duration_bonus = global_user.vote_streak * 60
-                    for i in range(int(global_user.vote_streak / 100) + 1):
-                        if i == 0:
-                            continue
-                        if int(global_user.vote_streak / (100 * i)) > 0:
-                            duration_bonus -= 6000
-                            duration_bonus += 6000 / (i + 1)
-                        duration_bonus -= global_user.vote_streak % (100 * i) * 60
-                        duration_bonus += (global_user.vote_streak % (100 * i) * 60) / i
+                    duration_bonus = 0
+                    for i in range(int(global_user.vote_streak / 100)):
+                        i = i+1
+                        duration_bonus += 6000/i 
+                    duration_bonus += 60 * (global_user.vote_streak % 100)/(int(global_user.vote_streak / 100)+1)
 
         user.catnip_active = int(time.time()) + 3600 * duration + duration_bonus
         await user.save()
