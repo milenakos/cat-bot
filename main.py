@@ -351,7 +351,7 @@ async def worker():
             start_time = time.perf_counter()
 
             for _ in range(40):
-                _, task = await config.request_queue.get()
+                _, _, task = await config.request_queue.get()
                 await task
                 config.request_queue.task_done()
 
@@ -369,7 +369,7 @@ async def add_queue(task, priority=None):
 
     if not priority:
         priority = 10
-    await config.request_queue.put((priority, task))
+    await config.request_queue.put((priority, time.time(), task))
 
 
 def get_emoji(name):
