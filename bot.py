@@ -81,12 +81,6 @@ bot = commands.AutoShardedBot(
     allowed_mentions=discord.AllowedMentions.none(),
 )
 
-# pre-set some persistent variables
-config.worker_on = False
-config.request_queue = asyncio.PriorityQueue()
-config.cat_cought_rain = {}
-config.rain_starter = {}
-
 
 @bot.event
 async def setup_hook():
