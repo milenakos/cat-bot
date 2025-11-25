@@ -5895,9 +5895,12 @@ async def slots(message: discord.Interaction):
         profile.slot_spins += 1
         await profile.save()
 
-        await achemb(interaction, "slots", "send")
-        await progress(message, profile, "slots")
-        await progress(message, profile, "slots2")
+        try:
+            await achemb(interaction, "slots", "send")
+            await progress(message, profile, "slots")
+            await progress(message, profile, "slots2")
+        except Exception:
+            pass
 
         variants = ["🍒", "🍋", "🍇", "🔔", "⭐", ":seven:"]
         reel_durations = [random.randint(9, 12), random.randint(15, 22), random.randint(25, 28)]
@@ -7356,9 +7359,9 @@ You can stop. That's okay. Seriously.
                     global_user = await User.get_or_create(user_id=interaction.user.id)
                     duration_bonus = 0
                     for i in range(int(global_user.vote_streak / 100)):
-                        i = i+1
-                        duration_bonus += 6000/i 
-                    duration_bonus += 60 * (global_user.vote_streak % 100)/(int(global_user.vote_streak / 100)+1)
+                        i = i + 1
+                        duration_bonus += 6000 / i
+                    duration_bonus += 60 * (global_user.vote_streak % 100) / (int(global_user.vote_streak / 100) + 1)
 
         user.catnip_active = int(time.time()) + 3600 * duration + duration_bonus
         await user.save()
