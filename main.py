@@ -1237,7 +1237,7 @@ async def on_ready():
             "APIs: **catfact.ninja, weilbyte.dev, wordnik.com, thecatapi.com**",
             "Open Source Projects: **[discord.py](https://github.com/Rapptz/discord.py), [asyncpg](https://github.com/MagicStack/asyncpg), [gateway-proxy](https://github.com/Gelbpunkt/gateway-proxy)**",
             "Art, suggestions, and a lot more: **TheTrashCell**",
-            "Banner art: 2braincelledcreature",
+            "Banner art: **2braincelledcreature**",
             "Testers: **" + ", ".join(tester_users) + "**",
             "Enjoying the bot: **You <3**",
         ]
