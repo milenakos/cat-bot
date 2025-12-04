@@ -173,7 +173,7 @@ vote_button_texts = [
     "Cat says you should vote",
     "cat will be happy if you vote",
     "VOTE NOW!!!!!",
-    "I voted and got 1000000$",
+    "I voted and got $1000000",
     "I voted and found a gf",
     "lebron james forgot to vote",
     "vote if you like cats",
