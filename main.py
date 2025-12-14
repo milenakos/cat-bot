@@ -2872,7 +2872,7 @@ at each level you will have some bounties you have to complete within a time fra
             embed = Container(
                 "## ❤️ vote for cat bot in top.gg awards",
                 'cat bot is finalist in "Labor of Love" category on top.gg awards!',
-                "make sure to vote for it and perhaps attend the awards ceremony on january 3rd",
+                "make sure to [vote for it](https://nominations.top.gg/) and perhaps attend the awards ceremony on january 3rd",
                 discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/7EW2I4P.png")),
                 Button(label="Vote for Cat Bot", url="https://nominations.top.gg/", emoji="🏆"),
                 "-# <t:1765747278>",
