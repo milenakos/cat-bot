@@ -383,8 +383,9 @@ news_list = [
     {"title": "100,000 SERVERS WHAT", "emoji": "🎉"},
     {"title": "Regarding recent instabilities", "emoji": "🗒️"},
     {"title": "cat bot reached #5 on top.gg", "emoji": "yippee"},
-    {"title": "nominate cat bot for top.gg awards", "emoji": "🏆"},
+    {"title": "top.gg awards (outdated)", "emoji": "🏆"},
     {"title": "Welcome to the Cat Mafia", "emoji": "catnip"},
+    {"title": "vote for cat bot as finalist in top.gg awards", "emoji": "❤️"},
 ]
 
 
@@ -2837,10 +2838,11 @@ thanks for using cat bot!""",
         elif news_id == 10:
             embed = Container(
                 "## 🏆 nominate cat bot for top.gg awards",
+                "(this is outdated, nominations are over. you can [vote for cat bot as finalist in Labor of Love category](https://nominations.top.gg/))"
                 "holy cat top.gg is doing annual awards now",
                 "you know [what to do](https://top.gg/bot/966695034340663367)...\nyou can also leave a review while you are there if you havent yet :3",
                 discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/YgQ0flQ.png")),
-                Button(label="Nominate Cat Bot", url="https://top.gg/bot/966695034340663367", emoji="🏆"),
+                Button(label="Vote for Cat Bot", url="https://nominations.top.gg/", emoji="🏆"),
                 "-# <t:1759513848>",
             )
             view.add_item(embed)
@@ -2862,6 +2864,18 @@ thanks for using cat bot!""",
 👉 okay now let me explain:
 at each level you will have some bounties you have to complete within a time frame. if you complete the bounties and pay the price, you will be able to choose one of 3 different perks of random rarities {get_emoji("common")}{get_emoji("uncommon")}{get_emoji("rare")}{get_emoji("epic")}{get_emoji("legendary")}. the perks will stack while catnip is active! failing to complete the bounties will bring you one level down and you will lose your last perk. higher levels are harder but give you better perks!""",
                 "-# <t:1761325200>",
+            )
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
+        elif news_id == 12:
+            embed = Container(
+                "## ❤️ vote for cat bot in top.gg awards",
+                'cat bot is finalist in "Labor of Love" category on top.gg awards!',
+                "make sure to vote for it and perhaps attend the awards ceremony on january 3rd",
+                discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/7EW2I4P.png")),
+                Button(label="Vote for Cat Bot", url="https://nominations.top.gg/", emoji="🏆"),
+                "-# <t:1765747278>",
             )
             view.add_item(embed)
             view.add_item(back_row)
