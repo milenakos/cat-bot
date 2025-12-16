@@ -7118,9 +7118,6 @@ async def catnip(message: discord.Interaction):
         if not user.perk_selected:
             await interaction.response.send_message("You haven't selected a perk from your previous level yet!", ephemeral=True)
             return
-        if user.bounty_progress_bonus == user.bounty_total_bonus and user.catnip_level >= 7 and not user.reroll:
-            await interaction.response.send_message("You haven't rerolled a perk yet!")
-            return
 
         trigger_cutscene = False
         if user.catnip_level != 10:
@@ -7137,6 +7134,7 @@ async def catnip(message: discord.Interaction):
         user.catnip_bought += 1
         user.catnip_total_cats = 0
         user.first_quote_seen = False
+        user.reroll = True
 
         if user.catnip_level > user.highest_catnip_level:
             user.highest_catnip_level = user.catnip_level
@@ -7518,8 +7516,26 @@ You can stop. That's okay. Seriously.
             button.callback = begin_bounties
             action_row.add_item(button)
         elif user.catnip_level < 11:
+
+            async def reroll_warning(interaction2):
+                async def continue_pay_catnip(interaction3):
+                    await interaction3.response.defer()
+                    await interaction3.delete_original_response()
+                    await pay_catnip(interaction2)
+
+                view2 = View(timeout=VIEW_TIMEOUT)
+                button = Button(label="Yes")
+                button.callback = continue_pay_catnip
+                view2.add_item(button)
+                await interaction2.response.send_message(
+                    "Warning: You will lose your reroll if you level up now. Use it first.\nStill continue?", view=view2, ephemeral=True
+                )
+
             button = Button(label="Pay Up!", style=ButtonStyle.blurple)
-            button.callback = pay_catnip
+            if user.bounty_progress_bonus == user.bounty_total_bonus and user.catnip_level >= 7 and not user.reroll:
+                button.callback = reroll_warning
+            else:
+                button.callback = pay_catnip
             button.disabled = not all_complete
             action_row.add_item(button)
 
