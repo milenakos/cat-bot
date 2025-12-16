@@ -343,12 +343,6 @@ loop_count = 0
 # loops in dpy can randomly break, i check if is been over X minutes since last loop to restart it
 last_loop_time = 0
 
-# keep track of cat cought in rain
-config.cat_cought_rain = {}
-
-# keep track of who started the rain
-config.rain_starter = {}
-
 
 def get_emoji(name):
     global emojis
@@ -3844,7 +3838,10 @@ async def rain_end(message, channel):
                 # this is to bypass character limit up to 4k
                 v = LayoutView()
                 v.add_item(TextDisplay(rain_msg))
-                await message.channel.send(view=v)
+                try:
+                    await message.channel.send(view=v)
+                except Exception:
+                    pass
 
             break
 
@@ -7718,8 +7715,8 @@ async def catch_tip(message: discord.Interaction):
 
 async def catch(message: discord.Interaction, msg: discord.Message):
     perms = await fetch_perms(message)
-    if not perms.attach_files:
-        await message.response.send_message("i cant attach files here!", ephemeral=True)
+    if not perms.attach_files or not perms.view_channel:
+        await message.response.send_message("i dont have perms to do this here!", ephemeral=True)
         return
     if message.user.id in catchcooldown and catchcooldown[message.user.id] + 6 > time.time():
         await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
@@ -7733,7 +7730,13 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         member = msg.author
     result = await event_loop.run_in_executor(None, msg2img.msg2img, msg, member)
 
-    await message.followup.send("cought in 4k", file=result)
+    try:
+        await message.followup.send("cought in 4k", file=result)
+    except Exception:
+        try:
+            await message.followup.send("failed")
+        except Exception:
+            pass
 
     catchcooldown[message.user.id] = time.time()
 

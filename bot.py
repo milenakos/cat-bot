@@ -101,6 +101,9 @@ async def reload(reload_db):
     await bot.load_extension("main")
 
 
+config.cat_cought_rain = {}
+config.rain_starter = {}
+
 bot.cat_bot_reload_hook = reload  # pyright: ignore
 
 try:
