@@ -344,10 +344,12 @@ loop_count = 0
 last_loop_time = 0
 
 # keep track of cat cought in rain
-config.cat_cought_rain = {}
+if not config.cat_cought_rain:
+    config.cat_cought_rain = {}
 
 # keep track of who started the rain
-config.rain_starter = {}
+if not config.rain_starter:
+    config.rain_starter = {}
 
 
 def get_emoji(name):
