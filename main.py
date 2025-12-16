@@ -352,9 +352,7 @@ config.rain_starter = {}
 
 def get_emoji(name):
     global emojis
-    if name in allowedemojis:
-        return emojis[name]
-    elif name in emojis.keys():
+    if name in allowedemojis and name in emojis.keys():
         return emojis[name]
     elif name in emoji.EMOJI_DATA:
         return name
