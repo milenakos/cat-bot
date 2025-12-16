@@ -6997,7 +6997,7 @@ As you return to your hideout, you hear a howl in the distance."""
     button1 = Button(label="RUN!", style=ButtonStyle.blurple)
     button1.callback = button1_callback
     myview1.add_item(button1)
-    await interaction.response.send_message(content=text1, view=myview1, ephemeral=True)
+    await interaction.followup.send(content=text1, view=myview1, ephemeral=True)
 
 
 async def mafia_cutscene2(interaction: discord.Interaction, user):
@@ -7055,7 +7055,7 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
     button1 = Button(label="'uhhhh'", style=ButtonStyle.blurple)
     button1.callback = button1_callback
     myview1.add_item(button1)
-    await interaction.response.send_message(content=text1, view=myview1, ephemeral=True)
+    await interaction.followup.send(content=text1, view=myview1, ephemeral=True)
 
 
 @bot.tree.command(description="..?")
@@ -7099,8 +7099,10 @@ async def catnip(message: discord.Interaction):
     async def pay_catnip(interaction):
         nonlocal user, cat_type, amount
         await user.refresh_from_db()
+        if not interaction.response.is_done():
+            await interaction.response.defer()
         if level != user.catnip_level:
-            await interaction.response.send_message("nice try", ephemeral=True)
+            await interaction.followup.send("nice try", ephemeral=True)
             return
         for i in range(user.bounties):
             if (
@@ -7108,15 +7110,15 @@ async def catnip(message: discord.Interaction):
                 or (i == 1 and user.bounty_progress_two < user.bounty_total_two)
                 or (i == 2 and user.bounty_progress_three < user.bounty_total_three)
             ):
-                await interaction.response.send_message("You haven't completed your bounties yet!", ephemeral=True)
+                await interaction.followup.send("You haven't completed your bounties yet!", ephemeral=True)
                 return
         if user.catnip_price:
             if user[f"cat_{user.catnip_price}"] < user.catnip_amount:
-                await interaction.response.send_message("You don't have enough cats to pay up!", ephemeral=True)
+                await interaction.followup.send("You don't have enough cats to pay up!", ephemeral=True)
                 return
             user[f"cat_{user.catnip_price}"] -= user.catnip_amount
         if not user.perk_selected:
-            await interaction.response.send_message("You haven't selected a perk from your previous level yet!", ephemeral=True)
+            await interaction.followup.send("You haven't selected a perk from your previous level yet!", ephemeral=True)
             return
 
         trigger_cutscene = False
@@ -7151,13 +7153,13 @@ You are meant to go up and down levels.
 You get absolutely no benefit from completing level 10.
 You can stop. That's okay. Seriously.
 """
-            await interaction.response.send_message(content=text, ephemeral=True)
+            await interaction.followup.send(content=text, ephemeral=True)
         elif trigger_cutscene and user.cutscene <= 1:
             await mafia_cutscene2(interaction, user)
         elif user.catnip_level > 1:
             await perk_screen(interaction)
         else:
-            await interaction.response.send_message("Catnip started!", ephemeral=True)
+            await interaction.followup.send("Catnip started!", ephemeral=True)
             await main_message.edit(view=await gen_main())
 
     async def reroll(interaction):
@@ -7228,7 +7230,8 @@ You can stop. That's okay. Seriously.
         await interaction.response.send_message(view=myview, ephemeral=True)
 
     async def perk_screen(interaction, level=0, reroll=False):
-        await interaction.response.defer()
+        if not interaction.response.is_done():
+            await interaction.response.defer()
         global_user = await User.get_or_create(user_id=interaction.user.id)
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
 
