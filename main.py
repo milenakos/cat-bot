@@ -344,11 +344,11 @@ loop_count = 0
 last_loop_time = 0
 
 # keep track of cat cought in rain
-if not config.cat_cought_rain:
+if config.cat_cought_rain is not None:
     config.cat_cought_rain = {}
 
 # keep track of who started the rain
-if not config.rain_starter:
+if config.rain_starter is not None:
     config.rain_starter = {}
 
 
