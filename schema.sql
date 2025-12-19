@@ -354,7 +354,8 @@ CREATE TABLE public."user" (
     blessings_enabled boolean DEFAULT false,
     blessings_anonymous boolean DEFAULT false,
     rain_minutes_bought integer DEFAULT 0,
-    username character varying(255) DEFAULT ''::character varying
+    username character varying(255) DEFAULT ''::character varying,
+    dm_channel_id bigint DEFAULT 0
 );
 
 

@@ -54,6 +54,7 @@ filtered_errors = [
     "Session is closed",
     "Unclosed connection",
     "unable to perform operation on",
+    "Event loop is closed",
     "503 Service Unavailable",
 ]
 
