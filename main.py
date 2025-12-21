@@ -1050,7 +1050,7 @@ async def maintaince_loop():
     # catch reminders
     proccessed_users = []
     async for user in Profile.limit(
-        ["id", "dm_channel_id"],
+        ["id"],
         "(reminders_enabled = true AND reminder_catch != 0) AND ((catch_cooldown != 0 AND catch_cooldown + 43200 < $1) OR (reminder_catch > 1 AND reminder_catch < $1))",
         time.time(),
     ):
@@ -1079,7 +1079,8 @@ async def maintaince_loop():
             guild_name = guild.name
 
         try:
-            user_dm = await fetch_dm_channel(user)
+            user_user = await User.get_or_create(id=user.id)
+            user_dm = await fetch_dm_channel(user_user)
             await user_dm.send(f"A new quest is available in {guild_name}!", embed=embed, view=view)
         except Exception:
             pass
@@ -1092,7 +1093,7 @@ async def maintaince_loop():
     # misc reminders
     proccessed_users = []
     async for user in Profile.limit(
-        ["id", "dm_channel_id"],
+        ["id"],
         "(reminders_enabled = true AND reminder_misc != 0) AND ((misc_cooldown != 0 AND misc_cooldown + 43200 < $1) OR (reminder_misc > 1 AND reminder_misc < $1))",
         time.time(),
     ):
@@ -1121,7 +1122,8 @@ async def maintaince_loop():
             guild_name = guild.name
 
         try:
-            user_dm = await fetch_dm_channel(user)
+            user_user = await User.get_or_create(user_id=user.id)
+            user_dm = await fetch_dm_channel(user_user)
             await user_dm.send(f"A new quest is available in {guild_name}!", embed=embed, view=view)
         except Exception:
             pass
