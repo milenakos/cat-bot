@@ -1012,7 +1012,7 @@ async def maintaince_loop():
     # vote reminders
     proccessed_users = []
     async for user in User.limit(
-        ["user_id", "reminder_vote", "vote_streak"],
+        ["user_id", "reminder_vote", "vote_streak", "dm_channel_id"],
         "vote_time_topgg != 0 AND vote_time_topgg + 43200 < $1 AND reminder_vote != 0 AND reminder_vote < $1",
         time.time(),
     ):
@@ -1050,7 +1050,7 @@ async def maintaince_loop():
     # catch reminders
     proccessed_users = []
     async for user in Profile.limit(
-        ["id"],
+        ["id", "dm_channel_id"],
         "(reminders_enabled = true AND reminder_catch != 0) AND ((catch_cooldown != 0 AND catch_cooldown + 43200 < $1) OR (reminder_catch > 1 AND reminder_catch < $1))",
         time.time(),
     ):
@@ -1092,7 +1092,7 @@ async def maintaince_loop():
     # misc reminders
     proccessed_users = []
     async for user in Profile.limit(
-        ["id"],
+        ["id", "dm_channel_id"],
         "(reminders_enabled = true AND reminder_misc != 0) AND ((misc_cooldown != 0 AND misc_cooldown + 43200 < $1) OR (reminder_misc > 1 AND reminder_misc < $1))",
         time.time(),
     ):
