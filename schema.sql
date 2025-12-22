@@ -291,7 +291,9 @@ CREATE TABLE public.profile (
     ping_reply boolean DEFAULT false,
     highest_catnip_level integer DEFAULT 0,
     bounties_complete integer DEFAULT 0,
-    cutscene smallint DEFAULT 0
+    cutscene smallint DEFAULT 0,
+    snowflakes integer DEFAULT 0,
+    pack_christmas integer DEFAULT 0
 );
 
 
