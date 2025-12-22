@@ -2129,7 +2129,7 @@ async def on_message(message: discord.Message):
                     packs_gained = user.snowflakes // 500
                     user.pack_christmas += packs_gained
                     user.snowflakes %= 500
-                    suffix_string = f"\n{get_emoji('christmaspack')} +{packs_gained} Christmas packs!"
+                    suffix_string += f"\n{get_emoji('christmaspack')} +{packs_gained} Christmas packs!"
                 suffix_string += f"\n❄️ +{new_snowflakes}! Next {get_emoji('christmaspack')}: {user.snowflakes}/500 ❄️"
 
                 custom_cough_strings = {
