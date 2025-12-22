@@ -1924,12 +1924,10 @@ async def on_message(message: discord.Message):
                             none_chance += perks_info[1]["values"][rarity] / 2
                             single_chance -= perks_info[1]["values"][rarity] * (1.5)
                         elif "pack" in id:
-                            no = False
-                            for pack in packs:
-                                if pack[0] == type - 3:
-                                    no = True
-                            if not no:
-                                packs.append((type - 3, perks_info[type - 1]["values"][rarity]))
+                            for num, pack in enumerate(pack_data):
+                                if pack["name"].lower() in id:
+                                    packs.append((num, perks_info[type - 1]["values"][rarity]))
+                                    break
                         elif id == "double_boost":
                             double_boost_chance += perks_info[8]["values"][rarity]
                         elif id == "triple_ach":
