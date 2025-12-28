@@ -1518,15 +1518,17 @@ async def on_message(message: discord.Message):
     if message.author.bot or message.webhook_id is not None:
         return
 
-    for ach in achs:
-        if (
-            (ach[1] == "startswith" and text.lower().startswith(ach[0]))
-            or (ach[1] == "re" and re.search(ach[0], text.lower()))
-            or (ach[1] == "exact" and ach[0] == text.lower())
-            or (ach[1] == "veryexact" and ach[0] == text)
-            or (ach[1] == "in" and ach[0] in text.lower())
-        ):
-            await achemb(message, ach[2], "reply")
+    for achievement in achs:
+        match_text, match_method, achievement_name ,= achievement
+        text_lowered = text.lower()
+        if any([
+            match_method == "startswith" and text_lowered.startswith(match_text),
+            match_method == "re" and re.search(match_text, text_lowered),
+            match_method == "exact" and match_text == text_lowered,
+            match_method == "veryexact" and match_text == text,
+            match_method == "in" and match_text in text_lowered
+        ]):
+            await achemb(message, achievement_name, "reply")
 
     if unidecode.unidecode(text).lower().strip() in [
         "mace",
