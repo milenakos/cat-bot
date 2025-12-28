@@ -1321,28 +1321,29 @@ async def on_message(message: discord.Message):
 
     # here are some automation hooks for giving out purchases and similiar
     if config.RAIN_CHANNEL_ID and message.channel.id == config.RAIN_CHANNEL_ID and text.lower().startswith("cat!rain"):
-        things = text.split(" ")
-        user = await User.get_or_create(user_id=int(things[1]))
+        arguements = text.split(" ")
+        user = await User.get_or_create(user_id=int(arguements[1]))
+        rain_duration = arguements[2]
         if not user.rain_minutes:
             user.rain_minutes = 0
 
-        if things[2] == "short":
+        if rain_duration == "short":
             user.rain_minutes += 2
-        elif things[2] == "medium":
+        elif rain_duration == "medium":
             user.rain_minutes += 10
-        elif things[2] == "long":
+        elif rain_duration == "long":
             user.rain_minutes += 20
         else:
-            user.rain_minutes += int(things[2])
-            user.rain_minutes_bought += int(things[2])
+            user.rain_minutes += int(rain_duration)
+            user.rain_minutes_bought += int(rain_duration)
         user.premium = True
         await user.save()
 
         # try to dm the user the thanks msg
         try:
-            person = await bot.fetch_user(int(things[1]))
+            person = await bot.fetch_user(int(user))
             await person.send(
-                f"**You have recieved {things[2]} minutes of Cat Rain!** ☔\n\nThanks for your support!\nYou can start a rain with `/rain`. By buying you also get access to `/editprofile` command as well as a role in [our Discord server](<https://discord.gg/staring>), where you can also get a decorative custom cat!\n\nEnjoy your goods!"
+                f"**You have recieved {rain_duration} minutes of Cat Rain!** ☔\n\nThanks for your support!\nYou can start a rain with `/rain`. By buying you also get access to `/editprofile` command as well as a role in [our Discord server](<https://discord.gg/staring>), where you can also get a decorative custom cat!\n\nEnjoy your goods!"
             )
         except Exception:
             pass
