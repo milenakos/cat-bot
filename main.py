@@ -1623,15 +1623,17 @@ async def on_message(message: discord.Message):
                     pass
 
     if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-        for resp in responses:
-            if (
-                (resp[1] == "startswith" and text.lower().startswith(resp[0]))
-                or (resp[1] == "re" and re.search(resp[0], text.lower()))
-                or (resp[1] == "exact" and resp[0] == text.lower())
-                or (resp[1] == "in" and resp[0] in text.lower())
-            ):
+        for response in responses:
+            match_method, match_text, response_reply ,= response
+            text_lowered = text.lower()
+            if any([
+                match_method == "startswith" and text_lowered.startswith(match_text),
+                match_method == "re" and re.search(match_text, text_lowered),
+                match_method == "exact" and match_text == text_lowered,
+                match_method == "in" and match_text in text_lowered,
+            ]):
                 try:
-                    await message.reply(resp[2])
+                    await message.reply(response_reply)
                 except Exception:
                     pass
 
