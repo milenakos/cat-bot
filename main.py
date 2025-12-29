@@ -1607,15 +1607,16 @@ async def on_message(message: discord.Message):
         await achemb(message, "multilingual", "reply")
 
     if perms.add_reactions:
-        for r in reactions:
-            if r[0] in text.lower() and reactions_ratelimit.get(message.guild.id, 0) < 100:
-                if r[1] == "custom":
-                    em = get_emoji(r[2])
-                elif r[1] == "vanilla":
-                    em = r[2]
+        for reaction in reactions:
+            reaction_prompt, reaction_type, reaction_name ,= reaction
+            if reaction_prompt in text.lower() and reactions_ratelimit.get(message.guild.id, 0) < 100:
+                if reaction_type == "custom":
+                    resolved_emoji = get_emoji(reaction_name)
+                elif reaction_type == "vanilla":
+                    resolved_emoji = reaction_name
 
                 try:
-                    await message.add_reaction(em)
+                    await message.add_reaction(resolved_emoji)
                     react_count += 1
                     reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
                 except Exception:
