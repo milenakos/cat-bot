@@ -278,7 +278,7 @@ class Colors:
 
 
 # rain shill message for footers
-rain_shill = "🎅 Christmas Sale! -20% /rain"
+rain_shill = "☔ Get tons of cats /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -593,7 +593,6 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         streak_data = get_streak_reward(global_user.vote_streak)
         if streak_data["reward"]:
             user[f"pack_{streak_data['reward']}"] += 1
-        user.pack_christmas += 1
 
         current_xp = user.progress + user.vote_reward
         quest_complete = True
@@ -727,9 +726,6 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
         streak_reward = f"\n🔥 **Streak Bonus!** +1 {streak_data['emoji']} {streak_data['reward'].capitalize()} pack"
     else:
         streak_reward = ""
-
-    if "top.gg" in quest_data["title"]:
-        streak_reward += f"\n❄️ **Christmas Event!** +1 {get_emoji('christmaspack')} Christmas pack!"
 
     return discord.Embed(
         title=f"✅ {title}",
@@ -963,7 +959,7 @@ async def maintaince_loop():
     reactions_ratelimit = {}
     catchcooldown = {}
     fakecooldown = {}
-    await bot.change_presence(activity=discord.CustomActivity(name=f"Feeling JOLLY in {len(bot.guilds):,} servers"))
+    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
     # update cookies
     temp_temp_cookie_storage = temp_cookie_storage.copy()
@@ -1040,11 +1036,7 @@ async def maintaince_loop():
 
         try:
             user_dm = await fetch_dm_channel(user)
-            await user_dm.send(
-                ("You can vote now!" if user.vote_streak < 10 else f"Vote now to keep your {user.vote_streak} streak going!")
-                + f"\n❄️ **Christmas Event!** Get 1 {get_emoji('christmaspack')} Christmas pack for voting!",
-                view=view,
-            )
+            await user_dm.send("You can vote now!" if user.vote_streak < 10 else f"Vote now to keep your {user.vote_streak} streak going!", view=view)
         except Exception:
             pass
         # no repeat reminers for now
@@ -2117,20 +2109,10 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n🎅 christmas sale! -20% </rain:{RAIN_ID}>"
+                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
                 if random.randint(0, 19) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
-
-                # JOLLY!
-                new_snowflakes = int(sum(type_dict.values()) / type_dict[channel.cattype])
-                user.snowflakes += new_snowflakes
-                if user.snowflakes >= 500:
-                    packs_gained = user.snowflakes // 500
-                    user.pack_christmas += packs_gained
-                    user.snowflakes %= 500
-                    suffix_string += f"\n{get_emoji('christmaspack')} +{packs_gained} Christmas packs!"
-                suffix_string += f"\n❄️ +{new_snowflakes}! Next {get_emoji('christmaspack')}: {user.snowflakes}/500 ❄️"
 
                 custom_cough_strings = {
                     "Corrupt": "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!",
@@ -4074,7 +4056,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
     shopbutton = Button(
         emoji="🛒",
-        label="Store (-20%)",
+        label="Store",
         url="https://catbot.shop",
     )
 
@@ -4408,7 +4390,7 @@ async def packs(message: discord.Interaction):
         await asyncio.sleep(1)
         await interaction.edit_original_response(view=gen_view(user))
 
-    description = f"Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n[Chance Info](<https://catbot.minkos.lol/packs>)\n\n❄️ **Christmas Event!** When opening {get_emoji('christmaspack')} Christmas packs, the upgrade chance is **70%** instead! They start below Wooden.\n\nClick the buttons below to start opening packs!"
+    description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n[Chance Info](<https://catbot.minkos.lol/packs>)\n\nClick the buttons below to start opening packs!"
     embed = discord.Embed(title=f"{get_emoji('bronzepack')} Packs", description=description, color=Colors.brown)
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     await message.response.send_message(embed=embed, view=gen_view(user))
@@ -4510,8 +4492,6 @@ async def battlepass(message: discord.Interaction):
                 description += f"- Reward: ~~{user.vote_reward}~~ **{user.vote_reward * 2}** XP"
             else:
                 description += f"- Reward: {user.vote_reward} XP"
-
-            description += f" + {get_emoji('christmaspack')} 1 Christmas pack"
 
             next_streak_data = get_streak_reward(global_user.vote_streak + 1)
             if next_streak_data["reward"] and global_user.vote_time_topgg + 24 * 3600 > time.time():
@@ -8477,7 +8457,6 @@ async def recieve_vote(request):
                     "",
                     f":fire: **Streak:** {user.vote_streak:,} (expires <t:{int(time.time()) + extend_time * 3600}:R>){freeze_note}",
                     f"{streak_progress}",
-                    f"\n❄️ **Christmas Event!** +1 {get_emoji('christmaspack')} Christmas pack!",
                 ]
             )
         )
