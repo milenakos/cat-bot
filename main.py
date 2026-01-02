@@ -4085,14 +4085,14 @@ if config.DONOR_CHANNEL_ID:
             await message.response.send_message("Invalid file type! Please upload a PNG, JPEG, GIF, WebP, or AVIF image.", ephemeral=True)
             return
 
-        await message.response.defer()
+        await message.response.defer(ephemeral=True)
 
         em_name = str(user.user_id) + "cat"
 
         if name:
-            user.name = name
+            user.custom = name
         if amount:
-            user.amount = amount
+            user.custom_num = amount
         if image:
             try:
                 emojiss = {emoji.name: emoji for emoji in await bot.fetch_application_emojis()}
