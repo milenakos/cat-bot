@@ -2425,7 +2425,7 @@ async def on_message(message: discord.Message):
         user = await User.get_or_create(user_id=int(stuff[1]))
         cat_name = " ".join(stuff[2:])
         if stuff[2] != "None" and message.reference and message.reference.message_id:
-            emoji_name = re.sub(r"[^a-zA-Z0-9]", "", cat_name).lower() + "cat"
+            emoji_name = str(user.user_id) + "cat"
             if emoji_name in emojis.keys():
                 await message.reply("emoji already exists")
                 return
@@ -3583,7 +3583,7 @@ async def gen_inventory(message, person_id):
             give_collector = False
 
     if user.custom:
-        icon = get_emoji(re.sub(r"[^a-zA-Z0-9]", "", user.custom).lower() + "cat")
+        icon = get_emoji(str(user.user_id) + "cat")
         cat_desc += f"{icon} **{user.custom}** {user.custom_num:,}"
 
     if len(cat_desc) == 0:
