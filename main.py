@@ -1350,7 +1350,7 @@ async def on_message(message: discord.Message):
         try:
             person = await fetch_dm_channel(user)
             await person.send(
-                f"**You have recieved {things[2]} minutes of Cat Rain!** ☔\n\nThanks for your support!\nYou can start a rain with `/rain`. By buying you also get access to `/editprofile` command as well as a role in [our Discord server](<https://discord.gg/staring>), where you can also get a decorative custom cat!\n\nEnjoy your goods!"
+                f"**You have recieved {things[2]} minutes of Cat Rain!** ☔\n\nThanks for your support!\nYou can start a rain with `/rain`. By buying you also get access to `/editprofile` and `/customcat` commands as well as a role in [our Discord server](<https://discord.gg/staring>)!\n\nEnjoy your goods!"
             )
         except Exception:
             pass
@@ -2320,15 +2320,6 @@ async def on_message(message: discord.Message):
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
                     except Exception:
                         pass
-
-    if text.lower().startswith("cat!amount") and perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-        user = await User.get_or_create(user_id=message.author.id)
-        try:
-            user.custom_num = int(text.split(" ")[1])
-            await user.save()
-            await message.reply("success")
-        except Exception:
-            await message.reply("invalid number")
 
     # only letting the owner of the bot access anything past this point
     if message.author.id != OWNER_ID:
@@ -4073,6 +4064,58 @@ async def store(message: discord.Interaction):
 
 
 if config.DONOR_CHANNEL_ID:
+
+    @bot.tree.command(description="(SUPPORTER) Get a cosmetic custom cat! (non-tradeable, doesn't count towards anything)")
+    @discord.app_commands.describe(
+        name="The name of your custom cat.",
+        image="Static/animated GIF, PNG, JPEG, WEBP, AVIF below 256 KB. Static images will be auto-resized.",
+        amount="The amount of your custom cat you want.",
+    )
+    async def customcat(message: discord.Interaction, name: Optional[str], image: Optional[discord.Attachment], amount: Optional[int]):
+        global emojis
+        user = await User.get_or_create(user_id=message.user.id)
+        if not user.premium:
+            await message.response.send_message(
+                "👑 This feature is supporter-only!\nBuy anything from Cat Bot Store to unlock custom cats!\n<https://catbot.shop>",
+                ephemeral=True,
+            )
+            return
+
+        if image and image.content_type not in ["image/png", "image/jpeg", "image/gif", "image/webp", "image/avif"]:
+            await message.response.send_message("Invalid file type! Please upload a PNG, JPEG, GIF, WebP, or AVIF image.", ephemeral=True)
+            return
+
+        await message.response.defer()
+
+        em_name = str(user.user_id) + "cat"
+
+        if name:
+            user.name = name
+        if amount:
+            user.amount = amount
+        if image:
+            try:
+                emojiss = {emoji.name: emoji for emoji in await bot.fetch_application_emojis()}
+                if em_name in emojiss:
+                    await emojiss[em_name].delete()
+                data = await image.read()
+                if image.content_type.startswith("image/gif"):
+                    new_em = await bot.create_application_emoji(name=em_name, image=data)
+                else:
+                    img = Image.open(io.BytesIO(data))
+                    img.thumbnail((128, 128))
+                    with io.BytesIO() as image_binary:
+                        img.save(image_binary, format="PNG")
+                        image_binary.seek(0)
+                        new_em = await bot.create_application_emoji(name=em_name, image=image_binary.getvalue())
+                emojiss[em_name] = new_em
+                emojis = {k: str(v) for k, v in emojiss.items()}
+            except Exception:
+                await message.followup.send("Error creating emoji. Make sure your image is a valid and below 256KB.", ephemeral=True)
+                return
+        await user.save()
+        embedVar = await gen_inventory(message, message.user)
+        await message.followup.send("Success! Here is a preview:", embed=embedVar, ephemeral=True)
 
     @bot.tree.command(description="(SUPPORTER) Bless random Cat Bot users with doubled cats!")
     async def bless(message: discord.Interaction):
