@@ -1314,7 +1314,6 @@ async def on_message(message: discord.Message):
     ]
 
     responses = [
-        ["cat!sex", "exact", "..."],
         [
             "cellua good",
             "in",
