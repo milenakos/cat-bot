@@ -2087,7 +2087,7 @@ async def on_message(message: discord.Message):
 
                     if normal_bump:
                         if double_boost:
-                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch twice from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
+                            suffix_string += f"\n{get_emoji('prism')}{get_emoji('prism')} {boost_applied_prism} boosted this catch twice from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
                         else:
                             suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
                     else:
@@ -2095,7 +2095,7 @@ async def on_message(message: discord.Message):
                             suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from an {get_emoji('ultimatecat')} Ultimate cat!"
                         if not channel.forcespawned:
                             if double_boost and le_old_emoji == "eGirl":
-                                suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch twice, but failed! A 20m rain will start!"
+                                suffix_string += f"\n{get_emoji('prism')}{get_emoji('prism')} {boost_applied_prism} tried to boost this catch twice, but failed! A 20m rain will start!"
                             else:
                                 suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch{' again' if double_boost else ''}, but failed! A 10m rain will start!"
 
