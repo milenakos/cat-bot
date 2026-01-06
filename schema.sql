@@ -291,7 +291,9 @@ CREATE TABLE public.profile (
     ping_reply boolean DEFAULT false,
     highest_catnip_level integer DEFAULT 0,
     bounties_complete integer DEFAULT 0,
-    cutscene smallint DEFAULT 0
+    cutscene smallint DEFAULT 0,
+    snowflakes integer DEFAULT 0,
+    pack_christmas integer DEFAULT 0
 );
 
 
@@ -354,7 +356,8 @@ CREATE TABLE public."user" (
     blessings_enabled boolean DEFAULT false,
     blessings_anonymous boolean DEFAULT false,
     rain_minutes_bought integer DEFAULT 0,
-    username character varying(255) DEFAULT ''::character varying
+    username character varying(255) DEFAULT ''::character varying,
+    dm_channel_id bigint DEFAULT 0
 );
 
 

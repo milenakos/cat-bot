@@ -54,6 +54,7 @@ filtered_errors = [
     "Session is closed",
     "Unclosed connection",
     "unable to perform operation on",
+    "Event loop is closed",
     "503 Service Unavailable",
 ]
 
@@ -100,6 +101,9 @@ async def reload(reload_db):
         await database.connect()
     await bot.load_extension("main")
 
+
+config.cat_cought_rain = {}
+config.rain_starter = {}
 
 bot.cat_bot_reload_hook = reload  # pyright: ignore
 
