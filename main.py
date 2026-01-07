@@ -1526,7 +1526,7 @@ async def on_message(message: discord.Message):
         return
 
     for achievement in achs:
-        match_text, match_method, achievement_name ,= achievement
+        match_text, match_method, achievement_name = achievement
         text_lowered = text.lower()
         if any([
             match_method == "startswith" and text_lowered.startswith(match_text),
@@ -1615,7 +1615,7 @@ async def on_message(message: discord.Message):
 
     if perms.add_reactions:
         for reaction in reactions:
-            reaction_prompt, reaction_type, reaction_name ,= reaction
+            reaction_prompt, reaction_type, reaction_name = reaction
             if reaction_prompt in text.lower() and reactions_ratelimit.get(message.guild.id, 0) < 100:
                 if reaction_type == "custom":
                     resolved_emoji = get_emoji(reaction_name)
@@ -1631,7 +1631,7 @@ async def on_message(message: discord.Message):
 
     if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
         for response in responses:
-            match_method, match_text, response_reply ,= response
+            match_method, match_text, response_reply = response
             text_lowered = text.lower()
             if any([
                 match_method == "startswith" and text_lowered.startswith(match_text),
