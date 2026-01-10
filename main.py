@@ -995,7 +995,7 @@ async def maintaince_loop():
                 r = await session.post(
                     "https://top.gg/api/v1/projects/@me/commands",
                     headers={"Authorization": config.TOP_GG_TOKEN},
-                    json=[command.to_dict(bot.tree) for command in bot.tree._get_all_commands(guild=None)],
+                    json=[command.to_dict(bot.tree) for command in bot.tree._get_all_commands(guild=None) if command.to_dict(bot.tree)["type"] == 1],
                 )
                 r.close()
 
