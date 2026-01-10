@@ -8183,12 +8183,6 @@ async def givecat(message: discord.Interaction, person_id: discord.User, cat_typ
 @bot.tree.command(name="setup", description="(ADMIN) Setup cat in current channel")
 @discord.app_commands.default_permissions(manage_guild=True)
 async def setup_channel(message: discord.Interaction):
-    if await Channel.get_or_none(channel_id=message.channel.id):
-        await message.response.send_message(
-            "bruh you already setup cat here are you dumb\n\nthere might already be a cat sitting in chat. type `cat` to catch it."
-        )
-        return
-
     try:
         channel_permissions = await fetch_perms(message)
         needed_perms = {
@@ -8208,6 +8202,12 @@ async def setup_channel(message: discord.Interaction):
             needed_perms = "\n- ".join(missing_perms)
             await message.response.send_message(
                 f":x: Missing Permissions! Please give me the following:\n- {needed_perms}\nHint: try setting channel permissions if server ones don't work."
+            )
+            return
+
+        if await Channel.get_or_none(channel_id=message.channel.id):
+            await message.response.send_message(
+                "bruh you already setup cat here are you dumb\n\nthere might already be a cat sitting in chat. type `cat` to catch it."
             )
             return
 
