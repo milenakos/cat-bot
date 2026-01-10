@@ -7196,7 +7196,8 @@ async def catnip(message: discord.Interaction):
                 return
         if user.catnip_price:
             if user[f"cat_{user.catnip_price}"] < user.catnip_amount:
-                await interaction.followup.send("You don't have enough cats to pay up!", ephemeral=True)
+                need_more = user.catnip_amount - user[f"cat_{user.catnip_price}"]
+                await interaction.followup.send(f"You don't have enough cats to pay up!\nYou need {need_more} more {user.catnip_price} cats.", ephemeral=True)
                 return
             user[f"cat_{user.catnip_price}"] -= user.catnip_amount
         if not user.perk_selected:
