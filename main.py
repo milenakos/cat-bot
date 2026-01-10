@@ -294,9 +294,10 @@ reactions_ratelimit = {}
 # sort of the same thing but for pointlaughs and per channel instead of peruser
 pointlaugh_ratelimit = {}
 
-# cooldowns for /fake cat /catch
+# cooldowns for some commands
 catchcooldown = {}
 fakecooldown = {}
+customcatcooldown = {}
 
 # cat bot auto-claims in the channel user last ran /vote in
 # this is a failsafe to store the fact they voted until they ran that atleast once
@@ -4067,7 +4068,7 @@ if config.DONOR_CHANNEL_ID:
     @bot.tree.command(description="(SUPPORTER) Get a cosmetic custom cat! (non-tradeable, doesn't count towards anything)")
     @discord.app_commands.describe(
         name="The name of your custom cat.",
-        image="Static/animated GIF, PNG, JPEG, WEBP, AVIF below 256 KB. Static images will be auto-resized.",
+        image="Static/animated GIF, PNG, JPEG, WEBP, AVIF below 256 KB. Static images will be auto-compressed.",
         amount="The amount of your custom cat you want.",
     )
     async def customcat(message: discord.Interaction, name: Optional[str], image: Optional[discord.Attachment], amount: Optional[int]):
@@ -4093,6 +4094,10 @@ if config.DONOR_CHANNEL_ID:
         if amount:
             user.custom_num = amount
         if image:
+            if customcatcooldown.get(message.user.id, 0) + 300 > time.time():
+                await message.followup.send("You can only upload a new custom cat image every 5 minutes.", ephemeral=True)
+                return
+            customcatcooldown[message.user.id] = time.time()
             try:
                 emojiss = {emoji.name: emoji for emoji in await bot.fetch_application_emojis()}
                 if em_name in emojiss:
