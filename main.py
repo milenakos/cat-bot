@@ -53,8 +53,6 @@ try:
 except ImportError:
     exportbackup = None
 
-logging.basicConfig(level=logging.INFO)
-
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
 
@@ -1001,7 +999,7 @@ async def background_loop():
                 r.close()
 
             except Exception:
-                print("Posting to top.gg failed.")
+                logging.warning("Posting to top.gg failed.")
 
     # revive dead catch loops
     async for channel in Channel.limit(["channel_id"], "yet_to_spawn < $1 AND cat = 0", time.time(), refetch=False):
@@ -1178,7 +1176,7 @@ async def background_loop():
                 else:
                     await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.", file=discord.File(backup_file))
             except Exception as e:
-                print(f"Error during backup: {e}")
+                logging.warning(f"Error during backup: {e}")
         else:
             await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.")
 
@@ -1197,7 +1195,7 @@ async def on_ready():
     if on_ready_debounce:
         return
     on_ready_debounce = True
-    print("cat is now online")
+    logging.info("cat is now online")
     emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
     appinfo = bot.application
     if appinfo.team and appinfo.team.owner_id:
@@ -1227,7 +1225,7 @@ async def on_ready():
                     if login not in ["milenakos", "ImgBotApp"]:
                         contributors.append(login)
             else:
-                print(f"Error: {response.status} - {await response.text()}")
+                logging.warning(f"Error: {response.status} - {await response.text()}")
 
     # fetch testers
     tester_users = []
@@ -1266,7 +1264,7 @@ async def on_message(message: discord.Message):
         last_loop_time = time.time()
         bot.loop.create_task(background_loop())
 
-    if message.guild is None:
+    if message.guild is None and not message.author.bot:
         if text.startswith("disable"):
             # disable reminders
             try:
@@ -1529,13 +1527,15 @@ async def on_message(message: discord.Message):
     for achievement in achs:
         match_text, match_method, achievement_name = achievement
         text_lowered = text.lower()
-        if any([
-            match_method == "startswith" and text_lowered.startswith(match_text),
-            match_method == "re" and re.search(match_text, text_lowered),
-            match_method == "exact" and match_text == text_lowered,
-            match_method == "veryexact" and match_text == text,
-            match_method == "in" and match_text in text_lowered
-        ]):
+        if any(
+            [
+                match_method == "startswith" and text_lowered.startswith(match_text),
+                match_method == "re" and re.search(match_text, text_lowered),
+                match_method == "exact" and match_text == text_lowered,
+                match_method == "veryexact" and match_text == text,
+                match_method == "in" and match_text in text_lowered,
+            ]
+        ):
             await achemb(message, achievement_name, "reply")
 
     if unidecode.unidecode(text).lower().strip() in [
@@ -1634,12 +1634,14 @@ async def on_message(message: discord.Message):
         for response in responses:
             match_method, match_text, response_reply = response
             text_lowered = text.lower()
-            if any([
-                match_method == "startswith" and text_lowered.startswith(match_text),
-                match_method == "re" and re.search(match_text, text_lowered),
-                match_method == "exact" and match_text == text_lowered,
-                match_method == "in" and match_text in text_lowered,
-            ]):
+            if any(
+                [
+                    match_method == "startswith" and text_lowered.startswith(match_text),
+                    match_method == "re" and re.search(match_text, text_lowered),
+                    match_method == "exact" and match_text == text_lowered,
+                    match_method == "in" and match_text in text_lowered,
+                ]
+            ):
                 try:
                     await message.reply(response_reply)
                 except Exception:
@@ -2323,7 +2325,6 @@ async def on_message(message: discord.Message):
                 # handle catnip bounties
                 await bounty(message, user, channel.cattype)
             finally:
-                await channel.save()
                 if decided_time:
                     if cat_rain_end:
                         bot.loop.create_task(rain_end(message, channel, force_summary=force_rain_summary))
@@ -2334,6 +2335,7 @@ async def on_message(message: discord.Message):
                         pass
                     await spawn_cat(str(message.channel.id))
                 else:
+                    await channel.save()
                     try:
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
                     except Exception:
