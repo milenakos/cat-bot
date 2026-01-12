@@ -58,6 +58,7 @@ class Profile(catpg.Model):
 
 class User(catpg.Model):
     _primary_key = "user_id"
+    _capped_ints = ["custom_num"]
 
 
 class Channel(catpg.Model):
