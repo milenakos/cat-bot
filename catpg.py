@@ -117,12 +117,12 @@ class Model:
         self.__dirty_values = []
 
     @classmethod
-    async def _get(self, fields: None | list[str | RawSQL] = None, **kwargs) -> asyncpg.Record:
-        table = self.__name__.lower()
+    async def _get(cls, fields: None | list[str | RawSQL] = None, **kwargs) -> asyncpg.Record:
+        table = cls.__name__.lower()
         select = "*"
         if fields:
-            if self._primary_key not in fields:
-                fields.append(self._primary_key)
+            if cls._primary_key not in fields:
+                fields.append(cls._primary_key)
             select = ", ".join(i if i.__class__.__name__ == "RawSQL" else f'"{i}"' for i in fields)
         query_string = f'SELECT {select} FROM "{table}" WHERE '
         var_counter = 1
@@ -144,9 +144,9 @@ class Model:
             self.__init__(result)
 
     @classmethod
-    async def get(self, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance:
-        result = await self._get(fields=fields, **kwargs)
-        return self(result)
+    async def get(cls, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance:
+        result = await cls._get(fields=fields, **kwargs)
+        return cls(result)
 
     @classmethod
     async def get_or_none(cls, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance | None:

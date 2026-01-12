@@ -1,7 +1,7 @@
 aiohttp[speedups]
 discord.py[speed] @ git+https://github.com/milenakos/discord.py-catbot
 Pillow
-Pilmoji
+Pilmoji==2.0.4
 emoji==1.7
 requests
 discord-emoji

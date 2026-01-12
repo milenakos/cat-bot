@@ -296,7 +296,6 @@ pointlaugh_ratelimit = {}
 
 # cooldowns for some commands
 catchcooldown = {}
-fakecooldown = {}
 customcatcooldown = {}
 
 # cat bot auto-claims in the channel user last ran /vote in
@@ -339,7 +338,7 @@ RAIN_ID = 1270470307102195752
 # for dev commands, this is fetched in on_ready
 OWNER_ID = 553093932012011520
 
-# for funny stats, you can probably edit maintaince_loop to restart every X of them
+# for funny stats, you can probably edit background_loop to restart every X of them
 loop_count = 0
 
 # loops in dpy can randomly break, i check if is been over X minutes since last loop to restart it
@@ -954,12 +953,11 @@ async def postpone_reminder(interaction):
 
 
 # a loop for various maintenance which is ran every 5 minutes
-async def maintenance_loop():
-    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage, temp_cookie_storage
+async def background_loop():
+    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, temp_belated_storage, temp_cookie_storage
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     catchcooldown = {}
-    fakecooldown = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
     # update cookies
@@ -1264,7 +1262,7 @@ async def on_message(message: discord.Message):
 
     if time.time() > last_loop_time + 300:
         last_loop_time = time.time()
-        bot.loop.create_task(maintenance_loop())
+        bot.loop.create_task(background_loop())
 
     if message.guild is None:
         if text.startswith("disable"):
@@ -1720,10 +1718,6 @@ async def on_message(message: discord.Message):
 
     # this is run whether someone says "cat" (very complex)
     if text.lower() == "cat":
-        if message.author.id in temp_user_locks and temp_user_locks[message.author.id] > time.time():
-            return
-        temp_user_locks[message.author.id] = time.time() + 2
-
         user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.author.id)
         channel = await Channel.get_or_none(channel_id=message.channel.id)
         if not channel or not channel.cat or channel.cat in temp_catches_storage or user.timeout > time.time():
@@ -4289,6 +4283,69 @@ if config.DONOR_CHANNEL_ID:
 
 @bot.tree.command(description="View and open packs")
 async def packs(message: discord.Interaction):
+    async def process_pack_opening(limit=None):
+        await user.refresh_from_db()
+
+        pack_names = [pack["name"] for pack in pack_data]
+        total_pack_count = sum(user[f"pack_{pack_id.lower()}"] for pack_id in pack_names)
+        
+        if total_pack_count < 1:
+            return None
+        
+        real_to_open = total_pack_count
+        if limit:
+            real_to_open = min(limit, total_pack_count)
+            
+        display_cats = real_to_open >= 50
+        results_header = []
+        results_detail = []
+        results_percat = {cat: 0 for cat in cattypes}
+        total_upgrades = 0
+        opened_so_far = 0
+        
+        for level, pack in enumerate(pack_names):
+            if opened_so_far >= real_to_open:
+                break
+            pack_id = f"pack_{pack.lower()}"
+            this_packs_count = user[pack_id]
+            if this_packs_count < 1:
+                continue
+            
+            opening_this = min(this_packs_count, real_to_open - opened_so_far)
+            
+            results_header.append(f"{opening_this:,}x {get_emoji(pack.lower() + 'pack')}")
+            for _ in range(opening_this):
+                chosen_type, cat_amount, upgrades, rewards = get_pack_rewards(level, is_single=False)
+                total_upgrades += upgrades
+                if not display_cats:
+                    results_detail.append(rewards)
+                results_percat[chosen_type] += cat_amount
+            
+            user[pack_id] -= opening_this
+            opened_so_far += opening_this
+            
+        user.packs_opened += opened_so_far
+        user.pack_upgrades += total_upgrades
+        for cat_type, cat_amount in results_percat.items():
+            user[f"cat_{cat_type}"] += cat_amount
+        await user.save()
+        
+        final_header = f"Opened {opened_so_far:,} packs!"
+        pack_list = "**" + ", ".join(results_header) + "**"
+        final_result = "\n".join(results_detail)
+        
+        if display_cats or len(final_result) > 4000 - len(pack_list):
+            cat_summary = []
+            for cat in cattypes:
+                if results_percat[cat] > 0:
+                    cat_summary.append(f"{get_emoji(cat.lower()+'cat')} x{results_percat[cat]:,}")
+            final_result = "\n".join(cat_summary)
+        
+        if len(final_result) > 0:
+            final_result = "\n\n" + final_result
+            
+        return discord.Embed(title=final_header, description=f"{pack_list}{final_result}", color=Colors.brown)
+
     async def open_custom_amount(interaction: discord.Interaction):
         if interaction.user != message.user:
             await do_funny(interaction)
@@ -4304,62 +4361,11 @@ async def packs(message: discord.Interaction):
                 return
             
             await interaction.response.defer()
-            await user.refresh_from_db()
-            
-            pack_names = [pack["name"] for pack in pack_data]
-            total_pack_count = sum(user[f"pack_{pack_id.lower()}"] for pack_id in pack_names)
-            
-            if total_pack_count < 1:
+            embed = await process_pack_opening(amount)
+            if not embed:
                 await interaction.followup.send("You have no packs!", ephemeral=True)
                 return
-            
-            to_open = min(amount, total_pack_count)
-            display_cats = to_open >= 50
-            results_header = []
-            results_detail = []
-            results_percat = {cat: 0 for cat in cattypes}
-            total_upgrades = 0
-            opened_so_far = 0
-            
-            for level, pack in enumerate(pack_names):
-                if opened_so_far >= to_open:
-                    break
-                pack_id = f"pack_{pack.lower()}"
-                this_packs_count = user[pack_id]
-                if this_packs_count < 1:
-                    continue
-                opening_this = min(this_packs_count, to_open - opened_so_far)
-                results_header.append(f"{opening_this:,}x {get_emoji(pack.lower() + 'pack')}")
-                for _ in range(opening_this):
-                    chosen_type, cat_amount, upgrades, rewards = get_pack_rewards(level, is_single=False)
-                    total_upgrades += upgrades
-                    if not display_cats:
-                        results_detail.append(rewards)
-                    results_percat[chosen_type] += cat_amount
-                user[pack_id] -= opening_this
-                opened_so_far += opening_this
-            
-            user.packs_opened += opened_so_far
-            user.pack_upgrades += total_upgrades
-            for cat_type, cat_amount in results_percat.items():
-                user[f"cat_{cat_type}"] += cat_amount
-            await user.save()
-            
-            final_header = f"Opened {opened_so_far:,} packs!"
-            pack_list = "**" + ", ".join(results_header) + "**"
-            final_result = "\n".join(results_detail)
-            
-            if display_cats or len(final_result) > 4000 - len(pack_list):
-                cat_summary = []
-                for cat in cattypes:
-                    if results_percat[cat] > 0:
-                        cat_summary.append(f"{get_emoji(cat.lower()+'cat')} x{results_percat[cat]:,}")
-                final_result = "\n".join(cat_summary)
-            
-            if len(final_result) > 0:
-                final_result = "\n\n" + final_result
-            
-            embed = discord.Embed(title=final_header, description=f"{pack_list}{final_result}", color=Colors.brown)
+
             await message.edit_original_response(embed=None, view=gen_view(user))
             await interaction.followup.send(embed=embed)
 
@@ -4512,53 +4518,11 @@ async def packs(message: discord.Interaction):
             return
 
         await interaction.response.defer()
-        await user.refresh_from_db()
-        pack_names = [pack["name"] for pack in pack_data]
-        total_pack_count = sum(user[f"pack_{pack_id.lower()}"] for pack_id in pack_names)
-        if total_pack_count < 1:
+        embed = await process_pack_opening()
+        if not embed:
             return
 
-        display_cats = total_pack_count >= 50
-        results_header = []
-        results_detail = []
-        results_percat = {cat: 0 for cat in cattypes}
-        total_upgrades = 0
-        for level, pack in enumerate(pack_names):
-            pack_id = f"pack_{pack.lower()}"
-            this_packs_count = user[pack_id]
-            if this_packs_count < 1:
-                continue
-            results_header.append(f"{this_packs_count:,}x {get_emoji(pack.lower() + 'pack')}")
-            for _ in range(this_packs_count):
-                chosen_type, cat_amount, upgrades, rewards = get_pack_rewards(level, is_single=False)
-                total_upgrades += upgrades
-                if not display_cats:
-                    results_detail.append(rewards)
-                results_percat[chosen_type] += cat_amount
-            user[pack_id] = 0
-
-        user.packs_opened += total_pack_count
-        user.pack_upgrades += total_upgrades
-        for cat_type, cat_amount in results_percat.items():
-            user[f"cat_{cat_type}"] += cat_amount
-        await user.save()
-
-        final_header = f"Opened {total_pack_count:,} packs!"
-        pack_list = "**" + ", ".join(results_header) + "**"
-        final_result = "\n".join(results_detail)
-        if display_cats or len(final_result) > 4000 - len(pack_list):
-            half_result = []
-            for cat in cattypes:
-                if results_percat[cat] == 0:
-                    continue
-                half_result.append(f"{get_emoji(cat.lower() + 'cat')} {results_percat[cat]:,} {cat} cats!")
-            final_result = "\n".join(half_result)
-
-        embed = discord.Embed(title=final_header, description=pack_list, color=Colors.brown)
         await interaction.edit_original_response(embed=embed, view=None)
-        await asyncio.sleep(1)
-        embed = discord.Embed(title=final_header, description=pack_list + "\n\n" + final_result, color=Colors.brown)
-        await interaction.edit_original_response(embed=embed)
         await asyncio.sleep(1)
         await interaction.edit_original_response(view=gen_view(user))
 
@@ -8366,28 +8330,6 @@ async def forget(message: discord.Interaction):
         await message.response.send_message(f"ok, now i wont send cats in <#{message.channel.id}>")
     else:
         await message.response.send_message("your an idiot there is literally no cat setupped in this channel you stupid")
-
-
-@bot.tree.command(description="LMAO TROLLED SO HARD :JOY:")
-async def fake(message: discord.Interaction):
-    if message.user.id in fakecooldown and fakecooldown[message.user.id] + 60 > time.time():
-        await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
-        return
-    file = discord.File("images/australian cat.png", filename="australian cat.png")
-    icon = get_emoji("egirlcat")
-    perms = await fetch_perms(message)
-    fakecooldown[message.user.id] = time.time()
-    try:
-        if not perms.send_messages or not perms.attach_files:
-            raise Exception
-        await message.response.send_message(
-            str(icon) + ' eGirl cat hasn\'t appeared! Type "cat" to catch ratio!',
-            file=file,
-        )
-    except Exception:
-        await message.response.send_message("i dont have perms lmao here is the ach anyways", ephemeral=True)
-        pass
-    await achemb(message, "trolled", "ephemeral")
 
 
 @bot.tree.command(description="(ADMIN) Force cats to appear")
