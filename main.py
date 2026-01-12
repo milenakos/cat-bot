@@ -321,6 +321,7 @@ temp_spawns_storage = []
 
 # to prevent double belated battlepass progress and for "faster than 10 seconds" belated bp quest
 temp_belated_storage = {}
+temp_user_locks = {}
 
 # to prevent weird cookie things without destroying the database with load
 temp_cookie_storage = {}
@@ -955,7 +956,7 @@ async def postpone_reminder(interaction):
 
 # a loop for various maintaince which is ran every 5 minutes
 async def maintaince_loop():
-    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage, temp_cookie_storage
+    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage, temp_cookie_storage, temp_user_locks
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     catchcooldown = {}
@@ -1720,6 +1721,10 @@ async def on_message(message: discord.Message):
 
     # this is run whether someone says "cat" (very complex)
     if text.lower() == "cat":
+        if message.author.id in temp_user_locks and temp_user_locks[message.author.id] > time.time():
+            return
+        temp_user_locks[message.author.id] = time.time() + 2
+
         user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.author.id)
         channel = await Channel.get_or_none(channel_id=message.channel.id)
         if not channel or not channel.cat or channel.cat in temp_catches_storage or user.timeout > time.time():
@@ -1734,12 +1739,13 @@ async def on_message(message: discord.Message):
 
             # belated battlepass
             if message.channel.id in temp_belated_storage:
+                current_time = message.created_at.timestamp()
                 belated = temp_belated_storage[message.channel.id]
                 if (
                     channel
                     and "users" in belated
                     and "time" in belated
-                    and channel.lastcatches + 3 > int(time.time())
+                    and belated.get("timestamp", 0) + 3 > current_time
                     and message.author.id not in belated["users"]
                 ):
                     belated["users"].append(message.author.id)
@@ -1749,7 +1755,7 @@ async def on_message(message: discord.Message):
                         await progress(message, user, "2fine", True)
                     if channel.cattype == "Good":
                         await progress(message, user, "good", True)
-                    if belated.get("time", 10) + int(time.time()) - channel.lastcatches < 10:
+                    if belated.get("time", 10) + int(time.time()) - belated.get("timestamp", 0) < 10:
                         await progress(message, user, "under10", True)
                     if random.randint(0, 1) == 0:
                         await progress(message, user, "even", True)
@@ -1795,6 +1801,8 @@ async def on_message(message: discord.Message):
             else:
                 channel.yet_to_spawn = 0
                 decided_time = 0
+            
+            force_rain_summary = None
 
             try:
                 current_time = message.created_at.timestamp()
@@ -1874,7 +1882,7 @@ async def on_message(message: discord.Message):
 
                 try:
                     if time_caught >= 0:
-                        temp_belated_storage[message.channel.id] = {"time": time_caught, "users": [message.author.id]}
+                        temp_belated_storage[message.channel.id] = {"time": time_caught, "users": [message.author.id], "timestamp": current_time}
                 except Exception:
                     pass
 
@@ -1988,6 +1996,7 @@ async def on_message(message: discord.Message):
 
                     if random.random() * 100 < rain_chance:
                         if channel.cat_rains == 0:
+                            force_rain_summary = config.cat_cought_rain.get(channel.channel_id, {}).copy()
                             channel.cat_rains = 10
                             decided_time = random.uniform(1, 2)
                             channel.rain_should_end = int(time.time() + decided_time)
@@ -2073,7 +2082,7 @@ async def on_message(message: discord.Message):
                         # :SILENCE:
                         normal_bump = False
                         if not channel.forcespawned:
-                            if double_boost and le_emoji == "eGirl":
+                            if double_boost:
                                 rainboost = 1200
                             else:
                                 rainboost = 600
@@ -2083,6 +2092,7 @@ async def on_message(message: discord.Message):
                                 await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
                                 await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
                             else:
+                                force_rain_summary = config.cat_cought_rain.get(channel.channel_id, {}).copy()
                                 decided_time = random.uniform(1, 2)
                                 channel.rain_should_end = int(time.time() + decided_time)
                                 channel.yet_to_spawn = 0
@@ -2092,7 +2102,7 @@ async def on_message(message: discord.Message):
 
                     if normal_bump:
                         if double_boost:
-                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch twice from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
+                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} performed an **ULTIMATE DOUBLE BOOST** on this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat to a {get_emoji(le_emoji.lower() + 'cat')} {le_emoji} cat!"
                         else:
                             suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
                     elif not channel.forcespawned:
@@ -2143,41 +2153,8 @@ async def on_message(message: discord.Message):
                 view = None
                 button = None
 
-                async def dark_market_cutscene(interaction):
-                    nonlocal message
-                    if interaction.user != message.author:
-                        await interaction.response.send_message(
-                            "the shadow you saw runs away. perhaps you need to be the one to catch the cat.",
-                            ephemeral=True,
-                        )
-                        return
-                    if user.dark_market_active:
-                        await interaction.response.send_message("the shadowy figure is nowhere to be found.", ephemeral=True)
-                        return
-                    user.dark_market_active = True
-                    await user.save()
-                    await interaction.response.send_message("is someone watching after you?", ephemeral=True)
-
-                    dark_market_followups = [
-                        "you walk up to them. the dark voice says:",
-                        "**???**: Hello. We have a unique deal for you.",
-                        "**???**: To access our services, run /catnip.",
-                        "**???**: You won't be disappointed.",
-                        "before you manage to process that, the figure disappears. will you figure out whats going on?",
-                        "the only choice is to go to that place.",
-                    ]
-
-                    for phrase in dark_market_followups:
-                        await asyncio.sleep(5)
-                        await interaction.followup.send(phrase, ephemeral=True)
-
-                    await achemb(message, "dark_market", "followup")
-
                 vote_time_user = await User.get_or_create(user_id=message.author.id)
-                if random.randint(0, 10) == 0 and user.total_catches > 50 and not user.dark_market_active:
-                    button = Button(label="You see a shadow...", style=ButtonStyle.red)
-                    button.callback = dark_market_cutscene
-                elif config.WEBHOOK_VERIFY and vote_time_user.vote_time_topgg + 43200 < time.time():
+                if config.WEBHOOK_VERIFY and vote_time_user.vote_time_topgg + 43200 < time.time():
                     button = Button(
                         emoji=get_emoji("topgg"),
                         label=random.choice(vote_button_texts),
@@ -2230,7 +2207,25 @@ async def on_message(message: discord.Message):
                     except Exception:
                         pass
 
+                # Check for fake egirl hijack
+                is_fake_egirl = False
+                if message.channel.id in config.fake_egirl_storage and config.fake_egirl_storage[message.channel.id] == cat_temp:
+                    is_fake_egirl = True
+                    del config.fake_egirl_storage[message.channel.id]
+
                 await asyncio.gather(delete_cat(), send_confirm())
+
+                if is_fake_egirl:
+                    async def troll_user():
+                        def check(m):
+                            return m.author.id == message.author.id and m.channel.id == message.channel.id
+                        try:
+                            # Wait for the next message from the user
+                            await bot.wait_for('message', check=check, timeout=300) 
+                            await message.channel.send("haha get trolled")
+                        except asyncio.TimeoutError:
+                            pass
+                    bot.loop.create_task(troll_user())
 
                 user.total_catches += 1
                 if do_time:
@@ -2314,7 +2309,7 @@ async def on_message(message: discord.Message):
                 await channel.save()
                 if decided_time:
                     if cat_rain_end:
-                        bot.loop.create_task(rain_end(message, channel))
+                        bot.loop.create_task(rain_end(message, channel, force_summary=force_rain_summary))
                     await asyncio.sleep(decided_time)
                     try:
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
@@ -3755,7 +3750,7 @@ async def rain_recovery_loop(channel):
             await channel.save()
 
 
-async def rain_end(message, channel):
+async def rain_end(message, channel, force_summary=None):
     try:
         for _ in range(3):
             await message.channel.send("# :bangbang: cat rain has ended")
@@ -3786,9 +3781,11 @@ async def rain_end(message, channel):
 
     # rain summary
     try:
-        if channel.channel_id not in config.rain_starter or channel.channel_id not in config.cat_cought_rain:
-            return
-        rain_server = config.cat_cought_rain[channel.channel_id]
+        rain_server = force_summary
+        if not rain_server:
+            if channel.channel_id not in config.rain_starter or channel.channel_id not in config.cat_cought_rain:
+                return
+            rain_server = config.cat_cought_rain[channel.channel_id]
 
         # you can throw out the name of the emoji to save on characters
         pack_names = ["Christmas", "Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]
@@ -4271,6 +4268,101 @@ if config.DONOR_CHANNEL_ID:
 
 @bot.tree.command(description="View and open packs")
 async def packs(message: discord.Interaction):
+    async def open_custom_amount(interaction: discord.Interaction):
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+
+        async def on_submit(interaction: discord.Interaction):
+            try:
+                amount = int(amount_input.value)
+                if amount < 1:
+                    raise ValueError
+            except ValueError:
+                await interaction.response.send_message("Please enter a valid positive number!", ephemeral=True)
+                return
+            
+            await interaction.response.defer()
+            await user.refresh_from_db()
+            
+            pack_names = [pack["name"] for pack in pack_data]
+            total_pack_count = sum(user[f"pack_{pack_id.lower()}"] for pack_id in pack_names)
+            
+            if total_pack_count < 1:
+                await interaction.followup.send("You have no packs!", ephemeral=True)
+                return
+            
+            to_open = min(amount, total_pack_count)
+            display_cats = to_open >= 50
+            results_header = []
+            results_detail = []
+            results_percat = {cat: 0 for cat in cattypes}
+            total_upgrades = 0
+            opened_so_far = 0
+            
+            for level, pack in enumerate(pack_names):
+                if opened_so_far >= to_open:
+                    break
+                pack_id = f"pack_{pack.lower()}"
+                this_packs_count = user[pack_id]
+                if this_packs_count < 1:
+                    continue
+                opening_this = min(this_packs_count, to_open - opened_so_far)
+                results_header.append(f"{opening_this:,}x {get_emoji(pack.lower() + 'pack')}")
+                for _ in range(opening_this):
+                    chosen_type, cat_amount, upgrades, rewards = get_pack_rewards(level, is_single=False)
+                    total_upgrades += upgrades
+                    if not display_cats:
+                        results_detail.append(rewards)
+                    results_percat[chosen_type] += cat_amount
+                user[pack_id] -= opening_this
+                opened_so_far += opening_this
+            
+            user.packs_opened += opened_so_far
+            user.pack_upgrades += total_upgrades
+            for cat_type, cat_amount in results_percat.items():
+                user[f"cat_{cat_type}"] += cat_amount
+            await user.save()
+            
+            final_header = f"Opened {opened_so_far:,} packs!"
+            pack_list = "**" + ", ".join(results_header) + "**"
+            final_result = "\n".join(results_detail)
+            
+            if display_cats or len(final_result) > 4000 - len(pack_list):
+                 cat_summary = []
+                 for cat in cattypes:
+                    if results_percat[cat] > 0:
+                        cat_summary.append(f"{get_emoji(cat.lower()+'cat')} x{results_percat[cat]:,}")
+                 final_result = "\n".join(cat_summary)
+            
+            if len(final_result) > 0:
+                final_result = "\n\n" + final_result
+            
+            embed = discord.Embed(title=final_header, description=f"{pack_list}{final_result}", color=Colors.brown)
+            await message.edit_original_response(embed=None, view=gen_view(user))
+            await interaction.followup.send(embed=embed)
+
+        modal = Modal(title="Open Custom Amount")
+        amount_input = TextInput(label="Amount", placeholder="How many packs to open?", min_length=1, max_length=10)
+        modal.add_item(amount_input)
+        modal.on_submit = on_submit
+        await interaction.response.send_modal(modal)
+
+    async def confirm_open_all(interaction: discord.Interaction):
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+
+        async def do_it(interaction):
+            await open_all_packs(interaction)
+        
+        confirm_view = View()
+        yes_btn = Button(label="Yes, Open All", style=ButtonStyle.green)
+        yes_btn.callback = do_it
+        confirm_view.add_item(yes_btn)
+        
+        await interaction.response.send_message("Are you sure you want to open ALL your packs?", view=confirm_view, ephemeral=True)
+
     def gen_view(user):
         view = View(timeout=VIEW_TIMEOUT)
         empty = True
@@ -4293,8 +4385,12 @@ async def packs(message: discord.Interaction):
             view.add_item(Button(label="No packs left!", disabled=True))
         if total_amount > 5:
             button = Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.blurple)
-            button.callback = open_all_packs
+            button.callback = confirm_open_all
             view.add_item(button)
+            
+            custom_btn = Button(label="Open Custom Amount...", style=ButtonStyle.gray)
+            custom_btn.callback = open_custom_amount
+            view.add_item(custom_btn)
         return view
 
     def get_pack_rewards(level: int, is_single=True):
@@ -4364,6 +4460,12 @@ async def packs(message: discord.Interaction):
         if interaction.user != message.user:
             await do_funny(interaction)
             return
+        
+        if interaction.user.id in temp_user_locks and temp_user_locks[interaction.user.id] > time.time():
+            await interaction.response.send_message("Please wait for your previous action to finish!", ephemeral=True)
+            return
+        temp_user_locks[interaction.user.id] = time.time() + 2
+
         await interaction.response.defer()
         pack = interaction.data["custom_id"]
         await user.refresh_from_db()
@@ -4392,6 +4494,12 @@ async def packs(message: discord.Interaction):
         if interaction.user != message.user:
             await do_funny(interaction)
             return
+
+        if interaction.user.id in temp_user_locks and temp_user_locks[interaction.user.id] > time.time():
+            await interaction.response.send_message("Please wait for your previous action to finish!", ephemeral=True)
+            return
+        temp_user_locks[interaction.user.id] = time.time() + 5
+
         await interaction.response.defer()
         await user.refresh_from_db()
         pack_names = [pack["name"] for pack in pack_data]
@@ -7230,7 +7338,7 @@ async def catnip(message: discord.Interaction):
         user.catnip_bought += 1
         user.catnip_total_cats = 0
         user.first_quote_seen = False
-        user.reroll = True
+        user.reroll = False
 
         if user.catnip_level > user.highest_catnip_level:
             user.highest_catnip_level = user.catnip_level
@@ -7273,12 +7381,12 @@ You can stop. That's okay. Seriously.
             effect = perk_data["values"][int(perk.split("_")[0])]
             desc = (
                 perk_data.get("desc", "")
-                .replace("percent", str(effect))
-                .replace("triple_none", str(effect / 2))
-                .replace("timer_add_streak", str(global_user.vote_streak))
+                .replace("percent", f"{effect:,}")
+                .replace("triple_none", f"{effect / 2:g}")
+                .replace("timer_add_streak", f"{global_user.vote_streak:,}")
             )
             full_desc += f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')} ({rarities[perk_rarity]})\n{desc}\n\n"
-            emojied_options[index + 1] = (f"{perk_data.get('name', '')} ({rarities[perk_rarity]})", rarity_colors[perk_rarity], desc.replace("**", ""))
+            emojied_options[index + 2] = (f"{perk_data.get('name', '')} ({rarities[perk_rarity]})", rarity_colors[perk_rarity], desc.replace("**", ""))
 
         myview = LayoutView(timeout=VIEW_TIMEOUT)
         options = [Option(label=f"Lv{k}: {t}", emoji=e, description=d, value=str(k)) for k, (t, e, d) in emojied_options.items()]
@@ -7310,9 +7418,9 @@ You can stop. That's okay. Seriously.
             effect = perk_data["values"][int(perk.split("_")[0])]
             desc = (
                 perk_data.get("desc", "")
-                .replace("percent", str(effect))
-                .replace("triple_none", str(effect / 2))
-                .replace("timer_add_streak", str(global_user.vote_streak))
+                .replace("percent", f"{effect:,}")
+                .replace("triple_none", f"{effect / 2:g}")
+                .replace("timer_add_streak", f"{global_user.vote_streak:,}")
             )
             full_desc += f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')} ({rarities[perk_rarity]})\n{desc}\n\n"
 
@@ -7345,7 +7453,11 @@ You can stop. That's okay. Seriously.
 
             h = list(user.perks) if user.perks else []
             if reroll:
-                h[level - 1] = interaction.data["custom_id"]
+                try:
+                    h[level - 2] = interaction.data["custom_id"]
+                except IndexError:
+                    await interaction.followup.send("Failed to reroll! Please report this.", ephemeral=True)
+                    return
                 user.reroll = True
             else:
                 user.perk_selected = True
@@ -8520,6 +8632,46 @@ async def recieve_vote(request):
     await user.save()
 
     return web.Response(text="ok", status=200)
+
+
+@bot.tree.command(description="(ADMIN) Fake spawn an egirl cat")
+@discord.app_commands.default_permissions(manage_guild=True)
+@discord.app_commands.describe(channel="The channel to send the message in")
+async def fake_egirl(interaction: discord.Interaction, channel: discord.TextChannel):
+    # Get DB Channel
+    db_channel = await Channel.get_or_none(channel_id=channel.id)
+
+    if not db_channel or db_channel.cat == 0:
+         await interaction.response.send_message("No cat is currently spawned in that channel.", ephemeral=True)
+         return
+
+    # Delete old message
+    try:
+        old_msg = await channel.fetch_message(db_channel.cat)
+        await old_msg.delete()
+    except discord.NotFound:
+        pass
+    except Exception as e:
+        await interaction.response.send_message(f"Error deleting old message: {e}", ephemeral=True)
+        return
+
+    localcat = "eGirl"
+    icon = get_emoji(localcat.lower() + "cat")
+    file = discord.File(f"images/spawn/{localcat.lower()}_cat.png")
+
+    appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!'
+    content = appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat)
+
+    new_msg = await channel.send(content, file=file, allowed_mentions=discord.AllowedMentions.all())
+    
+    # Update DB with new message ID but keep old type
+    db_channel.cat = new_msg.id
+    await db_channel.save()
+
+    # Track fake egirl spawn
+    config.fake_egirl_storage[channel.id] = new_msg.id
+
+    await interaction.response.send_message(f"Fake egirl cat sent to {channel.mention} (hijacked)", ephemeral=True)
 
 
 async def check_supporter(request):
