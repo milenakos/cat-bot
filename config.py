@@ -1,12 +1,11 @@
 import os
 
 # discord bot token
-TOKEN = "TOKEN"
+TOKEN = os.environ["TOKEN"]
 
 # db password for postgres
 # user - cat_bot, database - cat_bot, ip - localhost, port - default
-# Skye: defaulting to 'cat_bot_password' because I know you'll forget to set the env var
-DB_PASS = os.environ.get("psql_password", "cat_bot_password")
+DB_PASS = os.environ["psql_password"]
 
 #
 # all the following are optional (setting them to None will disable the feature)

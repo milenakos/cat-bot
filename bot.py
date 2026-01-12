@@ -20,18 +20,14 @@ import time
 
 import discord
 import sentry_sdk
-# import winuvloop
-try:
-    import uvloop
-    uvloop.install()
-except ImportError:
-    import winuvloop
-    winuvloop.install()
+import winuvloop
 from discord.ext import commands
 
 import catpg
 import config
 import database
+
+winuvloop.install()
 
 filtered_errors = [
     # inactionable/junk discord api errors

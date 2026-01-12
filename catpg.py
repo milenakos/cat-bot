@@ -226,7 +226,7 @@ class Model:
 
     @classmethod
     async def limit(
-        self,
+        cls,
         fields: str | RawSQL | None | list[str | RawSQL] = None,
         filter: str | RawSQL | None = None,
         *args,
@@ -235,27 +235,27 @@ class Model:
     ) -> AsyncGenerator[ModelInstance, None]:
         if isinstance(fields, str):
             fields = [fields]
-        async for row in self.filter(filter, refetch=refetch, add_primary_key=add_primary_key, *args, fields=fields):
+        async for row in cls.filter(filter, refetch=refetch, add_primary_key=add_primary_key, *args, fields=fields):
             yield row
 
     @classmethod
-    async def all(self) -> AsyncGenerator[ModelInstance, None]:
-        async for row in self.filter():
+    async def all(cls) -> AsyncGenerator[ModelInstance, None]:
+        async for row in cls.filter():
             yield row
 
     @classmethod
-    async def collect(self, filter: str | RawSQL | None = None, *args, add_primary_key: bool = True) -> list[ModelInstance]:
-        return [i async for i in self.filter(filter, *args, refetch=False, add_primary_key=add_primary_key)]
+    async def collect(cls, filter: str | RawSQL | None = None, *args, add_primary_key: bool = True) -> list[ModelInstance]:
+        return [i async for i in cls.filter(filter, *args, refetch=False, add_primary_key=add_primary_key)]
 
     @classmethod
     async def collect_limit(
-        self, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, *args, add_primary_key: bool = True
+        cls, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, *args, add_primary_key: bool = True
     ) -> list[ModelInstance]:
-        return [i async for i in self.limit(fields, filter, *args, refetch=False, add_primary_key=add_primary_key)]
+        return [i async for i in cls.limit(fields, filter, *args, refetch=False, add_primary_key=add_primary_key)]
 
     @classmethod
-    async def __do_function(self, func: str, column: str, filter: str | RawSQL | None = None, *args) -> Any:
-        table = self.__name__.lower()
+    async def __do_function(cls, func: str, column: str, filter: str | RawSQL | None = None, *args) -> Any:
+        table = cls.__name__.lower()
         if column != "*":
             column = f'"{column}"'
         query = f'SELECT {func}({column}) FROM "{table}"'
@@ -264,24 +264,24 @@ class Model:
         return await pool.fetchval(query + ";", *args)
 
     @classmethod
-    async def sum(self, column: str, filter: str | RawSQL | None = None, *args) -> int:
-        return await self.__do_function("SUM", column, filter, *args) or 0
+    async def sum(cls, column: str, filter: str | RawSQL | None = None, *args) -> int:
+        return await cls.__do_function("SUM", column, filter, *args) or 0
 
     @classmethod
-    async def max(self, column: str, filter: str | RawSQL | None = None, *args) -> int:
-        return await self.__do_function("MAX", column, filter, *args)
+    async def max(cls, column: str, filter: str | RawSQL | None = None, *args) -> int:
+        return await cls.__do_function("MAX", column, filter, *args)
 
     @classmethod
-    async def min(self, column: str, filter: str | RawSQL | None = None, *args) -> int:
-        return await self.__do_function("MIN", column, filter, *args)
+    async def min(cls, column: str, filter: str | RawSQL | None = None, *args) -> int:
+        return await cls.__do_function("MIN", column, filter, *args)
 
     @classmethod
-    async def count(self, filter: str | RawSQL | None = None, *args) -> int:
-        return await self.__do_function("COUNT", "*", filter, *args)
+    async def count(cls, filter: str | RawSQL | None = None, *args) -> int:
+        return await cls.__do_function("COUNT", "*", filter, *args)
 
     @classmethod
-    async def bulk_update(self, rows: list[ModelInstance], *columns) -> None:
-        table = self.__name__.lower()
+    async def bulk_update(cls, rows: list[ModelInstance], *columns) -> None:
+        table = cls.__name__.lower()
         # build the query
         query = f'UPDATE "{table}" SET '
         var_counter = 1
@@ -289,7 +289,7 @@ class Model:
         for col in columns:
             change.append(f"{col} = ${var_counter}")
             var_counter += 1
-        query += ", ".join(change) + f" WHERE {self._primary_key} = ${var_counter};"
+        query += ", ".join(change) + f" WHERE {cls._primary_key} = ${var_counter};"
 
         # prepare the data
         data = []
@@ -297,7 +297,7 @@ class Model:
             curr = []
             for col in columns:
                 curr.append(row[col])
-            curr.append(row[self._primary_key])
+            curr.append(row[cls._primary_key])
             data.append(tuple(curr))
 
         # execute the query

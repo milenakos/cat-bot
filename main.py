@@ -954,13 +954,14 @@ async def postpone_reminder(interaction):
     await interaction.response.send_message(f"ok, i will remind you <t:{int(time.time()) + 30 * 60}:R>", ephemeral=True)
 
 
-# a loop for various maintaince which is ran every 5 minutes
-async def maintaince_loop():
+# a loop for various maintenance which is ran every 5 minutes
+async def maintenance_loop():
     global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage, temp_cookie_storage, temp_user_locks
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     catchcooldown = {}
     fakecooldown = {}
+    temp_user_locks = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
     # update cookies
@@ -1265,7 +1266,7 @@ async def on_message(message: discord.Message):
 
     if time.time() > last_loop_time + 300:
         last_loop_time = time.time()
-        bot.loop.create_task(maintaince_loop())
+        bot.loop.create_task(maintenance_loop())
 
     if message.guild is None:
         if text.startswith("disable"):
@@ -1801,7 +1802,6 @@ async def on_message(message: discord.Message):
             else:
                 channel.yet_to_spawn = 0
                 decided_time = 0
-            
             force_rain_summary = None
 
             try:
@@ -2080,11 +2080,18 @@ async def on_message(message: discord.Message):
                         normal_bump = True
                     except IndexError:
                         # :SILENCE:
+                        # This block handles cases where boosting goes beyond the maximum cat rarity (eGirl).
+                        # Previously, a check `if double_boost and le_emoji == 'eGirl'` ensured only eGirl triggered the mega-rain.
+                        # This was removed so that ANY double boost that fails (e.g., Ultimate -> Index+2) also triggers the 1200 boost.
                         normal_bump = False
                         if not channel.forcespawned:
                             if double_boost:
+                                # rainboost is the duration of the rain in seconds.
+                                # 1200 seconds = 20 minutes of rain.
+                                # This rewards the player for a "failed" double boost on a high-tier cat (Ultimate or eGirl).
                                 rainboost = 1200
                             else:
+                                # 600 seconds = 10 minutes of rain.
                                 rainboost = 600
                             channel.cat_rains += math.ceil(rainboost / 2.75)
                             if channel.cat_rains > math.ceil(rainboost / 2.75):
@@ -2205,6 +2212,7 @@ async def on_message(message: discord.Message):
                             **kwargs,
                         )
                     except Exception:
+                        # Silently fail if we can't send the confirmation message (e.g. permission issues)
                         pass
 
                 # Check for fake egirl hijack
@@ -2221,9 +2229,11 @@ async def on_message(message: discord.Message):
                             return m.author.id == message.author.id and m.channel.id == message.channel.id
                         try:
                             # Wait for the next message from the user
-                            await bot.wait_for('message', check=check, timeout=300) 
+                            # Timeout reduced to 60s to prevent task accumulation
+                            await bot.wait_for('message', check=check, timeout=60) 
                             await message.channel.send("haha get trolled")
                         except asyncio.TimeoutError:
+                            # If they don't respond in time, the joke is over.
                             pass
                     bot.loop.create_task(troll_user())
 
@@ -4329,11 +4339,11 @@ async def packs(message: discord.Interaction):
             final_result = "\n".join(results_detail)
             
             if display_cats or len(final_result) > 4000 - len(pack_list):
-                 cat_summary = []
-                 for cat in cattypes:
+                cat_summary = []
+                for cat in cattypes:
                     if results_percat[cat] > 0:
                         cat_summary.append(f"{get_emoji(cat.lower()+'cat')} x{results_percat[cat]:,}")
-                 final_result = "\n".join(cat_summary)
+                final_result = "\n".join(cat_summary)
             
             if len(final_result) > 0:
                 final_result = "\n\n" + final_result
@@ -4464,6 +4474,7 @@ async def packs(message: discord.Interaction):
         if interaction.user.id in temp_user_locks and temp_user_locks[interaction.user.id] > time.time():
             await interaction.response.send_message("Please wait for your previous action to finish!", ephemeral=True)
             return
+        # Standard 2s lock for single-pack operations to prevent rapid-fire spam
         temp_user_locks[interaction.user.id] = time.time() + 2
 
         await interaction.response.defer()
@@ -4498,6 +4509,7 @@ async def packs(message: discord.Interaction):
         if interaction.user.id in temp_user_locks and temp_user_locks[interaction.user.id] > time.time():
             await interaction.response.send_message("Please wait for your previous action to finish!", ephemeral=True)
             return
+        # Extended 5s lock for "Open All" to account for heavier processing and larger state changes
         temp_user_locks[interaction.user.id] = time.time() + 5
 
         await interaction.response.defer()
@@ -7338,6 +7350,7 @@ async def catnip(message: discord.Interaction):
         user.catnip_bought += 1
         user.catnip_total_cats = 0
         user.first_quote_seen = False
+        # user.reroll acts as "reroll_consumed". Setting to False means "reroll available".
         user.reroll = False
 
         if user.catnip_level > user.highest_catnip_level:
@@ -7386,7 +7399,7 @@ You can stop. That's okay. Seriously.
                 .replace("timer_add_streak", f"{global_user.vote_streak:,}")
             )
             full_desc += f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')} ({rarities[perk_rarity]})\n{desc}\n\n"
-            emojied_options[index + 2] = (f"{perk_data.get('name', '')} ({rarities[perk_rarity]})", rarity_colors[perk_rarity], desc.replace("**", ""))
+            emojied_options[index + 1] = (f"{perk_data.get('name', '')} ({rarities[perk_rarity]})", rarity_colors[perk_rarity], desc.replace("**", ""))
 
         myview = LayoutView(timeout=VIEW_TIMEOUT)
         options = [Option(label=f"Lv{k}: {t}", emoji=e, description=d, value=str(k)) for k, (t, e, d) in emojied_options.items()]
@@ -7453,11 +7466,13 @@ You can stop. That's okay. Seriously.
 
             h = list(user.perks) if user.perks else []
             if reroll:
-                try:
-                    h[level - 2] = interaction.data["custom_id"]
-                except IndexError:
-                    await interaction.followup.send("Failed to reroll! Please report this.", ephemeral=True)
+                # We use level-1 because level is 1-based (Lv1, Lv2, etc) defined in the UI
+                if 0 <= level - 1 < len(h):
+                    h[level - 1] = interaction.data["custom_id"]
+                else:
+                    await interaction.followup.send(f"Failed to reroll! Perk slot {level} not found. (Count: {len(h)})", ephemeral=True)
                     return
+                # Mark reroll as consumed
                 user.reroll = True
             else:
                 user.perk_selected = True
@@ -8627,6 +8642,7 @@ async def recieve_vote(request):
             )
         )
     except Exception:
+        # Ignore errors when DMing the user (e.g. if they have DMs closed)
         pass
 
     await user.save()
@@ -8634,10 +8650,22 @@ async def recieve_vote(request):
     return web.Response(text="ok", status=200)
 
 
-@bot.tree.command(description="(ADMIN) Fake spawn an egirl cat")
+@bot.tree.command(description="(ADMIN) Prank: Hijacks an active cat spawn to look like an eGirl to troll users")
 @discord.app_commands.default_permissions(manage_guild=True)
-@discord.app_commands.describe(channel="The channel to send the message in")
+@discord.app_commands.describe(channel="The channel to hijack the spawn in")
 async def fake_egirl(interaction: discord.Interaction, channel: discord.TextChannel):
+    """
+    Hijacks an existing cat spawn in the specified channel.
+    
+    This command deletes the current spawn message and replaces it with a 
+    fake 'eGirl' cat appearance. The actual cat type in the database remains 
+    unchanged (e.g., if it was a 'common' cat, it remains 'common').
+    
+    When a user catches this "fake" eGirl:
+    1. They receive the original underlying cat type rewards.
+    2. The bot tracks the fake usage via `fake_egirl_storage`.
+    3. The bot triggers a "troll" response ("haha get trolled") upon the user's next message.
+    """
     # Get DB Channel
     db_channel = await Channel.get_or_none(channel_id=channel.id)
 
