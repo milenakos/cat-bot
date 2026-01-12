@@ -1527,13 +1527,15 @@ async def on_message(message: discord.Message):
     for achievement in achs:
         match_text, match_method, achievement_name = achievement
         text_lowered = text.lower()
-        if any([
-            match_method == "startswith" and text_lowered.startswith(match_text),
-            match_method == "re" and re.search(match_text, text_lowered),
-            match_method == "exact" and match_text == text_lowered,
-            match_method == "veryexact" and match_text == text,
-            match_method == "in" and match_text in text_lowered
-        ]):
+        if any(
+            [
+                match_method == "startswith" and text_lowered.startswith(match_text),
+                match_method == "re" and re.search(match_text, text_lowered),
+                match_method == "exact" and match_text == text_lowered,
+                match_method == "veryexact" and match_text == text,
+                match_method == "in" and match_text in text_lowered,
+            ]
+        ):
             await achemb(message, achievement_name, "reply")
 
     if unidecode.unidecode(text).lower().strip() in [
@@ -1632,12 +1634,14 @@ async def on_message(message: discord.Message):
         for response in responses:
             match_method, match_text, response_reply = response
             text_lowered = text.lower()
-            if any([
-                match_method == "startswith" and text_lowered.startswith(match_text),
-                match_method == "re" and re.search(match_text, text_lowered),
-                match_method == "exact" and match_text == text_lowered,
-                match_method == "in" and match_text in text_lowered,
-            ]):
+            if any(
+                [
+                    match_method == "startswith" and text_lowered.startswith(match_text),
+                    match_method == "re" and re.search(match_text, text_lowered),
+                    match_method == "exact" and match_text == text_lowered,
+                    match_method == "in" and match_text in text_lowered,
+                ]
+            ):
                 try:
                     await message.reply(response_reply)
                 except Exception:
@@ -2309,10 +2313,25 @@ async def on_message(message: discord.Message):
                 # handle catnip bounties
                 await bounty(message, user, channel.cattype)
             finally:
-                await channel.save()
                 if decided_time:
                     if cat_rain_end:
+                        await channel.save()
                         bot.loop.create_task(rain_end(message, channel))
+
+                    # shift decided_time to reduce load
+                    if decided_time > 10:
+                        # ignore cat rains
+                        start_time = channel.yet_to_spawn
+                        shifts = [0] + [x for n in range(1, 11) for x in (n, -n)]
+                        for shift in shifts:
+                            c = await Channel.count("yet_to_spawn = $1", start_time + shift)
+                            if c < 5:
+                                channel.yet_to_spawn = start_time + shift
+                                decided_time += shift
+                                break
+
+                    await channel.save()
+
                     await asyncio.sleep(decided_time)
                     try:
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
@@ -2320,6 +2339,7 @@ async def on_message(message: discord.Message):
                         pass
                     await spawn_cat(str(message.channel.id))
                 else:
+                    await channel.save()
                     try:
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
                     except Exception:
