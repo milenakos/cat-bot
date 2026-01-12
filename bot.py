@@ -16,6 +16,7 @@
 
 import asyncio
 import importlib
+import logging
 import time
 
 import discord
@@ -26,6 +27,8 @@ from discord.ext import commands
 import catpg
 import config
 import database
+
+logging.basicConfig(level=logging.INFO)
 
 winuvloop.install()
 

@@ -53,8 +53,6 @@ try:
 except ImportError:
     exportbackup = None
 
-logging.basicConfig(level=logging.INFO)
-
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
 
@@ -1001,7 +999,7 @@ async def maintaince_loop():
                 r.close()
 
             except Exception:
-                print("Posting to top.gg failed.")
+                logging.warning("Posting to top.gg failed.")
 
     # revive dead catch loops
     async for channel in Channel.limit(["channel_id"], "yet_to_spawn < $1 AND cat = 0", time.time(), refetch=False):
@@ -1178,7 +1176,7 @@ async def maintaince_loop():
                 else:
                     await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.", file=discord.File(backup_file))
             except Exception as e:
-                print(f"Error during backup: {e}")
+                logging.warning(f"Error during backup: {e}")
         else:
             await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.")
 
@@ -1197,7 +1195,7 @@ async def on_ready():
     if on_ready_debounce:
         return
     on_ready_debounce = True
-    print("cat is now online")
+    logging.info("cat is now online")
     emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
     appinfo = bot.application
     if appinfo.team and appinfo.team.owner_id:
@@ -1227,7 +1225,7 @@ async def on_ready():
                     if login not in ["milenakos", "ImgBotApp"]:
                         contributors.append(login)
             else:
-                print(f"Error: {response.status} - {await response.text()}")
+                logging.warning(f"Error: {response.status} - {await response.text()}")
 
     # fetch testers
     tester_users = []
