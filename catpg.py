@@ -200,7 +200,7 @@ class Model:
     @classmethod
     async def filter(
         self, filter: str | RawSQL | None = None, *args, refetch: bool = True, add_primary_key: bool = True, **kwargs
-    ) -> AsyncGenerator[ModelInstance]:
+    ) -> AsyncGenerator[ModelInstance, None]:
         table = self.__name__.lower()
         select = "*"
         if "fields" in kwargs:
@@ -232,14 +232,14 @@ class Model:
         *args,
         refetch: bool = True,
         add_primary_key: bool = True,
-    ) -> AsyncGenerator[ModelInstance]:
+    ) -> AsyncGenerator[ModelInstance, None]:
         if isinstance(fields, str):
             fields = [fields]
         async for row in self.filter(filter, refetch=refetch, add_primary_key=add_primary_key, *args, fields=fields):
             yield row
 
     @classmethod
-    async def all(self) -> AsyncGenerator[ModelInstance]:
+    async def all(self) -> AsyncGenerator[ModelInstance, None]:
         async for row in self.filter():
             yield row
 
