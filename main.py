@@ -1264,7 +1264,7 @@ async def on_message(message: discord.Message):
         last_loop_time = time.time()
         bot.loop.create_task(maintaince_loop())
 
-    if message.guild is None:
+    if message.guild is None and not message.author.bot:
         if text.startswith("disable"):
             # disable reminders
             try:
