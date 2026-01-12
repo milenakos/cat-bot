@@ -321,7 +321,6 @@ temp_spawns_storage = []
 
 # to prevent double belated battlepass progress and for "faster than 10 seconds" belated bp quest
 temp_belated_storage = {}
-temp_user_locks = {}
 
 # to prevent weird cookie things without destroying the database with load
 temp_cookie_storage = {}
@@ -956,12 +955,11 @@ async def postpone_reminder(interaction):
 
 # a loop for various maintenance which is ran every 5 minutes
 async def maintenance_loop():
-    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage, temp_cookie_storage, temp_user_locks
+    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage, temp_cookie_storage
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     catchcooldown = {}
     fakecooldown = {}
-    temp_user_locks = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
     # update cookies
@@ -2109,7 +2107,7 @@ async def on_message(message: discord.Message):
 
                     if normal_bump:
                         if double_boost:
-                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} performed an **ULTIMATE DOUBLE BOOST** on this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat to a {get_emoji(le_emoji.lower() + 'cat')} {le_emoji} cat!"
+                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch twice from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat to a {get_emoji(le_emoji.lower() + 'cat')} {le_emoji} cat!"
                         else:
                             suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
                     elif not channel.forcespawned:
@@ -2160,8 +2158,41 @@ async def on_message(message: discord.Message):
                 view = None
                 button = None
 
+                async def dark_market_cutscene(interaction):
+                    nonlocal message
+                    if interaction.user != message.author:
+                        await interaction.response.send_message(
+                            "the shadow you saw runs away. perhaps you need to be the one to catch the cat.",
+                            ephemeral=True,
+                        )
+                        return
+                    if user.dark_market_active:
+                        await interaction.response.send_message("the shadowy figure is nowhere to be found.", ephemeral=True)
+                        return
+                    user.dark_market_active = True
+                    await user.save()
+                    await interaction.response.send_message("is someone watching after you?", ephemeral=True)
+
+                    dark_market_followups = [
+                        "you walk up to them. the dark voice says:",
+                        "**???**: Hello. We have a unique deal for you.",
+                        "**???**: To access our services, run /catnip.",
+                        "**???**: You won't be disappointed.",
+                        "before you manage to process that, the figure disappears. will you figure out whats going on?",
+                        "the only choice is to go to that place.",
+                    ]
+
+                    for phrase in dark_market_followups:
+                        await asyncio.sleep(5)
+                        await interaction.followup.send(phrase, ephemeral=True)
+
+                    await achemb(message, "dark_market", "followup")
+
                 vote_time_user = await User.get_or_create(user_id=message.author.id)
-                if config.WEBHOOK_VERIFY and vote_time_user.vote_time_topgg + 43200 < time.time():
+                if random.randint(0, 10) == 0 and user.total_catches > 50 and not user.dark_market_active:
+                    button = Button(label="You see a shadow...", style=ButtonStyle.red)
+                    button.callback = dark_market_cutscene
+                elif config.WEBHOOK_VERIFY and vote_time_user.vote_time_topgg + 43200 < time.time():
                     button = Button(
                         emoji=get_emoji("topgg"),
                         label=random.choice(vote_button_texts),
@@ -2215,27 +2246,7 @@ async def on_message(message: discord.Message):
                         # Silently fail if we can't send the confirmation message (e.g. permission issues)
                         pass
 
-                # Check for fake egirl hijack
-                is_fake_egirl = False
-                if message.channel.id in config.fake_egirl_storage and config.fake_egirl_storage[message.channel.id] == cat_temp:
-                    is_fake_egirl = True
-                    del config.fake_egirl_storage[message.channel.id]
-
                 await asyncio.gather(delete_cat(), send_confirm())
-
-                if is_fake_egirl:
-                    async def troll_user():
-                        def check(m):
-                            return m.author.id == message.author.id and m.channel.id == message.channel.id
-                        try:
-                            # Wait for the next message from the user
-                            # Timeout reduced to 60s to prevent task accumulation
-                            await bot.wait_for('message', check=check, timeout=60) 
-                            await message.channel.send("haha get trolled")
-                        except asyncio.TimeoutError:
-                            # If they don't respond in time, the joke is over.
-                            pass
-                    bot.loop.create_task(troll_user())
 
                 user.total_catches += 1
                 if do_time:
@@ -4292,11 +4303,6 @@ async def packs(message: discord.Interaction):
                 await interaction.response.send_message("Please enter a valid positive number!", ephemeral=True)
                 return
             
-            if interaction.user.id in temp_user_locks and temp_user_locks[interaction.user.id] > time.time():
-                await interaction.response.send_message("Please wait for your previous action to finish!", ephemeral=True)
-                return
-            temp_user_locks[interaction.user.id] = time.time() + 5
-            
             await interaction.response.defer()
             await user.refresh_from_db()
             
@@ -4399,7 +4405,7 @@ async def packs(message: discord.Interaction):
         if empty:
             view.add_item(Button(label="No packs left!", disabled=True))
         if total_amount > 5:
-            button = Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.blurple)
+            button = Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.gray)
             button.callback = confirm_open_all
             view.add_item(button)
             
@@ -4475,12 +4481,6 @@ async def packs(message: discord.Interaction):
         if interaction.user != message.user:
             await do_funny(interaction)
             return
-        
-        if interaction.user.id in temp_user_locks and temp_user_locks[interaction.user.id] > time.time():
-            await interaction.response.send_message("Please wait for your previous action to finish!", ephemeral=True)
-            return
-        # Standard 2s lock for single-pack operations to prevent rapid-fire spam
-        temp_user_locks[interaction.user.id] = time.time() + 2
 
         await interaction.response.defer()
         pack = interaction.data["custom_id"]
@@ -4510,12 +4510,6 @@ async def packs(message: discord.Interaction):
         if interaction.user != message.user:
             await do_funny(interaction)
             return
-
-        if interaction.user.id in temp_user_locks and temp_user_locks[interaction.user.id] > time.time():
-            await interaction.response.send_message("Please wait for your previous action to finish!", ephemeral=True)
-            return
-        # Extended 5s lock for "Open All" to account for heavier processing and larger state changes
-        temp_user_locks[interaction.user.id] = time.time() + 5
 
         await interaction.response.defer()
         await user.refresh_from_db()
@@ -8653,59 +8647,6 @@ async def recieve_vote(request):
     await user.save()
 
     return web.Response(text="ok", status=200)
-
-
-@bot.tree.command(description="(ADMIN) Prank: Hijacks an active cat spawn to look like an eGirl to troll users")
-@discord.app_commands.default_permissions(manage_guild=True)
-@discord.app_commands.describe(channel="The channel to hijack the spawn in")
-async def fake_egirl(interaction: discord.Interaction, channel: discord.TextChannel):
-    """
-    Hijacks an existing cat spawn in the specified channel.
-    
-    This command deletes the current spawn message and replaces it with a 
-    fake 'eGirl' cat appearance. The actual cat type in the database remains 
-    unchanged (e.g., if it was a 'common' cat, it remains 'common').
-    
-    When a user catches this "fake" eGirl:
-    1. They receive the original underlying cat type rewards.
-    2. The bot tracks the fake usage via `fake_egirl_storage`.
-    3. The bot triggers a "troll" response ("haha get trolled") upon the user's next message.
-    """
-    # Get DB Channel
-    db_channel = await Channel.get_or_none(channel_id=channel.id)
-
-    if not db_channel or db_channel.cat == 0:
-        await interaction.response.send_message("No cat is currently spawned in that channel.", ephemeral=True)
-        return
-
-    # Delete old message
-    try:
-        old_msg = await channel.fetch_message(db_channel.cat)
-        await old_msg.delete()
-    except discord.NotFound:
-        # Message already deleted, safe to ignore
-        pass
-    except Exception as e:
-        await interaction.response.send_message(f"Error deleting old message: {e}", ephemeral=True)
-        return
-
-    localcat = "eGirl"
-    icon = get_emoji(localcat.lower() + "cat")
-    file = discord.File(f"images/spawn/{localcat.lower()}_cat.png")
-
-    appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!'
-    content = appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat)
-
-    new_msg = await channel.send(content, file=file, allowed_mentions=discord.AllowedMentions.all())
-    
-    # Update DB with new message ID but keep old type
-    db_channel.cat = new_msg.id
-    await db_channel.save()
-
-    # Track fake egirl spawn
-    config.fake_egirl_storage[channel.id] = new_msg.id
-
-    await interaction.response.send_message(f"Fake egirl cat sent to {channel.mention} (hijacked)", ephemeral=True)
 
 
 async def check_supporter(request):
