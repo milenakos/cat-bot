@@ -1329,20 +1329,21 @@ async def on_message(message: discord.Message):
 
     # here are some automation hooks for giving out purchases and similiar
     if config.RAIN_CHANNEL_ID and message.channel.id == config.RAIN_CHANNEL_ID and text.lower().startswith("cat!rain"):
-        things = text.split(" ")
-        user = await User.get_or_create(user_id=int(things[1]))
+        arguements = text.split(" ")
+        user = await User.get_or_create(user_id=int(arguements[1]))
+        rain_duration = arguements[2]
         if not user.rain_minutes:
             user.rain_minutes = 0
 
-        if things[2] == "short":
+        if rain_duration == "short":
             user.rain_minutes += 2
-        elif things[2] == "medium":
+        elif rain_duration == "medium":
             user.rain_minutes += 10
-        elif things[2] == "long":
+        elif rain_duration == "long":
             user.rain_minutes += 20
         else:
-            user.rain_minutes += int(things[2])
-            user.rain_minutes_bought += int(things[2])
+            user.rain_minutes += int(rain_duration)
+            user.rain_minutes_bought += int(rain_duration)
         user.premium = True
         await user.save()
 
@@ -1350,7 +1351,7 @@ async def on_message(message: discord.Message):
         try:
             person = await fetch_dm_channel(user)
             await person.send(
-                f"**You have recieved {things[2]} minutes of Cat Rain!** ☔\n\nThanks for your support!\nYou can start a rain with `/rain`. By buying you also get access to `/editprofile` and `/customcat` commands as well as a role in [our Discord server](<https://discord.gg/staring>)!\n\nEnjoy your goods!"
+                f"**You have recieved {rain_duration} minutes of Cat Rain!** ☔\n\nThanks for your support!\nYou can start a rain with `/rain`. By buying you also get access to `/editprofile` and `/customcat` commands as well as a role in [our Discord server](<https://discord.gg/staring>)!\n\nEnjoy your goods!"
             )
         except Exception:
             pass
@@ -1525,15 +1526,17 @@ async def on_message(message: discord.Message):
     if message.author.bot or message.webhook_id is not None:
         return
 
-    for ach in achs:
-        if (
-            (ach[1] == "startswith" and text.lower().startswith(ach[0]))
-            or (ach[1] == "re" and re.search(ach[0], text.lower()))
-            or (ach[1] == "exact" and ach[0] == text.lower())
-            or (ach[1] == "veryexact" and ach[0] == text)
-            or (ach[1] == "in" and ach[0] in text.lower())
-        ):
-            await achemb(message, ach[2], "reply")
+    for achievement in achs:
+        match_text, match_method, achievement_name = achievement
+        text_lowered = text.lower()
+        if any([
+            match_method == "startswith" and text_lowered.startswith(match_text),
+            match_method == "re" and re.search(match_text, text_lowered),
+            match_method == "exact" and match_text == text_lowered,
+            match_method == "veryexact" and match_text == text,
+            match_method == "in" and match_text in text_lowered
+        ]):
+            await achemb(message, achievement_name, "reply")
 
     if unidecode.unidecode(text).lower().strip() in [
         "mace",
@@ -1612,30 +1615,33 @@ async def on_message(message: discord.Message):
         await achemb(message, "multilingual", "reply")
 
     if perms.add_reactions:
-        for r in reactions:
-            if r[0] in text.lower() and reactions_ratelimit.get(message.guild.id, 0) < 100:
-                if r[1] == "custom":
-                    em = get_emoji(r[2])
-                elif r[1] == "vanilla":
-                    em = r[2]
+        for reaction in reactions:
+            reaction_prompt, reaction_type, reaction_name = reaction
+            if reaction_prompt in text.lower() and reactions_ratelimit.get(message.guild.id, 0) < 100:
+                if reaction_type == "custom":
+                    resolved_emoji = get_emoji(reaction_name)
+                elif reaction_type == "vanilla":
+                    resolved_emoji = reaction_name
 
                 try:
-                    await message.add_reaction(em)
+                    await message.add_reaction(resolved_emoji)
                     react_count += 1
                     reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
                 except Exception:
                     pass
 
     if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-        for resp in responses:
-            if (
-                (resp[1] == "startswith" and text.lower().startswith(resp[0]))
-                or (resp[1] == "re" and re.search(resp[0], text.lower()))
-                or (resp[1] == "exact" and resp[0] == text.lower())
-                or (resp[1] == "in" and resp[0] in text.lower())
-            ):
+        for response in responses:
+            match_method, match_text, response_reply = response
+            text_lowered = text.lower()
+            if any([
+                match_method == "startswith" and text_lowered.startswith(match_text),
+                match_method == "re" and re.search(match_text, text_lowered),
+                match_method == "exact" and match_text == text_lowered,
+                match_method == "in" and match_text in text_lowered,
+            ]):
                 try:
-                    await message.reply(resp[2])
+                    await message.reply(response_reply)
                 except Exception:
                     pass
 
