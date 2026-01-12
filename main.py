@@ -4371,7 +4371,7 @@ async def packs(message: discord.Interaction):
         async def do_it(interaction):
             await open_all_packs(interaction)
         
-        confirm_view = View()
+        confirm_view = View(timeout=VIEW_TIMEOUT)
         yes_btn = Button(label="Yes, Open All", style=ButtonStyle.green)
         yes_btn.callback = do_it
         confirm_view.add_item(yes_btn)
@@ -7355,7 +7355,7 @@ async def catnip(message: discord.Interaction):
         user.catnip_bought += 1
         user.catnip_total_cats = 0
         user.first_quote_seen = False
-        # user.reroll acts as "reroll_consumed". Setting to False means "reroll available".
+        # user.reroll acts as "reroll_consumed". Setting to False means "reroll not yet consumed (available for use)".
         user.reroll = False
 
         if user.catnip_level > user.highest_catnip_level:
