@@ -149,17 +149,17 @@ class Model:
         return self(result)
 
     @classmethod
-    async def get_or_none(self, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance | None:
+    async def get_or_none(cls, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance | None:
         try:
-            return await self.get(fields=fields, **kwargs)
+            return await cls.get(fields=fields, **kwargs)
         except asyncpg.exceptions.PostgresError:
             return None
         except AttributeError:
             return None
 
     @classmethod
-    async def get_or_create(self, **kwargs) -> ModelInstance:
-        table = self.__name__.lower()
+    async def get_or_create(cls, **kwargs) -> ModelInstance:
+        table = cls.__name__.lower()
         values = kwargs.values()
 
         # build column names and placeholders
@@ -175,11 +175,11 @@ class Model:
 
         # run the query and return the result
         result = await pool.fetchrow(query_string, *values)
-        return self(result)
+        return cls(result)
 
     @classmethod
-    async def create(self, **kwargs) -> None:
-        table = self.__name__.lower()
+    async def create(cls, **kwargs) -> None:
+        table = cls.__name__.lower()
         values = kwargs.values()
 
         query_string = f'INSERT INTO "{table}" ('
@@ -199,13 +199,13 @@ class Model:
 
     @classmethod
     async def filter(
-        self, filter: str | RawSQL | None = None, *args, refetch: bool = True, add_primary_key: bool = True, **kwargs
+        cls, filter: str | RawSQL | None = None, *args, refetch: bool = True, add_primary_key: bool = True, **kwargs
     ) -> AsyncGenerator[ModelInstance, None]:
-        table = self.__name__.lower()
+        table = cls.__name__.lower()
         select = "*"
         if "fields" in kwargs:
-            if add_primary_key and self._primary_key not in kwargs["fields"]:
-                kwargs["fields"].append(self._primary_key)
+            if add_primary_key and cls._primary_key not in kwargs["fields"]:
+                kwargs["fields"].append(cls._primary_key)
             select = ", ".join(i if i.__class__.__name__ == "RawSQL" else f'"{i}"' for i in kwargs["fields"])
         query = f'SELECT {select} FROM "{table}"'
         if filter:
@@ -213,15 +213,15 @@ class Model:
         cur = await pool.fetch(query + ";", *args)
         for row in cur:
             if refetch:
-                val = {self._primary_key: row[self._primary_key]}
+                val = {cls._primary_key: row[cls._primary_key]}
                 if "fields" in kwargs:
-                    row = await self.get_or_none(fields=kwargs["fields"], **val)
+                    row = await cls.get_or_none(fields=kwargs["fields"], **val)
                 else:
-                    row = await self.get_or_none(**val)
+                    row = await cls.get_or_none(**val)
                 if not row:
                     continue
             else:
-                row = self(row)
+                row = cls(row)
             yield row
 
     @classmethod

@@ -1756,7 +1756,7 @@ async def on_message(message: discord.Message):
                         await progress(message, user, "2fine", True)
                     if channel.cattype == "Good":
                         await progress(message, user, "good", True)
-                    if belated.get("time", 10) + int(time.time()) - belated.get("timestamp", 0) < 10:
+                    if belated.get("time", 10) + current_time - belated.get("timestamp", 0) < 10:
                         await progress(message, user, "under10", True)
                     if random.randint(0, 1) == 0:
                         await progress(message, user, "even", True)
@@ -4291,6 +4291,11 @@ async def packs(message: discord.Interaction):
             except ValueError:
                 await interaction.response.send_message("Please enter a valid positive number!", ephemeral=True)
                 return
+            
+            if interaction.user.id in temp_user_locks and temp_user_locks[interaction.user.id] > time.time():
+                await interaction.response.send_message("Please wait for your previous action to finish!", ephemeral=True)
+                return
+            temp_user_locks[interaction.user.id] = time.time() + 5
             
             await interaction.response.defer()
             await user.refresh_from_db()
@@ -8670,14 +8675,15 @@ async def fake_egirl(interaction: discord.Interaction, channel: discord.TextChan
     db_channel = await Channel.get_or_none(channel_id=channel.id)
 
     if not db_channel or db_channel.cat == 0:
-         await interaction.response.send_message("No cat is currently spawned in that channel.", ephemeral=True)
-         return
+        await interaction.response.send_message("No cat is currently spawned in that channel.", ephemeral=True)
+        return
 
     # Delete old message
     try:
         old_msg = await channel.fetch_message(db_channel.cat)
         await old_msg.delete()
     except discord.NotFound:
+        # Message already deleted, safe to ignore
         pass
     except Exception as e:
         await interaction.response.send_message(f"Error deleting old message: {e}", ephemeral=True)
