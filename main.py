@@ -2327,7 +2327,23 @@ async def on_message(message: discord.Message):
             finally:
                 if decided_time:
                     if cat_rain_end:
-                        bot.loop.create_task(rain_end(message, channel, force_summary=force_rain_summary))
+                        await channel.save()
+                        bot.loop.create_task(rain_end(message, channel))
+
+                    # shift decided_time to reduce load
+                    if decided_time > 10:
+                        # ignore cat rains
+                        start_time = channel.yet_to_spawn
+                        shifts = [0] + [x for n in range(1, 11) for x in (n, -n)]
+                        for shift in shifts:
+                            c = await Channel.count("yet_to_spawn = $1", start_time + shift)
+                            if c < 5:
+                                channel.yet_to_spawn = start_time + shift
+                                decided_time += shift
+                                break
+
+                    await channel.save()
+
                     await asyncio.sleep(decided_time)
                     try:
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
@@ -8333,6 +8349,28 @@ async def forget(message: discord.Interaction):
         await message.response.send_message(f"ok, now i wont send cats in <#{message.channel.id}>")
     else:
         await message.response.send_message("your an idiot there is literally no cat setupped in this channel you stupid")
+
+
+@bot.tree.command(description="LMAO TROLLED SO HARD :JOY:")
+async def fake(message: discord.Interaction):
+    if message.user.id in fakecooldown and fakecooldown[message.user.id] + 60 > time.time():
+        await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
+        return
+    file = discord.File("images/australian cat.png", filename="australian cat.png")
+    icon = get_emoji("egirlcat")
+    perms = await fetch_perms(message)
+    fakecooldown[message.user.id] = time.time()
+    try:
+        if not perms.send_messages or not perms.attach_files:
+            raise Exception
+        await message.response.send_message(
+            str(icon) + ' eGirl cat hasn\'t appeared! Type "cat" to catch ratio!',
+            file=file,
+        )
+    except Exception:
+        await message.response.send_message("i dont have perms lmao here is the ach anyways", ephemeral=True)
+        pass
+    await achemb(message, "trolled", "ephemeral")
 
 
 @bot.tree.command(description="(ADMIN) Force cats to appear")
