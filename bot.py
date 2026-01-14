@@ -33,12 +33,15 @@ logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
 handler.setLevel(logging.INFO)
 logger.addHandler(handler)
+log_level = logging.INFO
 
 try:
     # this is a messy closed source script which injects into logging module to do statistics
     # inside discord.py, it only intercepts the amount of status codes and ratelimits
     # everything else is from main.py logging.debug() statements
-    import stats  # pyright: ignore
+    import stats  # noqa: F401
+
+    log_level = logging.DEBUG
 except ImportError:
     pass
 
@@ -125,6 +128,6 @@ bot.cat_bot_reload_hook = reload  # pyright: ignore
 
 try:
     config.HARD_RESTART_TIME = time.time()
-    bot.run(config.TOKEN, log_handler=handler)
+    bot.run(config.TOKEN, log_handler=handler, log_level=log_level)
 finally:
     asyncio.run(database.close())

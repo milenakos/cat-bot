@@ -1935,7 +1935,8 @@ async def on_message(message: discord.Message):
                         perks = user.perks
                     perks_info = catnip_list["perks"]
 
-                    logging.debug("Catnip active")
+                    if len(perks) > 0:
+                        logging.debug("Catnip active with %d perks", len(perks))
 
                     for perk in perks:
                         h = perk.split("_")
