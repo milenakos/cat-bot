@@ -2360,7 +2360,7 @@ async def on_message(message: discord.Message):
                 if decided_time:
                     if cat_rain_end:
                         await channel.save()
-                        bot.loop.create_task(rain_end(message, channel))
+                        bot.loop.create_task(rain_end(message, channel, force_rain_summary))
 
                     # shift decided_time to reduce load
                     if decided_time > 10:
