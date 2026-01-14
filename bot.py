@@ -28,7 +28,20 @@ import catpg
 import config
 import database
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
+logger.addHandler(handler)
+
+try:
+    # this is a messy closed source script which injects into logging module to do statistics
+    # inside discord.py, it only intercepts the amount of status codes and ratelimits
+    # everything else is from main.py logging.debug() statements
+    import stats  # pyright: ignore
+except ImportError:
+    pass
+
 
 winuvloop.install()
 
@@ -112,6 +125,6 @@ bot.cat_bot_reload_hook = reload  # pyright: ignore
 
 try:
     config.HARD_RESTART_TIME = time.time()
-    bot.run(config.TOKEN)
+    bot.run(config.TOKEN, log_handler=handler)
 finally:
     asyncio.run(database.close())

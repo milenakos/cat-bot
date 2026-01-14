@@ -413,6 +413,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
 
     profile[ach_id] = True
     await profile.save()
+    logging.debug("Achievement unlocked: %s", ach_id)
     ach_data = ach_list[ach_id]
     desc = ach_data["description"]
     if ach_id == "dataminer":
@@ -615,6 +616,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
 
     user.quests_completed += 1
 
+    logging.debug("Quest complete: %s", quest)
     old_xp = user.progress
     perms = await fetch_perms(message)
     level_complete_embeds = []
@@ -626,6 +628,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         level_text = f"Level {user.battlepass + 1}"
 
     if current_xp >= level_data["xp"]:
+        logging.debug("Level complete %d", user.battlepass)
         xp_progress = current_xp
         active_level_data = level_data
         while xp_progress >= active_level_data["xp"]:
@@ -931,6 +934,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     channel.cattype = localcat
     await channel.save()
     temp_spawns_storage.remove(int(ch_id))
+    logging.debug("Cat spawned, forced: %s", bool(force_spawn))
     return True
 
 
@@ -948,6 +952,7 @@ async def postpone_reminder(interaction):
         else:
             user.reminder_misc = int(time.time()) + 30 * 60
         await user.save()
+    logging.debug("Reminder postponed: %s", reminder_type)
     await interaction.response.send_message(f"ok, i will remind you <t:{int(time.time()) + 30 * 60}:R>", ephemeral=True)
 
 
@@ -969,6 +974,7 @@ async def background_loop():
         cookie_updates.append(p)
     if cookie_updates:
         await Profile.bulk_update(cookie_updates, "cookies")
+    logging.debug("Cookies updated: %d", len(cookie_updates))
     temp_cookie_storage = {}
 
     # temp_belated_storage cleanup
@@ -1002,9 +1008,12 @@ async def background_loop():
                 logging.warning("Posting to top.gg failed.")
 
     # revive dead catch loops
+    counter = 0
     async for channel in Channel.limit(["channel_id"], "yet_to_spawn < $1 AND cat = 0", time.time(), refetch=False):
+        counter += 1
         await spawn_cat(str(channel.channel_id))
         await asyncio.sleep(0.1)
+    logging.debug("Channels revived: %d", counter)
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
     #
@@ -1043,6 +1052,7 @@ async def background_loop():
         proccessed_users.append(user)
 
     await User.bulk_update(proccessed_users, "reminder_vote")
+    logging.debug("Reminders sent: %d, type: %s", len(proccessed_users), "vote")
 
     # i know the next two are similiar enough to be merged but its currently dec 30 and i cant be bothered
     # catch reminders
@@ -1087,6 +1097,7 @@ async def background_loop():
 
     if proccessed_users:
         await Profile.bulk_update(proccessed_users, "reminder_catch")
+    logging.debug("Reminders sent: %d, type: %s", len(proccessed_users), "catch")
 
     # misc reminders
     proccessed_users = []
@@ -1130,6 +1141,7 @@ async def background_loop():
 
     if proccessed_users:
         await Profile.bulk_update(proccessed_users, "reminder_misc")
+    logging.debug("Reminders sent: %d, type: %s", len(proccessed_users), "misc")
 
     # manual reminders
     async for reminder in Reminder.filter("time < $1", time.time()):
@@ -1506,6 +1518,7 @@ async def on_message(message: discord.Message):
                     await message.add_reaction(get_emoji("staring_cat"))
                     react_count += 1
                     reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
+                    logging.debug("Reaction added: %s", "staring_cat")
             except Exception:
                 pass
 
@@ -1627,6 +1640,7 @@ async def on_message(message: discord.Message):
                     await message.add_reaction(resolved_emoji)
                     react_count += 1
                     reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
+                    logging.debug("Reaction added: %s", reaction_name)
                 except Exception:
                     pass
 
@@ -1646,12 +1660,14 @@ async def on_message(message: discord.Message):
                     await message.reply(response_reply)
                 except Exception:
                     pass
+                logging.debug("Response sent: %s", response_reply)
 
     try:
         if message.author in message.mentions and perms.add_reactions and reactions_ratelimit.get(message.guild.id, 0) < 100:
             await message.add_reaction(get_emoji("staring_cat"))
             react_count += 1
             reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
+            logging.debug("Reaction added: %s", "staring_cat")
     except Exception:
         pass
 
@@ -1668,6 +1684,7 @@ async def on_message(message: discord.Message):
         except Exception:
             # test failure
             pass
+        logging.debug("Response sent: %s", "test success")
         await achemb(message, "test_ach", "reply")
 
     if text.lower() == "please do not the cat":
@@ -1681,6 +1698,7 @@ async def on_message(message: discord.Message):
         except Exception:
             pass
         await achemb(message, "pleasedonotthecat", "reply")
+        logging.debug("Response sent: %s", "please do not the cat")
 
     if text.lower() == "please do the cat":
         thing = discord.File("images/socialcredit.jpg", filename="socialcredit.jpg")
@@ -1690,6 +1708,7 @@ async def on_message(message: discord.Message):
         except Exception:
             pass
         await achemb(message, "pleasedothecat", "reply")
+        logging.debug("Response sent: %s", "please do the cat")
 
     if text.lower() == "car":
         file = discord.File("images/car.png", filename="car.png")
@@ -1700,6 +1719,7 @@ async def on_message(message: discord.Message):
         except Exception:
             pass
         await achemb(message, "car", "reply")
+        logging.debug("Response sent: %s", "car")
 
     if text.lower() == "cart":
         file = discord.File("images/cart.png", filename="cart.png")
@@ -1709,6 +1729,7 @@ async def on_message(message: discord.Message):
                 await message.reply(file=file, embed=embed)
         except Exception:
             pass
+        logging.debug("Response sent: %s", "cart")
 
     try:
         if (
@@ -1912,6 +1933,8 @@ async def on_message(message: discord.Message):
                         perks = user.perks
                     perks_info = catnip_list["perks"]
 
+                    logging.debug("Catnip active")
+
                     for perk in perks:
                         h = perk.split("_")
                         rarity = int(h[0])
@@ -2033,6 +2056,8 @@ async def on_message(message: discord.Message):
                         blesser.username = (await bot.fetch_user(blesser.user_id)).name
                     asyncio.create_task(blesser.save())
 
+                    logging.debug("Catch blessed")
+
                     if blesser.blessings_anonymous:
                         blesser_text = "💫 Anonymous Supporter"
                     else:
@@ -2067,6 +2092,7 @@ async def on_message(message: discord.Message):
                     user.boosted_catches += 1
                     prism_which_boosted.catches_boosted += 1
                     asyncio.create_task(prism_which_boosted.save())
+                    logging.debug("Boosted from %s", le_emoji)
                     try:
                         le_old_emoji = le_emoji
                         if double_boost:
@@ -2089,6 +2115,7 @@ async def on_message(message: discord.Message):
                             else:
                                 # 600 seconds = 10 minutes of rain.
                                 rainboost = 600
+                            logging.debug("Boosted to rain: %d", rainboost)
                             channel.cat_rains += math.ceil(rainboost / 2.75)
                             if channel.cat_rains > math.ceil(rainboost / 2.75):
                                 await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
@@ -2245,6 +2272,9 @@ async def on_message(message: discord.Message):
                         pass
 
                 await asyncio.gather(delete_cat(), send_confirm())
+
+                logging.debug("Caught (pre-boost) %d %s", 1, channel.cattype)
+                logging.debug("Caught (post-boost) %d %s", silly_amount, le_emoji)
 
                 user.total_catches += 1
                 if do_time:
@@ -2487,6 +2517,8 @@ async def on_guild_join(guild):
             if patt in i.name:
                 return i
 
+    logging.debug("Guild joined, member count %d", guild.member_count)
+
     # first to try a good channel, then whenever we cat atleast chat
     ch = find("cat", guild.text_channels)
     if not verify(ch):
@@ -2681,6 +2713,8 @@ async def news(message: discord.Interaction):
         back_button = Button(emoji="⬅️", label="Back")
         back_button.callback = go_back
         back_row = ActionRow(back_button)
+
+        logging.debug("Read news #%d", news_id)
 
         if news_id == 0:
             embed = Container(
@@ -3774,6 +3808,7 @@ __Highlighted Stat__
 
 
 async def rain_recovery_loop(channel):
+    logging.debug("Rain started, cats %d", channel.cat_rains)
     while True:
         await asyncio.sleep(5)
         await channel.refresh_from_db()
@@ -4308,31 +4343,32 @@ async def packs(message: discord.Interaction):
 
         pack_names = [pack["name"] for pack in pack_data]
         total_pack_count = sum(user[f"pack_{pack_id.lower()}"] for pack_id in pack_names)
-        
+
         if total_pack_count < 1:
             return None
-        
+
         real_to_open = total_pack_count
         if limit:
             real_to_open = min(limit, total_pack_count)
-            
+
         display_cats = real_to_open >= 50
         results_header = []
         results_detail = []
         results_percat = {cat: 0 for cat in cattypes}
         total_upgrades = 0
         opened_so_far = 0
-        
+
         for level, pack in enumerate(pack_names):
             if opened_so_far >= real_to_open:
                 break
+            logging.debug("Opened pack %s", pack)
             pack_id = f"pack_{pack.lower()}"
             this_packs_count = user[pack_id]
             if this_packs_count < 1:
                 continue
-            
+
             opening_this = min(this_packs_count, real_to_open - opened_so_far)
-            
+
             results_header.append(f"{opening_this:,}x {get_emoji(pack.lower() + 'pack')}")
             for _ in range(opening_this):
                 chosen_type, cat_amount, upgrades, rewards = get_pack_rewards(level, is_single=False)
@@ -4340,30 +4376,30 @@ async def packs(message: discord.Interaction):
                 if not display_cats:
                     results_detail.append(rewards)
                 results_percat[chosen_type] += cat_amount
-            
+
             user[pack_id] -= opening_this
             opened_so_far += opening_this
-            
+
         user.packs_opened += opened_so_far
         user.pack_upgrades += total_upgrades
         for cat_type, cat_amount in results_percat.items():
             user[f"cat_{cat_type}"] += cat_amount
         await user.save()
-        
+
         final_header = f"Opened {opened_so_far:,} packs!"
         pack_list = "**" + ", ".join(results_header) + "**"
         final_result = "\n".join(results_detail)
-        
+
         if display_cats or len(final_result) > 4000 - len(pack_list):
             cat_summary = []
             for cat in cattypes:
                 if results_percat[cat] > 0:
-                    cat_summary.append(f"{get_emoji(cat.lower()+'cat')} x{results_percat[cat]:,}")
+                    cat_summary.append(f"{get_emoji(cat.lower() + 'cat')} x{results_percat[cat]:,}")
             final_result = "\n".join(cat_summary)
-        
+
         if len(final_result) > 0:
             final_result = "\n\n" + final_result
-            
+
         return discord.Embed(title=final_header, description=f"{pack_list}{final_result}", color=Colors.brown)
 
     async def open_custom_amount(interaction: discord.Interaction):
@@ -4379,7 +4415,7 @@ async def packs(message: discord.Interaction):
             except ValueError:
                 await interaction.response.send_message("Please enter a valid positive number!", ephemeral=True)
                 return
-            
+
             await interaction.response.defer()
             embed = await process_pack_opening(amount)
             if not embed:
@@ -4402,12 +4438,12 @@ async def packs(message: discord.Interaction):
 
         async def do_it(interaction):
             await open_all_packs(interaction)
-        
+
         confirm_view = View(timeout=VIEW_TIMEOUT)
         yes_btn = Button(label="Yes, Open All", style=ButtonStyle.green)
         yes_btn.callback = do_it
         confirm_view.add_item(yes_btn)
-        
+
         await interaction.response.send_message("Are you sure you want to open ALL your packs?", view=confirm_view, ephemeral=True)
 
     def gen_view(user):
@@ -4434,7 +4470,7 @@ async def packs(message: discord.Interaction):
             button = Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.gray)
             button.callback = confirm_open_all
             view.add_item(button)
-            
+
             custom_btn = Button(label="Open Custom Amount...", style=ButtonStyle.gray)
             custom_btn.callback = open_custom_amount
             view.add_item(custom_btn)
@@ -4521,6 +4557,8 @@ async def packs(message: discord.Interaction):
         user.packs_opened += 1
         user[f"pack_{pack.lower()}"] -= 1
         await user.save()
+
+        logging.debug("Opened pack %s", pack)
 
         embed = discord.Embed(title=reward_texts[0], color=Colors.brown)
         await interaction.edit_original_response(embed=embed, view=None)
@@ -4821,6 +4859,9 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
             time=selected_time,
             name=selected_name,
         )
+
+        logging.debug("Created prism")
+
         await message.followup.send(f"{icon} {interaction.user.mention} has created prism {selected_name}!")
         await achemb(interaction, "prism", "followup")
         await achemb(interaction, "collecter", "followup")
@@ -6835,6 +6876,7 @@ async def bounty(message, user, cattype):
                 user.reroll_level = 0
             await user.save()
     for i in range(complete):
+        logging.debug("Completed bounties %d", completed)
         level = user.catnip_level
         progress_line = f"\n{level} " + get_emoji("staring_square") * int(colored) + "⬛" * int(10 - colored) + f" {level + 1}"
         if completed == user.bounties:
@@ -7113,6 +7155,8 @@ async def level_down(user, message, ephemeral=False):
         description=f"**{name}**: *{quote}*\n\nLevel {user.catnip_level + 1} bounties failed!\nYou're now on level {user.catnip_level}.{removed_line}",
     )
 
+    logging.debug("Levelled down to %d", user.catnip_level)
+
     if ephemeral:
         return embed
 
@@ -7342,6 +7386,8 @@ async def catnip(message: discord.Interaction):
         await set_bounties(user.catnip_level, user)
         await set_mafia_offer(user.catnip_level, user)
 
+        logging.debug("Levelled up to %d", user.catnip_level)
+
         if user.catnip_level == 8 and user.cutscene == 0:
             await mafia_cutscene(interaction, user)
         elif user.catnip_level == 10 and not trigger_cutscene:
@@ -7466,6 +7512,8 @@ You can stop. That's okay. Seriously.
             user.perk3 = ""
             await user.save()
 
+            logging.debug("Selected perk on level %d", user.catnip_level)
+
             await main_message.edit(view=await gen_main())
 
         if user.perk_selected and not reroll:
@@ -7584,6 +7632,8 @@ You can stop. That's okay. Seriously.
 
         user.catnip_active = int(time.time()) + 3600 * duration + duration_bonus
         await user.save()
+
+        logging.debug("Started bounties on level %d", user.catnip_level)
 
         await main_message.edit(view=await gen_main())
 
@@ -8623,6 +8673,8 @@ async def recieve_vote(request):
                 ]
             )
         )
+
+        logging.debug("User voted, streak %d", user.vote_streak)
     except Exception:
         # Ignore errors when DMing the user (e.g. if they have DMs closed)
         pass
@@ -8646,6 +8698,11 @@ async def on_error(*args, **kwargs):
     raise
 
 
+# this is for stats, useless otherwise
+async def on_command(ctx):
+    logging.debug("Command %s was used", ctx.command.name)
+
+
 async def setup(bot2):
     global bot, RAIN_ID, vote_server
 
@@ -8664,6 +8721,7 @@ async def setup(bot2):
     bot2.on_message = on_message
     bot2.on_connect = on_connect
     bot2.on_error = on_error
+    bot2.on_command = on_command
 
     if config.WEBHOOK_VERIFY:
         app = web.Application()
