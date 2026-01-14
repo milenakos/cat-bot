@@ -1198,7 +1198,8 @@ async def background_loop():
 # fetch app emojis early
 async def on_connect():
     global emojis
-    emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
+    if len(emojis) == 0:
+        emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
 
 
 # some code which is run when bot is started
@@ -1208,7 +1209,8 @@ async def on_ready():
         return
     on_ready_debounce = True
     logging.info("cat is now online")
-    emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
+    if len(emojis) == 0:
+        emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
     appinfo = bot.application
     if appinfo.team and appinfo.team.owner_id:
         OWNER_ID = appinfo.team.owner_id
