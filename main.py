@@ -4577,11 +4577,6 @@ async def packs(message: discord.Interaction):
         await interaction.edit_original_response(view=gen_view(user))
 
     async def open_all_packs(interaction: discord.Interaction):
-        if interaction.user != message.user:
-            await do_funny(interaction)
-            return
-
-        await interaction.response.defer()
         embed = await process_pack_opening()
         if not embed:
             return
