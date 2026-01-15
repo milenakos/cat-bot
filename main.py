@@ -8700,7 +8700,7 @@ async def on_error(*args, **kwargs):
 
 
 # this is for stats, useless otherwise
-async def on_command(ctx):
+async def on_interaction(ctx):
     if ctx.command:
         logging.debug("Command %s was used", ctx.command.name)
 
@@ -8723,7 +8723,7 @@ async def setup(bot2):
     bot2.on_message = on_message
     bot2.on_connect = on_connect
     bot2.on_error = on_error
-    bot2.on_command = on_command
+    bot2.on_interaction = on_interaction
 
     if config.WEBHOOK_VERIFY:
         app = web.Application()
