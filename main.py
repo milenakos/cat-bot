@@ -4425,7 +4425,9 @@ async def packs(message: discord.Interaction):
                 await interaction.followup.send("You have no packs!", ephemeral=True)
                 return
 
-            await message.edit_original_response(embed=embed, view=gen_view(user))
+            await message.edit_original_response(embed=embed, view=None)
+            await asyncio.sleep(1)
+            await message.edit_original_response(view=gen_view(user))
 
         modal = Modal(title="Open Custom Amount")
         amount_input = TextInput(label="Amount", placeholder="How many packs to open?", min_length=1, max_length=10)
@@ -4439,6 +4441,7 @@ async def packs(message: discord.Interaction):
             return
 
         async def do_it(interaction):
+            await interaction.response.defer()
             await interaction.delete_original_response()
             await open_all_packs(interaction)
 
