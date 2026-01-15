@@ -4425,8 +4425,7 @@ async def packs(message: discord.Interaction):
                 await interaction.followup.send("You have no packs!", ephemeral=True)
                 return
 
-            await message.edit_original_response(embed=None, view=gen_view(user))
-            await interaction.followup.send(embed=embed)
+            await message.edit_original_response(embed=embed, view=gen_view(user))
 
         modal = Modal(title="Open Custom Amount")
         amount_input = TextInput(label="Amount", placeholder="How many packs to open?", min_length=1, max_length=10)
@@ -4440,6 +4439,7 @@ async def packs(message: discord.Interaction):
             return
 
         async def do_it(interaction):
+            await interaction.delete_original_response()
             await open_all_packs(interaction)
 
         confirm_view = View(timeout=VIEW_TIMEOUT)
@@ -4583,9 +4583,9 @@ async def packs(message: discord.Interaction):
         if not embed:
             return
 
-        await interaction.edit_original_response(embed=embed, view=None)
+        await message.edit_original_response(embed=embed, view=None)
         await asyncio.sleep(1)
-        await interaction.edit_original_response(view=gen_view(user))
+        await message.edit_original_response(view=gen_view(user))
 
     description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n[Chance Info](<https://catbot.minkos.lol/packs>)\n\nClick the buttons below to start opening packs!"
     embed = discord.Embed(title=f"{get_emoji('bronzepack')} Packs", description=description, color=Colors.brown)
