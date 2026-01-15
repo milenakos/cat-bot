@@ -1141,7 +1141,7 @@ async def background_loop():
 
     # db backups
     if config.BACKUP_ID:
-        backupchannel = bot.get_channel(config.BACKUP_ID)
+        backupchannel = bot.get_partial_messageable(config.BACKUP_ID)
 
         if loop_count % 12 == 0:
             backup_file = "/root/backup.dump"
@@ -2425,7 +2425,7 @@ async def on_message(message: discord.Message):
     if text.lower().startswith("cat!news"):
         async for i in Channel.all():
             try:
-                channeley = bot.get_channel(int(i.channel_id))
+                channeley = bot.get_partial_messageable(int(i.channel_id))
                 await channeley.send(text[8:])
             except Exception:
                 pass
@@ -4027,7 +4027,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         await profile.save()
         await interaction.response.send_message(f"{rain_length}m cat rain was started by {interaction.user.mention}!")
         try:
-            ch = bot.get_channel(config.RAIN_CHANNEL_ID)
+            ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
             await ch.send(f"{interaction.user.id} started {rain_length}m rain in {interaction.channel.id} ({user.rain_minutes} left)")
         except Exception:
             pass
@@ -4237,7 +4237,7 @@ if config.DONOR_CHANNEL_ID:
                 user.color = match.group(0)
         if image and image.content_type in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
             # reupload image
-            channeley = bot.get_channel(config.DONOR_CHANNEL_ID)
+            channeley = bot.get_partial_messageable(config.DONOR_CHANNEL_ID)
             file = await image.to_file()
             if "." in file.filename:
                 ext = file.filename[file.filename.rfind(".") :]
@@ -5321,7 +5321,7 @@ async def gift(
             await message.response.send_message("no", ephemeral=True)
 
         try:
-            ch = bot.get_channel(config.RAIN_CHANNEL_ID)
+            ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
             await ch.send(f"{message.user.id} gave {amount}m to {person_id}")
         except Exception:
             pass
@@ -5497,7 +5497,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     actual_user1.rain_minutes -= v
                     actual_user2.rain_minutes += v
                     try:
-                        ch = bot.get_channel(config.RAIN_CHANNEL_ID)
+                        ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
                         await ch.send(f"{actual_user1.user_id} traded {v}m to {actual_user2.user_id}")
                     except Exception:
                         pass
@@ -5518,7 +5518,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     actual_user2.rain_minutes -= v
                     actual_user1.rain_minutes += v
                     try:
-                        ch = bot.get_channel(config.RAIN_CHANNEL_ID)
+                        ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
                         await ch.send(f"{actual_user2.user_id} traded {v}m to {actual_user1.user_id}")
                     except Exception:
                         pass
