@@ -3610,28 +3610,29 @@ async def gen_inventory(message, person_id):
         if len(news_list) > len(user.news_state.strip()) or "0" in user.news_state.strip()[-4:]:
             embedVar.set_author(name="You have unread news! /news")
 
+        give_achs = []
         if give_collector:
-            await achemb(message, "collecter", "followup")
+            give_achs.append("collecter")
 
         if person.time <= 5:
-            await achemb(message, "fast_catcher", "followup")
+            give_achs.append("fast_catcher")
         if person.timeslow >= 3600:
-            await achemb(message, "slow_catcher", "followup")
+            give_achs.append("slow_catcher")
 
         if total >= 100:
-            await achemb(message, "second", "followup")
+            give_achs.append("second")
         if total >= 1000:
-            await achemb(message, "third", "followup")
+            give_achs.append("third")
         if total >= 10000:
-            await achemb(message, "fourth", "followup")
+            give_achs.append("fourth")
 
         if unlocked >= 15:
-            await achemb(message, "achiever", "followup")
+            give_achs.append("achiever")
 
         if debt:
             bot.loop.create_task(debt_cutscene(message, person))
 
-    return embedVar
+    return embedVar, give_achs
 
 
 @bot.tree.command(description="View your inventory")
@@ -3742,7 +3743,7 @@ __Highlighted Stat__
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-    embedVar = await gen_inventory(message, person_id)
+    embedVar, give_achs = await gen_inventory(message, person_id)
 
     embedVar.set_footer(text=rain_shill)
 
@@ -3754,6 +3755,9 @@ __Highlighted Stat__
         await message.followup.send(embed=embedVar, view=view)
     else:
         await message.followup.send(embed=embedVar)
+
+    for ach in give_achs:
+        await achemb(message, ach, "followup")
 
 
 async def rain_recovery_loop(channel):
@@ -4117,7 +4121,7 @@ if config.DONOR_CHANNEL_ID:
                 await message.followup.send("Error creating emoji. Make sure your image is a valid and below 256KB.", ephemeral=True)
                 return
         await user.save()
-        embedVar = await gen_inventory(message, message.user)
+        embedVar, _ = await gen_inventory(message, message.user)
         await message.followup.send("Success! Here is a preview:", embed=embedVar, ephemeral=True)
 
     @bot.tree.command(description="(SUPPORTER) Bless random Cat Bot users with doubled cats!")
@@ -4247,7 +4251,7 @@ if config.DONOR_CHANNEL_ID:
             msg = await channeley.send(file=file)
             user.image = msg.attachments[0].url
         await user.save()
-        embedVar = await gen_inventory(message, message.user)
+        embedVar, _ = await gen_inventory(message, message.user)
         await message.response.send_message("Success! Here is a preview:", embed=embedVar)
 
 
