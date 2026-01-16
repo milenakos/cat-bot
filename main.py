@@ -3605,12 +3605,12 @@ async def gen_inventory(message, person_id):
     if user.image.startswith("https://cdn.discordapp.com/attachments/"):
         embedVar.set_thumbnail(url=user.image)
 
+    give_achs = []
     if me:
         # give some aches if we are vieweing our own inventory
         if len(news_list) > len(user.news_state.strip()) or "0" in user.news_state.strip()[-4:]:
             embedVar.set_author(name="You have unread news! /news")
 
-        give_achs = []
         if give_collector:
             give_achs.append("collecter")
 
