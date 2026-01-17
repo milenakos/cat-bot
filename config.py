@@ -8,25 +8,20 @@ TOKEN = os.environ["TOKEN"]
 DB_PASS = os.environ["psql_password"]
 
 #
-# all the following are optional (setting them to None will disable the feature)
+# all the following are optional (If not set they will default to None, disabling the feature)
 #
 
-try:
-    env_vars = [os.environ["sentry_dsn"], os.environ["webhook_verify"], os.environ["top_gg_token"], os.environ["wordnik_api_key"]]
-except KeyError:
-    env_vars = [None, None, None, None]
-
 # dsn of a sentry-compatible service for error logging
-SENTRY_DSN = env_vars[0]
+SENTRY_DSN = os.environ.get("sentry_dsn")
 
 # top.gg vote webhook verification key, setting this to None disables all voting stuff
-WEBHOOK_VERIFY = env_vars[1]
+WEBHOOK_VERIFY = os.environ.get("webhook_verify")
 
 # top.gg api token to occasionally post stats
-TOP_GG_TOKEN = env_vars[2]
+TOP_GG_TOKEN = os.environ.get("top_gg_token")
 
 # wordnik api key for /define command
-WORDNIK_API_KEY = env_vars[3]
+WORDNIK_API_KEY = os.environ.get("wordnik_api_key")
 
 # only post stats if server count is above this, to prevent wrong stats
 MIN_SERVER_SEND = 125_000
