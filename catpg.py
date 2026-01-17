@@ -117,12 +117,12 @@ class Model:
         self.__dirty_values = []
 
     @classmethod
-    async def _get(self, fields: None | list[str | RawSQL] = None, **kwargs) -> asyncpg.Record:
-        table = self.__name__.lower()
+    async def _get(cls, fields: None | list[str | RawSQL] = None, **kwargs) -> asyncpg.Record:
+        table = cls.__name__.lower()
         select = "*"
         if fields:
-            if self._primary_key not in fields:
-                fields.append(self._primary_key)
+            if cls._primary_key not in fields:
+                fields.append(cls._primary_key)
             select = ", ".join(i if i.__class__.__name__ == "RawSQL" else f'"{i}"' for i in fields)
         query_string = f'SELECT {select} FROM "{table}" WHERE '
         var_counter = 1
@@ -144,22 +144,22 @@ class Model:
             self.__init__(result)
 
     @classmethod
-    async def get(self, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance:
-        result = await self._get(fields=fields, **kwargs)
-        return self(result)
+    async def get(cls, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance:
+        result = await cls._get(fields=fields, **kwargs)
+        return cls(result)
 
     @classmethod
-    async def get_or_none(self, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance | None:
+    async def get_or_none(cls, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance | None:
         try:
-            return await self.get(fields=fields, **kwargs)
+            return await cls.get(fields=fields, **kwargs)
         except asyncpg.exceptions.PostgresError:
             return None
         except AttributeError:
             return None
 
     @classmethod
-    async def get_or_create(self, **kwargs) -> ModelInstance:
-        table = self.__name__.lower()
+    async def get_or_create(cls, **kwargs) -> ModelInstance:
+        table = cls.__name__.lower()
         values = kwargs.values()
 
         # build column names and placeholders
@@ -175,11 +175,11 @@ class Model:
 
         # run the query and return the result
         result = await pool.fetchrow(query_string, *values)
-        return self(result)
+        return cls(result)
 
     @classmethod
-    async def create(self, **kwargs) -> None:
-        table = self.__name__.lower()
+    async def create(cls, **kwargs) -> None:
+        table = cls.__name__.lower()
         values = kwargs.values()
 
         query_string = f'INSERT INTO "{table}" ('
@@ -199,13 +199,13 @@ class Model:
 
     @classmethod
     async def filter(
-        self, filter: str | RawSQL | None = None, *args, refetch: bool = True, add_primary_key: bool = True, **kwargs
-    ) -> AsyncGenerator[ModelInstance]:
-        table = self.__name__.lower()
+        cls, filter: str | RawSQL | None = None, *args, refetch: bool = True, add_primary_key: bool = True, **kwargs
+    ) -> AsyncGenerator[ModelInstance, None]:
+        table = cls.__name__.lower()
         select = "*"
         if "fields" in kwargs:
-            if add_primary_key and self._primary_key not in kwargs["fields"]:
-                kwargs["fields"].append(self._primary_key)
+            if add_primary_key and cls._primary_key not in kwargs["fields"]:
+                kwargs["fields"].append(cls._primary_key)
             select = ", ".join(i if i.__class__.__name__ == "RawSQL" else f'"{i}"' for i in kwargs["fields"])
         query = f'SELECT {select} FROM "{table}"'
         if filter:
@@ -213,49 +213,49 @@ class Model:
         cur = await pool.fetch(query + ";", *args)
         for row in cur:
             if refetch:
-                val = {self._primary_key: row[self._primary_key]}
+                val = {cls._primary_key: row[cls._primary_key]}
                 if "fields" in kwargs:
-                    row = await self.get_or_none(fields=kwargs["fields"], **val)
+                    row = await cls.get_or_none(fields=kwargs["fields"], **val)
                 else:
-                    row = await self.get_or_none(**val)
+                    row = await cls.get_or_none(**val)
                 if not row:
                     continue
             else:
-                row = self(row)
+                row = cls(row)
             yield row
 
     @classmethod
     async def limit(
-        self,
+        cls,
         fields: str | RawSQL | None | list[str | RawSQL] = None,
         filter: str | RawSQL | None = None,
         *args,
         refetch: bool = True,
         add_primary_key: bool = True,
-    ) -> AsyncGenerator[ModelInstance]:
+    ) -> AsyncGenerator[ModelInstance, None]:
         if isinstance(fields, str):
             fields = [fields]
-        async for row in self.filter(filter, refetch=refetch, add_primary_key=add_primary_key, *args, fields=fields):
+        async for row in cls.filter(filter, refetch=refetch, add_primary_key=add_primary_key, *args, fields=fields):
             yield row
 
     @classmethod
-    async def all(self) -> AsyncGenerator[ModelInstance]:
-        async for row in self.filter():
+    async def all(cls) -> AsyncGenerator[ModelInstance, None]:
+        async for row in cls.filter():
             yield row
 
     @classmethod
-    async def collect(self, filter: str | RawSQL | None = None, *args, add_primary_key: bool = True) -> list[ModelInstance]:
-        return [i async for i in self.filter(filter, *args, refetch=False, add_primary_key=add_primary_key)]
+    async def collect(cls, filter: str | RawSQL | None = None, *args, add_primary_key: bool = True) -> list[ModelInstance]:
+        return [i async for i in cls.filter(filter, *args, refetch=False, add_primary_key=add_primary_key)]
 
     @classmethod
     async def collect_limit(
-        self, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, *args, add_primary_key: bool = True
+        cls, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, *args, add_primary_key: bool = True
     ) -> list[ModelInstance]:
-        return [i async for i in self.limit(fields, filter, *args, refetch=False, add_primary_key=add_primary_key)]
+        return [i async for i in cls.limit(fields, filter, *args, refetch=False, add_primary_key=add_primary_key)]
 
     @classmethod
-    async def __do_function(self, func: str, column: str, filter: str | RawSQL | None = None, *args) -> Any:
-        table = self.__name__.lower()
+    async def __do_function(cls, func: str, column: str, filter: str | RawSQL | None = None, *args) -> Any:
+        table = cls.__name__.lower()
         if column != "*":
             column = f'"{column}"'
         query = f'SELECT {func}({column}) FROM "{table}"'
@@ -264,24 +264,24 @@ class Model:
         return await pool.fetchval(query + ";", *args)
 
     @classmethod
-    async def sum(self, column: str, filter: str | RawSQL | None = None, *args) -> int:
-        return await self.__do_function("SUM", column, filter, *args) or 0
+    async def sum(cls, column: str, filter: str | RawSQL | None = None, *args) -> int:
+        return await cls.__do_function("SUM", column, filter, *args) or 0
 
     @classmethod
-    async def max(self, column: str, filter: str | RawSQL | None = None, *args) -> int:
-        return await self.__do_function("MAX", column, filter, *args)
+    async def max(cls, column: str, filter: str | RawSQL | None = None, *args) -> int:
+        return await cls.__do_function("MAX", column, filter, *args)
 
     @classmethod
-    async def min(self, column: str, filter: str | RawSQL | None = None, *args) -> int:
-        return await self.__do_function("MIN", column, filter, *args)
+    async def min(cls, column: str, filter: str | RawSQL | None = None, *args) -> int:
+        return await cls.__do_function("MIN", column, filter, *args)
 
     @classmethod
-    async def count(self, filter: str | RawSQL | None = None, *args) -> int:
-        return await self.__do_function("COUNT", "*", filter, *args)
+    async def count(cls, filter: str | RawSQL | None = None, *args) -> int:
+        return await cls.__do_function("COUNT", "*", filter, *args)
 
     @classmethod
-    async def bulk_update(self, rows: list[ModelInstance], *columns) -> None:
-        table = self.__name__.lower()
+    async def bulk_update(cls, rows: list[ModelInstance], *columns) -> None:
+        table = cls.__name__.lower()
         # build the query
         query = f'UPDATE "{table}" SET '
         var_counter = 1
@@ -289,7 +289,7 @@ class Model:
         for col in columns:
             change.append(f"{col} = ${var_counter}")
             var_counter += 1
-        query += ", ".join(change) + f" WHERE {self._primary_key} = ${var_counter};"
+        query += ", ".join(change) + f" WHERE {cls._primary_key} = ${var_counter};"
 
         # prepare the data
         data = []
@@ -297,7 +297,7 @@ class Model:
             curr = []
             for col in columns:
                 curr.append(row[col])
-            curr.append(row[self._primary_key])
+            curr.append(row[cls._primary_key])
             data.append(tuple(curr))
 
         # execute the query

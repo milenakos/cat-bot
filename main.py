@@ -29,7 +29,7 @@ import subprocess
 import sys
 import time
 import traceback
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import aiohttp
 import discord
@@ -52,8 +52,6 @@ try:
     import exportbackup  # type: ignore
 except ImportError:
     exportbackup = None
-
-logging.basicConfig(level=logging.INFO)
 
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
@@ -294,9 +292,10 @@ reactions_ratelimit = {}
 # sort of the same thing but for pointlaughs and per channel instead of peruser
 pointlaugh_ratelimit = {}
 
-# cooldowns for /fake cat /catch
+# cooldowns for some commands
 catchcooldown = {}
 fakecooldown = {}
+customcatcooldown = {}
 
 # cat bot auto-claims in the channel user last ran /vote in
 # this is a failsafe to store the fact they voted until they ran that atleast once
@@ -338,7 +337,7 @@ RAIN_ID = 1270470307102195752
 # for dev commands, this is fetched in on_ready
 OWNER_ID = 553093932012011520
 
-# for funny stats, you can probably edit maintaince_loop to restart every X of them
+# for funny stats, you can probably edit background_loop to restart every X of them
 loop_count = 0
 
 # loops in dpy can randomly break, i check if is been over X minutes since last loop to restart it
@@ -353,15 +352,6 @@ def get_emoji(name):
         return name
     else:
         return "🔳"
-
-
-async def fetch_perms(message: discord.Message | discord.Interaction) -> discord.Permissions:
-    # this is mainly for threads where the parent isnt cached
-    if isinstance(message.channel, discord.Thread) and not message.channel.parent:
-        parent = message.guild.get_channel(message.channel.parent_id) or await message.guild.fetch_channel(message.channel.parent_id)
-        return parent.permissions_for(message.guild.me)
-    else:
-        return message.channel.permissions_for(message.guild.me)
 
 
 async def fetch_dm_channel(user: User) -> discord.PartialMessageable:
@@ -414,6 +404,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
 
     profile[ach_id] = True
     await profile.save()
+    logging.debug("Achievement unlocked: %s", ach_id)
     ach_data = ach_list[ach_id]
     desc = ach_data["description"]
     if ach_id == "dataminer":
@@ -457,11 +448,9 @@ async def achemb(message, ach_id, send_type, author_string=None):
 
     try:
         result = None
-        perms = await fetch_perms(message)
-        correct_perms = perms.send_messages and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads)
-        if send_type == "reply" and correct_perms:
+        if send_type == "reply":
             result = await message.reply(embed=embed)
-        elif send_type == "send" and correct_perms:
+        elif send_type == "send":
             result = await message.channel.send(embed=embed)
         elif send_type == "followup":
             result = await message.followup.send(embed=embed)
@@ -616,8 +605,8 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
 
     user.quests_completed += 1
 
+    logging.debug("Quest complete: %s", quest)
     old_xp = user.progress
-    perms = await fetch_perms(message)
     level_complete_embeds = []
     if user.battlepass >= len(battle["seasons"][str(user.season)]):
         level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
@@ -627,6 +616,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         level_text = f"Level {user.battlepass + 1}"
 
     if current_xp >= level_data["xp"]:
+        logging.debug("Level complete %d", user.battlepass)
         xp_progress = current_xp
         active_level_data = level_data
         while xp_progress >= active_level_data["xp"]:
@@ -695,11 +685,10 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
     if is_belated:
         embed_progress.set_footer(text="For catching within 3 seconds")
 
-    if perms.send_messages and perms.embed_links and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
-        if level_complete_embeds:
-            await message.channel.send(f"<@{user.user_id}>", embeds=level_complete_embeds + [embed_progress])
-        else:
-            await message.channel.send(f"<@{user.user_id}>", embed=embed_progress)
+    if level_complete_embeds:
+        await message.channel.send(f"<@{user.user_id}>", embeds=level_complete_embeds + [embed_progress])
+    else:
+        await message.channel.send(f"<@{user.user_id}>", embed=embed_progress)
 
 
 async def progress_embed(message, user, level_data, current_xp, old_xp, quest_data, diff, level_text) -> discord.Embed:
@@ -797,31 +786,29 @@ async def finale(message, user):
 
     user.finale_seen = True
     await user.save()
-    perms = await fetch_perms(message)
-    if perms.send_messages and (not isinstance(message.channel, discord.Thread) or perms.send_messages_in_threads):
-        try:
-            author_string = message.author
-        except Exception:
-            author_string = message.user
-        await asyncio.sleep(5)
-        await message.channel.send("...")
-        await asyncio.sleep(3)
-        await message.channel.send("You...")
-        await asyncio.sleep(3)
-        await message.channel.send("...actually did it.")
-        await asyncio.sleep(3)
-        await message.channel.send(
-            embed=discord.Embed(
-                title="True Ending achieved!",
-                description="You are finally free.",
-                color=Colors.rose,
-            )
-            .set_author(
-                name="All achievements complete!",
-                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png",
-            )
-            .set_footer(text=f"Congrats to {author_string}")
+    try:
+        author_string = message.author
+    except Exception:
+        author_string = message.user
+    await asyncio.sleep(5)
+    await message.channel.send("...")
+    await asyncio.sleep(3)
+    await message.channel.send("You...")
+    await asyncio.sleep(3)
+    await message.channel.send("...actually did it.")
+    await asyncio.sleep(3)
+    await message.channel.send(
+        embed=discord.Embed(
+            title="True Ending achieved!",
+            description="You are finally free.",
+            color=Colors.rose,
         )
+        .set_author(
+            name="All achievements complete!",
+            icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png",
+        )
+        .set_footer(text=f"Congrats to {author_string}")
+    )
 
 
 # function to autocomplete cat_type choices for /givecat, and /forcespawn, which also allows more than 25 options
@@ -932,6 +919,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     channel.cattype = localcat
     await channel.save()
     temp_spawns_storage.remove(int(ch_id))
+    logging.debug("Cat spawned, forced: %s", bool(force_spawn))
     return True
 
 
@@ -949,12 +937,13 @@ async def postpone_reminder(interaction):
         else:
             user.reminder_misc = int(time.time()) + 30 * 60
         await user.save()
+    logging.debug("Reminder postponed: %s", reminder_type)
     await interaction.response.send_message(f"ok, i will remind you <t:{int(time.time()) + 30 * 60}:R>", ephemeral=True)
 
 
-# a loop for various maintaince which is ran every 5 minutes
-async def maintaince_loop():
-    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, fakecooldown, temp_belated_storage, temp_cookie_storage
+# a loop for various maintenance which is ran every 5 minutes
+async def background_loop():
+    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, temp_belated_storage, temp_cookie_storage, fakecooldown
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     catchcooldown = {}
@@ -970,6 +959,7 @@ async def maintaince_loop():
         cookie_updates.append(p)
     if cookie_updates:
         await Profile.bulk_update(cookie_updates, "cookies")
+    logging.debug("Cookies updated: %d", len(cookie_updates))
     temp_cookie_storage = {}
 
     # temp_belated_storage cleanup
@@ -995,17 +985,20 @@ async def maintaince_loop():
                 r = await session.post(
                     "https://top.gg/api/v1/projects/@me/commands",
                     headers={"Authorization": config.TOP_GG_TOKEN},
-                    json=[command.to_dict(bot.tree) for command in bot.tree._get_all_commands(guild=None)],
+                    json=[command.to_dict(bot.tree) for command in bot.tree._get_all_commands(guild=None) if command.to_dict(bot.tree)["type"] == 1],
                 )
                 r.close()
 
             except Exception:
-                print("Posting to top.gg failed.")
+                logging.warning("Posting to top.gg failed.")
 
     # revive dead catch loops
+    counter = 0
     async for channel in Channel.limit(["channel_id"], "yet_to_spawn < $1 AND cat = 0", time.time(), refetch=False):
+        counter += 1
         await spawn_cat(str(channel.channel_id))
         await asyncio.sleep(0.1)
+    logging.debug("Channels revived: %d", counter)
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
     #
@@ -1044,6 +1037,7 @@ async def maintaince_loop():
         proccessed_users.append(user)
 
     await User.bulk_update(proccessed_users, "reminder_vote")
+    logging.debug("Reminders sent: %d, type: %s", len(proccessed_users), "vote")
 
     # i know the next two are similiar enough to be merged but its currently dec 30 and i cant be bothered
     # catch reminders
@@ -1088,6 +1082,7 @@ async def maintaince_loop():
 
     if proccessed_users:
         await Profile.bulk_update(proccessed_users, "reminder_catch")
+    logging.debug("Reminders sent: %d, type: %s", len(proccessed_users), "catch")
 
     # misc reminders
     proccessed_users = []
@@ -1131,6 +1126,7 @@ async def maintaince_loop():
 
     if proccessed_users:
         await Profile.bulk_update(proccessed_users, "reminder_misc")
+    logging.debug("Reminders sent: %d, type: %s", len(proccessed_users), "misc")
 
     # manual reminders
     async for reminder in Reminder.filter("time < $1", time.time()):
@@ -1145,17 +1141,7 @@ async def maintaince_loop():
 
     # db backups
     if config.BACKUP_ID:
-        backupchannel = bot.get_channel(config.BACKUP_ID)
-        if not isinstance(
-            backupchannel,
-            Union[
-                discord.TextChannel,
-                discord.StageChannel,
-                discord.VoiceChannel,
-                discord.Thread,
-            ],
-        ):
-            return
+        backupchannel = bot.get_partial_messageable(config.BACKUP_ID)
 
         if loop_count % 12 == 0:
             backup_file = "/root/backup.dump"
@@ -1177,7 +1163,7 @@ async def maintaince_loop():
                 else:
                     await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.", file=discord.File(backup_file))
             except Exception as e:
-                print(f"Error during backup: {e}")
+                logging.warning(f"Error during backup: {e}")
         else:
             await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.")
 
@@ -1187,7 +1173,8 @@ async def maintaince_loop():
 # fetch app emojis early
 async def on_connect():
     global emojis
-    emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
+    if len(emojis) == 0:
+        emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
 
 
 # some code which is run when bot is started
@@ -1196,8 +1183,9 @@ async def on_ready():
     if on_ready_debounce:
         return
     on_ready_debounce = True
-    print("cat is now online")
-    emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
+    logging.info("cat is now online")
+    if len(emojis) == 0:
+        emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
     appinfo = bot.application
     if appinfo.team and appinfo.team.owner_id:
         OWNER_ID = appinfo.team.owner_id
@@ -1226,7 +1214,7 @@ async def on_ready():
                     if login not in ["milenakos", "ImgBotApp"]:
                         contributors.append(login)
             else:
-                print(f"Error: {response.status} - {await response.text()}")
+                logging.warning(f"Error: {response.status} - {await response.text()}")
 
     # fetch testers
     tester_users = []
@@ -1263,9 +1251,9 @@ async def on_message(message: discord.Message):
 
     if time.time() > last_loop_time + 300:
         last_loop_time = time.time()
-        bot.loop.create_task(maintaince_loop())
+        bot.loop.create_task(background_loop())
 
-    if message.guild is None:
+    if message.guild is None and not message.author.bot:
         if text.startswith("disable"):
             # disable reminders
             try:
@@ -1282,8 +1270,6 @@ async def on_message(message: discord.Message):
         else:
             await message.channel.send('good job! please send "lol_i_have_dmed_the_cat_bot_and_got_an_ach" in server to get your ach!')
         return
-
-    perms = await fetch_perms(message)
 
     achs = [
         ["cat?", "startswith", "???"],
@@ -1503,22 +1489,22 @@ async def on_message(message: discord.Message):
             const_perc = len(text) / (len(text) - total_vow)
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
             try:
-                if perms.add_reactions and reactions_ratelimit.get(message.guild.id, 0) < 100:
+                if reactions_ratelimit.get(message.guild.id, 0) < 100:
                     await message.add_reaction(get_emoji("staring_cat"))
                     react_count += 1
                     reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
+                    logging.debug("Reaction added: %s", "staring_cat")
             except Exception:
                 pass
 
     try:
-        if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-            if "robotop" in message.author.name.lower() and "i rate **cat" in message.content.lower():
-                icon = str(get_emoji("no_ach"))
-                await message.reply("**RoboTop**, I rate **you** 0 cats " + icon * 5)
+        if "robotop" in message.author.name.lower() and "i rate **cat" in message.content.lower():
+            icon = str(get_emoji("no_ach"))
+            await message.reply("**RoboTop**, I rate **you** 0 cats " + icon * 5)
 
-            if "leafbot" in message.author.name.lower() and "hmm... i would rate cat" in message.content.lower():
-                icon = str(get_emoji("no_ach")) + " "
-                await message.reply("Hmm... I would rate you **0 cats**! " + icon * 5)
+        if "leafbot" in message.author.name.lower() and "hmm... i would rate cat" in message.content.lower():
+            icon = str(get_emoji("no_ach")) + " "
+            await message.reply("Hmm... I would rate you **0 cats**! " + icon * 5)
     except Exception:
         pass
 
@@ -1528,13 +1514,15 @@ async def on_message(message: discord.Message):
     for achievement in achs:
         match_text, match_method, achievement_name = achievement
         text_lowered = text.lower()
-        if any([
-            match_method == "startswith" and text_lowered.startswith(match_text),
-            match_method == "re" and re.search(match_text, text_lowered),
-            match_method == "exact" and match_text == text_lowered,
-            match_method == "veryexact" and match_text == text,
-            match_method == "in" and match_text in text_lowered
-        ]):
+        if any(
+            [
+                match_method == "startswith" and text_lowered.startswith(match_text),
+                match_method == "re" and re.search(match_text, text_lowered),
+                match_method == "exact" and match_text == text_lowered,
+                match_method == "veryexact" and match_text == text,
+                match_method == "in" and match_text in text_lowered,
+            ]
+        ):
             await achemb(message, achievement_name, "reply")
 
     if unidecode.unidecode(text).lower().strip() in [
@@ -1613,46 +1601,49 @@ async def on_message(message: discord.Message):
     ]:
         await achemb(message, "multilingual", "reply")
 
-    if perms.add_reactions:
-        for reaction in reactions:
-            reaction_prompt, reaction_type, reaction_name = reaction
-            if reaction_prompt in text.lower() and reactions_ratelimit.get(message.guild.id, 0) < 100:
-                if reaction_type == "custom":
-                    resolved_emoji = get_emoji(reaction_name)
-                elif reaction_type == "vanilla":
-                    resolved_emoji = reaction_name
+    for reaction in reactions:
+        reaction_prompt, reaction_type, reaction_name = reaction
+        if reaction_prompt in text.lower() and reactions_ratelimit.get(message.guild.id, 0) < 100:
+            if reaction_type == "custom":
+                resolved_emoji = get_emoji(reaction_name)
+            elif reaction_type == "vanilla":
+                resolved_emoji = reaction_name
 
-                try:
-                    await message.add_reaction(resolved_emoji)
-                    react_count += 1
-                    reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
-                except Exception:
-                    pass
+            try:
+                await message.add_reaction(resolved_emoji)
+                react_count += 1
+                reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
+                logging.debug("Reaction added: %s", reaction_name)
+            except Exception:
+                pass
 
-    if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-        for response in responses:
-            match_method, match_text, response_reply = response
-            text_lowered = text.lower()
-            if any([
+    for response in responses:
+        match_method, match_text, response_reply = response
+        text_lowered = text.lower()
+        if any(
+            [
                 match_method == "startswith" and text_lowered.startswith(match_text),
                 match_method == "re" and re.search(match_text, text_lowered),
                 match_method == "exact" and match_text == text_lowered,
                 match_method == "in" and match_text in text_lowered,
-            ]):
-                try:
-                    await message.reply(response_reply)
-                except Exception:
-                    pass
+            ]
+        ):
+            try:
+                await message.reply(response_reply)
+            except Exception:
+                pass
+            logging.debug("Response sent: %s", response_reply)
 
     try:
-        if message.author in message.mentions and perms.add_reactions and reactions_ratelimit.get(message.guild.id, 0) < 100:
+        if message.author in message.mentions and reactions_ratelimit.get(message.guild.id, 0) < 100:
             await message.add_reaction(get_emoji("staring_cat"))
             react_count += 1
             reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
+            logging.debug("Reaction added: %s", "staring_cat")
     except Exception:
         pass
 
-    if react_count >= 3 and perms.add_reactions:
+    if react_count >= 3:
         await achemb(message, "silly", "reply")
 
     if (":place_of_worship:" in text or "🛐" in text) and (":cat:" in text or ":staring_cat:" in text or "🐱" in text):
@@ -1660,11 +1651,11 @@ async def on_message(message: discord.Message):
 
     if text.lower() in ["testing testing 1 2 3", "cat!ach"]:
         try:
-            if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                await message.reply("test success")
+            await message.reply("test success")
         except Exception:
             # test failure
             pass
+        logging.debug("Response sent: %s", "test success")
         await achemb(message, "test_ach", "reply")
 
     if text.lower() == "please do not the cat":
@@ -1672,40 +1663,40 @@ async def on_message(message: discord.Message):
         user.cat_Fine -= 1
         await user.save()
         try:
-            if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                personname = message.author.name.replace("_", "\\_")
-                await message.reply(f"ok then\n{personname} lost 1 fine cat!!!1!\nYou now have {user.cat_Fine:,} cats of dat type!")
+            personname = message.author.name.replace("_", "\\_")
+            await message.reply(f"ok then\n{personname} lost 1 fine cat!!!1!\nYou now have {user.cat_Fine:,} cats of dat type!")
         except Exception:
             pass
         await achemb(message, "pleasedonotthecat", "reply")
+        logging.debug("Response sent: %s", "please do not the cat")
 
     if text.lower() == "please do the cat":
         thing = discord.File("images/socialcredit.jpg", filename="socialcredit.jpg")
         try:
-            if perms.send_messages and perms.attach_files and (not message.thread or perms.send_messages_in_threads):
-                await message.reply(file=thing)
+            await message.reply(file=thing)
         except Exception:
             pass
         await achemb(message, "pleasedothecat", "reply")
+        logging.debug("Response sent: %s", "please do the cat")
 
     if text.lower() == "car":
         file = discord.File("images/car.png", filename="car.png")
         embed = discord.Embed(title="car!", color=Colors.brown).set_image(url="attachment://car.png")
         try:
-            if perms.send_messages and perms.attach_files and (not message.thread or perms.send_messages_in_threads):
-                await message.reply(file=file, embed=embed)
+            await message.reply(file=file, embed=embed)
         except Exception:
             pass
         await achemb(message, "car", "reply")
+        logging.debug("Response sent: %s", "car")
 
     if text.lower() == "cart":
         file = discord.File("images/cart.png", filename="cart.png")
         embed = discord.Embed(title="cart!", color=Colors.brown).set_image(url="attachment://cart.png")
         try:
-            if perms.send_messages and perms.attach_files and (not message.thread or perms.send_messages_in_threads):
-                await message.reply(file=file, embed=embed)
+            await message.reply(file=file, embed=embed)
         except Exception:
             pass
+        logging.debug("Response sent: %s", "cart")
 
     try:
         if (
@@ -1724,7 +1715,7 @@ async def on_message(message: discord.Message):
         if not channel or not channel.cat or channel.cat in temp_catches_storage or user.timeout > time.time():
             # laugh at this user
             # (except if rain is active, we dont have perms or channel isnt setupped, or we laughed way too much already)
-            if channel and channel.cat_rains == 0 and perms.add_reactions and pointlaugh_ratelimit.get(message.channel.id, 0) < 10:
+            if channel and channel.cat_rains == 0 and pointlaugh_ratelimit.get(message.channel.id, 0) < 10:
                 try:
                     await message.add_reaction(get_emoji("pointlaugh"))
                     pointlaugh_ratelimit[message.channel.id] = pointlaugh_ratelimit.get(message.channel.id, 0) + 1
@@ -1733,12 +1724,13 @@ async def on_message(message: discord.Message):
 
             # belated battlepass
             if message.channel.id in temp_belated_storage:
+                current_time = message.created_at.timestamp()
                 belated = temp_belated_storage[message.channel.id]
                 if (
                     channel
                     and "users" in belated
                     and "time" in belated
-                    and channel.lastcatches + 3 > int(time.time())
+                    and belated.get("timestamp", 0) + 3 > current_time
                     and message.author.id not in belated["users"]
                 ):
                     belated["users"].append(message.author.id)
@@ -1748,7 +1740,7 @@ async def on_message(message: discord.Message):
                         await progress(message, user, "2fine", True)
                     if channel.cattype == "Good":
                         await progress(message, user, "good", True)
-                    if belated.get("time", 10) + int(time.time()) - channel.lastcatches < 10:
+                    if belated.get("time", 10) + current_time - belated.get("timestamp", 0) < 10:
                         await progress(message, user, "under10", True)
                     if random.randint(0, 1) == 0:
                         await progress(message, user, "even", True)
@@ -1794,6 +1786,7 @@ async def on_message(message: discord.Message):
             else:
                 channel.yet_to_spawn = 0
                 decided_time = 0
+            force_rain_summary = None
 
             try:
                 current_time = message.created_at.timestamp()
@@ -1804,7 +1797,7 @@ async def on_message(message: discord.Message):
                     if channel.cattype != "":
                         catchtime = discord.utils.snowflake_time(cat_temp)
                         le_emoji = channel.cattype
-                    elif perms.read_message_history:
+                    else:
                         var = await message.channel.fetch_message(cat_temp)
                         catchtime = var.created_at
                         catchcontents = var.content
@@ -1826,12 +1819,9 @@ async def on_message(message: discord.Message):
                                 if i.lower() in partial_type:
                                     le_emoji = i
                                     break
-                    else:
-                        raise Exception
                 except Exception:
                     try:
-                        if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                            await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
+                        await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
                     except Exception:
                         pass
                     return
@@ -1873,7 +1863,7 @@ async def on_message(message: discord.Message):
 
                 try:
                     if time_caught >= 0:
-                        temp_belated_storage[message.channel.id] = {"time": time_caught, "users": [message.author.id]}
+                        temp_belated_storage[message.channel.id] = {"time": time_caught, "users": [message.author.id], "timestamp": current_time}
                 except Exception:
                     pass
 
@@ -1906,6 +1896,9 @@ async def on_message(message: discord.Message):
                     else:
                         perks = user.perks
                     perks_info = catnip_list["perks"]
+
+                    if len(perks) > 0:
+                        logging.debug("Catnip active with %d perks", len(perks))
 
                     for perk in perks:
                         h = perk.split("_")
@@ -1987,6 +1980,7 @@ async def on_message(message: discord.Message):
 
                     if random.random() * 100 < rain_chance:
                         if channel.cat_rains == 0:
+                            force_rain_summary = config.cat_cought_rain.get(channel.channel_id, {}).copy()
                             channel.cat_rains = 10
                             decided_time = random.uniform(1, 2)
                             channel.rain_should_end = int(time.time() + decided_time)
@@ -2027,6 +2021,8 @@ async def on_message(message: discord.Message):
                         blesser.username = (await bot.fetch_user(blesser.user_id)).name
                     asyncio.create_task(blesser.save())
 
+                    logging.debug("Catch blessed")
+
                     if blesser.blessings_anonymous:
                         blesser_text = "💫 Anonymous Supporter"
                     else:
@@ -2061,6 +2057,7 @@ async def on_message(message: discord.Message):
                     user.boosted_catches += 1
                     prism_which_boosted.catches_boosted += 1
                     asyncio.create_task(prism_which_boosted.save())
+                    logging.debug("Boosted from %s", le_emoji)
                     try:
                         le_old_emoji = le_emoji
                         if double_boost:
@@ -2070,18 +2067,27 @@ async def on_message(message: discord.Message):
                         normal_bump = True
                     except IndexError:
                         # :SILENCE:
+                        # This block handles cases where boosting goes beyond the maximum cat rarity (eGirl).
+                        # Previously, a check `if double_boost and le_emoji == 'eGirl'` ensured only eGirl triggered the mega-rain.
+                        # This was removed so that ANY double boost that fails (e.g., Ultimate -> Index+2) also triggers the 1200 boost.
                         normal_bump = False
                         if not channel.forcespawned:
-                            if double_boost and le_emoji == "eGirl":
+                            if double_boost:
+                                # rainboost is the duration of the rain in seconds.
+                                # 1200 seconds = 20 minutes of rain.
+                                # This rewards the player for a "failed" double boost on a high-tier cat (Ultimate or eGirl).
                                 rainboost = 1200
                             else:
+                                # 600 seconds = 10 minutes of rain.
                                 rainboost = 600
+                            logging.debug("Boosted to rain: %d", rainboost)
                             channel.cat_rains += math.ceil(rainboost / 2.75)
                             if channel.cat_rains > math.ceil(rainboost / 2.75):
                                 await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
                                 await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
                                 await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
                             else:
+                                force_rain_summary = config.cat_cought_rain.get(channel.channel_id, {}).copy()
                                 decided_time = random.uniform(1, 2)
                                 channel.rain_should_end = int(time.time() + decided_time)
                                 channel.yet_to_spawn = 0
@@ -2091,7 +2097,7 @@ async def on_message(message: discord.Message):
 
                     if normal_bump:
                         if double_boost:
-                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch twice from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
+                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch twice from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat to a {get_emoji(le_emoji.lower() + 'cat')} {le_emoji} cat!"
                         else:
                             suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
                     elif not channel.forcespawned:
@@ -2227,9 +2233,13 @@ async def on_message(message: discord.Message):
                             **kwargs,
                         )
                     except Exception:
+                        # Silently fail if we can't send the confirmation message (e.g. permission issues)
                         pass
 
                 await asyncio.gather(delete_cat(), send_confirm())
+
+                logging.debug("Caught (pre-boost) %d %s", 1, channel.cattype)
+                logging.debug("Caught (post-boost) %d %s", silly_amount, le_emoji)
 
                 user.total_catches += 1
                 if do_time:
@@ -2310,10 +2320,25 @@ async def on_message(message: discord.Message):
                 # handle catnip bounties
                 await bounty(message, user, channel.cattype)
             finally:
-                await channel.save()
                 if decided_time:
                     if cat_rain_end:
-                        bot.loop.create_task(rain_end(message, channel))
+                        await channel.save()
+                        bot.loop.create_task(rain_end(message, channel, force_rain_summary))
+
+                    # shift decided_time to reduce load
+                    if decided_time > 10:
+                        # ignore cat rains
+                        start_time = channel.yet_to_spawn
+                        shifts = [0] + [x for n in range(1, 11) for x in (n, -n)]
+                        for shift in shifts:
+                            c = await Channel.count("yet_to_spawn = $1", start_time + shift)
+                            if c < 5:
+                                channel.yet_to_spawn = start_time + shift
+                                decided_time += shift
+                                break
+
+                    await channel.save()
+
                     await asyncio.sleep(decided_time)
                     try:
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
@@ -2321,6 +2346,7 @@ async def on_message(message: discord.Message):
                         pass
                     await spawn_cat(str(message.channel.id))
                 else:
+                    await channel.save()
                     try:
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
                     except Exception:
@@ -2399,19 +2425,8 @@ async def on_message(message: discord.Message):
     if text.lower().startswith("cat!news"):
         async for i in Channel.all():
             try:
-                channeley = bot.get_channel(int(i.channel_id))
-                if not isinstance(
-                    channeley,
-                    Union[
-                        discord.TextChannel,
-                        discord.StageChannel,
-                        discord.VoiceChannel,
-                        discord.Thread,
-                    ],
-                ):
-                    continue
-                if perms.send_messages and (not message.thread or perms.send_messages_in_threads):
-                    await channeley.send(text[8:])
+                channeley = bot.get_partial_messageable(int(i.channel_id))
+                await channeley.send(text[8:])
             except Exception:
                 pass
     if text.lower().startswith("cat!custom"):
@@ -2455,6 +2470,8 @@ async def on_guild_join(guild):
         for i in channels:
             if patt in i.name:
                 return i
+
+    logging.debug("Guild joined, member count %d", guild.member_count)
 
     # first to try a good channel, then whenever we cat atleast chat
     ch = find("cat", guild.text_channels)
@@ -2650,6 +2667,8 @@ async def news(message: discord.Interaction):
         back_button = Button(emoji="⬅️", label="Back")
         back_button.callback = go_back
         back_row = ActionRow(back_button)
+
+        logging.debug("Read news #%d", news_id)
 
         if news_id == 0:
             embed = Container(
@@ -3014,11 +3033,6 @@ This means catching an eGirl cat will give you 4 Christmas packs!
 @bot.tree.command(description="Read text as TikTok TTS woman")
 @discord.app_commands.describe(text="The text to be read! (300 characters max)")
 async def tiktok(message: discord.Interaction, text: str):
-    perms = await fetch_perms(message)
-    if not perms.attach_files:
-        await message.response.send_message("i cant attach files here!", ephemeral=True)
-        return
-
     # detect n-words
     for i in NONOWORDS:
         if i in text.lower():
@@ -3591,33 +3605,34 @@ async def gen_inventory(message, person_id):
     if user.image.startswith("https://cdn.discordapp.com/attachments/"):
         embedVar.set_thumbnail(url=user.image)
 
+    give_achs = []
     if me:
         # give some aches if we are vieweing our own inventory
         if len(news_list) > len(user.news_state.strip()) or "0" in user.news_state.strip()[-4:]:
             embedVar.set_author(name="You have unread news! /news")
 
         if give_collector:
-            await achemb(message, "collecter", "followup")
+            give_achs.append("collecter")
 
         if person.time <= 5:
-            await achemb(message, "fast_catcher", "followup")
+            give_achs.append("fast_catcher")
         if person.timeslow >= 3600:
-            await achemb(message, "slow_catcher", "followup")
+            give_achs.append("slow_catcher")
 
         if total >= 100:
-            await achemb(message, "second", "followup")
+            give_achs.append("second")
         if total >= 1000:
-            await achemb(message, "third", "followup")
+            give_achs.append("third")
         if total >= 10000:
-            await achemb(message, "fourth", "followup")
+            give_achs.append("fourth")
 
         if unlocked >= 15:
-            await achemb(message, "achiever", "followup")
+            give_achs.append("achiever")
 
         if debt:
             bot.loop.create_task(debt_cutscene(message, person))
 
-    return embedVar
+    return embedVar, give_achs
 
 
 @bot.tree.command(description="View your inventory")
@@ -3728,7 +3743,7 @@ __Highlighted Stat__
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-    embedVar = await gen_inventory(message, person_id)
+    embedVar, give_achs = await gen_inventory(message, person_id)
 
     embedVar.set_footer(text=rain_shill)
 
@@ -3741,8 +3756,12 @@ __Highlighted Stat__
     else:
         await message.followup.send(embed=embedVar)
 
+    for ach in give_achs:
+        await achemb(message, ach, "followup")
+
 
 async def rain_recovery_loop(channel):
+    logging.debug("Rain started, cats %d", channel.cat_rains)
     while True:
         await asyncio.sleep(5)
         await channel.refresh_from_db()
@@ -3754,7 +3773,7 @@ async def rain_recovery_loop(channel):
             await channel.save()
 
 
-async def rain_end(message, channel):
+async def rain_end(message, channel, force_summary=None):
     try:
         for _ in range(3):
             await message.channel.send("# :bangbang: cat rain has ended")
@@ -3762,7 +3781,6 @@ async def rain_end(message, channel):
     except Exception:
         pass
 
-    channel_permissions = await fetch_perms(message)
     lock_success = False
     try:
         me_overwrites = message.channel.overwrites_for(message.guild.me)
@@ -3772,12 +3790,11 @@ async def rain_end(message, channel):
         current_perm = everyone_overwrites.send_messages
         everyone_overwrites.send_messages = False
 
-        if channel_permissions.manage_roles:
-            await asyncio.gather(
-                message.channel.set_permissions(message.guild.default_role, overwrite=everyone_overwrites),
-                message.channel.set_permissions(message.guild.me, overwrite=me_overwrites),
-            )
-            lock_success = True
+        await asyncio.gather(
+            message.channel.set_permissions(message.guild.default_role, overwrite=everyone_overwrites),
+            message.channel.set_permissions(message.guild.me, overwrite=me_overwrites),
+        )
+        lock_success = True
     except Exception:
         pass
 
@@ -3785,9 +3802,11 @@ async def rain_end(message, channel):
 
     # rain summary
     try:
-        if channel.channel_id not in config.rain_starter or channel.channel_id not in config.cat_cought_rain:
-            return
-        rain_server = config.cat_cought_rain[channel.channel_id]
+        rain_server = force_summary
+        if not rain_server:
+            if channel.channel_id not in config.rain_starter or channel.channel_id not in config.cat_cought_rain:
+                return
+            rain_server = config.cat_cought_rain[channel.channel_id]
 
         # you can throw out the name of the emoji to save on characters
         pack_names = ["Christmas", "Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]
@@ -3996,27 +4015,6 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             await interaction.response.send_message("there is already a rain running!", ephemeral=True)
             return
 
-        channel_permissions = await fetch_perms(message)
-        needed_perms = {
-            "View Channel": channel_permissions.view_channel,
-            "Send Messages": channel_permissions.send_messages,
-            "Attach Files": channel_permissions.attach_files,
-        }
-        if isinstance(message.channel, discord.Thread):
-            needed_perms["Send Messages in Threads"] = channel_permissions.send_messages_in_threads
-
-        for name, value in needed_perms.copy().items():
-            if value:
-                needed_perms.pop(name)
-
-        missing_perms = list(needed_perms.keys())
-        if len(missing_perms) != 0:
-            needed_perms = "\n- ".join(missing_perms)
-            await interaction.response.send_message(
-                f":x: Missing Permissions! Please give me the following:\n- {needed_perms}\nHint: try setting channel permissions if server ones don't work."
-            )
-            return
-
         profile.rain_minutes_started += rain_length
         channel.cat_rains = math.ceil(rain_length * 60 / 2.75)
         channel.yet_to_spawn = 0
@@ -4033,7 +4031,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         await profile.save()
         await interaction.response.send_message(f"{rain_length}m cat rain was started by {interaction.user.mention}!")
         try:
-            ch = bot.get_channel(config.RAIN_CHANNEL_ID)
+            ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
             await ch.send(f"{interaction.user.id} started {rain_length}m rain in {interaction.channel.id} ({user.rain_minutes} left)")
         except Exception:
             pass
@@ -4073,7 +4071,7 @@ if config.DONOR_CHANNEL_ID:
     @bot.tree.command(description="(SUPPORTER) Get a cosmetic custom cat! (non-tradeable, doesn't count towards anything)")
     @discord.app_commands.describe(
         name="The name of your custom cat.",
-        image="Static/animated GIF, PNG, JPEG, WEBP, AVIF below 256 KB. Static images will be auto-resized.",
+        image="Static/animated GIF, PNG, JPEG, WEBP, AVIF below 256 KB. Static images will be auto-compressed.",
         amount="The amount of your custom cat you want.",
     )
     async def customcat(message: discord.Interaction, name: Optional[str], image: Optional[discord.Attachment], amount: Optional[int]):
@@ -4099,6 +4097,10 @@ if config.DONOR_CHANNEL_ID:
         if amount:
             user.custom_num = amount
         if image:
+            if customcatcooldown.get(message.user.id, 0) + 300 > time.time():
+                await message.followup.send("You can only upload a new custom cat image every 5 minutes.", ephemeral=True)
+                return
+            customcatcooldown[message.user.id] = time.time()
             try:
                 emojiss = {emoji.name: emoji for emoji in await bot.fetch_application_emojis()}
                 if em_name in emojiss:
@@ -4119,7 +4121,7 @@ if config.DONOR_CHANNEL_ID:
                 await message.followup.send("Error creating emoji. Make sure your image is a valid and below 256KB.", ephemeral=True)
                 return
         await user.save()
-        embedVar = await gen_inventory(message, message.user)
+        embedVar, _ = await gen_inventory(message, message.user)
         await message.followup.send("Success! Here is a preview:", embed=embedVar, ephemeral=True)
 
     @bot.tree.command(description="(SUPPORTER) Bless random Cat Bot users with doubled cats!")
@@ -4239,33 +4241,133 @@ if config.DONOR_CHANNEL_ID:
                 user.color = match.group(0)
         if image and image.content_type in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
             # reupload image
-            channeley = bot.get_channel(config.DONOR_CHANNEL_ID)
+            channeley = bot.get_partial_messageable(config.DONOR_CHANNEL_ID)
             file = await image.to_file()
             if "." in file.filename:
                 ext = file.filename[file.filename.rfind(".") :]
                 file.filename = "i" + ext
             else:
                 file.filename = "i"
-            if not isinstance(
-                channeley,
-                Union[
-                    discord.TextChannel,
-                    discord.StageChannel,
-                    discord.VoiceChannel,
-                    discord.Thread,
-                ],
-            ):
-                await message.response.send_message("temporary error. please try again in a few minutes")
-                return
             msg = await channeley.send(file=file)
             user.image = msg.attachments[0].url
         await user.save()
-        embedVar = await gen_inventory(message, message.user)
+        embedVar, _ = await gen_inventory(message, message.user)
         await message.response.send_message("Success! Here is a preview:", embed=embedVar)
 
 
 @bot.tree.command(description="View and open packs")
 async def packs(message: discord.Interaction):
+    async def process_pack_opening(limit=None):
+        await user.refresh_from_db()
+
+        pack_names = [pack["name"] for pack in pack_data]
+        total_pack_count = sum(user[f"pack_{pack_id.lower()}"] for pack_id in pack_names)
+
+        if total_pack_count < 1:
+            return None
+
+        real_to_open = total_pack_count
+        if limit:
+            real_to_open = min(limit, total_pack_count)
+
+        display_cats = real_to_open >= 50
+        results_header = []
+        results_detail = []
+        results_percat = {cat: 0 for cat in cattypes}
+        total_upgrades = 0
+        opened_so_far = 0
+
+        for level, pack in enumerate(pack_names):
+            if opened_so_far >= real_to_open:
+                break
+            logging.debug("Opened pack %s", pack)
+            pack_id = f"pack_{pack.lower()}"
+            this_packs_count = user[pack_id]
+            if this_packs_count < 1:
+                continue
+
+            opening_this = min(this_packs_count, real_to_open - opened_so_far)
+
+            results_header.append(f"{opening_this:,}x {get_emoji(pack.lower() + 'pack')}")
+            for _ in range(opening_this):
+                chosen_type, cat_amount, upgrades, rewards = get_pack_rewards(level, is_single=False)
+                total_upgrades += upgrades
+                if not display_cats:
+                    results_detail.append(rewards)
+                results_percat[chosen_type] += cat_amount
+
+            user[pack_id] -= opening_this
+            opened_so_far += opening_this
+
+        user.packs_opened += opened_so_far
+        user.pack_upgrades += total_upgrades
+        for cat_type, cat_amount in results_percat.items():
+            user[f"cat_{cat_type}"] += cat_amount
+        await user.save()
+
+        final_header = f"Opened {opened_so_far:,} packs!"
+        pack_list = "**" + ", ".join(results_header) + "**"
+        final_result = "\n".join(results_detail)
+
+        if display_cats or len(final_result) > 4000 - len(pack_list):
+            cat_summary = []
+            for cat in cattypes:
+                if results_percat[cat] > 0:
+                    cat_summary.append(f"{get_emoji(cat.lower() + 'cat')} x{results_percat[cat]:,}")
+            final_result = "\n".join(cat_summary)
+
+        if len(final_result) > 0:
+            final_result = "\n\n" + final_result
+
+        return discord.Embed(title=final_header, description=f"{pack_list}{final_result}", color=Colors.brown)
+
+    async def open_custom_amount(interaction: discord.Interaction):
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+
+        async def on_submit(interaction: discord.Interaction):
+            try:
+                amount = int(amount_input.value)
+                if amount < 1:
+                    raise ValueError
+            except ValueError:
+                await interaction.response.send_message("Please enter a valid positive number!", ephemeral=True)
+                return
+
+            await interaction.response.defer()
+            embed = await process_pack_opening(amount)
+            if not embed:
+                await interaction.followup.send("You have no packs!", ephemeral=True)
+                return
+
+            await message.edit_original_response(embed=embed, view=None)
+            await asyncio.sleep(1)
+            await message.edit_original_response(view=gen_view(user))
+
+        modal = Modal(title="Open Custom Amount")
+        amount_input = TextInput(label="Amount", placeholder="How many packs to open?", min_length=1, max_length=10)
+        modal.add_item(amount_input)
+        modal.on_submit = on_submit
+        await interaction.response.send_modal(modal)
+
+    async def confirm_open_all(interaction: discord.Interaction):
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+
+        async def do_it(interaction):
+            await interaction.response.defer()
+            await interaction.delete_original_response()
+            await open_all_packs(interaction)
+
+        confirm_view = View(timeout=VIEW_TIMEOUT)
+        yes_btn = Button(label="Yes, Open All", style=ButtonStyle.green)
+        yes_btn.callback = do_it
+        confirm_view.add_item(yes_btn)
+
+        await interaction.response.send_message("Are you sure you want to open ALL your packs?", view=confirm_view, ephemeral=True)
+
     def gen_view(user):
         view = View(timeout=VIEW_TIMEOUT)
         empty = True
@@ -4287,9 +4389,13 @@ async def packs(message: discord.Interaction):
         if empty:
             view.add_item(Button(label="No packs left!", disabled=True))
         if total_amount > 5:
-            button = Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.blurple)
-            button.callback = open_all_packs
+            button = Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.gray)
+            button.callback = confirm_open_all
             view.add_item(button)
+
+            custom_btn = Button(label="Open Custom Amount...", style=ButtonStyle.gray)
+            custom_btn.callback = open_custom_amount
+            view.add_item(custom_btn)
         return view
 
     def get_pack_rewards(level: int, is_single=True):
@@ -4359,6 +4465,7 @@ async def packs(message: discord.Interaction):
         if interaction.user != message.user:
             await do_funny(interaction)
             return
+
         await interaction.response.defer()
         pack = interaction.data["custom_id"]
         await user.refresh_from_db()
@@ -4373,6 +4480,8 @@ async def packs(message: discord.Interaction):
         user[f"pack_{pack.lower()}"] -= 1
         await user.save()
 
+        logging.debug("Opened pack %s", pack)
+
         embed = discord.Embed(title=reward_texts[0], color=Colors.brown)
         await interaction.edit_original_response(embed=embed, view=None)
         for reward_text in reward_texts[1:]:
@@ -4384,59 +4493,13 @@ async def packs(message: discord.Interaction):
         await interaction.edit_original_response(view=gen_view(user))
 
     async def open_all_packs(interaction: discord.Interaction):
-        if interaction.user != message.user:
-            await do_funny(interaction)
-            return
-        await interaction.response.defer()
-        await user.refresh_from_db()
-        pack_names = [pack["name"] for pack in pack_data]
-        total_pack_count = sum(user[f"pack_{pack_id.lower()}"] for pack_id in pack_names)
-        if total_pack_count < 1:
+        embed = await process_pack_opening()
+        if not embed:
             return
 
-        display_cats = total_pack_count >= 50
-        results_header = []
-        results_detail = []
-        results_percat = {cat: 0 for cat in cattypes}
-        total_upgrades = 0
-        for level, pack in enumerate(pack_names):
-            pack_id = f"pack_{pack.lower()}"
-            this_packs_count = user[pack_id]
-            if this_packs_count < 1:
-                continue
-            results_header.append(f"{this_packs_count:,}x {get_emoji(pack.lower() + 'pack')}")
-            for _ in range(this_packs_count):
-                chosen_type, cat_amount, upgrades, rewards = get_pack_rewards(level, is_single=False)
-                total_upgrades += upgrades
-                if not display_cats:
-                    results_detail.append(rewards)
-                results_percat[chosen_type] += cat_amount
-            user[pack_id] = 0
-
-        user.packs_opened += total_pack_count
-        user.pack_upgrades += total_upgrades
-        for cat_type, cat_amount in results_percat.items():
-            user[f"cat_{cat_type}"] += cat_amount
-        await user.save()
-
-        final_header = f"Opened {total_pack_count:,} packs!"
-        pack_list = "**" + ", ".join(results_header) + "**"
-        final_result = "\n".join(results_detail)
-        if display_cats or len(final_result) > 4000 - len(pack_list):
-            half_result = []
-            for cat in cattypes:
-                if results_percat[cat] == 0:
-                    continue
-                half_result.append(f"{get_emoji(cat.lower() + 'cat')} {results_percat[cat]:,} {cat} cats!")
-            final_result = "\n".join(half_result)
-
-        embed = discord.Embed(title=final_header, description=pack_list, color=Colors.brown)
-        await interaction.edit_original_response(embed=embed, view=None)
+        await message.edit_original_response(embed=embed, view=None)
         await asyncio.sleep(1)
-        embed = discord.Embed(title=final_header, description=pack_list + "\n\n" + final_result, color=Colors.brown)
-        await interaction.edit_original_response(embed=embed)
-        await asyncio.sleep(1)
-        await interaction.edit_original_response(view=gen_view(user))
+        await message.edit_original_response(view=gen_view(user))
 
     description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n[Chance Info](<https://catbot.minkos.lol/packs>)\n\nClick the buttons below to start opening packs!"
     embed = discord.Embed(title=f"{get_emoji('bronzepack')} Packs", description=description, color=Colors.brown)
@@ -4713,6 +4776,9 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
             time=selected_time,
             name=selected_name,
         )
+
+        logging.debug("Created prism")
+
         await message.followup.send(f"{icon} {interaction.user.mention} has created prism {selected_name}!")
         await achemb(interaction, "prism", "followup")
         await achemb(interaction, "collecter", "followup")
@@ -5259,7 +5325,7 @@ async def gift(
             await message.response.send_message("no", ephemeral=True)
 
         try:
-            ch = bot.get_channel(config.RAIN_CHANNEL_ID)
+            ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
             await ch.send(f"{message.user.id} gave {amount}m to {person_id}")
         except Exception:
             pass
@@ -5435,7 +5501,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     actual_user1.rain_minutes -= v
                     actual_user2.rain_minutes += v
                     try:
-                        ch = bot.get_channel(config.RAIN_CHANNEL_ID)
+                        ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
                         await ch.send(f"{actual_user1.user_id} traded {v}m to {actual_user2.user_id}")
                     except Exception:
                         pass
@@ -5456,7 +5522,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     actual_user2.rain_minutes -= v
                     actual_user1.rain_minutes += v
                     try:
-                        ch = bot.get_channel(config.RAIN_CHANNEL_ID)
+                        ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
                         await ch.send(f"{actual_user2.user_id} traded {v}m to {actual_user1.user_id}")
                     except Exception:
                         pass
@@ -5796,11 +5862,6 @@ async def cat(message: discord.Interaction, cat_type: Optional[str]):
         await message.response.send_message("bro what", ephemeral=True)
         return
 
-    perms = await fetch_perms(message)
-    if not perms.attach_files:
-        await message.response.send_message("i cant attach files here!", ephemeral=True)
-        return
-
     # check the user has the cat if required
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     if cat_type and user[f"cat_{cat_type}"] <= 0:
@@ -5814,20 +5875,12 @@ async def cat(message: discord.Interaction, cat_type: Optional[str]):
 
 @bot.tree.command(description="Get Cursed Cat")
 async def cursed(message: discord.Interaction):
-    perms = await fetch_perms(message)
-    if not perms.attach_files:
-        await message.response.send_message("i cant attach files here!", ephemeral=True)
-        return
     file = discord.File("images/cursed.jpg", filename="cursed.jpg")
     await message.response.send_message(file=file)
 
 
 @bot.tree.command(description="Get Your balance")
 async def bal(message: discord.Interaction):
-    perms = await fetch_perms(message)
-    if not perms.attach_files:
-        await message.response.send_message("i cant attach files here!", ephemeral=True)
-        return
     file = discord.File("images/money.png", filename="money.png")
     embed = discord.Embed(title="cat coins", color=Colors.brown).set_image(url="attachment://money.png")
     await message.response.send_message(file=file, embed=embed)
@@ -6727,6 +6780,7 @@ async def bounty(message, user, cattype):
                 user.reroll_level = 0
             await user.save()
     for i in range(complete):
+        logging.debug("Completed bounties %d", completed)
         level = user.catnip_level
         progress_line = f"\n{level} " + get_emoji("staring_square") * int(colored) + "⬛" * int(10 - colored) + f" {level + 1}"
         if completed == user.bounties:
@@ -7005,6 +7059,8 @@ async def level_down(user, message, ephemeral=False):
         description=f"**{name}**: *{quote}*\n\nLevel {user.catnip_level + 1} bounties failed!\nYou're now on level {user.catnip_level}.{removed_line}",
     )
 
+    logging.debug("Levelled down to %d", user.catnip_level)
+
     if ephemeral:
         return embed
 
@@ -7202,7 +7258,8 @@ async def catnip(message: discord.Interaction):
                 return
         if user.catnip_price:
             if user[f"cat_{user.catnip_price}"] < user.catnip_amount:
-                await interaction.followup.send("You don't have enough cats to pay up!", ephemeral=True)
+                need_more = user.catnip_amount - user[f"cat_{user.catnip_price}"]
+                await interaction.followup.send(f"You don't have enough cats to pay up!\nYou need {need_more} more {user.catnip_price} cats.", ephemeral=True)
                 return
             user[f"cat_{user.catnip_price}"] -= user.catnip_amount
         if not user.perk_selected:
@@ -7232,6 +7289,8 @@ async def catnip(message: discord.Interaction):
         await user.save()
         await set_bounties(user.catnip_level, user)
         await set_mafia_offer(user.catnip_level, user)
+
+        logging.debug("Levelled up to %d", user.catnip_level)
 
         if user.catnip_level == 8 and user.cutscene == 0:
             await mafia_cutscene(interaction, user)
@@ -7267,9 +7326,9 @@ You can stop. That's okay. Seriously.
             effect = perk_data["values"][int(perk.split("_")[0])]
             desc = (
                 perk_data.get("desc", "")
-                .replace("percent", str(effect))
-                .replace("triple_none", str(effect / 2))
-                .replace("timer_add_streak", str(global_user.vote_streak))
+                .replace("percent", f"{effect:,}")
+                .replace("triple_none", f"{effect / 2:g}")
+                .replace("timer_add_streak", f"{global_user.vote_streak:,}")
             )
             full_desc += f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')} ({rarities[perk_rarity]})\n{desc}\n\n"
             emojied_options[index + 1] = (f"{perk_data.get('name', '')} ({rarities[perk_rarity]})", rarity_colors[perk_rarity], desc.replace("**", ""))
@@ -7304,9 +7363,9 @@ You can stop. That's okay. Seriously.
             effect = perk_data["values"][int(perk.split("_")[0])]
             desc = (
                 perk_data.get("desc", "")
-                .replace("percent", str(effect))
-                .replace("triple_none", str(effect / 2))
-                .replace("timer_add_streak", str(global_user.vote_streak))
+                .replace("percent", f"{effect:,}")
+                .replace("triple_none", f"{effect / 2:g}")
+                .replace("timer_add_streak", f"{global_user.vote_streak:,}")
             )
             full_desc += f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')} ({rarities[perk_rarity]})\n{desc}\n\n"
 
@@ -7339,7 +7398,13 @@ You can stop. That's okay. Seriously.
 
             h = list(user.perks) if user.perks else []
             if reroll:
-                h[level - 1] = interaction.data["custom_id"]
+                # We use level-1 because level is 1-based (Lv1, Lv2, etc) defined in the UI
+                if 0 <= level - 1 < len(h):
+                    h[level - 1] = interaction.data["custom_id"]
+                else:
+                    await interaction.followup.send(f"Failed to reroll! Perk slot {level} not found. (Count: {len(h)})", ephemeral=True)
+                    return
+                # Mark reroll as consumed
                 user.reroll = True
             else:
                 user.perk_selected = True
@@ -7350,6 +7415,8 @@ You can stop. That's okay. Seriously.
             user.perk2 = ""
             user.perk3 = ""
             await user.save()
+
+            logging.debug("Selected perk on level %d", user.catnip_level)
 
             await main_message.edit(view=await gen_main())
 
@@ -7469,6 +7536,8 @@ You can stop. That's okay. Seriously.
 
         user.catnip_active = int(time.time()) + 3600 * duration + duration_bonus
         await user.save()
+
+        logging.debug("Started bounties on level %d", user.catnip_level)
 
         await main_message.edit(view=await gen_main())
 
@@ -7807,10 +7876,6 @@ async def catch_tip(message: discord.Interaction):
 
 
 async def catch(message: discord.Interaction, msg: discord.Message):
-    perms = await fetch_perms(message)
-    if not perms.attach_files or not perms.view_channel:
-        await message.response.send_message("i dont have perms to do this here!", ephemeral=True)
-        return
     if message.user.id in catchcooldown and catchcooldown[message.user.id] + 6 > time.time():
         await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
         return
@@ -8189,14 +8254,12 @@ async def givecat(message: discord.Interaction, person_id: discord.User, cat_typ
 @bot.tree.command(name="setup", description="(ADMIN) Setup cat in current channel")
 @discord.app_commands.default_permissions(manage_guild=True)
 async def setup_channel(message: discord.Interaction):
-    if await Channel.get_or_none(channel_id=message.channel.id):
-        await message.response.send_message(
-            "bruh you already setup cat here are you dumb\n\nthere might already be a cat sitting in chat. type `cat` to catch it."
-        )
-        return
-
     try:
-        channel_permissions = await fetch_perms(message)
+        if isinstance(message.channel, discord.Thread) and not message.channel.parent:
+            parent = message.guild.get_channel(message.channel.parent_id) or await message.guild.fetch_channel(message.channel.parent_id)
+            channel_permissions = parent.permissions_for(message.guild.me)
+        else:
+            channel_permissions = message.channel.permissions_for(message.guild.me)
         needed_perms = {
             "View Channel": channel_permissions.view_channel,
             "Send Messages": channel_permissions.send_messages,
@@ -8214,6 +8277,12 @@ async def setup_channel(message: discord.Interaction):
             needed_perms = "\n- ".join(missing_perms)
             await message.response.send_message(
                 f":x: Missing Permissions! Please give me the following:\n- {needed_perms}\nHint: try setting channel permissions if server ones don't work."
+            )
+            return
+
+        if await Channel.get_or_none(channel_id=message.channel.id):
+            await message.response.send_message(
+                "bruh you already setup cat here are you dumb\n\nthere might already be a cat sitting in chat. type `cat` to catch it."
             )
             return
 
@@ -8243,11 +8312,8 @@ async def fake(message: discord.Interaction):
         return
     file = discord.File("images/australian cat.png", filename="australian cat.png")
     icon = get_emoji("egirlcat")
-    perms = await fetch_perms(message)
     fakecooldown[message.user.id] = time.time()
     try:
-        if not perms.send_messages or not perms.attach_files:
-            raise Exception
         await message.response.send_message(
             str(icon) + ' eGirl cat hasn\'t appeared! Type "cat" to catch ratio!',
             file=file,
@@ -8508,7 +8574,10 @@ async def recieve_vote(request):
                 ]
             )
         )
+
+        logging.debug("User voted, streak %d", user.vote_streak)
     except Exception:
+        # Ignore errors when DMing the user (e.g. if they have DMs closed)
         pass
 
     await user.save()
@@ -8530,6 +8599,12 @@ async def on_error(*args, **kwargs):
     raise
 
 
+# this is for stats, useless otherwise
+async def on_interaction(ctx):
+    if ctx.command:
+        logging.debug("Command %s was used", ctx.command.name)
+
+
 async def setup(bot2):
     global bot, RAIN_ID, vote_server
 
@@ -8548,6 +8623,7 @@ async def setup(bot2):
     bot2.on_message = on_message
     bot2.on_connect = on_connect
     bot2.on_error = on_error
+    bot2.on_interaction = on_interaction
 
     if config.WEBHOOK_VERIFY:
         app = web.Application()

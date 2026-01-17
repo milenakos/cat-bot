@@ -408,4 +408,6 @@ CREATE INDEX idx_slot_wins_partial ON public.profile (slot_wins) WHERE slot_wins
 
 CREATE INDEX idx_gambles_partial ON public.profile (gambles) WHERE gambles > 0;
 
+CREATE INDEX idx_yet_to_spawn ON public.channel (yet_to_spawn);
+
 REVOKE USAGE ON SCHEMA public FROM PUBLIC;
