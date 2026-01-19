@@ -2118,6 +2118,18 @@ async def on_message(message: discord.Message):
                             config.cat_cought_rain[channel.channel_id][i] = []
                         config.cat_cought_rain[channel.channel_id][i].append(f"<@{user.user_id}>")
 
+                # battlepass progress strings
+                if user.catch_cooldown != 0:
+                    if user.catch_quest == "3cats" and user.catch_progress < 2:
+                        suffix_string += f"\nBattlepass catch progress: {user.catch_progress+1}/3 cats cought!"
+                    elif channel.cattype == "Fine" and user.catch_quest == "2fine" and user.catch_progress < 1:
+                        suffix_string += f"\nBattlepass catch progress: {user.catch_progress+1}/2 Fine cats cought!"
+                    elif user.catch_quest == "finenice" and user.catch_progress == 0:
+                        if channel.cattype == "Fine":
+                            suffix_string += "\nBattlepass catch progress: 1/2, needs a Nice cat!"
+                        elif channel.cattype == "Nice":
+                            suffix_string += "\nBattlepass catch progress: 1/2, needs a Fine cat!"
+                
                 if random.randint(0, 7) == 0:
                     # shill rains
                     suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
@@ -6058,6 +6070,13 @@ async def slots(message: discord.Interaction):
         except Exception:
             pass
 
+        subheader = ""
+        if profile.misc_cooldown != 0:
+            if profile.misc_quest == "slots":
+                subheader = f"Battlepass spin {profile.misc_progress}/10\n"
+            elif profile.misc_quest == "slots2":
+                subheader = f"Battlepass spin {profile.misc_progress}/5\n"
+
         variants = ["🍒", "🍋", "🍇", "🔔", "⭐", ":seven:"]
         reel_durations = [random.randint(9, 12), random.randint(15, 22), random.randint(25, 28)]
         random.shuffle(reel_durations)
@@ -6077,7 +6096,7 @@ async def slots(message: discord.Interaction):
             current1 = min(len(col1) - 2, slot_loop_ind)
             current2 = min(len(col2) - 2, slot_loop_ind)
             current3 = min(len(col3) - 2, slot_loop_ind)
-            desc = ""
+            desc = subheader
             for offset in [-1, 0, 1]:
                 if offset == 0:
                     desc += f"➡️ {col1[current1 + offset]} {col2[current2 + offset]} {col3[current3 + offset]} ⬅️\n"
