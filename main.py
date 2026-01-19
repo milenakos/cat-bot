@@ -6182,123 +6182,125 @@ async def roulette(message: discord.Interaction):
         async def on_submit(self, interaction: discord.Interaction):
             await user.refresh_from_db()
 
-            valids = ["red", "black", "green"] + [str(i) for i in range(37)]
-            if self.bettype.value.lower() not in valids:
+            bet_type = self.bet_type.value.lower()
+            valid_bet_types = ["red", "black", "green"] + [str(i) for i in range(37)]
+            if bet_type not in valid_bet_types:
                 await interaction.response.send_message("invalid bet", ephemeral=True)
                 return
 
-            try:
-                bet_amount = int(self.betamount.value)
-                if bet_amount <= 0:
-                    await interaction.response.send_message("bet amount must be greater than 0", ephemeral=True)
-                    return
-                if bet_amount > max(user.roulette_balance, 100):
-                    await interaction.response.send_message(f"your max bet is {max(user.roulette_balance, 100)}", ephemeral=True)
-                    return
-            except ValueError:
-                await interaction.response.send_message("invalid bet amount", ephemeral=True)
+            if not self.bet_amount.value.isnumeric():
+                await interaction.response.send_message("bet must be a number silly", ephemeral=True)
                 return
+
+            bet_amount = int(self.bet_amount.value)
+            if bet_amount <= 0:
+                await interaction.response.send_message("bet amount must be greater than 0", ephemeral=True)
+                return
+            
+            max_bet = max(user.roulette_balance, 100)
+            if bet_amount > max_bet:
+                await interaction.response.send_message(f"your max bet is {max_bet}", ephemeral=True)
+                return
+
+            user.roulette_balance -= bet_amount
+            user.roulette_spins += 1
 
             await interaction.response.defer()
 
-            # mapping of colors to numbers by indexes
-            colors = [
-                "green",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
+            ROULETTE_POCKETS = [
+                ("0", "green", "roulette_0"),
+                ("32", "red", "roulette_32"),
+                ("15", "black", "roulette_15"),
+                ("19", "red", "roulette_19"),
+                ("4", "black", "roulette_4"),
+                ("21", "red", "roulette_21"),
+                ("2", "black", "roulette_2"),
+                ("25", "red","roulette_25"),
+                ("17", "black","roulette_17"),
+                ("34", "red", "roulette_34"),
+                ("6", "black", "roulette_6"),
+                ("27", "red", "roulette_27"),
+                ("13", "black", "roulette_13"),
+                ("36", "red", "roulette_36"),
+                ("11", "black", "roulette_11"),
+                ("30", "red", "roulette_30"),
+                ("8", "black", "roulette_8"),
+                ("23", "red", "roulette_23"),
+                ("10", "black", "roulette_10"),
+                ("5", "red", "roulette_5"),
+                ("24", "black", "roulette_24"),
+                ("16", "red", "roulette_16"),
+                ("33", "black", "roulette_33"),
+                ("1", "red", "roulette_1"),
+                ("20", "black", "roulette_20"),
+                ("14", "red", "roulette_14"),
+                ("31", "black", "roulette_31"),
+                ("9", "red", "roulette_9"),
+                ("22", "black", "roulette_22"),
+                ("18", "red", "roulette_18"),
+                ("29", "black", "roulette_29"),
+                ("7", "red", "roulette_7"),
+                ("28", "black", "roulette_28"),
+                ("12", "red", "roulette_12"),
+                ("35", "black", "roulette_35"),
+                ("3", "red", "roulette_3"),
+                ("26", "black", "roulette_26")
             ]
 
-            emoji_map = {
-                "red": "🔴",
-                "black": "⚫",
-                "green": "🟢",
-            }
+            random_times = [0.1] * random.randint(2, 3)
+            base_times = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.5]
+            wait_times = random_times + base_times
 
-            final_choice = random.randint(0, 36)
-            user.roulette_balance -= bet_amount
-            user.roulette_spins += 1
-            win = False
-            funny_win = False
-            if str(final_choice) == self.bettype.value or colors[final_choice] == self.bettype.value.lower():
-                if self.bettype.value in [str(i) for i in range(37)] or self.bettype.value.lower() == "green":
+            padding = 4
+            roulette_spin_times = len(wait_times) + padding
+            
+            start_point = random.randint(0, 37)
+            chosen_roulette_pockets = [ROULETTE_POCKETS[(start_point + i) % len(ROULETTE_POCKETS)] for i in range(roulette_spin_times)]
+
+            roulette_embed = discord.Embed(colour=Colors.maroon, title="woo its spinnin")
+            blank, down_arrow, up_arrow = get_emoji("empty"), ":arrow_down_small:", ":arrow_up_small:"
+            side_padding = str(blank) * 2
+            for number, wait_time in enumerate(wait_times):
+                n1, n2, n3, n4, n5 ,= [get_emoji(number[2]) for number in chosen_roulette_pockets[number:number + 5]]
+                roulette_embed.description = f"your bet is {bet_amount:,} cat dollars on {bet_type.capitalize()}\n"
+                roulette_embed.description += f"{side_padding}{blank}{blank}{down_arrow}{blank}{blank}\n"
+                roulette_embed.description += f"{side_padding}{n1}{n2}{n3}{n4}{n5}\n"
+                roulette_embed.description += f"{side_padding}{blank}{blank}{up_arrow}{blank}{blank}"
+                await asyncio.sleep(wait_time)
+                await interaction.edit_original_response(embed=roulette_embed, view=None)
+
+            winning_pocket = chosen_roulette_pockets[-3]
+            winning_number = winning_pocket[0]
+            winning_colour = winning_pocket[1]
+
+            if bet_type == winning_number or bet_type == winning_colour:
+                if bet_type.isnumeric() or bet_type == "green":
                     user.roulette_balance += bet_amount * 36
-                    funny_win = True
+                    await achemb(interaction, "roulette_prodigy", "followup")
                 else:
                     user.roulette_balance += bet_amount * 2
-                user.roulette_wins += 1
-                win = True
-            user.roulette_balance = int(round(user.roulette_balance))
-            await user.save()
 
-            for wait_time in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.5]:
-                choice = random.randint(0, 36)
-                color = colors[choice]
-                embed = discord.Embed(
-                    color=Colors.maroon,
-                    title="woo its spinnin",
-                    description=f"your bet is {int(self.betamount.value):,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**",
-                )
-                await interaction.edit_original_response(embed=embed, view=None)
-                await asyncio.sleep(wait_time)
-
-            color = colors[final_choice]
-
-            broke_suffix = ""
-            if user.roulette_balance <= 0:
-                broke_suffix = "\ndebt is allowed - you can still gamble up to **100** cat dollars"
-
-            embed = discord.Embed(
-                color=Colors.maroon,
-                title="winner!!!" if win else "womp womp",
-                description=f"your bet was {int(self.betamount.value):,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance:,}** cat dollars{broke_suffix}",
-            )
-            view = View(timeout=VIEW_TIMEOUT)
-            b = Button(label="spin", style=ButtonStyle.blurple)
-            b.callback = modal_select
-            view.add_item(b)
-            await interaction.edit_original_response(embed=embed, view=view)
-
-            if win:
                 await progress(message, user, "roulette")
                 await achemb(interaction, "roulette_winner", "followup")
-            if funny_win:
-                await achemb(interaction, "roulette_prodigy", "followup")
-            if user.roulette_balance < 0:
+                outcome_embed = discord.Embed(colour=Colors.maroon, title="winner!!!")
+
+            else:
+                outcome_embed = discord.Embed(colour=Colors.maroon, title="womp womp")
+
+            user.roulette_balance = round(user.roulette_balance)
+            await user.save()
+
+            outcome_embed.description = roulette_embed.description
+            outcome_embed.description += f"\n\nyour new balance is **{user.roulette_balance:,}** cat dollars"
+            if user.roulette_balance <= 0:
+                outcome_embed.description += "\ndebt is allowed - you can still gamble up to **100** cat dollars"
                 await achemb(interaction, "failed_gambler", "followup")
+
+            view = View(timeout=VIEW_TIMEOUT)
+            spin_button = Button(label="spin", style=ButtonStyle.blurple)
+            spin_button.callback = modal_select
+            view.add_item(spin_button)
+            await interaction.edit_original_response(embed=outcome_embed, view=view)
 
     async def modal_select(interaction: discord.Interaction):
         if interaction.user != message.user:
@@ -6307,20 +6309,19 @@ async def roulette(message: discord.Interaction):
 
         await interaction.response.send_modal(RouletteModel())
 
-    broke_suffix = ""
-    if user.roulette_balance <= 0:
-        broke_suffix = "\n\ndebt is allowed - you can still gamble up to **100** cat dollars"
-
     embed = discord.Embed(
         color=Colors.maroon,
         title="hecking roulette table",
-        description=f"your balance is **{user.roulette_balance:,}** cat dollars{broke_suffix}",
+        description=f"your balance is **{user.roulette_balance:,}** cat dollars",
     )
 
+    if user.roulette_balance <= 0:
+        embed.description += "\n\ndebt is allowed - you can still gamble up to **100** cat dollars"
+
     view = View(timeout=VIEW_TIMEOUT)
-    b = Button(label="spin", style=ButtonStyle.blurple)
-    b.callback = modal_select
-    view.add_item(b)
+    spin_button = Button(label="spin", style=ButtonStyle.blurple)
+    spin_button.callback = modal_select
+    view.add_item(spin_button)
 
     await message.response.send_message(embed=embed, view=view)
 
