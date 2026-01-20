@@ -8133,6 +8133,7 @@ async def leaderboards(
                         num = round(num / 31536000, 2)
                         unit = "yrs"
                     else:
+                        num = round(num, 2)
                         unit = "sec"
                 elif type in ["Cookies", "Cats", "Pig", "Prisms"] and num <= 0:
                     break
