@@ -8120,20 +8120,23 @@ async def leaderboards(
                 elif type == "Fast" or type == "Slow":
                     if num >= 99999999999999 or num <= 0:
                         break
-                    if num >= 60:
-                        num = round(num / 60, 2)
-                        unit = "mins"
-                    elif num >= 3600:
-                        num = round(num / 3600, 2)
-                        unit = "hrs"
+                    if num >= 31536000:
+                        num = round(num / 31536000, 2)
+                        unit = "yrs"
                     elif num >= 86400:
                         num = round(num / 86400, 2)
                         unit = "days"
-                    elif num >= 31536000:
-                        num = round(num / 31536000, 2)
-                        unit = "yrs"
-                    else:
+                    elif num >= 3600:
+                        num = round(num / 3600, 2)
+                        unit = "hrs"
+                    elif num >= 60:
+                        num = round(num / 60, 2)
+                        unit = "mins"
+                    elif num >= 1:
                         num = round(num, 2)
+                        unit = "sec"
+                    else:
+                        num = round(num, 3)
                         unit = "sec"
                 elif type in ["Cookies", "Cats", "Pig", "Prisms"] and num <= 0:
                     break
