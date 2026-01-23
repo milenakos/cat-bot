@@ -4893,6 +4893,12 @@ async def ping(message: discord.Interaction):
     await progress(message, user, "ping")
 
 
+@bot.tree.command(description="the most useful command ever")
+async def bruh(message: discord.Interaction):
+    await message.response.defer()
+    await message.delete_original_response()
+
+
 @bot.tree.command(description="play a relaxing game of tic tac toe")
 @discord.app_commands.describe(person="who do you want to play with? (choose Cat Bot for ai)")
 async def tictactoe(message: discord.Interaction, person: discord.Member):
