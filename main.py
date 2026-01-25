@@ -25,6 +25,7 @@ import os
 import platform
 import random
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -1144,15 +1145,25 @@ async def background_loop():
         backupchannel = bot.get_partial_messageable(config.BACKUP_ID)
 
         if loop_count % 12 == 0:
-            backup_file = "/root/backup.dump"
+            backup_dir = "./backups"
+            backup_file = "./backup.dump"
             try:
-                # delete the previous backup file
-                os.remove(backup_file)
+                shutil.rmtree(backup_dir)
             except Exception:
                 pass
 
             try:
-                process = await asyncio.create_subprocess_shell(f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -Fc -Z 9 -f {backup_file} cat_bot")
+                os.remove(backup_file)
+            except Exception:
+                pass
+
+            if not os.path.exists(backup_dir):
+                os.makedirs(backup_dir)
+
+            try:
+                process = await asyncio.create_subprocess_shell(
+                    f"PGPASSWORD={config.DB_PASS} pg_basebackup -U cat_bot -h localhost -D {backup_dir} -F t -z -P --wal-method=stream && tar -zcvf {backup_file} {backup_dir}"
+                )
                 await process.wait()
 
                 if exportbackup:
