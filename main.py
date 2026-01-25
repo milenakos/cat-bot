@@ -2058,27 +2058,21 @@ async def on_message(message: discord.Message):
                     prism_which_boosted.catches_boosted += 1
                     asyncio.create_task(prism_which_boosted.save())
                     logging.debug("Boosted from %s", le_emoji)
+                    idx_shift = 0
                     try:
                         le_old_emoji = le_emoji
                         if double_boost:
-                            le_emoji = cattypes[cattypes.index(le_emoji) + 2]
+                            idx_shift = cattypes.index(le_emoji) + 2
                         else:
-                            le_emoji = cattypes[cattypes.index(le_emoji) + 1]
+                            idx_shift = cattypes.index(le_emoji) + 1
+                        le_emoji = cattypes[idx_shift]
                         normal_bump = True
                     except IndexError:
-                        # :SILENCE:
-                        # This block handles cases where boosting goes beyond the maximum cat rarity (eGirl).
-                        # Previously, a check `if double_boost and le_emoji == 'eGirl'` ensured only eGirl triggered the mega-rain.
-                        # This was removed so that ANY double boost that fails (e.g., Ultimate -> Index+2) also triggers the 1200 boost.
                         normal_bump = False
                         if not channel.forcespawned:
-                            if double_boost:
-                                # rainboost is the duration of the rain in seconds.
-                                # 1200 seconds = 20 minutes of rain.
-                                # This rewards the player for a "failed" double boost on a high-tier cat (Ultimate or eGirl).
+                            if idx_shift == len(cattypes) + 1:
                                 rainboost = 1200
-                            else:
-                                # 600 seconds = 10 minutes of rain.
+                            elif idx_shift == len(cattypes):
                                 rainboost = 600
                             logging.debug("Boosted to rain: %d", rainboost)
                             channel.cat_rains += math.ceil(rainboost / 2.75)
@@ -2101,10 +2095,9 @@ async def on_message(message: discord.Message):
                         else:
                             suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
                     elif not channel.forcespawned:
-                        if double_boost:
-                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 20m rain will start!"
-                        else:
-                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A 10m rain will start!"
+                        suffix_string += (
+                            f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A {rainboost // 60}m rain will start!"
+                        )
 
                 icon = get_emoji(le_emoji.lower() + "cat")
 
