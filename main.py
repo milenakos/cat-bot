@@ -41,7 +41,7 @@ import unidecode  # type: ignore
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
-from discord.ui import ActionRow, Button, LayoutView, Modal, Separator, TextDisplay, TextInput, Thumbnail, View
+from discord.ui import ActionRow, Button, LayoutView, Modal, Separator, TextDisplay, TextInput, Thumbnail
 from PIL import Image
 
 import config
@@ -1016,7 +1016,7 @@ async def background_loop():
             continue
         await asyncio.sleep(0.1)
 
-        view = View(timeout=VIEW_TIMEOUT)
+        view = View()
         button = Button(
             emoji=get_emoji("topgg"),
             label=random.choice(vote_button_texts),
@@ -1061,7 +1061,7 @@ async def background_loop():
             color=Colors.green,
         )
 
-        view = View(timeout=VIEW_TIMEOUT)
+        view = View()
         button = Button(label="Postpone", custom_id=f"catch_{user.guild_id}")
         button.callback = postpone_reminder
         view.add_item(button)
@@ -1105,7 +1105,7 @@ async def background_loop():
             color=Colors.green,
         )
 
-        view = View(timeout=VIEW_TIMEOUT)
+        view = View()
         button = Button(label="Postpone", custom_id=f"misc_{user.guild_id}")
         button.callback = postpone_reminder
         view.add_item(button)
@@ -2208,7 +2208,7 @@ async def on_message(message: discord.Message):
                     )
 
                 if button:
-                    view = View(timeout=VIEW_TIMEOUT)
+                    view = View()
                     view.add_item(button)
 
                 user[f"cat_{le_emoji}"] += silly_amount
@@ -3280,7 +3280,7 @@ leave blank to reset.""",
     button2 = Button(label="Catch Message", style=ButtonStyle.blurple)
     button2.callback = ask_catch
 
-    view = View(timeout=VIEW_TIMEOUT)
+    view = View()
     view.add_item(button1)
     view.add_item(button2)
 
@@ -3669,7 +3669,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
             async def select_callback(interaction: discord.Interaction):
                 await interaction.response.defer()
                 if select.values[0] == "back":
-                    view = View(timeout=VIEW_TIMEOUT)
+                    view = View()
                     view.add_item(category_select())
                     await interaction.edit_original_response(view=view)
                 else:
@@ -3694,7 +3694,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
                 # im 13 and this is deep (nesting)
                 # and also please dont think about the fact this is async inside of sync :3
                 await interaction.response.defer()
-                view = View(timeout=VIEW_TIMEOUT)
+                view = View()
                 view.add_item(stat_select(select.values[0]))
                 await interaction.edit_original_response(view=view)
 
@@ -3712,7 +3712,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
                     highlighted_stat = stat
                     break
 
-        view = View(timeout=VIEW_TIMEOUT)
+        view = View()
         view.add_item(category_select())
 
         if user.premium:
@@ -3752,7 +3752,7 @@ __Highlighted Stat__
     embedVar.set_footer(text=rain_shill)
 
     if person_id.id == message.user.id:
-        view = View(timeout=VIEW_TIMEOUT)
+        view = View()
         btn = Button(emoji="📝", label="Edit", style=ButtonStyle.blurple)
         btn.callback = edit_profile
         view.add_item(btn)
@@ -4058,7 +4058,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         url="https://catbot.shop",
     )
 
-    view = View(timeout=VIEW_TIMEOUT)
+    view = View()
     view.add_item(button)
     view.add_item(shopbutton)
 
@@ -4173,7 +4173,7 @@ if config.DONOR_CHANNEL_ID:
             user_bless_chance = user.rain_minutes_bought * 0.0001
             global_bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001
 
-            view = View(timeout=VIEW_TIMEOUT)
+            view = View()
             if not user.premium:
                 bbutton = Button(label="Supporter Required!", url="https://catbot.shop", emoji="👑")
             else:
@@ -4365,7 +4365,7 @@ async def packs(message: discord.Interaction):
             await interaction.delete_original_response()
             await open_all_packs(interaction)
 
-        confirm_view = View(timeout=VIEW_TIMEOUT)
+        confirm_view = View()
         yes_btn = Button(label="Yes, Open All", style=ButtonStyle.green)
         yes_btn.callback = do_it
         confirm_view.add_item(yes_btn)
@@ -4373,7 +4373,7 @@ async def packs(message: discord.Interaction):
         await interaction.response.send_message("Are you sure you want to open ALL your packs?", view=confirm_view, ephemeral=True)
 
     def gen_view(user):
-        view = View(timeout=VIEW_TIMEOUT)
+        view = View()
         empty = True
         total_amount = 0
         for pack in pack_data:
@@ -4539,7 +4539,7 @@ async def battlepass(message: discord.Interaction):
         user.reminders_enabled = not user.reminders_enabled
         await user.save()
 
-        view = View(timeout=VIEW_TIMEOUT)
+        view = View()
         button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
         button.callback = gen_main
         view.add_item(button)
@@ -4678,7 +4678,7 @@ async def battlepass(message: discord.Interaction):
             description=description,
             color=Colors.brown,
         ).set_footer(text=rain_shill)
-        view = View(timeout=VIEW_TIMEOUT)
+        view = View()
 
         button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
         button.callback = gen_main
@@ -4801,12 +4801,12 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
                 missing_cats.append(get_emoji("mysterycat"))
 
         if len(missing_cats) == 0:
-            view = View(timeout=VIEW_TIMEOUT)
+            view = View()
             confirm_button = Button(label="Craft!", style=ButtonStyle.blurple, emoji=icon)
             confirm_button.callback = confirm_craft
             description = "The crafting recipe is __ONE of EVERY cat type__.\nContinue crafting?"
         else:
-            view = View(timeout=VIEW_TIMEOUT)
+            view = View()
             confirm_button = Button(label="Not enough cats!", style=ButtonStyle.red, disabled=True)
             description = "The crafting recipe is __ONE of EVERY cat type__.\nYou are missing " + "".join(missing_cats)
 
@@ -4838,7 +4838,7 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
 
         embed.description += "\n".join(prism_texts[page_number * 26 : (page_number + 1) * 26])
 
-        view = View(timeout=VIEW_TIMEOUT)
+        view = View()
 
         craft_button = Button(label="Craft!", style=ButtonStyle.blurple, emoji=icon)
         craft_button.callback = craft_prism
@@ -5192,7 +5192,7 @@ async def cookie(message: discord.Interaction):
         if 5100 > curr >= 5000:
             await achemb(interaction, "cookiesclicked", "followup")
 
-    view = View(timeout=VIEW_TIMEOUT)
+    view = View()
     button = Button(emoji="🍪", label=f"{temp_cookie_storage[cookie_id]:,}", style=ButtonStyle.blurple)
     button.callback = bake
     view.add_item(button)
@@ -5288,7 +5288,7 @@ async def gift(
                 button2 = Button(label="Evade the tax", style=ButtonStyle.red)
                 button2.callback = evade
 
-                myview = View(timeout=VIEW_TIMEOUT)
+                myview = View()
 
                 myview.add_item(button)
                 myview.add_item(button2)
@@ -5611,7 +5611,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             await achemb(message, "blackhole", "followup", person2)
             return discord.Embed(color=Colors.brown, title="Blackhole", description="How Did We Get Here?"), None
 
-        view = View(timeout=VIEW_TIMEOUT)
+        view = View()
 
         accept = Button(label="Accept", style=ButtonStyle.green)
         accept.callback = acceptb
@@ -5985,7 +5985,7 @@ async def casino(message: discord.Interaction):
         button = Button(label="Spin", style=ButtonStyle.blurple)
         button.callback = spin
 
-        myview = View(timeout=VIEW_TIMEOUT)
+        myview = View()
         myview.add_item(button)
 
         casino_lock.remove(message.user.id + message.guild.id)
@@ -5998,7 +5998,7 @@ async def casino(message: discord.Interaction):
     button = Button(label="Spin", style=ButtonStyle.blurple)
     button.callback = spin
 
-    myview = View(timeout=VIEW_TIMEOUT)
+    myview = View()
     myview.add_item(button)
 
     await message.response.send_message(embed=embed, view=myview)
@@ -6124,7 +6124,7 @@ async def slots(message: discord.Interaction):
         button = Button(label="Spin", style=ButtonStyle.blurple)
         button.callback = spin
 
-        myview = View(timeout=VIEW_TIMEOUT)
+        myview = View()
         myview.add_item(button)
 
         if big_win:
@@ -6152,7 +6152,7 @@ async def slots(message: discord.Interaction):
     button = Button(label="Spin", style=ButtonStyle.blurple)
     button.callback = spin
 
-    myview = View(timeout=VIEW_TIMEOUT)
+    myview = View()
     myview.add_item(button)
 
     await message.followup.send(embed=embed, view=myview)
@@ -6296,7 +6296,7 @@ async def roulette(message: discord.Interaction):
                 title="winner!!!" if win else "womp womp",
                 description=f"your bet was {int(self.betamount.value):,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance:,}** cat dollars{broke_suffix}",
             )
-            view = View(timeout=VIEW_TIMEOUT)
+            view = View()
             b = Button(label="spin", style=ButtonStyle.blurple)
             b.callback = modal_select
             view.add_item(b)
@@ -6327,7 +6327,7 @@ async def roulette(message: discord.Interaction):
         description=f"your balance is **{user.roulette_balance:,}** cat dollars{broke_suffix}",
     )
 
-    view = View(timeout=VIEW_TIMEOUT)
+    view = View()
     b = Button(label="spin", style=ButtonStyle.blurple)
     b.callback = modal_select
     view.add_item(b)
@@ -7118,7 +7118,7 @@ As you return to your hideout, you hear a howl in the distance."""
         await achemb(interaction, "thanksforplaying", "followup")
 
     async def button2a_callback(interaction: discord.Interaction):
-        myview3 = View(timeout=VIEW_TIMEOUT)
+        myview3 = View()
         button3 = Button(label="Next", style=ButtonStyle.blurple)
         button3.callback = button3_callback
         myview3.add_item(button3)
@@ -7126,7 +7126,7 @@ As you return to your hideout, you hear a howl in the distance."""
         await interaction.edit_original_response(content=text3a, view=myview3)
 
     async def button2b_callback(interaction: discord.Interaction):
-        myview3 = View(timeout=VIEW_TIMEOUT)
+        myview3 = View()
         button3 = Button(label="Next", style=ButtonStyle.blurple)
         button3.callback = button3_callback
         myview3.add_item(button3)
@@ -7134,7 +7134,7 @@ As you return to your hideout, you hear a howl in the distance."""
         await interaction.edit_original_response(content=text3b, view=myview3)
 
     async def button1_callback(interaction: discord.Interaction):
-        myview2 = View(timeout=VIEW_TIMEOUT)
+        myview2 = View()
         button2a = Button(label="Left", style=ButtonStyle.red)
         button2b = Button(label="Right", style=ButtonStyle.green)
         button2a.callback = button2a_callback
@@ -7147,7 +7147,7 @@ As you return to your hideout, you hear a howl in the distance."""
     user.thanksforplaying = True
     await user.save()
 
-    myview1 = View(timeout=VIEW_TIMEOUT)
+    myview1 = View()
     button1 = Button(label="RUN!", style=ButtonStyle.blurple)
     button1.callback = button1_callback
     myview1.add_item(button1)
@@ -7184,7 +7184,7 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
         await interaction.edit_original_response(content=text4b, view=None)
 
     async def button2_callback(interaction: discord.Interaction):
-        myview3 = View(timeout=VIEW_TIMEOUT)
+        myview3 = View()
         button3a = Button(label="Stay", style=ButtonStyle.green)
         button3b = Button(label="Continue", style=ButtonStyle.red, disabled=True)
         button3a.callback = button3a_callback
@@ -7195,7 +7195,7 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
         await interaction.edit_original_response(content=text3, view=myview3)
 
     async def button1_callback(interaction: discord.Interaction):
-        myview2 = View(timeout=VIEW_TIMEOUT)
+        myview2 = View()
         button2 = Button(label="Next", style=ButtonStyle.blurple)
         button2.callback = button2_callback
         myview2.add_item(button2)
@@ -7205,7 +7205,7 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
     user.mafia_win = True
     await user.save()
 
-    myview1 = View(timeout=VIEW_TIMEOUT)
+    myview1 = View()
     button1 = Button(label="'uhhhh'", style=ButtonStyle.blurple)
     button1.callback = button1_callback
     myview1.add_item(button1)
@@ -7516,7 +7516,7 @@ You can stop. That's okay. Seriously.
             await interaction2.delete_original_response()
 
         if user.catnip_active > time.time() and user.catnip_level >= 2 and not override:
-            myview = View(timeout=VIEW_TIMEOUT)
+            myview = View()
             button = Button(label="Begin Anyway", style=ButtonStyle.red)
             button.callback = callbacks_are_so_fun
             myview.add_item(button)
@@ -7693,7 +7693,7 @@ You can stop. That's okay. Seriously.
                     await interaction3.delete_original_response()
                     await pay_catnip(interaction2)
 
-                view2 = View(timeout=VIEW_TIMEOUT)
+                view2 = View()
                 button = Button(label="Yes")
                 button.callback = continue_pay_catnip
                 view2.add_item(button)
@@ -7827,7 +7827,7 @@ async def achievements(message: discord.Interaction):
 
     # creates buttons at the bottom of the full view
     def insane_view_generator(category):
-        myview = View(timeout=VIEW_TIMEOUT)
+        myview = View()
         buttons_list = []
 
         async def callback_hell(interaction):
@@ -8201,7 +8201,7 @@ async def leaderboards(
             embedVar.set_author(name=f"{message.user} has unread news! /news")
 
         # handle funny buttons
-        myview = View(timeout=VIEW_TIMEOUT)
+        myview = View()
 
         if type == "Cats":
             dd_opts = [Option(label="All", emoji=get_emoji("staring_cat"), value="All")]
@@ -8450,7 +8450,7 @@ async def reset(message: discord.Interaction, person_id: discord.User):
         else:
             await do_funny(interaction)
 
-    view = View(timeout=VIEW_TIMEOUT)
+    view = View()
     button = Button(style=ButtonStyle.red, label="Confirm")
     button.callback = confirmed
     view.add_item(button)
@@ -8472,7 +8472,7 @@ async def nuke(message: discord.Interaction):
             "This is dangerous! (4)",
             "Reset everything! (5)",
         ]
-        view = View(timeout=VIEW_TIMEOUT)
+        view = View()
         button = Button(label=lines[max(1, counter)], style=ButtonStyle.red)
         button.callback = count
         view.add_item(button)
@@ -8761,3 +8761,16 @@ class Section(discord.ui.Section):
             super().__init__(*new_children, **kwargs)
         else:
             super().__init__(*children, **kwargs)
+
+
+class View(discord.ui.View):
+    def __init__(self, *args, **kwargs):
+        if "timeout" not in kwargs:
+            kwargs["timeout"] = VIEW_TIMEOUT
+        super().__init__(*args, **kwargs)
+
+    async def on_timeout(self):
+        for item in self.children:
+            if isinstance(item, discord.ui.Button) or isinstance(item, discord.ui.Select):
+                item.disabled = True
+        await self.message.edit(view=self)
