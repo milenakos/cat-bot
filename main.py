@@ -750,6 +750,9 @@ async def do_funny(message):
 
 
 # not :eyes:
+import asyncio
+import random
+
 async def debt_cutscene(message, user):
     if user.debt_seen:
         return
@@ -759,7 +762,7 @@ async def debt_cutscene(message, user):
 
     debt_msgs = [
         "**\\*BANG\\***",
-        "Your door gets slammed open and multiple man in black suits enter your room.",
+        "Your door gets slammed open and multiple men in black suits enter your room.",
         "**???**: Hello, you have unpaid debts. You owe us money. We are here to liquidate all your assets.",
         "*(oh for fu)*",
         "**You**: pls dont",
@@ -773,6 +776,20 @@ async def debt_cutscene(message, user):
     for debt_msg in debt_msgs:
         await asyncio.sleep(4)
         await message.followup.send(debt_msg, ephemeral=True)
+
+    # 0.1% chance to get nuked and lose all debt
+    if random.random() <= 0.001:
+        user.debt = 0
+        await user.save()
+
+        await asyncio.sleep(4)
+        await message.followup.send(
+            "**☢️ NUCLER STRIK ☢️**\n"
+            "some dumbass hit you with a bomb\n"
+            "light eats you.\n\n"
+            "**ur debt is erased enjoy while it lasts nerd.**",
+            ephemeral=True
+        )
 
 
 # :eyes:
