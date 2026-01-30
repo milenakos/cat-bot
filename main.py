@@ -47,7 +47,7 @@ from PIL import Image
 import config
 import msg2img
 from catpg import RawSQL
-from database import Channel, Prism, Profile, Reminder, User
+from database import Channel, Prism, Profile, Reminder, User, Channel, Server
 
 try:
     import exportbackup  # type: ignore
@@ -336,7 +336,7 @@ emojis = {}
 RAIN_ID = 1270470307102195752
 
 # for dev commands, this is fetched in on_ready
-OWNER_ID = 553093932012011520
+OWNER_ID = 798072830595301406
 
 # for funny stats, you can probably edit background_loop to restart every X of them
 loop_count = 0
@@ -1260,6 +1260,12 @@ async def on_message(message: discord.Message):
     if not bot.user or message.author.id == bot.user.id:
         return
 
+    sid = int(message.guild.id)
+    serverq = await Server.get_or_none(server_id=sid) # gets server database
+    if serverq is None:
+        await Server.create(server_id=sid)
+        serverq = await Server.get_or_none(server_id=sid) # creates server database if one currently doesnt exist
+
     if time.time() > last_loop_time + 300:
         last_loop_time = time.time()
         bot.loop.create_task(background_loop())
@@ -1501,7 +1507,8 @@ async def on_message(message: discord.Message):
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
             try:
                 if reactions_ratelimit.get(message.guild.id, 0) < 100:
-                    await message.add_reaction(get_emoji("staring_cat"))
+                    if serverq.do_reactions:
+                        await message.add_reaction(get_emoji("staring_cat"))
                     react_count += 1
                     reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
                     logging.debug("Reaction added: %s", "staring_cat")
@@ -1621,7 +1628,8 @@ async def on_message(message: discord.Message):
                 resolved_emoji = reaction_name
 
             try:
-                await message.add_reaction(resolved_emoji)
+                if serverq.do_reactions:
+                    await message.add_reaction(resolved_emoji)
                 react_count += 1
                 reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
                 logging.debug("Reaction added: %s", reaction_name)
@@ -1647,10 +1655,12 @@ async def on_message(message: discord.Message):
 
     try:
         if message.author in message.mentions and reactions_ratelimit.get(message.guild.id, 0) < 100:
-            await message.add_reaction(get_emoji("staring_cat"))
-            react_count += 1
-            reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
-            logging.debug("Reaction added: %s", "staring_cat")
+            if not str(message.type) == "MessageType.poll_result":
+                if serverq.do_reactions:
+                    await message.add_reaction(get_emoji("staring_cat"))
+                react_count += 1
+                reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
+                logging.debug("Reaction added: %s", "staring_cat")
     except Exception:
         pass
 
@@ -1728,7 +1738,8 @@ async def on_message(message: discord.Message):
             # (except if rain is active, we dont have perms or channel isnt setupped, or we laughed way too much already)
             if channel and channel.cat_rains == 0 and pointlaugh_ratelimit.get(message.channel.id, 0) < 10:
                 try:
-                    await message.add_reaction(get_emoji("pointlaugh"))
+                    if serverq.do_reactions:
+                        await message.add_reaction(get_emoji("pointlaugh"))
                     pointlaugh_ratelimit[message.channel.id] = pointlaugh_ratelimit.get(message.channel.id, 0) + 1
                 except Exception:
                     pass
@@ -4901,6 +4912,36 @@ async def ping(message: discord.Interaction):
 async def bruh(message: discord.Interaction):
     await message.response.defer()
     await message.delete_original_response()
+
+@bot.tree.command(description="(ADMIN) enable/disable cat bot's reactions") # 4905
+@discord.app_commands.default_permissions(manage_guild=True)
+async def reactions(message: discord.Interaction, setting: Literal["Enable", "Disable"] = "View"):
+    try:
+        await message.response.defer()
+        sid = int(message.guild.id)
+        server = await Server.get_or_none(server_id=sid)
+
+        if server is None:
+            await Server.create(server_id=sid)
+            server = await Server.get_or_none(server_id=sid)
+
+        if setting == "Enable":
+            server.do_reactions = True
+            await server.save()
+            await message.followup.send(f"✅ ok, enabled reactions in **{message.guild.name}**")
+        elif setting == "Disable":
+            server.do_reactions = False
+            await server.save()
+            await message.followup.send(f"❌ alright, disabled reactions in **{message.guild.name}**")
+        elif setting == "View":
+            onoff = "Disabled"
+            if server.do_reactions:
+                onoff = "Enabled"
+            await message.followup.send(f"{get_emoji('staring_cat')} reactions are currently: `{onoff}`")
+        else:
+            raise Exception("error")
+    except Exception as e:
+        await message.followup.send(f"critical error\nDEBUG: {e}")
 
 
 @bot.tree.command(description="play a relaxing game of tic tac toe")
