@@ -1260,11 +1260,7 @@ async def on_message(message: discord.Message):
     if not bot.user or message.author.id == bot.user.id:
         return
 
-    sid = int(message.guild.id)
-    serverq = await Server.get_or_none(server_id=sid) # gets server database
-    if serverq is None:
-        await Server.create(server_id=sid)
-        serverq = await Server.get_or_none(server_id=sid) # creates server database if one currently doesnt exist
+    server = await Server.get_or_create(server_id=message.guild.id)
 
     if time.time() > last_loop_time + 300:
         last_loop_time = time.time()
@@ -1507,7 +1503,7 @@ async def on_message(message: discord.Message):
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
             try:
                 if reactions_ratelimit.get(message.guild.id, 0) < 100:
-                    if serverq.do_reactions:
+                    if server.do_reactions:
                         await message.add_reaction(get_emoji("staring_cat"))
                     react_count += 1
                     reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
@@ -1628,7 +1624,7 @@ async def on_message(message: discord.Message):
                 resolved_emoji = reaction_name
 
             try:
-                if serverq.do_reactions:
+                if server.do_reactions:
                     await message.add_reaction(resolved_emoji)
                 react_count += 1
                 reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
@@ -1655,8 +1651,8 @@ async def on_message(message: discord.Message):
 
     try:
         if message.author in message.mentions and reactions_ratelimit.get(message.guild.id, 0) < 100:
-            if not str(message.type) == "MessageType.poll_result":
-                if serverq.do_reactions:
+            if not message.type == "MessageType.poll_result":
+                if server.do_reactions:
                     await message.add_reaction(get_emoji("staring_cat"))
                 react_count += 1
                 reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
@@ -1738,7 +1734,7 @@ async def on_message(message: discord.Message):
             # (except if rain is active, we dont have perms or channel isnt setupped, or we laughed way too much already)
             if channel and channel.cat_rains == 0 and pointlaugh_ratelimit.get(message.channel.id, 0) < 10:
                 try:
-                    if serverq.do_reactions:
+                    if server.do_reactions:
                         await message.add_reaction(get_emoji("pointlaugh"))
                     pointlaugh_ratelimit[message.channel.id] = pointlaugh_ratelimit.get(message.channel.id, 0) + 1
                 except Exception:
@@ -4915,33 +4911,18 @@ async def bruh(message: discord.Interaction):
 
 @bot.tree.command(description="(ADMIN) enable/disable cat bot's reactions") # 4905
 @discord.app_commands.default_permissions(manage_guild=True)
-async def reactions(message: discord.Interaction, setting: Literal["Enable", "Disable"] = "View"):
-    try:
-        await message.response.defer()
-        sid = int(message.guild.id)
-        server = await Server.get_or_none(server_id=sid)
+async def togglereactions(message: discord.Interaction):
+    await message.response.defer()
+    server = await Server.get_or_create(server_id=message.guild.id)
 
-        if server is None:
-            await Server.create(server_id=sid)
-            server = await Server.get_or_none(server_id=sid)
-
-        if setting == "Enable":
-            server.do_reactions = True
-            await server.save()
-            await message.followup.send(f"✅ ok, enabled reactions in **{message.guild.name}**")
-        elif setting == "Disable":
-            server.do_reactions = False
-            await server.save()
-            await message.followup.send(f"❌ alright, disabled reactions in **{message.guild.name}**")
-        elif setting == "View":
-            onoff = "Disabled"
-            if server.do_reactions:
-                onoff = "Enabled"
-            await message.followup.send(f"{get_emoji('staring_cat')} reactions are currently: `{onoff}`")
-        else:
-            raise Exception("error")
-    except Exception as e:
-        await message.followup.send(f"critical error\nDEBUG: {e}")
+    if server.do_reactions:
+        server.do_reactions = False
+        await server.save()
+        await message.followup.send(f"disabled reactions in **{message.guild.name}**")
+    else:
+        server.do_reactions = True
+        await server.save()
+        await message.followup.send(f"enabled reactions in **{message.guild.name}**")
 
 
 @bot.tree.command(description="play a relaxing game of tic tac toe")
