@@ -336,7 +336,7 @@ emojis = {}
 RAIN_ID = 1270470307102195752
 
 # for dev commands, this is fetched in on_ready
-OWNER_ID = 798072830595301406
+OWNER_ID = 553093932012011520
 
 # for funny stats, you can probably edit background_loop to restart every X of them
 loop_count = 0
