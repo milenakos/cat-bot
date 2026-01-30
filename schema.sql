@@ -360,6 +360,8 @@ CREATE TABLE public."user" (
     dm_channel_id bigint DEFAULT 0
 );
 
+ALTER TABLE public."user" OWNER TO cat_bot;
+
 CREATE TABLE public.server (
     server_id bigint NOT NULL,
     do_reactions boolean DEFAULT true
