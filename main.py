@@ -47,7 +47,7 @@ from PIL import Image
 import config
 import msg2img
 from catpg import RawSQL
-from database import Channel, Prism, Profile, Reminder, User, Channel, Server
+from database import Channel, Prism, Profile, Reminder, User, Server
 
 try:
     import exportbackup  # type: ignore
