@@ -3299,6 +3299,15 @@ async def getid(message: discord.Interaction, thing: discord.User | discord.Role
     await message.response.send_message(f"The ID of {thing.mention} is {thing.id}\nyou can use it in /changemessage like this: `{thing.mention}`")
 
 
+@bot.tree.command(description="(ADMIN) enable/disable cat bot's reactions")
+@discord.app_commands.default_permissions(manage_guild=True)
+async def togglereactions(message: discord.Interaction):
+    server = await Server.get_or_create(server_id=message.guild.id)
+    server.do_reactions = not server.do_reactions
+    await server.save()
+    await message.followup.send(f"ok, {'enabled' if server.do_reactions else 'disabled'} reactions in this server.")
+
+
 @bot.tree.command(description="Get Daily cats")
 async def daily(message: discord.Interaction):
     await message.response.send_message("there is no daily cats why did you even try this")
@@ -4908,21 +4917,6 @@ async def ping(message: discord.Interaction):
 async def bruh(message: discord.Interaction):
     await message.response.defer()
     await message.delete_original_response()
-
-@bot.tree.command(description="(ADMIN) enable/disable cat bot's reactions") # 4905
-@discord.app_commands.default_permissions(manage_guild=True)
-async def togglereactions(message: discord.Interaction):
-    await message.response.defer()
-    server = await Server.get_or_create(server_id=message.guild.id)
-
-    if server.do_reactions:
-        server.do_reactions = False
-        await server.save()
-        await message.followup.send(f"disabled reactions in **{message.guild.name}**")
-    else:
-        server.do_reactions = True
-        await server.save()
-        await message.followup.send(f"enabled reactions in **{message.guild.name}**")
 
 
 @bot.tree.command(description="play a relaxing game of tic tac toe")
