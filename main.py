@@ -1260,8 +1260,6 @@ async def on_message(message: discord.Message):
     if not bot.user or message.author.id == bot.user.id:
         return
 
-    server = await Server.get_or_create(server_id=message.guild.id)
-
     if time.time() > last_loop_time + 300:
         last_loop_time = time.time()
         bot.loop.create_task(background_loop())
@@ -1283,6 +1281,8 @@ async def on_message(message: discord.Message):
         else:
             await message.channel.send('good job! please send "lol_i_have_dmed_the_cat_bot_and_got_an_ach" in server to get your ach!')
         return
+
+    server = await Server.get_or_create(server_id=message.guild.id)
 
     achs = [
         ["cat?", "startswith", "???"],
