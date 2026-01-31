@@ -360,8 +360,14 @@ CREATE TABLE public."user" (
     dm_channel_id bigint DEFAULT 0
 );
 
-
 ALTER TABLE public."user" OWNER TO cat_bot;
+
+CREATE TABLE public.server (
+    server_id bigint NOT NULL,
+    do_reactions boolean DEFAULT true
+);
+
+ALTER TABLE public.server OWNER TO cat_bot;
 
 ALTER TABLE ONLY public.prism ALTER COLUMN id SET DEFAULT nextval('public.prism_id_seq'::regclass);
 
@@ -373,10 +379,8 @@ ALTER TABLE ONLY public.reminder ALTER COLUMN id SET DEFAULT nextval('public.rem
 ALTER TABLE ONLY public.channel
     ADD CONSTRAINT channel_pkey PRIMARY KEY (channel_id);
 
-
 ALTER TABLE ONLY public.prism
     ADD CONSTRAINT prism_pkey PRIMARY KEY (id);
-
 
 ALTER TABLE ONLY public.profile
     ADD CONSTRAINT profile_pkey PRIMARY KEY (id);
@@ -384,9 +388,12 @@ ALTER TABLE ONLY public.profile
 ALTER TABLE ONLY public.reminder
     ADD CONSTRAINT reminder_pkey PRIMARY KEY (id);
 
-
 ALTER TABLE ONLY public."user"
     ADD CONSTRAINT user_pkey PRIMARY KEY (user_id);
+
+ALTER TABLE ONLY public.server
+    ADD CONSTRAINT server_pkey PRIMARY KEY (server_id);
+
 
 CREATE INDEX idx_guild_id ON public.profile USING btree (guild_id);
 

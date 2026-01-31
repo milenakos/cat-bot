@@ -71,3 +71,7 @@ class Prism(catpg.Model):
 
 class Reminder(catpg.Model):
     pass
+
+
+class Server(catpg.Model):
+    _primary_key = "server_id"

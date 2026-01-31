@@ -47,7 +47,7 @@ from PIL import Image
 import config
 import msg2img
 from catpg import RawSQL
-from database import Channel, Prism, Profile, Reminder, User
+from database import Channel, Prism, Profile, Reminder, User, Server
 
 try:
     import exportbackup  # type: ignore
@@ -1260,6 +1260,8 @@ async def on_message(message: discord.Message):
     if not bot.user or message.author.id == bot.user.id:
         return
 
+    server = await Server.get_or_create(server_id=message.guild.id)
+
     if time.time() > last_loop_time + 300:
         last_loop_time = time.time()
         bot.loop.create_task(background_loop())
@@ -1501,7 +1503,8 @@ async def on_message(message: discord.Message):
         if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
             try:
                 if reactions_ratelimit.get(message.guild.id, 0) < 100:
-                    await message.add_reaction(get_emoji("staring_cat"))
+                    if server.do_reactions:
+                        await message.add_reaction(get_emoji("staring_cat"))
                     react_count += 1
                     reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
                     logging.debug("Reaction added: %s", "staring_cat")
@@ -1621,7 +1624,8 @@ async def on_message(message: discord.Message):
                 resolved_emoji = reaction_name
 
             try:
-                await message.add_reaction(resolved_emoji)
+                if server.do_reactions:
+                    await message.add_reaction(resolved_emoji)
                 react_count += 1
                 reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
                 logging.debug("Reaction added: %s", reaction_name)
@@ -1647,10 +1651,12 @@ async def on_message(message: discord.Message):
 
     try:
         if message.author in message.mentions and reactions_ratelimit.get(message.guild.id, 0) < 100:
-            await message.add_reaction(get_emoji("staring_cat"))
-            react_count += 1
-            reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
-            logging.debug("Reaction added: %s", "staring_cat")
+            if not message.type == "MessageType.poll_result":
+                if server.do_reactions:
+                    await message.add_reaction(get_emoji("staring_cat"))
+                react_count += 1
+                reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
+                logging.debug("Reaction added: %s", "staring_cat")
     except Exception:
         pass
 
@@ -1728,7 +1734,8 @@ async def on_message(message: discord.Message):
             # (except if rain is active, we dont have perms or channel isnt setupped, or we laughed way too much already)
             if channel and channel.cat_rains == 0 and pointlaugh_ratelimit.get(message.channel.id, 0) < 10:
                 try:
-                    await message.add_reaction(get_emoji("pointlaugh"))
+                    if server.do_reactions:
+                        await message.add_reaction(get_emoji("pointlaugh"))
                     pointlaugh_ratelimit[message.channel.id] = pointlaugh_ratelimit.get(message.channel.id, 0) + 1
                 except Exception:
                     pass
@@ -3290,6 +3297,15 @@ leave blank to reset.""",
 @bot.tree.command(description="Get ID of a thing")
 async def getid(message: discord.Interaction, thing: discord.User | discord.Role):
     await message.response.send_message(f"The ID of {thing.mention} is {thing.id}\nyou can use it in /changemessage like this: `{thing.mention}`")
+
+
+@bot.tree.command(description="(ADMIN) enable/disable cat bot's reactions")
+@discord.app_commands.default_permissions(manage_guild=True)
+async def togglereactions(message: discord.Interaction):
+    server = await Server.get_or_create(server_id=message.guild.id)
+    server.do_reactions = not server.do_reactions
+    await server.save()
+    await message.response.send_message(f"ok, {'enabled' if server.do_reactions else 'disabled'} reactions in this server.")
 
 
 @bot.tree.command(description="Get Daily cats")
