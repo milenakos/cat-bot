@@ -47,7 +47,7 @@ from PIL import Image
 import config
 import msg2img
 from catpg import RawSQL
-from database import Channel, Prism, Profile, Reminder, User, Server
+from database import Channel, Prism, Profile, Reminder, Server, User
 
 try:
     import exportbackup  # type: ignore
@@ -1650,13 +1650,12 @@ async def on_message(message: discord.Message):
             logging.debug("Response sent: %s", response_reply)
 
     try:
-        if message.author in message.mentions and reactions_ratelimit.get(message.guild.id, 0) < 100:
-            if not message.type == "MessageType.poll_result":
-                if server.do_reactions:
-                    await message.add_reaction(get_emoji("staring_cat"))
-                react_count += 1
-                reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
-                logging.debug("Reaction added: %s", "staring_cat")
+        if message.author in message.mentions and message.type != discord.MessageType.poll_result and reactions_ratelimit.get(message.guild.id, 0) < 100:
+            if server.do_reactions:
+                await message.add_reaction(get_emoji("staring_cat"))
+            react_count += 1
+            reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
+            logging.debug("Reaction added: %s", "staring_cat")
     except Exception:
         pass
 
