@@ -68,8 +68,10 @@ class Channel(catpg.Model):
 class Prism(catpg.Model):
     pass
 
+
 class Reminder(catpg.Model):
     pass
+
 
 class Server(catpg.Model):
     _primary_key = "server_id"
