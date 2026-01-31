@@ -3305,7 +3305,7 @@ async def togglereactions(message: discord.Interaction):
     server = await Server.get_or_create(server_id=message.guild.id)
     server.do_reactions = not server.do_reactions
     await server.save()
-    await message.followup.send(f"ok, {'enabled' if server.do_reactions else 'disabled'} reactions in this server.")
+    await message.response.send_message(f"ok, {'enabled' if server.do_reactions else 'disabled'} reactions in this server.")
 
 
 @bot.tree.command(description="Get Daily cats")
