@@ -7947,7 +7947,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Battlepass", "Cookies", "Pig", "Roulette Dollars", "Prisms"]],
+    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Cattlepass", "Cookies", "Pig", "Roulette Dollars", "Prisms"]],
     cat_type: Optional[str],
     locked: Optional[bool],
 ):
@@ -8026,7 +8026,7 @@ async def leaderboards(
             unit = "h"
             result = await Profile.collect_limit(["user_id", "timeslow"], "guild_id = $1 AND timeslow > 0 ORDER BY timeslow DESC", message.guild.id)
             final_value = "timeslow"
-        elif type == "Battlepass":
+        elif type == "Cattlepass":
             start_date = datetime.datetime(2024, 12, 1)
             current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
             full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
@@ -8077,7 +8077,7 @@ async def leaderboards(
             if position["user_id"] == interaction.user.id:
                 interactor_placement = index + 1
                 interactor = position[final_value]
-                if type == "Battlepass":
+                if type == "Cattlepass":
                     if position[final_value] >= len(bp_season):
                         lv_xp_req = 1500
                     else:
@@ -8086,7 +8086,7 @@ async def leaderboards(
             if interaction.user != message.user and position["user_id"] == message.user.id:
                 messager_placement = index + 1
                 messager = position[final_value]
-                if type == "Battlepass":
+                if type == "Cattlepass":
                     if position[final_value] >= len(bp_season):
                         lv_xp_req = 1500
                     else:
@@ -8130,7 +8130,7 @@ async def leaderboards(
         for i in result[:show_amount]:
             num = i[final_value]
 
-            if type == "Battlepass":
+            if type == "Cattlepass":
                 if i[final_value] >= len(bp_season):
                     lv_xp_req = 1500
                 else:
@@ -8183,12 +8183,12 @@ async def leaderboards(
             interactor_line = ""
             messager_line = ""
             if include_interactor:
-                if type == "Battlepass":
+                if type == "Cattlepass":
                     interactor_line = f"{interactor_placement}\\. Level **{interactor}** *({interactor_perc}%)*: {interaction.user.mention}\n"
                 else:
                     interactor_line = f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
             if include_messager:
-                if type == "Battlepass":
+                if type == "Cattlepass":
                     messager_line = f"{messager_placement}\\. Level **{messager}** *({messager_perc}%)*: {message.user.mention}\n"
                 else:
                     messager_line = f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: {message.user.mention}\n"
@@ -8238,7 +8238,7 @@ async def leaderboards(
             "Value": "🧮",
             "Fast": "⏱️",
             "Slow": "💤",
-            "Battlepass": "⬆️",
+            "Cattlepass": "⬆️",
             "Cookies": "🍪",
             "Pig": "🎲",
             "Roulette Dollars": "💰",
