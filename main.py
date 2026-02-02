@@ -372,7 +372,7 @@ news_list = [
     {"title": "Cat Bot Survey - win rains!", "emoji": "📜"},
     {"title": "New Cat Rains perks!", "emoji": "✨"},
     {"title": "Cat Bot Christmas 2024", "emoji": "🎅"},
-    {"title": "Battlepass Update", "emoji": "⬆️"},
+    {"title": "Cattlepass Update", "emoji": "⬆️"},
     {"title": "Packs!", "emoji": "goldpack"},
     {"title": "Message from CEO of Cat Bot", "emoji": "finecat"},
     {"title": "Cat Bot Turns 3", "emoji": "🥳"},
@@ -521,7 +521,7 @@ async def generate_quest(user: Profile, quest_type: str):
 async def refresh_quests(user):
     await user.refresh_from_db()
     start_date = datetime.datetime(2024, 12, 1)
-    current_date = datetime.datetime.utcnow() + datetime.timedelta(hours=4)
+    current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
     full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
     if current_date.day < start_date.day:
         full_months_passed -= 1
@@ -965,7 +965,7 @@ async def background_loop():
 
     # temp_belated_storage cleanup
     # clean up anything older than 1 minute
-    baseflake = discord.utils.time_snowflake(datetime.datetime.utcnow() - datetime.timedelta(minutes=1))
+    baseflake = discord.utils.time_snowflake(discord.utils.utcnow() - datetime.timedelta(minutes=1))
     for id in temp_belated_storage.copy().keys():
         if id < baseflake:
             del temp_belated_storage[id]
@@ -2546,7 +2546,7 @@ async def help(message):
             inline=False,
         )
         .set_footer(
-            text=f"Cat Bot by Milenakos, {datetime.datetime.utcnow().year}",
+            text=f"Cat Bot by Milenakos, {discord.utils.utcnow().year}",
             icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png",
         )
     )
@@ -2710,22 +2710,22 @@ async def news(message: discord.Interaction):
             await interaction.edit_original_response(view=view)
         elif news_id == 3:
             embed = Container(
-                "## Battlepass is getting an update!",
+                "## Cattlepass is getting an update!",
                 """### qhar?
 - Huge stuff!
-- Battlepass will now reset every month
+- Cattlepass will now reset every month
 - You will have 3 quests, including voting
 - They refresh 12 hours after completing
 - Quest reward is XP which goes towards progressing
-- There are 30 battlepass levels with much better rewards (even Ultimate cats and Rain minutes!)
-- Prism crafting/true ending no longer require battlepass progress.
+- There are 30 cattlepass levels with much better rewards (even Ultimate cats and Rain minutes!)
+- Prism crafting/true ending no longer require cattlepass progress.
 - More fun stuff to do each day and better rewards!
 
 ### oh no what if i hate grinding?
-Don't worry, quests are very easy and to complete the battlepass you will need to complete less than 3 easy quests a day.
+Don't worry, quests are very easy and to complete the cattlepass you will need to complete less than 3 easy quests a day.
 
-### will you sell paid battlepass? its joever
-There are currently no plans to sell a paid battlepass.""",
+### will you sell paid cattlepass? its joever
+There are currently no plans to sell a paid cattlepass.""",
                 "-# <t:1735689601>",
             )
             view.add_item(embed)
@@ -3588,7 +3588,7 @@ async def gen_inventory(message, person_id):
 
     embedVar = discord.Embed(
         title=f"{emoji_prefix}{person_id.name.replace('_', r'\_')}",
-        description=f"{highlighted_stat[1]} {highlighted_stat[2]}\n{get_emoji('ach')} Achievements: {unlocked}/{total_achs}{minus_achs}\n⬆️ Battlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)",
+        description=f"{highlighted_stat[1]} {highlighted_stat[2]}\n{get_emoji('ach')} Achievements: {unlocked}/{total_achs}{minus_achs}\n⬆️ Cattlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)",
         color=discord.Colour.from_str(color),
     )
 
@@ -4590,7 +4590,7 @@ async def battlepass(message: discord.Interaction):
         await user.refresh_from_db()
 
         # season end
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=4)
+        now = discord.utils.utcnow() + datetime.timedelta(hours=4)
 
         if now.month == 12:
             next_month = datetime.datetime(now.year + 1, 1, 1)
@@ -8028,7 +8028,7 @@ async def leaderboards(
             final_value = "timeslow"
         elif type == "Battlepass":
             start_date = datetime.datetime(2024, 12, 1)
-            current_date = datetime.datetime.utcnow() + datetime.timedelta(hours=4)
+            current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
             full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
             bp_season = battle["seasons"][str(full_months_passed)]
             if current_date.day < start_date.day:
