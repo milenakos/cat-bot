@@ -1264,22 +1264,25 @@ async def on_message(message: discord.Message):
         last_loop_time = time.time()
         bot.loop.create_task(background_loop())
 
-    if message.guild is None and not message.author.bot:
-        if text.startswith("disable"):
-            # disable reminders
-            try:
-                where = text.split(" ")[1]
-                user = await Profile.get_or_create(guild_id=int(where), user_id=message.author.id)
-                user.reminders_enabled = False
-                await user.save()
-                await message.channel.send("reminders disabled")
-            except Exception:
-                await message.channel.send("failed. check if your guild id is correct")
-                return
-        elif text == "lol_i_have_dmed_the_cat_bot_and_got_an_ach":
-            await message.channel.send('which part of "send in server" was unclear?')
-        else:
-            await message.channel.send('good job! please send "lol_i_have_dmed_the_cat_bot_and_got_an_ach" in server to get your ach!')
+    if message.guild is None:
+        try:
+            if text.startswith("disable"):
+                # disable reminders
+                try:
+                    where = text.split(" ")[1]
+                    user = await Profile.get_or_create(guild_id=int(where), user_id=message.author.id)
+                    user.reminders_enabled = False
+                    await user.save()
+                    await message.channel.send("reminders disabled")
+                except Exception:
+                    await message.channel.send("failed. check if your guild id is correct")
+                    return
+            elif text == "lol_i_have_dmed_the_cat_bot_and_got_an_ach":
+                await message.channel.send('which part of "send in server" was unclear?')
+            else:
+                await message.channel.send('good job! please send "lol_i_have_dmed_the_cat_bot_and_got_an_ach" in server to get your ach!')
+        except Exception:
+            pass
         return
 
     server = await Server.get_or_create(server_id=message.guild.id)
