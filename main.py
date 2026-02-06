@@ -1008,10 +1008,12 @@ async def background_loop():
     reminder_count = 0
     start_time = int(time.time())
     while True:
-        user = await User.get_or_none(
-            f"vote_time_topgg != 0 AND vote_time_topgg + 43200 < {start_time} AND reminder_vote != 0 AND reminder_vote < {start_time} "
-            + 'AND EXISTS(SELECT 1 FROM profile WHERE profile.user_id = "user".user_id AND reminders_enabled = true)',
-        )
+        user = (
+            await User.collect(
+                f"vote_time_topgg != 0 AND vote_time_topgg + 43200 < {start_time} AND reminder_vote != 0 AND reminder_vote < {start_time} "
+                + 'AND EXISTS(SELECT 1 FROM profile WHERE profile.user_id = "user".user_id AND reminders_enabled = true) LIMIT 1',
+            )
+        )[0]
         if not user:
             break
         await asyncio.sleep(0.2)
@@ -1045,9 +1047,11 @@ async def background_loop():
     # catch reminders
     reminder_count = 0
     while True:
-        user = await Profile.get_or_none(
-            f"(reminders_enabled = true AND reminder_catch != 0) AND ((catch_cooldown != 0 AND catch_cooldown + 43200 < {start_time}) OR (reminder_catch > 1 AND reminder_catch < {start_time}))"
-        )
+        user = (
+            await Profile.collect(
+                f"(reminders_enabled = true AND reminder_catch != 0) AND ((catch_cooldown != 0 AND catch_cooldown + 43200 < {start_time}) OR (reminder_catch > 1 AND reminder_catch < {start_time})) LIMIT 1",
+            )
+        )[0]
         if not user:
             break
         await asyncio.sleep(0.2)
@@ -1089,9 +1093,11 @@ async def background_loop():
     # misc reminders
     reminder_count = 0
     while True:
-        user = await Profile.get_or_none(
-            f"(reminders_enabled = true AND reminder_misc != 0) AND ((misc_cooldown != 0 AND misc_cooldown + 43200 < {start_time}) OR (reminder_misc > 1 AND reminder_misc < {start_time}))"
-        )
+        user = (
+            await Profile.collect(
+                f"(reminders_enabled = true AND reminder_misc != 0) AND ((misc_cooldown != 0 AND misc_cooldown + 43200 < {start_time}) OR (reminder_misc > 1 AND reminder_misc < {start_time})) LIMIT 1",
+            )
+        )[0]
         if not user:
             break
         await asyncio.sleep(0.2)
