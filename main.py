@@ -4113,7 +4113,7 @@ if config.DONOR_CHANNEL_ID:
         if name:
             user.custom = name
         if name.lower() == "none":
-            user.custom = None
+            user.custom = ""
         if amount:
             user.custom_num = amount
         if image:
