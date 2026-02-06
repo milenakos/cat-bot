@@ -1006,15 +1006,16 @@ async def background_loop():
     # i wont go into the details of this because its a complicated mess which took me like solid 30 minutes of planning
     #
     # vote reminders
-    proccessed_users = []
-    async for user in User.limit(
-        ["user_id", "reminder_vote", "vote_streak", "dm_channel_id"],
-        "vote_time_topgg != 0 AND vote_time_topgg + 43200 < $1 AND reminder_vote != 0 AND reminder_vote < $1",
-        time.time(),
-    ):
-        if not await Profile.count("user_id = $1 AND reminders_enabled = true LIMIT 1", user.user_id):
-            continue
-        await asyncio.sleep(0.1)
+    reminder_count = 0
+    while True:
+        user = await User.get_or_none(
+            "vote_time_topgg != 0 AND vote_time_topgg + 43200 < $1 AND reminder_vote != 0 AND reminder_vote < $1 "
+            + 'AND EXISTS(SELECT 1 FROM profile WHERE profile.user_id = "user".user_id AND reminders_enabled = true)',
+            time.time(),
+        )
+        if not user:
+            break
+        await asyncio.sleep(0.2)
 
         view = View(timeout=VIEW_TIMEOUT)
         button = Button(
@@ -1033,22 +1034,25 @@ async def background_loop():
             await user_dm.send("You can vote now!" if user.vote_streak < 10 else f"Vote now to keep your {user.vote_streak} streak going!", view=view)
         except Exception:
             pass
+
         # no repeat reminers for now
         user.reminder_vote = 0
-        proccessed_users.append(user)
+        reminder_count += 1
+        await user.save()
 
-    await User.bulk_update(proccessed_users, "reminder_vote")
-    logging.debug("Reminders sent: %d, type: %s", len(proccessed_users), "vote")
+    logging.debug("Reminders sent: %d, type: %s", reminder_count, "vote")
 
     # i know the next two are similiar enough to be merged but its currently dec 30 and i cant be bothered
     # catch reminders
-    proccessed_users = []
-    async for user in Profile.limit(
-        ["id"],
-        "(reminders_enabled = true AND reminder_catch != 0) AND ((catch_cooldown != 0 AND catch_cooldown + 43200 < $1) OR (reminder_catch > 1 AND reminder_catch < $1))",
-        time.time(),
-    ):
-        await asyncio.sleep(0.1)
+    reminder_count = 0
+    while True:
+        user = await Profile.get_or_none(
+            "(reminders_enabled = true AND reminder_catch != 0) AND ((catch_cooldown != 0 AND catch_cooldown + 43200 < $1) OR (reminder_catch > 1 AND reminder_catch < $1))",
+            time.time(),
+        )
+        if not user:
+            break
+        await asyncio.sleep(0.2)
 
         await refresh_quests(user)
         await user.refresh_from_db()
@@ -1079,20 +1083,21 @@ async def background_loop():
         except Exception:
             pass
         user.reminder_catch = 0
-        proccessed_users.append(user)
+        reminder_count += 1
+        await user.save()
 
-    if proccessed_users:
-        await Profile.bulk_update(proccessed_users, "reminder_catch")
-    logging.debug("Reminders sent: %d, type: %s", len(proccessed_users), "catch")
+    logging.debug("Reminders sent: %d, type: %s", reminder_count, "catch")
 
     # misc reminders
-    proccessed_users = []
-    async for user in Profile.limit(
-        ["id"],
-        "(reminders_enabled = true AND reminder_misc != 0) AND ((misc_cooldown != 0 AND misc_cooldown + 43200 < $1) OR (reminder_misc > 1 AND reminder_misc < $1))",
-        time.time(),
-    ):
-        await asyncio.sleep(0.1)
+    reminder_count = 0
+    while True:
+        user = await Profile.get_or_none(
+            "(reminders_enabled = true AND reminder_misc != 0) AND ((misc_cooldown != 0 AND misc_cooldown + 43200 < $1) OR (reminder_misc > 1 AND reminder_misc < $1))",
+            time.time(),
+        )
+        if not user:
+            break
+        await asyncio.sleep(0.2)
 
         await refresh_quests(user)
         await user.refresh_from_db()
@@ -1123,11 +1128,10 @@ async def background_loop():
         except Exception:
             pass
         user.reminder_misc = 0
-        proccessed_users.append(user)
+        reminder_count += 1
+        await user.save()
 
-    if proccessed_users:
-        await Profile.bulk_update(proccessed_users, "reminder_misc")
-    logging.debug("Reminders sent: %d, type: %s", len(proccessed_users), "misc")
+    logging.debug("Reminders sent: %d, type: %s", reminder_count, "misc")
 
     # manual reminders
     async for reminder in Reminder.filter("time < $1", time.time()):
