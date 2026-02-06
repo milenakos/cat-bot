@@ -1007,11 +1007,11 @@ async def background_loop():
     #
     # vote reminders
     reminder_count = 0
+    time = int(time.time())
     while True:
         user = await User.get_or_none(
-            "vote_time_topgg != 0 AND vote_time_topgg + 43200 < $1 AND reminder_vote != 0 AND reminder_vote < $1 "
+            f"vote_time_topgg != 0 AND vote_time_topgg + 43200 < {time} AND reminder_vote != 0 AND reminder_vote < {time} "
             + 'AND EXISTS(SELECT 1 FROM profile WHERE profile.user_id = "user".user_id AND reminders_enabled = true)',
-            time.time(),
         )
         if not user:
             break
@@ -1047,8 +1047,7 @@ async def background_loop():
     reminder_count = 0
     while True:
         user = await Profile.get_or_none(
-            "(reminders_enabled = true AND reminder_catch != 0) AND ((catch_cooldown != 0 AND catch_cooldown + 43200 < $1) OR (reminder_catch > 1 AND reminder_catch < $1))",
-            time.time(),
+            f"(reminders_enabled = true AND reminder_catch != 0) AND ((catch_cooldown != 0 AND catch_cooldown + 43200 < {time}) OR (reminder_catch > 1 AND reminder_catch < {time}))"
         )
         if not user:
             break
@@ -1092,8 +1091,7 @@ async def background_loop():
     reminder_count = 0
     while True:
         user = await Profile.get_or_none(
-            "(reminders_enabled = true AND reminder_misc != 0) AND ((misc_cooldown != 0 AND misc_cooldown + 43200 < $1) OR (reminder_misc > 1 AND reminder_misc < $1))",
-            time.time(),
+            f"(reminders_enabled = true AND reminder_misc != 0) AND ((misc_cooldown != 0 AND misc_cooldown + 43200 < {time}) OR (reminder_misc > 1 AND reminder_misc < {time}))"
         )
         if not user:
             break
