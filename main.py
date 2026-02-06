@@ -6261,10 +6261,10 @@ async def roulette(message: discord.Interaction):
             blank, down_arrow, up_arrow = get_emoji("empty"), ":arrow_down_small:", ":arrow_up_small:"
             side_padding = str(blank) * 2
             for number, wait_time in enumerate(wait_times):
-                n1, n2, n3, n4, n5 ,= [get_emoji(number[2]) for number in chosen_roulette_pockets[number:number + 5]]
+                p1, p2, p3, p4, p5 ,= [get_emoji(number[2]) for number in chosen_roulette_pockets[number:number + 5]]
                 roulette_embed.description = f"your bet is {bet_amount:,} cat dollars on {bet_type.capitalize()}\n"
                 roulette_embed.description += f"{side_padding}{blank}{blank}{down_arrow}{blank}{blank}\n"
-                roulette_embed.description += f"{side_padding}{n1}{n2}{n3}{n4}{n5}\n"
+                roulette_embed.description += f"{side_padding}{p1}{p2}{p3}{p4}{p5}\n"
                 roulette_embed.description += f"{side_padding}{blank}{blank}{up_arrow}{blank}{blank}"
                 await asyncio.sleep(wait_time)
                 await interaction.edit_original_response(embed=roulette_embed, view=None)
