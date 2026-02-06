@@ -6160,7 +6160,7 @@ async def roulette(message: discord.Interaction):
                 timeout=3600,
             )
 
-            self.bettype = TextInput(
+            self.bet_value_input = TextInput(
                 min_length=1,
                 max_length=5,
                 label="choose a bet",
@@ -6168,27 +6168,27 @@ async def roulette(message: discord.Interaction):
                 required=True,
                 placeholder="red / black / green / 0 / 1 / 2 / 3 / ... / 36",
             )
-            self.add_item(self.bettype)
+            self.add_item(self.bet_value_input)
 
-            self.betamount = TextInput(
+            self.bet_amount_input = TextInput(
                 min_length=1,
                 label="bet amount (in cat dollars)",
                 style=discord.TextStyle.short,
                 required=True,
                 placeholder="69",
             )
-            self.add_item(self.betamount)
+            self.add_item(self.bet_amount_input)
 
         async def on_submit(self, interaction: discord.Interaction):
             await user.refresh_from_db()
 
-            bet_type = self.bet_type.value.lower()
-            valid_bet_types = ["red", "black", "green"] + [str(i) for i in range(37)]
-            if bet_type not in valid_bet_types:
+            bet_value = self.bet_value_input.value.lower()
+            valid_bet_values = ["red", "black", "green"] + [str(i) for i in range(37)]
+            if bet_value not in valid_bet_values:
                 await interaction.response.send_message("invalid bet", ephemeral=True)
                 return
 
-            if not self.bet_amount.value.isnumeric():
+            if not self.bet_amount_input.value.isnumeric():
                 await interaction.response.send_message("bet must be a whole number silly", ephemeral=True)
                 return
 
@@ -6262,7 +6262,7 @@ async def roulette(message: discord.Interaction):
             side_padding = str(blank) * 2
             for number, wait_time in enumerate(wait_times):
                 p1, p2, p3, p4, p5 = [get_emoji(pocket[2]) for pocket in chosen_roulette_pockets[number:number + 5]]
-                roulette_embed.description = f"your bet is {bet_amount:,} cat dollars on {bet_type.capitalize()}\n"
+                roulette_embed.description = f"your bet is {bet_amount:,} cat dollars on {bet_value.capitalize()}\n"
                 roulette_embed.description += f"{side_padding}{blank}{blank}{down_arrow}{blank}{blank}\n"
                 roulette_embed.description += f"{side_padding}{p1}{p2}{p3}{p4}{p5}\n"
                 roulette_embed.description += f"{side_padding}{blank}{blank}{up_arrow}{blank}{blank}"
@@ -6273,8 +6273,8 @@ async def roulette(message: discord.Interaction):
             winning_number = winning_pocket[0]
             winning_colour = winning_pocket[1]
 
-            if bet_type == winning_number or bet_type == winning_colour:
-                if bet_type.isnumeric() or bet_type == "green":
+            if bet_value == winning_number or bet_value == winning_colour:
+                if bet_value.isnumeric() or bet_value == "green":
                     user.roulette_balance += bet_amount * 36
                     await achemb(interaction, "roulette_prodigy", "followup")
                 else:
