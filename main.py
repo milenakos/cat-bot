@@ -6189,7 +6189,7 @@ async def roulette(message: discord.Interaction):
                 return
 
             if not self.bet_amount.value.isnumeric():
-                await interaction.response.send_message("bet must be a number silly", ephemeral=True)
+                await interaction.response.send_message("bet must be a whole number silly", ephemeral=True)
                 return
 
             bet_amount = int(self.bet_amount.value)
