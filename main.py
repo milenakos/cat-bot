@@ -1007,10 +1007,10 @@ async def background_loop():
     #
     # vote reminders
     reminder_count = 0
-    time = int(time.time())
+    start_time = int(time.time())
     while True:
         user = await User.get_or_none(
-            f"vote_time_topgg != 0 AND vote_time_topgg + 43200 < {time} AND reminder_vote != 0 AND reminder_vote < {time} "
+            f"vote_time_topgg != 0 AND vote_time_topgg + 43200 < {start_time} AND reminder_vote != 0 AND reminder_vote < {start_time} "
             + 'AND EXISTS(SELECT 1 FROM profile WHERE profile.user_id = "user".user_id AND reminders_enabled = true)',
         )
         if not user:
@@ -1047,7 +1047,7 @@ async def background_loop():
     reminder_count = 0
     while True:
         user = await Profile.get_or_none(
-            f"(reminders_enabled = true AND reminder_catch != 0) AND ((catch_cooldown != 0 AND catch_cooldown + 43200 < {time}) OR (reminder_catch > 1 AND reminder_catch < {time}))"
+            f"(reminders_enabled = true AND reminder_catch != 0) AND ((catch_cooldown != 0 AND catch_cooldown + 43200 < {start_time}) OR (reminder_catch > 1 AND reminder_catch < {start_time}))"
         )
         if not user:
             break
@@ -1091,7 +1091,7 @@ async def background_loop():
     reminder_count = 0
     while True:
         user = await Profile.get_or_none(
-            f"(reminders_enabled = true AND reminder_misc != 0) AND ((misc_cooldown != 0 AND misc_cooldown + 43200 < {time}) OR (reminder_misc > 1 AND reminder_misc < {time}))"
+            f"(reminders_enabled = true AND reminder_misc != 0) AND ((misc_cooldown != 0 AND misc_cooldown + 43200 < {start_time}) OR (reminder_misc > 1 AND reminder_misc < {start_time}))"
         )
         if not user:
             break
@@ -1147,25 +1147,14 @@ async def background_loop():
         backupchannel = bot.get_partial_messageable(config.BACKUP_ID)
 
         if loop_count % 12 == 0:
-            backup_dir = "./backups"
             backup_file = "./backup.dump"
-            try:
-                shutil.rmtree(backup_dir)
-            except Exception:
-                pass
-
             try:
                 os.remove(backup_file)
             except Exception:
                 pass
 
-            if not os.path.exists(backup_dir):
-                os.makedirs(backup_dir)
-
             try:
-                process = await asyncio.create_subprocess_shell(
-                    f"PGPASSWORD={config.DB_PASS} pg_basebackup -U cat_bot -h localhost -D {backup_dir} -F t -z -P --wal-method=stream && tar -zcvf {backup_file} {backup_dir}"
-                )
+                process = await asyncio.create_subprocess_shell(f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -Fc -Z 9 -f {backup_file} cat_bot")
                 await process.wait()
 
                 if exportbackup:
