@@ -25,7 +25,6 @@ import os
 import platform
 import random
 import re
-import shutil
 import subprocess
 import sys
 import time
@@ -4083,7 +4082,7 @@ if config.DONOR_CHANNEL_ID:
 
     @bot.tree.command(description="(SUPPORTER) Get a cosmetic custom cat! (non-tradeable, doesn't count towards anything)")
     @discord.app_commands.describe(
-        name="The name of your custom cat.",
+        name='The name of your custom cat. ("None" to remove)',
         image="Static/animated GIF, PNG, JPEG, WEBP, AVIF below 256 KB. Static images will be auto-compressed.",
         amount="The amount of your custom cat you want.",
     )
@@ -4107,6 +4106,8 @@ if config.DONOR_CHANNEL_ID:
 
         if name:
             user.custom = name
+        if name.lower() == "none":
+            user.custom = None
         if amount:
             user.custom_num = amount
         if image:
