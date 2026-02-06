@@ -6188,7 +6188,7 @@ async def roulette(message: discord.Interaction):
                 await interaction.response.send_message("invalid bet", ephemeral=True)
                 return
 
-            if not self.bet_amount_input.value.isdigit():
+            if not self.bet_amount_input.value.isdecimal():
                 await interaction.response.send_message("bet must be a whole number silly", ephemeral=True)
                 return
 
@@ -6274,7 +6274,7 @@ async def roulette(message: discord.Interaction):
             winning_colour = winning_pocket[1]
 
             if bet_value == winning_number or bet_value == winning_colour:
-                if bet_value.isdigit() or bet_value == "green":
+                if bet_value.isdecimal() or bet_value == "green":
                     user.roulette_balance += bet_amount * 36
                     await achemb(interaction, "roulette_prodigy", "followup")
                 else:
