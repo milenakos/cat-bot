@@ -2006,7 +2006,7 @@ async def on_message(message: discord.Message):
                     chance = random.random() * 100
                     if chance <= triple_chance:
                         silly_amount *= 3
-                        suffix_string += f"\n{get_emoji('catnip')} catnip worked! your cat was TRIPLED by catnip!1!!1!"
+                        suffix_string += f"\n{get_emoji('catnip')}{get_emoji('catnip')} catnip worked! your cat was TRIPLED by catnip!1!!1!"
                         user.catnip_activations += 2
                     elif chance <= triple_chance + double_chance:
                         silly_amount *= 2
@@ -2104,7 +2104,7 @@ async def on_message(message: discord.Message):
 
                     if normal_bump:
                         if double_boost:
-                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch twice from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat to a {get_emoji(le_emoji.lower() + 'cat')} {le_emoji} cat!"
+                            suffix_string += f"\n{get_emoji('prism')}{get_emoji('prism')} {boost_applied_prism} boosted this catch twice from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
                         else:
                             suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
                     elif not channel.forcespawned:
