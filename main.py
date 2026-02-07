@@ -4108,9 +4108,7 @@ if config.DONOR_CHANNEL_ID:
         em_name = str(user.user_id) + "cat"
 
         if name:
-            user.custom = name
-        if name.lower() == "none":
-            user.custom = ""
+            user.custom = name if name.lower() != "none" else ""
         if amount:
             user.custom_num = amount
         if image:
