@@ -8758,7 +8758,7 @@ async def recieve_vote(request):
             streak_progress += f"\nNext Special Reward: {get_streak_reward(special_reward)['emoji']} at {special_reward} streak"
 
         streak_top_position = await User.count("vote_streak > $1", user.vote_streak) + 1
-        top_text = f"(top #{streak_top_position}!) " if streak_top_position < 1000 else ""
+        top_text = f" (top #{streak_top_position}!)" if streak_top_position < 1000 else ""
 
         await channeley.send(
             "\n".join(
