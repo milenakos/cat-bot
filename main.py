@@ -5324,8 +5324,8 @@ async def valentine(message: discord.Interaction, user: discord.Member):
             await interaction.followup.send("you were too slow", ephemeral=True)
             return
 
-        profile.valentine_user = other_profile.id
-        other_profile.valentine_user = profile.id
+        profile.valentine_user = user.id
+        other_profile.valentine_user = message.author.id
         await profile.save()
         await other_profile.save()
 
