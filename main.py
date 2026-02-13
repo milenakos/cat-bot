@@ -733,7 +733,7 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
         if not user.valentine_user:
             streak_reward += "\n💔 find a /valentine - both get a pack when either votes!"
         else:
-            streak_reward += f"💞 and +1 {get_emoji('valentinepack')} for your valentine!"
+            streak_reward += f"\n💞 and +1 {get_emoji('valentinepack')} for your valentine!"
 
     return discord.Embed(
         title=f"✅ {title}",
