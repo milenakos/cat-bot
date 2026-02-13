@@ -5325,7 +5325,7 @@ async def valentine(message: discord.Interaction, user: discord.Member):
             return
 
         profile.valentine_user = user.id
-        other_profile.valentine_user = message.author.id
+        other_profile.valentine_user = message.user.id
         await profile.save()
         await other_profile.save()
 
