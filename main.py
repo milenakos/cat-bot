@@ -4597,7 +4597,7 @@ async def packs(message: discord.Interaction):
     view, has_special = gen_view(user)
     description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n[Chance Info](<https://catbot.minkos.lol/packs>)"
     if has_special:
-        description += "**Special Packs** are packs highlighted in green. Their upgrade chance is 70% instead of 30% and they start below Wooden."
+        description += "\n\n**Special Packs** are packs highlighted in green. Their upgrade chance is 70% instead of 30% and they start below Wooden."
     description += "\n\nClick the buttons below to start opening packs!"
     embed = discord.Embed(title=f"{get_emoji('goldpack')} Packs", description=description, color=Colors.brown)
     await message.response.send_message(embed=embed, view=view)
