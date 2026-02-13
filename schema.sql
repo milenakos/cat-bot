@@ -293,7 +293,10 @@ CREATE TABLE public.profile (
     bounties_complete integer DEFAULT 0,
     cutscene smallint DEFAULT 0,
     snowflakes integer DEFAULT 0,
-    pack_christmas integer DEFAULT 0
+    pack_christmas integer DEFAULT 0,
+    pack_valentine integer DEFAULT 0,
+    valentine_user bigint DEFAULT 0,
+    valentine_progress smallint DEFAULT 0
 );
 
 
