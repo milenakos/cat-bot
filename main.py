@@ -5321,7 +5321,7 @@ async def valentine(message: discord.Interaction, user: discord.Member):
         await profile.refresh_from_db()
 
         if profile.valentine_user or other_profile.valentine_user:
-            await interaction.response.send_message("you were too slow", ephemeral=True)
+            await interaction.followup.send("you were too slow", ephemeral=True)
             return
 
         profile.valentine_user = other_profile.id
@@ -5330,7 +5330,7 @@ async def valentine(message: discord.Interaction, user: discord.Member):
         await other_profile.save()
 
         await interaction.edit_original_response(
-            f"💞 {message.user.mention} and {user.mention} are now valentines!\nYou both will earn a Valentine Pack for every 50 combined catches, as well as when either of you votes.",
+            content=f"💞 {message.user.mention} and {user.mention} are now valentines!\nYou both will earn a Valentine Pack for every 50 combined catches, as well as when either of you votes.",
             view=None,
         )
 
@@ -5339,7 +5339,7 @@ async def valentine(message: discord.Interaction, user: discord.Member):
             await do_funny(interaction)
             return
         await interaction.response.defer()
-        await interaction.edit_original_response(f"💔 {user.mention} declined {message.user.mention}'s valentine request.", view=None)
+        await interaction.edit_original_response(content=f"💔 {user.mention} declined {message.user.mention}'s valentine request.", view=None)
 
     view = View(timeout=VIEW_TIMEOUT)
 
