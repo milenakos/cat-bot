@@ -588,6 +588,8 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         if streak_data["reward"]:
             user[f"pack_{streak_data['reward']}"] += 1
         user.pack_valentine += 1
+        if user.valentine_user and user.valentine_user < 10_000_000:
+            user.valentine_user = 0
         if user.valentine_user:
             valentine_user = await Profile.get_or_create(user_id=user.valentine_user, guild_id=user.guild_id)
             valentine_user.pack_valentine += 1
@@ -2153,6 +2155,8 @@ async def on_message(message: discord.Message):
                     suffix_string += "\n💡 " + random.choice(hints)
 
                 # VALENTINES 💝💝💝💝💞💞💞💞💞💞
+                if user.valentine_user and user.valentine_user < 10_000_000:
+                    user.valentine_user = 0
                 if not user.valentine_user:
                     suffix_string += "\n💔 find a /valentine to get event packs!"
                 else:
@@ -5304,6 +5308,9 @@ async def valentine(message: discord.Interaction, user: discord.Member):
 
     profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
     other_profile = await Profile.get_or_create(user_id=user.id, guild_id=message.guild.id)
+    if profile.valentine_user and profile.valentine_user < 10_000_000:
+        profile.valentine_user = 0
+        await profile.save()
     if profile.valentine_user:
         await message.response.send_message(f"You are already valentines with <@{profile.valentine_user}>!", ephemeral=True)
         return
