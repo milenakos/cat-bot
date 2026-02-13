@@ -2166,7 +2166,7 @@ async def on_message(message: discord.Message):
                         valentine_user.valentine_progress -= 50
                         suffix_string += f"\n💞 +1 {get_emoji('valentinepack')}! next: {user.valentine_progress}/50"
                     else:
-                        suffix_string += f"\n💞 {user.valentine_progress}/50 until {get_emoji('valentinepack')}"
+                        suffix_string += f"\n💞 {user.valentine_progress}/50 until +1 {get_emoji('valentinepack')} Valentine pack"
                     await valentine_user.save()
 
                 custom_cough_strings = {
