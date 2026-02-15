@@ -59,8 +59,11 @@ filtered_errors = [
     "CommandNotFound",
     "CommandAlreadyRegistered",
     "Cannot send an empty message",
-    # connection errors and warnings
+    "Missing Permissions",
+    # connection errors and warnings (why are there so many)
     "ClientConnectorError",
+    "ClientConnectorDNSError",
+    "NameResolutionError",
     "DiscordServerError",
     "WSServerHandshakeError",
     "ConnectionClosed",
