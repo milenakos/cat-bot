@@ -1195,10 +1195,6 @@ async def background_loop():
         else:
             await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.")
 
-    if loop_count % 6 == 0:
-        await database.close()
-        await database.connect()
-
     loop_count += 1
 
 
