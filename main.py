@@ -243,7 +243,7 @@ bot = commands.AutoShardedBot(
 )
 
 funny = [
-    "why did you click this this arent yours",
+    "why did you click this this isn't yours",
     "absolutely not",
     "cat bot not responding, try again later",
     "you cant",
@@ -261,7 +261,7 @@ funny = [
     "cease",
     "wrong",
     "aw dangit",
-    "why don't you press buttons from your commands",
+    "why don't you press buttons from your own commands",
     "you're only making me angrier",
     "why are you like this",
     "legends say you get something for clicking it 1000 times",
@@ -777,7 +777,7 @@ async def debt_cutscene(message, user):
 
     debt_msgs = [
         "**\\*BANG\\***",
-        "Your door gets slammed open and multiple man in black suits enter your room.",
+        "Your door gets slammed open and multiple men in black suits enter your room.",
         "**???**: Hello, you have unpaid debts. You owe us money. We are here to liquidate all your assets.",
         "*(oh for fu)*",
         "**You**: pls dont",
@@ -6656,7 +6656,7 @@ async def eightball(message: discord.Interaction, question: str):
         "very doubtful",
         "most likely not",
         "unlikely",
-        "no definitely",
+        "definitely not",
         "no",
         "signs point to no",
         # neutral
@@ -6664,7 +6664,7 @@ async def eightball(message: discord.Interaction, question: str):
         "ask again later",
         "better not tell you now",
         "cannot predict now",
-        "concetrate and ask again",
+        "concentrate and ask again",
     ]
 
     await message.response.send_message(f"{question}\n:8ball: **{random.choice(catball_responses)}**")
