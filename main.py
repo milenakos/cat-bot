@@ -46,6 +46,7 @@ from discord.ui import ActionRow, Button, LayoutView, Modal, Separator, TextDisp
 from PIL import Image
 
 import config
+import database
 import msg2img
 from catpg import RawSQL
 from database import Channel, Prism, Profile, Reminder, Server, User
@@ -1193,6 +1194,10 @@ async def background_loop():
                 logging.warning(f"Error during backup: {e}")
         else:
             await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.")
+
+    if loop_count % 6 == 0:
+        await database.close()
+        await database.connect()
 
     loop_count += 1
 
