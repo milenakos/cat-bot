@@ -22,6 +22,7 @@
 
 # this is a KISS wrapper i made for asyncpg
 
+import asyncio
 from typing import Any, AsyncGenerator, TypeVar
 
 import asyncpg
@@ -44,6 +45,7 @@ async def close():
 async def reconnect():
     global pool, save_kwargs
     temp_pool = await asyncpg.create_pool(**save_kwargs)
+    await asyncio.sleep(10)
     pool, temp_pool = temp_pool, pool
     await temp_pool.close()
 
