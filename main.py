@@ -976,7 +976,7 @@ async def background_loop():
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     catchcooldown = {}
-    temp_catches_storage = {}
+    temp_catches_storage = []
     fakecooldown = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Spreading love in {len(bot.guilds):,} servers"))
 
