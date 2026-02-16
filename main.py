@@ -963,10 +963,20 @@ async def postpone_reminder(interaction):
 
 # a loop for various maintenance which is ran every 5 minutes
 async def background_loop():
-    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, temp_belated_storage, temp_cookie_storage, fakecooldown
+    global \
+        pointlaugh_ratelimit, \
+        reactions_ratelimit, \
+        last_loop_time, \
+        loop_count, \
+        catchcooldown, \
+        temp_belated_storage, \
+        temp_cookie_storage, \
+        fakecooldown, \
+        temp_catches_storage
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     catchcooldown = {}
+    temp_catches_storage = {}
     fakecooldown = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Spreading love in {len(bot.guilds):,} servers"))
 
