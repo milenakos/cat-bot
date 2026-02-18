@@ -281,7 +281,7 @@ class Colors:
 
 
 # rain shill message for footers
-rain_shill = "💝 Valentine's Sale! -20% /rain"
+rain_shill = "☔ Get tons of cats /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -588,13 +588,6 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         streak_data = get_streak_reward(global_user.vote_streak)
         if streak_data["reward"]:
             user[f"pack_{streak_data['reward']}"] += 1
-        user.pack_valentine += 1
-        if user.valentine_user and user.valentine_user < 1_000_000_000:
-            user.valentine_user = 0
-        if user.valentine_user:
-            valentine_user = await Profile.get_or_create(user_id=user.valentine_user, guild_id=user.guild_id)
-            valentine_user.pack_valentine += 1
-            await valentine_user.save()
 
         current_xp = user.progress + user.vote_reward
         quest_complete = True
@@ -728,13 +721,6 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
         streak_reward = f"\n🔥 **Streak Bonus!** +1 {streak_data['emoji']} {streak_data['reward'].capitalize()} pack"
     else:
         streak_reward = ""
-
-    if "top.gg" in quest_data["title"]:
-        streak_reward += f"\n💝 **Valentine's Event!** +1 {get_emoji('valentinepack')} Valentine pack!"
-        if not user.valentine_user:
-            streak_reward += "\n💔 find a /valentine - both get a pack when either votes!"
-        else:
-            streak_reward += f"\n💞 and +1 {get_emoji('valentinepack')} for your valentine!"
 
     return discord.Embed(
         title=f"✅ {title}",
@@ -978,7 +964,7 @@ async def background_loop():
     catchcooldown = {}
     temp_catches_storage = []
     fakecooldown = {}
-    await bot.change_presence(activity=discord.CustomActivity(name=f"Spreading love in {len(bot.guilds):,} servers"))
+    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
     # update cookies
     temp_temp_cookie_storage = temp_cookie_storage.copy()
@@ -1062,8 +1048,7 @@ async def background_loop():
         try:
             user_dm = await fetch_dm_channel(user)
             await user_dm.send(
-                ("You can vote now!" if user.vote_streak < 10 else f"Vote now to keep your {user.vote_streak} streak going!")
-                + f"\n💝 **Valentine's Event!** Get 1 {get_emoji('valentinepack')} Valentine pack for voting!",
+                "You can vote now!" if user.vote_streak < 10 else f"Vote now to keep your {user.vote_streak} streak going!",
                 view=view,
             )
         except Exception:
@@ -2163,29 +2148,10 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n💝 valentines sale! -20% </rain:{RAIN_ID}>"
+                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
                 if random.randint(0, 19) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
-
-                # VALENTINES 💝💝💝💝💞💞💞💞💞💞
-                if user.valentine_user and user.valentine_user < 1_000_000_000:
-                    user.valentine_user = 0
-                if not user.valentine_user:
-                    suffix_string += "\n💔 find a /valentine to get event packs!"
-                else:
-                    valentine_user = await Profile.get_or_create(guild_id=message.guild.id, user_id=user.valentine_user)
-                    user.valentine_progress += 1
-                    valentine_user.valentine_progress = user.valentine_progress
-                    if user.valentine_progress >= 50:
-                        user.pack_valentine += 1
-                        valentine_user.pack_valentine += 1
-                        user.valentine_progress -= 50
-                        valentine_user.valentine_progress -= 50
-                        suffix_string += f"\n💞 +1 {get_emoji('valentinepack')}! next: {user.valentine_progress}/50"
-                    else:
-                        suffix_string += f"\n💞 {user.valentine_progress}/50 until +1 {get_emoji('valentinepack')} Valentine pack"
-                    await valentine_user.save()
 
                 custom_cough_strings = {
                     "Corrupt": "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!",
@@ -2994,7 +2960,7 @@ This means catching an eGirl cat will give you 4 Christmas packs!
         elif news_id == 14:
             embed = Container(
                 "## 💝 Valentine's Day!",
-                f"""💞 **Pick a Valentine**
+                f"""💞 **Pick a Valentine** (event over)
 Use `/valentine` to pick a valentine - your progress and rewards will be shared with them for the duration of the event.
 You can't change this after you picked someone, so choose wisely!
 
@@ -3006,7 +2972,7 @@ You will be able to collect them until <t:1771437600> using 2 methods:
 - You and your valentine both get 1 when either of you completes the Vote quest, and
 - You and your valentine both get 1 for every 50 cats you collectively catch.
 
-🥰 **Valentine's Sale**
+🥰 **Valentine's Sale** (over)
 -20% sale starts now on the Cat Bot Store and will end on <t:1771437600>!
 :point_right: **[catbot.shop](<https://catbot.shop>)**""",
                 ActionRow(
@@ -4147,7 +4113,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
     shopbutton = Button(
         emoji="🛒",
-        label="Store (-20%!)",
+        label="Store",
         url="https://catbot.shop",
     )
 
@@ -5307,74 +5273,6 @@ async def cookie(message: discord.Interaction):
     button.callback = bake
     view.add_item(button)
     await message.response.send_message(view=view)
-
-
-@bot.tree.command(description="will u... be my valentine?~ 🥺👉👈")
-@discord.app_commands.describe(user="Person you want to ask out to be your valentine.")
-async def valentine(message: discord.Interaction, user: discord.Member):
-    if user == bot.user:
-        await message.response.send_message("no go away")
-        return
-
-    if user.bot or user == message.user:
-        await message.response.send_message("😭🙏")
-        return
-
-    profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
-    other_profile = await Profile.get_or_create(user_id=user.id, guild_id=message.guild.id)
-    if profile.valentine_user and profile.valentine_user < 1_000_000_000:
-        profile.valentine_user = 0
-        await profile.save()
-    if profile.valentine_user:
-        await message.response.send_message(f"You are already valentines with <@{profile.valentine_user}>!", ephemeral=True)
-        return
-    if other_profile.valentine_user:
-        await message.response.send_message(f"{user.mention} already has a valentine! :(", ephemeral=True)
-        return
-
-    async def accept_valentine(interaction: discord.Interaction):
-        if interaction.user != user:
-            await do_funny(interaction)
-            return
-        await interaction.response.defer()
-
-        await other_profile.refresh_from_db()
-        await profile.refresh_from_db()
-
-        if profile.valentine_user or other_profile.valentine_user:
-            await interaction.followup.send("you were too slow", ephemeral=True)
-            return
-
-        profile.valentine_user = user.id
-        other_profile.valentine_user = message.user.id
-        await profile.save()
-        await other_profile.save()
-
-        await interaction.edit_original_response(
-            content=f"💞 {message.user.mention} and {user.mention} are now valentines!\nYou both will earn a Valentine Pack for every 50 combined catches, as well as when either of you votes.",
-            view=None,
-        )
-
-    async def decline_valentine(interaction: discord.Interaction):
-        if interaction.user != user:
-            await do_funny(interaction)
-            return
-        await interaction.response.defer()
-        await interaction.edit_original_response(content=f"💔 {user.mention} declined {message.user.mention}'s valentine request.", view=None)
-
-    view = View(timeout=VIEW_TIMEOUT)
-
-    button = Button(label="Accept", style=discord.ButtonStyle.green)
-    button.callback = accept_valentine
-    view.add_item(button)
-
-    button = Button(label="Reject", style=discord.ButtonStyle.red)
-    button.callback = decline_valentine
-    view.add_item(button)
-
-    await message.response.send_message(
-        f"{user.mention}, {message.user.mention} is asking you to be their valentine!", view=view, allowed_mentions=discord.AllowedMentions(users=True)
-    )
 
 
 @bot.tree.command(description="give cats now")
