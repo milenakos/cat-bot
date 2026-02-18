@@ -26,10 +26,6 @@ async def close():
     await catpg.close()
 
 
-async def reconnect():
-    await catpg.reconnect()
-
-
 class Profile(catpg.Model):
     _capped_ints = [
         "cats_gifted",

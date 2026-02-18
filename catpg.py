@@ -22,32 +22,21 @@
 
 # this is a KISS wrapper i made for asyncpg
 
-import asyncio
 from typing import Any, AsyncGenerator, TypeVar
 
 import asyncpg
 
 pool = None
-save_kwargs = None
 
 
 async def connect(**kwargs):
-    global pool, save_kwargs
-    save_kwargs = kwargs.copy()
+    global pool
     pool = await asyncpg.create_pool(**kwargs)
 
 
 async def close():
     if pool:
         await pool.close()
-
-
-async def reconnect():
-    global pool, save_kwargs
-    temp_pool = await asyncpg.create_pool(**save_kwargs)
-    await asyncio.sleep(10)
-    pool, temp_pool = temp_pool, pool
-    await temp_pool.close()
 
 
 # this is used in limit() to distinguish between raw SQL and column names
