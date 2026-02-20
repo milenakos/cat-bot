@@ -2896,15 +2896,15 @@ thanks for using cat bot!""",
         elif news_id == 11:
             embed = Container(
                 f"## {get_emoji('catnip')} Welcome to the Cat Mafia",
-                f"""after the dog mafia got arrested for selling cataine, cats got inspired and started their own mafia!
+                f"""after the dog mafia got arrested, cats got inspired and started their own mafia!
 
-- cataine is replaced by {get_emoji("catnip")} catnip
+- the dark market is being replaced by {get_emoji("catnip")} catnip
 - the biggest update ever (probably)
 - this is a new late-game complex mechanic with *leveling, bounties and perks*
 - it can be accessed and managed via /catnip
 - discover **10 new cats** - the members of the mafia who have tough challenges for you
 - getting through all of it is a very tough challenge, **the hardest thing in cat bot**
-- old cataine is completely gone, all process you had in it will be reset
+- the old system is completely gone, all process you had in it will be reset
 
 👉 okay now let me explain:
 at each level you will have some bounties you have to complete within a time frame. if you complete the bounties and pay the price, you will be able to choose one of 3 different perks of random rarities {get_emoji("common")}{get_emoji("uncommon")}{get_emoji("rare")}{get_emoji("epic")}{get_emoji("legendary")}. the perks will stack while catnip is active! failing to complete the bounties will bring you one level down and you will lose your last perk. higher levels are harder but give you better perks!""",
