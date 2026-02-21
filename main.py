@@ -7948,6 +7948,8 @@ async def achievements(message: discord.Interaction):
     if unlocked >= 15:
         await achemb(message, "achiever", "followup")
 
+    await finale(message, user)
+
 
 @bot.tree.command(name="catch", description="Catch someone in 4k")
 async def catch_tip(message: discord.Interaction):
