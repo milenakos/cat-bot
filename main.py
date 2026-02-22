@@ -1508,13 +1508,8 @@ async def on_message(message: discord.Message):
         for j in illegal:
             if j in s:
                 total_illegal += 1
-        vow_perc = 0
-        const_perc = len(text)
-        if total_vow != 0:
-            vow_perc = len(text) / total_vow
-        if total_vow != len(text):
-            const_perc = len(text) / (len(text) - total_vow)
-        if (vow_perc <= 3 and const_perc >= 6) or total_illegal >= 2:
+        vow_perc = total_vow / len(text)
+        if (vow_perc >= 0.82) or total_illegal >= 2:
             try:
                 if reactions_ratelimit.get(message.guild.id, 0) < 100:
                     if server.do_reactions:
