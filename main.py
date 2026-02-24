@@ -2241,11 +2241,15 @@ async def on_message(message: discord.Message):
                         kwargs = {}
                         if view:
                             kwargs["view"] = view
+                        # chance for rickroll text to become blu and leads to rickroll video cuz funny
+                        rickroll_link_blue_text = le_emoji
+                        if le_emoji.lower() == "rickrollcat" and random.radint(1, 100) == 1:
+                            rickroll_link_blue_text = "[rickrollcat](https://www.youtube.com/watch?v=dQw4w9WgXcQ)" 
 
                         await send_target.send(
                             coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
                             .replace("{emoji}", str(icon))
-                            .replace("{type}", le_emoji)
+                            .replace("{type}", rickroll_link_blue_text) 
                             .replace("{count}", f"{new_count:,}")
                             .replace("{time}", caught_time[:-1])
                             + suffix_string,
