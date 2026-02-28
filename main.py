@@ -5325,7 +5325,7 @@ async def stocks(message: discord.Interaction):
             remaining_quantity = await resolve_orders(order)
             if remaining_quantity == 0:
                 await interaction.followup.send("✅ Order fully fulfilled!", ephemeral=True)
-            elif remaining_quantity != int(self.quantity):
+            elif remaining_quantity != quantity:
                 await interaction.followup.send(f"✅ Order partially fulfilled. {remaining_quantity}/{self.quantity} shares remaining", ephemeral=True)
             await achemb(interaction, "buy_stock" if self.type == "buy" else "sell_stock", "followup")
 
