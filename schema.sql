@@ -12,10 +12,9 @@ SET row_security = off;
 ALTER SCHEMA public OWNER TO cat_bot;
 COMMENT ON SCHEMA public IS '';
 
-
 SET default_tablespace = '';
-
 SET default_table_access_method = heap;
+
 
 CREATE TABLE public.channel (
     channel_id bigint NOT NULL,
@@ -33,7 +32,6 @@ CREATE TABLE public.channel (
     rain_should_end bigint DEFAULT 0
 );
 
-
 ALTER TABLE public.channel OWNER TO cat_bot;
 
 
@@ -47,7 +45,6 @@ CREATE TABLE public.prism (
     catches_boosted integer DEFAULT 0
 );
 
-
 ALTER TABLE public.prism OWNER TO cat_bot;
 
 CREATE SEQUENCE public.prism_id_seq
@@ -58,9 +55,7 @@ CREATE SEQUENCE public.prism_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER TABLE public.prism_id_seq OWNER TO cat_bot;
-
 
 ALTER SEQUENCE public.prism_id_seq OWNED BY public.prism.id;
 
@@ -296,9 +291,15 @@ CREATE TABLE public.profile (
     pack_christmas integer DEFAULT 0,
     pack_valentine integer DEFAULT 0,
     valentine_user bigint DEFAULT 0,
-    valentine_progress smallint DEFAULT 0
+    valentine_progress smallint DEFAULT 0,
+    coins integer DEFAULT 0,
+    stock_prsm integer DEFAULT 0,
+    stock_ctnp integer DEFAULT 0,
+    stock_pass integer DEFAULT 0,
+    stock_achs integer DEFAULT 0,
+    stock_rain integer DEFAULT 0,
+    pack_attempts integer DEFAULT 0
 );
-
 
 ALTER TABLE public.profile OWNER TO cat_bot;
 
@@ -310,10 +311,10 @@ CREATE SEQUENCE public.profile_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER TABLE public.profile_id_seq OWNER TO cat_bot;
 
 ALTER SEQUENCE public.profile_id_seq OWNED BY public.profile.id;
+
 
 CREATE TABLE public.reminder (
     id integer NOT NULL,
@@ -321,7 +322,6 @@ CREATE TABLE public.reminder (
     "time" bigint NOT NULL,
     text character varying(2000) NOT NULL
 );
-
 
 ALTER TABLE public.reminder OWNER TO cat_bot;
 
@@ -333,10 +333,10 @@ CREATE SEQUENCE public.reminder_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER TABLE public.reminder_id_seq OWNER TO cat_bot;
 
 ALTER SEQUENCE public.reminder_id_seq OWNED BY public.reminder.id;
+
 
 CREATE TABLE public."user" (
     user_id bigint NOT NULL,
@@ -372,11 +372,103 @@ CREATE TABLE public.server (
 
 ALTER TABLE public.server OWNER TO cat_bot;
 
+CREATE TABLE public.order (
+    id integer NOT NULL,
+    user_id bigint NOT NULL,
+    time bigint NOT NULL,
+    ticker character varying(10) NOT NULL,
+    type_buy boolean NOT NULL,
+    quantity integer NOT NULL,
+    price integer NOT NULL
+);
+
+ALTER TABLE public.order OWNER TO cat_bot;
+
+CREATE SEQUENCE public.order_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER TABLE public.order_id_seq OWNER TO cat_bot;
+
+ALTER SEQUENCE public.order_id_seq OWNED BY public.order.id;
+
+
+CREATE TABLE public.reward (
+    ticker character varying(10) NOT NULL,
+    active boolean DEFAULT false,
+    start_time bigint DEFAULT 0,
+    end_time bigint DEFAULT 0,
+    chance smallint DEFAULT 0,
+    chance_hidden boolean DEFAULT false,
+    amount smallint DEFAULT 0,
+    amount_hidden boolean DEFAULT false
+);
+
+ALTER TABLE public.reward OWNER TO cat_bot;
+
+
+CREATE TABLE public.portfoliohistory (
+    id integer NOT NULL,
+    user_id bigint NOT NULL,
+    time bigint NOT NULL,
+    type character varying(1) NOT NULL,
+    ticker character varying(10) DEFAULT NULL,
+    quantity integer DEFAULT NULL,
+    price integer DEFAULT NULL
+);
+
+ALTER TABLE public.portfoliohistory OWNER TO cat_bot;
+
+CREATE SEQUENCE public.portfoliohistory_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER TABLE public.portfoliohistory_id_seq OWNER TO cat_bot;
+
+ALTER SEQUENCE public.portfoliohistory_id_seq OWNED BY public.portfoliohistory.id;
+
+
+CREATE TABLE public.pricehistory (
+    id integer NOT NULL,
+    time bigint NOT NULL,
+    ticker character varying(10) NOT NULL,
+    price integer NOT NULL
+);
+
+ALTER TABLE public.pricehistory OWNER TO cat_bot;
+
+CREATE SEQUENCE public.pricehistory_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER TABLE public.pricehistory_id_seq OWNER TO cat_bot;
+
+ALTER SEQUENCE public.pricehistory_id_seq OWNED BY public.pricehistory.id;
+
+
 ALTER TABLE ONLY public.prism ALTER COLUMN id SET DEFAULT nextval('public.prism_id_seq'::regclass);
 
 ALTER TABLE ONLY public.profile ALTER COLUMN id SET DEFAULT nextval('public.profile_id_seq'::regclass);
 
 ALTER TABLE ONLY public.reminder ALTER COLUMN id SET DEFAULT nextval('public.reminder_id_seq'::regclass);
+
+ALTER TABLE ONLY public.order ALTER COLUMN id SET DEFAULT nextval('public.order_id_seq'::regclass);
+
+ALTER TABLE ONLY public.pricehistory ALTER COLUMN id SET DEFAULT nextval('public.pricehistory_id_seq'::regclass);
+
+ALTER TABLE ONLY public.portfoliohistory ALTER COLUMN id SET DEFAULT nextval('public.portfoliohistory_id_seq'::regclass);
 
 
 ALTER TABLE ONLY public.channel
@@ -396,6 +488,18 @@ ALTER TABLE ONLY public."user"
 
 ALTER TABLE ONLY public.server
     ADD CONSTRAINT server_pkey PRIMARY KEY (server_id);
+
+ALTER TABLE ONLY public.order
+    ADD CONSTRAINT order_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY public.pricehistory
+    ADD CONSTRAINT pricehistory_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY public.portfoliohistory
+    ADD CONSTRAINT portfoliohistory_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY public.reward
+    ADD CONSTRAINT reward_pkey PRIMARY KEY (ticker);
 
 
 CREATE INDEX idx_guild_id ON public.profile USING btree (guild_id);
@@ -419,5 +523,6 @@ CREATE INDEX idx_slot_wins_partial ON public.profile (slot_wins) WHERE slot_wins
 CREATE INDEX idx_gambles_partial ON public.profile (gambles) WHERE gambles > 0;
 
 CREATE INDEX idx_yet_to_spawn ON public.channel (yet_to_spawn);
+
 
 REVOKE USAGE ON SCHEMA public FROM PUBLIC;
