@@ -298,7 +298,10 @@ CREATE TABLE public.profile (
     stock_pass integer DEFAULT 0,
     stock_achs integer DEFAULT 0,
     stock_rain integer DEFAULT 0,
-    pack_attempts integer DEFAULT 0
+    pack_attempts integer DEFAULT 0,
+    buy_stock boolean DEFAULT false,
+    sell_stock boolean DEFAULT false,
+    rugpulled boolean DEFAULT false
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;
