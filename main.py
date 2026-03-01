@@ -3072,7 +3072,7 @@ You will be able to collect them until <t:1771437600> using 2 methods:
             view.add_item(embed)
             view.add_item(back_row)
             await interaction.edit_original_response(view=view)
-        elif news_id == 14:
+        elif news_id == 15:
             embed = Container(
                 "## 📈 Welcome to the Stock Market",
                 """ever wanted to invest your cats into stocks? no? well now you can!
