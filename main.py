@@ -5087,7 +5087,7 @@ async def the_order_canceller(interaction, choices):
             profile[f"stock_{order.ticker.lower()}"] += order.quantity
         await order.delete()
     await profile.save()
-    await interaction.edit_original_response("Orders cancelled!", ephemeral=True)
+    await interaction.edit_original_response("Orders cancelled!")
 
 
 @bot.tree.command(description="stonks")
