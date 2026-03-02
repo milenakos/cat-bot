@@ -5058,6 +5058,9 @@ async def cancel_orders(interaction):
         open_orders.append(
             discord.SelectOption(label=f"{'BUY' if order.type_buy else 'SELL'}ING {order.quantity:,}x {order.ticker}, 🪙 {order.price:,}/share", value=order.id)
         )
+    if not open_orders:
+        await interaction.followup.send("No open orders", ephemeral=True)
+        return
     cancel_select = Select(
         "cancel_order_dd",
         placeholder="Select an order to cancel",
@@ -5075,7 +5078,7 @@ async def the_order_canceller(interaction, choices):
     await interaction.response.defer()
     profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild.id)
     for choice in choices:
-        order = await Order.get(id=choice)
+        order = await Order.get(id=int(choice))
         if order.type_buy:
             profile.coins += order.price * order.quantity
         else:
