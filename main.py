@@ -5009,7 +5009,7 @@ async def view_portfolio(interaction, person, refresh=False):
     help_button = Button(label="Help", style=ButtonStyle.gray, emoji="💡")
     help_button.callback = portfolio_help
 
-    cancel_button = Button(label="Cancel", style=ButtonStyle.red, emoji="❌")
+    cancel_button = Button(label="Cancel orders...", style=ButtonStyle.red)
     cancel_button.callback = cancel_orders
 
     refresh_button = Button(label="Refresh", style=ButtonStyle.gray, emoji="🔄")
