@@ -5061,7 +5061,7 @@ async def cancel_orders(interaction):
     cancel_select = Select(
         "cancel_order_dd",
         placeholder="Select an order to cancel",
-        options=open_orders,
+        opts=open_orders,
         on_select=the_order_canceller,
     )
     view.add_item(cancel_select)
