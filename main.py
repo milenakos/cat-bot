@@ -5077,6 +5077,8 @@ async def the_order_canceller(interaction, choices):
         return
     await interaction.response.defer()
     profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild.id)
+    if not isinstance(choices, list):
+        choices = [choices]
     for choice in choices:
         order = await Order.get(id=int(choice))
         if order.type_buy:
