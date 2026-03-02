@@ -4941,7 +4941,7 @@ The reward can also sometimes be negative but I'm sure you don't have to worry a
 async def portfolio_help(message):
     text = """Welcome to your portfolio!
 
-First of all comes your combined portfolio value. This is a sum of all of your stocks priced at their current **stock price**, plus your current coin balance. You can also see your lifetime portfolio growth percentage.
+First of all comes your combined portfolio value. This is a sum of all of your stocks priced at their current **stock price**, plus your current coin balance. You can also see your lifetime portfolio growth percentage and cancel your open orders.
 
 Next, the portfolio value from before is broken down. You can see how much of each stock you have, how much they are worth, and how many :coin: **coins** you have left.
 
@@ -4951,7 +4951,7 @@ Lastly, there is your portfolio history. This is a history of everything which h
     await message.response.send_message(text, ephemeral=True)
 
 
-async def view_portfolio(interaction, person):
+async def view_portfolio(interaction, person, refresh=False):
     await interaction.response.defer()
     profile = await Profile.get_or_create(user_id=person.id, guild_id=interaction.guild.id)
     user = await User.get_or_create(user_id=person.id)
@@ -5003,8 +5003,17 @@ async def view_portfolio(interaction, person):
 
     first_lines = (f"## {emoji_prefix}{person}", f"### 🪙 {portfolio_value:,}", f"{growth_emoji} {value_diff:+.2f}% *(Lifetime)*")
 
-    button = Button(label="Help", style=ButtonStyle.gray, emoji="💡")
-    button.callback = portfolio_help
+    async def refresh_portfolio(interaction):
+        await view_portfolio(interaction, person, refresh=True)
+
+    help_button = Button(label="Help", style=ButtonStyle.gray, emoji="💡")
+    help_button.callback = portfolio_help
+
+    cancel_button = Button(label="Cancel", style=ButtonStyle.red, emoji="❌")
+    cancel_button.callback = cancel_orders
+
+    refresh_button = Button(label="Refresh", style=ButtonStyle.gray, emoji="🔄")
+    refresh_button.callback = refresh_portfolio
 
     container = Container(
         Section(*first_lines, Thumbnail(user.image)) if user.image else first_lines,
@@ -5017,12 +5026,15 @@ async def view_portfolio(interaction, person):
         "### Portfolio History",
         "\n".join(portfolio_history) or "No portfolio history",
         "===",
-        ActionRow(button),
+        ActionRow(refresh_button, cancel_button, help_button),
         accent_color=Colors.brown if not user.color else discord.Colour.from_str(user.color),
     )
 
     view.add_item(container)
-    await interaction.followup.send(view=view)
+    if not refresh:
+        await interaction.followup.send(view=view)
+    else:
+        await interaction.edit_original_response(view=view)
 
     if not profile.rugpulled and await PortfolioHistory.count("user_id = $1 AND type = $2 AND quantity < 0", profile.id, "r") > 0:
         await achemb(interaction, "rugpulled", "followup")
@@ -5035,6 +5047,42 @@ async def portfolio(message: discord.Interaction, person_id: Optional[discord.Us
     if not person_id:
         person_id = message.user
     await view_portfolio(message, person_id)
+
+
+async def cancel_orders(interaction):
+    await interaction.response.defer()
+    profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild.id)
+    view = View(timeout=VIEW_TIMEOUT)
+    open_orders = []
+    async for order in Order.filter("user_id = $1", profile.id):
+        open_orders.append(
+            discord.SelectOption(label=f"{'BUY' if order.type_buy else 'SELL'}ING {order.quantity:,}x {order.ticker}, 🪙 {order.price:,}/share", value=order.id)
+        )
+    cancel_select = Select(
+        "cancel_order_dd",
+        placeholder="Select an order to cancel",
+        options=open_orders,
+        on_select=the_order_canceller,
+    )
+    view.add_item(cancel_select)
+    await interaction.followup.send("Select orders to cancel...", view=view, ephemeral=True)
+
+
+async def the_order_canceller(interaction, choices):
+    if not choices:
+        await interaction.response.send_message("No orders selected", ephemeral=True)
+        return
+    await interaction.response.defer()
+    profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild.id)
+    for choice in choices:
+        order = await Order.get(id=choice)
+        if order.type_buy:
+            profile.coins += order.price * order.quantity
+        else:
+            profile[f"stock_{order.ticker.lower()}"] += order.quantity
+        await order.delete()
+    await profile.save()
+    await interaction.edit_original_response("Orders cancelled!", ephemeral=True)
 
 
 @bot.tree.command(description="stonks")
@@ -5287,6 +5335,11 @@ async def stocks(message: discord.Interaction):
                     raise Exception
             except Exception:
                 await interaction.response.send_message("your quantity looks funny (it must be a positive integer)", ephemeral=True)
+                return
+
+            # open orders checking
+            if await Order.count("user_id = $1", profile.id) > 25:
+                await interaction.response.send_message("you have too many open orders. please cancel some before placing new ones.", ephemeral=True)
                 return
 
             if self.type == "sell" and quantity > profile[f"stock_{self.ticker.lower()}"]:
@@ -9537,7 +9590,7 @@ class Select(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if self.on_select is not None and callable(self.on_select):
-            await self.on_select(interaction, self.values[0])
+            await self.on_select(interaction, self.values[0] if len(self.values) == 1 else self.values)
 
 
 class Container(discord.ui.Container):
