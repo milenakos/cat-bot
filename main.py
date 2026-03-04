@@ -1739,7 +1739,7 @@ async def on_message(message: discord.Message):
                 pass
 
     for response in responses:
-        match_method, match_text, response_reply = response
+        match_text, match_method, response_reply = response
         text_lowered = text.lower()
         if any(
             [
