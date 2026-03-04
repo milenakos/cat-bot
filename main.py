@@ -5362,7 +5362,7 @@ async def stocks(message: discord.Interaction):
             await profile.save()
 
             curr_time = int(time.time())
-            await Order.create(
+            order = await Order.get_or_create(
                 user_id=profile.id,
                 ticker=self.ticker,
                 type_buy=self.type == "buy",
@@ -5379,7 +5379,6 @@ async def stocks(message: discord.Interaction):
                 time=curr_time,
             )
             await interaction.response.send_message(f"☑️ Order to {self.type} {quantity} shares of {self.ticker} placed!", ephemeral=True)
-            order = await Order.get(user_id=profile.id, ticker=self.ticker, type_buy=self.type == "buy", quantity=quantity, price=price, time=curr_time)
             remaining_quantity = await resolve_orders(order)
             if remaining_quantity == 0:
                 await interaction.followup.send("✅ Order fully fulfilled!", ephemeral=True)
@@ -5651,13 +5650,18 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
 
         found_cats = await cats_in_server(interaction.guild.id)
         missing_cats = []
+        unknowns = 0
         for i in cattypes:
             if user[f"cat_{i}"] > 0:
                 continue
             if i in found_cats:
                 missing_cats.append(get_emoji(i.lower() + "cat"))
             else:
-                missing_cats.append(get_emoji("mysterycat"))
+                unknowns += 1
+
+        unknown_suffix = ""
+        if unknows:
+            unknown_suffix = f" + {unknowns} unknown cat types (see /catalogue)"
 
         if len(missing_cats) == 0:
             view = View(timeout=VIEW_TIMEOUT)
@@ -5667,7 +5671,7 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
         else:
             view = View(timeout=VIEW_TIMEOUT)
             confirm_button = Button(label="Not enough cats!", style=ButtonStyle.red, disabled=True)
-            description = "The crafting recipe is __ONE of EVERY cat type__.\nYou are missing " + "".join(missing_cats)
+            description = "The crafting recipe is __ONE of EVERY cat type__.\nYou are missing " + "".join(missing_cats) + unknown_suffix
 
         view.add_item(confirm_button)
         await interaction.response.send_message(description, view=view, ephemeral=True)
