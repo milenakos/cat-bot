@@ -5363,7 +5363,7 @@ async def stocks(message: discord.Interaction):
             await profile.save()
 
             curr_time = int(time.time())
-            order = await Order.get_or_create(
+            await Order.create(
                 user_id=profile.id,
                 ticker=self.ticker,
                 type_buy=self.type == "buy",
@@ -5380,6 +5380,14 @@ async def stocks(message: discord.Interaction):
                 time=curr_time,
             )
             await interaction.response.send_message(f"☑️ Order to {self.type} {quantity} shares of {self.ticker} placed!", ephemeral=True)
+            order = await Order.get(
+                user_id=profile.id,
+                ticker=self.ticker,
+                type_buy=self.type == "buy",
+                quantity=quantity,
+                price=price,
+                time=curr_time,
+            )
             remaining_quantity = await resolve_orders(order)
             if remaining_quantity == 0:
                 await interaction.followup.send("✅ Order fully fulfilled!", ephemeral=True)
