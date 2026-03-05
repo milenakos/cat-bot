@@ -5661,7 +5661,7 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
                 unknowns += 1
 
         unknown_suffix = ""
-        if unknows:
+        if unknowns:
             unknown_suffix = f" + {unknowns} unknown cat types (see /catalogue)"
 
         if len(missing_cats) == 0:
