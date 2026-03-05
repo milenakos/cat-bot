@@ -110,11 +110,11 @@ pack_data = [
 ]
 
 stock_data = [
-    {"name": "Prisms", "ticker": "PRSM", "emoji": "prism", "amount": 25_000, "init_price": 40},
-    {"name": "Catnip", "ticker": "CTNP", "emoji": "catnip", "amount": 25_000, "init_price": 40},
-    {"name": "Cattlepass", "ticker": "PASS", "emoji": "⬆️", "amount": 25_000, "init_price": 40},
-    {"name": "Achievements", "ticker": "ACHS", "emoji": "ach", "amount": 25_000, "init_price": 40},
-    {"name": "Rain", "ticker": "RAIN", "emoji": "☔", "amount": 25_000, "init_price": 40},
+    {"name": "Prisms", "ticker": "PRSM", "emoji": "prism", "amount": 10_000, "init_price": 40},
+    {"name": "Catnip", "ticker": "CTNP", "emoji": "catnip", "amount": 10_000, "init_price": 40},
+    {"name": "Cattlepass", "ticker": "PASS", "emoji": "⬆️", "amount": 10_000, "init_price": 40},
+    {"name": "Achievements", "ticker": "ACHS", "emoji": "ach", "amount": 10_000, "init_price": 40},
+    {"name": "Rain", "ticker": "RAIN", "emoji": "☔", "amount": 10_000, "init_price": 40},
 ]
 
 prism_names_start = [
@@ -5102,7 +5102,7 @@ async def stocks(message: discord.Interaction):
         for pack in pack_data:
             if pack["name"] not in ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]:
                 continue
-            profile.coins += pack["value"] * profile[f"pack_{pack['name'].lower()}"]
+            profile.coins += pack["totalvalue"] * profile[f"pack_{pack['name'].lower()}"]
             profile[f"pack_{pack['name'].lower()}"] = 0
         await profile.save()
         embedVar = discord.Embed(title="📥 Deposit Packs", description=f"You currently have 🪙 **{profile.coins:,}** coins.", color=Colors.brown)
@@ -5113,13 +5113,16 @@ async def stocks(message: discord.Interaction):
         await interaction.response.defer()
         await profile.refresh_from_db()
         pack_name = interaction.data["custom_id"]
+        if profile[f"pack_{pack_name.lower()}"] < 1:
+            await interaction.followup.send("u dont have any packs of such type", ephemeral=True)
+            return
         profile[f"pack_{pack_name.lower()}"] -= 1
         og = profile.coins
         if pack_name not in ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]:
             return
         for pack in pack_data:
             if pack["name"].lower() == pack_name.lower():
-                profile.coins += pack["value"]
+                profile.coins += pack["totalvalue"]
                 break
         await profile.save()
         embedVar = discord.Embed(title="📥 Deposit Packs", description=f"You currently have 🪙 **{profile.coins:,}** coins.", color=Colors.brown)
