@@ -2743,6 +2743,7 @@ async def wiki(message: discord.Interaction):
             "[Gambling](https://catbot.wiki/gambling)",
             "[Catnip](https://catbot.wiki/catnip)",
             "[Prisms](https://catbot.wiki/prisms)",
+            "[Stocks](https://catbot.wiki/stocks)",
         ]
     )
     await message.response.send_message(embed=embed)
