@@ -5433,7 +5433,7 @@ async def stocks(message: discord.Interaction):
         async for i in PriceHistory.filter("ticker = $1 AND time > $2", stock_ticker, int(time.time() - 3600 * 49)):
             data.append((i.time, i.price))
 
-        buffer = await bot.loop.run_in_executor(None, graph.make_graph, data, 5, 3)
+        buffer = await bot.loop.run_in_executor(None, graph.make_graph, data, 10, 3)
         file = discord.File(fp=buffer, filename="output.png")
 
         reward = await Reward.get_or_create(ticker=stock["ticker"])

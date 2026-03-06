@@ -23,6 +23,7 @@ from datetime import datetime, timedelta, timezone
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import MaxNLocator
 
 
 def floor_to_bucket(ts_seconds: int, bucket_min: int) -> int:
@@ -84,6 +85,7 @@ def interpolate_means(timeline):
 
 def plot_aggregated(timeline, title="Price (5-min buckets, past 3 days)"):
     xs_ts, means = interpolate_means(timeline)
+    means = np.round(means)
     xs = [datetime.fromtimestamp(int(ts), tz=timezone.utc) for ts in xs_ts]
 
     fig, ax = plt.subplots(figsize=(4.5, 3))
@@ -101,6 +103,7 @@ def plot_aggregated(timeline, title="Price (5-min buckets, past 3 days)"):
     for spine in ax.spines.values():
         spine.set_color("#808080")
 
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
     ax.xaxis.set_major_locator(mdates.AutoDateLocator())
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
     fig.autofmt_xdate(rotation=0)
