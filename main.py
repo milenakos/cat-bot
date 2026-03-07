@@ -5040,7 +5040,7 @@ async def portfolio(message: discord.Interaction, person_id: Optional[discord.Us
         person_id = message.user
     if not hidden:
         hidden = False
-    await view_portfolio(message, person_id, refresh=False, ephemeral=hidden)
+    await view_portfolio(message, person_id, refresh=False, hidden=hidden)
 
 
 async def cancel_orders(interaction):
