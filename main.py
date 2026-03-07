@@ -3081,13 +3081,11 @@ You will be able to collect them until <t:1771437600> using 2 methods:
 - deposit packs to get coins
 - trade shares of stocks with other cat bot users globally
 - earn random rewards (dividends) from time to time
-- withdraw back to packs with a 20% fee\\*
+- withdraw back to packs with a 20% fee
 
 i understand this might be overwhelming which is why i added a ton of help buttons throughout the thing! those have much better explanations than this brief overview
 
-ummm good luck and let the line go up!
-
-\\*withdrawals will be disabled for the first few days in case there are some major exploits found""",
+ummm good luck and let the line go up!""",
                 "-# <t:1772308800>",
             )
             view.add_item(embed)
@@ -5135,7 +5133,7 @@ async def stocks(message: discord.Interaction):
         embedVar = discord.Embed(title="📥 Deposit Packs", description=f"You currently have 🪙 **{profile.coins:,}** coins.", color=Colors.brown)
         await interaction.response.send_message(embed=embedVar, view=deposit_msg(profile), ephemeral=True)
         await profile.save()
-        await go_back(interaction)
+        await interaction.edit_original_response(view=await main_page())
 
     def deposit_msg(profile):
         view = View(timeout=VIEW_TIMEOUT)
@@ -5173,7 +5171,6 @@ async def stocks(message: discord.Interaction):
         view = View(timeout=VIEW_TIMEOUT)
         button = Button(label="Continue")
         button.callback = send_withdrawal_modal
-        view.add_item(button)
         view.add_item(button)
         await interaction.response.send_message(embed=embedVar, view=view, ephemeral=True)
 
@@ -5309,7 +5306,7 @@ async def stocks(message: discord.Interaction):
 
             self.quantity = TextInput(
                 label="Quantity",
-                placeholder=f"The amount of shares to {type}" + f" (max {max_shares})" if type == "sell" else f" (your balance: {max_shares})",
+                placeholder=f"The amount of shares to {type}" + (f" (max {max_shares})" if type == "sell" else f" (your balance: {max_shares})"),
                 min_length=1,
                 max_length=6,
                 required=True,
