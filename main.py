@@ -4894,13 +4894,6 @@ async def vote(message: discord.Interaction):
     await message.response.send_message(view=view)
 
 
-async def main_help(message):
-    text = f"""Welcome!
-
-**Cat Bot Stock Market** is a recreation of real-life stock market made to be as simple as possible while still being functional. There are 5 stocks you can trade with other Cat Bot users *globally*. To sell and buy stocks you use :coin: **coins**, which you can get by depositing {get_emoji("goldpack")} __Packs__. You can withdraw :coin: **coins** back into __Packs__ with a 25% fee. Select any stock and click "Help" to learn more."""
-    await message.response.send_message(text, ephemeral=True)
-
-
 async def stock_help(message):
     text = """Let's break this down!
 
@@ -5526,7 +5519,7 @@ async def stocks(message: discord.Interaction):
         )
 
         for item in stock_data:
-            button = Button(label="View", style=ButtonStyle.blurple, custom_id=item["ticker"], disabled=not profile.seen_deposit)
+            button = Button(label="View", style=ButtonStyle.blurple, custom_id=item["ticker"])
 
             button.callback = view_stock
 
@@ -5554,16 +5547,12 @@ async def stocks(message: discord.Interaction):
         button.callback = deposit
         row.add_item(button)
 
-        button = Button(label="Withdraw", style=ButtonStyle.red, disabled=not profile.seen_deposit)
+        button = Button(label="Withdraw", style=ButtonStyle.red)
         button.callback = withdraw
         row.add_item(button)
 
-        button = Button(label="Your Portfolio", style=ButtonStyle.blurple, disabled=not profile.seen_deposit)
+        button = Button(label="Your Portfolio", style=ButtonStyle.blurple)
         button.callback = view_user_portfolio
-        row.add_item(button)
-
-        button = Button(label="Help", style=ButtonStyle.gray, emoji="💡")
-        button.callback = main_help
         row.add_item(button)
 
         container.add_item(Separator())
@@ -5579,6 +5568,14 @@ async def stocks(message: discord.Interaction):
         await interaction.edit_original_response(view=await main_page(), attachments=[])
 
     await message.response.send_message(view=await main_page(), ephemeral=True)
+
+    if not profile.seen_deposit:
+        text = f"""Welcome!
+
+**Cat Bot Stock Market** is a recreation of real-life stock market made to be as simple as possible while still being functional. There are 5 stocks you can trade with other Cat Bot users *globally*. To sell and buy stocks you use :coin: **coins**, which you can get by depositing {get_emoji("goldpack")} __Packs__. You can withdraw :coin: **coins** back into __Packs__ with a 25% fee.
+
+Select any stock and click `💡 Help` to learn more, or click `Deposit` to start."""
+        await message.followup.send(text, ephemeral=True)
 
 
 @bot.tree.command(description="cat prisms are a special power up")
