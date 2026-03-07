@@ -983,7 +983,7 @@ async def refresh_stock_rewards(ticker):
     stock.active = False
     stock.start_time = time.time() + random.randint(3 * day, 7 * day)
     stock.end_time = stock.start_time + day * 2
-    stock.chance = round(random.gauss(50, 10))
+    stock.chance = min(100, max(0, round(random.gauss(50, 10))))
     stock.amount = round(random.gauss(5, current_price / 4))
     stock.chance_hidden = random.randint(0, 100) < 25
     stock.amount_hidden = random.randint(0, 100) < 75
@@ -5131,8 +5131,11 @@ async def stocks(message: discord.Interaction):
 
     async def deposit(interaction):
         await profile.refresh_from_db()
+        profile.seen_deposit = True
         embedVar = discord.Embed(title="📥 Deposit Packs", description=f"You currently have 🪙 **{profile.coins:,}** coins.", color=Colors.brown)
         await interaction.response.send_message(embed=embedVar, view=deposit_msg(profile), ephemeral=True)
+        await profile.save()
+        await go_back(interaction)
 
     def deposit_msg(profile):
         view = View(timeout=VIEW_TIMEOUT)
@@ -5168,10 +5171,9 @@ async def stocks(message: discord.Interaction):
             color=Colors.brown,
         )
         view = View(timeout=VIEW_TIMEOUT)
-        # button = Button(label="Continue")
-        # button.callback = send_withdrawal_modal
-        # view.add_item(button)
-        button = Button(label="Temporarily Disabled", disabled=True)
+        button = Button(label="Continue")
+        button.callback = send_withdrawal_modal
+        view.add_item(button)
         view.add_item(button)
         await interaction.response.send_message(embed=embedVar, view=view, ephemeral=True)
 
@@ -5307,7 +5309,7 @@ async def stocks(message: discord.Interaction):
 
             self.quantity = TextInput(
                 label="Quantity",
-                placeholder=f"The amount of shares to {type}" + f" (max {max_shares})" if max_shares else "",
+                placeholder=f"The amount of shares to {type}" + f" (max {max_shares})" if type == "sell" else f" (your balance: {max_shares})",
                 min_length=1,
                 max_length=6,
                 required=True,
@@ -5399,6 +5401,7 @@ async def stocks(message: discord.Interaction):
             await achemb(interaction, "buy_stock" if self.type == "buy" else "sell_stock", "followup")
 
     async def buy_stock(interaction):
+        profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=message.guild.id)
         ticker = interaction.data["custom_id"].split("_")[0]
         try:
             recommended_price = await Order.min("price", "ticker = $1 AND type_buy = $2", ticker, False)
@@ -5406,7 +5409,7 @@ async def stocks(message: discord.Interaction):
                 recommended_price = 40
         except Exception:
             recommended_price = 40
-        await interaction.response.send_modal(OrderModal(ticker, "buy", recommended_price))
+        await interaction.response.send_modal(OrderModal(ticker, "buy", recommended_price, profile.coins))
 
     async def sell_stock(interaction):
         profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=message.guild.id)
@@ -5525,7 +5528,7 @@ async def stocks(message: discord.Interaction):
         )
 
         for item in stock_data:
-            button = Button(label="View", style=ButtonStyle.blurple, custom_id=item["ticker"])
+            button = Button(label="View", style=ButtonStyle.blurple, custom_id=item["ticker"], disabled=not profile.seen_deposit)
 
             button.callback = view_stock
 
@@ -5553,11 +5556,11 @@ async def stocks(message: discord.Interaction):
         button.callback = deposit
         row.add_item(button)
 
-        button = Button(label="Withdraw", style=ButtonStyle.red)
+        button = Button(label="Withdraw", style=ButtonStyle.red, disabled=not profile.seen_deposit)
         button.callback = withdraw
         row.add_item(button)
 
-        button = Button(label="Your Portfolio", style=ButtonStyle.blurple)
+        button = Button(label="Your Portfolio", style=ButtonStyle.blurple, disabled=not profile.seen_deposit)
         button.callback = view_user_portfolio
         row.add_item(button)
 
