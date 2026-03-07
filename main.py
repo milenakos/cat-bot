@@ -4943,8 +4943,10 @@ Lastly, there is your portfolio history. This is a history of everything which h
     await message.response.send_message(text, ephemeral=True)
 
 
-async def view_portfolio(interaction, person, refresh=False, hidden=False):
-    await interaction.response.defer()
+async def view_portfolio(interaction, person, refresh=False, hidden=None):
+    if not hidden:
+        hidden = False
+    await interaction.response.defer(ephemeral=hidden)
     profile = await Profile.get_or_create(user_id=person.id, guild_id=interaction.guild.id)
     user = await User.get_or_create(user_id=person.id)
 
@@ -4996,7 +4998,7 @@ async def view_portfolio(interaction, person, refresh=False, hidden=False):
     first_lines = (f"## {emoji_prefix}{person}", f"### 🪙 {portfolio_value:,}", f"{growth_emoji} {value_diff:+.2f}% *(Lifetime)*")
 
     async def refresh_portfolio(interaction):
-        await view_portfolio(interaction, person, refresh=True)
+        await view_portfolio(interaction, person, refresh=True, hidden=False)
 
     help_button = Button(label="Help", style=ButtonStyle.gray, emoji="💡")
     help_button.callback = portfolio_help
