@@ -4943,7 +4943,7 @@ Lastly, there is your portfolio history. This is a history of everything which h
     await message.response.send_message(text, ephemeral=True)
 
 
-async def view_portfolio(interaction, person, refresh=False):
+async def view_portfolio(interaction, person, refresh=False, hidden=False):
     await interaction.response.defer()
     profile = await Profile.get_or_create(user_id=person.id, guild_id=interaction.guild.id)
     user = await User.get_or_create(user_id=person.id)
@@ -5024,7 +5024,7 @@ async def view_portfolio(interaction, person, refresh=False):
 
     view.add_item(container)
     if not refresh:
-        await interaction.followup.send(view=view)
+        await interaction.followup.send(view=view, ephemeral=hidden)
     else:
         await interaction.edit_original_response(view=view)
 
@@ -5034,11 +5034,13 @@ async def view_portfolio(interaction, person, refresh=False):
 
 @bot.tree.command(description="View your portfolio")
 @discord.app_commands.rename(person_id="user")
-@discord.app_commands.describe(person_id="Person to view the inventory of!")
-async def portfolio(message: discord.Interaction, person_id: Optional[discord.User]):
+@discord.app_commands.describe(person_id="Person to view the inventory of!", hidden="Whether the response will only be seen by you.")
+async def portfolio(message: discord.Interaction, person_id: Optional[discord.User], hidden: Optional[bool]):
     if not person_id:
         person_id = message.user
-    await view_portfolio(message, person_id)
+    if not hidden:
+        hidden = False
+    await view_portfolio(message, person_id, refresh=False, ephemeral=hidden)
 
 
 async def cancel_orders(interaction):
@@ -5559,7 +5561,7 @@ async def stocks(message: discord.Interaction):
         return view
 
     async def view_user_portfolio(interaction):
-        await view_portfolio(interaction, interaction.user)
+        await view_portfolio(interaction, interaction.user, refresh=False, hidden=True)
 
     async def go_back(interaction):
         await interaction.response.defer()
