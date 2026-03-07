@@ -5121,13 +5121,11 @@ async def stocks(message: discord.Interaction):
         await PortfolioHistory.create(user_id=profile.id, time=int(time.time()), type="d", price=profile.coins - og)
 
     async def deposit(interaction):
-        await interaction.response.defer()
         await profile.refresh_from_db()
         profile.seen_deposit = True
-        await profile.save()
-        await interaction.edit_original_response(view=await main_page())
         embedVar = discord.Embed(title="📥 Deposit Packs", description=f"You currently have 🪙 **{profile.coins:,}** coins.", color=Colors.brown)
-        await interaction.followup.send(embed=embedVar, view=deposit_msg(profile), ephemeral=True)
+        await interaction.response.send_message(embed=embedVar, view=deposit_msg(profile), ephemeral=True)
+        await profile.save()
 
     def deposit_msg(profile):
         view = View(timeout=VIEW_TIMEOUT)
