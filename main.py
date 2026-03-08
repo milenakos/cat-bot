@@ -5122,8 +5122,8 @@ async def stocks(message: discord.Interaction):
     async def deposit(interaction):
         await profile.refresh_from_db()
         profile.seen_deposit = True
-        if profile.battlepass < 2:
-            await interaction.response.send_message("you need to reach atleast cattlepass level 2 to deposit packs.", ephemeral=True)
+        if profile.battlepass < 3:
+            await interaction.response.send_message("you need to reach atleast cattlepass level 3 to deposit packs.", ephemeral=True)
             return
         embedVar = discord.Embed(title="📥 Deposit Packs", description=f"You currently have 🪙 **{profile.coins:,}** coins.", color=Colors.brown)
         await interaction.response.send_message(embed=embedVar, view=deposit_msg(profile), ephemeral=True)
