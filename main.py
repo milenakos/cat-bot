@@ -2617,7 +2617,7 @@ async def on_guild_join(guild):
         pass
 
 
-@bot.tree.command(description="Learn to use the bot")
+@bot.tree.command(description="A guide of how to use the bot")
 async def help(message):
     embed1 = discord.Embed(
         title="How to Setup",
@@ -2686,7 +2686,7 @@ def format_timedelta(start_timestamp, end_timestamp):
     return f"{days}d {hours}h {minutes}m {seconds}s"
 
 
-@bot.tree.command(description="View various bot information and stats")
+@bot.tree.command(description="View various info and stats about the bot")
 async def info(message: discord.Interaction):
     embed = discord.Embed(title="Cat Bot Info", color=Colors.brown)
     try:
@@ -3267,7 +3267,7 @@ async def changeavatar(message: discord.Interaction, avatar: Optional[discord.At
         return
 
 
-@bot.tree.command(description="(ADMIN) Change the cat appear timings")
+@bot.tree.command(description="(ADMIN) Change the cat spawn/appear times")
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.describe(
     minimum_time="In seconds, minimum possible time between spawns (leave both empty to reset)",
@@ -3311,7 +3311,7 @@ async def changetimings(
         await message.response.send_message("Please input all times.", ephemeral=True)
 
 
-@bot.tree.command(description="(ADMIN) Change the cat appear and cought messages")
+@bot.tree.command(description="(ADMIN) Change the cat appear and cought message texts")
 @discord.app_commands.default_permissions(manage_guild=True)
 async def changemessage(message: discord.Interaction):
     caller = message.user
@@ -3445,7 +3445,7 @@ async def getid(message: discord.Interaction, thing: discord.User | discord.Role
     await message.response.send_message(f"The ID of {thing.mention} is {thing.id}\nyou can use it in /changemessage like this: `{thing.mention}`")
 
 
-@bot.tree.command(description="(ADMIN) enable/disable cat bot's reactions")
+@bot.tree.command(description="(ADMIN) Enable/disable Cat Bot reactions")
 @discord.app_commands.default_permissions(manage_guild=True)
 async def togglereactions(message: discord.Interaction):
     server = await Server.get_or_create(server_id=message.guild.id)
@@ -3484,7 +3484,7 @@ async def last(message: discord.Interaction):
     await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.{nextpossible}")
 
 
-@bot.tree.command(description="View all the juicy numbers behind cat types")
+@bot.tree.command(description="View all the juicy numbers and info behind cat types")
 async def catalogue(message: discord.Interaction):
     embed = discord.Embed(title=f"{get_emoji('staring_cat')} The Catalogue", color=Colors.brown)
     for cat_type in cattypes:
@@ -4690,7 +4690,7 @@ async def packs(message: discord.Interaction):
     await message.response.send_message(embed=embed, view=view)
 
 
-@bot.tree.command(description="why would anyone think a cattlepass would be a good idea")
+@bot.tree.command(description="why would anyone think a cattlepass would be a good idea (bp)")
 async def battlepass(message: discord.Interaction):
     current_mode = ""
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
@@ -5029,7 +5029,7 @@ async def view_portfolio(interaction, person, refresh=False, hidden=None):
         await achemb(interaction, "rugpulled", "followup")
 
 
-@bot.tree.command(description="View your portfolio")
+@bot.tree.command(description="View your stock portfolio")
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="Person to view the inventory of!", hidden="Whether the response will only be seen by you.")
 async def portfolio(message: discord.Interaction, person_id: Optional[discord.User], hidden: Optional[bool]):
@@ -5081,7 +5081,7 @@ async def the_order_canceller(interaction, choices):
     await interaction.edit_original_response(content="Orders cancelled!", view=None)
 
 
-@bot.tree.command(description="stonks")
+@bot.tree.command(description="the stonk market")
 async def stocks(message: discord.Interaction):
     profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
 
@@ -6072,7 +6072,7 @@ async def cookie(message: discord.Interaction):
     await message.response.send_message(view=view)
 
 
-@bot.tree.command(description="give cats now")
+@bot.tree.command(description="donate cats now")
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(
     person="Whom to gift?",
@@ -8599,7 +8599,7 @@ You can stop. That's okay. Seriously.
     main_message = await message.followup.send(view=await gen_main(), ephemeral=True, wait=True)
 
 
-@bot.tree.command(description="View your achievements")
+@bot.tree.command(description="View your achievements (achs)")
 async def achievements(message: discord.Interaction):
     # this is very close to /inv's ach counter
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
@@ -8798,7 +8798,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         await achemb(message, "not_like_that", "followup")
 
 
-@bot.tree.command(description="View the leaderboards")
+@bot.tree.command(description="View the leaderboards (lb)")
 @discord.app_commands.rename(leaderboard_type="type")
 @discord.app_commands.describe(
     leaderboard_type="The leaderboard type to view!",
@@ -9194,7 +9194,7 @@ async def setup_channel(message: discord.Interaction):
     await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
 
 
-@bot.tree.command(description="(ADMIN) Undo the setup")
+@bot.tree.command(description="(ADMIN) Undo the setup/unsetup")
 @discord.app_commands.default_permissions(manage_guild=True)
 async def forget(message: discord.Interaction):
     if channel := await Channel.get_or_none(channel_id=message.channel.id):
@@ -9223,7 +9223,7 @@ async def fake(message: discord.Interaction):
     await achemb(message, "trolled", "ephemeral")
 
 
-@bot.tree.command(description="(ADMIN) Force cats to appear")
+@bot.tree.command(description="(ADMIN) Force cats to appear/spawn")
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(cat_type="select a cat type ok")
@@ -9333,7 +9333,7 @@ async def reset(message: discord.Interaction, person_id: discord.User):
     await message.response.send_message(f"Are you sure you want to reset {person_id.mention}?", view=view, allowed_mentions=discord.AllowedMentions(users=True))
 
 
-@bot.tree.command(description="(HIGH ADMIN) [VERY DANGEROUS] Reset all Cat Bot data of this server")
+@bot.tree.command(description="(HIGH ADMIN) [VERY DANGEROUS] Reset/wipe all Cat Bot data of this server")
 @discord.app_commands.default_permissions(administrator=True)
 async def nuke(message: discord.Interaction):
     warning_text = "⚠️ This will completely reset **all** Cat Bot progress of **everyone** in this server. Spawn channels and their settings *will not be affected*.\nPress the button 5 times to continue."
