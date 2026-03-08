@@ -2686,6 +2686,13 @@ async def credits(message: discord.Interaction):
     await message.followup.send(embed=embedVar)
 
 
+@bot.tree.command(description="Meow.")
+async def meow(interaction: discord.Interaction):
+    await interaction.response.send_message(
+        file=discord.File("meow.mp3")
+    )
+
+
 def format_timedelta(start_timestamp, end_timestamp):
     delta = datetime.timedelta(seconds=end_timestamp - start_timestamp)
     days = delta.days
