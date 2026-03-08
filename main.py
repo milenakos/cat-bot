@@ -218,6 +218,7 @@ hints = [
     "Cat Bot has reached top #9 on top.gg in April 2025",
     "Cat Bot has reached top #7 on top.gg in May 2025",
     "Cat Bot has reached top #5 on top.gg in September 2025",
+    "Cat Bot has reached top #3 on top.gg in March 2026",
     "Most Cat Bot features were made within 2 weeks",
     "Cat Bot was initially made for only one server",
     "Cat Bot is made in Python with discord.py",
@@ -1084,9 +1085,13 @@ async def background_loop():
 
     # cancel old orders
     async for order in Order.filter("time > 0 AND time < $1", time.time() - 3600 * 24 * 7):
-        profile = await Profile.get_or_create(user_id=order.user_id)
-        profile[f"stock_{order.ticker.lower()}"] += order.quantity
-        await profile.save()
+        profile = await Profile.get_or_none(user_id=order.user_id)
+        if profile:
+            if order.type_buy:
+                profile.coins += order.quantity * order.price
+            else:
+                profile[f"stock_{order.ticker.lower()}"] += order.quantity
+            await profile.save()
         await order.delete()
 
     # revive dead catch loops
@@ -4111,7 +4116,7 @@ async def rain(message: discord.Interaction):
 
 You can get those by buying them at our [store](<https://catbot.shop>) or by winning them in an event.
 This bot is developed by a single person so buying one would be very appreciated.
-As a bonus, you will get access to /editprofile command!
+As a bonus, you will get access to /editprofile and /customcat commands!
 Fastest times are not saved during rains.
 
 You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
