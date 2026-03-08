@@ -1011,20 +1011,10 @@ async def postpone_reminder(interaction):
 
 # a loop for various maintenance which is ran every 5 minutes
 async def background_loop():
-    global \
-        pointlaugh_ratelimit, \
-        reactions_ratelimit, \
-        last_loop_time, \
-        loop_count, \
-        catchcooldown, \
-        temp_belated_storage, \
-        temp_cookie_storage, \
-        fakecooldown, \
-        temp_catches_storage
+    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, temp_belated_storage, temp_cookie_storage, fakecooldown
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     catchcooldown = {}
-    temp_catches_storage = []
     fakecooldown = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
@@ -5132,6 +5122,9 @@ async def stocks(message: discord.Interaction):
     async def deposit(interaction):
         await profile.refresh_from_db()
         profile.seen_deposit = True
+        if profile.battlepass < 2:
+            await interaction.response.send_message("you need to reach atleast cattlepass level 2 to deposit packs.", ephemeral=True)
+            return
         embedVar = discord.Embed(title="📥 Deposit Packs", description=f"You currently have 🪙 **{profile.coins:,}** coins.", color=Colors.brown)
         await interaction.response.send_message(embed=embedVar, view=deposit_msg(profile), ephemeral=True)
         await profile.save()
@@ -5307,7 +5300,7 @@ async def stocks(message: discord.Interaction):
 
             self.quantity = TextInput(
                 label="Quantity",
-                placeholder=f"The amount of shares to {type}" + (f" (max {max_shares})" if type == "sell" else f" (your balance: {max_shares})"),
+                placeholder=f"Amt. of shares to {type}" + (f" (max {max_shares})" if type == "sell" else f" (balance: {max_shares})"),
                 min_length=1,
                 max_length=6,
                 required=True,
