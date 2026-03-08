@@ -1085,7 +1085,7 @@ async def background_loop():
 
     # cancel old orders
     async for order in Order.filter("time > 0 AND time < $1", time.time() - 3600 * 24 * 7):
-        profile = await Profile.get_or_none(user_id=order.user_id)
+        profile = await Profile.get_or_none(id=order.user_id)
         if profile:
             if order.type_buy:
                 profile.coins += order.quantity * order.price
