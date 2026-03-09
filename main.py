@@ -5122,7 +5122,7 @@ async def stocks(message: discord.Interaction):
     async def deposit(interaction):
         await profile.refresh_from_db()
         profile.seen_deposit = True
-        if profile.battlepass < 3:
+        if profile.battlepass < 3 and not profile.bp_history.strip().replace("0,0,0;", ""):
             await interaction.response.send_message("you need to reach atleast cattlepass level 3 to deposit packs.", ephemeral=True)
             return
         embedVar = discord.Embed(title="📥 Deposit Packs", description=f"You currently have 🪙 **{profile.coins:,}** coins.", color=Colors.brown)
@@ -6216,6 +6216,9 @@ async def gift(
         cat_type = cat_type.lower()
         # packs um also this seems to be repetetive uh
         user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        if user.battlepass < 3 and not user.bp_history.strip().replace("0,0,0;", ""):
+            await message.response.send_message("you need to reach atleast cattlepass level 3 to gift packs.", ephemeral=True)
+            return
         # if we even have enough packs
         if user[f"pack_{cat_type}"] >= amount:
             reciever = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id)
@@ -6625,6 +6628,9 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             if self.cattype.value.capitalize() in [i["name"] for i in pack_data]:
                 pname = self.cattype.value.capitalize()
                 if self.currentuser == 1:
+                    if user1.battlepass < 3 and not user1.bp_history.strip().replace("0,0,0;", ""):
+                        await interaction.response.send_message("you need to reach atleast cattlepass level 3 to trade packs.", ephemeral=True)
+                        return
                     if user1[f"pack_{pname.lower()}"] < int(value):
                         await interaction.response.send_message("you dont have enough packs", ephemeral=True)
                         return
@@ -6635,6 +6641,9 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                         await interaction.response.send_message("skibidi toilet", ephemeral=True)
                         return
                 else:
+                    if user2.battlepass < 3 and not user2.bp_history.strip().replace("0,0,0;", ""):
+                        await interaction.response.send_message("you need to reach atleast cattlepass level 3 to trade packs.", ephemeral=True)
+                        return
                     if user2[f"pack_{pname.lower()}"] < int(value):
                         await interaction.response.send_message("you dont have enough packs", ephemeral=True)
                         return
@@ -8798,7 +8807,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         await achemb(message, "not_like_that", "followup")
 
 
-@bot.tree.command(description="View the leaderboards (lb)")
+@bot.tree.command(description="View the leaderboards (lbs)")
 @discord.app_commands.rename(leaderboard_type="type")
 @discord.app_commands.describe(
     leaderboard_type="The leaderboard type to view!",
