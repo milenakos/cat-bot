@@ -585,7 +585,9 @@ async def multi_progress(message: discord.Message | discord.Interaction, user: P
     await refresh_quests(user)
     await user.refresh_from_db()
     for quest in quests:
-        user = await progress(message, user, quest, is_belated, False)
+        return_user = await progress(message, user, quest, is_belated, False)
+        if return_user:
+            user = return_user
 
 
 async def progress(
