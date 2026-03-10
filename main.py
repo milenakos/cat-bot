@@ -4988,7 +4988,7 @@ async def view_portfolio(interaction, person, refresh=False, hidden=None):
         )
 
     portfolio_history = []
-    async for history in PortfolioHistory.filter("user_id = $1 ORDER BY time DESC LIMIT 15", profile.id):
+    async for history in PortfolioHistory.filter("user_id = $1 ORDER BY time DESC LIMIT 13", profile.id):
         if history.type == "d":
             portfolio_history.append(f"📥 Deposited 🪙 {history.price:,} coins <t:{history.time}:R>")
         elif history.type == "w":
