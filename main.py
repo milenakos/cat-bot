@@ -581,9 +581,19 @@ async def refresh_quests(user):
         await generate_quest(user, "misc")
 
 
-async def progress(message: discord.Message | discord.Interaction, user: Profile, quest: str, is_belated: Optional[bool] = False):
+async def multi_progress(message: discord.Message | discord.Interaction, user: Profile, quests: list[str], is_belated: Optional[bool] = False):
     await refresh_quests(user)
     await user.refresh_from_db()
+    for quest in quests:
+        user = await progress(message, user, quest, is_belated, False)
+
+
+async def progress(
+    message: discord.Message | discord.Interaction, user: Profile, quest: str, is_belated: Optional[bool] = False, refetch: bool = True
+) -> Profile:
+    if refetch:
+        await refresh_quests(user)
+        await user.refresh_from_db()
 
     # progress
     quest_complete = False
@@ -633,7 +643,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
 
     await user.save()
     if not quest_complete:
-        return
+        return user
 
     user.quests_completed += 1
 
@@ -721,6 +731,8 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         await message.channel.send(f"<@{user.user_id}>", embeds=level_complete_embeds + [embed_progress])
     else:
         await message.channel.send(f"<@{user.user_id}>", embed=embed_progress)
+
+    return user
 
 
 async def progress_embed(message, user, level_data, current_xp, old_xp, quest_data, diff, level_text) -> discord.Embed:
@@ -1853,37 +1865,37 @@ async def on_message(message: discord.Message):
                 ):
                     belated["users"].append(message.author.id)
                     temp_belated_storage[message.channel.id] = belated
-                    await progress(message, user, "3cats", True)
-                    if channel.cattype == "Fine":
-                        await progress(message, user, "2fine", True)
-                    if channel.cattype == "Good":
-                        await progress(message, user, "good", True)
-                    if belated.get("time", 10) + current_time - belated.get("timestamp", 0) < 10:
-                        await progress(message, user, "under10", True)
-                    if random.randint(0, 1) == 0:
-                        await progress(message, user, "even", True)
-                    else:
-                        await progress(message, user, "odd", True)
-                    if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
-                        await progress(message, user, "rare+", True)
                     if user.catnip_active >= time.time() or user.hibernation:
                         await bounty(message, user, channel.cattype)
+                    quests = ["3cats"]
+                    if channel.cattype == "Fine":
+                        quests.append("2fine")
+                    if channel.cattype == "Good":
+                        quests.append("good")
+                    if belated.get("time", 10) + current_time - belated.get("timestamp", 0) < 10:
+                        quests.append("under10")
+                    if random.randint(0, 1) == 0:
+                        quests.append("even")
+                    else:
+                        quests.append("odd")
+                    if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
+                        quests.append("rare+")
                     total_count = await Prism.count("guild_id = $1", message.guild.id)
                     user_count = await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id)
-                    global_boost = 0.06 * math.log(2 * total_count + 1)
-                    prism_boost = global_boost + 0.03 * math.log(2 * user_count + 1)
+                    prism_boost = 0.06 * math.log(2 * total_count + 1) + 0.03 * math.log(2 * user_count + 1)
                     if prism_boost > random.random():
-                        await progress(message, user, "prism", True)
+                        quests.append("prism")
                     if user.catch_quest == "finenice":
                         # 0 none
                         # 1 fine
                         # 2 nice
                         # 3 both
                         if channel.cattype == "Fine" and user.catch_progress in [0, 2]:
-                            await progress(message, user, "finenice", True)
+                            quests.append("finenice")
                         elif channel.cattype == "Nice" and user.catch_progress in [0, 1]:
-                            await progress(message, user, "finenice", True)
-                            await progress(message, user, "finenice", True)
+                            quests.append("finenice")
+                            quests.append("finenice")
+                    await multi_progress(message, user, quests, True)
         else:
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
@@ -2153,19 +2165,21 @@ async def on_message(message: discord.Message):
                         suffix_string += f"\n{blesser_text} blessed your catch and it got saved!"
 
                 # calculate prism boost
-                total_prisms = await Prism.collect("guild_id = $1", message.guild.id)
-                user_prisms = await Prism.collect("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id)
-                global_boost = 0.06 * math.log(2 * len(total_prisms) + 1)
-                user_boost = global_boost + 0.03 * math.log(2 * len(user_prisms) + 1)
+                total_count = await Prism.count("guild_id = $1", message.guild.id)
+                user_count = await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id)
+                global_boost = 0.06 * math.log(2 * total_count + 1)
+                user_boost = global_boost + 0.03 * math.log(2 * user_count + 1)
                 did_boost = False
                 if user_boost > random.random():
                     # determine whodunnit
                     if random.uniform(0, user_boost) > global_boost:
                         # boost from our own prism
-                        prism_which_boosted = random.choice(user_prisms)
+                        user_prisms = await Prism.collect("guild_id = $1 AND user_id = $2 ORDER BY random() LIMIT 1", message.guild.id, message.author.id)
+                        prism_which_boosted = user_prisms[0]
                     else:
                         # boost from any prism
-                        prism_which_boosted = random.choice(total_prisms)
+                        total_prisms = await Prism.collect("guild_id = $1 ORDER BY random() LIMIT 1", message.guild.id)
+                        prism_which_boosted = total_prisms[0]
 
                     if prism_which_boosted.user_id == message.author.id:
                         boost_applied_prism = "Your prism " + prism_which_boosted.name
@@ -2368,69 +2382,73 @@ async def on_message(message: discord.Message):
 
                 await user.save()
 
-                if random.randint(0, 1000) == 69:
+                if random.randint(0, 1000) == 69 and not user.lucky:
                     await achemb(message, "lucky", "send")
-                if message.content == "CAT":
+                if message.content == "CAT" and not user.loud_cat:
                     await achemb(message, "loud_cat", "send")
-                if bot.user in message.mentions and message.reference.message_id == cat_temp:
+                if bot.user in message.mentions and message.reference.message_id == cat_temp and not user.ping_reply:
                     await achemb(message, "ping_reply", "send")
-                if channel.cat_rains > 0:
+                if channel.cat_rains > 0 and not user.cat_rain:
                     await achemb(message, "cat_rain", "send")
 
-                await achemb(message, "first", "send")
+                if not user.first:
+                    await achemb(message, "first", "send")
 
-                if user.time <= 5:
+                if user.time <= 5 and not user.fast_catcher:
                     await achemb(message, "fast_catcher", "send")
 
-                if user.timeslow >= 3600:
+                if user.timeslow >= 3600 and not user.slow_catcher:
                     await achemb(message, "slow_catcher", "send")
 
-                if time_caught in [3.14, 31.41, 31.42, 194.15, 194.16, 1901.59, 11655.92, 11655.93]:
+                if time_caught in [3.14, 31.41, 31.42, 194.15, 194.16, 1901.59, 11655.92, 11655.93] and not user.pie:
                     await achemb(message, "pie", "send")
 
-                if time_caught > 0 and time_caught == int(time_caught):
+                if time_caught > 0 and time_caught == int(time_caught) and not user.perfection:
                     await achemb(message, "perfection", "send")
 
-                if did_boost:
+                if did_boost and not user.boosted:
                     await achemb(message, "boosted", "send")
 
-                if "undefined" not in caught_time and time_caught > 0:
+                if "undefined" not in caught_time and time_caught > 0 and not user.all_the_same:
                     raw_digits = "".join(char for char in caught_time[:-1] if char.isdigit())
                     if len(set(raw_digits)) == 1:
                         await achemb(message, "all_the_same", "send")
 
-                if suffix_string.count("\n") >= 4:
+                if suffix_string.count("\n") >= 4 and not user.certified_yapper:
                     await achemb(message, "certified_yapper", "send")
 
                 # handle battlepass
-                await progress(message, user, "3cats")
+                quests = ["3cats"]
                 if channel.cattype == "Fine":
-                    await progress(message, user, "2fine")
+                    quests.append("2fine")
                 if channel.cattype == "Good":
-                    await progress(message, user, "good")
+                    quests.append("good")
                 if time_caught >= 0 and time_caught < 10:
-                    await progress(message, user, "under10")
+                    quests.append("under10")
                 if time_caught >= 0 and int(time_caught) % 2 == 0:
-                    await progress(message, user, "even")
+                    quests.append("even")
                 if time_caught >= 0 and int(time_caught) % 2 == 1:
-                    await progress(message, user, "odd")
+                    quests.append("odd")
                 if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
-                    await progress(message, user, "rare+")
+                    quests.append("rare+")
                 if did_boost:
-                    await progress(message, user, "prism")
+                    quests.append("prism")
                 if user.catch_quest == "finenice":
                     # 0 none
                     # 1 fine
                     # 2 nice
                     # 3 both
                     if channel.cattype == "Fine" and user.catch_progress in [0, 2]:
-                        await progress(message, user, "finenice")
+                        quests.append("finenice")
                     elif channel.cattype == "Nice" and user.catch_progress in [0, 1]:
-                        await progress(message, user, "finenice")
-                        await progress(message, user, "finenice")
+                        quests.append("finenice")
+                        quests.append("finenice")
 
                 # handle catnip bounties
                 await bounty(message, user, channel.cattype)
+
+                # handle quests
+                await multi_progress(message, user, quests, False)
             finally:
                 if decided_time:
                     if cat_rain_end:
