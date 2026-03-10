@@ -5091,7 +5091,9 @@ async def the_order_canceller(interaction, choices):
     if not isinstance(choices, list):
         choices = [choices]
     for choice in choices:
-        order = await Order.get(id=int(choice))
+        order = await Order.get_or_none(id=int(choice))
+        if not order:
+            continue
         if order.type_buy:
             profile.coins += order.price * order.quantity
         else:
