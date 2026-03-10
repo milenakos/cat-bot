@@ -599,7 +599,7 @@ async def progress(
     quest_complete = False
     if user.catch_quest == quest:
         if user.catch_cooldown != 0:
-            return
+            return user
         quest_data = battle["quests"]["catch"][quest]
         user.catch_progress += 1
         if user.catch_progress >= quest_data["progress"]:
@@ -610,7 +610,7 @@ async def progress(
             user.reminder_catch = 1
     elif quest == "vote":
         if user.vote_cooldown != 0:
-            return
+            return user
         quest_data = battle["quests"]["vote"][quest]
         global_user = await User.get_or_create(user_id=user.user_id)
         user.vote_cooldown = global_user.vote_time_topgg
@@ -629,7 +629,7 @@ async def progress(
         quest_complete = True
     elif user.misc_quest == quest:
         if user.misc_cooldown != 0:
-            return
+            return user
         quest_data = battle["quests"]["misc"][quest]
         user.misc_progress += 1
         if user.misc_progress >= quest_data["progress"]:
@@ -639,7 +639,7 @@ async def progress(
             user.misc_progress = 0
             user.reminder_misc = 1
     else:
-        return
+        return user
 
     await user.save()
     if not quest_complete:
