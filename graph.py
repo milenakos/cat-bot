@@ -105,11 +105,11 @@ def plot_aggregated(timeline, title="Price (5-min buckets, past 3 days)"):
     now_dt = datetime.now(timezone.utc)
     tick_positions = []
     tick_labels = []
-    for h in range(0, 73, 12):
+    for h in range(12, 73, 12):
         tick_dt = now_dt - timedelta(hours=h)
         if tick_dt >= xs[0]:
             tick_positions.append(tick_dt)
-            tick_labels.append("now" if h == 0 else f"{h}h ago")
+            tick_labels.append(f"-{h}h")
 
     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
     ax.set_xticks(tick_positions)
