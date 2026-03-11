@@ -244,6 +244,9 @@ with open("config/catnip.json", "r", encoding="utf-8") as f:
 with open("facts.txt") as f:
     cat_facts_list = f.read().split("\n")
 
+with open("fanhalo.txt") as f:
+    fanhalo_list = f.read().split("\n")
+
 # convert achievement json to a few other things
 ach_names = ach_list.keys()
 ach_titles = {value["title"].lower(): key for (key, value) in ach_list.items()}
@@ -1383,6 +1386,7 @@ async def on_message(message: discord.Message):
 
     if message.guild is None:
         try:
+            user = await User.get_or_create(user_id=message.author.id)
             if text.startswith("disable"):
                 # disable reminders
                 try:
@@ -1390,14 +1394,18 @@ async def on_message(message: discord.Message):
                     user = await Profile.get_or_create(guild_id=int(where), user_id=message.author.id)
                     user.reminders_enabled = False
                     await user.save()
-                    await message.channel.send("reminders disabled")
+                    await message.reply("reminders disabled")
                 except Exception:
-                    await message.channel.send("failed. check if your guild id is correct")
+                    await message.reply("failed. check if your guild id is correct")
                     return
             elif text == "lol_i_have_dmed_the_cat_bot_and_got_an_ach":
-                await message.channel.send('which part of "send in server" was unclear?')
+                await message.reply('which part of "send in server" was unclear?')
+            elif user.dms < 15:
+                await message.reply('good job! please send "lol_i_have_dmed_the_cat_bot_and_got_an_ach" in server to get your ach!')
+                user.dms += 1
+                await user.save()
             else:
-                await message.channel.send('good job! please send "lol_i_have_dmed_the_cat_bot_and_got_an_ach" in server to get your ach!')
+                await message.reply(random.choice(fanhalo_list))
         except Exception:
             pass
         return

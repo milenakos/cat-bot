@@ -364,7 +364,8 @@ CREATE TABLE public."user" (
     blessings_anonymous boolean DEFAULT false,
     rain_minutes_bought integer DEFAULT 0,
     username character varying(255) DEFAULT ''::character varying,
-    dm_channel_id bigint DEFAULT 0
+    dm_channel_id bigint DEFAULT 0,
+    dms smallint DEFAULT 0
 );
 
 ALTER TABLE public."user" OWNER TO cat_bot;
