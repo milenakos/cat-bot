@@ -1096,8 +1096,10 @@ async def background_loop():
         if profile:
             if order.type_buy:
                 profile.coins += order.quantity * order.price
+                await PortfolioHistory.create(user_id=profile.id, type="c", quantity=order.price * order.quantity, time=int(time.time()))
             else:
                 profile[f"stock_{order.ticker.lower()}"] += order.quantity
+                await PortfolioHistory.create(user_id=profile.id, type="C", quantity=order.quantity, time=int(time.time()), ticker=order.ticker)
             await profile.save()
         await order.delete()
 
@@ -5002,11 +5004,15 @@ async def view_portfolio(interaction, person, refresh=False, hidden=None):
         elif history.type == "w":
             portfolio_history.append(f"📤 Withdrew 🪙 {history.price:,} coins <t:{history.time}:R>")
         elif history.type == "s":
-            portfolio_history.append(f"🔴 Sold {history.quantity:,}x {history.ticker} shares at 🪙 {history.price:,}/share <t:{history.time}:R>")
+            portfolio_history.append(f"🔴 Created SELL for {history.quantity:,}x {history.ticker} shares at 🪙 {history.price:,}/share <t:{history.time}:R>")
         elif history.type == "b":
-            portfolio_history.append(f"🟢 Bought {history.quantity:,}x {history.ticker} shares at 🪙 {history.price:,}/share <t:{history.time}:R>")
+            portfolio_history.append(f"🟢 Created BUY for {history.quantity:,}x {history.ticker} shares at 🪙 {history.price:,}/share <t:{history.time}:R>")
         elif history.type == "r":
             portfolio_history.append(f"⭐ Rewarded 🪙 {history.quantity:,} by {history.ticker} <t:{history.time}:R>")
+        elif history.type == "c":
+            portfolio_history.append(f":x: Cancelled BUY, refunded 🪙 {history.quantity:,} <t:{history.time}:R>")
+        elif history.type == "C":
+            portfolio_history.append(f":x: Cancelled SELL, refunded {history.quantity:,}x {history.ticker} shares <t:{history.time}:R>")
 
     deposits = await PortfolioHistory.sum("price", "user_id = $1 AND type = $2", profile.id, "d")
     deposits -= await PortfolioHistory.sum("price", "user_id = $1 AND type = $2", profile.id, "w")
@@ -5104,8 +5110,10 @@ async def the_order_canceller(interaction, choices):
             continue
         if order.type_buy:
             profile.coins += order.price * order.quantity
+            await PortfolioHistory.create(user_id=profile.id, type="c", quantity=order.price * order.quantity, time=int(time.time()))
         else:
             profile[f"stock_{order.ticker.lower()}"] += order.quantity
+            await PortfolioHistory.create(user_id=profile.id, type="C", quantity=order.quantity, time=int(time.time()), ticker=order.ticker)
         await order.delete()
     await profile.save()
     await interaction.edit_original_response(content="Orders cancelled!", view=None)
