@@ -1002,7 +1002,7 @@ async def refresh_stock_rewards(ticker):
     stock.start_time = time.time() + random.randint(3 * day, 7 * day)
     stock.end_time = stock.start_time + day * 2
     stock.chance = min(100, max(0, round(random.gauss(50, 10))))
-    stock.amount = round(random.gauss(5, current_price / 4))
+    stock.amount = round(random.gauss(0, current_price / 4))
     stock.chance_hidden = random.randint(0, 100) < 25
     stock.amount_hidden = random.randint(0, 100) < 75
     await stock.save()
