@@ -3553,31 +3553,21 @@ async def gen_stats(profile, star):
     stats.append(["purrfect_catches", "✨", f"Purrfect catches: {profile.perfection_count:,}{star}"])
 
     # catching boosts
-    stats.append([get_emoji("prism"), "Boosts"])
+    stats.append([get_emoji("prism"), "Prisms & Catnip"])
     prisms_crafted = await Prism.count("guild_id = $1 AND user_id = $2", profile.guild_id, profile.user_id)
     boosts_done = await Prism.sum("catches_boosted", "guild_id = $1 AND user_id = $2", profile.guild_id, profile.user_id)
     stats.append(["prism_crafted", get_emoji("prism"), f"Prisms crafted: {prisms_crafted:,}"])
     stats.append(["boosts_done", get_emoji("prism"), f"Boosts by owned prisms: {boosts_done:,}{star}"])
     stats.append(["boosted_catches", get_emoji("prism"), f"Prism-boosted catches: {profile.boosted_catches:,}{star}"])
-
-    # catnip
-    stats.append([get_emoji("catnip"), "Catnip"])
     stats.append(["catnip_activations", get_emoji("catnip"), f"Cats gained from catnip: {profile.catnip_activations:,}"])
     stats.append(["catnip_bought", get_emoji("catnip"), f"Catnip levels reached: {profile.catnip_bought:,}"])
     stats.append(["highest_catnip_level", "⬆️", f"Highest catnip level: {profile.highest_catnip_level:,}"])
-    stats.append(["bounties_complete", "🎯", f"Bounties completed: {profile.bounties_complete:,}"])
-
-    # voting
-    stats.append([get_emoji("topgg"), "Voting"])
-    stats.append(["total_votes", get_emoji("topgg"), f"Total votes: {user.total_votes:,}{star}"])
-    stats.append(["current_vote_streak", "🔥", f"Current vote streak: {user.vote_streak} (max {max(user.vote_streak, user.max_vote_streak):,}){star}"])
-    if user.vote_time_topgg + 43200 > time.time():
-        stats.append(["can_vote", get_emoji("topgg"), f"Can vote <t:{user.vote_time_topgg + 43200}:R>"])
-    else:
-        stats.append(["can_vote", get_emoji("topgg"), "Can vote!"])
+    stats.append(["bounties_complete", "🎯", f"Mafia bounties completed: {profile.bounties_complete:,}"])
 
     # battlepass
-    stats.append(["⬆️", "Cattlepass"])
+    stats.append(["⬆️", "Cattlepass & Voting"])
+    stats.append(["total_votes", get_emoji("topgg"), f"Total votes: {user.total_votes:,}{star}"])
+    stats.append(["current_vote_streak", "🔥", f"Current vote streak: {user.vote_streak} (max {max(user.vote_streak, user.max_vote_streak):,}){star}"])
     seasons_complete = 0
     levels_complete = 0
     max_level = 0
@@ -3628,44 +3618,37 @@ async def gen_stats(profile, star):
     stats.append(["total_xp_earned", "🧮", f"Total Cattlepass XP earned: {total_xp:,}"])
 
     # rains & supporter
-    stats.append(["☔", "Rains"])
+    stats.append(["☔", "Rains & Blessings"])
     stats.append(["current_rain_minutes", "☔", f"Current rain minutes: {user.rain_minutes:,}"])
-    stats.append(["supporter", "👑", "Ever bought rains: " + ("Yes" if user.premium else "No")])
     stats.append(["rain_minutes_bought", "☔", f"Rain minutes bought: {user.rain_minutes_bought:,}"])
     stats.append(["cats_caught_during_rains", "☔", f"Cats caught during rains: {profile.rain_participations:,}{star}"])
     stats.append(["rain_minutes_started", "☔", f"Rain minutes started: {profile.rain_minutes_started:,}{star}"])
     stats.append(["cats_blessed", "🌠", f"Cats blessed: {user.cats_blessed:,}"])
 
-    # gambling
-    stats.append(["🎰", "Gambling"])
-    stats.append(["casino_spins", "🎰", f"Casino spins: {profile.gambles:,}"])
-    stats.append(["slot_spins", "🎰", f"Slot spins: {profile.slot_spins:,}"])
-    stats.append(["slot_wins", "🎰", f"Slot wins: {profile.slot_wins:,}"])
-    stats.append(["slot_big_wins", "🎰", f"Slot big wins: {profile.slot_big_wins:,}"])
-    stats.append(["roulette_spins", "💰", f"Roulette spins: {profile.roulette_spins:,}"])
-    stats.append(["roulette_wins", "💰", f"Roulette wins: {profile.roulette_wins:,}"])
-
-    # tic tac toe
-    stats.append(["⭕", "Tic Tac Toe"])
-    stats.append(["ttc_games", "⭕", f"Tic Tac Toe games played: {profile.ttt_played:,}"])
-    stats.append(["ttc_wins", "⭕", f"Tic Tac Toe wins: {profile.ttt_won:,}"])
-    stats.append(["ttc_draws", "⭕", f"Tic Tac Toe draws: {profile.ttt_draws:,}"])
-    if profile.ttt_played != 0:
-        stats.append(["ttc_win_rate", "⭕", f"Tic Tac Toe win rate: {(profile.ttt_won + profile.ttt_draws) / profile.ttt_played * 100:.2f}%"])
-    else:
-        stats.append(["ttc_win_rate", "⭕", "Tic Tac Toe win rate: 0%"])
-
+    # misc
+    stats.append(["❓", "Misc"])
     if (profile.guild_id, profile.user_id) not in temp_cookie_storage.keys():
         cookies = profile.cookies
     else:
         cookies = temp_cookie_storage[(profile.guild_id, profile.user_id)]
-    # misc
-    stats.append(["❓", "Misc"])
-    stats.append(["facts_read", "🧐", f"Facts read: {profile.facts:,}"])
+    portfolio_value = 0
+    for stock in stock_data:
+        stock_price = await get_stock_price(stock["ticker"])
+        amount_owned = profile[f"stock_{stock['ticker'].lower()}"]
+        item_value = stock_price * amount_owned
+        portfolio_value += item_value
+    if profile.ttt_played != 0:
+        stats.append(
+            ["ttc_win_rate", "⭕", f"Tic Tac Toe wins: {profile.ttt_won:,} (winrate: {(profile.ttt_won + profile.ttt_draws) / profile.ttt_played * 100:.2f}%"]
+        )
+    else:
+        stats.append(["ttc_win_rate", "⭕", "Tic Tac Toe wins: 0 (winrate: 0%)"])
+    stats.append(["casino_spins", "🎰", f"Casino spins: {profile.gambles:,}"])
+    stats.append(["slot_spins", "🎰", f"Slot spins: {profile.slot_spins:,}, wins: {profile.slot_wins:,}, big wins: {profile.slot_big_wins:,}"])
+    stats.append(["roulette_spins", "💰", f"Roulette spins: {profile.roulette_spins:,}, wins: {profile.roulette_wins:,}"])
+    stats.append(["portfolio_value", "🪙", f"Portfolio value: {portfolio_value:,}"])
     stats.append(["cookies", "🍪", f"Cookies clicked: {cookies:,}"])
     stats.append(["pig_high_score", "🎲", f"Pig high score: {profile.best_pig_score:,}"])
-    stats.append(["private_embed_clicks", get_emoji("pointlaugh"), f"Private embed clicks: {profile.funny:,}"])
-    stats.append(["reminders_set", "⏰", f"Reminders set: {profile.reminders_set:,}{star}"])
     stats.append(["cats_gifted", "🎁", f"Cats gifted: {profile.cats_gifted:,}{star}"])
     stats.append(["cats_received_as_gift", "🎁", f"Cats received as gift: {profile.cat_gifts_recieved:,}{star}"])
     stats.append(["trades_completed", "💱", f"Trades completed: {profile.trades_completed}{star}"])
@@ -5004,11 +4987,11 @@ async def view_portfolio(interaction, person, refresh=False, hidden=None):
         elif history.type == "w":
             portfolio_history.append(f"📤 Withdrew 🪙 {history.price:,} coins <t:{history.time}:R>")
         elif history.type == "s":
-            portfolio_history.append(f"🔴 Created SELL for {history.quantity:,}x {history.ticker} shares at 🪙 {history.price:,}/share <t:{history.time}:R>")
+            portfolio_history.append(f"🔴 Created SELL for {history.quantity:,}x {history.ticker} at 🪙 {history.price:,}/share <t:{history.time}:R>")
         elif history.type == "b":
-            portfolio_history.append(f"🟢 Created BUY for {history.quantity:,}x {history.ticker} shares at 🪙 {history.price:,}/share <t:{history.time}:R>")
+            portfolio_history.append(f"🟢 Created BUY for {history.quantity:,}x {history.ticker} at 🪙 {history.price:,}/share <t:{history.time}:R>")
         elif history.type == "r":
-            portfolio_history.append(f"⭐ Rewarded 🪙 {history.quantity:,} by {history.ticker} <t:{history.time}:R>")
+            portfolio_history.append(f"⭐ Got rewarded 🪙 {history.quantity:,} by {history.ticker} <t:{history.time}:R>")
         elif history.type == "c":
             portfolio_history.append(f":x: Cancelled BUY, refunded 🪙 {history.quantity:,} <t:{history.time}:R>")
         elif history.type == "C":
