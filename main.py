@@ -417,6 +417,7 @@ news_list = [
     {"title": "Cat Bot Christmas 2025", "emoji": "christmaspack"},
     {"title": "Happy Valentine's!", "emoji": "💞"},
     {"title": "Cat Bot Stocks", "emoji": "📈"},
+    {"title": "PackOrRain Event [ACTIVE]", "emoji": "🔥"},
 ]
 
 
@@ -622,7 +623,7 @@ async def progress(
 
         # Weekdays 0 Mon - 6 Sun
         # double vote xp rewards if Friday, Saturday or Sunday
-        voted_at = datetime.datetime.utcfromtimestamp(global_user.vote_time_topgg)
+        voted_at = datetime.datetime.fromtimestamp(global_user.vote_time_topgg, tz=datetime.timezone.utc)
         if voted_at.weekday() >= 4:
             user.vote_reward *= 2
 
@@ -3116,6 +3117,69 @@ ummm good luck and let the line go up!""",
             view.add_item(embed)
             view.add_item(back_row)
             await interaction.edit_original_response(view=view)
+        elif news_id == 16:
+            # "pack" votes are stored as Fine cats, "rain" votes are stored as Nice cats
+            funny_user = await Profile.get_or_create(guild_id=0, user_id=bot.user.id)
+
+            async def vote_event(interaction):
+                await interaction.response.defer()
+                voter = await User.get_or_create(user_id=interaction.user.id)
+                current_state = voter.news_state.strip()
+                if len(current_state) < len(news_list):
+                    current_state += "0" * (len(news_list) - len(current_state))
+                await funny_user.refresh_from_db()
+
+                vote_msg = "You already voted for that option!"
+                if interaction.data["custom_id"] == "pack" and current_state[news_id] != "2":
+                    if current_state[news_id] == "3":
+                        funny_user.cat_Nice -= 1
+                        vote_msg = "Changed your vote to Platinum pack!"
+                    else:
+                        vote_msg = "Voted for Platinum pack!"
+                    funny_user.cat_Fine += 1
+                    current_state = current_state[:news_id] + "2" + current_state[news_id + 1 :]
+                elif interaction.data["custom_id"] == "rain" and current_state[news_id] != "3":
+                    if current_state[news_id] == "2":
+                        funny_user.cat_Fine -= 1
+                        vote_msg = "Changed your vote to Rain!"
+                    else:
+                        vote_msg = "Voted for Rain!"
+                    funny_user.cat_Nice += 1
+                    current_state = current_state[:news_id] + "3" + current_state[news_id + 1 :]
+
+                if vote_msg != "You already voted for that option!":
+                    voter.news_state = current_state
+                    await funny_user.save()
+                    await voter.save()
+
+                await interaction.followup.send(vote_msg, ephemeral=True)
+
+            pack_votes = funny_user.cat_Fine
+            rain_votes = funny_user.cat_Nice
+            total_votes = pack_votes + rain_votes
+            pack_pct = (pack_votes / total_votes * 100) if total_votes else 50.0
+            rain_pct = (rain_votes / total_votes * 100) if total_votes else 50.0
+
+            pack_btn = Button(label=f"Platinum Pack ({pack_pct:.1f}%)", emoji=get_emoji("platinumpack"), style=ButtonStyle.primary, custom_id="pack")
+            pack_btn.callback = vote_event
+            rain_btn = Button(label=f"Rain ({rain_pct:.1f}%)", emoji="☔", style=ButtonStyle.primary, custom_id="rain")
+            rain_btn.callback = vote_event
+            catches = await Profile.sum("total_catches", "total_catches > 0") - 142453335
+            embed = Container(
+                "## PackOrRain Event",
+                "everyone *who votes below* will earn a prize! the prize type will be **whatever option gets most votes**, and the prize amount will be **how many millions of catches** everyone does until the event ends!",
+                "-# the prize will be given to everyone who votes, even if their vote wasn't the winning option.",
+                "===",
+                f"**Current prize:** {int(catches / 1000000)} {'Platinum Packs' if pack_votes > rain_votes else 'Rain Minutes'}",
+                f"**Total catches:** {catches:,} (+1 prize in {(catches % 1000000):,} catches)",
+                "**Event ends** <t:1773856800>",
+                "===",
+                ActionRow(pack_btn, rain_btn),
+                "-# <t:1773424800>",
+            )
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
 
     async def regen_buttons():
         nonlocal buttons
@@ -3639,7 +3703,7 @@ async def gen_stats(profile, star):
         portfolio_value += item_value
     if profile.ttt_played != 0:
         stats.append(
-            ["ttc_win_rate", "⭕", f"Tic Tac Toe wins: {profile.ttt_won:,} (winrate: {(profile.ttt_won + profile.ttt_draws) / profile.ttt_played * 100:.2f}%"]
+            ["ttc_win_rate", "⭕", f"Tic Tac Toe wins: {profile.ttt_won:,} (winrate: {(profile.ttt_won + profile.ttt_draws) / profile.ttt_played * 100:.2f}%)"]
         )
     else:
         stats.append(["ttc_win_rate", "⭕", "Tic Tac Toe wins: 0 (winrate: 0%)"])
@@ -9479,29 +9543,29 @@ async def recieve_vote(request):
 
     user.vote_time_topgg = created_at
 
+    channeley = await fetch_dm_channel(user)
+
+    if user.vote_streak == 1:
+        streak_progress = "🟦⬛⬛⬛⬛⬛⬛⬛⬛⬛\n⬆️"
+    else:
+        streak_progress = ""
+        if user.vote_streak > 0:
+            streak_progress += get_streak_reward(user.vote_streak - 1)["done_emoji"]
+        streak_progress += get_streak_reward(user.vote_streak)["done_emoji"]
+
+        for i in range(user.vote_streak + 1, user.vote_streak + 9):
+            streak_progress += get_streak_reward(i)["emoji"]
+
+        streak_progress += f"\n{get_emoji('empty')}⬆️"
+
+    special_reward = math.ceil(user.vote_streak / 25) * 25
+    if special_reward not in range(user.vote_streak, user.vote_streak + 9):
+        streak_progress += f"\nNext Special Reward: {get_streak_reward(special_reward)['emoji']} at {special_reward} streak"
+
+    streak_top_position = await User.count("vote_streak > $1", user.vote_streak) + 1
+    top_text = f" (top #{streak_top_position}!)" if streak_top_position < 1000 else ""
+
     try:
-        channeley = await fetch_dm_channel(user)
-
-        if user.vote_streak == 1:
-            streak_progress = "🟦⬛⬛⬛⬛⬛⬛⬛⬛⬛\n⬆️"
-        else:
-            streak_progress = ""
-            if user.vote_streak > 0:
-                streak_progress += get_streak_reward(user.vote_streak - 1)["done_emoji"]
-            streak_progress += get_streak_reward(user.vote_streak)["done_emoji"]
-
-            for i in range(user.vote_streak + 1, user.vote_streak + 9):
-                streak_progress += get_streak_reward(i)["emoji"]
-
-            streak_progress += f"\n{get_emoji('empty')}⬆️"
-
-        special_reward = math.ceil(user.vote_streak / 25) * 25
-        if special_reward not in range(user.vote_streak, user.vote_streak + 9):
-            streak_progress += f"\nNext Special Reward: {get_streak_reward(special_reward)['emoji']} at {special_reward} streak"
-
-        streak_top_position = await User.count("vote_streak > $1", user.vote_streak) + 1
-        top_text = f" (top #{streak_top_position}!)" if streak_top_position < 1000 else ""
-
         await channeley.send(
             "\n".join(
                 [
