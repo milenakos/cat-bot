@@ -9443,17 +9443,16 @@ async def transfer(interaction: discord.Interaction, from_user: discord.User, to
             self.to_user = to_user
             self.selected_types = selected or []
 
-            # Header
             header = TextDisplay(
                 f"**Transferring data from {from_user.mention} to {to_user.mention}**\n"
                 "Pick what data to transfer:"
             )
 
-            # Multi‑select dropdown
             options = [
                 Option(label="Stats", emoji="📝", value="stats"),
                 Option(label="Achievements", emoji=get_emoji("ach"), value="achs"),
                 Option(label="Cats", emoji="🐈", value="cats"),
+                Option(label="Packs", emoji=get_emoji("goldpack"), value="packs"),
             ]
             self.select = Select(
                 id="transfer_type_select",
@@ -9461,14 +9460,12 @@ async def transfer(interaction: discord.Interaction, from_user: discord.User, to
                 opts=options,
                 selected=self.selected_types,
                 on_select=self.on_select,
-                max_values=3,
+                max_values=4,
             )
 
-            # Transfer button (disabled if nothing selected)
             self.transfer_btn = Button(label="Transfer", style=ButtonStyle.primary, disabled=len(self.selected_types) == 0)
             self.transfer_btn.callback = self.on_transfer_click
 
-            # Build container
             container = Container(
                 header,
                 ActionRow(self.select),
@@ -9478,18 +9475,14 @@ async def transfer(interaction: discord.Interaction, from_user: discord.User, to
             self.add_item(container)
 
         async def on_select(self, interaction: discord.Interaction, values):
-            """Called when user changes selection. values is a list."""
-            # Create a new view with the updated selection
             new_view = TransferTypeView(self.from_user, self.to_user, selected=values)
             await interaction.response.edit_message(view=new_view)
 
         async def on_transfer_click(self, interaction: discord.Interaction):
-            """Move to confirmation view."""
             if not self.selected_types:
                 await interaction.response.send_message("You haven't selected anything!", ephemeral=True)
                 return
 
-            # Build header text for confirmation
             header = (
                 f"**Transferring data from {self.from_user.mention} to {self.to_user.mention}**\n"
                 f"Selected: **{', '.join(self.selected_types)}**\n\n"
@@ -9526,7 +9519,7 @@ async def transfer(interaction: discord.Interaction, from_user: discord.User, to
 
             changes = []
 
-            # Cats
+            # ─── CATS ─────────────────────────────────────────────
             if "cats" in self.selected_types:
                 for cat in cattypes:
                     field = f"cat_{cat}"
@@ -9536,7 +9529,17 @@ async def transfer(interaction: discord.Interaction, from_user: discord.User, to
                         setattr(to_profile, field, getattr(to_profile, field) + val)
                 changes.append("cats")
 
-            # Achievements
+            # ─── PACKS ────────────────────────────────────────────
+            if "packs" in self.selected_types:
+                for pack in pack_data:
+                    field = f"pack_{pack['name'].lower()}"
+                    val = getattr(from_profile, field)
+                    if val:
+                        setattr(from_profile, field, 0)
+                        setattr(to_profile, field, getattr(to_profile, field) + val)
+                changes.append("packs")
+
+            # ─── ACHIEVEMENTS ─────────────────────────────────────
             if "achs" in self.selected_types:
                 for ach in ach_names:
                     if getattr(from_profile, ach):
@@ -9544,9 +9547,8 @@ async def transfer(interaction: discord.Interaction, from_user: discord.User, to
                         setattr(from_profile, ach, False)
                 changes.append("achievements")
 
-            # Stats
+            # ─── STATS ────────────────────────────────────────────
             if "stats" in self.selected_types:
-                # Sentinel for fastest time
                 FASTEST_SENTINEL = 99999999999999
 
                 # All numeric fields that should be transferred
@@ -9568,7 +9570,7 @@ async def transfer(interaction: discord.Interaction, from_user: discord.User, to
                     "catnip_activations", "catnip_bought", "highest_catnip_level",
                     "bounties_complete", "cookies", "reminders_set", "pack_attempts",
                     # Catnip state (numeric parts)
-                    "catnip_level", "catnip_active", "catnip_price", "catnip_amount",
+                    "catnip_level", "catnip_active", "catnip_amount",
                     "bounty_total_one", "bounty_total_two", "bounty_total_three",
                     "bounty_progress_one", "bounty_progress_two", "bounty_progress_three",
                     "bounty_total_bonus", "bounty_progress_bonus", "bounties",
@@ -9584,11 +9586,12 @@ async def transfer(interaction: discord.Interaction, from_user: discord.User, to
                     "hibernation", "first_quote_seen", "reroll", "perk_selected",
                 ]
 
-                # String fields (bounty types and ids)
+                # String fields (bounty types, ids, catnip price, perk placeholders)
                 str_fields = [
                     "bounty_id_one", "bounty_id_two", "bounty_id_three",
                     "bounty_type_one", "bounty_type_two", "bounty_type_three",
                     "bounty_id_bonus", "bounty_type_bonus",
+                    "catnip_price",
                     "perk1", "perk2", "perk3",
                 ]
 
@@ -9598,17 +9601,15 @@ async def transfer(interaction: discord.Interaction, from_user: discord.User, to
                     to_val = getattr(to_profile, field)
 
                     if field == "time":
-                        # Keep the faster (lower) time
                         new_val = min(from_val, to_val) if to_val != FASTEST_SENTINEL else from_val
                         setattr(to_profile, field, new_val)
                         setattr(from_profile, field, FASTEST_SENTINEL)
                     elif field == "timeslow":
-                        # Keep the slower (higher) time
                         new_val = max(from_val, to_val)
                         setattr(to_profile, field, new_val)
                         setattr(from_profile, field, 0)
                     else:
-                        # Wasn't sure about how to handle this
+                         # Wasn't sure about how to handle this
 
                         # Additive
                         # OPTIONAL: Preserve base 100 for roulette_balance (uncomment if desired)
@@ -9620,7 +9621,7 @@ async def transfer(interaction: discord.Interaction, from_user: discord.User, to
                         setattr(to_profile, field, to_val + from_val)
                         setattr(from_profile, field, 0)
 
-                # Transfer boolean fields (OR them – target keeps existing, gains source's)
+                # Transfer boolean fields (OR them)
                 for field in bool_fields:
                     from_val = getattr(from_profile, field)
                     to_val = getattr(to_profile, field)
@@ -9632,7 +9633,7 @@ async def transfer(interaction: discord.Interaction, from_user: discord.User, to
                     from_val = getattr(from_profile, field)
                     if from_val:
                         setattr(to_profile, field, from_val)
-                        setattr(from_profile, field, "" if field.startswith("bounty") else None)
+                        setattr(from_profile, field, "")  # reset to empty string
 
                 changes.append("stats")
 
