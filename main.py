@@ -9609,7 +9609,7 @@ async def transfer(interaction: discord.Interaction, from_user: discord.User, to
                         setattr(to_profile, field, new_val)
                         setattr(from_profile, field, 0)
                     else:
-                         # Wasn't sure about how to handle this
+                        # Wasn't sure about how to handle this
 
                         # Additive
                         # OPTIONAL: Preserve base 100 for roulette_balance (uncomment if desired)
