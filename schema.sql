@@ -302,7 +302,8 @@ CREATE TABLE public.profile (
     buy_stock boolean DEFAULT false,
     sell_stock boolean DEFAULT false,
     rugpulled boolean DEFAULT false,
-    seen_deposit boolean DEFAULT false
+    seen_deposit boolean DEFAULT false,
+    last_ran_stocks bigint DEFAULT 0
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;

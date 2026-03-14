@@ -1104,6 +1104,23 @@ async def background_loop():
             await profile.save()
         await order.delete()
 
+    # auto-sell stocks of people inactive for over a week
+    if False:  # grace period
+        async for profile in Profile.filter("last_ran_stocks < $1 AND last_ran_stocks != 0", time.time() - 3600 * 24 * 7):
+            for stock in stock_data:
+                ticker = stock["ticker"]
+                quantity = profile[f"stock_{ticker.lower()}"]
+                price = await get_stock_price(ticker)
+                if quantity > 0:
+                    curr_time = int(time.time())
+                    await Order.create(user_id=profile.id, ticker=ticker, quantity=quantity, price=price, type_buy=False, time=curr_time)
+                    await PortfolioHistory.create(user_id=profile.id, type="s", price=price, quantity=quantity, time=curr_time, ticker=ticker)
+                    profile[f"stock_{ticker.lower()}"] = 0
+                    order = await Order.get_or_none(user_id=profile.id, ticker=ticker, quantity=quantity, price=price, type_buy=False, time=curr_time)
+                    if order:
+                        await resolve_orders(order)
+            await profile.save()
+
     # revive dead catch loops
     counter = 0
     async for channel in Channel.limit(["channel_id"], "yet_to_spawn < $1 AND cat = 0", time.time(), refetch=False):
@@ -5166,9 +5183,95 @@ async def the_order_canceller(interaction, choices):
     await interaction.edit_original_response(content="Orders cancelled!", view=None)
 
 
+async def resolve_orders(order: Order):
+    remaining_quantity = order.quantity
+    display_price = None
+    if order.type_buy:
+        # buy order
+        seller_coin_deltas = {}
+        async for eligible_order in Order.filter(
+            "ticker = $1 AND type_buy = $2 AND price <= $3 ORDER BY price ASC, time ASC", order.ticker, False, order.price
+        ):
+            if remaining_quantity == 0:
+                break
+
+            buy_quantity = min(remaining_quantity, eligible_order.quantity)
+            remaining_quantity -= buy_quantity
+            eligible_order.quantity -= buy_quantity
+
+            seller_coin_deltas[eligible_order.user_id] = seller_coin_deltas.get(eligible_order.user_id, 0) + (buy_quantity * eligible_order.price)
+
+            display_price = eligible_order.price
+
+            if eligible_order.quantity == 0:
+                await eligible_order.delete()
+            else:
+                await eligible_order.save()
+                break
+
+        if seller_coin_deltas:
+            updates = []
+            for user_id, delta in seller_coin_deltas.items():
+                u = await Profile.get(id=user_id)
+                u.coins += delta
+                updates.append(u)
+            await Profile.bulk_update(updates, "coins")
+
+        profile = await Profile.get(id=order.user_id)
+        profile[f"stock_{order.ticker.lower()}"] += order.quantity - remaining_quantity
+        await profile.save()
+    else:
+        # sell order
+        buyer_stock_deltas = {}
+        async for eligible_order in Order.filter(
+            "ticker = $1 AND type_buy = $2 AND price >= $3 ORDER BY price DESC, time ASC", order.ticker, True, order.price
+        ):
+            if remaining_quantity == 0:
+                break
+
+            sell_quantity = min(remaining_quantity, eligible_order.quantity)
+            remaining_quantity -= sell_quantity
+            eligible_order.quantity -= sell_quantity
+
+            buyer_stock_deltas[eligible_order.user_id] = buyer_stock_deltas.get(eligible_order.user_id, 0) + sell_quantity
+
+            display_price = eligible_order.price
+
+            if eligible_order.quantity == 0:
+                await eligible_order.delete()
+            else:
+                await eligible_order.save()
+                break
+
+        if buyer_stock_deltas:
+            updates = []
+            for user_id, delta in buyer_stock_deltas.items():
+                u = await Profile.get(id=user_id)
+                u[f"stock_{order.ticker.lower()}"] += delta
+                updates.append(u)
+            await Profile.bulk_update(updates, f"stock_{order.ticker.lower()}")
+
+        profile = await Profile.get(id=order.user_id)
+        profile.coins += (order.quantity - remaining_quantity) * order.price
+        await profile.save()
+
+    if display_price:
+        await PriceHistory.create(ticker=order.ticker, price=display_price, time=int(time.time()))
+        temp_stock_prices[order.ticker] = display_price
+
+    if remaining_quantity > 0:
+        order.quantity = remaining_quantity
+        await order.save()
+    else:
+        await order.delete()
+    return remaining_quantity
+
+
 @bot.tree.command(description="the stonk market")
 async def stocks(message: discord.Interaction):
     profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
+    profile.last_ran_stocks = int(time.time())
+    await profile.save()
 
     async def ask_deposit_all(interaction):
         await interaction.response.defer()
@@ -5307,81 +5410,6 @@ async def stocks(message: discord.Interaction):
             await profile.save()
             await PortfolioHistory.create(user_id=profile.id, time=int(time.time()), type="w", price=packs * 100)
             await interaction.response.send_message(f"📤 You withdrew {packs} wooden packs! 🪙 -{packs * 100} coins.", ephemeral=True)
-
-    async def resolve_orders(order: Order):
-        remaining_quantity = order.quantity
-        display_price = None
-        if order.type_buy:
-            # buy order
-            updates = []
-            async for eligible_order in Order.filter(
-                "ticker = $1 AND type_buy = $2 AND price <= $3 ORDER BY price ASC, time ASC", order.ticker, False, order.price
-            ):
-                if remaining_quantity == 0:
-                    break
-
-                buy_quantity = min(remaining_quantity, eligible_order.quantity)
-                remaining_quantity -= buy_quantity
-                eligible_order.quantity -= buy_quantity
-
-                u = await Profile.get(id=eligible_order.user_id)
-                u.coins += buy_quantity * eligible_order.price
-                updates.append(u)
-
-                display_price = eligible_order.price
-
-                if eligible_order.quantity == 0:
-                    await eligible_order.delete()
-                else:
-                    await eligible_order.save()
-                    break
-
-            await Profile.bulk_update(updates, "coins")
-
-            profile = await Profile.get(id=order.user_id)
-            profile[f"stock_{order.ticker.lower()}"] += order.quantity - remaining_quantity
-            await profile.save()
-        else:
-            # sell order
-            updates = []
-            async for eligible_order in Order.filter(
-                "ticker = $1 AND type_buy = $2 AND price >= $3 ORDER BY price DESC, time ASC", order.ticker, True, order.price
-            ):
-                if remaining_quantity == 0:
-                    break
-
-                sell_quantity = min(remaining_quantity, eligible_order.quantity)
-                remaining_quantity -= sell_quantity
-                eligible_order.quantity -= sell_quantity
-
-                u = await Profile.get(id=eligible_order.user_id)
-                u[f"stock_{order.ticker.lower()}"] += sell_quantity
-                updates.append(u)
-
-                display_price = eligible_order.price
-
-                if eligible_order.quantity == 0:
-                    await eligible_order.delete()
-                else:
-                    await eligible_order.save()
-                    break
-
-            await Profile.bulk_update(updates, f"stock_{order.ticker.lower()}")
-
-            profile = await Profile.get(id=order.user_id)
-            profile.coins += (order.quantity - remaining_quantity) * order.price
-            await profile.save()
-
-        if display_price:
-            await PriceHistory.create(ticker=order.ticker, price=display_price, time=int(time.time()))
-            temp_stock_prices[order.ticker] = display_price
-
-        if remaining_quantity > 0:
-            order.quantity = remaining_quantity
-            await order.save()
-        else:
-            await order.delete()
-        return remaining_quantity
 
     class OrderModal(Modal):
         def __init__(self, ticker, type, recommended_price, max_shares=None):
