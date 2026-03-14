@@ -6275,6 +6275,7 @@ async def roulette(message: discord.Interaction):
             winning_colour = winning_pocket[1]
 
             if bet_value == winning_number or bet_value == winning_colour:
+                user.roulette_wins += 1
                 if bet_value.isdecimal() or bet_value == "green":
                     user.roulette_balance += bet_amount * 36
                     await achemb(interaction, "roulette_prodigy", "followup")
