@@ -5170,6 +5170,14 @@ async def the_order_canceller(interaction, choices):
 async def stocks(message: discord.Interaction):
     profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
 
+    async def ask_deposit_all(interaction):
+        await interaction.response.defer()
+        view = View(timeout=VIEW_TIMEOUT)
+        button = Button(label="Confirm")
+        button.callback = confirm_deposit_all
+        view.add_item(button)
+        await interaction.edit_original_response(content="Are you sure you want to deposit all your packs?", embed=None, view=view)
+
     async def confirm_deposit_all(interaction):
         await interaction.response.defer()
         await profile.refresh_from_db()
@@ -5181,7 +5189,7 @@ async def stocks(message: discord.Interaction):
             profile[f"pack_{pack['name'].lower()}"] = 0
         await profile.save()
         embedVar = discord.Embed(title="📥 Deposit Packs", description=f"You currently have 🪙 **{profile.coins:,}** coins.", color=Colors.brown)
-        await interaction.edit_original_response(embed=embedVar, view=deposit_msg(profile))
+        await interaction.edit_original_response(content=None, embed=embedVar, view=deposit_msg(profile))
         await PortfolioHistory.create(user_id=profile.id, time=int(time.time()), type="d", price=profile.coins - og)
 
     async def deposit_pack(interaction):
@@ -5236,7 +5244,7 @@ async def stocks(message: discord.Interaction):
             view.add_item(Button(label="No packs left!", disabled=True))
         else:
             button = Button(label="Deposit all!", style=ButtonStyle.gray)
-            button.callback = confirm_deposit_all
+            button.callback = ask_deposit_all
             view.add_item(button)
         return view
 
