@@ -6204,6 +6204,7 @@ async def roulette(message: discord.Interaction):
 
             user.roulette_balance -= bet_amount
             user.roulette_spins += 1
+            await user.save()
 
             await interaction.response.defer()
 
@@ -6280,6 +6281,8 @@ async def roulette(message: discord.Interaction):
                 else:
                     user.roulette_balance += bet_amount * 2
 
+                user.roulette_balance = round(user.roulette_balance)
+                await user.save()
                 await progress(message, user, "roulette")
                 await achemb(interaction, "roulette_winner", "followup")
                 outcome_embed = discord.Embed(colour=Colors.maroon, title="winner!!!")
@@ -6287,8 +6290,6 @@ async def roulette(message: discord.Interaction):
             else:
                 outcome_embed = discord.Embed(colour=Colors.maroon, title="womp womp")
 
-            user.roulette_balance = round(user.roulette_balance)
-            await user.save()
 
             outcome_embed.description = roulette_embed.description
             outcome_embed.description += f"\n\nyour new balance is **{user.roulette_balance:,}** cat dollars"
