@@ -6192,7 +6192,7 @@ async def roulette(message: discord.Interaction):
                 await interaction.response.send_message("bet must be a whole number silly", ephemeral=True)
                 return
 
-            bet_amount = int(self.bet_amount.value)
+            bet_amount = int(self.bet_amount_input.value)
             if bet_amount <= 0:
                 await interaction.response.send_message("bet amount must be greater than 0", ephemeral=True)
                 return
@@ -6254,7 +6254,7 @@ async def roulette(message: discord.Interaction):
             padding = 4
             roulette_spin_times = len(wait_times) + padding
             
-            start_point = random.randint(0, 37)
+            start_point = random.randint(0, len(ROULETTE_POCKETS) - 1)
             chosen_roulette_pockets = [ROULETTE_POCKETS[(start_point + i) % len(ROULETTE_POCKETS)] for i in range(roulette_spin_times)]
 
             roulette_embed = discord.Embed(colour=Colors.maroon, title="woo its spinnin")
