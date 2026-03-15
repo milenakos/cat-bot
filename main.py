@@ -3750,9 +3750,9 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     star = "*" if not profile.new_user else ""
 
     stats = await gen_stats(profile, star)
-        embedVar = discord.Embed(
+    embedVar = discord.Embed(
         title=f"{person_id.name}'s Stats",
-        color=Colors.brown
+        color=Colors.brown,
     )
     
     current_category = None
