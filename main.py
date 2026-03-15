@@ -4993,7 +4993,7 @@ After this you can view the open sell and buy orders. Let's explain this with an
 - Then, all of the orders try to cancel out - if there is a sell order for the same (or less) amount of coins as yours in the *Sell Orders* list, it will fulfill your order.
 - If such a match isn't found or wasn't enough to fully fulfill your order, then your order will stay in the *Buy Orders* list until someone creates a matching *Sell Order*.
 - Whenever an exchange such as this happens, this is set to be the **stock price**, as displayed on the graph and in overviews.
-- This proccess is symmetrical for buy and sell orders."""
+- This process is symmetrical for buy and sell orders."""
 
     view = View(timeout=VIEW_TIMEOUT)
     button = Button(label="Continue")
