@@ -298,7 +298,7 @@ rain_shill = "☔ Get tons of cats /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
-VIEW_TIMEOUT = 86400
+VIEW_TIMEOUT = 600
 
 # store credits usernames to prevent excessive api calls
 gen_credits = {}
@@ -418,6 +418,248 @@ news_list = [
     {"title": "Happy Valentine's!", "emoji": "💞"},
     {"title": "Cat Bot Stocks", "emoji": "📈"},
     {"title": "PackOrRain Event [ACTIVE]", "emoji": "🔥"},
+]
+
+achs = [
+    ["cat?", "startswith", "???"],
+    ["catn", "exact", "catn"],
+    ["cat!coupon jr0f-pzka", "exact", "coupon_user"],
+    ["pineapple", "exact", "pineapple"],
+    ["cat!i_like_cat_website", "exact", "website_user"],
+    ["cat!i_clicked_there", "exact", "click_here"],
+    ["cat!lia_is_cute", "exact", "nerd"],
+    ["i read help", "exact", "patient_reader"],
+    ["lol_i_have_dmed_the_cat_bot_and_got_an_ach", "exact", "dm"],
+    ["dog", "exact", "not_quite"],
+    ["egril", "exact", "egril"],
+    ["-.-. .- -", "exact", "morse_cat"],
+    ["tac", "exact", "reverse"],
+    ["cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6", "veryexact", "dataminer"],
+]
+
+reactions = [
+    ["v1;", "custom", "why_v1"],
+    ["proglet", "custom", "professor_cat"],
+    ["xnopyt", "custom", "vanish"],
+    ["silly", "custom", "sillycat"],
+    ["indev", "vanilla", "🐸"],
+    ["bleh", "custom", "blepcat"],
+    ["blep", "custom", "blepcat"],
+]
+
+responses = [
+    [
+        "cellua good",
+        "in",
+        ".".join([str(random.randint(2, 254)) for _ in range(4)]),
+    ],
+    [
+        "https://tenor.com/view/this-cat-i-have-hired-this-cat-to-stare-at-you-hired-cat-cat-stare-gif-26392360",
+        "exact",
+        "https://tenor.com/view/cat-staring-cat-gif-16983064494644320763",
+    ],
+]
+
+cat_translations = [
+    "mace",
+    "katu",
+    "kot",
+    "koshka",
+    "macka",
+    "gat",
+    "gata",
+    "kocka",
+    "kat",
+    "poes",
+    "kass",
+    "kissa",
+    "chat",
+    "chatte",
+    "gato",
+    "katze",
+    "gata",
+    "macska",
+    "kottur",
+    "gatto",
+    "getta",
+    "kakis",
+    "kate",
+    "qattus",
+    "qattusa",
+    "katt",
+    "kit",
+    "kishka",
+    "cath",
+    "qitta",
+    "katu",
+    "pisik",
+    "biral",
+    "kyaung",
+    "mao",
+    "pusa",
+    "kata",
+    "billi",
+    "kucing",
+    "neko",
+    "bekku",
+    "mysyq",
+    "chhma",
+    "goyangi",
+    "pucha",
+    "manjar",
+    "muur",
+    "biralo",
+    "gorbeh",
+    "punai",
+    "pilli",
+    "kedi",
+    "mushuk",
+    "meo",
+    "demat",
+    "nwamba",
+    "jangwe",
+    "adure",
+    "katsi",
+    "bisad,",
+    "paka",
+    "ikati",
+    "ologbo",
+    "wesa",
+    "popoki",
+    "piqtuq",
+    "negeru",
+    "poti",
+    "mosi",
+    "michi",
+    "pusi",
+    "oratii",
+]
+
+illegal = [
+    "bk",
+    "fq",
+    "jc",
+    "jt",
+    "mj",
+    "qh",
+    "qx",
+    "vj",
+    "wz",
+    "zh",
+    "bq",
+    "fv",
+    "jd",
+    "jv",
+    "mq",
+    "qj",
+    "qy",
+    "vk",
+    "xb",
+    "zj",
+    "bx",
+    "fx",
+    "jf",
+    "jw",
+    "mx",
+    "qk",
+    "qz",
+    "vm",
+    "xg",
+    "zn",
+    "cb",
+    "fz",
+    "jg",
+    "jx",
+    "mz",
+    "ql",
+    "sx",
+    "vn",
+    "xj",
+    "zq",
+    "cf",
+    "gq",
+    "jh",
+    "jy",
+    "pq",
+    "qm",
+    "sz",
+    "vp",
+    "xk",
+    "zr",
+    "cg",
+    "gv",
+    "jk",
+    "jz",
+    "pv",
+    "qn",
+    "tq",
+    "vq",
+    "xv",
+    "zs",
+    "cj",
+    "gx",
+    "jl",
+    "kq",
+    "px",
+    "qo",
+    "tx",
+    "vt",
+    "xz",
+    "zx",
+    "cp",
+    "hk",
+    "jm",
+    "kv",
+    "qb",
+    "qp",
+    "vb",
+    "vw",
+    "yq",
+    "cv",
+    "hv",
+    "jn",
+    "kx",
+    "qc",
+    "qr",
+    "vc",
+    "vx",
+    "yv",
+    "cw",
+    "hx",
+    "jp",
+    "kz",
+    "qd",
+    "qs",
+    "vd",
+    "vz",
+    "yz",
+    "cx",
+    "hz",
+    "jq",
+    "lq",
+    "qe",
+    "qt",
+    "vf",
+    "wq",
+    "zb",
+    "dx",
+    "iy",
+    "jr",
+    "lx",
+    "qf",
+    "qv",
+    "vg",
+    "wv",
+    "zc",
+    "fk",
+    "jb",
+    "js",
+    "mg",
+    "qg",
+    "qw",
+    "vh",
+    "wx",
+    "zg",
 ]
 
 
@@ -1430,48 +1672,7 @@ async def on_message(message: discord.Message):
             pass
         return
 
-    server = await Server.get_or_create(server_id=message.guild.id)
-
-    achs = [
-        ["cat?", "startswith", "???"],
-        ["catn", "exact", "catn"],
-        ["cat!coupon jr0f-pzka", "exact", "coupon_user"],
-        ["pineapple", "exact", "pineapple"],
-        ["cat!i_like_cat_website", "exact", "website_user"],
-        ["cat!i_clicked_there", "exact", "click_here"],
-        ["cat!lia_is_cute", "exact", "nerd"],
-        ["i read help", "exact", "patient_reader"],
-        [str(bot.user.id), "in", "who_ping"],
-        ["lol_i_have_dmed_the_cat_bot_and_got_an_ach", "exact", "dm"],
-        ["dog", "exact", "not_quite"],
-        ["egril", "exact", "egril"],
-        ["-.-. .- -", "exact", "morse_cat"],
-        ["tac", "exact", "reverse"],
-        ["cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6", "veryexact", "dataminer"],
-    ]
-
-    reactions = [
-        ["v1;", "custom", "why_v1"],
-        ["proglet", "custom", "professor_cat"],
-        ["xnopyt", "custom", "vanish"],
-        ["silly", "custom", "sillycat"],
-        ["indev", "vanilla", "🐸"],
-        ["bleh", "custom", "blepcat"],
-        ["blep", "custom", "blepcat"],
-    ]
-
-    responses = [
-        [
-            "cellua good",
-            "in",
-            ".".join([str(random.randint(2, 254)) for _ in range(4)]),
-        ],
-        [
-            "https://tenor.com/view/this-cat-i-have-hired-this-cat-to-stare-at-you-hired-cat-cat-stare-gif-26392360",
-            "exact",
-            "https://tenor.com/view/cat-staring-cat-gif-16983064494644320763",
-        ],
-    ]
+    server = None
 
     # here are some automation hooks for giving out purchases and similiar
     if config.RAIN_CHANNEL_ID and message.channel.id == config.RAIN_CHANNEL_ID and text.lower().startswith("cat!rain"):
@@ -1513,132 +1714,6 @@ async def on_message(message: discord.Message):
         total_illegal = 0
         for i in "aeuio":
             total_vow += s.count(i)
-        illegal = [
-            "bk",
-            "fq",
-            "jc",
-            "jt",
-            "mj",
-            "qh",
-            "qx",
-            "vj",
-            "wz",
-            "zh",
-            "bq",
-            "fv",
-            "jd",
-            "jv",
-            "mq",
-            "qj",
-            "qy",
-            "vk",
-            "xb",
-            "zj",
-            "bx",
-            "fx",
-            "jf",
-            "jw",
-            "mx",
-            "qk",
-            "qz",
-            "vm",
-            "xg",
-            "zn",
-            "cb",
-            "fz",
-            "jg",
-            "jx",
-            "mz",
-            "ql",
-            "sx",
-            "vn",
-            "xj",
-            "zq",
-            "cf",
-            "gq",
-            "jh",
-            "jy",
-            "pq",
-            "qm",
-            "sz",
-            "vp",
-            "xk",
-            "zr",
-            "cg",
-            "gv",
-            "jk",
-            "jz",
-            "pv",
-            "qn",
-            "tq",
-            "vq",
-            "xv",
-            "zs",
-            "cj",
-            "gx",
-            "jl",
-            "kq",
-            "px",
-            "qo",
-            "tx",
-            "vt",
-            "xz",
-            "zx",
-            "cp",
-            "hk",
-            "jm",
-            "kv",
-            "qb",
-            "qp",
-            "vb",
-            "vw",
-            "yq",
-            "cv",
-            "hv",
-            "jn",
-            "kx",
-            "qc",
-            "qr",
-            "vc",
-            "vx",
-            "yv",
-            "cw",
-            "hx",
-            "jp",
-            "kz",
-            "qd",
-            "qs",
-            "vd",
-            "vz",
-            "yz",
-            "cx",
-            "hz",
-            "jq",
-            "lq",
-            "qe",
-            "qt",
-            "vf",
-            "wq",
-            "zb",
-            "dx",
-            "iy",
-            "jr",
-            "lx",
-            "qf",
-            "qv",
-            "vg",
-            "wv",
-            "zc",
-            "fk",
-            "jb",
-            "js",
-            "mg",
-            "qg",
-            "qw",
-            "vh",
-            "wx",
-            "zg",
-        ]
         for j in illegal:
             if j in s:
                 total_illegal += 1
@@ -1646,6 +1721,8 @@ async def on_message(message: discord.Message):
         if (vow_perc >= 0.82) or total_illegal >= 2:
             try:
                 if reactions_ratelimit.get(message.guild.id, 0) < 100:
+                    if not server:
+                        server = await Server.get_or_create(server_id=message.guild.id)
                     if server.do_reactions:
                         await message.add_reaction(get_emoji("staring_cat"))
                     react_count += 1
@@ -1682,81 +1759,11 @@ async def on_message(message: discord.Message):
         ):
             await achemb(message, achievement_name, "reply")
 
-    if unidecode.unidecode(text).lower().strip() in [
-        "mace",
-        "katu",
-        "kot",
-        "koshka",
-        "macka",
-        "gat",
-        "gata",
-        "kocka",
-        "kat",
-        "poes",
-        "kass",
-        "kissa",
-        "chat",
-        "chatte",
-        "gato",
-        "katze",
-        "gata",
-        "macska",
-        "kottur",
-        "gatto",
-        "getta",
-        "kakis",
-        "kate",
-        "qattus",
-        "qattusa",
-        "katt",
-        "kit",
-        "kishka",
-        "cath",
-        "qitta",
-        "katu",
-        "pisik",
-        "biral",
-        "kyaung",
-        "mao",
-        "pusa",
-        "kata",
-        "billi",
-        "kucing",
-        "neko",
-        "bekku",
-        "mysyq",
-        "chhma",
-        "goyangi",
-        "pucha",
-        "manjar",
-        "muur",
-        "biralo",
-        "gorbeh",
-        "punai",
-        "pilli",
-        "kedi",
-        "mushuk",
-        "meo",
-        "demat",
-        "nwamba",
-        "jangwe",
-        "adure",
-        "katsi",
-        "bisad,",
-        "paka",
-        "ikati",
-        "ologbo",
-        "wesa",
-        "popoki",
-        "piqtuq",
-        "negeru",
-        "poti",
-        "mosi",
-        "michi",
-        "pusi",
-        "oratii",
-    ]:
+    if unidecode.unidecode(text).lower().strip() in cat_translations:
         await achemb(message, "multilingual", "reply")
+
+    if bot.user.id in message.content:
+        await achemb(message, "who_ping", "reply")
 
     for reaction in reactions:
         reaction_prompt, reaction_type, reaction_name = reaction
@@ -1767,6 +1774,8 @@ async def on_message(message: discord.Message):
                 resolved_emoji = reaction_name
 
             try:
+                if not server:
+                    server = await Server.get_or_create(server_id=message.guild.id)
                 if server.do_reactions:
                     await message.add_reaction(resolved_emoji)
                 react_count += 1
@@ -1794,6 +1803,8 @@ async def on_message(message: discord.Message):
 
     try:
         if message.author in message.mentions and message.type != discord.MessageType.poll_result and reactions_ratelimit.get(message.guild.id, 0) < 100:
+            if not server:
+                server = await Server.get_or_create(server_id=message.guild.id)
             if server.do_reactions:
                 await message.add_reaction(get_emoji("staring_cat"))
             react_count += 1
@@ -1876,6 +1887,8 @@ async def on_message(message: discord.Message):
             # (except if rain is active, we dont have perms or channel isnt setupped, or we laughed way too much already)
             if channel and channel.cat_rains == 0 and pointlaugh_ratelimit.get(message.channel.id, 0) < 10:
                 try:
+                    if not server:
+                        server = await Server.get_or_create(server_id=message.guild.id)
                     if server.do_reactions:
                         await message.add_reaction(get_emoji("pointlaugh"))
                     pointlaugh_ratelimit[message.channel.id] = pointlaugh_ratelimit.get(message.channel.id, 0) + 1
@@ -4605,37 +4618,6 @@ async def packs(message: discord.Interaction):
 
         return discord.Embed(title=final_header, description=f"{pack_list}{final_result}", color=Colors.brown)
 
-    async def open_custom_amount(interaction: discord.Interaction):
-        if interaction.user != message.user:
-            await do_funny(interaction)
-            return
-
-        async def on_submit(interaction: discord.Interaction):
-            try:
-                amount = int(amount_input.value)
-                if amount < 1:
-                    raise ValueError
-            except ValueError:
-                await interaction.response.send_message("Please enter a valid positive number!", ephemeral=True)
-                return
-
-            await interaction.response.defer()
-            embed = await process_pack_opening(amount)
-            if not embed:
-                await interaction.followup.send("You have no packs!", ephemeral=True)
-                return
-
-            await message.edit_original_response(embed=embed, view=None)
-            await asyncio.sleep(1)
-            view, _ = gen_view(user)
-            await message.edit_original_response(view=view)
-
-        modal = Modal(title="Open Custom Amount")
-        amount_input = TextInput(label="Amount", placeholder="How many packs to open?", min_length=1, max_length=10)
-        modal.add_item(amount_input)
-        modal.on_submit = on_submit
-        await interaction.response.send_modal(modal)
-
     async def confirm_open_all(interaction: discord.Interaction):
         if interaction.user != message.user:
             await do_funny(interaction)
@@ -4680,10 +4662,6 @@ async def packs(message: discord.Interaction):
             button = Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.gray)
             button.callback = confirm_open_all
             view.add_item(button)
-
-            custom_btn = Button(label="Open Custom Amount...", style=ButtonStyle.gray)
-            custom_btn.callback = open_custom_amount
-            view.add_item(custom_btn)
         return view, has_special
 
     def get_pack_rewards(level: int, is_single=True):
