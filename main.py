@@ -3750,18 +3750,42 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     star = "*" if not profile.new_user else ""
 
     stats = await gen_stats(profile, star)
-    stats_string = ""
+        embedVar = discord.Embed(
+        title=f"{person_id.name}'s Stats",
+        color=Colors.brown
+    )
+    
+    current_category = None
+    current_lines = []
+    
     for stat in stats:
         if len(stat) == 2:
-            # category
-            stats_string += f"\n{stat[0]} __{stat[1]}__\n"
+            # remove prev cat
+            if current_category:
+                embedVar.add_field(
+                    name=current_category,
+                    value="\n".join(current_lines),
+                    inline=True
+                )
+    
+            # start new cat
+            current_category = f"{stat[0]} {stat[1]}"
+            current_lines = []
+    
         elif len(stat) == 3:
-            # stat
-            stats_string += f"{stat[2]}\n"
+            current_lines.append(stat[2])
+    
+    # add last cat
+    if current_category:
+        embedVar.add_field(
+            name=current_category,
+            value="\n".join(current_lines),
+            inline=True
+        )
+    
     if star:
-        stats_string += "\n\\*this stat is only tracked since February 2025"
-
-    embedVar = discord.Embed(title=f"{person_id.name}'s Stats", color=Colors.brown, description=stats_string)
+        embedVar.set_footer(text="* this stat is only tracked since February 2025")
+    
     await message.followup.send(embed=embedVar)
 
 
