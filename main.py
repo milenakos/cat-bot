@@ -298,7 +298,7 @@ rain_shill = "☔ Get tons of cats /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
-VIEW_TIMEOUT = 86400
+VIEW_TIMEOUT = 3600 * 6
 
 # store credits usernames to prevent excessive api calls
 gen_credits = {}
@@ -418,6 +418,248 @@ news_list = [
     {"title": "Happy Valentine's!", "emoji": "💞"},
     {"title": "Cat Bot Stocks", "emoji": "📈"},
     {"title": "PackOrRain Event [ACTIVE]", "emoji": "🔥"},
+]
+
+achs = [
+    ["cat?", "startswith", "???"],
+    ["catn", "exact", "catn"],
+    ["cat!coupon jr0f-pzka", "exact", "coupon_user"],
+    ["pineapple", "exact", "pineapple"],
+    ["cat!i_like_cat_website", "exact", "website_user"],
+    ["cat!i_clicked_there", "exact", "click_here"],
+    ["cat!lia_is_cute", "exact", "nerd"],
+    ["i read help", "exact", "patient_reader"],
+    ["lol_i_have_dmed_the_cat_bot_and_got_an_ach", "exact", "dm"],
+    ["dog", "exact", "not_quite"],
+    ["egril", "exact", "egril"],
+    ["-.-. .- -", "exact", "morse_cat"],
+    ["tac", "exact", "reverse"],
+    ["cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6", "veryexact", "dataminer"],
+]
+
+reactions = [
+    ["v1;", "custom", "why_v1"],
+    ["proglet", "custom", "professor_cat"],
+    ["xnopyt", "custom", "vanish"],
+    ["silly", "custom", "sillycat"],
+    ["indev", "vanilla", "🐸"],
+    ["bleh", "custom", "blepcat"],
+    ["blep", "custom", "blepcat"],
+]
+
+responses = [
+    [
+        "cellua good",
+        "in",
+        ".".join([str(random.randint(2, 254)) for _ in range(4)]),
+    ],
+    [
+        "https://tenor.com/view/this-cat-i-have-hired-this-cat-to-stare-at-you-hired-cat-cat-stare-gif-26392360",
+        "exact",
+        "https://tenor.com/view/cat-staring-cat-gif-16983064494644320763",
+    ],
+]
+
+cat_translations = [
+    "mace",
+    "katu",
+    "kot",
+    "koshka",
+    "macka",
+    "gat",
+    "gata",
+    "kocka",
+    "kat",
+    "poes",
+    "kass",
+    "kissa",
+    "chat",
+    "chatte",
+    "gato",
+    "katze",
+    "gata",
+    "macska",
+    "kottur",
+    "gatto",
+    "getta",
+    "kakis",
+    "kate",
+    "qattus",
+    "qattusa",
+    "katt",
+    "kit",
+    "kishka",
+    "cath",
+    "qitta",
+    "katu",
+    "pisik",
+    "biral",
+    "kyaung",
+    "mao",
+    "pusa",
+    "kata",
+    "billi",
+    "kucing",
+    "neko",
+    "bekku",
+    "mysyq",
+    "chhma",
+    "goyangi",
+    "pucha",
+    "manjar",
+    "muur",
+    "biralo",
+    "gorbeh",
+    "punai",
+    "pilli",
+    "kedi",
+    "mushuk",
+    "meo",
+    "demat",
+    "nwamba",
+    "jangwe",
+    "adure",
+    "katsi",
+    "bisad,",
+    "paka",
+    "ikati",
+    "ologbo",
+    "wesa",
+    "popoki",
+    "piqtuq",
+    "negeru",
+    "poti",
+    "mosi",
+    "michi",
+    "pusi",
+    "oratii",
+]
+
+illegal = [
+    "bk",
+    "fq",
+    "jc",
+    "jt",
+    "mj",
+    "qh",
+    "qx",
+    "vj",
+    "wz",
+    "zh",
+    "bq",
+    "fv",
+    "jd",
+    "jv",
+    "mq",
+    "qj",
+    "qy",
+    "vk",
+    "xb",
+    "zj",
+    "bx",
+    "fx",
+    "jf",
+    "jw",
+    "mx",
+    "qk",
+    "qz",
+    "vm",
+    "xg",
+    "zn",
+    "cb",
+    "fz",
+    "jg",
+    "jx",
+    "mz",
+    "ql",
+    "sx",
+    "vn",
+    "xj",
+    "zq",
+    "cf",
+    "gq",
+    "jh",
+    "jy",
+    "pq",
+    "qm",
+    "sz",
+    "vp",
+    "xk",
+    "zr",
+    "cg",
+    "gv",
+    "jk",
+    "jz",
+    "pv",
+    "qn",
+    "tq",
+    "vq",
+    "xv",
+    "zs",
+    "cj",
+    "gx",
+    "jl",
+    "kq",
+    "px",
+    "qo",
+    "tx",
+    "vt",
+    "xz",
+    "zx",
+    "cp",
+    "hk",
+    "jm",
+    "kv",
+    "qb",
+    "qp",
+    "vb",
+    "vw",
+    "yq",
+    "cv",
+    "hv",
+    "jn",
+    "kx",
+    "qc",
+    "qr",
+    "vc",
+    "vx",
+    "yv",
+    "cw",
+    "hx",
+    "jp",
+    "kz",
+    "qd",
+    "qs",
+    "vd",
+    "vz",
+    "yz",
+    "cx",
+    "hz",
+    "jq",
+    "lq",
+    "qe",
+    "qt",
+    "vf",
+    "wq",
+    "zb",
+    "dx",
+    "iy",
+    "jr",
+    "lx",
+    "qf",
+    "qv",
+    "vg",
+    "wv",
+    "zc",
+    "fk",
+    "jb",
+    "js",
+    "mg",
+    "qg",
+    "qw",
+    "vh",
+    "wx",
+    "zg",
 ]
 
 
@@ -1104,6 +1346,23 @@ async def background_loop():
             await profile.save()
         await order.delete()
 
+    # auto-sell stocks of people inactive for over a week
+    if False:  # grace period
+        async for profile in Profile.filter("last_ran_stocks < $1 AND last_ran_stocks != 0", time.time() - 3600 * 24 * 7):
+            for stock in stock_data:
+                ticker = stock["ticker"]
+                quantity = profile[f"stock_{ticker.lower()}"]
+                price = await get_stock_price(ticker)
+                if quantity > 0:
+                    curr_time = int(time.time())
+                    await Order.create(user_id=profile.id, ticker=ticker, quantity=quantity, price=price, type_buy=False, time=curr_time)
+                    await PortfolioHistory.create(user_id=profile.id, type="s", price=price, quantity=quantity, time=curr_time, ticker=ticker)
+                    profile[f"stock_{ticker.lower()}"] = 0
+                    order = await Order.get_or_none(user_id=profile.id, ticker=ticker, quantity=quantity, price=price, type_buy=False, time=curr_time)
+                    if order:
+                        await resolve_orders(order)
+            await profile.save()
+
     # revive dead catch loops
     counter = 0
     async for channel in Channel.limit(["channel_id"], "yet_to_spawn < $1 AND cat = 0", time.time(), refetch=False):
@@ -1413,48 +1672,7 @@ async def on_message(message: discord.Message):
             pass
         return
 
-    server = await Server.get_or_create(server_id=message.guild.id)
-
-    achs = [
-        ["cat?", "startswith", "???"],
-        ["catn", "exact", "catn"],
-        ["cat!coupon jr0f-pzka", "exact", "coupon_user"],
-        ["pineapple", "exact", "pineapple"],
-        ["cat!i_like_cat_website", "exact", "website_user"],
-        ["cat!i_clicked_there", "exact", "click_here"],
-        ["cat!lia_is_cute", "exact", "nerd"],
-        ["i read help", "exact", "patient_reader"],
-        [str(bot.user.id), "in", "who_ping"],
-        ["lol_i_have_dmed_the_cat_bot_and_got_an_ach", "exact", "dm"],
-        ["dog", "exact", "not_quite"],
-        ["egril", "exact", "egril"],
-        ["-.-. .- -", "exact", "morse_cat"],
-        ["tac", "exact", "reverse"],
-        ["cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6", "veryexact", "dataminer"],
-    ]
-
-    reactions = [
-        ["v1;", "custom", "why_v1"],
-        ["proglet", "custom", "professor_cat"],
-        ["xnopyt", "custom", "vanish"],
-        ["silly", "custom", "sillycat"],
-        ["indev", "vanilla", "🐸"],
-        ["bleh", "custom", "blepcat"],
-        ["blep", "custom", "blepcat"],
-    ]
-
-    responses = [
-        [
-            "cellua good",
-            "in",
-            ".".join([str(random.randint(2, 254)) for _ in range(4)]),
-        ],
-        [
-            "https://tenor.com/view/this-cat-i-have-hired-this-cat-to-stare-at-you-hired-cat-cat-stare-gif-26392360",
-            "exact",
-            "https://tenor.com/view/cat-staring-cat-gif-16983064494644320763",
-        ],
-    ]
+    server = None
 
     # here are some automation hooks for giving out purchases and similiar
     if config.RAIN_CHANNEL_ID and message.channel.id == config.RAIN_CHANNEL_ID and text.lower().startswith("cat!rain"):
@@ -1496,132 +1714,6 @@ async def on_message(message: discord.Message):
         total_illegal = 0
         for i in "aeuio":
             total_vow += s.count(i)
-        illegal = [
-            "bk",
-            "fq",
-            "jc",
-            "jt",
-            "mj",
-            "qh",
-            "qx",
-            "vj",
-            "wz",
-            "zh",
-            "bq",
-            "fv",
-            "jd",
-            "jv",
-            "mq",
-            "qj",
-            "qy",
-            "vk",
-            "xb",
-            "zj",
-            "bx",
-            "fx",
-            "jf",
-            "jw",
-            "mx",
-            "qk",
-            "qz",
-            "vm",
-            "xg",
-            "zn",
-            "cb",
-            "fz",
-            "jg",
-            "jx",
-            "mz",
-            "ql",
-            "sx",
-            "vn",
-            "xj",
-            "zq",
-            "cf",
-            "gq",
-            "jh",
-            "jy",
-            "pq",
-            "qm",
-            "sz",
-            "vp",
-            "xk",
-            "zr",
-            "cg",
-            "gv",
-            "jk",
-            "jz",
-            "pv",
-            "qn",
-            "tq",
-            "vq",
-            "xv",
-            "zs",
-            "cj",
-            "gx",
-            "jl",
-            "kq",
-            "px",
-            "qo",
-            "tx",
-            "vt",
-            "xz",
-            "zx",
-            "cp",
-            "hk",
-            "jm",
-            "kv",
-            "qb",
-            "qp",
-            "vb",
-            "vw",
-            "yq",
-            "cv",
-            "hv",
-            "jn",
-            "kx",
-            "qc",
-            "qr",
-            "vc",
-            "vx",
-            "yv",
-            "cw",
-            "hx",
-            "jp",
-            "kz",
-            "qd",
-            "qs",
-            "vd",
-            "vz",
-            "yz",
-            "cx",
-            "hz",
-            "jq",
-            "lq",
-            "qe",
-            "qt",
-            "vf",
-            "wq",
-            "zb",
-            "dx",
-            "iy",
-            "jr",
-            "lx",
-            "qf",
-            "qv",
-            "vg",
-            "wv",
-            "zc",
-            "fk",
-            "jb",
-            "js",
-            "mg",
-            "qg",
-            "qw",
-            "vh",
-            "wx",
-            "zg",
-        ]
         for j in illegal:
             if j in s:
                 total_illegal += 1
@@ -1629,6 +1721,8 @@ async def on_message(message: discord.Message):
         if (vow_perc >= 0.82) or total_illegal >= 2:
             try:
                 if reactions_ratelimit.get(message.guild.id, 0) < 100:
+                    if not server:
+                        server = await Server.get_or_create(server_id=message.guild.id)
                     if server.do_reactions:
                         await message.add_reaction(get_emoji("staring_cat"))
                     react_count += 1
@@ -1665,81 +1759,11 @@ async def on_message(message: discord.Message):
         ):
             await achemb(message, achievement_name, "reply")
 
-    if unidecode.unidecode(text).lower().strip() in [
-        "mace",
-        "katu",
-        "kot",
-        "koshka",
-        "macka",
-        "gat",
-        "gata",
-        "kocka",
-        "kat",
-        "poes",
-        "kass",
-        "kissa",
-        "chat",
-        "chatte",
-        "gato",
-        "katze",
-        "gata",
-        "macska",
-        "kottur",
-        "gatto",
-        "getta",
-        "kakis",
-        "kate",
-        "qattus",
-        "qattusa",
-        "katt",
-        "kit",
-        "kishka",
-        "cath",
-        "qitta",
-        "katu",
-        "pisik",
-        "biral",
-        "kyaung",
-        "mao",
-        "pusa",
-        "kata",
-        "billi",
-        "kucing",
-        "neko",
-        "bekku",
-        "mysyq",
-        "chhma",
-        "goyangi",
-        "pucha",
-        "manjar",
-        "muur",
-        "biralo",
-        "gorbeh",
-        "punai",
-        "pilli",
-        "kedi",
-        "mushuk",
-        "meo",
-        "demat",
-        "nwamba",
-        "jangwe",
-        "adure",
-        "katsi",
-        "bisad,",
-        "paka",
-        "ikati",
-        "ologbo",
-        "wesa",
-        "popoki",
-        "piqtuq",
-        "negeru",
-        "poti",
-        "mosi",
-        "michi",
-        "pusi",
-        "oratii",
-    ]:
+    if unidecode.unidecode(text).lower().strip() in cat_translations:
         await achemb(message, "multilingual", "reply")
+
+    if str(bot.user.id) in message.content:
+        await achemb(message, "who_ping", "reply")
 
     for reaction in reactions:
         reaction_prompt, reaction_type, reaction_name = reaction
@@ -1750,6 +1774,8 @@ async def on_message(message: discord.Message):
                 resolved_emoji = reaction_name
 
             try:
+                if not server:
+                    server = await Server.get_or_create(server_id=message.guild.id)
                 if server.do_reactions:
                     await message.add_reaction(resolved_emoji)
                 react_count += 1
@@ -1777,6 +1803,8 @@ async def on_message(message: discord.Message):
 
     try:
         if message.author in message.mentions and message.type != discord.MessageType.poll_result and reactions_ratelimit.get(message.guild.id, 0) < 100:
+            if not server:
+                server = await Server.get_or_create(server_id=message.guild.id)
             if server.do_reactions:
                 await message.add_reaction(get_emoji("staring_cat"))
             react_count += 1
@@ -1859,6 +1887,8 @@ async def on_message(message: discord.Message):
             # (except if rain is active, we dont have perms or channel isnt setupped, or we laughed way too much already)
             if channel and channel.cat_rains == 0 and pointlaugh_ratelimit.get(message.channel.id, 0) < 10:
                 try:
+                    if not server:
+                        server = await Server.get_or_create(server_id=message.guild.id)
                     if server.do_reactions:
                         await message.add_reaction(get_emoji("pointlaugh"))
                     pointlaugh_ratelimit[message.channel.id] = pointlaugh_ratelimit.get(message.channel.id, 0) + 1
@@ -3419,7 +3449,7 @@ async def changemessage(message: discord.Interaction):
         def __init__(self, type):
             super().__init__(
                 title=f"Change {type} Message",
-                timeout=3600,
+                timeout=VIEW_TIMEOUT,
             )
 
             self.type = type
@@ -3733,18 +3763,34 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     star = "*" if not profile.new_user else ""
 
     stats = await gen_stats(profile, star)
-    stats_string = ""
+    embedVar = discord.Embed(
+        title=f"{person_id.name}'s Stats",
+        color=Colors.brown,
+    )
+
+    current_category = None
+    current_lines = []
+
     for stat in stats:
         if len(stat) == 2:
-            # category
-            stats_string += f"\n{stat[0]} __{stat[1]}__\n"
-        elif len(stat) == 3:
-            # stat
-            stats_string += f"{stat[2]}\n"
-    if star:
-        stats_string += "\n\\*this stat is only tracked since February 2025"
+            # remove prev cat
+            if current_category:
+                embedVar.add_field(name=current_category, value="\n".join(current_lines), inline=True)
 
-    embedVar = discord.Embed(title=f"{person_id.name}'s Stats", color=Colors.brown, description=stats_string)
+            # start new cat
+            current_category = f"{stat[0]} {stat[1]}"
+            current_lines = []
+
+        elif len(stat) == 3:
+            current_lines.append(stat[2])
+
+    # add last cat
+    if current_category:
+        embedVar.add_field(name=current_category, value="\n".join(current_lines), inline=True)
+
+    if star:
+        embedVar.set_footer(text="* this stat is only tracked since February 2025")
+
     await message.followup.send(embed=embedVar)
 
 
@@ -4195,7 +4241,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         def __init__(self, type):
             super().__init__(
                 title="Start a Cat Rain!",
-                timeout=3600,
+                timeout=VIEW_TIMEOUT,
             )
 
             self.input = TextInput(
@@ -4564,37 +4610,6 @@ async def packs(message: discord.Interaction):
 
         return discord.Embed(title=final_header, description=f"{pack_list}{final_result}", color=Colors.brown)
 
-    async def open_custom_amount(interaction: discord.Interaction):
-        if interaction.user != message.user:
-            await do_funny(interaction)
-            return
-
-        async def on_submit(interaction: discord.Interaction):
-            try:
-                amount = int(amount_input.value)
-                if amount < 1:
-                    raise ValueError
-            except ValueError:
-                await interaction.response.send_message("Please enter a valid positive number!", ephemeral=True)
-                return
-
-            await interaction.response.defer()
-            embed = await process_pack_opening(amount)
-            if not embed:
-                await interaction.followup.send("You have no packs!", ephemeral=True)
-                return
-
-            await message.edit_original_response(embed=embed, view=None)
-            await asyncio.sleep(1)
-            view, _ = gen_view(user)
-            await message.edit_original_response(view=view)
-
-        modal = Modal(title="Open Custom Amount")
-        amount_input = TextInput(label="Amount", placeholder="How many packs to open?", min_length=1, max_length=10)
-        modal.add_item(amount_input)
-        modal.on_submit = on_submit
-        await interaction.response.send_modal(modal)
-
     async def confirm_open_all(interaction: discord.Interaction):
         if interaction.user != message.user:
             await do_funny(interaction)
@@ -4639,10 +4654,6 @@ async def packs(message: discord.Interaction):
             button = Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.gray)
             button.callback = confirm_open_all
             view.add_item(button)
-
-            custom_btn = Button(label="Open Custom Amount...", style=ButtonStyle.gray)
-            custom_btn.callback = open_custom_amount
-            view.add_item(custom_btn)
         return view, has_special
 
     def get_pack_rewards(level: int, is_single=True):
@@ -5166,9 +5177,103 @@ async def the_order_canceller(interaction, choices):
     await interaction.edit_original_response(content="Orders cancelled!", view=None)
 
 
+async def resolve_orders(order: Order):
+    remaining_quantity = order.quantity
+    display_price = None
+    if order.type_buy:
+        # buy order
+        seller_coin_deltas = {}
+        async for eligible_order in Order.filter(
+            "ticker = $1 AND type_buy = $2 AND price <= $3 ORDER BY price ASC, time ASC", order.ticker, False, order.price
+        ):
+            if remaining_quantity == 0:
+                break
+
+            buy_quantity = min(remaining_quantity, eligible_order.quantity)
+            remaining_quantity -= buy_quantity
+            eligible_order.quantity -= buy_quantity
+
+            seller_coin_deltas[eligible_order.user_id] = seller_coin_deltas.get(eligible_order.user_id, 0) + (buy_quantity * eligible_order.price)
+
+            display_price = eligible_order.price
+
+            if eligible_order.quantity == 0:
+                await eligible_order.delete()
+            else:
+                await eligible_order.save()
+                break
+
+        if seller_coin_deltas:
+            updates = []
+            for user_id, delta in seller_coin_deltas.items():
+                u = await Profile.get(id=user_id)
+                u.coins += delta
+                updates.append(u)
+            await Profile.bulk_update(updates, "coins")
+
+        profile = await Profile.get(id=order.user_id)
+        profile[f"stock_{order.ticker.lower()}"] += order.quantity - remaining_quantity
+        await profile.save()
+    else:
+        # sell order
+        buyer_stock_deltas = {}
+        async for eligible_order in Order.filter(
+            "ticker = $1 AND type_buy = $2 AND price >= $3 ORDER BY price DESC, time ASC", order.ticker, True, order.price
+        ):
+            if remaining_quantity == 0:
+                break
+
+            sell_quantity = min(remaining_quantity, eligible_order.quantity)
+            remaining_quantity -= sell_quantity
+            eligible_order.quantity -= sell_quantity
+
+            buyer_stock_deltas[eligible_order.user_id] = buyer_stock_deltas.get(eligible_order.user_id, 0) + sell_quantity
+
+            display_price = eligible_order.price
+
+            if eligible_order.quantity == 0:
+                await eligible_order.delete()
+            else:
+                await eligible_order.save()
+                break
+
+        if buyer_stock_deltas:
+            updates = []
+            for user_id, delta in buyer_stock_deltas.items():
+                u = await Profile.get(id=user_id)
+                u[f"stock_{order.ticker.lower()}"] += delta
+                updates.append(u)
+            await Profile.bulk_update(updates, f"stock_{order.ticker.lower()}")
+
+        profile = await Profile.get(id=order.user_id)
+        profile.coins += (order.quantity - remaining_quantity) * order.price
+        await profile.save()
+
+    if display_price:
+        await PriceHistory.create(ticker=order.ticker, price=display_price, time=int(time.time()))
+        temp_stock_prices[order.ticker] = display_price
+
+    if remaining_quantity > 0:
+        order.quantity = remaining_quantity
+        await order.save()
+    else:
+        await order.delete()
+    return remaining_quantity
+
+
 @bot.tree.command(description="the stonk market")
 async def stocks(message: discord.Interaction):
     profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
+    profile.last_ran_stocks = int(time.time())
+    await profile.save()
+
+    async def ask_deposit_all(interaction):
+        await interaction.response.defer()
+        view = View(timeout=VIEW_TIMEOUT)
+        button = Button(label="Confirm")
+        button.callback = confirm_deposit_all
+        view.add_item(button)
+        await interaction.edit_original_response(content="Are you sure you want to deposit all your packs?", embed=None, view=view)
 
     async def confirm_deposit_all(interaction):
         await interaction.response.defer()
@@ -5181,7 +5286,7 @@ async def stocks(message: discord.Interaction):
             profile[f"pack_{pack['name'].lower()}"] = 0
         await profile.save()
         embedVar = discord.Embed(title="📥 Deposit Packs", description=f"You currently have 🪙 **{profile.coins:,}** coins.", color=Colors.brown)
-        await interaction.edit_original_response(embed=embedVar, view=deposit_msg(profile))
+        await interaction.edit_original_response(content=None, embed=embedVar, view=deposit_msg(profile))
         await PortfolioHistory.create(user_id=profile.id, time=int(time.time()), type="d", price=profile.coins - og)
 
     async def deposit_pack(interaction):
@@ -5236,7 +5341,7 @@ async def stocks(message: discord.Interaction):
             view.add_item(Button(label="No packs left!", disabled=True))
         else:
             button = Button(label="Deposit all!", style=ButtonStyle.gray)
-            button.callback = confirm_deposit_all
+            button.callback = ask_deposit_all
             view.add_item(button)
         return view
 
@@ -5264,7 +5369,7 @@ async def stocks(message: discord.Interaction):
         def __init__(self, max_packs):
             super().__init__(
                 title="Withdraw...",
-                timeout=3600,
+                timeout=VIEW_TIMEOUT,
             )
 
             self.input = TextInput(
@@ -5299,81 +5404,6 @@ async def stocks(message: discord.Interaction):
             await profile.save()
             await PortfolioHistory.create(user_id=profile.id, time=int(time.time()), type="w", price=packs * 100)
             await interaction.response.send_message(f"📤 You withdrew {packs} wooden packs! 🪙 -{packs * 100} coins.", ephemeral=True)
-
-    async def resolve_orders(order: Order):
-        remaining_quantity = order.quantity
-        display_price = None
-        if order.type_buy:
-            # buy order
-            updates = []
-            async for eligible_order in Order.filter(
-                "ticker = $1 AND type_buy = $2 AND price <= $3 ORDER BY price ASC, time ASC", order.ticker, False, order.price
-            ):
-                if remaining_quantity == 0:
-                    break
-
-                buy_quantity = min(remaining_quantity, eligible_order.quantity)
-                remaining_quantity -= buy_quantity
-                eligible_order.quantity -= buy_quantity
-
-                u = await Profile.get(id=eligible_order.user_id)
-                u.coins += buy_quantity * eligible_order.price
-                updates.append(u)
-
-                display_price = eligible_order.price
-
-                if eligible_order.quantity == 0:
-                    await eligible_order.delete()
-                else:
-                    await eligible_order.save()
-                    break
-
-            await Profile.bulk_update(updates, "coins")
-
-            profile = await Profile.get(id=order.user_id)
-            profile[f"stock_{order.ticker.lower()}"] += order.quantity - remaining_quantity
-            await profile.save()
-        else:
-            # sell order
-            updates = []
-            async for eligible_order in Order.filter(
-                "ticker = $1 AND type_buy = $2 AND price >= $3 ORDER BY price DESC, time ASC", order.ticker, True, order.price
-            ):
-                if remaining_quantity == 0:
-                    break
-
-                sell_quantity = min(remaining_quantity, eligible_order.quantity)
-                remaining_quantity -= sell_quantity
-                eligible_order.quantity -= sell_quantity
-
-                u = await Profile.get(id=eligible_order.user_id)
-                u[f"stock_{order.ticker.lower()}"] += sell_quantity
-                updates.append(u)
-
-                display_price = eligible_order.price
-
-                if eligible_order.quantity == 0:
-                    await eligible_order.delete()
-                else:
-                    await eligible_order.save()
-                    break
-
-            await Profile.bulk_update(updates, f"stock_{order.ticker.lower()}")
-
-            profile = await Profile.get(id=order.user_id)
-            profile.coins += (order.quantity - remaining_quantity) * order.price
-            await profile.save()
-
-        if display_price:
-            await PriceHistory.create(ticker=order.ticker, price=display_price, time=int(time.time()))
-            temp_stock_prices[order.ticker] = display_price
-
-        if remaining_quantity > 0:
-            order.quantity = remaining_quantity
-            await order.save()
-        else:
-            await order.delete()
-        return remaining_quantity
 
     class OrderModal(Modal):
         def __init__(self, ticker, type, recommended_price, max_shares=None):
@@ -6657,7 +6687,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         def __init__(self, currentuser):
             super().__init__(
                 title="Add to the trade",
-                timeout=3600,
+                timeout=VIEW_TIMEOUT,
             )
             self.currentuser = currentuser
 
@@ -7134,7 +7164,7 @@ async def roulette(message: discord.Interaction):
         def __init__(self):
             super().__init__(
                 title="place a bet idfk",
-                timeout=3600,
+                timeout=VIEW_TIMEOUT,
             )
 
             self.bettype = TextInput(
@@ -7500,7 +7530,7 @@ async def pig(message: discord.Interaction):
             # gg
             last_score = score
             score = 0
-            view = View(timeout=3600)
+            view = View(timeout=VIEW_TIMEOUT)
             button = Button(label="Play Again", emoji="🎲", style=ButtonStyle.blurple)
             button.callback = roll
             view.add_item(button)
@@ -7509,7 +7539,7 @@ async def pig(message: discord.Interaction):
             )
         else:
             score += roll_result
-            view = View(timeout=3600)
+            view = View(timeout=VIEW_TIMEOUT)
             button = Button(label="Roll", emoji="🎲", style=ButtonStyle.blurple)
             button.callback = roll
             button2 = Button(label="Save & Finish")
@@ -7541,13 +7571,13 @@ async def pig(message: discord.Interaction):
 
         last_score = score
         score = 0
-        view = View(timeout=3600)
+        view = View(timeout=VIEW_TIMEOUT)
         button = Button(label="Play Again", emoji="🎲", style=ButtonStyle.blurple)
         button.callback = roll
         view.add_item(button)
         await interaction.edit_original_response(content=f"*Congrats!*\nYou finished with {last_score} score!", view=view)
 
-    view = View(timeout=3600)
+    view = View(timeout=VIEW_TIMEOUT)
     button = Button(label="Play!", emoji="🎲", style=ButtonStyle.blurple)
     button.callback = roll
     view.add_item(button)
