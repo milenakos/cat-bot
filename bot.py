@@ -15,6 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
+import gc
 import importlib
 import logging
 import time
@@ -27,6 +28,8 @@ from discord.ext import commands
 import catpg
 import config
 import database
+
+gc.set_threshold(100, 5, 10)
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)

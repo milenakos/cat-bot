@@ -298,7 +298,7 @@ rain_shill = "☔ Get tons of cats /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
-VIEW_TIMEOUT = 600
+VIEW_TIMEOUT = 3600 * 6
 
 # store credits usernames to prevent excessive api calls
 gen_credits = {}
@@ -3449,7 +3449,7 @@ async def changemessage(message: discord.Interaction):
         def __init__(self, type):
             super().__init__(
                 title=f"Change {type} Message",
-                timeout=3600,
+                timeout=VIEW_TIMEOUT,
             )
 
             self.type = type
@@ -4241,7 +4241,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
         def __init__(self, type):
             super().__init__(
                 title="Start a Cat Rain!",
-                timeout=3600,
+                timeout=VIEW_TIMEOUT,
             )
 
             self.input = TextInput(
@@ -5369,7 +5369,7 @@ async def stocks(message: discord.Interaction):
         def __init__(self, max_packs):
             super().__init__(
                 title="Withdraw...",
-                timeout=3600,
+                timeout=VIEW_TIMEOUT,
             )
 
             self.input = TextInput(
@@ -6687,7 +6687,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         def __init__(self, currentuser):
             super().__init__(
                 title="Add to the trade",
-                timeout=3600,
+                timeout=VIEW_TIMEOUT,
             )
             self.currentuser = currentuser
 
@@ -7164,7 +7164,7 @@ async def roulette(message: discord.Interaction):
         def __init__(self):
             super().__init__(
                 title="place a bet idfk",
-                timeout=3600,
+                timeout=VIEW_TIMEOUT,
             )
 
             self.bettype = TextInput(
@@ -7530,7 +7530,7 @@ async def pig(message: discord.Interaction):
             # gg
             last_score = score
             score = 0
-            view = View(timeout=3600)
+            view = View(timeout=VIEW_TIMEOUT)
             button = Button(label="Play Again", emoji="🎲", style=ButtonStyle.blurple)
             button.callback = roll
             view.add_item(button)
@@ -7539,7 +7539,7 @@ async def pig(message: discord.Interaction):
             )
         else:
             score += roll_result
-            view = View(timeout=3600)
+            view = View(timeout=VIEW_TIMEOUT)
             button = Button(label="Roll", emoji="🎲", style=ButtonStyle.blurple)
             button.callback = roll
             button2 = Button(label="Save & Finish")
@@ -7571,13 +7571,13 @@ async def pig(message: discord.Interaction):
 
         last_score = score
         score = 0
-        view = View(timeout=3600)
+        view = View(timeout=VIEW_TIMEOUT)
         button = Button(label="Play Again", emoji="🎲", style=ButtonStyle.blurple)
         button.callback = roll
         view.add_item(button)
         await interaction.edit_original_response(content=f"*Congrats!*\nYou finished with {last_score} score!", view=view)
 
-    view = View(timeout=3600)
+    view = View(timeout=VIEW_TIMEOUT)
     button = Button(label="Play!", emoji="🎲", style=ButtonStyle.blurple)
     button.callback = roll
     view.add_item(button)
