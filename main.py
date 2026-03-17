@@ -298,7 +298,7 @@ rain_shill = "☔ Get tons of cats /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
-VIEW_TIMEOUT = 3600 * 6
+VIEW_TIMEOUT = 3600 * 24
 
 # store credits usernames to prevent excessive api calls
 gen_credits = {}
