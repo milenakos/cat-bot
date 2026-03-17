@@ -18,7 +18,6 @@ import asyncio
 import importlib
 import logging
 import time
-import tracemalloc
 
 import discord
 import sentry_sdk
@@ -28,9 +27,6 @@ from discord.ext import commands
 import catpg
 import config
 import database
-
-tracemalloc.start()
-
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
