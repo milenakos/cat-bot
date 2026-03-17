@@ -5137,7 +5137,7 @@ async def cancel_orders(interaction):
     profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild.id)
     view = View(timeout=VIEW_TIMEOUT)
     open_orders = []
-    async for order in Order.filter("user_id = $1", profile.id):
+    async for order in Order.filter("user_id = $1 AND time < $2", profile.id, time.time() - 43200):
         open_orders.append(
             discord.SelectOption(label=f"{'BUY' if order.type_buy else 'SELL'}ING {order.quantity:,}x {order.ticker}, 🪙 {order.price:,}/share", value=order.id)
         )
@@ -5151,7 +5151,7 @@ async def cancel_orders(interaction):
         on_select=the_order_canceller,
     )
     view.add_item(cancel_select)
-    await interaction.followup.send("Select orders to cancel...", view=view, ephemeral=True)
+    await interaction.followup.send("Select orders to cancel...\n(you can only cancel orders after 12 hours)", view=view, ephemeral=True)
 
 
 async def the_order_canceller(interaction, choices):
@@ -5164,7 +5164,7 @@ async def the_order_canceller(interaction, choices):
         choices = [choices]
     for choice in choices:
         order = await Order.get_or_none(id=int(choice))
-        if not order:
+        if not order or order.user_id != profile.id or order.time > time.time() - 43200:
             continue
         if order.type_buy:
             profile.coins += order.price * order.quantity
