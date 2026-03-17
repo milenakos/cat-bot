@@ -15,10 +15,10 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
-import gc
 import importlib
 import logging
 import time
+import tracemalloc
 
 import discord
 import sentry_sdk
@@ -29,7 +29,8 @@ import catpg
 import config
 import database
 
-gc.set_threshold(100, 5, 10)
+tracemalloc.start()
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
