@@ -4047,7 +4047,7 @@ async def rain_end(message, channel, force_summary=None):
 
     lock_success = False
     try:
-        me_overwrites = api_channel.overwrites_for(guild.me)
+        me_overwrites = api_channel.overwrites_for(message.guild.me)
         me_overwrites.send_messages = True
 
         everyone_overwrites = api_channel.overwrites_for(guild.default_role)
@@ -4056,7 +4056,7 @@ async def rain_end(message, channel, force_summary=None):
 
         await asyncio.gather(
             api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites),
-            api_channel.set_permissions(guild.me, overwrite=me_overwrites),
+            api_channel.set_permissions(message.guild.me, overwrite=me_overwrites),
         )
         lock_success = True
     except Exception:
@@ -9250,7 +9250,7 @@ async def setup_channel(message: discord.Interaction):
             channel = await guild.fetch_channel(message.channel.parent_id)
         else:
             channel = await guild.fetch_channel(message.channel.id)
-        channel_permissions = channel.permissions_for(guild.me)
+        channel_permissions = channel.permissions_for(message.guild.me)
         needed_perms = {
             "View Channel": channel_permissions.view_channel,
             "Send Messages": channel_permissions.send_messages,
