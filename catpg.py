@@ -87,10 +87,10 @@ class Model:
 
     async def delete(self) -> None:
         table = self.__class__.__name__.lower()
-        query_string = f'DELETE FROM "{table}" WHERE {self._primary_key} = $1;'
+        query_string = f'DELETE FROM "{table}" WHERE "{self._primary_key}" = $1;'
         await pool.execute(query_string, self.__values[self._primary_key])
         self.__dirty_values = []
-        self.__values = []
+        self.__values = {}
 
     async def save(self) -> None:
         table = self.__class__.__name__.lower()
@@ -109,7 +109,7 @@ class Model:
         query_string += ", ".join(changes)
 
         # show where to write
-        query_string += f" WHERE {self._primary_key} = ${var_counter};"
+        query_string += f' WHERE "{self._primary_key}" = ${var_counter};'
         args.append(self.__values[self._primary_key])
 
         # run the query
@@ -121,6 +121,7 @@ class Model:
         table = cls.__name__.lower()
         select = "*"
         if fields:
+            fields = fields.copy()
             if cls._primary_key not in fields:
                 fields.append(cls._primary_key)
             select = ", ".join(i if i.__class__.__name__ == "RawSQL" else f'"{i}"' for i in fields)
@@ -160,7 +161,7 @@ class Model:
     @classmethod
     async def get_or_create(cls, **kwargs) -> ModelInstance:
         table = cls.__name__.lower()
-        values = kwargs.values()
+        values = list(kwargs.values())
 
         # build column names and placeholders
         columns = list(kwargs.keys())
@@ -178,24 +179,25 @@ class Model:
         return cls(result)
 
     @classmethod
-    async def create(cls, **kwargs) -> None:
+    async def create(cls, **kwargs) -> ModelInstance:
         table = cls.__name__.lower()
-        values = kwargs.values()
+        values = list(kwargs.values())
 
         query_string = f'INSERT INTO "{table}" ('
         var_counter = 1
 
-        # add the search parameters
+        # add the column names
         changes = []
         for i in kwargs.keys():
-            changes.append(i)
+            changes.append(f'"{i}"')
             var_counter += 1
         query_string += ", ".join(changes) + ") VALUES ("
 
         # add the var numbers
         changes2 = ["$" + str(i) for i in range(1, var_counter)]
-        query_string += ", ".join(changes2) + ");"
-        await pool.execute(query_string, *values)
+        query_string += ", ".join(changes2) + ") RETURNING *;"
+        result = await pool.fetchrow(query_string, *values)
+        return cls(result)
 
     @classmethod
     async def filter(
@@ -287,9 +289,9 @@ class Model:
         var_counter = 1
         change = []
         for col in columns:
-            change.append(f"{col} = ${var_counter}")
+            change.append(f'"{col}" = ${var_counter}')
             var_counter += 1
-        query += ", ".join(change) + f" WHERE {cls._primary_key} = ${var_counter};"
+        query += ", ".join(change) + f' WHERE "{cls._primary_key}" = ${var_counter};'
 
         # prepare the data
         data = []

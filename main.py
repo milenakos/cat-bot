@@ -1218,13 +1218,33 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
 async def wait_and_do_stock(stock):
     await asyncio.sleep(stock.end_time - time.time())
     if random.random() * 100 < stock.chance:
+        allowed_tickers = {s["ticker"] for s in stock_data}
+        if stock.ticker not in allowed_tickers:
+            return
+        stock_column = f'"stock_{stock.ticker.lower()}"'
+
         # payout
         await pool.execute(
-            f"""WITH updated AS (
-            UPDATE profile
-            SET coins = coins + stock_{stock.ticker.lower()} * $1
-            WHERE stock_{stock.ticker.lower()} > 0
-            RETURNING id AS profile_id, stock_{stock.ticker.lower()} * $1 AS coin_change
+            f"""WITH stock_holders_raw AS (
+            SELECT id AS user_id, {stock_column} AS quantity
+            FROM profile
+            WHERE {stock_column} > 0
+            UNION ALL
+            SELECT user_id, quantity
+            FROM "order"
+            WHERE ticker = $4 AND type_buy = false
+        ),
+        stock_holders AS (
+            SELECT user_id, SUM(quantity) AS quantity
+            FROM stock_holders_raw
+            GROUP BY user_id
+        )
+        updated AS (
+            UPDATE profile p
+            SET coins = coins + sh.quantity * $1
+            FROM stock_holders sh
+            WHERE p.id = sh.user_id
+            RETURNING p.id AS profile_id, sh.quantity * $1 AS coin_change
         )
         INSERT INTO portfoliohistory (user_id, time, type, ticker, quantity)
         SELECT profile_id, $2, $3, $4, coin_change
@@ -1355,12 +1375,10 @@ async def background_loop():
                 price = await get_stock_price(ticker)
                 if quantity > 0:
                     curr_time = int(time.time())
-                    await Order.create(user_id=profile.id, ticker=ticker, quantity=quantity, price=price, type_buy=False, time=curr_time)
+                    order = await Order.create(user_id=profile.id, ticker=ticker, quantity=quantity, price=price, type_buy=False, time=curr_time)
                     await PortfolioHistory.create(user_id=profile.id, type="s", price=price, quantity=quantity, time=curr_time, ticker=ticker)
                     profile[f"stock_{ticker.lower()}"] = 0
-                    order = await Order.get_or_none(user_id=profile.id, ticker=ticker, quantity=quantity, price=price, type_buy=False, time=curr_time)
-                    if order:
-                        await resolve_orders(order)
+                    await resolve_orders(order)
             await profile.save()
 
     # revive dead catch loops
@@ -5430,7 +5448,7 @@ async def stocks(message: discord.Interaction):
             await profile.save()
 
             curr_time = int(time.time())
-            await Order.create(
+            order = await Order.create(
                 user_id=profile.id,
                 ticker=self.ticker,
                 type_buy=self.type == "buy",
@@ -5447,14 +5465,6 @@ async def stocks(message: discord.Interaction):
                 time=curr_time,
             )
             await interaction.response.send_message(f"☑️ Order to {self.type} {quantity} shares of {self.ticker} placed!", ephemeral=True)
-            order = await Order.get(
-                user_id=profile.id,
-                ticker=self.ticker,
-                type_buy=self.type == "buy",
-                quantity=quantity,
-                price=price,
-                time=curr_time,
-            )
             remaining_quantity = await resolve_orders(order)
             if remaining_quantity == 0:
                 await interaction.followup.send("✅ Order fully fulfilled!", ephemeral=True)
