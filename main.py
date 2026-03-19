@@ -4039,23 +4039,24 @@ async def rain_end(message, channel, force_summary=None):
     except Exception:
         pass
 
+    guild = await bot.fetch_guild(message.guild_id)
     if isinstance(message.channel, discord.Thread):
-        api_channel = await message.guild.fetch_channel(message.channel.parent_id)
+        api_channel = await guild.fetch_channel(message.channel.parent_id)
     else:
-        api_channel = await message.guild.fetch_channel(message.channel.id)
+        api_channel = await guild.fetch_channel(message.channel.id)
 
     lock_success = False
     try:
-        me_overwrites = api_channel.overwrites_for(message.guild.me)
+        me_overwrites = api_channel.overwrites_for(guild.me)
         me_overwrites.send_messages = True
 
-        everyone_overwrites = api_channel.overwrites_for(message.guild.default_role)
+        everyone_overwrites = api_channel.overwrites_for(guild.default_role)
         current_perm = everyone_overwrites.send_messages
         everyone_overwrites.send_messages = False
 
         await asyncio.gather(
-            api_channel.set_permissions(message.guild.default_role, overwrite=everyone_overwrites),
-            api_channel.set_permissions(message.guild.me, overwrite=me_overwrites),
+            api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites),
+            api_channel.set_permissions(guild.me, overwrite=me_overwrites),
         )
         lock_success = True
     except Exception:
@@ -4173,9 +4174,9 @@ async def rain_end(message, channel, force_summary=None):
         pass
     finally:
         if lock_success:
-            everyone_overwrites = api_channel.overwrites_for(message.guild.default_role)
+            everyone_overwrites = api_channel.overwrites_for(guild.default_role)
             everyone_overwrites.send_messages = current_perm
-            await api_channel.set_permissions(message.guild.default_role, overwrite=everyone_overwrites)
+            await api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites)
 
 
 @bot.tree.command(description="its raining cats")
@@ -9244,11 +9245,12 @@ async def givecat(message: discord.Interaction, person_id: discord.User, cat_typ
 @discord.app_commands.default_permissions(manage_guild=True)
 async def setup_channel(message: discord.Interaction):
     try:
+        guild = await bot.fetch_guild(message.guild_id)
         if isinstance(message.channel, discord.Thread):
-            channel = await message.guild.fetch_channel(message.channel.parent_id)
+            channel = await guild.fetch_channel(message.channel.parent_id)
         else:
-            channel = await message.guild.fetch_channel(message.channel.id)
-        channel_permissions = channel.permissions_for(message.guild.me)
+            channel = await guild.fetch_channel(message.channel.id)
+        channel_permissions = channel.permissions_for(guild.me)
         needed_perms = {
             "View Channel": channel_permissions.view_channel,
             "Send Messages": channel_permissions.send_messages,
