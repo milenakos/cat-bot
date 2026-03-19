@@ -4039,7 +4039,7 @@ async def rain_end(message, channel, force_summary=None):
     except Exception:
         pass
 
-    guild = await bot.fetch_guild(message.guild_id)
+    guild = await bot.fetch_guild(message.guild.id)
     if isinstance(message.channel, discord.Thread):
         api_channel = await guild.fetch_channel(message.channel.parent_id)
     else:
@@ -9245,7 +9245,7 @@ async def givecat(message: discord.Interaction, person_id: discord.User, cat_typ
 @discord.app_commands.default_permissions(manage_guild=True)
 async def setup_channel(message: discord.Interaction):
     try:
-        guild = await bot.fetch_guild(message.guild_id)
+        guild = await bot.fetch_guild(message.guild.id)
         if isinstance(message.channel, discord.Thread):
             channel = await guild.fetch_channel(message.channel.parent_id)
         else:
