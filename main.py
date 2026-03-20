@@ -4735,7 +4735,7 @@ async def packs(message: discord.Interaction):
         await interaction.edit_original_response(view=view)
 
     async def open_all_packs(interaction: discord.Interaction):
-        embed = await process_pack_opening()
+        embed = await process_pack_opening(10000)
         if not embed:
             return
 
