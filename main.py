@@ -1329,13 +1329,14 @@ async def background_loop():
                     )
                     r.close()
 
-                # post commands to top.gg
-                r = await session.post(
-                    "https://top.gg/api/v1/projects/@me/commands",
-                    headers={"Authorization": config.TOP_GG_TOKEN},
-                    json=[command.to_dict(bot.tree) for command in bot.tree._get_all_commands(guild=None) if command.to_dict(bot.tree)["type"] == 1],
-                )
-                r.close()
+                if config.TOP_GG_MODERN_TOKEN:
+                    # post commands to top.gg
+                    r = await session.post(
+                        "https://top.gg/api/v1/projects/@me/commands",
+                        headers={"Authorization": f"Bearer {config.TOP_GG_MODERN_TOKEN}"},
+                        json=[command.to_dict(bot.tree) for command in bot.tree._get_all_commands(guild=None) if command.to_dict(bot.tree)["type"] == 1],
+                    )
+                    r.close()
 
             except Exception:
                 logging.warning("Posting to top.gg failed.")
@@ -4813,6 +4814,22 @@ async def battlepass(message: discord.Interaction):
         if global_user.vote_time_topgg + 12 * 3600 > time.time():
             await progress(message, user, "vote")
             await global_user.refresh_from_db()
+        elif not first and config.TOP_GG_MODERN_TOKEN:
+            # fallback check top.gg vote
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"https://top.gg/api/v1/projects/@me/votes/{interaction.user.id}?source=discord",
+                    headers={"Authorization": f"Bearer {config.TOP_GG_MODERN_TOKEN}"},
+                ) as r:
+                    data = await r.json()
+                    created_at = 0
+                    if data.get("created_at", 0):
+                        created_at = datetime.datetime.fromisoformat(data["created_at"]).timestamp()
+                    if created_at and created_at > global_user.vote_time_topgg + 10:
+                        await do_vote(global_user, created_at)
+                        await global_user.refresh_from_db()
+                        await progress(message, user, "vote")
+                        await global_user.refresh_from_db()
 
         await user.refresh_from_db()
 
@@ -9509,6 +9526,12 @@ async def recieve_vote(request):
     user = await User.get_or_create(user_id=int(request_data["user"]["platform_id"]))
     created_at = datetime.datetime.fromisoformat(request_data["created_at"]).timestamp()
 
+    await do_vote(user, created_at)
+
+    return web.Response(text="ok", status=200)
+
+
+async def do_vote(user: User, created_at: float):
     if user.vote_streak < 10:
         extend_time = 24
     elif user.vote_streak < 20:
@@ -9582,8 +9605,6 @@ async def recieve_vote(request):
         pass
 
     await user.save()
-
-    return web.Response(text="ok", status=200)
 
 
 async def check_supporter(request):
