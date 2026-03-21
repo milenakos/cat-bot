@@ -6319,10 +6319,10 @@ async def gift(
         await message.response.send_message(content, allowed_mentions=discord.AllowedMentions(users=True))
 
     # handle aches
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     await achemb(message, "donator", "followup")
     await achemb(message, "anti_donator", "followup", person)
     if person_id == bot.user.id and gift_type == "Ultimate":
-        user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
         user.ultimates_gifted = min(127, user.ultimates_gifted + int(amount))
         await user.save()
         if user.ultimates_gifted >= 5:
