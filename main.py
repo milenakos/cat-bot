@@ -6229,11 +6229,11 @@ async def gift(
             if person_id == bot.user.id:
                 await message.response.send_message("you can't sacrifice rains", ephemeral=True)
                 return
-            user = await User.get_or_create(user_id=message.user.id, connection=conn)
-            reciever = await User.get_or_create(user_id=person_id, connection=conn)
+            user = await User.get_or_create(conn, user_id=message.user.id)
+            reciever = await User.get_or_create(conn, user_id=person_id)
         else:
-            user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id, connection=conn)
-            reciever = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id, connection=conn)
+            user = await Profile.get_or_create(conn, guild_id=message.guild.id, user_id=message.user.id)
+            reciever = await Profile.get_or_create(conn, guild_id=message.guild.id, user_id=person_id)
 
         if gift_type.lower() == "rain":
             key = "rain_minutes"
