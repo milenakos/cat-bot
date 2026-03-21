@@ -6217,7 +6217,7 @@ async def gift(
         amount = 1
     person_id = person.id
 
-    if amount <= 0 or message.user.id == person_id:
+    if amount <= 0 or amount >= 2147483647 or message.user.id == person_id:
         # haha skill issue
         await message.response.send_message("no", ephemeral=True)
         if message.user.id == person_id:
@@ -6323,7 +6323,7 @@ async def gift(
     await achemb(message, "donator", "followup")
     await achemb(message, "anti_donator", "followup", person)
     if person_id == bot.user.id and gift_type == "Ultimate":
-        user.ultimates_gifted = min(127, user.ultimates_gifted + int(amount))
+        user.ultimates_gifted = min(32766, user.ultimates_gifted + int(amount))
         await user.save()
         if user.ultimates_gifted >= 5:
             await achemb(message, "rich", "followup")
@@ -7745,8 +7745,6 @@ async def bounty(message, user, cattype):
             user.bounty_progress_three = progress
             if progress == total:
                 completed += 1
-        colored += (progress / total) * 10 / user.bounties
-        await user.save()
     if catnip_list["levels"][user.catnip_level]["bonus"]:
         bonus_title = ""
         if user.bounty_progress_bonus < user.bounty_total_bonus:
@@ -7773,6 +7771,7 @@ async def bounty(message, user, cattype):
     for i in range(complete):
         logging.debug("Completed bounties %d", completed)
         level = user.catnip_level
+        colored = int(completed / user.bounties * 10)
         progress_line = f"\n{level} " + get_emoji("staring_square") * int(colored) + "⬛" * int(10 - colored) + f" {level + 1}"
         if completed == user.bounties:
             description = f"{progress_line}\nAll Bounties Complete!\nGo to `/catnip` to pay up and pick a perk!"
@@ -8546,6 +8545,7 @@ You can stop. That's okay. Seriously.
         amount = user.catnip_amount
         quote_list = catnip_list["quotes"][level - 1]["quotes"]
         all_complete = True
+        bounties_complete = 0
         bonus_complete = False
         name = ""
 
@@ -8554,10 +8554,9 @@ You can stop. That's okay. Seriously.
             desc += "\nThe timer for leveling up will **not start** until you begin your bounties.\n"
 
         if user.catnip_level > 0 and user.catnip_level < 11:
-            colored = 0
 
             def format_bounty(bounty_numstr, single=False):
-                nonlocal desc, all_complete, colored, bonus_complete
+                nonlocal desc, all_complete, bonus_complete, bounties_complete
                 bounty_id = user[f"bounty_id_{bounty_numstr}"]
                 bounty_type = user[f"bounty_type_{bounty_numstr}"]
                 bounty_total = user[f"bounty_total_{bounty_numstr}"]
@@ -8568,6 +8567,8 @@ You can stop. That's okay. Seriously.
                     desc += "✅ "
                     if bounty_numstr == "bonus":
                         bonus_complete = True
+                    else:
+                        bounties_complete += 1
                 elif bounty_numstr != "bonus":
                     all_complete = False
 
@@ -8580,8 +8581,6 @@ You can stop. That's okay. Seriously.
                     desc = desc.replace("cats", "cat")
 
                 desc = desc.replace("type", f"{get_emoji(bounty_type.lower() + 'cat')} {bounty_type}")
-                if bounty_numstr != "bonus":
-                    colored += (bounty_progress / bounty_total) * 10 / user.bounties
 
             if not user.hibernation:
                 if user.bounties == 1:
@@ -8598,8 +8597,6 @@ You can stop. That's okay. Seriously.
                 if bonus:
                     desc += "\n**__Bonus Bounty:__**"
                     format_bounty("bonus")
-
-                colored = int(colored)
                 desc += "\n"
                 if not all_complete:
                     desc += f"\n**Pay Up!** {amount} {get_emoji(cat_type.lower() + 'cat')} {cat_type} after completing your bounties"
@@ -8611,6 +8608,7 @@ You can stop. That's okay. Seriously.
                     desc += f"\nPerks expire <t:{user.catnip_active}:R>"
                 all_complete = False
 
+            colored = int(bounties_complete / user.bounties * 10)
             desc += f"\n\n**Level {level}** - {change}"
             desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
         if not level == 0 and not user.hibernation:
@@ -8930,7 +8928,7 @@ async def leaderboards(
 
     # this fat function handles a single page
     async def lb_handler(interaction, type, do_edit=None, specific_cat="All"):
-        if specific_cat is None:
+        if not specific_cat:
             specific_cat = "All"
 
         nonlocal message
