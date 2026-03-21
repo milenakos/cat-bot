@@ -48,7 +48,7 @@ from PIL import Image
 import config
 import graph
 import msg2img
-from catpg import RawSQL, pool
+from catpg import RawSQL, pool, transaction
 from database import Channel, Order, PortfolioHistory, PriceHistory, Prism, Profile, Reminder, Reward, Server, User
 
 try:
@@ -347,7 +347,8 @@ temp_stock_prices = {}
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
 
-about_to_stop = False
+# fallback for fetching missing votes on background loops using top.gg replay api thing
+last_vote_cursor = None
 
 # d.py doesnt cache app emojis so we do it on our own yippe
 emojis = {}
@@ -1291,7 +1292,16 @@ async def postpone_reminder(interaction):
 
 # a loop for various maintenance which is ran every 5 minutes
 async def background_loop():
-    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, temp_belated_storage, temp_cookie_storage, fakecooldown
+    global \
+        pointlaugh_ratelimit, \
+        reactions_ratelimit, \
+        last_loop_time, \
+        loop_count, \
+        catchcooldown, \
+        temp_belated_storage, \
+        temp_cookie_storage, \
+        fakecooldown, \
+        last_vote_cursor
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     catchcooldown = {}
@@ -1337,6 +1347,27 @@ async def background_loop():
                         json=[command.to_dict(bot.tree) for command in bot.tree._get_all_commands(guild=None) if command.to_dict(bot.tree)["type"] == 1],
                     )
                     r.close()
+
+                    # fallback fetch votes
+                    if last_vote_cursor:
+                        suffix = "cursor=" + last_vote_cursor
+                    else:
+                        timestamp = discord.utils.utcnow() - datetime.timedelta(minutes=5)
+                        suffix = "startDate=" + timestamp.isoformat()
+                    r = await session.get(
+                        f"https://top.gg/api/v1/projects/@me/votes?{suffix}",
+                        headers={"Authorization": f"Bearer {config.TOP_GG_MODERN_TOKEN}"},
+                    )
+                    data = await r.json()
+                    r.close()
+
+                    last_vote_cursor = data.get("cursor", None)
+                    for vote_data in data.get("data", []):
+                        if not vote_data.get("created_at", 0) or not vote_data.get("platform_id", 0):
+                            continue
+                        created_at = datetime.datetime.fromisoformat(vote_data["created_at"]).timestamp()
+                        vote_user = await User.get_or_create(user_id=vote_data["platform_id"])
+                        await do_vote(vote_user, created_at)
 
             except Exception:
                 logging.warning("Posting to top.gg failed.")
@@ -4253,10 +4284,6 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             user.claimed_free_rain = True
             await user.save()
 
-        if about_to_stop:
-            await interaction.response.send_message("the bot is about to stop. please try again later.", ephemeral=True)
-            return
-
         if rain_length < 1:
             await interaction.response.send_message("last time i checked weather can not change for a negative amount of time", ephemeral=True)
             return
@@ -6171,18 +6198,18 @@ async def cookie(message: discord.Interaction):
     await message.response.send_message(view=view)
 
 
-@bot.tree.command(description="donate cats now")
-@discord.app_commands.rename(cat_type="type")
+@bot.tree.command(description="donate (give) cats now")
+@discord.app_commands.rename(gift_type="type")
 @discord.app_commands.describe(
     person="Whom to gift?",
-    cat_type="im gonna airstrike your house from orbit",
+    gift_type="im gonna airstrike your house from orbit",
     amount="And how much?",
 )
-@discord.app_commands.autocomplete(cat_type=gift_autocomplete)
+@discord.app_commands.autocomplete(gift_type=gift_autocomplete)
 async def gift(
     message: discord.Interaction,
     person: discord.User,
-    cat_type: str,
+    gift_type: str,
     amount: Optional[int],
 ):
     if amount is None:
@@ -6197,149 +6224,123 @@ async def gift(
             await achemb(message, "lonely", "followup")
         return
 
-    if cat_type in cattypes:
-        user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-        # if we even have enough cats
-        if user[f"cat_{cat_type}"] >= amount:
-            reciever = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id)
-            user[f"cat_{cat_type}"] -= amount
-            reciever[f"cat_{cat_type}"] += amount
-            try:
-                user.cats_gifted += amount
-                reciever.cat_gifts_recieved += amount
-            except Exception:
-                pass
-            await user.save()
-            await reciever.save()
-            content = f"Successfully transfered {amount:,} {cat_type} cats from {message.user.mention} to <@{person_id}>!"
-
-            # handle tax
-            if amount >= 5:
-                tax_amount = round(amount * 0.2)
-                tax_debounce = False
-
-                async def pay(interaction):
-                    nonlocal tax_debounce
-                    if interaction.user.id == message.user.id and not tax_debounce:
-                        tax_debounce = True
-                        await interaction.response.defer()
-                        await user.refresh_from_db()
-                        try:
-                            # transfer tax
-                            user[f"cat_{cat_type}"] -= tax_amount
-
-                            try:
-                                await interaction.edit_original_response(view=None)
-                            except Exception:
-                                pass
-                            await interaction.followup.send(f"Tax of {tax_amount:,} {cat_type} cats was withdrawn from your account!")
-                        finally:
-                            # always save to prevent issue with exceptions leaving bugged state
-                            await user.save()
-                        await achemb(message, "good_citizen", "followup")
-                        if user[f"cat_{cat_type}"] < 0:
-                            bot.loop.create_task(debt_cutscene(interaction, user))
-                    else:
-                        await do_funny(interaction)
-
-                async def evade(interaction):
-                    if interaction.user.id == message.user.id:
-                        await interaction.response.defer()
-                        try:
-                            await interaction.edit_original_response(view=None)
-                        except Exception:
-                            pass
-                        await interaction.followup.send(f"You evaded the tax of {tax_amount:,} {cat_type} cats.")
-                        await achemb(message, "secret", "followup")
-                    else:
-                        await do_funny(interaction)
-
-                button = Button(label="Pay 20% tax", style=ButtonStyle.green)
-                button.callback = pay
-
-                button2 = Button(label="Evade the tax", style=ButtonStyle.red)
-                button2.callback = evade
-
-                myview = View(timeout=VIEW_TIMEOUT)
-
-                myview.add_item(button)
-                myview.add_item(button2)
-
-                await message.response.send_message(content, view=myview, allowed_mentions=discord.AllowedMentions(users=True))
-            else:
-                await message.response.send_message(content, allowed_mentions=discord.AllowedMentions(users=True))
-
-            # handle aches
-            await achemb(message, "donator", "followup")
-            await achemb(message, "anti_donator", "followup", person)
-            if person_id == bot.user.id and cat_type == "Ultimate" and int(amount) >= 5:
-                await achemb(message, "rich", "followup")
+    async with transaction() as conn:
+        if gift_type.lower() == "rain":
             if person_id == bot.user.id:
-                await achemb(message, "sacrifice", "followup")
-            if cat_type == "Nice" and int(amount) == 69:
-                await achemb(message, "nice", "followup")
-
-            await progress(message, user, "gift")
+                await message.response.send_message("you can't sacrifice rains", ephemeral=True)
+                return
+            user = await User.get_or_create(user_id=message.user.id, connection=conn)
+            reciever = await User.get_or_create(user_id=person_id, connection=conn)
         else:
-            await message.response.send_message("no", ephemeral=True)
-    elif cat_type.lower() == "rain":
-        if person_id == bot.user.id:
-            await message.response.send_message("you can't sacrifice rains", ephemeral=True)
+            user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id, connection=conn)
+            reciever = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id, connection=conn)
+
+        if gift_type.lower() == "rain":
+            key = "rain_minutes"
+            thing = "Rain Minutes"
+        elif gift_type.lower() in [cattype.lower() for cattype in cattypes]:
+            gift_type = cattype_lc_dict[gift_type.lower()]
+            key = f"cat_{gift_type}"
+            thing = f"{gift_type} cats"
+        elif gift_type.lower() in [i["name"].lower() for i in pack_data]:
+            key = f"pack_{gift_type.lower()}"
+            thing = f"{gift_type.capitalize()} packs"
+            if user.battlepass < 3 and not user.bp_history.strip().replace("0,0,0;", ""):
+                await message.response.send_message("you need to reach atleast cattlepass level 3 to gift packs.", ephemeral=True)
+                return
+        else:
+            await message.response.send_message("bro what", ephemeral=True)
             return
 
-        actual_user = await User.get_or_create(user_id=message.user.id)
-        actual_receiver = await User.get_or_create(user_id=person_id)
-        if actual_user.rain_minutes >= amount:
-            actual_user.rain_minutes -= amount
-            actual_receiver.rain_minutes += amount
-            await actual_user.save()
-            await actual_receiver.save()
-            content = f"Successfully transfered {amount:,} minutes of rain from {message.user.mention} to <@{person_id}>!"
-
-            await message.response.send_message(content, allowed_mentions=discord.AllowedMentions(users=True))
-
-            # handle aches
-            await achemb(message, "donator", "followup")
-            await achemb(message, "anti_donator", "followup", person)
-            user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-            await progress(message, user, "gift")
+        # if enough
+        if user[key] >= amount:
+            user[key] -= amount
+            reciever[key] += amount
+            if key.startswith("cat_"):
+                user.cats_gifted += amount
+                reciever.cat_gifts_recieved += amount
+            await user.save()
+            await reciever.save()
         else:
             await message.response.send_message("no", ephemeral=True)
+            return
 
+    content = f"Successfully transfered {amount:,} {thing} from {message.user.mention} to {person.mention}!"
+
+    # handle tax
+    if key.startswith("cat_") and amount >= 5:
+        tax_amount = round(amount * 0.2)
+        tax_debounce = False
+
+        async def pay(interaction):
+            nonlocal tax_debounce
+            if tax_debounce:
+                return
+            if interaction.user.id != message.user.id:
+                await do_funny(interaction)
+                return
+
+            tax_debounce = True
+            await interaction.response.defer()
+
+            user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+            user[f"cat_{gift_type}"] -= tax_amount
+            await user.save()
+
+            await interaction.edit_original_response(view=None)
+            await interaction.followup.send(f"You paid the tax of {tax_amount:,} {gift_type} cats!")
+            await achemb(message, "good_citizen", "followup")
+            if user[f"cat_{gift_type}"] < 0:
+                bot.loop.create_task(debt_cutscene(interaction, user))
+
+        async def evade(interaction):
+            if interaction.user.id != message.user.id:
+                await do_funny(interaction)
+                return
+
+            await interaction.response.defer()
+            await interaction.edit_original_response(view=None)
+            await interaction.followup.send(f"You evaded the tax of {tax_amount:,} {gift_type} cats.")
+            await achemb(message, "secret", "followup")
+
+        button = Button(label="Pay 20% tax", style=ButtonStyle.green)
+        button.callback = pay
+
+        button2 = Button(label="Evade the tax", style=ButtonStyle.red)
+        button2.callback = evade
+
+        myview = View(timeout=VIEW_TIMEOUT)
+
+        myview.add_item(button)
+        myview.add_item(button2)
+
+        await message.response.send_message(content, view=myview, allowed_mentions=discord.AllowedMentions(users=True))
+    else:
+        await message.response.send_message(content, allowed_mentions=discord.AllowedMentions(users=True))
+
+    # handle aches
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    reciever = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id)
+    await achemb(message, "donator", "followup")
+    await achemb(message, "anti_donator", "followup", reciever)
+    if person_id == bot.user.id and gift_type == "Ultimate":
+        user.ultimates_gifted = min(127, user.ultimates_gifted + int(amount))
+        await user.save()
+        if user.ultimates_gifted >= 5:
+            await achemb(message, "rich", "followup")
+    if person_id == bot.user.id:
+        await achemb(message, "sacrifice", "followup")
+    if gift_type == "Nice" and int(amount) == 69:
+        await achemb(message, "nice", "followup")
+
+    await progress(message, user, "gift")
+
+    if key == "rain_minutes":
         try:
             ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
             await ch.send(f"{message.user.id} gave {amount}m to {person_id}")
         except Exception:
             pass
-    elif cat_type.lower() in [i["name"].lower() for i in pack_data]:
-        cat_type = cat_type.lower()
-        # packs um also this seems to be repetetive uh
-        user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-        if user.battlepass < 3 and not user.bp_history.strip().replace("0,0,0;", ""):
-            await message.response.send_message("you need to reach atleast cattlepass level 3 to gift packs.", ephemeral=True)
-            return
-        # if we even have enough packs
-        if user[f"pack_{cat_type}"] >= amount:
-            reciever = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id)
-            user[f"pack_{cat_type}"] -= amount
-            reciever[f"pack_{cat_type}"] += amount
-            await user.save()
-            await reciever.save()
-            content = f"Successfully transfered {amount:,} {cat_type} packs from {message.user.mention} to <@{person_id}>!"
-
-            await message.response.send_message(content, allowed_mentions=discord.AllowedMentions(users=True))
-
-            # handle aches
-            await achemb(message, "donator", "followup")
-            await achemb(message, "anti_donator", "followup", person)
-            if person_id == bot.user.id:
-                await achemb(message, "sacrifice", "followup")
-
-            await progress(message, user, "gift")
-        else:
-            await message.response.send_message("no", ephemeral=True)
-    else:
-        await message.response.send_message("bro what", ephemeral=True)
 
 
 @bot.tree.command(description="Trade stuff!")
@@ -9542,6 +9543,9 @@ async def do_vote(user: User, created_at: float):
         extend_time = 60
     else:
         extend_time = 72
+
+    if created_at - user.vote_time_topgg < 3600:
+        return
 
     user.reminder_vote = 1
     user.total_votes += 1
