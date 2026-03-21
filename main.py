@@ -7745,6 +7745,7 @@ async def bounty(message, user, cattype):
             user.bounty_progress_three = progress
             if progress == total:
                 completed += 1
+        await user.save()
     if catnip_list["levels"][user.catnip_level]["bonus"]:
         bonus_title = ""
         if user.bounty_progress_bonus < user.bounty_total_bonus:
