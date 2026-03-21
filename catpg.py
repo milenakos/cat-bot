@@ -132,6 +132,9 @@ class Model:
     async def _get(cls, connection: asyncpg.Connection | None = None, fields: None | list[str | RawSQL] = None, **kwargs) -> asyncpg.Record:
         table = cls.__name__.lower()
         select = "*"
+        if not connection:
+            connection = pool
+
         if fields:
             fields = fields.copy()
             if cls._primary_key not in fields:
@@ -180,6 +183,8 @@ class Model:
     async def get_or_create(cls, connection: asyncpg.Connection | None = None, **kwargs) -> ModelInstance:
         table = cls.__name__.lower()
         values = list(kwargs.values())
+        if not connection:
+            connection = pool
 
         # build column names and placeholders
         columns = list(kwargs.keys())
@@ -207,6 +212,9 @@ class Model:
     async def create(cls, connection: asyncpg.Connection | None = None, **kwargs) -> ModelInstance:
         table = cls.__name__.lower()
         values = list(kwargs.values())
+
+        if not connection:
+            connection = pool
 
         query_string = f'INSERT INTO "{table}" ('
         var_counter = 1
