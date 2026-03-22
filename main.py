@@ -4849,22 +4849,6 @@ async def battlepass(message: discord.Interaction):
         if global_user.vote_time_topgg + 12 * 3600 > time.time():
             await progress(message, user, "vote")
             await global_user.refresh_from_db()
-        elif not first and config.TOP_GG_MODERN_TOKEN:
-            # fallback check top.gg vote
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"https://top.gg/api/v1/projects/@me/votes/{interaction.user.id}?source=discord",
-                    headers={"Authorization": f"Bearer {config.TOP_GG_MODERN_TOKEN}"},
-                ) as r:
-                    data = await r.json()
-                    created_at = 0
-                    if data.get("created_at", 0):
-                        created_at = datetime.datetime.fromisoformat(data["created_at"]).timestamp()
-                    if created_at and created_at > global_user.vote_time_topgg + 10:
-                        await do_vote(global_user, created_at)
-                        await global_user.refresh_from_db()
-                        await progress(message, user, "vote")
-                        await global_user.refresh_from_db()
 
         await user.refresh_from_db()
 
