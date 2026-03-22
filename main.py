@@ -348,7 +348,11 @@ temp_stock_prices = {}
 on_ready_debounce = False
 
 # fallback for fetching missing votes on background loops using top.gg replay api thing
-last_vote_cursor = None
+try:
+    with open("cursor.txt", "r", encoding="utf-8") as f:
+        last_vote_cursor = f.read().strip() or None
+except FileNotFoundError:
+    last_vote_cursor = None
 
 # d.py doesnt cache app emojis so we do it on our own yippe
 emojis = {}
@@ -1240,7 +1244,7 @@ async def wait_and_do_stock(stock):
             FROM stock_holders_raw
             GROUP BY user_id
         )
-        updated AS (
+        "updated" AS (
             UPDATE profile p
             SET coins = coins + sh.quantity * $1
             FROM stock_holders sh
@@ -1249,7 +1253,7 @@ async def wait_and_do_stock(stock):
         )
         INSERT INTO portfoliohistory (user_id, time, type, ticker, quantity)
         SELECT profile_id, $2, $3, $4, coin_change
-        FROM updated;""",
+        FROM "updated";""",
             stock.amount,
             stock.end_time,
             "r",
@@ -1362,7 +1366,11 @@ async def background_loop():
                     r.close()
 
                     last_vote_cursor = data.get("cursor", None)
-                    for vote_data in data.get("data", []):
+                    with open("cursor.txt", "w") as f:
+                        f.write(last_vote_cursor)
+                    the_votes = data.get("data", [])
+                    logging.info(f"Fetched {len(the_votes)} votes, cursor {last_vote_cursor}")
+                    for vote_data in the_votes:
                         if not vote_data.get("created_at", 0) or not vote_data.get("platform_id", 0):
                             continue
                         created_at = datetime.datetime.fromisoformat(vote_data["created_at"]).timestamp()

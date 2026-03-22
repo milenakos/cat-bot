@@ -354,7 +354,7 @@ CREATE TABLE public."user" (
     premium boolean DEFAULT false,
     claimed_free_rain boolean DEFAULT false,
     rain_minutes smallint DEFAULT 0,
-    news_state character(2000) DEFAULT ''::bpchar,
+    news_state character(2000) DEFAULT ''::character varying,
     reminder_vote bigint DEFAULT 0,
     custom_num integer DEFAULT 1,
     total_votes integer DEFAULT 0,
