@@ -769,7 +769,7 @@ async def generate_quest(user: Profile, quest_type: str):
             total_count = await Prism.count("guild_id = $1", user.guild_id)
             user_count = await Prism.count("guild_id = $1 AND user_id = $2", user.guild_id, user.user_id)
             global_boost = 0.06 * math.log(2 * total_count + 1)
-            prism_boost = global_boost + 0.03 * math.log(2 * user_count + 1)
+            prism_boost = global_boost + 0.05 * math.log(2 * user_count + 1)
             if prism_boost < 0.15:
                 continue
         elif quest == "news":
@@ -1357,7 +1357,7 @@ async def background_loop():
                         suffix = "cursor=" + last_vote_cursor
                     else:
                         timestamp = discord.utils.utcnow() - datetime.timedelta(minutes=5)
-                        suffix = "startDate=" + timestamp.isoformat()
+                        suffix = "startDate=" + timestamp.replace(tzinfo=None).isoformat()
                     r = await session.get(
                         f"https://top.gg/api/v1/projects/@me/votes?{suffix}",
                         headers={"Authorization": f"Bearer {config.TOP_GG_MODERN_TOKEN}"},
@@ -1365,7 +1365,7 @@ async def background_loop():
                     data = await r.json()
                     r.close()
 
-                    last_vote_cursor = data.get("cursor", None)
+                    last_vote_cursor = data.get("cursor", "")
                     with open("cursor.txt", "w") as f:
                         f.write(last_vote_cursor)
                     the_votes = data.get("data", [])
@@ -1983,7 +1983,7 @@ async def on_message(message: discord.Message):
                         quests.append("rare+")
                     total_count = await Prism.count("guild_id = $1", message.guild.id)
                     user_count = await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id)
-                    prism_boost = 0.06 * math.log(2 * total_count + 1) + 0.03 * math.log(2 * user_count + 1)
+                    prism_boost = 0.06 * math.log(2 * total_count + 1) + 0.05 * math.log(2 * user_count + 1)
                     if prism_boost > random.random():
                         quests.append("prism")
                     if user.catch_quest == "finenice":
@@ -2269,7 +2269,7 @@ async def on_message(message: discord.Message):
                 total_count = await Prism.count("guild_id = $1", message.guild.id)
                 user_count = await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id)
                 global_boost = 0.06 * math.log(2 * total_count + 1)
-                user_boost = global_boost + 0.03 * math.log(2 * user_count + 1)
+                user_boost = global_boost + 0.05 * math.log(2 * user_count + 1)
                 did_boost = False
                 if user_boost > random.random():
                     # determine whodunnit
@@ -3832,7 +3832,7 @@ async def gen_inventory(message, person_id):
     total_count = await Prism.count("guild_id = $1", message.guild.id)
     user_count = len(prisms)
     global_boost = 0.06 * math.log(2 * total_count + 1)
-    prism_boost = round((global_boost + 0.03 * math.log(2 * user_count + 1)) * 100, 3)
+    prism_boost = round((global_boost + 0.05 * math.log(2 * user_count + 1)) * 100, 3)
     if len(prisms) == 0:
         prism_list = "None"
     elif len(prisms) <= 3:
@@ -5728,7 +5728,7 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
     total_count = len(all_prisms)
     user_count = len(user_prisms)
     global_boost = 0.06 * math.log(2 * total_count + 1)
-    user_boost = round((global_boost + 0.03 * math.log(2 * user_count + 1)) * 100, 3)
+    user_boost = round((global_boost + 0.05 * math.log(2 * user_count + 1)) * 100, 3)
     prism_texts = []
 
     if person_id == message.user and user_count != 0:
