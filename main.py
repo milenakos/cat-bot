@@ -1243,7 +1243,7 @@ async def wait_and_do_stock(stock):
             SELECT user_id, SUM(quantity) AS quantity
             FROM stock_holders_raw
             GROUP BY user_id
-        )
+        ),
         "updated" AS (
             UPDATE profile p
             SET coins = coins + sh.quantity * $1
