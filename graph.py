@@ -15,6 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # this is almost fully coded by chatgpt i do not give a crap about matplotlib and numpy
+#chezburger
 
 import io
 from collections import OrderedDict, defaultdict
