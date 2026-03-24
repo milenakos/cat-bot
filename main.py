@@ -1365,17 +1365,18 @@ async def background_loop():
                     data = await r.json()
                     r.close()
 
-                    last_vote_cursor = data.get("cursor", "")
-                    with open("cursor.txt", "w") as f:
-                        f.write(last_vote_cursor)
                     the_votes = data.get("data", [])
-                    logging.info(f"Fetched {len(the_votes)} votes, cursor {last_vote_cursor}")
                     for vote_data in the_votes:
                         if not vote_data.get("created_at", 0) or not vote_data.get("platform_id", 0):
                             continue
                         created_at = datetime.datetime.fromisoformat(vote_data["created_at"]).timestamp()
                         vote_user = await User.get_or_create(user_id=int(vote_data["platform_id"]))
                         await do_vote(vote_user, created_at)
+
+                    last_vote_cursor = data.get("cursor", "")
+                    with open("cursor.txt", "w") as f:
+                        f.write(last_vote_cursor)
+                    logging.info(f"Fetched {len(the_votes)} votes, cursor {last_vote_cursor}")
 
             except Exception:
                 logging.warning("Posting to top.gg failed.")
