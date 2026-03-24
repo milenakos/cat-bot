@@ -1374,7 +1374,7 @@ async def background_loop():
                         if not vote_data.get("created_at", 0) or not vote_data.get("platform_id", 0):
                             continue
                         created_at = datetime.datetime.fromisoformat(vote_data["created_at"]).timestamp()
-                        vote_user = await User.get_or_create(user_id=vote_data["platform_id"])
+                        vote_user = await User.get_or_create(user_id=int(vote_data["platform_id"]))
                         await do_vote(vote_user, created_at)
 
             except Exception:
