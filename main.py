@@ -1700,6 +1700,10 @@ async def on_message(message: discord.Message):
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
         return
+    
+    # detect if the message was sent by an activity by checking if the username has a hashtag (#) in it, and return if it does
+    if "#" in message.author.name:
+        return
 
     if time.time() > last_loop_time + 300:
         last_loop_time = time.time()
