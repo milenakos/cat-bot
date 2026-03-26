@@ -17,6 +17,7 @@
 import asyncio
 import base64
 import datetime
+from email.mime import message
 import hashlib
 import hmac
 import io
@@ -1701,8 +1702,11 @@ async def on_message(message: discord.Message):
     if not bot.user or message.author.id == bot.user.id:
         return
     
-    # detect if the message was sent by an activity by checking if the username has a hashtag (#) in it, and return if it does
-    if "#" in message.author.name:
+    # ignore non-user senders before any DM/easter-egg counting logic
+    if message.author.bot or message.webhook_id is not None:
+        return
+    # fallback for edge-case activity-style pseudo users
+    if "#" in getattr(message.author, "name", ""):
         return
 
     if time.time() > last_loop_time + 300:
