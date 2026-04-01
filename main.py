@@ -9288,7 +9288,7 @@ async def setup_channel(message: discord.Interaction):
 
         await Channel.create(channel_id=message.channel.id)
     except Exception:
-        await message.response.send_message("this channel gives me bad vibes.")
+        await message.response.send_message("error. check if i have permissions to access this channel")
         return
 
     await spawn_cat(str(message.channel.id))
