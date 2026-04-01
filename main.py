@@ -231,6 +231,56 @@ hints = [
     "Make sure to leave Cat Bot [a review on top.gg](<https://top.gg/bot/966695034340663367#reviews>)!",
 ]
 
+aprilfools = [
+    "Giga",
+    "Cool",
+    "Pokemon",
+    "Mario",
+    "Fat",
+    "Silly",
+    "This",
+    "WhoIsThat",
+    "Karen",
+    "Rubix",
+    "Ohio",
+    "French",
+    "Wobble",
+    "Fake",
+    "Car",
+    "Glowstick",
+    "Gay",
+    "Emo",
+    "Nyan",
+    "Mad",
+    "BBC",
+    "Fine",
+    "Schrodingers",
+    "Alien",
+    "Chomp",
+    "Jellyfish",
+    "Spanish",
+    "Scary",
+    "Artist",
+    "Copy",
+    "Fast",
+    "Jam",
+    "Evil",
+    "Elemental",
+    "CataC",
+    "British",
+    "Rainbow",
+    "Fish",
+    "Banana",
+    "Whopper",
+    "Void",
+    "Bread",
+    "Giant",
+    "Sushi",
+    "Cheese",
+    # and finally...
+    "Jeremy",
+]
+
 # laod the jsons
 with open("config/aches.json", "r") as f:
     ach_list = json.load(f)
@@ -1179,13 +1229,20 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
 
     if not localcat:
         localcat = random.choices(cattypes, weights=type_dict.values())[0]
-    icon = get_emoji(localcat.lower() + "cat")
-    file = discord.File(
-        f"images/spawn/{localcat.lower()}_cat.png",
-    )
     channeley = bot.get_partial_messageable(int(ch_id))
-
-    appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
+    if localcat.lower() == "fine":
+        april_fools_type = random.choice(aprilfools)
+        icon = get_emoji("mysteryfinecat")
+        file = discord.File(
+            f"images/spawn/what/{april_fools_type.lower()}_cat.png",
+        )
+        appearstring = f'{icon} {april_fools_type} cat has appeared! Type "cat" to catch it!'
+    else:
+        icon = get_emoji(localcat.lower() + "cat")
+        file = discord.File(
+            f"images/spawn/{localcat.lower()}_cat.png",
+        )
+        appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
 
     if int(ch_id) in temp_spawns_storage:
         return False
@@ -2372,6 +2429,9 @@ async def on_message(message: discord.Message):
                 else:
                     # default
                     coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
+
+                if channel.cattype == "Fine":
+                    coughstring = "{username} cought a-- wait a minute thats just a Fine cat huh. well then ig\n" + coughstring
 
                 view = None
                 button = None
