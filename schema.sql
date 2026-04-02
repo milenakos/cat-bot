@@ -304,7 +304,9 @@ CREATE TABLE public.profile (
     rugpulled boolean DEFAULT false,
     seen_deposit boolean DEFAULT false,
     last_ran_stocks bigint DEFAULT 0,
-    ultimates_gifted smallint DEFAULT 0
+    ultimates_gifted smallint DEFAULT 0,
+    last_catch bigint DEFAULT 0,
+    last_catch_channel bigint DEFAULT 0
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;
@@ -374,7 +376,14 @@ ALTER TABLE public."user" OWNER TO cat_bot;
 
 CREATE TABLE public.server (
     server_id bigint NOT NULL,
-    do_reactions boolean DEFAULT true
+    only_setupped_channels boolean DEFAULT false,
+    do_reactions boolean DEFAULT true,
+    do_responses boolean DEFAULT true,
+    do_rain boolean DEFAULT true,
+    do_catnip boolean DEFAULT true,
+    auto_delete_achievements boolean DEFAULT false,
+    mute_achievements boolean DEFAULT false,
+    anti_double_catch boolean DEFAULT false
 );
 
 ALTER TABLE public.server OWNER TO cat_bot;
