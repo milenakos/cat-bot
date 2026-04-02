@@ -1956,7 +1956,6 @@ async def on_message(message: discord.Message):
             except Exception:
                 pass
             logging.debug("Response sent: %s", "cart")
-        await achemb(message, "cart", "reply")
 
     try:
         if (
