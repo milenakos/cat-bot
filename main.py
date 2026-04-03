@@ -5242,7 +5242,7 @@ async def view_portfolio(interaction, person, refresh=False, hidden=None):
         await interaction.edit_original_response(view=view)
 
     if not profile.rugpulled and await PortfolioHistory.count("user_id = $1 AND type = $2 AND quantity < 0", profile.id, "r") > 0:
-        await achemb(interaction, "rugpulled", "followup")
+        await achemb(interaction, "rugpulled", "followup", person)
 
 
 @bot.tree.command(description="View your stock portfolio")
