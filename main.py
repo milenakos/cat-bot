@@ -95,9 +95,10 @@ for i in cattypes:
     allowedemojis.append(i.lower() + "cat")
 
 pack_data = [
-    # event
+    # event/special
     {"name": "Christmas", "value": 30, "upgrade": 70, "totalvalue": 225, "special": True},
     {"name": "Valentine", "value": 30, "upgrade": 70, "totalvalue": 225, "special": True},
+    {"name": "Chef", "value": 30, "upgrade": 70, "totalvalue": 225, "special": True},
     # normal
     {"name": "Wooden", "value": 65, "upgrade": 30, "totalvalue": 75, "special": False},
     {"name": "Stone", "value": 90, "upgrade": 30, "totalvalue": 100, "special": False},
@@ -337,9 +338,6 @@ temp_spawns_storage = []
 
 # to prevent double belated battlepass progress and for "faster than 10 seconds" belated bp quest
 temp_belated_storage = {}
-
-# to prevent weird cookie things without destroying the database with load
-temp_cookie_storage = {}
 
 # to avoid expensive db queries
 temp_stock_prices = {}
@@ -1311,34 +1309,12 @@ async def postpone_reminder(interaction):
 
 # a loop for various maintenance which is ran every 5 minutes
 async def background_loop():
-    global \
-        pointlaugh_ratelimit, \
-        reactions_ratelimit, \
-        last_loop_time, \
-        loop_count, \
-        catchcooldown, \
-        temp_belated_storage, \
-        temp_cookie_storage, \
-        fakecooldown, \
-        last_vote_cursor
+    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, temp_belated_storage, fakecooldown, last_vote_cursor
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     catchcooldown = {}
     fakecooldown = {}
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
-
-    # update cookies
-    temp_temp_cookie_storage = temp_cookie_storage.copy()
-    cookie_updates = []
-    for cookie_id, cookies in temp_temp_cookie_storage.items():
-        p = await Profile.get_or_create(guild_id=cookie_id[0], user_id=cookie_id[1])
-        if cookies > p.cookies:
-            p.cookies = cookies
-            cookie_updates.append(p)
-    if cookie_updates:
-        await Profile.bulk_update(cookie_updates, "cookies")
-    logging.debug("Cookies updated: %d", len(cookie_updates))
-    temp_cookie_storage = {}
 
     # temp_belated_storage cleanup
     # clean up anything older than 1 minute
@@ -3095,23 +3071,19 @@ thanks for using cat bot!""",
             await interaction.edit_original_response(view=view)
         elif news_id == 9:
             # we hijack the cookie system to store the yippee count
-            cookie_id = (9, bot.user.id)
-            if cookie_id not in temp_cookie_storage.keys():
-                cookie_user = await Profile.get_or_create(guild_id=9, user_id=bot.user.id)
-                temp_cookie_storage[cookie_id] = cookie_user.cookies
+            cookie_user = await Profile.get_or_create(guild_id=9, user_id=bot.user.id)
 
             async def add_yippee(interaction):
+                nonlocal cookie_user
                 await interaction.response.defer()
-                try:
-                    temp_cookie_storage[cookie_id] += 1
-                except KeyError:
-                    cookie_user = await Profile.get_or_create(guild_id=9, user_id=bot.user.id)
-                    temp_cookie_storage[cookie_id] = cookie_user.cookies
+                cookie_user = await Profile.get(["cookies"], guild_id=9, user_id=bot.user.id)
+                cookie_user.cookies += 1
+                await cookie_user.save()
                 await send_yippee(interaction)
 
             async def send_yippee(interaction):
                 view = LayoutView(timeout=VIEW_TIMEOUT)
-                btn = Button(label=f"yippee! ({temp_cookie_storage[cookie_id]:,})", emoji=get_emoji("yippee"), style=ButtonStyle.primary)
+                btn = Button(label=f"yippee! ({cookie_user.cookies:,})", emoji=get_emoji("yippee"), style=ButtonStyle.primary)
                 btn.callback = add_yippee
                 embed = Container(
                     "## cat bot is now top 5 on top.gg",
@@ -3837,10 +3809,6 @@ async def gen_stats(profile, star):
 
     # misc
     stats.append(["❓", "Misc"])
-    if (profile.guild_id, profile.user_id) not in temp_cookie_storage.keys():
-        cookies = profile.cookies
-    else:
-        cookies = temp_cookie_storage[(profile.guild_id, profile.user_id)]
     portfolio_value = 0
     for stock in stock_data:
         stock_price = await get_stock_price(stock["ticker"])
@@ -3857,7 +3825,7 @@ async def gen_stats(profile, star):
     stats.append(["slot_spins", "🎰", f"Slot spins: {profile.slot_spins:,}, wins: {profile.slot_wins:,}, big wins: {profile.slot_big_wins:,}"])
     stats.append(["roulette_spins", "💰", f"Roulette spins: {profile.roulette_spins:,}, wins: {profile.roulette_wins:,}"])
     stats.append(["portfolio_value", "🪙", f"Portfolio value: {portfolio_value:,}"])
-    stats.append(["cookies", "🍪", f"Cookies clicked: {cookies:,}"])
+    stats.append(["cookies", "🍪", f"Cookies clicked: {profile.cookies:,}"])
     stats.append(["pig_high_score", "🎲", f"Pig high score: {profile.best_pig_score:,}"])
     stats.append(["cats_gifted", "🎁", f"Cats gifted: {profile.cats_gifted:,}{star}"])
     stats.append(["cats_received_as_gift", "🎁", f"Cats received as gift: {profile.cat_gifts_recieved:,}{star}"])
@@ -6272,32 +6240,26 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
 
 @bot.tree.command(description="you feel like making cookies")
 async def cookie(message: discord.Interaction):
-    cookie_id = (message.guild.id, message.user.id)
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    if cookie_id not in temp_cookie_storage.keys():
-        temp_cookie_storage[cookie_id] = user.cookies
 
     async def bake(interaction):
+        nonlocal user
         if interaction.user != message.user:
             await do_funny(interaction)
             return
         await interaction.response.defer()
-        if cookie_id in temp_cookie_storage:
-            curr = temp_cookie_storage[cookie_id]
-        else:
-            await user.refresh_from_db()
-            curr = user.cookies
-        curr += 1
-        temp_cookie_storage[cookie_id] = curr
-        view.children[0].label = f"{curr:,}"
+        user = await Profile.get(["cookies"], guild_id=message.guild.id, user_id=message.user.id)
+        user.cookies += 1
+        await user.save()
+        view.children[0].label = f"{user.cookies:,}"
         await interaction.edit_original_response(view=view)
-        if curr < 5:
+        if user.cookies < 5:
             await achemb(interaction, "cookieclicker", "followup")
-        if 5100 > curr >= 5000:
+        if 5100 > user.cookies >= 5000:
             await achemb(interaction, "cookiesclicked", "followup")
 
     view = View(timeout=VIEW_TIMEOUT)
-    button = Button(emoji="🍪", label=f"{temp_cookie_storage[cookie_id]:,}", style=ButtonStyle.blurple)
+    button = Button(emoji="🍪", label=f"{user.cookies:,}", style=ButtonStyle.blurple)
     button.callback = bake
     view.add_item(button)
     await message.response.send_message(view=view)
@@ -6984,8 +6946,147 @@ async def bal(message: discord.Interaction):
 
 @bot.tree.command(description="Brew some coffee to catch cats more efficiently")
 async def brew(message: discord.Interaction):
-    await message.response.send_message("HTTP 418: I'm a teapot. <https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418>")
+    user = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
+    retry_counter = 5
+
+    async def brew_coffee(interaction: discord.Interaction):
+        nonlocal user, retry_counter, view
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+
+        await interaction.response.defer()
+
+        if retry_counter != 0:
+            retry_counter -= 1
+            return
+
+        user = await Profile.get(["coffees"], guild_id=message.guild.id, user_id=message.user.id)
+        user.coffees += 1
+        await user.save()
+
+        view.children[0].label = f"{user.coffees:,}"
+        await interaction.edit_original_response(content="ugh fine", view=view)
+
+    view = View(timeout=VIEW_TIMEOUT)
+    button = Button(emoji="☕", label="Retry", style=ButtonStyle.blurple)
+    button.callback = brew_coffee
+    view.add_item(button)
+    await message.response.send_message("HTTP 418: I'm a teapot. <https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418>", view=view)
     await achemb(message, "coffee", "followup")
+
+
+def get_current_week():
+    epoch_monday = datetime.datetime(1970, 1, 5, tzinfo=datetime.timezone.utc).date()
+    today = discord.utils.utcnow().date()
+    return (today - epoch_monday).days // 7
+
+
+def get_timestamp_of_next_week():
+    today = discord.utils.utcnow().date()
+    days_until_next_monday = (7 - today.weekday()) % 7
+    if days_until_next_monday == 0:
+        days_until_next_monday = 7
+    next_monday_date = today + datetime.timedelta(days=days_until_next_monday)
+    next_monday_dt = datetime.datetime(next_monday_date.year, next_monday_date.month, next_monday_date.day, tzinfo=datetime.timezone.utc)
+    return int(next_monday_dt.timestamp())
+
+
+@bot.tree.command(description="Deliver orders from your bakery to get Cat Eggs and Packs!")
+async def bakery(message: discord.Interaction):
+    user = await User.get_or_create(user_id=message.user.id)
+    profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
+    if user.queued_chef_pack:
+        profile.pack_chef += 1
+        user.queued_chef_pack = False
+        await user.save()
+        await profile.save()
+        try:
+            await message.channel.send(f"{message.user.mention} got +1 {get_emoji('chefpack')} Chef Pack from Bake.gg!")
+        except Exception:
+            pass
+
+    if user.last_bakegg_send == get_current_week():
+        # order already delivered for this week
+        await message.response.send_message(f"You already delivered this order. Next order is <t:{get_timestamp_of_next_week()}:R>.", ephemeral=True)
+        return
+
+    async def deliver(interaction: discord.Interaction):
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+
+        await interaction.response.defer()
+
+        await profile.refresh_from_db()
+        await user.refresh_from_db()
+        if profile.cookies < 120 or profile.coffees < 140 or profile.cat_Nice < 2:
+            await interaction.followup.send("Your order is not ready yet.", ephemeral=True)
+            return
+        if user.last_bakegg_send == get_current_week():
+            await interaction.followup.send("You've already delivered this order.", ephemeral=True)
+            return
+
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.post(
+                    "https://auth.bake.gg:2053/reward/catbot",
+                    headers={"Authorization": os.environ.get("BAKE_GG_TOKEN", "")},  # i dont believe anyone would ever need to change this
+                    json={"user": str(interaction.user.id)},
+                ) as response:
+                    if response.status != 200:
+                        print(response.status, await response.text())
+                        raise ValueError
+
+                    profile.cookies -= 120
+                    profile.coffees -= 140
+                    profile.cat_Nice -= 2
+                    profile.pack_silver += 1
+                    await profile.save()
+
+                    user.last_bakegg_send = get_current_week()
+                    await user.save()
+
+                    view = LayoutView(timeout=1)
+                    view.add_item(
+                        Container(
+                            "## ✅ Order Delivered!",
+                            f"+1 {get_emoji('silverpack')} Silver pack, +1 {get_emoji('bakegg_egg')} Bake.gg Cat Egg",
+                            f"Next order <t:{get_timestamp_of_next_week()}:R>",
+                            "===",
+                            f"➡️ Opening any {get_emoji('bakegg_egg')} Cat Egg in Bake.gg will give you an **exclusive {get_emoji('chefpack')} Chef Pack** in Cat Bot, so head over to not miss out!",
+                            "-# 1 Chef Pack per user per week",
+                            "===",
+                            Button(label="Bake.gg", url="https://bake.gg/"),
+                        )
+                    )
+                    await interaction.edit_original_response(view=view)
+                    await achemb(message, "baker", "followup")
+            except Exception:
+                await interaction.followup.send("Failed! Try again later.", ephemeral=True)
+                raise
+
+    view = LayoutView(timeout=VIEW_TIMEOUT)
+    order_complete = profile.cookies >= 120 and profile.coffees >= 140 and profile.cat_Nice >= 2
+    button = Button(label="Deliver!", style=ButtonStyle.green, disabled=not order_complete)
+    button.callback = deliver
+    embed = Container(
+        "## 📝 Bakery Order",
+        "In collaboration with [Bake.gg](https://bake.gg)",
+        "__Order Details__",
+        f"""{get_emoji("bakegg_cookie")} {min(profile.cookies, 120)}/120 {"✅" if profile.cookies >= 120 else "(`/cookie`)"}
+{get_emoji("bakegg_coffee")} {min(profile.coffees, 140)}/140 {"✅" if profile.coffees >= 140 else "(`/brew`)"}
+{get_emoji("nicecat")} {min(profile.cat_Nice, 2)}/2 {"✅" if profile.cat_Nice >= 2 else ""}""",
+        "===",
+        "__Order Reward__",
+        f"""{get_emoji("bakegg_egg")} 1 Bake.gg Cat Egg
+{get_emoji("silverpack")} 1 Silver Pack""",
+        "-# orders can only be done once a week per user",
+        "===",
+        button,
+    )
+    view.add_item(embed)
+    await message.response.send_message(view=view)
 
 
 @bot.tree.command(description="Gamble your life savings away in our totally-not-rigged catsino!")
@@ -9123,7 +9224,6 @@ async def leaderboards(
         elif type == "Cookies":
             unit = "cookies"
             result = await Profile.collect_limit(["user_id", "cookies"], "guild_id = $1 AND cookies > 0 ORDER BY cookies DESC", message.guild.id)
-            string = "Cookie leaderboard updates every 5 min\n\n"
             final_value = "cookies"
         elif type == "Pig":
             unit = "score"
@@ -9730,6 +9830,31 @@ async def check_supporter(request):
     return web.Response(text="1" if user.premium else "0", status=200)
 
 
+async def bake_gg_reward(request):
+    if request.headers.get("Authorization", "") != os.environ.get("BAKE_GG_WEBHOOK_TOKEN", ""):
+        return web.Response(text="Invalid or missing authorization token", status=401)
+
+    try:
+        request_json = await request.json()
+        user_id = int(request_json["user"])
+    except Exception:
+        return web.Response(text="Invalid user ID", status=400)
+    user = await User.get_or_create(user_id=user_id)
+
+    if user.last_bakegg_get == get_current_week():
+        return web.Response(text="User already claimed this week", status=429)
+
+    user.last_bakegg_get = get_current_week()
+    user.queued_chef_pack = True
+    await user.save()
+    try:
+        channeley = await fetch_dm_channel(user)
+        await channeley.send(f"You have received a {get_emoji('chefpack')} Chef Pack from Bake.gg! You can claim it in a single server by running `/bakery`.")
+    except Exception:
+        pass
+    return web.Response(text="Success", status=200)
+
+
 # cat bot uses glitchtip (sentry alternative) for errors, here u can instead implement some other logic like dming the owner
 async def on_error(*args, **kwargs):
     raise
@@ -9763,7 +9888,13 @@ async def setup(bot2):
 
     if config.WEBHOOK_VERIFY:
         app = web.Application()
-        app.add_routes([web.post("/", recieve_vote), web.get("/supporter", check_supporter)])
+        app.add_routes(
+            [
+                web.post("/", recieve_vote),
+                web.get("/supporter", check_supporter),
+                web.post("/bakegg", bake_gg_reward),
+            ]
+        )
         vote_server = web.AppRunner(app)
         await vote_server.setup()
         site = web.TCPSite(vote_server, "0.0.0.0", 8069)
@@ -9784,16 +9915,6 @@ async def setup(bot2):
 
 
 async def teardown(bot):
-    cookie_updates = []
-    for cookie_id, cookies in temp_cookie_storage.items():
-        p = await Profile.get_or_create(guild_id=cookie_id[0], user_id=cookie_id[1])
-        if cookies > p.cookies:
-            p.cookies = cookies
-            cookie_updates.append(p)
-
-    if cookie_updates:
-        await Profile.bulk_update(cookie_updates, "cookies")
-
     if config.WEBHOOK_VERIFY:
         await vote_server.cleanup()
 

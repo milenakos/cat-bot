@@ -306,7 +306,8 @@ CREATE TABLE public.profile (
     last_ran_stocks bigint DEFAULT 0,
     ultimates_gifted smallint DEFAULT 0,
     last_catch bigint DEFAULT 0,
-    last_catch_channel bigint DEFAULT 0
+    last_catch_channel bigint DEFAULT 0,
+    coffees integer DEFAULT 0
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;
@@ -369,7 +370,10 @@ CREATE TABLE public."user" (
     rain_minutes_bought integer DEFAULT 0,
     username character varying(255) DEFAULT ''::character varying,
     dm_channel_id bigint DEFAULT 0,
-    dms smallint DEFAULT 0
+    dms smallint DEFAULT 0,
+    last_bakegg_send smallint DEFAULT 0,
+    last_bakegg_get smallint DEFAULT 0,
+    queued_chef_pack boolean DEFAULT false
 );
 
 ALTER TABLE public."user" OWNER TO cat_bot;
