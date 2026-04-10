@@ -148,13 +148,7 @@ class Model:
         for i in kwargs.keys():
             changes.append(f'"{i}" = ${var_counter}')
             var_counter += 1
-        query_string += " AND ".join(changes)
-
-        # lock row if in transaction
-        if connection is not None:
-            query_string += " LIMIT 1 FOR UPDATE;"
-        else:
-            query_string += " LIMIT 1;"
+        query_string += " AND ".join(changes) + " LIMIT 1 FOR UPDATE;"
 
         # run the query
         return await connection.fetchrow(query_string, *kwargs.values())
@@ -183,8 +177,10 @@ class Model:
     async def get_or_create(cls, connection: asyncpg.Connection | None = None, **kwargs) -> ModelInstance:
         table = cls.__name__.lower()
         values = list(kwargs.values())
+        transaction = False
         if not connection:
             connection = pool
+            transaction = True
 
         # build column names and placeholders
         columns = list(kwargs.keys())
@@ -201,7 +197,7 @@ class Model:
         result = await connection.fetchrow(query_string, *values)
 
         # lock row if in transaction
-        if connection is not None:
+        if transaction:
             pk_field = cls._primary_key
             lock_query = f'SELECT * FROM "{table}" WHERE "{pk_field}" = $1 FOR UPDATE;'
             result = await connection.fetchrow(lock_query, result[pk_field])
