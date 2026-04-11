@@ -3233,7 +3233,7 @@ ummm good luck and let the line go up!""",
             await interaction.edit_original_response(view=view)
         elif news_id == 17:
             embed = Container(
-                "## cat bot has reached 200k servers!",
+                f"## {get_emoji('insane')} cat bot has reached 200k servers!",
                 "wow big number!!",
                 "to celebrate im doing a 200 rain minute giveaway in our [discord server](https://discord.com/channels/966586000417619998/1021844042654417017/1492510874458394655)",
                 ActionRow(
