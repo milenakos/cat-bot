@@ -428,6 +428,7 @@ news_list = [
     {"title": "Happy Valentine's!", "emoji": "💞"},
     {"title": "Cat Bot Stocks", "emoji": "📈"},
     {"title": "PackOrRain Event [ended]", "emoji": "🔥"},
+    {"title": "200,000 servers giveaway", "emoji": "insane"},
 ]
 
 achs = [
@@ -3226,6 +3227,19 @@ ummm good luck and let the line go up!""",
                 "**Event ended** <t:1773856800>",
                 "===",
                 "-# <t:1773424800>",
+            )
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
+        elif news_id == 17:
+            embed = Container(
+                "## cat bot has reached 200k servers!",
+                "wow big number!!",
+                "to celebrate im doing a 200 rain minute giveaway in our [discord server](https://discord.com/channels/966586000417619998/1021844042654417017/1492510874458394655)",
+                ActionRow(
+                    Button(label="Join the server", url="https://discord.gg/staring"),
+                ),
+                "-# <t:1775913490>",
             )
             view.add_item(embed)
             view.add_item(back_row)
