@@ -1401,18 +1401,19 @@ async def background_loop():
         await order.delete()
 
     # auto-sell stocks of people inactive for over a week
-    async for profile in Profile.filter("last_ran_stocks < $1 AND last_ran_stocks != 0", time.time() - 3600 * 24 * 7):
-        for stock in stock_data:
-            ticker = stock["ticker"]
-            quantity = profile[f"stock_{ticker.lower()}"]
-            price = await get_stock_price(ticker)
-            if quantity > 0:
-                curr_time = int(time.time())
-                order = await Order.create(user_id=profile.id, ticker=ticker, quantity=quantity, price=price, type_buy=False, time=curr_time)
-                await PortfolioHistory.create(user_id=profile.id, type="s", price=price, quantity=quantity, time=curr_time, ticker=ticker)
-                profile[f"stock_{ticker.lower()}"] = 0
-                await resolve_orders(order)
-        await profile.save()
+    if False:
+        async for profile in Profile.filter("last_ran_stocks < $1 AND last_ran_stocks != 0", time.time() - 3600 * 24 * 7):
+            for stock in stock_data:
+                ticker = stock["ticker"]
+                quantity = profile[f"stock_{ticker.lower()}"]
+                price = await get_stock_price(ticker)
+                if quantity > 0:
+                    curr_time = int(time.time())
+                    order = await Order.create(user_id=profile.id, ticker=ticker, quantity=quantity, price=price, type_buy=False, time=curr_time)
+                    await PortfolioHistory.create(user_id=profile.id, type="s", price=price, quantity=quantity, time=curr_time, ticker=ticker)
+                    profile[f"stock_{ticker.lower()}"] = 0
+                    await resolve_orders(order)
+            await profile.save()
 
     # revive dead catch loops
     counter = 0
