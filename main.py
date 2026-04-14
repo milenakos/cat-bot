@@ -2476,7 +2476,7 @@ async def on_message(message: discord.Message):
 
                         if server.auto_delete_catches:
                             # button do stuff = button stay... for now-
-                            delay = delay = 30 if (button and button.callback) else 10
+                            delay = 30 if (button and button.callback) else 10
                             await result.delete(delay=delay)
 
                     except Exception:
