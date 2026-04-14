@@ -388,6 +388,7 @@ CREATE TABLE public.server (
     do_rain boolean DEFAULT true,
     do_catnip boolean DEFAULT true,
     auto_delete_achievements boolean DEFAULT false,
+    auto_delete_catches boolean DEFAULT false,
     mute_achievements boolean DEFAULT false,
     anti_double_catch boolean DEFAULT false
 );
