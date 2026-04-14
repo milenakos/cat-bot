@@ -2475,7 +2475,9 @@ async def on_message(message: discord.Message):
                         )
 
                         if server.auto_delete_catches:
-                            await result.delete(delay=10)
+                            # button do stuff = button stay... for now-
+                            delay = delay = 30 if (button and button.callback) else 10
+                            await result.delete(delay=delay)
 
                     except Exception:
                         # Silently fail if we can't send the confirmation message (e.g. permission issues)
@@ -3670,7 +3672,7 @@ async def settings(message: discord.Interaction):
                 ),
                 Section(
                     "### Auto-Delete Catches",
-                    'If enabled, will delete all "user cought" messages after 10 seconds',
+                    'If enabled, will delete all "user cought" messages after ~10 seconds',
                     make_button("auto_delete_catches"),
                 ),
                 "===",
