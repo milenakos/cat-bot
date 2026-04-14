@@ -2464,7 +2464,7 @@ async def on_message(message: discord.Message):
                         if view:
                             kwargs["view"] = view
 
-                        await send_target.send(
+                        result = await send_target.send(
                             coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
                             .replace("{emoji}", str(icon))
                             .replace("{type}", le_emoji)
@@ -2473,6 +2473,12 @@ async def on_message(message: discord.Message):
                             + suffix_string,
                             **kwargs,
                         )
+
+                        if server.auto_delete_catches:
+                            # button do stuff = button stay... for now-
+                            delay = 30 if (button and button.callback) else 10
+                            await result.delete(delay=delay)
+
                     except Exception:
                         # Silently fail if we can't send the confirmation message (e.g. permission issues)
                         pass
@@ -3663,6 +3669,11 @@ async def settings(message: discord.Interaction):
                     "### Auto-Delete Achievements",
                     'If enabled, will delete all "achievement get" messages after 10 seconds',
                     make_button("auto_delete_achievements"),
+                ),
+                Section(
+                    "### Auto-Delete Catches",
+                    'If enabled, will delete all "user cought" messages after ~10 seconds',
+                    make_button("auto_delete_catches"),
                 ),
                 "===",
                 Section("### Cat Rains", "Controls whether Cat Rains can happen", make_button("do_rain")),
