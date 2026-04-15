@@ -28,6 +28,7 @@
   "slots": {"title": "More gambling??", "description": "spin the /slots machine", "is_hidden": false, "category": "Commands"},
   "win_slots": {"title": "Pro Gambler", "description": "win at the /slots machine", "is_hidden": false, "category": "Commands"},
   "define": {"title": "Definer", "description": "find out a definition of a word", "is_hidden": false, "category": "Commands"},
+  "who_am_i": {"title": "Who Am I?", "description": "give cat bot an existential crisis", "is_hidden": true, "category": "Commands"},
   "cookieclicker": {"title": "Cookie Clicker", "description": "click a cookie", "is_hidden": false, "category": "Commands"},
   "roulette_winner": {"title": "Roulette Winner", "description": "win at the /roulette game", "is_hidden": false, "category": "Commands"},
   "buy_stock": {"title": "Investor", "description": "this isnt s&p 500 but who knows", "is_hidden": true, "category": "Commands"},

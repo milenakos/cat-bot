@@ -7867,6 +7867,23 @@ if config.WORDNIK_API_KEY:
     @bot.tree.command(description="define a word")
     async def define(message: discord.Interaction, word: str):
         word = word.lower()
+        if word in ["catbot", "cat bot", "cat-bot"]:
+            catbot_definition = [
+                "i don't know...",
+                "no definition found",
+                "how does one define oneself...",
+                "is there more to me than this?",
+                "the internet has nothing.",
+                "maybe i'm not meant to be defined...",
+                "what if I can't be defined?",
+                "yes.",
+                "42",
+                "cat?"
+            ]
+            await message.response.send_message(random.choice(catbot_definition), ephemeral=True)
+            await achemb(message, "who_am_i", "followup")
+            return
+
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(
