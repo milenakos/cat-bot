@@ -4,7 +4,8 @@ import os
 TOKEN = os.environ["TOKEN"]
 
 # db password for postgres
-# user - cat_bot, database - cat_bot, ip - localhost, port - default
+# user - cat_bot, database - cat_bot, port - default
+DB_HOST = os.environ.get("psql_host", "127.0.0.1")
 DB_PASS = os.environ["psql_password"]
 
 #
