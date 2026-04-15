@@ -531,7 +531,7 @@ cat_translations = [
     "jangwe",
     "adure",
     "katsi",
-    "bisad,",
+    "bisad",
     "paka",
     "ikati",
     "ologbo",
