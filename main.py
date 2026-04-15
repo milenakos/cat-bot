@@ -1125,11 +1125,11 @@ async def cat_type_autocomplete(interaction: discord.Interaction, current: str) 
 # function to autocomplete /cat, it only shows the cats you have
 async def cat_command_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
-    choices = []
-    for choice in cattypes:
-        if current.lower() in choice.lower() and user[f"cat_{choice}"] > 0:
-            choices.append(discord.app_commands.Choice(name=choice, value=choice))
-    return choices[:25]
+    return [
+        discord.app_commands.Choice(name=choice, value=choice)
+        for choice in cattypes
+        if current.lower() in choice.lower() and user[f"cat_{choice}"] > 0
+    ][:25]
 
 
 async def lb_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
