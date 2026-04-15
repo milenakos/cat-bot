@@ -90,9 +90,7 @@ cattypes = list(type_dict.keys())
 # generate a dict with lowercase'd keys
 cattype_lc_dict = {i.lower(): i for i in cattypes}
 
-allowedemojis = []
-for i in cattypes:
-    allowedemojis.append(i.lower() + "cat")
+allowedemojis = [i.lower() + "cat" for i in cattypes]
 
 pack_data = [
     # event/special
@@ -168,10 +166,7 @@ prism_names_end = [
     " Nineteen",
     " Twenty",
 ]
-prism_names = []
-for i in prism_names_end:
-    for j in prism_names_start:
-        prism_names.append(j + i)
+prism_names = [j + i for i in prism_names_end for j in prism_names_start]
 
 vote_button_texts = [
     "You havent voted today!",
