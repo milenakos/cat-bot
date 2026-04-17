@@ -90,9 +90,7 @@ cattypes = list(type_dict.keys())
 # generate a dict with lowercase'd keys
 cattype_lc_dict = {i.lower(): i for i in cattypes}
 
-allowedemojis = []
-for i in cattypes:
-    allowedemojis.append(i.lower() + "cat")
+allowedemojis = [i.lower() + "cat" for i in cattypes]
 
 pack_data = [
     # event/special
@@ -168,10 +166,7 @@ prism_names_end = [
     " Nineteen",
     " Twenty",
 ]
-prism_names = []
-for i in prism_names_end:
-    for j in prism_names_start:
-        prism_names.append(j + i)
+prism_names = [j + i for i in prism_names_end for j in prism_names_start]
 
 vote_button_texts = [
     "You havent voted today!",
@@ -1130,11 +1125,11 @@ async def cat_type_autocomplete(interaction: discord.Interaction, current: str) 
 # function to autocomplete /cat, it only shows the cats you have
 async def cat_command_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
-    choices = []
-    for choice in cattypes:
-        if current.lower() in choice.lower() and user[f"cat_{choice}"] > 0:
-            choices.append(discord.app_commands.Choice(name=choice, value=choice))
-    return choices[:25]
+    return [
+        discord.app_commands.Choice(name=choice, value=choice)
+        for choice in cattypes
+        if current.lower() in choice.lower() and user[f"cat_{choice}"] > 0
+    ][:25]
 
 
 async def lb_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
