@@ -6,10 +6,10 @@ TOKEN = os.environ["TOKEN"]
 # db password for postgres
 # user - cat_bot, database - cat_bot, port - default
 DB_HOST = os.environ.get("psql_host", "127.0.0.1")
-DB_PASS = os.environ["psql_password"]
+DB_PASS = os.environ.get("psql_password", "")
 
 #
-# all the following are optional (If not set they will default to None, disabling the feature)
+# all the following are optional (setting to None will disable the feature)
 #
 
 # dsn of a sentry-compatible service for error logging
@@ -18,14 +18,14 @@ SENTRY_DSN = os.environ.get("sentry_dsn")
 # top.gg vote webhook verification secret, setting this to None disables all voting stuff
 WEBHOOK_VERIFY = os.environ.get("webhook_verify")
 
-# top.gg modern (v1) token to post commands and fallback votes
+# top.gg modern (v1) token to post stats, commands and fetch fallback votes
 TOP_GG_MODERN_TOKEN = os.environ.get("top_gg_modern_token")
 
 # wordnik api key for /define command
 WORDNIK_API_KEY = os.environ.get("wordnik_api_key")
 
 # only post stats if server count is above this, to prevent wrong stats
-MIN_SERVER_SEND = 175_000
+MIN_SERVER_SEND = 200_000
 
 # channel id for db backups, private extremely recommended
 BACKUP_ID = 1060545763194707998

@@ -10,35 +10,23 @@ Please note that self-hosting is hacky and isn't supported; instructions below a
 
 - Python 3 (around 3.8 or so, newer is better ofc)
 - PostgreSQL
-- Git (optional)
 
 ## Instructions
 
-1. Clone the repository. You can use the green "Code" button at the top or a git command:
+1. Clone/download the repository.
 
-   ```shell
-   git clone https://github.com/milenakos/cat-bot.git
-   ```
+2. `pip install -r requirements.txt` (use venv if desired)
 
-3. Install requirements:
+3. Download [the emojis](https://github.com/staring-cat/emojis/releases/latest/download/emojis.zip) and upload them to "App Emojis" in Discord Dev Portal.
 
-   ```shell
-   pip install -r requirements.txt
-   ```
+5. Setup your Postgres: (example instructions)
+ - `createdb -U postgres -O cat_bot cat_bot`
+ - `psql -U cat_bot`
+ - Copy-paste everything from `schema.sql`.
 
-   If you are running a Gateway Proxy, do `pip install -r requirements-gw.txt` instead. This uses a custom fork which contacts `localhost:7878` instead and removes ratelimits and heartbeats.
+6. Configure the bot inside `config.py` file. Most things are optional. You can hardcode the values if you don't want to use environment variables.
 
-4. You will need to add all emojis you want to Discord's App Emoji in the Dev Portal.
-
-   If they aren't found there, they will be replaced with a placeholder.
-
-   All emojis can be downloaded [here](https://github.com/staring-cat/emojis/releases/latest/download/emojis.zip).
-
-5. Go inside of the `config.py` file and configure everything to your liking.
-
-6. Run the bot with `python bot.py`.
-
-7. Done!
+7. Run the bot with `python bot.py`.
 
 # License
 
