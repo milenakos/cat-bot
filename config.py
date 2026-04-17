@@ -18,10 +18,7 @@ SENTRY_DSN = os.environ.get("sentry_dsn")
 # top.gg vote webhook verification secret, setting this to None disables all voting stuff
 WEBHOOK_VERIFY = os.environ.get("webhook_verify")
 
-# top.gg legacy api token to occasionally post stats
-TOP_GG_TOKEN = os.environ.get("top_gg_token")
-
-# top.gg modern token to post commands and fallback votes
+# top.gg modern (v1) token to post commands and fallback votes
 TOP_GG_MODERN_TOKEN = os.environ.get("top_gg_modern_token")
 
 # wordnik api key for /define command

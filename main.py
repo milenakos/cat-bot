@@ -1125,11 +1125,9 @@ async def cat_type_autocomplete(interaction: discord.Interaction, current: str) 
 # function to autocomplete /cat, it only shows the cats you have
 async def cat_command_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
-    return [
-        discord.app_commands.Choice(name=choice, value=choice)
-        for choice in cattypes
-        if current.lower() in choice.lower() and user[f"cat_{choice}"] > 0
-    ][:25]
+    return [discord.app_commands.Choice(name=choice, value=choice) for choice in cattypes if current.lower() in choice.lower() and user[f"cat_{choice}"] > 0][
+        :25
+    ]
 
 
 async def lb_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
@@ -1319,52 +1317,51 @@ async def background_loop():
         if id < baseflake:
             del temp_belated_storage[id]
 
-    if config.TOP_GG_TOKEN:
+    if config.TOP_GG_MODERN_TOKEN:
         async with aiohttp.ClientSession() as session:
             try:
                 if not config.MIN_SERVER_SEND or len(bot.guilds) > config.MIN_SERVER_SEND:
                     # send server count to top.gg
                     r = await session.post(
-                        f"https://top.gg/api/bots/{bot.user.id}/stats",
-                        headers={"Authorization": config.TOP_GG_TOKEN},
-                        json={"server_count": len(bot.guilds)},
-                    )
-                    r.close()
-
-                if config.TOP_GG_MODERN_TOKEN:
-                    # post commands to top.gg
-                    r = await session.post(
-                        "https://top.gg/api/v1/projects/@me/commands",
+                        "https://top.gg/api/v1/projects/@me/metrics",
                         headers={"Authorization": f"Bearer {config.TOP_GG_MODERN_TOKEN}"},
-                        json=[command.to_dict(bot.tree) for command in bot.tree._get_all_commands(guild=None) if command.to_dict(bot.tree)["type"] == 1],
+                        json={"server_count": len(bot.guilds), "shard_count": len(bot.shards)},
                     )
                     r.close()
 
-                    # fallback fetch votes
-                    if last_vote_cursor:
-                        suffix = "cursor=" + last_vote_cursor
-                    else:
-                        timestamp = discord.utils.utcnow() - datetime.timedelta(minutes=5)
-                        suffix = "startDate=" + timestamp.replace(tzinfo=None).isoformat()
-                    r = await session.get(
-                        f"https://top.gg/api/v1/projects/@me/votes?{suffix}",
-                        headers={"Authorization": f"Bearer {config.TOP_GG_MODERN_TOKEN}"},
-                    )
-                    data = await r.json()
-                    r.close()
+                # post commands to top.gg
+                r = await session.post(
+                    "https://top.gg/api/v1/projects/@me/commands",
+                    headers={"Authorization": f"Bearer {config.TOP_GG_MODERN_TOKEN}"},
+                    json=[command.to_dict(bot.tree) for command in bot.tree._get_all_commands(guild=None) if command.to_dict(bot.tree)["type"] == 1],
+                )
+                r.close()
 
-                    the_votes = data.get("data", [])
-                    for vote_data in the_votes:
-                        if not vote_data.get("created_at", 0) or not vote_data.get("platform_id", 0):
-                            continue
-                        created_at = datetime.datetime.fromisoformat(vote_data["created_at"]).timestamp()
-                        vote_user = await User.get_or_create(user_id=int(vote_data["platform_id"]))
-                        await do_vote(vote_user, created_at)
+                # fallback fetch votes
+                if last_vote_cursor:
+                    suffix = "cursor=" + last_vote_cursor
+                else:
+                    timestamp = discord.utils.utcnow() - datetime.timedelta(minutes=5)
+                    suffix = "startDate=" + timestamp.replace(tzinfo=None).isoformat()
+                r = await session.get(
+                    f"https://top.gg/api/v1/projects/@me/votes?{suffix}",
+                    headers={"Authorization": f"Bearer {config.TOP_GG_MODERN_TOKEN}"},
+                )
+                data = await r.json()
+                r.close()
 
-                    last_vote_cursor = data.get("cursor", "")
-                    with open("cursor.txt", "w") as f:
-                        f.write(last_vote_cursor)
-                    logging.info(f"Fetched {len(the_votes)} votes, cursor {last_vote_cursor}")
+                the_votes = data.get("data", [])
+                for vote_data in the_votes:
+                    if not vote_data.get("created_at", 0) or not vote_data.get("platform_id", 0):
+                        continue
+                    created_at = datetime.datetime.fromisoformat(vote_data["created_at"]).timestamp()
+                    vote_user = await User.get_or_create(user_id=int(vote_data["platform_id"]))
+                    await do_vote(vote_user, created_at)
+
+                last_vote_cursor = data.get("cursor", "")
+                with open("cursor.txt", "w") as f:
+                    f.write(last_vote_cursor)
+                logging.info(f"Fetched {len(the_votes)} votes, cursor {last_vote_cursor}")
 
             except Exception:
                 logging.warning("Posting to top.gg failed.")
