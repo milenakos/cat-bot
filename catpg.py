@@ -132,8 +132,10 @@ class Model:
     async def _get(cls, connection: asyncpg.Connection | None = None, fields: None | list[str | RawSQL] = None, **kwargs) -> asyncpg.Record:
         table = cls.__name__.lower()
         select = "*"
+        for_update = False
         if not connection:
             connection = pool
+            for_update = True
 
         if fields:
             fields = fields.copy()
@@ -148,7 +150,10 @@ class Model:
         for i in kwargs.keys():
             changes.append(f'"{i}" = ${var_counter}')
             var_counter += 1
-        query_string += " AND ".join(changes) + " LIMIT 1 FOR UPDATE;"
+        query_string += " AND ".join(changes) + " LIMIT 1"
+        if for_update:
+            query_string += " FOR UPDATE"
+        query_string += ";"
 
         # run the query
         return await connection.fetchrow(query_string, *kwargs.values())
