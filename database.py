@@ -19,7 +19,7 @@ import config
 
 
 async def connect():
-    await catpg.connect(user="cat_bot", password=config.DB_PASS, database="cat_bot", host=config.DB_HOST, max_size=80)
+    await catpg.connect(user="cat_bot", password=config.DB_PASS, database="cat_bot", host=config.DB_HOST, max_size=90)
 
 
 async def close():
