@@ -1776,8 +1776,7 @@ async def on_message(message: discord.Message):
                 pass
 
     try:
-        server = await Server.get_or_create(server_id=message.guild.id)
-        if server.do_responses and await check_channel_setupped(server, message.channel):
+        if await check_channel_setupped(server, message.channel):
             if "robotop" in message.author.name.lower() and "i rate **cat" in message.content.lower():
                 icon = str(get_emoji("no_ach"))
                 await message.reply("**RoboTop**, I rate **you** 0 cats " + icon * 5)
@@ -1831,18 +1830,19 @@ async def on_message(message: discord.Message):
                 pass
 
     for response in responses:
-        server = await Server.get_or_create(server_id=message.guild.id)
-        if server.do_responses and await check_channel_setupped(server, message.channel):
-            match_text, match_method, response_reply = response
-            text_lowered = text.lower()
-            if any(
-                [
-                    match_method == "startswith" and text_lowered.startswith(match_text),
-                    match_method == "re" and re.search(match_text, text_lowered),
-                    match_method == "exact" and match_text == text_lowered,
-                    match_method == "in" and match_text in text_lowered,
-                ]
-            ):
+        match_text, match_method, response_reply = response
+        text_lowered = text.lower()
+        if any(
+            [
+                match_method == "startswith" and text_lowered.startswith(match_text),
+                match_method == "re" and re.search(match_text, text_lowered),
+                match_method == "exact" and match_text == text_lowered,
+                match_method == "in" and match_text in text_lowered,
+            ]
+        ):
+            if not server:
+                server = await Server.get_or_create(server_id=message.guild.id)
+            if server.do_responses and await check_channel_setupped(server, message.channel):
                 try:
                     await message.reply(response_reply)
                 except Exception:
@@ -1868,7 +1868,8 @@ async def on_message(message: discord.Message):
         await achemb(message, "worship", "reply")
 
     if text.lower() in ["testing testing 1 2 3", "cat!ach"]:
-        server = await Server.get_or_create(server_id=message.guild.id)
+        if not server:
+            server = await Server.get_or_create(server_id=message.guild.id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
             try:
                 await message.reply("test success")
@@ -1882,7 +1883,8 @@ async def on_message(message: discord.Message):
         user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.author.id)
         user.cat_Fine -= 1
         await user.save()
-        server = await Server.get_or_create(server_id=message.guild.id)
+        if not server:
+            server = await Server.get_or_create(server_id=message.guild.id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
             try:
                 personname = message.author.name.replace("_", "\\_")
@@ -1893,7 +1895,8 @@ async def on_message(message: discord.Message):
         await achemb(message, "pleasedonotthecat", "reply")
 
     if text.lower() == "please do the cat":
-        server = await Server.get_or_create(server_id=message.guild.id)
+        if not server:
+            server = await Server.get_or_create(server_id=message.guild.id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
             thing = discord.File("images/socialcredit.jpg", filename="socialcredit.jpg")
             try:
@@ -1904,7 +1907,8 @@ async def on_message(message: discord.Message):
         await achemb(message, "pleasedothecat", "reply")
 
     if text.lower() == "car":
-        server = await Server.get_or_create(server_id=message.guild.id)
+        if not server:
+            server = await Server.get_or_create(server_id=message.guild.id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
             file = discord.File("images/car.png", filename="car.png")
             embed = discord.Embed(title="car!", color=Colors.brown).set_image(url="attachment://car.png")
@@ -1916,7 +1920,8 @@ async def on_message(message: discord.Message):
         await achemb(message, "car", "reply")
 
     if text.lower() == "cart":
-        server = await Server.get_or_create(server_id=message.guild.id)
+        if not server:
+            server = await Server.get_or_create(server_id=message.guild.id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
             file = discord.File("images/cart.png", filename="cart.png")
             embed = discord.Embed(title="cart!", color=Colors.brown).set_image(url="attachment://cart.png")
@@ -1940,7 +1945,8 @@ async def on_message(message: discord.Message):
     if text.lower() == "cat":
         user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.author.id)
         channel = await Channel.get_or_none(channel_id=message.channel.id)
-        server = await Server.get_or_create(server_id=message.guild.id)
+        if not server:
+            server = await Server.get_or_create(server_id=message.guild.id)
         if (
             not channel
             or not channel.cat
@@ -2315,7 +2321,6 @@ async def on_message(message: discord.Message):
                                 rainboost = 600
                             logging.debug("Boosted to rain: %d", rainboost)
                             channel.cat_rains += math.ceil(rainboost / 2.75)
-                            server = await Server.get_or_create(server_id=message.guild.id)
                             if channel.cat_rains > math.ceil(rainboost / 2.75):
                                 await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
                                 await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
