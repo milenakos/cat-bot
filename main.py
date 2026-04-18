@@ -1775,18 +1775,6 @@ async def on_message(message: discord.Message):
             except Exception:
                 pass
 
-    try:
-        if await check_channel_setupped(server, message.channel):
-            if "robotop" in message.author.name.lower() and "i rate **cat" in message.content.lower():
-                icon = str(get_emoji("no_ach"))
-                await message.reply("**RoboTop**, I rate **you** 0 cats " + icon * 5)
-
-            if "leafbot" in message.author.name.lower() and "hmm... i would rate cat" in message.content.lower():
-                icon = str(get_emoji("no_ach")) + " "
-                await message.reply("Hmm... I would rate you **0 cats**! " + icon * 5)
-    except Exception:
-        pass
-
     if message.author.bot or message.webhook_id is not None:
         return
 
