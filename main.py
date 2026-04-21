@@ -2343,7 +2343,7 @@ async def on_message(message: discord.Message):
                         user.birthday_rain_progress = 10
                         user.rain_minutes += 2
                         suffix_string += f"\n{get_emoji('b_babycat')} +1 {get_emoji('birthdaypack')}! +2 ☔ Rain Minutes!"
-                    elif user.birthday_rain_minutes >= 10:
+                    elif user.birthday_rain_progress >= 10:
                         suffix_string += f"\n{get_emoji('b_babycat')} +1 {get_emoji('birthdaypack')} Birthday Pack!"
                     else:
                         user.birthday_rain_progress += 1
