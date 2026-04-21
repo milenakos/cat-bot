@@ -426,7 +426,7 @@ news_list = [
     {"title": "Happy Valentine's!", "emoji": "💞"},
     {"title": "Cat Bot Stocks", "emoji": "📈"},
     {"title": "PackOrRain Event [ended]", "emoji": "🔥"},
-    {"title": "200,000 servers giveaway", "emoji": "insane"},
+    {"title": "200,000 servers giveaway [ended]", "emoji": "insane"},
     {"title": "Cat Bot's 4th Birthday!", "emoji": "b_babycat"},
 ]
 
@@ -3246,7 +3246,7 @@ ummm good luck and let the line go up!""",
             embed = Container(
                 f"## {get_emoji('insane')} cat bot has reached 200k servers!",
                 "wow big number!!",
-                "to celebrate im doing a 200 rain minute giveaway in our [discord server](https://discord.com/channels/966586000417619998/1021844042654417017/1492510874458394655)",
+                "to celebrate im ~~doing a 200 rain minute giveaway~~ ended!! in our [discord server](https://discord.com/channels/966586000417619998/1021844042654417017/1492510874458394655)",
                 ActionRow(
                     Button(label="Join the server", url="https://discord.gg/staring"),
                 ),
