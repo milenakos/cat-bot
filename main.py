@@ -2337,7 +2337,7 @@ async def on_message(message: discord.Message):
                         )
 
                 # hbd!!
-                if le_emoji == "Baby":
+                if le_emoji == "Baby" or (le_old_emoji and le_old_emoji == "Baby"):
                     user.pack_birthday += 1
                     if user.birthday_rain_progress == 9:
                         user.birthday_rain_progress = 10
