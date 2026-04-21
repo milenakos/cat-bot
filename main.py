@@ -2242,6 +2242,7 @@ async def on_message(message: discord.Message):
 
                 # blessings
                 bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001 * 0.01
+                le_old_emoji = "Baby"
                 if bless_chance > random.random():
                     # woo we got blessed thats pretty cool
                     if silly_amount == 0:
@@ -2337,7 +2338,7 @@ async def on_message(message: discord.Message):
                         )
 
                 # hbd!!
-                if le_emoji == "Baby" or (le_old_emoji and le_old_emoji == "Baby"):
+                if le_old_emoji == "Baby":
                     user.pack_birthday += 1
                     if user.birthday_rain_progress == 9:
                         user.birthday_rain_progress = 10
