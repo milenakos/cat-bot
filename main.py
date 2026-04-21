@@ -2242,7 +2242,6 @@ async def on_message(message: discord.Message):
 
                 # blessings
                 bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001 * 0.01
-                le_old_emoji = "Baby"
                 if bless_chance > random.random():
                     # woo we got blessed thats pretty cool
                     if silly_amount == 0:
@@ -2275,6 +2274,7 @@ async def on_message(message: discord.Message):
                 global_boost = 0.06 * math.log(2 * total_count + 1)
                 user_boost = global_boost + 0.05 * math.log(2 * user_count + 1)
                 did_boost = False
+                le_old_emoji = le_emoji
                 if user_boost > random.random():
                     # determine whodunnit
                     if random.uniform(0, user_boost) > global_boost:
