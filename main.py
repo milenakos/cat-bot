@@ -97,6 +97,7 @@ pack_data = [
     {"name": "Christmas", "value": 30, "upgrade": 70, "totalvalue": 225, "special": True},
     {"name": "Valentine", "value": 30, "upgrade": 70, "totalvalue": 225, "special": True},
     {"name": "Chef", "value": 30, "upgrade": 70, "totalvalue": 225, "special": True},
+    {"name": "Birthday", "value": 30, "upgrade": 70, "totalvalue": 225, "special": True},
     # normal
     {"name": "Wooden", "value": 65, "upgrade": 30, "totalvalue": 75, "special": False},
     {"name": "Stone", "value": 90, "upgrade": 30, "totalvalue": 100, "special": False},
@@ -290,7 +291,7 @@ class Colors:
 
 
 # rain shill message for footers
-rain_shill = "☔ Get tons of cats /rain"
+rain_shill = "🎉 Birthday Sale! -50% /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -365,6 +366,8 @@ last_loop_time = 0
 
 def get_emoji(name):
     global emojis
+    if name in allowedemojis:
+        return emojis["b_" + name]
     if name in emojis.keys():
         return emojis[name]
     elif name in emoji.EMOJI_DATA:
@@ -424,6 +427,7 @@ news_list = [
     {"title": "Cat Bot Stocks", "emoji": "📈"},
     {"title": "PackOrRain Event [ended]", "emoji": "🔥"},
     {"title": "200,000 servers giveaway", "emoji": "insane"},
+    {"title": "Cat Bot's 4th Birthday!", "emoji": "b_babycat"},
 ]
 
 achs = [
@@ -2332,6 +2336,21 @@ async def on_message(message: discord.Message):
                             f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A {rainboost // 60}m rain will start!"
                         )
 
+                # hbd!!
+                if le_emoji == "Baby":
+                    user.pack_birthday += 1
+                    if user.birthday_rain_progress == 9:
+                        user.birthday_rain_progress = 10
+                        user.rain_minutes += 2
+                        suffix_string += f"\n{get_emoji('b_babycat')} +1 {get_emoji('birthdaypack')}! +2 ☔ Rain Minutes!"
+                    elif user.birthday_rain_minutes >= 10:
+                        suffix_string += f"\n{get_emoji('b_babycat')} +1 {get_emoji('birthdaypack')} Birthday Pack!"
+                    else:
+                        user.birthday_rain_progress += 1
+                        colored = "🟧" * user.birthday_rain_progress
+                        uncolored = "⬛" * (10 - user.birthday_rain_progress)
+                        suffix_string += f"\n{get_emoji('b_babycat')} +1 {get_emoji('birthdaypack')}! {colored}{uncolored} {get_emoji('2rain')}"
+
                 icon = get_emoji(le_emoji.lower() + "cat")
 
                 if channel.channel_id in config.cat_cought_rain:
@@ -2346,7 +2365,7 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
+                    suffix_string += f"\n🎉 birthday sale! -50%!! </rain:{RAIN_ID}>"
                 if random.randint(0, 19) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
@@ -3231,6 +3250,31 @@ ummm good luck and let the line go up!""",
                     Button(label="Join the server", url="https://discord.gg/staring"),
                 ),
                 "-# <t:1775913490>",
+            )
+            view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
+        elif news_id == 18:
+            embed = Container(
+                f"## {get_emoji('b_babycat')} It's Cat Bot's 4th birthday!!",
+                Section(
+                    f"### {get_emoji('b_babycat')} Baby cat becomes an adult 🥳",
+                    "Help decide Baby cat's new name via a poll in our [Discord server](https://discord.com/channels/966586000417619998/1021844042654417017)!",
+                    Button(label="Vote!", url="https://discord.com/channels/966586000417619998/1021844042654417017"),
+                ),
+                f"### {get_emoji('birthdaypack')} Birthday Packs",
+                f"For the next 5 days, you will get a {get_emoji('birthdaypack')} Birthday Pack for every {get_emoji('b_babycat')} Baby cat you catch!\nCollect 10 of them to get ☔ **2 free Rain Minutes**!",
+                Section(
+                    "### 🎨 Birthday Art Contest",
+                    "Join our [Discord server](https://discord.gg/staring) to participate in the Birthday Art Contest! 3 winners will get ☔ **100 Rain Minutes** each.",
+                    Button(label="Join the server", url="https://discord.gg/staring"),
+                ),
+                Section(
+                    f"### {get_emoji('insane')} -50% off Sale",
+                    "This is **much higher** than normal sale amounts!!",
+                    Button(label="catbot.shop", emoji="☔", url="https://catbot.shop"),
+                ),
+                "-# <t:1776778856>",
             )
             view.add_item(embed)
             view.add_item(back_row)
@@ -4441,7 +4485,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
 
     shopbutton = Button(
         emoji="🛒",
-        label="Store",
+        label="Store (-50%!)",
         url="https://catbot.shop",
     )
 
@@ -5244,7 +5288,7 @@ async def cancel_orders(interaction):
             discord.SelectOption(label=f"{'BUY' if order.type_buy else 'SELL'}ING {order.quantity:,}x {order.ticker}, 🪙 {order.price:,}/share", value=order.id)
         )
     if not open_orders:
-        await interaction.followup.send("No open orders", ephemeral=True)
+        await interaction.followup.send("No open orders\n-# you can only cancel orders older than 12 hours", ephemeral=True)
         return
     cancel_select = Select(
         "cancel_order_dd",

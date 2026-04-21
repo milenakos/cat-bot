@@ -309,7 +309,9 @@ CREATE TABLE public.profile (
     last_catch_channel bigint DEFAULT 0,
     coffees integer DEFAULT 0,
     pack_chef integer DEFAULT 0,
-    baker boolean DEFAULT false
+    baker boolean DEFAULT false,
+    pack_birthday integer DEFAULT 0,
+    birthday_rain_progress smallint DEFAULT 0
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;
