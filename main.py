@@ -3543,14 +3543,22 @@ async def changemessage(message: discord.Interaction):
 
             self.type = type
 
+            if self.type == "Appear":
+                default = channel.appear if channel.appear else '{emoji} {type} cat has appeared! Type "cat" to catch it!'
+            else:
+                default = (
+                    channel.cought
+                    if channel.cought
+                    else "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
+                )
+
             self.input = TextInput(
                 min_length=0,
                 max_length=1000,
                 label="Input",
                 style=discord.TextStyle.long,
                 required=False,
-                placeholder='{emoji} {type} has appeared! Type "cat" to catch it!',
-                default=channel.appear if self.type == "Appear" else channel.cought,
+                default=default,
             )
             self.add_item(self.input)
 
@@ -3567,7 +3575,10 @@ async def changemessage(message: discord.Interaction):
 
                 for i in check:
                     if i not in input_value:
-                        await interaction.response.send_message(f"nuh uh! you are missing `{i}`.", ephemeral=True)
+                        await interaction.response.send_message(
+                            f"nuh uh! you are missing `{i}`.\nyou must include the placeholders exactly like they are shown, the values will be replaced by cat bot when it uses them.",
+                            ephemeral=True,
+                        )
                         return
                     elif input_value.count(i) > 10:
                         await interaction.response.send_message(f"nuh uh! you are using too much of `{i}`.", ephemeral=True)
@@ -4232,8 +4243,6 @@ async def rain_end(message, channel, force_summary=None):
     except Exception:
         pass
 
-    await asyncio.sleep(1)
-
     # rain summary
     try:
         rain_server = force_summary
@@ -4243,8 +4252,8 @@ async def rain_end(message, channel, force_summary=None):
             rain_server = config.cat_cought_rain[channel.channel_id]
 
         # you can throw out the name of the emoji to save on characters
-        pack_names = ["Christmas", "Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]
-        pack_yeah = {"Christmas": 1.2, "Wooden": 1, "Stone": 0.9, "Bronze": 0.8, "Silver": 0.7, "Gold": 0.6, "Platinum": 0.5, "Diamond": 0.4, "Celestial": 0.3}
+        pack_names = ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]
+        pack_yeah = {"Wooden": 1, "Stone": 0.9, "Bronze": 0.8, "Silver": 0.7, "Gold": 0.6, "Platinum": 0.5, "Diamond": 0.4, "Celestial": 0.3}
         rain_packs = []
         rain_cats = []
 
@@ -5418,9 +5427,22 @@ async def stocks(message: discord.Interaction):
         await interaction.response.defer()
         view = View(timeout=VIEW_TIMEOUT)
         button = Button(label="Confirm")
-        button.callback = confirm_deposit_all
+        button.callback = ask_deposit_all2
         view.add_item(button)
         await interaction.edit_original_response(content="Are you sure you want to deposit all your packs?", embed=None, view=view)
+
+    async def ask_deposit_all2(interaction):
+        await interaction.response.defer()
+        view = View(timeout=VIEW_TIMEOUT)
+        button = Button(label="Confirm")
+        button.callback = confirm_deposit_all
+        view.add_item(button)
+        packs = ""
+        for pack in pack_data:
+            if pack["name"] not in ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]:
+                continue
+            packs += f"\n{get_emoji(pack['name'].lower() + 'pack')} {pack['name']} x{profile[f'pack_{pack['name'].lower()}']:,}"
+        await interaction.edit_original_response(content=f"Are you SURE you want to deposit the following packs:{packs}", embed=None, view=view)
 
     async def confirm_deposit_all(interaction):
         await interaction.response.defer()
