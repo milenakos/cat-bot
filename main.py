@@ -5441,6 +5441,8 @@ async def stocks(message: discord.Interaction):
         for pack in pack_data:
             if pack["name"] not in ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]:
                 continue
+            if profile[f"pack_{pack['name'].lower()}"] <= 0:
+                continue
             packs += f"\n{get_emoji(pack['name'].lower() + 'pack')} {pack['name']} x{profile[f'pack_{pack['name'].lower()}']:,}"
         await interaction.edit_original_response(content=f"Are you SURE you want to deposit the following packs:{packs}", embed=None, view=view)
 
