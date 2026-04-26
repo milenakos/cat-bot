@@ -9714,6 +9714,236 @@ async def reset(message: discord.Interaction, person_id: discord.User):
     view.add_item(button)
     await message.response.send_message(f"Are you sure you want to reset {person_id.mention}?", view=view, allowed_mentions=discord.AllowedMentions(users=True))
 
+@bot.tree.command(description="(ADMIN) Transfer cats and stats")
+@discord.app_commands.default_permissions(manage_guild=True)
+@discord.app_commands.rename(from_user="from", to_user="to")
+@discord.app_commands.describe(from_user="From whom?", to_user="To whom?")
+async def transfer(interaction: discord.Interaction, from_user: discord.User, to_user: discord.User):
+    if from_user.id == to_user.id:
+        await interaction.response.send_message("You can't transfer to the same user!", ephemeral=True)
+        return
+
+    # Type selection view
+    class TransferTypeView(LayoutView):
+        def __init__(self, from_user: discord.User, to_user: discord.User, selected: list[str] = None):
+            super().__init__(timeout=VIEW_TIMEOUT)
+            self.from_user = from_user
+            self.to_user = to_user
+            self.selected_types = selected or []
+
+            header = TextDisplay(
+                f"**Transferring data from {from_user.mention} to {to_user.mention}**\n"
+                "Pick what data to transfer:"
+            )
+
+            options = [
+                Option(label="Stats", emoji="📝", value="stats"),
+                Option(label="Achievements", emoji=get_emoji("ach"), value="achs"),
+                Option(label="Cats", emoji="🐈", value="cats"),
+                Option(label="Packs", emoji=get_emoji("goldpack"), value="packs"),
+            ]
+            self.select = Select(
+                id="transfer_type_select",
+                placeholder="Choose types to transfer...",
+                opts=options,
+                selected=self.selected_types,
+                on_select=self.on_select,
+                max_values=4,
+            )
+
+            self.transfer_btn = Button(label="Transfer", style=ButtonStyle.primary, disabled=len(self.selected_types) == 0)
+            self.transfer_btn.callback = self.on_transfer_click
+
+            container = Container(
+                header,
+                ActionRow(self.select),
+                ActionRow(self.transfer_btn),
+                accent_color=Colors.brown,
+            )
+            self.add_item(container)
+
+        async def on_select(self, interaction: discord.Interaction, values):
+            new_view = TransferTypeView(self.from_user, self.to_user, selected=values)
+            await interaction.response.edit_message(view=new_view)
+
+        async def on_transfer_click(self, interaction: discord.Interaction):
+            if not self.selected_types:
+                await interaction.response.send_message("You haven't selected anything!", ephemeral=True)
+                return
+
+            header = (
+                f"**Transferring data from {self.from_user.mention} to {self.to_user.mention}**\n"
+                f"Selected: **{', '.join(self.selected_types)}**\n\n"
+                "Are you sure you want to proceed?"
+            )
+            confirm_view = TransferConfirmView(self.from_user, self.to_user, self.selected_types, header)
+            await interaction.response.edit_message(view=confirm_view)
+
+    # Confirmation view
+    class TransferConfirmView(LayoutView):
+        def __init__(self, from_user: discord.User, to_user: discord.User, selected_types: list, header_text: str):
+            super().__init__(timeout=VIEW_TIMEOUT)
+            self.from_user = from_user
+            self.to_user = to_user
+            self.selected_types = selected_types
+
+            confirm_btn = Button(label="Transfer", style=ButtonStyle.danger)
+            confirm_btn.callback = self.on_confirm
+            cancel_btn = Button(label="Cancel", style=ButtonStyle.secondary)
+            cancel_btn.callback = self.on_cancel
+
+            container = Container(
+                TextDisplay(header_text),
+                ActionRow(confirm_btn, cancel_btn),
+                accent_color=Colors.brown,
+            )
+            self.add_item(container)
+
+        async def on_confirm(self, interaction: discord.Interaction):
+            await interaction.response.defer(ephemeral=True)
+
+            from_profile = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=self.from_user.id)
+            to_profile = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=self.to_user.id)
+
+            changes = []
+
+            # ─── CATS ─────────────────────────────────────────────
+            if "cats" in self.selected_types:
+                for cat in cattypes:
+                    field = f"cat_{cat}"
+                    val = getattr(from_profile, field)
+                    if val:
+                        setattr(from_profile, field, 0)
+                        setattr(to_profile, field, getattr(to_profile, field) + val)
+                changes.append("cats")
+
+            # ─── PACKS ────────────────────────────────────────────
+            if "packs" in self.selected_types:
+                for pack in pack_data:
+                    field = f"pack_{pack['name'].lower()}"
+                    val = getattr(from_profile, field)
+                    if val:
+                        setattr(from_profile, field, 0)
+                        setattr(to_profile, field, getattr(to_profile, field) + val)
+                changes.append("packs")
+
+            # ─── ACHIEVEMENTS ─────────────────────────────────────
+            if "achs" in self.selected_types:
+                for ach in ach_names:
+                    if getattr(from_profile, ach):
+                        setattr(to_profile, ach, True)
+                        setattr(from_profile, ach, False)
+                changes.append("achievements")
+
+            # ─── STATS ────────────────────────────────────────────
+            if "stats" in self.selected_types:
+                FASTEST_SENTINEL = 99999999999999
+
+                # All numeric fields that should be transferred
+                numeric_fields = [
+                    # Times
+                    "time", "timeslow",
+                    # Catch stats
+                    "total_catches", "total_catch_time", "perfection_count",
+                    # Gambling
+                    "gambles", "slot_spins", "slot_wins", "slot_big_wins",
+                    "roulette_spins", "roulette_wins", "roulette_balance",
+                    # Games
+                    "best_pig_score", "facts", "ttt_played", "ttt_won", "ttt_draws",
+                    # Misc
+                    "funny", "boosted_catches", "rain_participations", "rain_minutes_started",
+                    "cat_gifts_recieved", "cats_gifted", "trades_completed", "cats_traded",
+                    "packs_opened", "pack_upgrades", "quests_completed",
+                    # Catnip
+                    "catnip_activations", "catnip_bought", "highest_catnip_level",
+                    "bounties_complete", "cookies", "reminders_set", "pack_attempts",
+                    # Catnip state (numeric parts)
+                    "catnip_level", "catnip_active", "catnip_amount",
+                    "bounty_total_one", "bounty_total_two", "bounty_total_three",
+                    "bounty_progress_one", "bounty_progress_two", "bounty_progress_three",
+                    "bounty_total_bonus", "bounty_progress_bonus", "bounties",
+                    "sphere_easter_egg",
+                ]
+
+                # Boolean/flags (will be ORed – target gains them if source has them)
+                bool_fields = [
+                    # Story flags
+                    "dark_market_active", "mafia_win", "cutscene", "thanksforplaying",
+                    "debt_seen", "finale_seen",
+                    # Catnip flags
+                    "hibernation", "first_quote_seen", "reroll", "perk_selected",
+                ]
+
+                # String fields (bounty types, ids, catnip price, perk placeholders)
+                str_fields = [
+                    "bounty_id_one", "bounty_id_two", "bounty_id_three",
+                    "bounty_type_one", "bounty_type_two", "bounty_type_three",
+                    "bounty_id_bonus", "bounty_type_bonus",
+                    "catnip_price",
+                    "perk1", "perk2", "perk3",
+                ]
+
+                # Transfer numeric fields
+                for field in numeric_fields:
+                    from_val = getattr(from_profile, field)
+                    to_val = getattr(to_profile, field)
+
+                    if field == "time":
+                        new_val = min(from_val, to_val) if to_val != FASTEST_SENTINEL else from_val
+                        setattr(to_profile, field, new_val)
+                        setattr(from_profile, field, FASTEST_SENTINEL)
+                    elif field == "timeslow":
+                        new_val = max(from_val, to_val)
+                        setattr(to_profile, field, new_val)
+                        setattr(from_profile, field, 0)
+                    else:
+                        # Wasn't sure about how to handle this
+
+                        # Additive
+                        # OPTIONAL: Preserve base 100 for roulette_balance (uncomment if desired)
+                        # if field == "roulette_balance":
+                        #     transfer_amount = max(0, from_val - 100)
+                        #     setattr(to_profile, field, to_val + transfer_amount)
+                        #     setattr(from_profile, field, 100)
+                        # else:
+                        setattr(to_profile, field, to_val + from_val)
+                        setattr(from_profile, field, 0)
+
+                # Transfer boolean fields (OR them)
+                for field in bool_fields:
+                    from_val = getattr(from_profile, field)
+                    to_val = getattr(to_profile, field)
+                    setattr(to_profile, field, to_val or from_val)
+                    setattr(from_profile, field, False)
+
+                # Transfer string fields (source overwrites target if source has a value)
+                for field in str_fields:
+                    from_val = getattr(from_profile, field)
+                    if from_val:
+                        setattr(to_profile, field, from_val)
+                        setattr(from_profile, field, "")  # reset to empty string
+
+                changes.append("stats")
+
+            await from_profile.save()
+            await to_profile.save()
+
+            # Public announcement
+            types_str = ", ".join(changes)
+            await interaction.followup.send(
+                f"Transferred {types_str} from {self.from_user.mention} to {self.to_user.mention}",
+                ephemeral=False
+            )
+
+            # Ephemeral confirmation
+            await interaction.followup.send("Transfer completed!", ephemeral=True)
+
+        async def on_cancel(self, interaction: discord.Interaction):
+            await interaction.response.edit_message(content="Transfer cancelled.", view=None)
+
+    # Launch first view
+    await interaction.response.send_message(view=TransferTypeView(from_user, to_user), ephemeral=True)
+
 
 @bot.tree.command(description="(HIGH ADMIN) [VERY DANGEROUS] Reset/wipe all Cat Bot data of this server")
 @discord.app_commands.default_permissions(administrator=True)
@@ -9998,29 +10228,40 @@ class Select(discord.ui.Select):
         id: str,
         placeholder: str,
         opts: list[Option],
-        selected: str = None,
+        selected: str | list[str] = None,
         on_select: callable = None,
         disabled: bool = False,
+        max_values: int = 1,
+        min_values: int = 1,
     ):
         options = []
         if on_select is not None:
             self.on_select = on_select
 
         for opt in opts:
-            options.append(discord.SelectOption(label=opt.label, description=opt.description, value=opt.value, emoji=opt.emoji, default=opt.value == selected))
+            if selected is None:
+                default = False
+            elif isinstance(selected, list):
+                default = opt.value in selected
+            else:
+                default = opt.value == selected
+            options.append(discord.SelectOption(label=opt.label, description=opt.description,  value=opt.value, emoji=opt.emoji, default=default))
 
         super().__init__(
             placeholder=placeholder,
             options=options,
             custom_id=id,
-            max_values=1,
-            min_values=1,
+            max_values=max_values,
+            min_values=min_values,
             disabled=disabled,
         )
 
     async def callback(self, interaction: discord.Interaction):
         if self.on_select is not None and callable(self.on_select):
-            await self.on_select(interaction, self.values[0] if len(self.values) == 1 else self.values)
+            if self.max_values == 1: # Single select
+                await self.on_select(interaction, self.values[0])
+            else: # Multi‑select
+                await self.on_select(interaction, self.values)
 
 
 class Container(discord.ui.Container):
