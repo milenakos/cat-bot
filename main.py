@@ -4973,6 +4973,10 @@ async def battlepass(message: discord.Interaction):
 
         await refresh_quests(user)
 
+        if str(user.season) not in battle["seasons"]:
+            await interaction.followup.send("Season changed! Please run the command again.", ephemeral=True)
+            return
+
         await global_user.refresh_from_db()
         if global_user.vote_time_topgg + 12 * 3600 > time.time():
             await progress(message, user, "vote")
@@ -9273,6 +9277,9 @@ async def leaderboards(
             start_date = datetime.datetime(2024, 12, 1)
             current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
             full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
+            if str(full_months_passed) not in battle["seasons"]:
+                await interaction.followup.send("Season changed! Please run the command again.", ephemeral=True)
+                return
             bp_season = battle["seasons"][str(full_months_passed)]
             if current_date.day < start_date.day:
                 full_months_passed -= 1
