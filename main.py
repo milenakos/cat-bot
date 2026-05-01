@@ -233,7 +233,7 @@ with open("config/aches.json", "r") as f:
     ach_list = json.load(f)
 
 with open("config/battlepass.json", "r", encoding="utf-8") as f:
-    battle = json.load(f)
+    config.battle = json.load(f)
 
 with open("config/catnip.json", "r", encoding="utf-8") as f:
     catnip_list = json.load(f)
@@ -770,7 +770,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
 
 async def generate_quest(user: Profile, quest_type: str):
     while True:
-        quest = random.choice(list(battle["quests"][quest_type].keys()))
+        quest = random.choice(list(config.battle["quests"][quest_type].keys()))
         if quest in ["slots", "reminder"]:
             # removed quests
             continue
@@ -794,7 +794,7 @@ async def generate_quest(user: Profile, quest_type: str):
                 continue
         break
 
-    quest_data = battle["quests"][quest_type][quest]
+    quest_data = config.battle["quests"][quest_type][quest]
     if quest_type == "vote":
         user.vote_reward = random.randint(quest_data["xp_min"] // 10, quest_data["xp_max"] // 10) * 10
         user.vote_cooldown = 0
@@ -862,7 +862,7 @@ async def progress(
     if user.catch_quest == quest:
         if user.catch_cooldown != 0:
             return user
-        quest_data = battle["quests"]["catch"][quest]
+        quest_data = config.battle["quests"]["catch"][quest]
         user.catch_progress += 1
         if user.catch_progress >= quest_data["progress"]:
             quest_complete = True
@@ -873,7 +873,7 @@ async def progress(
     elif quest == "vote":
         if user.vote_cooldown != 0:
             return user
-        quest_data = battle["quests"]["vote"][quest]
+        quest_data = config.battle["quests"]["vote"][quest]
         global_user = await User.get_or_create(user_id=user.user_id)
         user.vote_cooldown = global_user.vote_time_topgg
 
@@ -892,7 +892,7 @@ async def progress(
     elif user.misc_quest == quest:
         if user.misc_cooldown != 0:
             return user
-        quest_data = battle["quests"]["misc"][quest]
+        quest_data = config.battle["quests"]["misc"][quest]
         user.misc_progress += 1
         if user.misc_progress >= quest_data["progress"]:
             quest_complete = True
@@ -912,11 +912,11 @@ async def progress(
     logging.debug("Quest complete: %s", quest)
     old_xp = user.progress
     level_complete_embeds = []
-    if user.battlepass >= len(battle["seasons"][str(user.season)]):
+    if user.battlepass >= len(config.battle["seasons"][str(user.season)]):
         level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
         level_text = "Extra Rewards"
     else:
-        level_data = battle["seasons"][str(user.season)][user.battlepass]
+        level_data = config.battle["seasons"][str(user.season)][user.battlepass]
         level_text = f"Level {user.battlepass + 1}"
 
     if current_xp >= level_data["xp"]:
@@ -954,11 +954,11 @@ async def progress(
             embed_level_up = discord.Embed(title=title, description=description, color=Colors.yellow)
             level_complete_embeds.append(embed_level_up)
 
-            if user.battlepass >= len(battle["seasons"][str(user.season)]):
+            if user.battlepass >= len(config.battle["seasons"][str(user.season)]):
                 active_level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
                 new_level_text = "Extra Rewards"
             else:
-                active_level_data = battle["seasons"][str(user.season)][user.battlepass]
+                active_level_data = config.battle["seasons"][str(user.season)][user.battlepass]
                 new_level_text = f"Level {user.battlepass + 1}"
 
         embed_progress = await progress_embed(
@@ -1477,7 +1477,7 @@ async def background_loop():
         await refresh_quests(user)
         await user.refresh_from_db()
 
-        quest_data = battle["quests"]["catch"][user.catch_quest]
+        quest_data = config.battle["quests"]["catch"][user.catch_quest]
 
         embed = discord.Embed(
             title=f"{get_emoji(quest_data['emoji'])} {quest_data['title']}",
@@ -1522,7 +1522,7 @@ async def background_loop():
         await refresh_quests(user)
         await user.refresh_from_db()
 
-        quest_data = battle["quests"]["misc"][user.misc_quest]
+        quest_data = config.battle["quests"]["misc"][user.misc_quest]
 
         embed = discord.Embed(
             title=f"{get_emoji(quest_data['emoji'])} {quest_data['title']}",
@@ -3818,7 +3818,7 @@ async def gen_stats(profile, star):
         if season_lvl > max_level:
             max_level = season_lvl
 
-        for num, level in enumerate(battle["seasons"][str(season_num)]):
+        for num, level in enumerate(config.battle["seasons"][str(season_num)]):
             if num >= season_lvl:
                 break
             total_xp += level["xp"]
@@ -3832,7 +3832,7 @@ async def gen_stats(profile, star):
         if profile.battlepass > max_level:
             max_level = profile.battlepass
 
-        for num, level in enumerate(battle["seasons"][str(profile.season)]):
+        for num, level in enumerate(config.battle["seasons"][str(profile.season)]):
             if num >= profile.battlepass:
                 break
             total_xp += level["xp"]
@@ -3973,7 +3973,7 @@ async def gen_inventory(message, person_id):
 
     await refresh_quests(person)
     try:
-        needed_xp = battle["seasons"][str(person.season)][person.battlepass]["xp"]
+        needed_xp = config.battle["seasons"][str(person.season)][person.battlepass]["xp"]
     except Exception:
         needed_xp = 1500
 
@@ -4973,10 +4973,6 @@ async def battlepass(message: discord.Interaction):
 
         await refresh_quests(user)
 
-        if str(user.season) not in battle["seasons"]:
-            await interaction.followup.send("Season changed! Please run the command again.", ephemeral=True)
-            return
-
         await global_user.refresh_from_db()
         if global_user.vote_time_topgg + 12 * 3600 > time.time():
             await progress(message, user, "vote")
@@ -5025,7 +5021,7 @@ async def battlepass(message: discord.Interaction):
             description += f"{streak_string}\n"
 
         # catch
-        catch_quest = battle["quests"]["catch"][user.catch_quest]
+        catch_quest = config.battle["quests"]["catch"][user.catch_quest]
         if user.catch_cooldown != 0:
             description += f"✅ ~~{catch_quest['title']}~~\n- Refreshes <t:{int(user.catch_cooldown + 12 * 3600 if user.catch_cooldown + 12 * 3600 < timestamp else timestamp)}:R>\n"
         else:
@@ -5042,7 +5038,7 @@ async def battlepass(message: discord.Interaction):
             description += f"{get_emoji(catch_quest['emoji'])} {catch_quest['title']}{progress_string}\n- Reward: {user.catch_reward} XP\n"
 
         # misc
-        misc_quest = battle["quests"]["misc"][user.misc_quest]
+        misc_quest = config.battle["quests"]["misc"][user.misc_quest]
         if user.misc_cooldown != 0:
             description += f"✅ ~~{misc_quest['title']}~~\n- Refreshes <t:{int(user.misc_cooldown + 12 * 3600 if user.misc_cooldown + 12 * 3600 < timestamp else timestamp)}:R>\n\n"
         else:
@@ -5051,12 +5047,12 @@ async def battlepass(message: discord.Interaction):
                 progress_string = f" ({user.misc_progress}/{misc_quest['progress']})"
             description += f"{get_emoji(misc_quest['emoji'])} {misc_quest['title']}{progress_string}\n- Reward: {user.misc_reward} XP\n\n"
 
-        if user.battlepass >= len(battle["seasons"][str(user.season)]):
+        if user.battlepass >= len(config.battle["seasons"][str(user.season)]):
             description += f"**Extra Rewards** [{user.progress}/1500 XP]\n"
             colored = int(user.progress / 150)
             description += get_emoji("staring_square") * colored + "⬛" * (10 - colored) + "\nReward: " + get_emoji("stonepack") + " Stone pack\n\n"
         else:
-            level_data = battle["seasons"][str(user.season)][user.battlepass]
+            level_data = config.battle["seasons"][str(user.season)][user.battlepass]
             description += f"**Level {user.battlepass + 1}/30** [{user.progress}/{level_data['xp']} XP]\n"
             colored = int(user.progress / level_data["xp"] * 10)
             description += f"**{user.battlepass}** " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" **{user.battlepass + 1}**\n"
@@ -5069,7 +5065,7 @@ async def battlepass(message: discord.Interaction):
                 description += f"Reward: {get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack\n\n"
 
         # next reward
-        levels = battle["seasons"][str(user.season)]
+        levels = config.battle["seasons"][str(user.season)]
         for num, level_data in enumerate(levels):
             claimed_suffix = "_claimed" if num < user.battlepass else ""
             if level_data["reward"] == "Rain":
@@ -5080,7 +5076,7 @@ async def battlepass(message: discord.Interaction):
                 description += get_emoji(level_data["reward"].lower() + "pack" + claimed_suffix)
             if num % 10 == 9:
                 description += "\n"
-        if user.battlepass >= len(battle["seasons"][str(user.season)]) - 1:
+        if user.battlepass >= len(config.battle["seasons"][str(user.season)]) - 1:
             description += f"*Extra:* {get_emoji('stonepack')} per 1500 XP"
 
         embedVar = discord.Embed(
@@ -9277,10 +9273,7 @@ async def leaderboards(
             start_date = datetime.datetime(2024, 12, 1)
             current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
             full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
-            if str(full_months_passed) not in battle["seasons"]:
-                await interaction.followup.send("Season changed! Please run the command again.", ephemeral=True)
-                return
-            bp_season = battle["seasons"][str(full_months_passed)]
+            bp_season = config.battle["seasons"][str(full_months_passed)]
             if current_date.day < start_date.day:
                 full_months_passed -= 1
             result = await Profile.collect_limit(
