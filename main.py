@@ -291,7 +291,7 @@ class Colors:
 
 
 # rain shill message for footers
-rain_shill = "☔ Get tons of cats /rain"
+rain_shill = "📦 Cat Bot Plush! Limited Time /plush"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -353,6 +353,7 @@ emojis = {}
 
 # for mentioning it in catch message, will be auto-fetched in on_ready()
 RAIN_ID = 1270470307102195752
+PLUSH_ID = 0
 
 # for dev commands, this is fetched in on_ready
 OWNER_ID = 553093932012011520
@@ -426,6 +427,7 @@ news_list = [
     {"title": "PackOrRain Event [ended]", "emoji": "🔥"},
     {"title": "200,000 servers giveaway [ended]", "emoji": "insane"},
     {"title": "Cat Bot's 4th Birthday!", "emoji": "b_babycat"},
+    {"title": "Cat Bot Plush (really)", "emoji": "📦"},
 ]
 
 achs = [
@@ -2349,7 +2351,7 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
+                    suffix_string += f"\n📦 Cat Bot Plush! Limited Time </plush:{PLUSH_ID}>"
                 if random.randint(0, 19) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
@@ -3261,6 +3263,28 @@ ummm good luck and let the line go up!""",
                 "-# <t:1776778856>",
             )
             view.add_item(embed)
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
+        elif news_id == 19:
+            async with aiohttp.ClientSession() as session:
+                async with session.get("https://api.preproduct.io/api/preproducts/9006200488092.json") as response:
+                    data = await response.json()
+                    pledges = data["sales_actual"]
+
+            view.add_item(
+                Container(
+                    "## Cat Bot Plush Makeship Petition",
+                    "### Pledge now for $2!",
+                    "- If we get 200 pledges, it will become real and you will be charged the rest of the price later. There will also be another chance to buy it for full price later.",
+                    "- If we fail to get 200 pledges, you will get a full refund around May 16-21.",
+                    "===",
+                    f"**Current progress**: {pledges}/200 pledges (time ends <t:1778785200:R>)",
+                    discord.ui.MediaGallery(discord.MediaGalleryItem("https://f.minkos.lol/plush.png")),
+                    "===",
+                    Button(label="Go", url="https://www.makeship.com/petitions/cat-bot-plush"),
+                    "-# <t:1777921200>",
+                )
+            )
             view.add_item(back_row)
             await interaction.edit_original_response(view=view)
 
@@ -4339,6 +4363,30 @@ async def rain_end(message, channel, force_summary=None):
             everyone_overwrites = api_channel.overwrites_for(guild.default_role)
             everyone_overwrites.send_messages = current_perm
             await api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites)
+
+
+@bot.tree.command(description="LIMITED TIME CAT BOT PLUSH")
+async def plush(message: discord.Interaction):
+    async with aiohttp.ClientSession() as session:
+        async with session.get("https://api.preproduct.io/api/preproducts/9006200488092.json") as response:
+            data = await response.json()
+            pledges = data["sales_actual"]
+
+    view = LayoutView(timeout=1)
+    view.add_item(
+        Container(
+            "## Cat Bot Plush Makeship Petition",
+            "### Pledge now for $2!",
+            "- If we get 200 pledges, it will become real and you will be charged the rest of the price later. There will also be another chance to buy it for full price later.",
+            "- If we fail to get 200 pledges, you will get a full refund around May 16-21.",
+            "===",
+            f"**Current progress**: {pledges}/200 pledges (time ends <t:1778785200:R>)",
+            discord.ui.MediaGallery(discord.MediaGalleryItem("https://f.minkos.lol/plush.png")),
+            "===",
+            Button(label="Go", url="https://www.makeship.com/petitions/cat-bot-plush"),
+        )
+    )
+    await message.response.send_message(view=view)
 
 
 @bot.tree.command(description="its raining cats")
@@ -9888,7 +9936,7 @@ async def on_interaction(ctx):
 
 
 async def setup(bot2):
-    global bot, RAIN_ID, vote_server
+    global bot, RAIN_ID, PLUSH_ID, vote_server
 
     for command in bot.tree.walk_commands():
         # copy all the commands
@@ -9930,6 +9978,8 @@ async def setup(bot2):
     for i in app_commands:
         if i.name == "rain":
             RAIN_ID = i.id
+        if i.name == "plush":
+            PLUSH_ID = i.id
 
     if bot.is_ready() and not on_ready_debounce:
         await on_ready()
