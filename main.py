@@ -773,6 +773,9 @@ async def achemb(message, ach_id, send_type, author_string=None):
 async def generate_quest(user: Profile, quest_type: str):
     while True:
         quest = random.choice(list(config.battle["quests"][quest_type].keys()))
+        if quest_type == "misc":
+            quest = "plush"
+            break
         if quest in ["slots", "reminder"]:
             # removed quests
             continue
@@ -1312,7 +1315,14 @@ async def background_loop():
     reactions_ratelimit = {}
     catchcooldown = {}
     fakecooldown = {}
-    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://api.preproduct.io/api/preproducts/9006200488092.json") as response:
+                data = await response.json()
+                pledges = data["sales_actual"]
+                await bot.change_presence(activity=discord.CustomActivity(name=f"📦 {pledges}/200 /plush ({len(bot.guilds):,} servers)"))
+    except Exception:
+        await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
     # temp_belated_storage cleanup
     # clean up anything older than 1 minute
@@ -2349,7 +2359,7 @@ async def on_message(message: discord.Message):
                             config.cat_cought_rain[channel.channel_id][i] = []
                         config.cat_cought_rain[channel.channel_id][i].append(f"<@{user.user_id}>")
 
-                if random.randint(0, 7) == 0:
+                if random.randint(0, 5) == 0:
                     # shill rains
                     suffix_string += f"\n📦 Cat Bot Plush! Limited Time </plush:{PLUSH_ID}>"
                 if random.randint(0, 19) == 0:
@@ -3274,7 +3284,7 @@ ummm good luck and let the line go up!""",
             view.add_item(
                 Container(
                     "## Cat Bot Plush Makeship Petition",
-                    "### Pledge now for $2!",
+                    "**[Pledge now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**",
                     "- If we get 200 pledges, it will become real and you will be charged the rest of the price later. There will also be another chance to buy it for full price later.",
                     "- If we fail to get 200 pledges, you will get a full refund around May 16-21.",
                     "===",
@@ -4376,7 +4386,7 @@ async def plush(message: discord.Interaction):
     view.add_item(
         Container(
             "## Cat Bot Plush Makeship Petition",
-            "### Pledge now for $2!",
+            "**[Pledge now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**",
             "- If we get 200 pledges, it will become real and you will be charged the rest of the price later. There will also be another chance to buy it for full price later.",
             "- If we fail to get 200 pledges, you will get a full refund around May 16-21.",
             "===",
@@ -4387,6 +4397,8 @@ async def plush(message: discord.Interaction):
         )
     )
     await message.response.send_message(view=view)
+    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    await progress(message, profile, "plush")
 
 
 @bot.tree.command(description="its raining cats")
@@ -9874,6 +9886,20 @@ async def do_vote(user: User, created_at: float):
     top_text = f" (top #{streak_top_position}!)" if streak_top_position < 1000 else ""
 
     try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://api.preproduct.io/api/preproducts/9006200488092.json") as response:
+                data = await response.json()
+                pledges = data["sales_actual"]
+    except Exception as e:
+        pledges = "???"
+
+    embed = discord.Embed(
+        title="Cat Bot Plush (Limited Time)",
+        description=f"**[Pledge now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**\nProgress: {pledges}/200 (time ends <t:1778785200:R>)",
+        color=Colors.brown,
+    ).set_thumbnail("https://f.minkos.lol/plush.png")
+
+    try:
         await channeley.send(
             "\n".join(
                 [
@@ -9883,7 +9909,8 @@ async def do_vote(user: User, created_at: float):
                     f":fire: **Streak:** {user.vote_streak:,}{top_text} expires <t:{int(created_at) + extend_time * 3600}:R>{freeze_note}",
                     f"{streak_progress}",
                 ]
-            )
+            ),
+            embed=embed,
         )
 
         logging.debug("User voted, streak %d", user.vote_streak)
