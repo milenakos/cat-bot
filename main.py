@@ -5897,6 +5897,10 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
             if not await Prism.get_or_none(guild_id=message.guild.id, name=selected_name):
                 break
 
+        if await Prism.get_or_none(guild_id=message.guild.id, name=selected_name) or await Prism.count("guild_id = $1", message.guild.id) >= len(prism_names):
+            await interaction.followup.send("This server has reached the prism limit.", ephemeral=True)
+            return
+
         youngest_prism = await Prism.collect("guild_id = $1 ORDER BY time DESC LIMIT 1", message.guild.id)
         if youngest_prism:
             selected_time = max(round(time.time()), youngest_prism[0].time + 1)
