@@ -9897,7 +9897,7 @@ async def do_vote(user: User, created_at: float):
         title="Cat Bot Plush (Limited Time)",
         description=f"**[Pledge now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**\nProgress: {pledges}/200 (time ends <t:1778785200:R>)",
         color=Colors.brown,
-    ).set_thumbnail("https://f.minkos.lol/plush.png")
+    ).set_thumbnail(url="https://f.minkos.lol/plush.png")
 
     try:
         await channeley.send(
