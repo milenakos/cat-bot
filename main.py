@@ -4430,7 +4430,7 @@ This bot is developed by a single person so buying one would be very appreciated
 As a bonus, you will get access to /editprofile and /customcat commands!
 Fastest times are not saved during rains.
 
-You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
+You currently have **{user.rain_minutes:,}** minutes of rains{server_rains}.""",
         color=Colors.brown,
     )
 
