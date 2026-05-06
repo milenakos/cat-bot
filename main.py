@@ -4430,7 +4430,7 @@ This bot is developed by a single person so buying one would be very appreciated
 As a bonus, you will get access to /editprofile and /customcat commands!
 Fastest times are not saved during rains.
 
-You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
+You currently have **{user.rain_minutes:,}** minutes of rains{server_rains}.""",
         color=Colors.brown,
     )
 
@@ -4517,7 +4517,7 @@ You currently have **{user.rain_minutes}** minutes of rains{server_rains}.""",
             user.rain_minutes -= rain_length
         await user.save()
         await profile.save()
-        await interaction.response.send_message(f"{rain_length}m cat rain was started by {interaction.user.mention}!")
+        await interaction.response.send_message(f"{rain_length:,}m cat rain was started by {interaction.user.mention}!")
         try:
             ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
             await ch.send(f"{interaction.user.id} started {rain_length}m rain in {interaction.channel.id} ({user.rain_minutes} left)")
