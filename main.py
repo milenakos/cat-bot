@@ -1195,7 +1195,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         localcat = random.choices(cattypes, weights=type_dict.values())[0]
     icon = get_emoji(localcat.lower() + "cat")
     file = discord.File(
-        f"images/spawn/{localcat.lower()}_cat.png",
+        f"images/spawn/{localcat.lower()}_cat.webp",
     )
     channeley = bot.get_partial_messageable(int(ch_id))
 
