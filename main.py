@@ -4738,6 +4738,8 @@ if config.DONOR_CHANNEL_ID:
             )
             return
 
+        await message.response.defer()
+
         if provided_emoji and discord_emoji.to_discord(provided_emoji.strip(), get_all=False, put_colons=False):
             user.emoji = provided_emoji.strip()
 
