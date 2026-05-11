@@ -4223,7 +4223,7 @@ __Highlighted Stat__
     if person_id.id == message.user.id:
         btn = Button(emoji="📝", label="Edit", style=ButtonStyle.blurple)
         btn.callback = edit_profile
-        view.add_item(btn)
+        view.add_item(ActionRow(btn))
 
     await message.followup.send(view=view)
 
