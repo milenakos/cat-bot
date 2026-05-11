@@ -4050,27 +4050,34 @@ async def gen_inventory(message, person_id):
     if len(cat_desc) == 0:
         cat_desc = f"u hav no cats {get_emoji('cat_cry')}"
 
-    if user.image.startswith("https://cdn.discordapp.com/attachments/"):
-        profile_image = Thumbnail(user.image)
-    else:
-        profile_image = None
-
-    section = Section(
-        f"## {emoji_prefix}{person_id.name.replace('_', r'\_')}",
-        f"""{highlighted_stat[1]} {highlighted_stat[2]}
-{get_emoji("ach")} Achievements: {unlocked}/{total_achs}{minus_achs}
-⬆️ Cattlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)
-{get_emoji("staring_cat")} Cats: {total:,}, Value: {round(valuenum):,}
-{get_emoji("prism")} Prisms: {prism_list} ({prism_boost}%)\n\n{cat_desc}""",
-        profile_image,
-    )
-
     if me and (len(news_list) > len(user.news_state.strip()) or "0" in user.news_state.strip()[-4:]):
         has_news = "You have unread news! /news"
     else:
         has_news = None
 
-    embedVar = Container(has_news, section, cat_desc, accent_color=discord.Colour.from_str(color))
+    things = f"""{highlighted_stat[1]} {highlighted_stat[2]}
+{get_emoji("ach")} Achievements: {unlocked}/{total_achs}{minus_achs}
+⬆️ Cattlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)
+{get_emoji("staring_cat")} Cats: {total:,}, Value: {round(valuenum):,}
+{get_emoji("prism")} Prisms: {prism_list} ({prism_boost}%)"""
+
+    username = f"## {emoji_prefix}{person_id.name.replace('_', r'\_')}"
+
+    if user.image.startswith("https://cdn.discordapp.com/attachments/"):
+        embedVar = Container(
+            has_news,
+            Section(username, things, Thumbnail(user.image)),
+            cat_desc,
+            accent_color=discord.Colour.from_str(color),
+        )
+    else:
+        embedVar = Container(
+            has_news,
+            username,
+            things,
+            cat_desc,
+            accent_color=discord.Colour.from_str(color),
+        )
 
     give_achs = []
     if me:
