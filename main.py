@@ -4024,12 +4024,6 @@ async def gen_inventory(message, person_id):
                 highlighted_stat = stat
                 break
 
-    embedVar = discord.Embed(
-        title=f"{emoji_prefix}{person_id.name.replace('_', r'\_')}",
-        description=f"{highlighted_stat[1]} {highlighted_stat[2]}\n{get_emoji('ach')} Achievements: {unlocked}/{total_achs}{minus_achs}\n⬆️ Cattlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)",
-        color=discord.Colour.from_str(color),
-    )
-
     debt = False
     give_collector = True
     total = 0
@@ -4056,18 +4050,31 @@ async def gen_inventory(message, person_id):
     if len(cat_desc) == 0:
         cat_desc = f"u hav no cats {get_emoji('cat_cry')}"
 
-    if embedVar.description:
-        embedVar.description += f"\n{get_emoji('staring_cat')} Cats: {total:,}, Value: {round(valuenum):,}\n{get_emoji('prism')} Prisms: {prism_list} ({prism_boost}%)\n\n{cat_desc}"
-
     if user.image.startswith("https://cdn.discordapp.com/attachments/"):
-        embedVar.set_thumbnail(url=user.image)
+        accessory = Thumbnail(user.image)
+    else:
+        accessory = None
+
+    section = Section(
+        f"## {emoji_prefix}{person_id.name.replace('_', r'\_')}",
+        f"""{highlighted_stat[1]} {highlighted_stat[2]}
+{get_emoji("ach")} Achievements: {unlocked}/{total_achs}{minus_achs}
+⬆️ Cattlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)
+{get_emoji("staring_cat")} Cats: {total:,}, Value: {round(valuenum):,}
+{get_emoji("prism")} Prisms: {prism_list} ({prism_boost}%)\n\n{cat_desc}""",
+        accessory=accessory,
+    )
+
+    if me and (len(news_list) > len(user.news_state.strip()) or "0" in user.news_state.strip()[-4:]):
+        has_news = "You have unread news! /news"
+    else:
+        has_news = None
+
+    embedVar = Container(has_news, section, cat_desc, color=discord.Colour.from_str(color))
 
     give_achs = []
     if me:
         # give some aches if we are vieweing our own inventory
-        if len(news_list) > len(user.news_state.strip()) or "0" in user.news_state.strip()[-4:]:
-            embedVar.set_author(name="You have unread news! /news")
-
         if give_collector:
             give_achs.append("collecter")
 
@@ -4200,18 +4207,18 @@ __Highlighted Stat__
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-    embedVar, give_achs = await gen_inventory(message, person_id)
+    view = LayoutView(timeout=VIEW_TIMEOUT)
 
-    embedVar.set_footer(text=rain_shill)
+    embedVar, give_achs = await gen_inventory(message, person_id)
+    embedVar.add_item(TextDisplay(f"-# {rain_shill}"))
+    view.add_item(embedVar)
 
     if person_id.id == message.user.id:
-        view = View(timeout=VIEW_TIMEOUT)
         btn = Button(emoji="📝", label="Edit", style=ButtonStyle.blurple)
         btn.callback = edit_profile
         view.add_item(btn)
-        await message.followup.send(embed=embedVar, view=view)
-    else:
-        await message.followup.send(embed=embedVar)
+
+    await message.followup.send(view=view)
 
     for ach in give_achs:
         await achemb(message, ach, "followup")
@@ -4611,7 +4618,10 @@ if config.DONOR_CHANNEL_ID:
                 return
         await user.save()
         embedVar, _ = await gen_inventory(message, message.user)
-        await message.followup.send("Success! Here is a preview:", embed=embedVar, ephemeral=True)
+        view = LayoutView(timeout=1)
+        view.add_item(TextDisplay("Success! Here is a preview:"))
+        view.add_item(embedVar)
+        await message.followup.send(view=view, ephemeral=True)
 
     @bot.tree.command(description="(SUPPORTER) Bless random Cat Bot users with doubled cats!")
     async def bless(message: discord.Interaction):
@@ -4741,7 +4751,10 @@ if config.DONOR_CHANNEL_ID:
             user.image = msg.attachments[0].url
         await user.save()
         embedVar, _ = await gen_inventory(message, message.user)
-        await message.response.send_message("Success! Here is a preview:", embed=embedVar)
+        view = LayoutView(timeout=1)
+        view.add_item(TextDisplay("Success! Here is a preview:"))
+        view.add_item(embedVar)
+        await message.followup.send(view=view)
 
 
 @bot.tree.command(description="View and open packs")
@@ -10079,7 +10092,9 @@ class Container(discord.ui.Container):
                 children.append(chil)
 
         for child in children:
-            if isinstance(child, str):
+            if not child:
+                continue
+            elif isinstance(child, str):
                 if child == "===":
                     new_children.append(Separator())
                 else:
