@@ -4070,7 +4070,7 @@ async def gen_inventory(message, person_id):
     else:
         has_news = None
 
-    embedVar = Container(has_news, section, cat_desc, color=discord.Colour.from_str(color))
+    embedVar = Container(has_news, section, cat_desc, accent_color=discord.Colour.from_str(color))
 
     give_achs = []
     if me:
