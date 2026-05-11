@@ -4051,9 +4051,9 @@ async def gen_inventory(message, person_id):
         cat_desc = f"u hav no cats {get_emoji('cat_cry')}"
 
     if user.image.startswith("https://cdn.discordapp.com/attachments/"):
-        accessory = Thumbnail(user.image)
+        profile_image = Thumbnail(user.image)
     else:
-        accessory = None
+        profile_image = None
 
     section = Section(
         f"## {emoji_prefix}{person_id.name.replace('_', r'\_')}",
@@ -4062,7 +4062,7 @@ async def gen_inventory(message, person_id):
 ⬆️ Cattlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)
 {get_emoji("staring_cat")} Cats: {total:,}, Value: {round(valuenum):,}
 {get_emoji("prism")} Prisms: {prism_list} ({prism_boost}%)\n\n{cat_desc}""",
-        accessory,
+        profile_image,
     )
 
     if me and (len(news_list) > len(user.news_state.strip()) or "0" in user.news_state.strip()[-4:]):
