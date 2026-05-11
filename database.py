@@ -36,7 +36,7 @@ class Profile(catpg.Model):
         "cat_Good",
         "cat_Rare",
         "cat_Wild",
-        "cat_Baby",
+        "cat_Gremlin",
         "cat_Epic",
         "cat_Sus",
         "cat_Brave",

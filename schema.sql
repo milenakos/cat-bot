@@ -109,7 +109,7 @@ CREATE TABLE public.profile (
     "cat_Good" integer DEFAULT 0,
     "cat_Rare" integer DEFAULT 0,
     "cat_Wild" integer DEFAULT 0,
-    "cat_Baby" integer DEFAULT 0,
+    "cat_Gremlin" integer DEFAULT 0,
     "cat_Epic" integer DEFAULT 0,
     "cat_Sus" integer DEFAULT 0,
     "cat_Brave" integer DEFAULT 0,

@@ -65,7 +65,7 @@ type_dict = {
     "Good": 500,
     "Rare": 350,
     "Wild": 275,
-    "Baby": 230,
+    "Gremlin": 230,
     "Epic": 200,
     "Sus": 175,
     "Brave": 150,
@@ -426,7 +426,7 @@ news_list = [
     {"title": "Cat Bot Stocks", "emoji": "📈"},
     {"title": "PackOrRain Event [ended]", "emoji": "🔥"},
     {"title": "200,000 servers giveaway [ended]", "emoji": "insane"},
-    {"title": "Cat Bot's 4th Birthday!", "emoji": "b_babycat"},
+    {"title": "Cat Bot's 4th Birthday!", "emoji": "b_gremlincat"},
     {"title": "Cat Bot Plush (really)", "emoji": "📦"},
 ]
 
@@ -2052,17 +2052,18 @@ async def on_message(message: discord.Message):
                                 partial_type = v
                                 break
 
-                        if not partial_type and "thetrashcellcat" in catchcontents:
-                            partial_type = "trashcat"
-                            le_emoji = "Trash"
-                        else:
-                            if not partial_type:
-                                return
-
-                            for i in cattypes:
-                                if i.lower() in partial_type:
-                                    le_emoji = i
-                                    break
+                        if not partial_type:
+                            if "thetrashcellcat" in catchcontents:
+                                partial_type = "trashcat"
+                                le_emoji = "Trash"
+                            elif "babycat" in catchcontents:
+                                partial_type = "gremlincat"
+                                le_emoji = "Gremlin"
+                            else:
+                                for i in cattypes:
+                                    if i.lower() in partial_type:
+                                        le_emoji = i
+                                        break
                 except Exception:
                     try:
                         await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
@@ -3252,14 +3253,14 @@ ummm good luck and let the line go up!""",
             await interaction.edit_original_response(view=view)
         elif news_id == 18:
             embed = Container(
-                f"## {get_emoji('b_babycat')} It's Cat Bot's 4th birthday!!",
+                f"## {get_emoji('b_gremlincat')} It's Cat Bot's 4th birthday!!",
                 Section(
-                    f"### {get_emoji('b_babycat')} Baby cat becomes an adult 🥳",
+                    f"### {get_emoji('b_gremlincat')} Baby cat becomes an adult 🥳",
                     "Help decide Baby cat's new name via a poll in our [Discord server](https://discord.com/channels/966586000417619998/1021844042654417017)!",
                     Button(label="Vote!", url="https://discord.com/channels/966586000417619998/1021844042654417017"),
                 ),
                 f"### {get_emoji('birthdaypack')} Birthday Packs [ended]",
-                f"For the next 5 days, you will get a {get_emoji('birthdaypack')} Birthday Pack for every {get_emoji('b_babycat')} Baby cat you catch!\nCollect 10 of them to get ☔ **2 free Rain Minutes**!",
+                f"For the next 5 days, you will get a {get_emoji('birthdaypack')} Birthday Pack for every {get_emoji('b_gremlincat')} Baby cat you catch!\nCollect 10 of them to get ☔ **2 free Rain Minutes**!",
                 Section(
                     "### 🎨 Birthday Art Contest",
                     "Join our [Discord server](https://discord.gg/staring) to participate in the Birthday Art Contest! 3 winners will get ☔ **100 Rain Minutes** each.",
@@ -9890,7 +9891,7 @@ async def do_vote(user: User, created_at: float):
             async with session.get("https://api.preproduct.io/api/preproducts/9006200488092.json") as response:
                 data = await response.json()
                 pledges = data["sales_actual"]
-    except Exception as e:
+    except Exception:
         pledges = "???"
 
     embed = discord.Embed(
