@@ -7011,7 +7011,7 @@ async def cat(message: discord.Interaction, cat_type: Optional[str]):
         await message.response.send_message("you dont have that cat", ephemeral=True)
         return
 
-    image = f"images/spawn/{cat_type.lower()}_cat.png" if cat_type else "images/cat.png"
+    image = f"images/spawn/{cat_type.lower()}_cat.webp" if cat_type else "images/cat.png"
     file = discord.File(image, filename=image)
     await message.response.send_message(file=file)
 
