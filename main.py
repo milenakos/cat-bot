@@ -4062,7 +4062,7 @@ async def gen_inventory(message, person_id):
 ⬆️ Cattlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)
 {get_emoji("staring_cat")} Cats: {total:,}, Value: {round(valuenum):,}
 {get_emoji("prism")} Prisms: {prism_list} ({prism_boost}%)\n\n{cat_desc}""",
-        accessory=accessory,
+        accessory,
     )
 
     if me and (len(news_list) > len(user.news_state.strip()) or "0" in user.news_state.strip()[-4:]):
@@ -10113,6 +10113,8 @@ class Section(discord.ui.Section):
             new_children = []
 
             for child in children:
+                if not child:
+                    continue
                 if isinstance(child, Button) or isinstance(child, Thumbnail):
                     kwargs["accessory"] = child
                 else:
