@@ -1323,7 +1323,7 @@ async def background_loop():
             async with session.get("https://api.preproduct.io/api/preproducts/9006200488092.json") as response:
                 data = await response.json()
                 pledges = data["sales_actual"]
-                await bot.change_presence(activity=discord.CustomActivity(name=f"📦 {pledges}/200 /plush ({len(bot.guilds):,} servers)"))
+                await bot.change_presence(activity=discord.CustomActivity(name=f"📦 /plush ({len(bot.guilds):,} servers)"))
     except Exception:
         await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
@@ -3280,21 +3280,13 @@ ummm good luck and let the line go up!""",
             view.add_item(back_row)
             await interaction.edit_original_response(view=view)
         elif news_id == 19:
-            async with aiohttp.ClientSession() as session:
-                async with session.get("https://api.preproduct.io/api/preproducts/9006200488092.json") as response:
-                    data = await response.json()
-                    pledges = data["sales_actual"]
-
             view.add_item(
                 Container(
                     "## Cat Bot Plush Makeship Petition",
-                    "**[Pledge now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**",
-                    "- If we get 200 pledges, it will become real and you will be charged the rest of the price later. There will also be another chance to buy it for full price later.",
-                    "- If we fail to get 200 pledges, you will get a full refund around May 16-21.",
+                    "**[Pre-order now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**",
                     "===",
-                    "### Everyone who pledges will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
+                    "### Everyone who pre-orders will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
                     "===",
-                    f"**Current progress**: {pledges}/200 pledges (time ends <t:1778785200:R>)",
                     discord.ui.MediaGallery(discord.MediaGalleryItem("https://f.minkos.lol/plush.png")),
                     "===",
                     Button(label="Go", url="https://www.makeship.com/petitions/cat-bot-plush"),
@@ -4439,22 +4431,13 @@ async def plushbadge(message: discord.Interaction, proof: discord.Attachment):
 
 @bot.tree.command(description="LIMITED TIME CAT BOT PLUSH")
 async def plush(message: discord.Interaction):
-    async with aiohttp.ClientSession() as session:
-        async with session.get("https://api.preproduct.io/api/preproducts/9006200488092.json") as response:
-            data = await response.json()
-            pledges = data["sales_actual"]
-
     view = LayoutView(timeout=1)
     view.add_item(
         Container(
             "## Cat Bot Plush Makeship Petition",
-            "**[Pledge now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**",
-            "- If we get 200 pledges, it will become real and you will be charged the rest of the price later. There will also be another chance to buy it for full price later.",
-            "- If we fail to get 200 pledges, you will get a full refund around May 16-21.",
+            "**[Pre-order now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**",
+            "### Everyone who pre-orders will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
             "===",
-            "### Everyone who pledges will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
-            "===",
-            f"**Current progress**: {pledges}/200 pledges (time ends <t:1778785200:R>)",
             discord.ui.MediaGallery(discord.MediaGalleryItem("https://f.minkos.lol/plush.png")),
             "===",
             Button(label="Go", url="https://www.makeship.com/petitions/cat-bot-plush"),
@@ -9957,19 +9940,10 @@ async def do_vote(user: User, created_at: float):
     streak_top_position = await User.count("vote_streak > $1", user.vote_streak) + 1
     top_text = f" (top #{streak_top_position}!)" if streak_top_position < 1000 else ""
 
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://api.preproduct.io/api/preproducts/9006200488092.json") as response:
-                data = await response.json()
-                pledges = data["sales_actual"]
-    except Exception:
-        pledges = "???"
-
     embed = discord.Embed(
         title="Cat Bot Plush (Limited Time)",
-        description=f"""**[Pledge now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**
-Progress: {pledges}/200 (time ends <t:1778785200:R>)
-Everyone who pledges will also get ☔ **60 Rain Minutes** and a **badge**! Run `/plushbadge` to redeem.""",
+        description="""**[Pre-order now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**
+Everyone who pre-orders will also get ☔ **60 Rain Minutes** and a **badge**! Run `/plushbadge` to redeem.""",
         color=Colors.brown,
     ).set_thumbnail(url="https://f.minkos.lol/plush.png")
 
