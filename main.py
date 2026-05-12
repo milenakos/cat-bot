@@ -4426,7 +4426,7 @@ async def rain_end(message, channel, force_summary=None):
 
 
 @bot.tree.command(description="redeem plush badge")
-@discord.app_commands.describe(proof="screenshot of pledge confirmation (dont include any personal info)")
+@discord.app_commands.describe(proof="screenshot of pledge confirmation email (dont include any personal info)")
 async def plushbadge(message: discord.Interaction, proof: discord.Attachment):
     if proof and proof.content_type in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
         file = await proof.to_file()
