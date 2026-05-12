@@ -776,10 +776,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
 async def generate_quest(user: Profile, quest_type: str):
     while True:
         quest = random.choice(list(config.battle["quests"][quest_type].keys()))
-        if quest_type == "misc":
-            quest = "plush"
-            break
-        if quest in ["slots", "reminder"]:
+        if quest in ["slots", "reminder", "plush"]:
             # removed quests
             continue
         elif quest == "prism":
