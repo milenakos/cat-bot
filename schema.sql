@@ -377,7 +377,12 @@ CREATE TABLE public."user" (
     dms smallint DEFAULT 0,
     last_bakegg_send smallint DEFAULT 0,
     last_bakegg_get smallint DEFAULT 0,
-    queued_chef_pack boolean DEFAULT false
+    queued_chef_pack boolean DEFAULT false,
+    og_badge boolean DEFAULT false,
+    cataine_badge boolean DEFAULT false,
+    puzzle_badge boolean DEFAULT false,
+    plush_badge boolean DEFAULT false,
+    second_birthday_badge boolean DEFAULT false
 );
 
 ALTER TABLE public."user" OWNER TO cat_bot;

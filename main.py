@@ -117,6 +117,8 @@ stock_data = [
     {"name": "Rain", "ticker": "RAIN", "emoji": "☔", "amount": 10_000, "init_price": 40},
 ]
 
+badge_list = ["og_badge", "cataine_badge", "second_birthday_badge", "puzzle_badge", "plush_badge"]
+
 prism_names_start = [
     "Alpha",
     "Bravo",
@@ -291,7 +293,7 @@ class Colors:
 
 
 # rain shill message for footers
-rain_shill = "📦 Cat Bot Plush! Limited Time /plush"
+rain_shill = "📦 /plush ending soon - bonus 60m rain & badge!"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -426,8 +428,9 @@ news_list = [
     {"title": "Cat Bot Stocks", "emoji": "📈"},
     {"title": "PackOrRain Event [ended]", "emoji": "🔥"},
     {"title": "200,000 servers giveaway [ended]", "emoji": "insane"},
-    {"title": "Cat Bot's 4th Birthday!", "emoji": "b_gremlincat"},
+    {"title": "Cat Bot's 4th Birthday! [ended]", "emoji": "b_gremlincat"},
     {"title": "Cat Bot Plush (really)", "emoji": "📦"},
+    {"title": "Badges", "emoji": "🎖️"},
 ]
 
 achs = [
@@ -2362,7 +2365,7 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 5) == 0:
                     # shill rains
-                    suffix_string += f"\n📦 Cat Bot Plush! Limited Time </plush:{PLUSH_ID}>"
+                    suffix_string += f"\n📦 </plush:{PLUSH_ID}> ending soon - bonus 60m rain & badge!"
                 if random.randint(0, 19) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
@@ -3255,14 +3258,14 @@ ummm good luck and let the line go up!""",
             embed = Container(
                 f"## {get_emoji('b_gremlincat')} It's Cat Bot's 4th birthday!!",
                 Section(
-                    f"### {get_emoji('b_gremlincat')} Baby cat becomes an adult 🥳",
+                    f"### {get_emoji('b_gremlincat')} Baby cat becomes an adult 🥳 [ended]",
                     "Help decide Baby cat's new name via a poll in our [Discord server](https://discord.com/channels/966586000417619998/1021844042654417017)!",
                     Button(label="Vote!", url="https://discord.com/channels/966586000417619998/1021844042654417017"),
                 ),
                 f"### {get_emoji('birthdaypack')} Birthday Packs [ended]",
                 f"For the next 5 days, you will get a {get_emoji('birthdaypack')} Birthday Pack for every {get_emoji('b_gremlincat')} Baby cat you catch!\nCollect 10 of them to get ☔ **2 free Rain Minutes**!",
                 Section(
-                    "### 🎨 Birthday Art Contest",
+                    "### 🎨 Birthday Art Contest [ended]",
                     "Join our [Discord server](https://discord.gg/staring) to participate in the Birthday Art Contest! 3 winners will get ☔ **100 Rain Minutes** each.",
                     Button(label="Join the server", url="https://discord.gg/staring"),
                 ),
@@ -3289,11 +3292,32 @@ ummm good luck and let the line go up!""",
                     "- If we get 200 pledges, it will become real and you will be charged the rest of the price later. There will also be another chance to buy it for full price later.",
                     "- If we fail to get 200 pledges, you will get a full refund around May 16-21.",
                     "===",
+                    "### Everyone who pledges will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
+                    "===",
                     f"**Current progress**: {pledges}/200 pledges (time ends <t:1778785200:R>)",
                     discord.ui.MediaGallery(discord.MediaGalleryItem("https://f.minkos.lol/plush.png")),
                     "===",
                     Button(label="Go", url="https://www.makeship.com/petitions/cat-bot-plush"),
                     "-# <t:1777921200>",
+                )
+            )
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
+        elif news_id == 20:
+            view.add_item(
+                Container(
+                    "## 🎖️ Badges!",
+                    "have you ever wanted to flex that *you were there* but had no proof? well now you can! here are the badges i retroactively added:",
+                    f"""- {get_emoji("og_badge")} *OG Badge* - Interact with Cat Bot before it got verified (71 people)
+- {get_emoji("cataine_badge")} *Cataine Badge* - Defeat the Dog Mafia prior to Oct 13 2025 (4200 people)
+- {get_emoji("second_birthday_badge")} *Second Birthday Badge* - Join the Cat Bot Birthday Server on Apr 21 2024 (1708 people)
+- {get_emoji("puzzle_badge")} *Puzzle Badge* - Collect at least 25 puzzle pieces during 2025 Birthday event (8893 people)
+- {get_emoji("plush_badge")} *Plush Badge* - Pledge to the Cat Bot Plush campaign and run `/plushbadge` **ACTIVE NOW!**""",
+                    "speaking of it, the plush petition runs out very soon and we are like 70% there. to motivate you im going to give everyone who pledges ☔ **60 Rain Minutes** as well! so",
+                    Button(emoji="🙏", label="go pledge the plush", url="https://www.makeship.com/petitions/cat-bot-plush"),
+                    "-# june update will be hype, sry for all the shilling",
+                    "===",
+                    "-# <t:1778544574>",
                 )
             )
             view.add_item(back_row)
@@ -4063,10 +4087,20 @@ async def gen_inventory(message, person_id):
 
     username = f"## {emoji_prefix}{person_id.name.replace('_', r'\_')}"
 
+    badges = ""
+    for badge in badge_list:
+        if user[badge]:
+            badges += f"{get_emoji(badge)} "
+
+    if not badges:
+        badges = None
+    else:
+        badges = f"### {badges}"
+
     if user.image.startswith("https://cdn.discordapp.com/attachments/"):
         embedVar = Container(
             has_news,
-            Section(username, things, Thumbnail(user.image)),
+            Section(username, badges, things, Thumbnail(user.image)),
             cat_desc,
             accent_color=discord.Colour.from_str(color),
         )
@@ -4074,6 +4108,7 @@ async def gen_inventory(message, person_id):
         embedVar = Container(
             has_news,
             username,
+            badges,
             things,
             cat_desc,
             accent_color=discord.Colour.from_str(color),
@@ -4390,6 +4425,18 @@ async def rain_end(message, channel, force_summary=None):
             await api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites)
 
 
+@bot.tree.command(description="redeem plush badge")
+@discord.app_commands.describe(proof="screenshot of pledge confirmation (dont include any personal info)")
+async def plushbadge(message: discord.Interaction, proof: discord.Attachment):
+    if proof and proof.content_type in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
+        file = await proof.to_file()
+        await (bot.get_partial_messageable(1503550891670634758)).send(message.user.id, file=file)
+        await message.response.send_message("✅ ok. you will get the badge after the pledge is confirmed. (under 24 hours)", ephemeral=True)
+    else:
+        await message.response.send_message("❌ invalid image. please upload a png, jpeg, gif, or webp image.", ephemeral=True)
+        return
+
+
 @bot.tree.command(description="LIMITED TIME CAT BOT PLUSH")
 async def plush(message: discord.Interaction):
     async with aiohttp.ClientSession() as session:
@@ -4404,6 +4451,8 @@ async def plush(message: discord.Interaction):
             "**[Pledge now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**",
             "- If we get 200 pledges, it will become real and you will be charged the rest of the price later. There will also be another chance to buy it for full price later.",
             "- If we fail to get 200 pledges, you will get a full refund around May 16-21.",
+            "===",
+            "### Everyone who pledges will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
             "===",
             f"**Current progress**: {pledges}/200 pledges (time ends <t:1778785200:R>)",
             discord.ui.MediaGallery(discord.MediaGalleryItem("https://f.minkos.lol/plush.png")),
@@ -9918,7 +9967,9 @@ async def do_vote(user: User, created_at: float):
 
     embed = discord.Embed(
         title="Cat Bot Plush (Limited Time)",
-        description=f"**[Pledge now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**\nProgress: {pledges}/200 (time ends <t:1778785200:R>)",
+        description=f"""**[Pledge now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**
+Progress: {pledges}/200 (time ends <t:1778785200:R>)
+Everyone who pledges will also get ☔ **60 Rain Minutes** and a **badge**! Run `/plushbadge` to redeem.""",
         color=Colors.brown,
     ).set_thumbnail(url="https://f.minkos.lol/plush.png")
 
