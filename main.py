@@ -1318,14 +1318,7 @@ async def background_loop():
     reactions_ratelimit = {}
     catchcooldown = {}
     fakecooldown = {}
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://api.preproduct.io/api/preproducts/9006200488092.json") as response:
-                data = await response.json()
-                pledges = data["sales_actual"]
-                await bot.change_presence(activity=discord.CustomActivity(name=f"📦 /plush ({len(bot.guilds):,} servers)"))
-    except Exception:
-        await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
+    await bot.change_presence(activity=discord.CustomActivity(name=f"📦 /plush ({len(bot.guilds):,} servers)"))
 
     # temp_belated_storage cleanup
     # clean up anything older than 1 minute
@@ -3282,7 +3275,7 @@ ummm good luck and let the line go up!""",
         elif news_id == 19:
             view.add_item(
                 Container(
-                    "## Cat Bot Plush Makeship Petition",
+                    "## Cat Bot Plush",
                     "**[Pre-order now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**",
                     "===",
                     "### Everyone who pre-orders will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
@@ -3304,9 +3297,9 @@ ummm good luck and let the line go up!""",
 - {get_emoji("cataine_badge")} *Cataine Badge* - Defeat the Dog Mafia prior to Oct 13 2025 (4200 people)
 - {get_emoji("second_birthday_badge")} *Second Birthday Badge* - Join the Cat Bot Birthday Server on Apr 21 2024 (1708 people)
 - {get_emoji("puzzle_badge")} *Puzzle Badge* - Collect at least 25 puzzle pieces during 2025 Birthday event (8893 people)
-- {get_emoji("plush_badge")} *Plush Badge* - Pledge to the Cat Bot Plush campaign and run `/plushbadge` **ACTIVE NOW!**""",
-                    "speaking of it, the plush petition runs out very soon and we are like 70% there. to motivate you im going to give everyone who pledges ☔ **60 Rain Minutes** as well! so",
-                    Button(emoji="🙏", label="go pledge the plush", url="https://www.makeship.com/petitions/cat-bot-plush"),
+- {get_emoji("plush_badge")} *Plush Badge* - Pre-order the Cat Bot Plush and run `/plushbadge` **ACTIVE NOW!**""",
+                    "we hit the petition goal! i will give everyone who pre-orders (or already did) ☔ **60 Rain Minutes** as well! so",
+                    Button(emoji="🙏", label="go pre-order the plush", url="https://www.makeship.com/petitions/cat-bot-plush"),
                     "-# june update will be hype, sry for all the shilling",
                     "===",
                     "-# <t:1778544574>",
@@ -4434,7 +4427,7 @@ async def plush(message: discord.Interaction):
     view = LayoutView(timeout=1)
     view.add_item(
         Container(
-            "## Cat Bot Plush Makeship Petition",
+            "## Cat Bot Plush",
             "**[Pre-order now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**",
             "### Everyone who pre-orders will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
             "===",
