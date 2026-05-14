@@ -192,6 +192,13 @@ vote_button_texts = [
     "vote if cats > dogs",
     "you should vote for cat NOW!",
     "I'd vote if I were you",
+    "Voting only takes 30s :3",
+    "uwu pls vote~~",
+    "Why haven't you voted yet :(",
+    "Stay hydrated! and vote too",
+    "hello guys im the vote button",
+    "btw, voting is free",
+    "Cats are cute, voting is too",
 ]
 
 # various hints/fun facts
@@ -228,6 +235,9 @@ hints = [
     "By default, cats spawn 1-10 minutes apart",
     "View the last catch as well as the next one with /last",
     "Make sure to leave Cat Bot [a review on top.gg](<https://top.gg/bot/966695034340663367#reviews>)!",
+    "The oldest Cat Bot bug was solved by [just upgrading](<https://blog.minkos.lol/posts/ratelimits>)",
+    "Cat Bot won top.gg Labor of Love 2025 award!",
+    "The addition of Packs doubled Cat Bot's votes!",
 ]
 
 # laod the jsons
@@ -245,6 +255,7 @@ with open("facts.txt") as f:
 
 with open("fanhalo.txt") as f:
     fanhalo_list = f.read().split("\n")
+
 
 # convert achievement json to a few other things
 ach_names = ach_list.keys()
@@ -278,6 +289,34 @@ funny = [
     "you're only making me angrier",
     "why are you like this",
     "legends say you get something for clicking it 1000 times",
+    "get off me",
+    "ow stop it hurts",
+    "do you have nothing better to do?",
+    "i will bite you",
+    "whAT DO YOU WANT",
+    "you're wasting your time",
+    "want something?",
+    "The FitnessGram™ Pacer Test is a multistage aerobic capacity test that progressively gets more difficult as it continues. The 20 meter pacer test will begin in 30 seconds. Line up at the start. The running speed starts slowly, but gets faster each minute after you hear this signal. [beep] A single lap should be completed each time you hear this sound. [ding] Remember to run in a straight line, and run as long as possible. The second time you fail to complete a lap before the sound, your test is over. The test will begin on the word start. On your mark, get ready, start. ",
+    "you're annoying",
+    "did you know:",
+    "cats don't like this much attention",
+    "your time has come",
+    "why. genuenlingy why",
+    "i think we lost the plot",
+    "please do not the cat",
+    "your sphere lands far away from here",
+    "look behind you",
+    "ill take away your fingers",
+    "no you cant get free bobux",
+    "who do you think you are",
+    "could we not",
+    "hello 911 this person keeps poking me",
+    "i'm bad at math, sorry",
+    "here comes the sun",
+    "i'd rather deal with dogs than deal with you",
+    "oh no",
+    "*steals your left kidney*",
+    "meow",
 ]
 
 
