@@ -6927,7 +6927,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     if user1.battlepass < 3 and not user1.bp_history.strip().replace("0,0,0;", ""):
                         await interaction.response.send_message("you need to reach atleast cattlepass level 3 to trade packs.", ephemeral=True)
                         return
-                    if user1[f"pack_{pname.lower()}"] < int(value):
+                    if user1[f"pack_{pname.lower()}"] < int(value) + person1gives.get(pname, 0):
                         await interaction.response.send_message("you dont have enough packs", ephemeral=True)
                         return
                     new_val = person1gives.get(pname, 0) + int(value)
@@ -6940,7 +6940,7 @@ async def trade(message: discord.Interaction, person_id: discord.User):
                     if user2.battlepass < 3 and not user2.bp_history.strip().replace("0,0,0;", ""):
                         await interaction.response.send_message("you need to reach atleast cattlepass level 3 to trade packs.", ephemeral=True)
                         return
-                    if user2[f"pack_{pname.lower()}"] < int(value):
+                    if user2[f"pack_{pname.lower()}"] < int(value) + person2gives.get(pname, 0):
                         await interaction.response.send_message("you dont have enough packs", ephemeral=True)
                         return
                     new_val = person2gives.get(pname, 0) + int(value)
@@ -6956,8 +6956,9 @@ async def trade(message: discord.Interaction, person_id: discord.User):
             # handle rains
             if "rain" in self.cattype.value.lower():
                 user = await User.get_or_create(user_id=interaction.user.id)
+                already = person1gives.get("rains", 0) if self.currentuser == 1 else person2gives.get("rains", 0)
                 try:
-                    if user.rain_minutes < int(value) or int(value) < 1:
+                    if user.rain_minutes < int(value) + already or int(value) < 1:
                         await interaction.response.send_message("you dont have enough rains", ephemeral=True)
                         return
                 except Exception:
