@@ -293,7 +293,7 @@ class Colors:
 
 
 # rain shill message for footers
-rain_shill = "📦 /plush ending soon - bonus 60m rain & badge!"
+rain_shill = "☔ Get tons of cats /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -355,7 +355,6 @@ emojis = {}
 
 # for mentioning it in catch message, will be auto-fetched in on_ready()
 RAIN_ID = 1270470307102195752
-PLUSH_ID = 0
 
 # for dev commands, this is fetched in on_ready
 OWNER_ID = 553093932012011520
@@ -429,7 +428,7 @@ news_list = [
     {"title": "PackOrRain Event [ended]", "emoji": "🔥"},
     {"title": "200,000 servers giveaway [ended]", "emoji": "insane"},
     {"title": "Cat Bot's 4th Birthday! [ended]", "emoji": "b_gremlincat"},
-    {"title": "Cat Bot Plush (really)", "emoji": "📦"},
+    {"title": "Cat Bot Plush [ended]", "emoji": "📦"},
     {"title": "Badges", "emoji": "🎖️"},
 ]
 
@@ -1315,7 +1314,7 @@ async def background_loop():
     reactions_ratelimit = {}
     catchcooldown = {}
     fakecooldown = {}
-    await bot.change_presence(activity=discord.CustomActivity(name=f"📦 /plush ({len(bot.guilds):,} servers)"))
+    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
     # temp_belated_storage cleanup
     # clean up anything older than 1 minute
@@ -2355,7 +2354,7 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 5) == 0:
                     # shill rains
-                    suffix_string += f"\n📦 </plush:{PLUSH_ID}> ending soon - bonus 60m rain & badge!"
+                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
                 if random.randint(0, 19) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
@@ -3272,14 +3271,10 @@ ummm good luck and let the line go up!""",
         elif news_id == 19:
             view.add_item(
                 Container(
-                    "## Cat Bot Plush",
-                    "**[Pre-order now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**",
+                    "## Cat Bot Plush [ended]",
+                    "~~[Pre-order now for $2!](https://www.makeship.com/petitions/cat-bot-plush)~~",
+                    "Everyone who pre-ordered will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
                     "===",
-                    "### Everyone who pre-orders will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
-                    "===",
-                    discord.ui.MediaGallery(discord.MediaGalleryItem("https://f.minkos.lol/plush.png")),
-                    "===",
-                    Button(label="Go", url="https://www.makeship.com/petitions/cat-bot-plush"),
                     "-# <t:1777921200>",
                 )
             )
@@ -3294,9 +3289,8 @@ ummm good luck and let the line go up!""",
 - {get_emoji("cataine_badge")} *Cataine Badge* - Defeat the Dog Mafia prior to Oct 13 2025 (4200 people)
 - {get_emoji("second_birthday_badge")} *Second Birthday Badge* - Join the Cat Bot Birthday Server on Apr 21 2024 (1708 people)
 - {get_emoji("puzzle_badge")} *Puzzle Badge* - Collect at least 25 puzzle pieces during 2025 Birthday event (8893 people)
-- {get_emoji("plush_badge")} *Plush Badge* - Pre-order the Cat Bot Plush and run `/plushbadge` **ACTIVE NOW!**""",
+- {get_emoji("plush_badge")} *Plush Badge* - Pre-order the Cat Bot Plush and run `/plushbadge`""",
                     "we hit the petition goal! i will give everyone who pre-orders (or already did) ☔ **60 Rain Minutes** as well! so",
-                    Button(emoji="🙏", label="go pre-order the plush", url="https://www.makeship.com/petitions/cat-bot-plush"),
                     "-# june update will be hype, sry for all the shilling",
                     "===",
                     "-# <t:1778544574>",
@@ -4424,13 +4418,9 @@ async def plush(message: discord.Interaction):
     view = LayoutView(timeout=1)
     view.add_item(
         Container(
-            "## Cat Bot Plush",
-            "**[Pre-order now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**",
-            "### Everyone who pre-orders will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
-            "===",
-            discord.ui.MediaGallery(discord.MediaGalleryItem("https://f.minkos.lol/plush.png")),
-            "===",
-            Button(label="Go", url="https://www.makeship.com/petitions/cat-bot-plush"),
+            "## Cat Bot Plush [ended]",
+            "~~[Pre-order now for $2!](https://www.makeship.com/petitions/cat-bot-plush)~~",
+            "Everyone who pre-ordered will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
         )
     )
     await message.response.send_message(view=view)
@@ -9933,13 +9923,6 @@ async def do_vote(user: User, created_at: float):
     streak_top_position = await User.count("vote_streak > $1", user.vote_streak) + 1
     top_text = f" (top #{streak_top_position}!)" if streak_top_position < 1000 else ""
 
-    embed = discord.Embed(
-        title="Cat Bot Plush (Limited Time)",
-        description="""**[Pre-order now for $2!](https://www.makeship.com/petitions/cat-bot-plush)**
-Everyone who pre-orders will also get ☔ **60 Rain Minutes** and a **badge**! Run `/plushbadge` to redeem.""",
-        color=Colors.brown,
-    ).set_thumbnail(url="https://f.minkos.lol/plush.png")
-
     try:
         await channeley.send(
             "\n".join(
@@ -9950,8 +9933,7 @@ Everyone who pre-orders will also get ☔ **60 Rain Minutes** and a **badge**! R
                     f":fire: **Streak:** {user.vote_streak:,}{top_text} expires <t:{int(created_at) + extend_time * 3600}:R>{freeze_note}",
                     f"{streak_progress}",
                 ]
-            ),
-            embed=embed,
+            )
         )
 
         logging.debug("User voted, streak %d", user.vote_streak)
@@ -10008,7 +9990,7 @@ async def on_interaction(ctx):
 
 
 async def setup(bot2):
-    global bot, RAIN_ID, PLUSH_ID, vote_server
+    global bot, RAIN_ID, vote_server
 
     for command in bot.tree.walk_commands():
         # copy all the commands
@@ -10050,8 +10032,6 @@ async def setup(bot2):
     for i in app_commands:
         if i.name == "rain":
             RAIN_ID = i.id
-        if i.name == "plush":
-            PLUSH_ID = i.id
 
     if bot.is_ready() and not on_ready_debounce:
         await on_ready()
