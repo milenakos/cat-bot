@@ -424,28 +424,29 @@ async def check_channel_setupped(guild: Server, channel: discord.TextChannel) ->
 
 # news stuff
 news_list = [
-    {"title": "Cat Bot Survey - win rains!", "emoji": "📜"},
-    {"title": "New Cat Rains perks!", "emoji": "✨"},
-    {"title": "Cat Bot Christmas 2024", "emoji": "🎅"},
-    {"title": "Cattlepass Update", "emoji": "⬆️"},
-    {"title": "Packs!", "emoji": "goldpack"},
-    {"title": "Message from CEO of Cat Bot", "emoji": "finecat"},
-    {"title": "Cat Bot Turns 3", "emoji": "🥳"},
-    {"title": "100,000 SERVERS WHAT", "emoji": "🎉"},
-    {"title": "Regarding recent instabilities", "emoji": "🗒️"},
-    {"title": "cat bot reached #5 on top.gg", "emoji": "yippee"},
-    {"title": "top.gg awards (outdated)", "emoji": "🏆"},
-    {"title": "Welcome to the Cat Mafia", "emoji": "catnip"},
-    {"title": "vote for cat bot as finalist in top.gg awards", "emoji": "❤️"},
-    {"title": "Cat Bot Christmas 2025", "emoji": "christmaspack"},
-    {"title": "Happy Valentine's!", "emoji": "💞"},
-    {"title": "Cat Bot Stocks [outdated]", "emoji": "📈"},
-    {"title": "PackOrRain Event [ended]", "emoji": "🔥"},
-    {"title": "200,000 servers giveaway [ended]", "emoji": "insane"},
-    {"title": "Cat Bot's 4th Birthday! [ended]", "emoji": "b_gremlincat"},
-    {"title": "Cat Bot Plush [ended]", "emoji": "📦"},
-    {"title": "Badges", "emoji": "🎖️"},
+    {"title": "Cat Bot Survey - win rains!", "emoji": "📜", "active": False},
+    {"title": "New Cat Rains perks!", "emoji": "✨", "active": False},
+    {"title": "Cat Bot Christmas 2024", "emoji": "🎅", "active": False},
+    {"title": "Cattlepass Update", "emoji": "⬆️", "active": True},
+    {"title": "Packs!", "emoji": "goldpack", "active": True},
+    {"title": "Message from CEO of Cat Bot", "emoji": "finecat", "active": False},
+    {"title": "Cat Bot Turns 3", "emoji": "🥳", "active": False},
+    {"title": "100,000 SERVERS WHAT", "emoji": "🎉", "active": False},
+    {"title": "Regarding recent instabilities", "emoji": "🗒️", "active": False},
+    {"title": "cat bot reached #5 on top.gg", "emoji": "yippee", "active": False},
+    {"title": "top.gg awards", "emoji": "🏆", "active": False},
+    {"title": "Welcome to the Cat Mafia", "emoji": "catnip", "active": True},
+    {"title": "vote for cat bot as finalist in top.gg awards", "emoji": "❤️", "active": False},
+    {"title": "Cat Bot Christmas 2025", "emoji": "christmaspack", "active": False},
+    {"title": "Happy Valentine's!", "emoji": "💞", "active": False},
+    {"title": "Cat Bot Stocks", "emoji": "📈", "active": False},
+    {"title": "PackOrRain Event", "emoji": "🔥", "active": False},
+    {"title": "200,000 servers giveaway", "emoji": "insane", "active": False},
+    {"title": "Cat Bot's 4th Birthday!", "emoji": "b_gremlincat", "active": False},
+    {"title": "Cat Bot Plush", "emoji": "📦", "active": False},
+    {"title": "Badges", "emoji": "🎖️", "active": True},
 ]
+last_active_article = [k for k, v in enumerate(news_list) if v["active"]][-1]
 
 achs = [
     ["cat?", "startswith", "???"],
@@ -3196,6 +3197,7 @@ You will be able to collect them until <t:1771437600> using 2 methods:
         nonlocal buttons
         await user.refresh_from_db()
         buttons = []
+        active_buttons = []
         current_state = user.news_state.strip()
         for num, article in enumerate(news_list):
             try:
@@ -3209,7 +3211,11 @@ You will be able to collect them until <t:1771437600> using 2 methods:
                 style=ButtonStyle.green if not have_read_this else ButtonStyle.gray,
             )
             button.callback = send_news
-            buttons.append(button)
+            if article["active"]:
+                active_buttons.append(button)
+            else:
+                buttons.append(button)
+        buttons.extend(active_buttons)
         buttons = buttons[::-1]  # reverse the list so the first button is the most recent article
 
     await regen_buttons()
@@ -3936,7 +3942,7 @@ async def gen_inventory(message, person_id):
     if len(cat_desc) == 0:
         cat_desc = f"u hav no cats {get_emoji('cat_cry')}"
 
-    if me and (len(news_list) > len(user.news_state.strip()) or "0" in user.news_state.strip()[-4:]):
+    if me and (len(news_list) > len(user.news_state.strip()) or user.news_state.strip()[last_active_article] == "0"):
         has_news = "You have unread news! /news"
     else:
         has_news = None
@@ -5078,7 +5084,7 @@ async def battlepass(message: discord.Interaction):
         button.callback = toggle_reminders
         view.add_item(button)
 
-        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state.strip()[-4:]:
+        if len(news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
             embedVar.set_author(name="You have unread news! /news")
 
         if first:
@@ -8306,7 +8312,7 @@ async def achievements(message: discord.Interaction):
         ).set_footer(text=rain_shill)
 
         global_user = await User.get_or_create(user_id=message.user.id)
-        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state.strip()[-4:]:
+        if len(news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
             newembed.set_author(name="You have unread news! /news")
 
         for k, v in ach_list.items():
@@ -8719,7 +8725,7 @@ async def leaderboards(
 
         global_user = await User.get_or_create(user_id=message.user.id)
 
-        if len(news_list) > len(global_user.news_state.strip()) or "0" in global_user.news_state.strip()[-4:]:
+        if len(news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
             embedVar.set_author(name=f"{message.user} has unread news! /news")
 
         # handle funny buttons
