@@ -1955,11 +1955,11 @@ async def on_message(message: discord.Message):
                             elif "babycat" in catchcontents:
                                 partial_type = "gremlincat"
                                 le_emoji = "Gremlin"
-                            else:
-                                for i in cattypes:
-                                    if i.lower() in partial_type:
-                                        le_emoji = i
-                                        break
+                        else:
+                            for i in cattypes:
+                                if i.lower() in partial_type:
+                                    le_emoji = i
+                                    break
                 except Exception:
                     try:
                         await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
