@@ -75,19 +75,3 @@ class Reminder(catpg.Model):
 
 class Server(catpg.Model):
     _primary_key = "server_id"
-
-
-class Order(catpg.Model):
-    pass
-
-
-class PriceHistory(catpg.Model):
-    pass
-
-
-class PortfolioHistory(catpg.Model):
-    pass
-
-
-class Reward(catpg.Model):
-    _primary_key = "ticker"
