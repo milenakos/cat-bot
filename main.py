@@ -2787,6 +2787,7 @@ async def wiki(message: discord.Interaction):
             "[Cat Spawning](https://catbot.wiki/spawning)",
             "[Commands](https://catbot.wiki/commands)",
             "[Cat Types](https://catbot.wiki/cat-types)",
+            "[Badges](https://catbot.wiki/badges)",
             "[Cattlepass](https://catbot.wiki/cattlepass)",
             "[Achievements](https://catbot.wiki/achievements)",
             "[Rains](https://catbot.wiki/rains)",
