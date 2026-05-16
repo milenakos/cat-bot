@@ -2262,6 +2262,24 @@ async def on_message(message: discord.Message):
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
 
+                # sparkles
+                if --message.id % 10000000000 == 0:
+                    suffix_string += f"\n{get_emoji('staring_cat')} This message appears on __***0.00000001%***__ of catches!!!!!"
+                elif message.id % 1000000000 == 0:
+                    suffix_string += "\n💀 This message appears on ***0.0000001%*** of catches!!!!!"
+                elif message.id % 100000000 == 0:
+                    suffix_string += f"\n{get_emoji('insane')} This message appears on ***0.000001%*** of catches!!!"
+                elif message.id % 10000000 == 0:
+                    suffix_string += f"\n{get_emoji('rainbow_sparkles')} This message appears on **0.00001%** of catches!!!"
+                elif message.id % 1000000 == 0:
+                    suffix_string += "\n💫 This message appears on **0.0001%** of catches!"
+                elif message.id % 100000 == 0:
+                    suffix_string += "\n🌟 This message appears on *0.001%* of catches!"
+                elif message.id % 10000 == 0:
+                    suffix_string += "\n✨ This message appears on *0.01%* of catches."
+                elif message.id % 1000 == 0:
+                    suffix_string += "\n⭐ This message appears on 0.1% of catches."
+
                 custom_cough_strings = {
                     "Corrupt": "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!",
                     "eGirl": "{username} cowought {emoji} {type} cat~~ ^^\nYou-u now *blushes* hawe {count} cats of dat tywe~!!!\nthis fella was <3 cought in {time}!!!!",
