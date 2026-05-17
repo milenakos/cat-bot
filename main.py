@@ -107,6 +107,7 @@ pack_data = [
     {"name": "Diamond", "value": 860, "upgrade": 30, "totalvalue": 1200, "special": False},
     {"name": "Celestial", "value": 2000, "upgrade": 0, "totalvalue": 2000, "special": False},  # is that a madeline celeste reference????
 ]
+pack_names = [i["name"] for i in pack_data]
 
 badge_list = ["og_badge", "cataine_badge", "second_birthday_badge", "puzzle_badge", "plush_badge"]
 
@@ -5757,246 +5758,335 @@ async def gift(
 @bot.tree.command(description="Trade stuff!")
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="why would you need description")
-async def trade(message: discord.Interaction, person_id: discord.User):
-    person1 = message.user
-    person2 = person_id
+async def trade(message: discord.Interaction, other_user: discord.User):
+    class TradeUser:
+        def __init__(self, user: discord.User, profile: Profile, global_user: User):
+            self.user = user
+            self.profile = profile
+            self.global_user = global_user
+            self.accept = False
+            self.value = 0
 
-    blackhole = False
+            self.gives_cats = {}
+            self.gives_packs = {}
+            self.gives_rain = 0
+            self.gives_prisms = []
 
-    person1accept = False
-    person2accept = False
+            if user.id == bot.user.id:
+                self.gives_cats["eGirl"] = 9999999
+                self.value += (sum(type_dict.values()) / type_dict["eGirl"]) * 9999999
 
-    person1value = 0
-    person2value = 0
+    blackhole: bool = False
+    person1: TradeUser = TradeUser(
+        message.user,
+        await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id),
+        await User.get_or_create(user_id=message.user.id),
+    )
+    person2: TradeUser = TradeUser(
+        other_user,
+        await Profile.get_or_create(guild_id=message.guild.id, user_id=other_user.id),
+        await User.get_or_create(user_id=other_user.id),
+    )
 
-    person1gives = {}
-    person2gives = {}
-
-    user1 = await Profile.get_or_create(guild_id=message.guild.id, user_id=person1.id)
-    user2 = await Profile.get_or_create(guild_id=message.guild.id, user_id=person2.id)
-
-    if not bot.user:
-        return
-
-    # do the funny
-    if person2.id == bot.user.id:
-        person2gives["eGirl"] = 9999999
-
-    # this is the deny button code
-    async def denyb(interaction):
-        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, blackhole
-        if interaction.user != person1 and interaction.user != person2:
+    async def denyb(interaction: discord.Interaction):
+        nonlocal blackhole
+        if interaction.user not in [person1.user, person2.user]:
             await do_funny(interaction)
             return
 
-        await interaction.response.defer()
         blackhole = True
-        person1gives = {}
-        person2gives = {}
+        person1.accept = False
+        person2.accept = False
         try:
-            await interaction.edit_original_response(
-                content=f"{interaction.user.mention} has cancelled the trade.",
-                embed=None,
-                view=None,
-            )
+            await interaction.response.defer()
+            await interaction.edit_original_response(content=f"{interaction.user.mention} has cancelled the trade.", embed=None, view=None)
         except Exception:
             pass
 
-    # this is the accept button code
-    async def acceptb(interaction):
-        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, person1value, person2value, user1, user2, blackhole
-        if interaction.user != person1 and interaction.user != person2:
+    async def acceptb(interaction: discord.Interaction):
+        nonlocal blackhole
+        if interaction.user not in [person1.user, person2.user]:
             await do_funny(interaction)
             return
 
-        # clicking accept again would make you un-accept
-        if interaction.user == person1:
-            person1accept = not person1accept
-        elif interaction.user == person2:
-            person2accept = not person2accept
-
         await interaction.response.defer()
-        await update_trade_embed(interaction)
 
-        if person1accept and person2 == bot.user:
+        active_user = person1 if interaction.user == person1.user else person2
+        active_user.accept = not active_user.accept
+
+        if active_user == person1 and active_user.accept and person2.user == bot.user:
             await achemb(message, "desperate", "followup")
 
+        embed, view = await gen_embed()
+        await interaction.edit_original_response(embed=embed, view=view)
+
         if blackhole:
-            await update_trade_embed(interaction)
             return
 
-        if person1accept and person2accept:
+        if person1.accept and person2.accept:
+            # accepted!!
             blackhole = True
-            await user1.refresh_from_db()
-            await user2.refresh_from_db()
-            actual_user1 = await User.get_or_create(user_id=person1.id)
-            actual_user2 = await User.get_or_create(user_id=person2.id)
 
-            # check if we have enough things (person could have moved them during the trade)
-            error = False
-            person1prismgive = 0
-            person2prismgive = 0
-            for k, v in person1gives.items():
-                if k in prism_names:
-                    person1prismgive += 1
-                    prism = await Prism.get_or_none(guild_id=interaction.guild.id, name=k)
-                    if not prism or prism.user_id != person1.id:
-                        error = True
-                        break
-                    continue
-                elif k == "rains":
-                    if actual_user1.rain_minutes < v:
-                        error = True
-                        break
-                elif k in cattypes:
-                    if user1[f"cat_{k}"] < v:
-                        error = True
-                        break
-                elif user1[f"pack_{k.lower()}"] < v:
-                    error = True
-                    break
+            # verify
+            fail = False
+            for user in [person1, person2]:
+                await user.profile.refresh_from_db()
+                await user.global_user.refresh_from_db()
+                for item, amount in user.gives_cats.items():
+                    if user.profile[f"cat_{item}"] < amount:
+                        fail = f"You don't have enough {item} cats!"
+                for item, amount in user.gives_packs.items():
+                    if user.profile[f"pack_{item}"] < amount:
+                        fail = f"You don't have enough {item} packs!"
+                if user.global_user.rain_minutes < user.gives_rain:
+                    fail = "You don't have enough rain!"
+                for prism_name in user.gives_prisms:
+                    prism = await Prism.get_or_none(guild_id=interaction.guild.id, name=prism_name)
+                    if prism is None:
+                        fail = f"Prism {prism_name} not found!"
+                    elif prism.user_id != user.user.id:
+                        fail = f"You don't have the {prism_name} prism!"
 
-            for k, v in person2gives.items():
-                if k in prism_names:
-                    person2prismgive += 1
-                    prism = await Prism.get_or_none(guild_id=interaction.guild.id, name=k)
-                    if not prism or prism.user_id != person2.id:
-                        error = True
-                        break
-                    continue
-                elif k == "rains":
-                    if actual_user2.rain_minutes < v:
-                        error = True
-                        break
-                elif k in cattypes:
-                    if user2[f"cat_{k}"] < v:
-                        error = True
-                        break
-                elif user2[f"pack_{k.lower()}"] < v:
-                    error = True
-                    break
-
-            if error:
-                try:
-                    await interaction.edit_original_response(
-                        content="Uh oh - some of the cats/prisms/packs/rains disappeared while trade was happening",
-                        embed=None,
-                        view=None,
-                    )
-                except Exception:
-                    await interaction.followup.send("Uh oh - some of the cats/prisms/packs/rains disappeared while trade was happening")
+            if fail:
+                await interaction.edit_original_response(content=fail, embed=None, view=None)
                 return
 
             # exchange
             cat_count = 0
-            for k, v in person1gives.items():
-                if k in prism_names:
-                    move_prism = await Prism.get_or_none(guild_id=message.guild.id, name=k)
-                    move_prism.user_id = person2.id
-                    await move_prism.save()
-                elif k == "rains":
-                    actual_user1.rain_minutes -= v
-                    actual_user2.rain_minutes += v
+            for giver in [person1, person2]:
+                getter = person2 if giver == person1 else person1
+                for item, amount in giver.gives_cats.items():
+                    giver.profile[f"cat_{item}"] -= amount
+                    getter.profile[f"cat_{item}"] += amount
+                    cat_count += amount
+                for item, amount in giver.gives_packs.items():
+                    giver.profile[f"pack_{item.lower()}"] -= amount
+                    getter.profile[f"pack_{item.lower()}"] += amount
+                if giver.gives_rain:
+                    giver.global_user.rain_minutes -= giver.gives_rain
+                    getter.global_user.rain_minutes += giver.gives_rain
                     try:
                         ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
-                        await ch.send(f"{actual_user1.user_id} traded {v}m to {actual_user2.user_id}")
+                        await ch.send(f"{giver.user.id} traded {giver.gives_rain}m to {getter.user.id}")
                     except Exception:
                         pass
-                elif k in cattypes:
-                    cat_count += v
-                    user1[f"cat_{k}"] -= v
-                    user2[f"cat_{k}"] += v
-                else:
-                    user1[f"pack_{k.lower()}"] -= v
-                    user2[f"pack_{k.lower()}"] += v
+                for prism in giver.gives_prisms:
+                    prism = await Prism.get(guild_id=interaction.guild.id, name=prism)
+                    prism.user_id = getter.user.id
+                    await prism.save()
 
-            for k, v in person2gives.items():
-                if k in prism_names:
-                    move_prism = await Prism.get_or_none(guild_id=message.guild.id, name=k)
-                    move_prism.user_id = person1.id
-                    await move_prism.save()
-                elif k == "rains":
-                    actual_user2.rain_minutes -= v
-                    actual_user1.rain_minutes += v
-                    try:
-                        ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
-                        await ch.send(f"{actual_user2.user_id} traded {v}m to {actual_user1.user_id}")
-                    except Exception:
-                        pass
-                elif k in cattypes:
-                    cat_count += v
-                    user1[f"cat_{k}"] += v
-                    user2[f"cat_{k}"] -= v
-                else:
-                    user1[f"pack_{k.lower()}"] += v
-                    user2[f"pack_{k.lower()}"] -= v
+            person1.profile.cats_traded += cat_count
+            person2.profile.cats_traded += cat_count
+            person1.profile.trades_completed += 1
+            person2.profile.trades_completed += 1
 
-            user1.cats_traded += cat_count
-            user2.cats_traded += cat_count
-            user1.trades_completed += 1
-            user2.trades_completed += 1
-
-            await user1.save()
-            await user2.save()
-            await actual_user1.save()
-            await actual_user2.save()
+            await person1.profile.save()
+            await person2.profile.save()
+            await person1.global_user.save()
+            await person2.global_user.save()
 
             try:
                 await interaction.edit_original_response(content="Trade finished!", view=None)
             except Exception:
-                await interaction.followup.send()
+                await interaction.followup.send(content="Trade finished!", view=None)
 
             await achemb(message, "extrovert", "followup")
-            await achemb(message, "extrovert", "followup", person2)
+            await achemb(message, "extrovert", "followup", other_user)
 
             if cat_count >= 1000:
                 await achemb(message, "capitalism", "followup")
-                await achemb(message, "capitalism", "followup", person2)
+                await achemb(message, "capitalism", "followup", other_user)
 
-            if person2value + person1value == 0:
+            if person1.value + person2.value == 0:
                 await achemb(message, "absolutely_nothing", "followup")
-                await achemb(message, "absolutely_nothing", "followup", person2)
+                await achemb(message, "absolutely_nothing", "followup", other_user)
 
-            if person2value - person1value >= 100:
+            if person2.value - person1.value >= 100:
                 await achemb(message, "profit", "followup")
-            if person1value - person2value >= 100:
-                await achemb(message, "profit", "followup", person2)
+            if person1.value - person2.value >= 100:
+                await achemb(message, "profit", "followup", other_user)
 
-            if person1value > person2value:
+            if person1.value > person2.value:
                 await achemb(message, "scammed", "followup")
-            if person2value > person1value:
-                await achemb(message, "scammed", "followup", person2)
+            if person2.value > person1.value:
+                await achemb(message, "scammed", "followup", other_user)
 
-            if person1value == person2value and person1gives != person2gives:
+            if person1.value == person2.value and (
+                person1.gives_cats != person2.gives_cats or person1.gives_packs != person2.gives_packs or person1.gives_rain != person2.gives_rain
+            ):
                 await achemb(message, "perfectly_balanced", "followup")
-                await achemb(message, "perfectly_balanced", "followup", person2)
+                await achemb(message, "perfectly_balanced", "followup", other_user)
 
-            await progress(message, user1, "trade")
-            await progress(message, user2, "trade")
+            await progress(message, person1.profile, "trade")
+            await progress(message, person2.profile, "trade")
 
-    # add cat code
-    async def addb(interaction):
-        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
-        if interaction.user != person1 and interaction.user != person2:
-            await do_funny(interaction)
-            return
-
-        currentuser = 1 if interaction.user == person1 else 2
-
-        # all we really do is spawn the modal
-        modal = TradeModal(currentuser)
-        await interaction.response.send_modal(modal)
-
-    # this is ran like everywhere when you do anything
-    # it updates the embed
-    async def gen_embed():
-        nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives, blackhole, person1value, person2value
-
+    async def gen_embed() -> tuple[discord.Embed, View]:
         if blackhole:
             # no way thats fun
             await achemb(message, "blackhole", "followup")
-            await achemb(message, "blackhole", "followup", person2)
+            await achemb(message, "blackhole", "followup", other_user)
             return discord.Embed(color=Colors.brown, title="Blackhole", description="How Did We Get Here?"), None
+
+        async def selectb(interaction: discord.Interaction):
+            async def submitb(interaction2: discord.Interaction):
+                if selection == "cats":
+                    pre_cattype = modal.find_item("type").values[0].lower()
+                    amount = modal.find_item("amount").value
+
+                    try:
+                        amount = int(amount)
+                    except Exception:
+                        await interaction2.response.send_message("Amount must be an integer!", ephemeral=True)
+                        return
+
+                    cattype = {t.lower(): t for t in cattypes}.get(pre_cattype, None)
+                    if cattype is None:
+                        await interaction2.response.send_message("Invalid cat type!", ephemeral=True)
+                        return
+
+                    await active_user.profile.refresh_from_db()
+
+                    current = active_user.gives_cats.get(cattype, 0)
+                    if active_user.profile[f"cat_{cattype}"] < amount + current or current + amount < 0:
+                        await interaction2.response.send_message(f"You don't have enough {cattype} cats!", ephemeral=True)
+                        return
+
+                    if current + amount == 0:
+                        active_user.gives_cats.pop(cattype, None)
+                    else:
+                        active_user.gives_cats[cattype] = amount + current
+                        active_user.gives_cats = {k: active_user.gives_cats[k] for k in cattypes if k in active_user.gives_cats}
+                    active_user.value += (sum(type_dict.values()) / type_dict[cattype]) * amount
+                elif selection == "packs":
+                    packtype = modal.find_item("type").values[0].title()
+                    amount = modal.find_item("amount").value
+
+                    try:
+                        amount = int(amount)
+                    except Exception:
+                        await interaction2.response.send_message("Amount must be an integer!", ephemeral=True)
+                        return
+
+                    if packtype not in pack_names:
+                        await interaction2.response.send_message(f"Pack {packtype} not found!", ephemeral=True)
+                        return
+
+                    await active_user.profile.refresh_from_db()
+
+                    current = active_user.gives_packs.get(packtype, 0)
+                    if active_user.profile[f"pack_{packtype.lower()}"] < amount + current or current + amount < 0:
+                        await interaction2.response.send_message(f"You don't have enough {packtype} packs!", ephemeral=True)
+                        return
+
+                    if current + amount == 0:
+                        active_user.gives_packs.pop(packtype, None)
+                    else:
+                        active_user.gives_packs[packtype] = amount + current
+                        active_user.gives_packs = {k: active_user.gives_packs[k] for k in pack_names if k in active_user.gives_packs}
+                    active_user.value += sum([i["totalvalue"] if i["name"] == packtype else 0 for i in pack_data]) * amount
+                elif selection == "rain":
+                    amount = modal.find_item("amount").value
+
+                    try:
+                        amount = int(amount)
+                    except Exception:
+                        await interaction2.response.send_message("Amount must be an integer!", ephemeral=True)
+                        return
+
+                    await active_user.global_user.refresh_from_db()
+
+                    current = active_user.gives_rain
+                    if active_user.global_user.rain_minutes < amount + current or current + amount < 0:
+                        await interaction2.response.send_message("You don't have enough rain!", ephemeral=True)
+                        return
+
+                    active_user.gives_rain += amount
+                    active_user.value += 900 * amount
+                elif selection == "prisms":
+                    prism_elem = modal.find_item("type")
+
+                    if isinstance(prism_elem, discord.ui.Select):
+                        prism_name = prism_elem.values[0].title()
+                    else:
+                        prism_name = prism_elem.value.title()
+
+                    prism_name = prism_name.replace("X-Ray", "X-ray")
+
+                    if prism_name in active_user.gives_prisms:
+                        active_user.gives_prisms.remove(prism_name)
+                        active_user.value -= 6271
+                    else:
+                        prism = await Prism.get_or_none(guild_id=interaction2.guild.id, name=prism_name)
+
+                        if prism is None:
+                            await interaction2.response.send_message(f"Prism {prism_name} not found!", ephemeral=True)
+                            return
+                        if prism.user_id != active_user.user.id:
+                            await interaction2.response.send_message(f"You don't own the {prism_name} prism!", ephemeral=True)
+                            return
+
+                        active_user.gives_prisms.append(prism_name)
+                        order_index = {k: i for i, k in enumerate(prism_names)}
+                        active_user.gives_prisms.sort(key=lambda x: order_index.get(x, float("inf")))
+                        active_user.value += 6271
+
+                person1.accept = False
+                person2.accept = False
+
+                embed, view = await gen_embed()
+                await interaction2.response.defer()
+                await interaction.edit_original_response(embed=embed, view=view)
+
+            if interaction.user not in [person1.user, person2.user]:
+                await do_funny(interaction)
+                return
+
+            active_user = person1 if interaction.user == person1.user else person2
+            selection = select.values[0]
+            modal = Modal()
+            if selection == "cats":
+                modal.title = "Offer cats..."
+                options = []
+                await active_user.profile.refresh_from_db()
+                for cattype in cattypes:
+                    if active_user.profile[f"cat_{cattype}"] > 0:
+                        options.append(discord.SelectOption(label=cattype, emoji=get_emoji(f"{cattype.lower()}cat")))
+                if len(options) == 0:
+                    await interaction.response.send_message("You don't have any cats to offer!", ephemeral=True)
+                    return
+                modal.add_item(discord.ui.Label(text="Cat Type", component=discord.ui.Select(options=options, id="type")))
+                modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(default="1", min_length=1, id="amount")))
+            elif selection == "packs":
+                if active_user.profile.battlepass < 3 and not active_user.profile.bp_history.strip().replace("0,0,0;", ""):
+                    await interaction.response.send_message("you need to reach atleast cattlepass level 3 to trade packs.", ephemeral=True)
+                    return
+                modal.title = "Offer packs..."
+                options = []
+                await active_user.profile.refresh_from_db()
+                for pack in pack_names:
+                    if active_user.profile[f"pack_{pack.lower()}"] > 0:
+                        options.append(discord.SelectOption(label=pack, emoji=get_emoji(f"{pack.lower()}pack")))
+                if len(options) == 0:
+                    await interaction.response.send_message("You don't have any packs to offer!", ephemeral=True)
+                    return
+                modal.add_item(discord.ui.Label(text="Pack Type", component=discord.ui.Select(options=options, id="type")))
+                modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(default="1", min_length=1, id="amount")))
+            elif selection == "rain":
+                modal.title = "Offer rain..."
+                modal.add_item(discord.ui.Label(text="Rain Minutes", component=discord.ui.TextInput(default="1", min_length=1, id="amount")))
+            elif selection == "prisms":
+                modal.title = "Offer prisms..."
+                names = [prism.name async for prism in Prism.filter("user_id = $1 AND guild_id = $2 ORDER BY time ASC", active_user.user.id, message.guild.id)]
+                if len(names) <= 25:
+                    options = [discord.SelectOption(label=name, emoji=get_emoji("prism")) for name in names]
+                    modal.add_item(discord.ui.Label(text="Prism Type", component=discord.ui.Select(options=options, id="type")))
+                elif len(names) != 0:
+                    modal.add_item(discord.ui.Label(text="Prism Type", component=discord.ui.TextInput(placeholder="Alpha", id="type")))
+                else:
+                    await interaction.response.send_message("You don't have any prisms to offer!", ephemeral=True)
+                    return
+            modal.on_submit = submitb
+            await interaction.response.send_modal(modal)
 
         view = View(timeout=VIEW_TIMEOUT)
 
@@ -6006,254 +6096,55 @@ async def trade(message: discord.Interaction, person_id: discord.User):
         deny = Button(label="Deny", style=ButtonStyle.red)
         deny.callback = denyb
 
-        add = Button(label="Offer...", style=ButtonStyle.blurple)
-        add.callback = addb
+        options = [
+            discord.SelectOption(label="Cats", emoji=get_emoji("finecat"), value="cats"),
+            discord.SelectOption(label="Packs", emoji=get_emoji("goldpack"), value="packs"),
+            discord.SelectOption(label="Prisms", emoji=get_emoji("prism"), value="prisms"),
+            discord.SelectOption(label="Rain", emoji="☔", value="rain"),
+        ]
+
+        select = discord.ui.Select(placeholder="Offer...", options=options)
+        select.callback = selectb
 
         view.add_item(accept)
         view.add_item(deny)
-        view.add_item(add)
+        view.add_item(select)
 
-        person1name = person1.name.replace("_", "\\_")
-        person2name = person2.name.replace("_", "\\_")
-        coolembed = discord.Embed(
-            color=Colors.brown,
-            title=f"{person1name} and {person2name} trade",
-            description="no way",
-        )
+        coolembed = discord.Embed(color=Colors.brown, title="Trade")
 
         # a single field for one person
-        def field(personaccept, persongives, person, number):
-            nonlocal coolembed, person1value, person2value
-            icon = "⬜"
-            if personaccept:
-                icon = "✅"
-            valuestr = ""
-            valuenum = 0
-            total = 0
-            for k, v in persongives.items():
-                if v == 0:
-                    continue
-                if k in prism_names:
-                    # prisms
-                    valuestr += f"{get_emoji('prism')} {k}\n"
-                    for v2 in type_dict.values():
-                        valuenum += sum(type_dict.values()) / v2
-                elif k == "rains":
-                    # rains
-                    valuestr += f"☔ {v:,}m of Cat Rains\n"
-                    valuenum += 900 * v
-                elif k in cattypes:
-                    # cats
-                    valuenum += (sum(type_dict.values()) / type_dict[k]) * v
-                    total += v
-                    aicon = get_emoji(k.lower() + "cat")
-                    valuestr += f"{aicon} {k} {v:,}\n"
-                else:
-                    # packs
-                    valuenum += sum([i["totalvalue"] if i["name"] == k else 0 for i in pack_data]) * v
-                    aicon = get_emoji(k.lower() + "pack")
-                    valuestr += f"{aicon} {k} {v:,}\n"
-            if not valuestr:
-                valuestr = "Nothing offered!"
-            else:
-                valuestr += f"*Total value: {round(valuenum):,}\nTotal cats: {round(total):,}*"
-                if number == 1:
-                    person1value = round(valuenum)
-                else:
-                    person2value = round(valuenum)
-            personname = person.name.replace("_", "\\_")
-            coolembed.add_field(name=f"{icon} {personname}", inline=True, value=valuestr)
+        for tradeuser in [person1, person2]:
+            icon = "✅" if tradeuser.accept else "⬜"
+            offer_string = ""
 
-        field(person1accept, person1gives, person1, 1)
-        field(person2accept, person2gives, person2, 2)
+            total = 0
+            for cattype, amount in tradeuser.gives_cats.items():
+                total += amount
+                offer_string += f"{get_emoji(cattype.lower() + 'cat')} {cattype} {amount:,}\n"
+
+            for packtype, amount in tradeuser.gives_packs.items():
+                offer_string += f"{get_emoji(packtype.lower() + 'pack')} {packtype} {amount:,}\n"
+
+            for prism in tradeuser.gives_prisms:
+                offer_string += f"{get_emoji('prism')} {prism}\n"
+
+            if tradeuser.gives_rain:
+                offer_string += f"☔ {tradeuser.gives_rain:,}m of Cat Rains\n"
+
+            if not offer_string:
+                offer_string = "Nothing offered!"
+            else:
+                offer_string += f"*Total value: {round(tradeuser.value):,}\nTotal cats: {round(total):,}*"
+
+            personname = tradeuser.user.name.replace("_", "\\_")
+            coolembed.add_field(name=f"{icon} {personname}", inline=True, value=offer_string)
 
         return coolembed, view
 
-    # this is wrapper around gen_embed() to edit the mesage automatically
-    async def update_trade_embed(interaction):
-        embed, view = await gen_embed()
-        try:
-            await interaction.edit_original_response(embed=embed, view=view)
-        except Exception:
-            await achemb(message, "blackhole", "followup")
-            await achemb(message, "blackhole", "followup", person2)
-
-    # lets go add cats modal thats fun
-    class TradeModal(Modal):
-        def __init__(self, currentuser):
-            super().__init__(
-                title="Add to the trade",
-                timeout=VIEW_TIMEOUT,
-            )
-            self.currentuser = currentuser
-
-            self.cattype = TextInput(
-                label='Cat or Pack Type, Prism Name or "Rain"',
-                placeholder="Fine / Wooden / Alpha / Rain",
-            )
-            self.add_item(self.cattype)
-
-            self.amount = TextInput(label="Amount to offer", placeholder="1", required=False)
-            self.add_item(self.amount)
-
-        # this is ran when user submits
-        async def on_submit(self, interaction: discord.Interaction):
-            nonlocal person1, person2, person1accept, person2accept, person1gives, person2gives
-            value = self.amount.value if self.amount.value else 1
-            await user1.refresh_from_db()
-            await user2.refresh_from_db()
-
-            try:
-                if int(value) < 0:
-                    person1accept = False
-                    person2accept = False
-            except Exception:
-                await interaction.response.send_message("invalid amount", ephemeral=True)
-                return
-
-            # handle prisms
-            if (pname := " ".join(i.capitalize() for i in self.cattype.value.split())) in prism_names:
-                try:
-                    prism = await Prism.get_or_none(guild_id=interaction.guild.id, name=pname)
-                    if not prism:
-                        raise Exception
-                except Exception:
-                    await interaction.response.send_message("this prism doesnt exist", ephemeral=True)
-                    return
-                if prism.user_id != interaction.user.id:
-                    await interaction.response.send_message("this is not your prism", ephemeral=True)
-                    return
-                if (self.currentuser == 1 and pname in person1gives.keys()) or (self.currentuser == 2 and pname in person2gives.keys()):
-                    await interaction.response.send_message("you already added this prism", ephemeral=True)
-                    return
-
-                if self.currentuser == 1:
-                    person1gives[pname] = 1
-                else:
-                    person2gives[pname] = 1
-                await interaction.response.defer()
-                await update_trade_embed(interaction)
-                return
-
-            # handle packs
-            if self.cattype.value.capitalize() in [i["name"] for i in pack_data]:
-                pname = self.cattype.value.capitalize()
-                if self.currentuser == 1:
-                    if user1.battlepass < 3 and not user1.bp_history.strip().replace("0,0,0;", ""):
-                        await interaction.response.send_message("you need to reach atleast cattlepass level 3 to trade packs.", ephemeral=True)
-                        return
-                    if user1[f"pack_{pname.lower()}"] < int(value) + person1gives.get(pname, 0):
-                        await interaction.response.send_message("you dont have enough packs", ephemeral=True)
-                        return
-                    new_val = person1gives.get(pname, 0) + int(value)
-                    if new_val >= 0:
-                        person1gives[pname] = new_val
-                    else:
-                        await interaction.response.send_message("skibidi toilet", ephemeral=True)
-                        return
-                else:
-                    if user2.battlepass < 3 and not user2.bp_history.strip().replace("0,0,0;", ""):
-                        await interaction.response.send_message("you need to reach atleast cattlepass level 3 to trade packs.", ephemeral=True)
-                        return
-                    if user2[f"pack_{pname.lower()}"] < int(value) + person2gives.get(pname, 0):
-                        await interaction.response.send_message("you dont have enough packs", ephemeral=True)
-                        return
-                    new_val = person2gives.get(pname, 0) + int(value)
-                    if new_val >= 0:
-                        person2gives[pname] = new_val
-                    else:
-                        await interaction.response.send_message("skibidi toilet", ephemeral=True)
-                        return
-                await interaction.response.defer()
-                await update_trade_embed(interaction)
-                return
-
-            # handle rains
-            if "rain" in self.cattype.value.lower():
-                user = await User.get_or_create(user_id=interaction.user.id)
-                already = person1gives.get("rains", 0) if self.currentuser == 1 else person2gives.get("rains", 0)
-                try:
-                    if user.rain_minutes < int(value) + already or int(value) < 1:
-                        await interaction.response.send_message("you dont have enough rains", ephemeral=True)
-                        return
-                except Exception:
-                    await interaction.response.send_message("please enter a number for amount", ephemeral=True)
-                    return
-
-                if self.currentuser == 1:
-                    try:
-                        person1gives["rains"] += int(value)
-                    except Exception:
-                        person1gives["rains"] = int(value)
-                else:
-                    try:
-                        person2gives["rains"] += int(value)
-                    except Exception:
-                        person2gives["rains"] = int(value)
-                await interaction.response.defer()
-                await update_trade_embed(interaction)
-                return
-
-            lc_input = self.cattype.value.lower()
-
-            # loop through the cat types and find the correct one using lowercased user input.
-            cname = cattype_lc_dict.get(lc_input, None)
-
-            # if no cat type was found, the user input was invalid. as cname is still `None`
-            if cname is None:
-                await interaction.response.send_message("add a valid cat/pack/prism name 💀💀💀", ephemeral=True)
-                return
-
-            try:
-                if self.currentuser == 1:
-                    currset = person1gives[cname]
-                else:
-                    currset = person2gives[cname]
-            except Exception:
-                currset = 0
-
-            try:
-                if int(value) + currset < 0 or int(value) == 0:
-                    raise Exception
-            except Exception:
-                await interaction.response.send_message("plz number?", ephemeral=True)
-                return
-
-            if (self.currentuser == 1 and user1[f"cat_{cname}"] < int(value) + currset) or (
-                self.currentuser == 2 and user2[f"cat_{cname}"] < int(value) + currset
-            ):
-                await interaction.response.send_message(
-                    "hell naww dude you dont even have that many cats 💀💀💀",
-                    ephemeral=True,
-                )
-                return
-
-            # OKE SEEMS GOOD LETS ADD CATS TO THE TRADE
-            if self.currentuser == 1:
-                try:
-                    person1gives[cname] += int(value)
-                    if person1gives[cname] == 0:
-                        person1gives.pop(cname)
-                except Exception:
-                    person1gives[cname] = int(value)
-            else:
-                try:
-                    person2gives[cname] += int(value)
-                    if person2gives[cname] == 0:
-                        person2gives.pop(cname)
-                except Exception:
-                    person2gives[cname] = int(value)
-
-            await interaction.response.defer()
-            await update_trade_embed(interaction)
-
     embed, view = await gen_embed()
-    if not view:
-        await message.response.send_message(embed=embed)
-    else:
-        await message.response.send_message(person2.mention, embed=embed, view=view, allowed_mentions=discord.AllowedMentions(users=True))
+    await message.response.send_message(other_user.mention, embed=embed, view=view, allowed_mentions=discord.AllowedMentions(users=True))
 
-    if person1 == person2:
+    if message.user == other_user:
         await achemb(message, "introvert", "followup")
 
 
