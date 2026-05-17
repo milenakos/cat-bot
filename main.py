@@ -6055,7 +6055,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                                 value=cattype,
                                 label=f"{cattype} ({ca})",
                                 emoji=get_emoji(f"{cattype.lower()}cat"),
-                                description=f"{value} value",
+                                description=f"{round(value, 2)} value",
                             )
                         )
                 if len(options) == 0:
@@ -6078,7 +6078,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                                 value=pack,
                                 label=f"{pack} ({pa})",
                                 emoji=get_emoji(f"{pack.lower()}pack"),
-                                description=f"{value} value",
+                                description=f"{round(value, 2)} value",
                             )
                         )
                 if len(options) == 0:
