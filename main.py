@@ -6054,7 +6054,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     await interaction.response.send_message("You don't have any cats to offer!", ephemeral=True)
                     return
                 modal.add_item(discord.ui.Label(text="Cat Type", component=discord.ui.Select(options=options, id=67)))
-                modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(default="1", min_length=1, id=69)))
+                modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(placeholder="1", min_length=1, id=69)))
             elif selection == "packs":
                 if active_user.profile.battlepass < 3 and not active_user.profile.bp_history.strip().replace("0,0,0;", ""):
                     await interaction.response.send_message("you need to reach atleast cattlepass level 3 to trade packs.", ephemeral=True)
@@ -6069,10 +6069,10 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     await interaction.response.send_message("You don't have any packs to offer!", ephemeral=True)
                     return
                 modal.add_item(discord.ui.Label(text="Pack Type", component=discord.ui.Select(options=options, id=67)))
-                modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(default="1", min_length=1, id=69)))
+                modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(placeholder="1", min_length=1, id=69)))
             elif selection == "rain":
                 modal = Modal(title="Offer rain...")
-                modal.add_item(discord.ui.Label(text="Rain Minutes", component=discord.ui.TextInput(default="1", min_length=1, id=69)))
+                modal.add_item(discord.ui.Label(text="Rain Minutes", component=discord.ui.TextInput(placeholder="1", min_length=1, id=69)))
             elif selection == "prisms":
                 modal = Modal(title="Offer prisms...")
                 names = [prism.name async for prism in Prism.filter("user_id = $1 AND guild_id = $2 ORDER BY time ASC", active_user.user.id, message.guild.id)]
