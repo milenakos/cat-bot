@@ -2579,9 +2579,8 @@ async def on_message(message: discord.Message):
  try:
 {spaced}
  except Exception:
-  return traceback.format_exc()
-res = bot.loop.create_task(go(message, bot))
-if res: await message.reply(res)
+  await message.reply(traceback.format_exc())
+bot.loop.create_task(go(message, bot))
         """
 
         exec(code)
