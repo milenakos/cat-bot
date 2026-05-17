@@ -6043,9 +6043,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
 
             active_user = person1 if interaction.user == person1.user else person2
             selection = select.values[0]
-            modal = Modal()
             if selection == "cats":
-                modal.title = "Offer cats..."
+                modal = Modal(title="Offer cats...")
                 options = []
                 await active_user.profile.refresh_from_db()
                 for cattype in cattypes:
@@ -6060,7 +6059,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 if active_user.profile.battlepass < 3 and not active_user.profile.bp_history.strip().replace("0,0,0;", ""):
                     await interaction.response.send_message("you need to reach atleast cattlepass level 3 to trade packs.", ephemeral=True)
                     return
-                modal.title = "Offer packs..."
+                modal = Modal(title="Offer packs...")
                 options = []
                 await active_user.profile.refresh_from_db()
                 for pack in pack_names:
@@ -6072,10 +6071,10 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 modal.add_item(discord.ui.Label(text="Pack Type", component=discord.ui.Select(options=options, id="type")))
                 modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(default="1", min_length=1, id="amount")))
             elif selection == "rain":
-                modal.title = "Offer rain..."
+                modal = Modal(title="Offer rain...")
                 modal.add_item(discord.ui.Label(text="Rain Minutes", component=discord.ui.TextInput(default="1", min_length=1, id="amount")))
             elif selection == "prisms":
-                modal.title = "Offer prisms..."
+                modal = Modal(title="Offer prisms...")
                 names = [prism.name async for prism in Prism.filter("user_id = $1 AND guild_id = $2 ORDER BY time ASC", active_user.user.id, message.guild.id)]
                 if len(names) <= 25:
                     options = [discord.SelectOption(label=name, emoji=get_emoji("prism")) for name in names]
