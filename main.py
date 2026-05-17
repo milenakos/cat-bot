@@ -2568,27 +2568,22 @@ async def on_message(message: discord.Message):
                 pass
     if text.lower().startswith("cat!eval"):
         # complex eval, multi-line + async support
-        # requires the full `await message.channel.send(2+3)` to get the result
-
-        # async def go():
-        #  <stuff goes here>
-        #
-        # try:
-        #  bot.loop.create_task(go())
-        # except Exception:
-        #  await message.reply(traceback.format_exc())
-
         silly_billy = text[9:]
 
         spaced = ""
         for i in silly_billy.split("\n"):
             spaced += "  " + i + "\n"
 
-        intro = "async def go(message, bot):\n try:\n"
-        ending = "\n except Exception:\n  await message.reply(traceback.format_exc())\nbot.loop.create_task(go(message, bot))"
+        code = f"""async def go(message, bot):
+ try:
+{spaced}
+ except Exception:
+  return traceback.format_exc()
+res = bot.loop.create_task(go(message, bot))
+if res: await message.reply(res)
+        """
 
-        complete = intro + spaced + ending
-        exec(complete)
+        exec(code)
     if text.lower().startswith("cat!news"):
         async for i in Channel.all():
             try:
