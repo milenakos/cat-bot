@@ -5930,8 +5930,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
         async def selectb(interaction: discord.Interaction):
             async def submitb(interaction2: discord.Interaction):
                 if selection == "cats":
-                    pre_cattype = modal.find_item("type").values[0].lower()
-                    amount = modal.find_item("amount").value
+                    pre_cattype = modal.find_item(67).values[0].lower()
+                    amount = modal.find_item(69).value
 
                     try:
                         amount = int(amount)
@@ -5958,8 +5958,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         active_user.gives_cats = {k: active_user.gives_cats[k] for k in cattypes if k in active_user.gives_cats}
                     active_user.value += (sum(type_dict.values()) / type_dict[cattype]) * amount
                 elif selection == "packs":
-                    packtype = modal.find_item("type").values[0].title()
-                    amount = modal.find_item("amount").value
+                    packtype = modal.find_item(67).values[0].title()
+                    amount = modal.find_item(69).value
 
                     try:
                         amount = int(amount)
@@ -5985,7 +5985,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         active_user.gives_packs = {k: active_user.gives_packs[k] for k in pack_names if k in active_user.gives_packs}
                     active_user.value += sum([i["totalvalue"] if i["name"] == packtype else 0 for i in pack_data]) * amount
                 elif selection == "rain":
-                    amount = modal.find_item("amount").value
+                    amount = modal.find_item(69).value
 
                     try:
                         amount = int(amount)
@@ -6003,7 +6003,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     active_user.gives_rain += amount
                     active_user.value += 900 * amount
                 elif selection == "prisms":
-                    prism_elem = modal.find_item("type")
+                    prism_elem = modal.find_item(67)
 
                     if isinstance(prism_elem, discord.ui.Select):
                         prism_name = prism_elem.values[0].title()
@@ -6053,8 +6053,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 if len(options) == 0:
                     await interaction.response.send_message("You don't have any cats to offer!", ephemeral=True)
                     return
-                modal.add_item(discord.ui.Label(text="Cat Type", component=discord.ui.Select(options=options, id="type")))
-                modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(default="1", min_length=1, id="amount")))
+                modal.add_item(discord.ui.Label(text="Cat Type", component=discord.ui.Select(options=options, id=67)))
+                modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(default="1", min_length=1, id=69)))
             elif selection == "packs":
                 if active_user.profile.battlepass < 3 and not active_user.profile.bp_history.strip().replace("0,0,0;", ""):
                     await interaction.response.send_message("you need to reach atleast cattlepass level 3 to trade packs.", ephemeral=True)
@@ -6068,19 +6068,19 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 if len(options) == 0:
                     await interaction.response.send_message("You don't have any packs to offer!", ephemeral=True)
                     return
-                modal.add_item(discord.ui.Label(text="Pack Type", component=discord.ui.Select(options=options, id="type")))
-                modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(default="1", min_length=1, id="amount")))
+                modal.add_item(discord.ui.Label(text="Pack Type", component=discord.ui.Select(options=options, id=67)))
+                modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(default="1", min_length=1, id=69)))
             elif selection == "rain":
                 modal = Modal(title="Offer rain...")
-                modal.add_item(discord.ui.Label(text="Rain Minutes", component=discord.ui.TextInput(default="1", min_length=1, id="amount")))
+                modal.add_item(discord.ui.Label(text="Rain Minutes", component=discord.ui.TextInput(default="1", min_length=1, id=69)))
             elif selection == "prisms":
                 modal = Modal(title="Offer prisms...")
                 names = [prism.name async for prism in Prism.filter("user_id = $1 AND guild_id = $2 ORDER BY time ASC", active_user.user.id, message.guild.id)]
                 if len(names) <= 25:
                     options = [discord.SelectOption(label=name, emoji=get_emoji("prism")) for name in names]
-                    modal.add_item(discord.ui.Label(text="Prism Type", component=discord.ui.Select(options=options, id="type")))
+                    modal.add_item(discord.ui.Label(text="Prism Type", component=discord.ui.Select(options=options, id=67)))
                 elif len(names) != 0:
-                    modal.add_item(discord.ui.Label(text="Prism Type", component=discord.ui.TextInput(placeholder="Alpha", id="type")))
+                    modal.add_item(discord.ui.Label(text="Prism Type", component=discord.ui.TextInput(placeholder="Alpha", id=67)))
                 else:
                     await interaction.response.send_message("You don't have any prisms to offer!", ephemeral=True)
                     return
