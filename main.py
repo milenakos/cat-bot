@@ -5836,7 +5836,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     if user.profile[f"cat_{item}"] < amount:
                         fail = f"You don't have enough {item} cats!"
                 for item, amount in user.gives_packs.items():
-                    if user.profile[f"pack_{item}"] < amount:
+                    if user.profile[f"pack_{item.lower()}"] < amount:
                         fail = f"You don't have enough {item} packs!"
                 if user.global_user.rain_minutes < user.gives_rain:
                     fail = "You don't have enough rain!"
