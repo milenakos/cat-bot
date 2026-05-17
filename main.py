@@ -6048,8 +6048,16 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 options = []
                 await active_user.profile.refresh_from_db()
                 for cattype in cattypes:
-                    if active_user.profile[f"cat_{cattype}"] > 0:
-                        options.append(discord.SelectOption(label=cattype, emoji=get_emoji(f"{cattype.lower()}cat")))
+                    if (ca := active_user.profile[f"cat_{cattype}"]) > 0:
+                        value = sum(type_dict.values()) / type_dict[cattype]
+                        options.append(
+                            discord.SelectOption(
+                                value=cattype,
+                                label=f"{cattype} ({ca})",
+                                emoji=get_emoji(f"{cattype.lower()}cat"),
+                                description=f"{value} value",
+                            )
+                        )
                 if len(options) == 0:
                     await interaction.response.send_message("You don't have any cats to offer!", ephemeral=True)
                     return
@@ -6063,8 +6071,16 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 options = []
                 await active_user.profile.refresh_from_db()
                 for pack in pack_names:
-                    if active_user.profile[f"pack_{pack.lower()}"] > 0:
-                        options.append(discord.SelectOption(label=pack, emoji=get_emoji(f"{pack.lower()}pack")))
+                    if (pa := active_user.profile[f"pack_{pack.lower()}"]) > 0:
+                        value = sum([i["totalvalue"] if i["name"] == pack else 0 for i in pack_data])
+                        options.append(
+                            discord.SelectOption(
+                                value=pack,
+                                label=f"{pack} ({pa})",
+                                emoji=get_emoji(f"{pack.lower()}pack"),
+                                description=f"{value} value",
+                            )
+                        )
                 if len(options) == 0:
                     await interaction.response.send_message("You don't have any packs to offer!", ephemeral=True)
                     return
@@ -6072,7 +6088,12 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(placeholder="1", min_length=1, id=69)))
             elif selection == "rain":
                 modal = Modal(title="Offer rain...")
-                modal.add_item(discord.ui.Label(text="Rain Minutes", component=discord.ui.TextInput(placeholder="1", min_length=1, id=69)))
+                await active_user.global_user.refresh_from_db()
+                modal.add_item(
+                    discord.ui.Label(
+                        text="Rain Minutes", component=discord.ui.TextInput(placeholder=f"Max: {active_user.global_user.rain_minutes}", min_length=1, id=69)
+                    )
+                )
             elif selection == "prisms":
                 modal = Modal(title="Offer prisms...")
                 names = [prism.name async for prism in Prism.filter("user_id = $1 AND guild_id = $2 ORDER BY time ASC", active_user.user.id, message.guild.id)]
