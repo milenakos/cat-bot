@@ -5756,8 +5756,8 @@ async def gift(
 
 
 @bot.tree.command(description="Trade stuff!")
-@discord.app_commands.rename(person_id="user")
-@discord.app_commands.describe(person_id="why would you need description")
+@discord.app_commands.rename(other_user="user")
+@discord.app_commands.describe(other_user="why would you need description")
 async def trade(message: discord.Interaction, other_user: discord.User):
     class TradeUser:
         def __init__(self, user: discord.User, profile: Profile, global_user: User):
