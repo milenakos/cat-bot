@@ -5842,7 +5842,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             fail = False
 
             async def fetch_all_prisms():
-                prism_names = set(person1.gives_prisms + person2.gives_prisms)
+                prism_names = person1.gives_prisms + person2.gives_prisms
                 if not prism_names:
                     return {}
                 return {
