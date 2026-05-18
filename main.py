@@ -720,6 +720,10 @@ async def achemb(message, ach_id, send_type, author_string=None):
     if ach_id == "dataminer":
         desc = "Your head hurts -- you seem to have forgotten what you just did to get this."
 
+    username = author_string.name
+    if author == bot.user:
+        username = "Cat Bot (what)"
+
     if ach_id != "thanksforplaying":
         embed = (
             discord.Embed(title=ach_data["title"], description=desc, color=Colors.green)
@@ -727,7 +731,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
                 name="Achievement get!",
                 icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/ach.png",
             )
-            .set_footer(text=f"Unlocked by {author_string.name}")
+            .set_footer(text=f"Unlocked by {username}")
         )
     else:
         embed = (
@@ -740,7 +744,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
                 name="Demonic achievement unlocked! 🌟",
                 icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/demonic_ach.png",
             )
-            .set_footer(text=f"Congrats to {author_string.name}!!")
+            .set_footer(text=f"Congrats to {username}!!")
         )
 
         embed2 = (
@@ -753,7 +757,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
                 name="Demonic achievement unlocked! 🌟",
                 icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/demonic_ach.png",
             )
-            .set_footer(text=f"Congrats to {author_string.name}!!")
+            .set_footer(text=f"Congrats to {username}!!")
         )
 
     try:
@@ -1012,6 +1016,8 @@ async def progress(
 
     if is_belated:
         embed_progress.set_footer(text="For catching within 3 seconds")
+    elif user == bot.user:
+        embed_progress.set_footer(text="im so good at this")
 
     server = await Server.get_or_create(server_id=message.guild.id)
     if await check_channel_setupped(server, message.channel):
@@ -3370,6 +3376,9 @@ async def tiktok(message: discord.Interaction, text: str):
 @discord.app_commands.describe(person="A person to timeout!", timeout="How many seconds? (0 to reset, -1 for infinity)")
 async def preventcatch(message: discord.Interaction, person: discord.User, timeout: int):
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=person.id)
+    if person == bot.user:
+        await message.response.send_message("i hate you")
+        return
     if timeout == 0:
         timestamp = 0
         suffix = " can now catch cats again."
@@ -3877,6 +3886,8 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
 
     if star:
         embedVar.set_footer(text="* this stat is only tracked since February 2025")
+    if person_id == bot.user:
+        embedVar.set_footer(text="dont believe the lies i every stat maxxed")
 
     await message.followup.send(embed=embedVar)
 
@@ -3942,6 +3953,8 @@ async def gen_inventory(message, person_id):
             if stat[0] == "time_records":
                 highlighted_stat = stat
                 break
+    if person == bot.user:
+        highlighted_stat = ["style_points", "😎", "Style points: 1000"]
 
     debt = False
     give_collector = True
@@ -5162,6 +5175,9 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
     if len(prisms) == 0:
         prism_texts.append("No prisms found!")
 
+    if person == bot.user:
+        prism_texts = ["dont i technically own every prism ever bc yknow"]
+
     async def confirm_craft(interaction: discord.Interaction):
         await interaction.response.defer()
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
@@ -5690,6 +5706,9 @@ async def gift(
             return
 
     content = f"Successfully transfered {amount:,} {thing} from {message.user.mention} to {person.mention}!"
+
+    if person == bot.user:
+        content += " wow thank you"
 
     # handle tax
     if key.startswith("cat_") and amount >= 5:
@@ -8797,7 +8816,10 @@ async def givecat(message: discord.Interaction, person_id: discord.User, cat_typ
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
     user[f"cat_{cat_type}"] += amount
     await user.save()
-    await message.response.send_message(f"gave {person_id.mention} {amount:,} {cat_type} cats", allowed_mentions=discord.AllowedMentions(users=True))
+    text = f"gave {person_id.mention} {amount:,} {cat_type} cats"
+    if person_id == bot.user:
+        text += ". you really didnt have to"
+    await message.response.send_message(text, allowed_mentions=discord.AllowedMentions(users=True))
 
 
 @bot.tree.command(name="setup", description="(ADMIN) Setup cat in current channel")
@@ -8943,7 +8965,7 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
                 color=color,
             )
             .set_author(name=title, icon_url=icon)
-            .set_footer(text=f"for {person_id.name}")
+            .set_footer(text=f"for {person_id.name}" if person_id != bot.user else "for the coolest bot ever")
         )
         await message.response.send_message(person_id.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
     else:
@@ -8981,7 +9003,10 @@ async def reset(message: discord.Interaction, person_id: discord.User):
     button = Button(style=ButtonStyle.red, label="Confirm")
     button.callback = confirmed
     view.add_item(button)
-    await message.response.send_message(f"Are you sure you want to reset {person_id.mention}?", view=view, allowed_mentions=discord.AllowedMentions(users=True))
+    thing = f"Are you sure you want to reset {person_id.mention}?"
+    if person_id == bot.user:
+        thing += " (this will make me sad)"
+    await message.response.send_message(thing, view=view, allowed_mentions=discord.AllowedMentions(users=True))
 
 
 @bot.tree.command(description="(HIGH ADMIN) [VERY DANGEROUS] Reset/wipe all Cat Bot data of this server")
