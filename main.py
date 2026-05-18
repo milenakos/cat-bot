@@ -5840,30 +5840,35 @@ async def trade(message: discord.Interaction, other_user: discord.User):
 
             # verify
             fail = False
-            temp_prisms = {}
 
-            async def fetch_prism(name):
-                nonlocal fail
-                if fail:
-                    return
-                prism = await Prism.get_or_none(guild_id=interaction.guild.id, name=name)
-                if prism is None:
-                    fail = f"Prism {name} not found!"
-                elif prism.user_id != user.user.id:
-                    fail = f"You don't have the {name} prism!"
-                temp_prisms[name] = prism
+            async def fetch_all_prisms():
+                prism_names = person1.gives_prisms + person2.gives_prisms
+                if not prism_names:
+                    return {}
+                return {
+                    p.name: p async for p in Prism.filter(
+                        "guild_id = $1 AND name = ANY($2)",
+                        interaction.guild.id,
+                        prism_names,
+                        refetch=False,
+                    )
+                }
 
-            await asyncio.gather(
-                *[fetch_prism(name) for name in person1.gives_prisms + person2.gives_prisms],
+
+            tasks = [
                 person1.profile.refresh_from_db(),
                 person2.profile.refresh_from_db(),
                 person1.global_user.refresh_from_db(),
                 person2.global_user.refresh_from_db(),
-            )
+            ]
+            fetch_prisms_task = None
+            if person1.gives_prisms or person2.gives_prisms:
+                fetch_prisms_task = asyncio.create_task(fetch_all_prisms())
+                tasks.append(fetch_prisms_task)
+            
+            await asyncio.gather(*tasks)
 
-            if fail:
-                await interaction.edit_original_response(content=fail, embed=None, view=None)
-                return
+            temp_prisms = fetch_prisms_task.result() if fetch_prisms_task else {}
 
             for user in [person1, person2]:
                 for item, amount in user.gives_cats.items():
@@ -5874,6 +5879,11 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         fail = f"You don't have enough {item} packs!"
                 if user.global_user.rain_minutes < user.gives_rain:
                     fail = "You don't have enough rain!"
+                for prism in user.gives_prisms:
+                    if prism not in temp_prisms:
+                        fail = f"Prism {prism} not found!"
+                    elif temp_prisms[prism].user_id != user.user.id:
+                        fail = f"You don't own prism {prism}!"
 
             if fail:
                 await interaction.edit_original_response(content=fail, embed=None, view=None)
@@ -5908,7 +5918,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
 
             async def save_prisms():
                 if temp_prisms:
-                    await Prism.bulk_update(temp_prisms.values(), ["user_id"])
+                    await Prism.bulk_update(temp_prisms.values(), "user_id")
 
             await asyncio.gather(
                 person1.profile.save(),
