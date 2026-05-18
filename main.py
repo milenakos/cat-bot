@@ -1016,7 +1016,7 @@ async def progress(
 
     if is_belated:
         embed_progress.set_footer(text="For catching within 3 seconds")
-    elif user == bot.user:
+    elif user.user_id == bot.user.id:
         embed_progress.set_footer(text="im so good at this")
 
     server = await Server.get_or_create(server_id=message.guild.id)
@@ -3953,7 +3953,7 @@ async def gen_inventory(message, person_id):
             if stat[0] == "time_records":
                 highlighted_stat = stat
                 break
-    if person == bot.user:
+    if person_id == bot.user:
         highlighted_stat = ["style_points", "😎", "Style points: 1000"]
 
     debt = False
@@ -5865,14 +5865,14 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 if not prism_names:
                     return {}
                 return {
-                    p.name: p async for p in Prism.filter(
+                    p.name: p
+                    async for p in Prism.filter(
                         "guild_id = $1 AND name = ANY($2)",
                         interaction.guild.id,
                         prism_names,
                         refetch=False,
                     )
                 }
-
 
             tasks = [
                 person1.profile.refresh_from_db(),
@@ -5884,7 +5884,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             if person1.gives_prisms or person2.gives_prisms:
                 fetch_prisms_task = asyncio.create_task(fetch_all_prisms())
                 tasks.append(fetch_prisms_task)
-            
+
             await asyncio.gather(*tasks)
 
             temp_prisms = fetch_prisms_task.result() if fetch_prisms_task else {}
