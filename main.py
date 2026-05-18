@@ -721,7 +721,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
         desc = "Your head hurts -- you seem to have forgotten what you just did to get this."
 
     username = author_string.name
-    if author == bot.user:
+    if author_string == bot.user:
         username = "Cat Bot (what)"
 
     if ach_id != "thanksforplaying":
