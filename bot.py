@@ -126,6 +126,7 @@ async def reload(reload_db):
 
 config.cat_cought_rain = {}
 config.rain_starter = {}
+config.chaos_current = None
 
 bot.cat_bot_reload_hook = reload  # pyright: ignore
 

@@ -393,9 +393,6 @@ loop_count = 0
 # loops in dpy can randomly break, i check if is been over X minutes since last loop to restart it
 last_loop_time = 0
 
-# CHAOS
-chaos_current = None
-
 
 def get_emoji(name):
     global emojis
@@ -1287,9 +1284,9 @@ async def background_loop():
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
 
     # save chaos
-    if chaos_current is not None:
+    if config.chaos_current is not None:
         chaos = await Profile.get_or_create(guild_id=666, user_id=bot.user.id)
-        chaos.cookies = chaos_current
+        chaos.cookies = config.chaos_current
         await chaos.save()
 
     # temp_belated_storage cleanup
@@ -1542,7 +1539,7 @@ async def on_connect():
 
 # some code which is run when bot is started
 async def on_ready():
-    global OWNER_ID, on_ready_debounce, gen_credits, emojis, chaos_current
+    global OWNER_ID, on_ready_debounce, gen_credits, emojis
     if on_ready_debounce:
         return
     on_ready_debounce = True
@@ -1604,7 +1601,7 @@ async def on_ready():
     )
 
     chaos = await Profile.get_or_create(guild_id=666, user_id=bot.user.id)
-    chaos_current = chaos.cookies
+    config.chaos_current = chaos.cookies
 
 
 # this is all the code which is ran on every message sent
@@ -6846,20 +6843,19 @@ async def roulette(message: discord.Interaction):
 
 @bot.tree.command(description="ABSOLUTE chaos")
 async def chaos(message: discord.Interaction):
-    if chaos_current is None:
+    if config.chaos_current is None:
         await message.response.send_message("come back later", ephemeral=True)
         return
 
     async def click(interaction: discord.Interaction, first: Optional[bool] = False):
-        global chaos_current
-        chaos_current += random.randint(0, 1000)
+        config.chaos_current += random.randint(0, 1000)
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
         b = Button(label="Chaos!", style=ButtonStyle.red, emoji="💥")
         b.callback = click
         view.add_item(
             Container(
-                f"## {chaos_current:,}",
+                f"## {config.chaos_current:,}",
                 "the number above is global for everyone. click the button to add a random number to it.",
                 b,
             )
