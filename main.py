@@ -7244,7 +7244,7 @@ async def cat_fact(message: discord.Interaction):
 
 
 async def bounty(message, user, cattype):
-    if user.hibernation:
+    if user.hibernation or user.catnip_active < time.time():
         return
     complete = 0
     completed = 0
