@@ -7243,75 +7243,60 @@ async def cat_fact(message: discord.Interaction):
         pass
 
 
+def _bounty_title(bid, total, btype):
+    if bid == 0:
+        return f"Catch {total} cats"
+    elif bid == 1:
+        return f"Catch {total} {btype} cats"
+    else:
+        return f"Catch {total} {btype} or rarer cats"
+
+
+def _bounty_matches(bid, btype, cattype):
+    if bid == 0:
+        return True
+    elif bid == 1:
+        return cattype == btype
+    else:
+        return cattypes.index(cattype) >= cattypes.index(btype)
+
+
 async def bounty(message, user, cattype):
     if user.hibernation or user.catnip_active < time.time():
         return
-    complete = 0
-    completed = 0
-    title = []
-    colored = 0
+
+    slots = ("one", "two", "three")
+    newly_completed_titles = []
+    completed_count = 0
+
     for i in range(user.bounties):
-        if i == 0:
-            id = user.bounty_id_one
-            progress = user.bounty_progress_one
-            total = user.bounty_total_one
-            type = user.bounty_type_one
-        if i == 1:
-            id = user.bounty_id_two
-            progress = user.bounty_progress_two
-            total = user.bounty_total_two
-            type = user.bounty_type_two
-        if i == 2:
-            id = user.bounty_id_three
-            progress = user.bounty_progress_three
-            total = user.bounty_total_three
-            type = user.bounty_type_three
-        if progress < total:
-            if id == 0:
-                progress += 1
-                if progress == total:
-                    complete += 1
-                    title.append(f"Catch {total} cats")
-            if id == 1:
-                if cattype == type:
-                    progress += 1
-                    if progress == total:
-                        complete += 1
-                        title.append(f"Catch {total} {type} cats")
-            if id == 2:
-                if cattypes.index(cattype) >= cattypes.index(type):
-                    progress += 1
-                    if progress == total:
-                        complete += 1
-                        title.append(f"Catch {total} {type} or rarer cats")
-        if i == 0:
-            user.bounty_progress_one = progress
-            if progress == total:
-                completed += 1
-        if i == 1:
-            user.bounty_progress_two = progress
-            if progress == total:
-                completed += 1
-        if i == 2:
-            user.bounty_progress_three = progress
-            if progress == total:
-                completed += 1
+        slot = slots[i]
+        bid = getattr(user, f"bounty_id_{slot}")
+        progress = getattr(user, f"bounty_progress_{slot}")
+        total = getattr(user, f"bounty_total_{slot}")
+        btype = getattr(user, f"bounty_type_{slot}")
+
+        if progress < total and _bounty_matches(bid, btype, cattype):
+            progress = min(progress + 1, total)
+            setattr(user, f"bounty_progress_{slot}", progress)
+            if progress >= total:
+                newly_completed_titles.append(_bounty_title(bid, total, btype))
+
+        if progress >= total:
+            completed_count += 1
+
     await user.save()
+
     if catnip_list["levels"][user.catnip_level]["bonus"]:
-        bonus_title = ""
-        if user.bounty_progress_bonus < user.bounty_total_bonus:
-            if user.bounty_id_bonus == 0:
-                user.bounty_progress_bonus += 1
-                bonus_title = f"Catch {user.bounty_total_bonus} cats"
-            elif user.bounty_id_bonus == 1:
-                if cattype == user.bounty_type_bonus:
-                    user.bounty_progress_bonus += 1
-                bonus_title = f"Catch {user.bounty_total_bonus} {cattype} cats"
-            else:
-                if cattypes.index(cattype) >= cattypes.index(user.bounty_type_bonus):
-                    user.bounty_progress_bonus += 1
-                bonus_title = f"Catch {user.bounty_total_bonus} {user.bounty_type_bonus} or rarer cats"
-            if user.bounty_progress_bonus == user.bounty_total_bonus:
+        b_progress = user.bounty_progress_bonus
+        b_total = user.bounty_total_bonus
+        if b_progress < b_total:
+            bid = user.bounty_id_bonus
+            btype = user.bounty_type_bonus
+            bonus_title = _bounty_title(bid, b_total, btype)
+            if _bounty_matches(bid, btype, cattype):
+                user.bounty_progress_bonus = min(b_progress + 1, b_total)
+            if user.bounty_progress_bonus >= b_total:
                 description = "Bonus Bounty Complete!\nGo to `/catnip` to reroll a perk!"
                 embed = discord.Embed(title=f"✅ {bonus_title}", color=Colors.green, description=description).set_author(
                     name="Mafia Level " + str(user.catnip_level)
@@ -7320,16 +7305,17 @@ async def bounty(message, user, cattype):
                 user.reroll = False
                 user.reroll_level = 0
             await user.save()
-    for i in range(complete):
-        logging.debug("Completed bounties %d", completed)
+
+    for title in newly_completed_titles:
+        logging.debug("Completed bounties %d", completed_count)
         level = user.catnip_level
-        colored = int(completed / user.bounties * 10)
-        progress_line = f"\n{level} " + get_emoji("staring_square") * int(colored) + "⬛" * int(10 - colored) + f" {level + 1}"
-        if completed == user.bounties:
+        colored = max(0, min(10, int(completed_count / user.bounties * 10)))
+        progress_line = f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
+        if completed_count == user.bounties:
             description = f"{progress_line}\nAll Bounties Complete!\nGo to `/catnip` to pay up and pick a perk!"
         else:
-            description = f"{progress_line}\n{completed}/{user.bounties} Bounties Complete"
-        embed = discord.Embed(title=f"✅ {title[i]}", color=Colors.green, description=description).set_author(name="Mafia Level " + str(level))
+            description = f"{progress_line}\n{completed_count}/{user.bounties} Bounties Complete"
+        embed = discord.Embed(title=f"✅ {title}", color=Colors.green, description=description).set_author(name="Mafia Level " + str(level))
         user.bounties_complete += 1
         if user.bounties_complete >= 5:
             await achemb(message, "bounty_novice", "followup")
