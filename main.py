@@ -6156,14 +6156,14 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             elif selection == "prisms":
                 modal = Modal(title="Offer prisms...")
                 names = [prism.name async for prism in Prism.filter("user_id = $1 AND guild_id = $2 ORDER BY time ASC", active_user.user.id, message.guild.id)]
+                if len(names) == 0:
+                    await interaction.response.send_message("You don't have any prisms to offer!", ephemeral=True)
+                    return
                 if len(names) <= 25:
                     options = [discord.SelectOption(label=name, emoji=get_emoji("prism")) for name in names]
                     modal.add_item(discord.ui.Label(text="Prism Type", component=discord.ui.Select(options=options, id=67)))
-                elif len(names) != 0:
-                    modal.add_item(discord.ui.Label(text="Prism Type", component=discord.ui.TextInput(placeholder="Alpha", id=67)))
                 else:
-                    await interaction.response.send_message("You don't have any prisms to offer!", ephemeral=True)
-                    return
+                    modal.add_item(discord.ui.Label(text="Prism Type", component=discord.ui.TextInput(placeholder="Alpha", id=67)))
             modal.on_submit = submitb
             await interaction.response.send_modal(modal)
 
