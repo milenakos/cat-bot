@@ -299,7 +299,8 @@ CREATE TABLE public.profile (
     pack_chef integer DEFAULT 0,
     baker boolean DEFAULT false,
     pack_birthday integer DEFAULT 0,
-    birthday_rain_progress smallint DEFAULT 0
+    birthday_rain_progress smallint DEFAULT 0,
+    catgpt boolean DEFAULT false
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;

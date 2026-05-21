@@ -1059,17 +1059,14 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
 
 
 def get_streak_reward(streak):
-    if streak % 5 != 0 or streak in [0, 5]:
-        return {"reward": None, "emoji": "⬛", "done_emoji": "🟦"}
-
-    pack_type = "gold"
-    # these honestly don't add that much value but feel like good milestones
     if streak % 100 == 0:
-        pack_type = "diamond"
+        return {"reward": "diamond", "emoji": get_emoji("diamondpack"), "done_emoji": get_emoji("diamondpack_claimed")}
     elif streak % 25 == 0:
-        pack_type = "platinum"
-
-    return {"reward": pack_type, "emoji": get_emoji(f"{pack_type}pack"), "done_emoji": get_emoji(f"{pack_type}pack_claimed")}
+        return {"reward": "platinum", "emoji": get_emoji("platinumpack"), "done_emoji": get_emoji("platinumpack_claimed")}
+    elif streak % 5 == 0 and streak not in [0, 5]:
+        return {"reward": "gold", "emoji": get_emoji("goldpack"), "done_emoji": get_emoji("goldpack_claimed")}
+    else:
+        return {"reward": None, "emoji": "⬛", "done_emoji": "🟦"}
 
 
 # handle curious people clicking buttons
@@ -4331,15 +4328,11 @@ async def rain_end(message, channel, force_summary=None):
 
 
 @bot.tree.command(description="redeem plush badge")
-@discord.app_commands.describe(proof="screenshot of pledge confirmation email (dont include any personal info)")
-async def plushbadge(message: discord.Interaction, proof: discord.Attachment):
-    if proof and proof.content_type in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
-        file = await proof.to_file()
-        await (bot.get_partial_messageable(1503550891670634758)).send(message.user.id, file=file)
-        await message.response.send_message("✅ ok. you will get the badge after the pledge is confirmed. (under 24 hours)", ephemeral=True)
-    else:
-        await message.response.send_message("❌ invalid image. please upload a png, jpeg, gif, or webp image.", ephemeral=True)
-        return
+async def plushbadge(message: discord.Interaction):
+    await message.response.send_message(
+        "if you pledged to the plush campaign and didnt yet redeem your badge, please join discord.gg/staring and create a ticket.",
+        ephemeral=True,
+    )
 
 
 @bot.tree.command(description="LIMITED TIME CAT BOT PLUSH")
