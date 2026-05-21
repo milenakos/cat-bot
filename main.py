@@ -7041,6 +7041,15 @@ async def eightball(message: discord.Interaction, question: str):
     await achemb(message, "balling", "followup")
 
 
+@bot.tree.command(description="The best Artificial Catelligence on the Planet")
+@discord.app_comands.describe(query="Your query to CatGPT")
+async def catgpt(message: discord.Interaction, query: str):
+    await message.response.defer(thinking=True)
+    await asyncio.sleep(6)
+    await message.followup.send("cat\n-# 🛈 CatGPT can't make mistakes.")
+    await achemb(message, "catgpt", "followup")
+
+
 @bot.tree.command(description="the most engaging boring game")
 async def pig(message: discord.Interaction):
     score = 0
