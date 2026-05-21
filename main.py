@@ -7042,7 +7042,7 @@ async def eightball(message: discord.Interaction, question: str):
 
 
 @bot.tree.command(description="The best Artificial Catelligence on the Planet")
-@discord.app_comands.describe(query="Your query to CatGPT")
+@discord.app_commands.describe(query="Your query to CatGPT")
 async def catgpt(message: discord.Interaction, query: str):
     await message.response.defer(thinking=True)
     await asyncio.sleep(6)
