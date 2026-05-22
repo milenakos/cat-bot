@@ -6859,8 +6859,11 @@ async def chaos(message: discord.Interaction):
         else:
             await interaction.response.defer()
             await interaction.edit_original_response(view=view)
+        
 
     await click(message, True)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    await progress(message, user, "chaos")
 
 
 @bot.tree.command(description="roll a dice")
@@ -7041,6 +7044,8 @@ async def catgpt(message: discord.Interaction, query: str):
     await asyncio.sleep(6)
     await message.followup.send("cat\n-# 🛈 CatGPT can't make mistakes.")
     await achemb(message, "catgpt", "followup")
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    await progress(message, user, "catgpt")
 
 
 @bot.tree.command(description="the most engaging boring game")
