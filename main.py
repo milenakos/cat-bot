@@ -8156,7 +8156,7 @@ You can stop. That's okay. Seriously.
                     desc += f"\nPerks expire <t:{user.catnip_active}:R>"
                 all_complete = False
 
-            colored = int(bounties_complete / user.bounties * 10)
+            colored = int(bounties_complete / user.bounties * 10) if user.bounties else 10
             desc += f"\n\n**Level {level}** - {change}"
             desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
         if not level == 0 and not user.hibernation:
