@@ -404,6 +404,10 @@ def get_emoji(name):
         return "🔳"
 
 
+def get_short_emoji(emoji):
+    return re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(emoji), count=1)
+
+
 async def fetch_dm_channel(user: User) -> discord.PartialMessageable:
     if user.dm_channel_id:
         return bot.get_partial_messageable(user.dm_channel_id)
@@ -4232,8 +4236,8 @@ async def rain_end(message, channel, force_summary=None):
             if key in pack_names:
                 rain_packs.append(key)
 
-        funny_cat_emojis = {k: re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(k.lower() + "cat"), count=1) for k in rain_cats}
-        funny_pack_emojis = {k: re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(k.lower() + "pack"), count=1) for k in rain_packs}
+        funny_cat_emojis = {k: get_short_emoji(k.lower() + "cat") for k in rain_cats}
+        funny_pack_emojis = {k: get_short_emoji(k.lower() + "pack") for k in rain_packs}
 
         funny_emojis = funny_cat_emojis | funny_pack_emojis
 
@@ -6192,13 +6196,13 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             total = 0
             for cattype, amount in tradeuser.gives_cats.items():
                 total += amount
-                offer_string += f"{get_emoji(cattype.lower() + 'cat')} {cattype} {amount:,}\n"
+                offer_string += f"{get_short_emoji(cattype.lower() + 'cat')} {cattype} {amount:,}\n"
 
             for packtype, amount in tradeuser.gives_packs.items():
-                offer_string += f"{get_emoji(packtype.lower() + 'pack')} {packtype} {amount:,}\n"
+                offer_string += f"{get_short_emoji(packtype.lower() + 'pack')} {packtype} {amount:,}\n"
 
             for prism in tradeuser.gives_prisms:
-                offer_string += f"{get_emoji('prism')} {prism}\n"
+                offer_string += f"{get_short_emoji('prism')} {prism}\n"
 
             if tradeuser.gives_rain:
                 offer_string += f"☔ {tradeuser.gives_rain:,}m of Cat Rains\n"
