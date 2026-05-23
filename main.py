@@ -5615,9 +5615,13 @@ async def cookie(message: discord.Interaction):
             await do_funny(interaction)
             return
         await interaction.response.defer()
-        user = await Profile.get(["cookies"], guild_id=message.guild.id, user_id=message.user.id)
-        user.cookies += 1
-        await user.save()
+        try:
+            user = await Profile.get(["cookies"], guild_id=message.guild.id, user_id=message.user.id)
+            user.cookies += 1
+            await user.save()
+        except AttributeError:
+            await interaction.edit_original_response(content="...", view=None)
+            return
         view.children[0].label = f"{user.cookies:,}"
         await interaction.edit_original_response(view=view)
         if user.cookies < 5:
@@ -6274,9 +6278,13 @@ async def brew(message: discord.Interaction):
             retry_counter -= 1
             return
 
-        user = await Profile.get(["coffees"], guild_id=message.guild.id, user_id=message.user.id)
-        user.coffees += 1
-        await user.save()
+        try:
+            user = await Profile.get(["coffees"], guild_id=message.guild.id, user_id=message.user.id)
+            user.coffees += 1
+            await user.save()
+        except AttributeError:
+            await interaction.edit_original_response(content="...", view=None)
+            return
 
         view.children[0].label = f"{user.coffees:,}"
         await interaction.edit_original_response(content="ugh fine", view=view)
