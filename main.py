@@ -8166,7 +8166,7 @@ You can stop. That's okay. Seriously.
 
             colored = int(bounties_complete / user.bounties * 10) if user.bounties else 10
             desc += f"\n\n**Level {level}** - {change}"
-            desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
+            desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {min(10, level + 1)}"
         if not level == 0 and not user.hibernation:
             if user.catnip_active - int(time.time()) < 1800:
                 desc += f"\n\n**Hurry!** Levels down <t:{user.catnip_active}:R> ({duration}h total)"
