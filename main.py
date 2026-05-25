@@ -4470,8 +4470,8 @@ You currently have **{user.rain_minutes:,}** minutes of rains{server_rains}.""",
             user.rain_minutes -= rain_length
         await user.save()
         await profile.save()
-        await interaction.response.send_message(f"{rain_length:,}m cat rain was started by {interaction.user.mention}!")
         try:
+            await interaction.response.send_message(f"{rain_length:,}m cat rain was started by {interaction.user.mention}!")
             ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
             await ch.send(f"{interaction.user.id} started {rain_length}m rain in {interaction.channel.id} ({user.rain_minutes} left)")
         except Exception:
