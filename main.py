@@ -4058,6 +4058,24 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
     user = await User.get_or_create(user_id=message.user.id)
     stats = await gen_stats(person, "")
 
+    async def confirm_report(interaction: discord.Interaction):
+        try:
+            ch = bot.get_partial_messageable(config.REPORT_CHANNEL_ID)
+            await ch.send(f"⚠️ {person_id.id} has been reported.")
+        except Exception:
+            pass
+        await interaction.response.defer()
+        await interaction.edit_original_response("Thanks for your report.", view=None)
+
+    async def report_profile(interaction: discord.Interaction):
+        view = View(timeout=VIEW_TIMEOUT)
+        btn = Button(label="Confirm Report")
+        btn.callback = confirm_report
+        view.add_item(btn)
+        await interaction.response.send_message(
+            f"⚠️ Are you sure you want to report {person_id} for having an inappropriate inventory image / custom cat?", view=view, ephemeral=True
+        )
+
     async def edit_profile(interaction: discord.Interaction):
         if interaction.user.id != person_id.id:
             await do_funny(interaction)
@@ -4164,6 +4182,10 @@ __Highlighted Stat__
     if person_id.id == message.user.id:
         btn = Button(emoji="📝", label="Edit", style=ButtonStyle.blurple)
         btn.callback = edit_profile
+        view.add_item(ActionRow(btn))
+    elif user.image.startswith("https://cdn.discordapp.com/attachments/") or user.custom:
+        btn = Button(emoji="⚠️", label="Report")
+        btn.callback = report_profile
         view.add_item(ActionRow(btn))
 
     await message.followup.send(view=view)

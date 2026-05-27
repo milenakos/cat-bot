@@ -36,3 +36,6 @@ DONOR_CHANNEL_ID = 1249343008890028144
 # cat bot will also log all rain uses/movements here
 # cat!rain commands here can be used without author check and will dm reciever a thanks message
 RAIN_CHANNEL_ID = 1278705994536321157
+
+# channel for reports of inappropriate supporter perks
+REPORT_CHANNEL_ID = 967080927937323138
