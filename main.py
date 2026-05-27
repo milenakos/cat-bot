@@ -4637,6 +4637,10 @@ if config.DONOR_CHANNEL_ID:
             await message.response.send_message("Invalid file type! Please upload a PNG, JPEG, GIF, WebP, or AVIF image.", ephemeral=True)
             return
 
+        if name and len(name) > 20:
+            await message.response.send_message("Name must be 20 characters or less.", ephemeral=True)
+            return
+
         await message.response.defer(ephemeral=True)
 
         em_name = str(user.user_id) + "cat"
