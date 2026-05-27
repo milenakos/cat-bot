@@ -2506,11 +2506,13 @@ async def on_message(message: discord.Message):
                 await multi_progress(message, user, quests, False)
 
                 if vote_time_user.tutorial_state == 0:
-                    await message.reply(f"👋 Welcome to Cat Bot! Check out the </tutorial:{COMMAND_IDS['tutorial']}> to get started (includes a free gift!)")
+                    await message.channel.send(
+                        f"{message.author.mention} 👋 Welcome to Cat Bot! Check out the </tutorial:{COMMAND_IDS['tutorial']}> to get started (includes a free gift!)"
+                    )
                     vote_time_user.tutorial_state = 1
                     await vote_time_user.save()
                 elif vote_time_user.tutorial_state == 2:
-                    await message.reply(f"✅ Run </tutorial:{COMMAND_IDS['tutorial']}> to continue")
+                    await message.channel.send(f"{message.author.mention} ✅ Run </tutorial:{COMMAND_IDS['tutorial']}> to continue")
                     vote_time_user.tutorial_state = 3
                     await vote_time_user.save()
             finally:
