@@ -2513,13 +2513,19 @@ async def on_message(message: discord.Message):
                 await multi_progress(message, user, quests, False)
 
                 if vote_time_user.tutorial_state == 0:
-                    await message.channel.send(
-                        f"{message.author.mention} 👋 Welcome to Cat Bot! Check out the {get_command_mention('tutorial')} to get started (includes a free gift!)"
-                    )
+                    text = f"👋 Welcome to Cat Bot! Check out the {get_command_mention('tutorial')} to get started (includes a free gift!)"
+                    try:
+                        await message.reply(text)
+                    except Exception:
+                        await message.channel.send(f"{message.author.mention} {text}")
                     vote_time_user.tutorial_state = 1
                     await vote_time_user.save()
                 elif vote_time_user.tutorial_state == 2:
-                    await message.channel.send(f"{message.author.mention} ✅ Run {get_command_mention('tutorial')} to continue")
+                    text = f"✅ Run {get_command_mention('tutorial')} to continue"
+                    try:
+                        await message.reply(text)
+                    except Exception:
+                        await message.channel.send(f"{message.author.mention} {text}")
                     vote_time_user.tutorial_state = 3
                     await vote_time_user.save()
             finally:
