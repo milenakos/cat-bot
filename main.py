@@ -2640,7 +2640,7 @@ bot.loop.create_task(go(message, bot))
 
 
 # the message when cat gets added to a new server
-async def on_guild_join(guild):
+async def on_guild_join(guild: discord.Guild):
     def verify(ch):
         return ch and ch.permissions_for(guild.me).send_messages
 
@@ -2649,36 +2649,52 @@ async def on_guild_join(guild):
             if patt in i.name:
                 return i
 
-    logging.debug("Guild joined, member count %d", guild.member_count)
+    source = "external" if guild.self_role.permissions.read_message_history else "discord"
 
     # first to try a good channel, then whenever we cat atleast chat
-    ch = find("cat", guild.text_channels)
-    if not verify(ch):
-        ch = find("bot", guild.text_channels)
-    if not verify(ch):
-        ch = find("commands", guild.text_channels)
-    if not verify(ch):
-        ch = find("general", guild.text_channels)
-
     found = False
-    if not verify(ch):
+    names = ["cat", "bot", "command", "welcome", "general"]
+    for name in names:
+        ch = find(name, guild.text_channels)
+        if verify(ch):
+            found = True
+            break
+
+    if not found:
         for ch in guild.text_channels:
             if verify(ch):
                 found = True
                 break
-        if not found:
-            ch = guild.owner
 
     # you are free to change/remove this, its just a note for general user letting them know
     unofficial_note = "**NOTE: This is an unofficial Cat Bot instance.**\n\n"
     if not bot.user or bot.user.id == 966695034340663367:
         unofficial_note = ""
+
+    msg = f"""{unofficial_note}
+Thanks for adding me!
+Use `/setup` to start (creating a new channel just for Cat Bot is recommended)!
+Join the support server here: https://discord.gg/staring
+Have a nice day :)"""
+
     try:
-        if ch.permissions_for(guild.me).send_messages:
-            await ch.send(
-                unofficial_note
-                + "Thanks for adding me!\nTo start, use `/setup` and `/help` to learn more!\nJoin the support server here: https://discord.gg/staring\nHave a nice day :)"
-            )
+        if found:
+            await ch.send(msg)
+    except Exception:
+        pass
+
+    try:
+        async for entry in guild.audit_logs(action=discord.AuditLogAction.bot_add, limit=20):
+            if entry.target and entry.target.id == bot.user.id:
+                await entry.user.send(msg)
+                break
+    except Exception:
+        pass
+
+    try:
+        if config.INVITE_LOGS_CHANNEL:
+            ch = bot.get_partial_messageable(config.INVITE_LOGS_CHANNEL)
+            await ch.send(f"#{len(bot.guilds):,} | {guild.member_count:,} members | Invite source: {source}")
     except Exception:
         pass
 
@@ -4184,7 +4200,7 @@ __Highlighted Stat__
         btn = Button(emoji="📝", label="Edit", style=ButtonStyle.blurple)
         btn.callback = edit_profile
         view.add_item(ActionRow(btn))
-    elif view_user.image.startswith("https://cdn.discordapp.com/attachments/") or view_user.custom:
+    elif config.REPORT_CHANNEL_ID and (view_user.image.startswith("https://cdn.discordapp.com/attachments/") or view_user.custom):
         btn = Button(emoji="⚠️", label="Report")
         btn.callback = report_profile
         view.add_item(ActionRow(btn))
