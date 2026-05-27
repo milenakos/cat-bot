@@ -381,8 +381,8 @@ except FileNotFoundError:
 # d.py doesnt cache app emojis so we do it on our own yippe
 emojis = {}
 
-# for mentioning it in catch message, will be auto-fetched in on_ready()
-RAIN_ID = 1270470307102195752
+# for mentioning em, will be auto-fetched in on_ready()
+COMMAND_IDS = {}
 
 # for dev commands, this is fetched in on_ready
 OWNER_ID = 553093932012011520
@@ -2274,8 +2274,8 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 5) == 0:
                     # shill rains
-                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{RAIN_ID}>"
-                if random.randint(0, 19) == 0:
+                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{COMMAND_IDS['rain']}>"
+                if random.randint(1, 20) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
 
@@ -9299,7 +9299,7 @@ async def on_interaction(ctx):
 
 
 async def setup(bot2):
-    global bot, RAIN_ID, vote_server
+    global bot, COMMAND_IDS, vote_server
 
     for command in bot.tree.walk_commands():
         # copy all the commands
@@ -9338,9 +9338,7 @@ async def setup(bot2):
     config.SOFT_RESTART_TIME = time.time()
 
     app_commands = await bot.tree.sync()
-    for i in app_commands:
-        if i.name == "rain":
-            RAIN_ID = i.id
+    COMMAND_IDS = {i.name: i.id for i in app_commands}
 
     if bot.is_ready() and not on_ready_debounce:
         await on_ready()
