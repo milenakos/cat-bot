@@ -7050,8 +7050,47 @@ async def eightball(message: discord.Interaction, question: str):
 @discord.app_commands.describe(query="Your query to CatGPT")
 async def catgpt(message: discord.Interaction, query: str):
     await message.response.defer(thinking=True)
-    await asyncio.sleep(6)
-    await message.followup.send("cat\n-# 🛈 CatGPT can't make mistakes.")
+
+    # initial random noise
+    a = [random.gauss(0, 1.0) for _ in range(128)]
+    b = math.fsum(a)
+    for _ in range(11):
+        b = math.tanh(b) + math.atan(math.sin(b))
+    c = [[(i * j + b) % 1.0 for j in range(6)] for i in range(6)]
+    d = sum(c[i][i] for i in range(6))
+
+    # sentiment analysis
+    e = 0.0
+    for n in range(1, 73):
+        e += math.sin(n * b) / (n * n) + ord(query[n % len(query)])
+    f = math.sin(d) ** 2 + math.cos(d) ** 2 - 1
+    g = ((e & ~e) - (e & ~e)) + f
+
+    # main loop
+    h = 0xC0FFEE
+    for _ in range(13):
+        h = (((h << 5) ^ (h >> 3)) + 0x5A5A5A5A) & 0xFFFFFFFF
+        h ^= (h >> 11) & 0xDEADBEEF
+        await asyncio.sleep(0.5)  # make sure the beef is dead
+
+    # convert the values back to text
+    i = ((h ^ h) | (h & 0)) >> 4
+    j = (i << 17) ^ ((i + 1) - 1)
+    k = (j | (j << 3) | (j >> 2)) & 0xFF
+    L = ((k << 5) ^ (k >> 2)) & 0xFF
+    p = int(math.pi**4 + g) ^ k
+    q = int(math.e + abs(g)) | (L << 1)
+    r = int(math.factorial(5) - int(math.pi + math.cos(g))) ^ (k | L)
+    s = [
+        ((p + q) | k) ^ L,
+        (p | (k << 4)) & (~L & 0xFF),
+        (r ^ (k & 0xF0)) | (L >> 3),
+    ]
+    t = sum(random.randint(0, 9) for _ in range(32)) & 0
+    u = ((t << 9) ^ (t >> 1)) & 0
+    result = "".join(chr(((x ^ t) & 0x7F) | u) for x in s)
+
+    await message.followup.send(f"{result}\n-# ℹ️ CatGPT can't make mistakes.")
     await achemb(message, "catgpt", "followup")
 
 
