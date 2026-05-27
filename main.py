@@ -408,6 +408,10 @@ def get_short_emoji(emoji):
     return re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(emoji), count=1)
 
 
+def get_command_mention(name):
+    return f"</{name}:{COMMAND_IDS[name]}>" if name in COMMAND_IDS else f"/{name}"
+
+
 async def fetch_dm_channel(user: User) -> discord.PartialMessageable:
     if user.dm_channel_id:
         return bot.get_partial_messageable(user.dm_channel_id)
@@ -2274,7 +2278,7 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 5) == 0:
                     # shill rains
-                    suffix_string += f"\n☔ get tons of cats and have fun: </rain:{COMMAND_IDS['rain']}>"
+                    suffix_string += f"\n☔ get tons of cats and have fun: {get_command_mention('rain')}"
                 if random.randint(1, 20) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
@@ -2507,12 +2511,12 @@ async def on_message(message: discord.Message):
 
                 if vote_time_user.tutorial_state == 0:
                     await message.channel.send(
-                        f"{message.author.mention} 👋 Welcome to Cat Bot! Check out the </tutorial:{COMMAND_IDS['tutorial']}> to get started (includes a free gift!)"
+                        f"{message.author.mention} 👋 Welcome to Cat Bot! Check out the {get_command_mention('tutorial')} to get started (includes a free gift!)"
                     )
                     vote_time_user.tutorial_state = 1
                     await vote_time_user.save()
                 elif vote_time_user.tutorial_state == 2:
-                    await message.channel.send(f"{message.author.mention} ✅ Run </tutorial:{COMMAND_IDS['tutorial']}> to continue")
+                    await message.channel.send(f"{message.author.mention} ✅ Run {get_command_mention('tutorial')} to continue")
                     vote_time_user.tutorial_state = 3
                     await vote_time_user.save()
             finally:
