@@ -2384,6 +2384,9 @@ async def on_message(message: discord.Message):
                     view = View(timeout=VIEW_TIMEOUT)
                     view.add_item(button)
 
+                if vote_time_user.tutorial_state < 10 and vote_time_user.tutorial_complete not in [0, 2]:
+                    suffix_string += f"\n👋 Check out the {get_command_mention('tutorial')} (includes a free gift!)"
+
                 user[f"cat_{le_emoji}"] += silly_amount
                 new_count = user[f"cat_{le_emoji}"]
 
