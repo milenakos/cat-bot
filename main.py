@@ -4056,6 +4056,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
         person_id = message.user
     person = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
     user = await User.get_or_create(user_id=message.user.id)
+    view_user = await User.get_or_create(user_id=person_id.id)
     stats = await gen_stats(person, "")
 
     async def confirm_report(interaction: discord.Interaction):
@@ -4183,7 +4184,7 @@ __Highlighted Stat__
         btn = Button(emoji="📝", label="Edit", style=ButtonStyle.blurple)
         btn.callback = edit_profile
         view.add_item(ActionRow(btn))
-    elif user.image.startswith("https://cdn.discordapp.com/attachments/") or user.custom:
+    elif view_user.image.startswith("https://cdn.discordapp.com/attachments/") or view_user.custom:
         btn = Button(emoji="⚠️", label="Report")
         btn.callback = report_profile
         view.add_item(ActionRow(btn))
