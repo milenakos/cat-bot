@@ -2504,6 +2504,15 @@ async def on_message(message: discord.Message):
 
                 # handle quests
                 await multi_progress(message, user, quests, False)
+
+                if vote_time_user.tutorial_state == 0:
+                    await message.reply(f"👋 Welcome to Cat Bot! Check out the </tutorial:{COMMAND_IDS['tutorial']}> to get started (includes a free gift!)")
+                    vote_time_user.tutorial_state = 1
+                    await vote_time_user.save()
+                elif vote_time_user.tutorial_state == 2:
+                    await message.reply(f"✅ Run </tutorial:{COMMAND_IDS['tutorial']}> to continue")
+                    vote_time_user.tutorial_state = 3
+                    await vote_time_user.save()
             finally:
                 if decided_time:
                     if cat_rain_end:
@@ -2700,43 +2709,100 @@ Have a nice day :)"""
         pass
 
 
-@bot.tree.command(description="A guide of how to use the bot")
-async def help(message):
-    embed1 = discord.Embed(
-        title="How to Setup",
-        description="Server moderator (anyone with *Manage Server* permission) needs to run `/setup` in any channel. After that, cats will start to spawn in 1-10 minute intervals inside of that channel.\nYou can customize those intervals with `/changetimings` and change the spawn message with `/changemessage`.\nCat spawns can also be forced by moderators using `/forcespawn` command.\nYou can have unlimited amounts of setupped channels at once.\nYou can stop the spawning in a channel by running `/forget`.",
-        color=Colors.brown,
-    ).set_thumbnail(url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png")
+# 0 - not started
+# 1 - seen cta message on catch, /tutorial required
+# 2 - seen first tutorial page, catch required
+# 3 - catch done, /tutorial refresh required
+# 4 - second tutorial page shown, /inventory required
+# 5 - /inventory done, third tutorial page shown, /leaderboards required
+# 6 - /leaderboards done, fourth tutorial page shown, /achievements required
+# 7 - /achievements done, fifth tutorial page shown, /battlepass required
+# 8 - /battlepass done, sixth tutorial page shown, pack open required
+# 9 - pack open done, final page shown, rain given
+# 10 - tutorial complete
+async def get_tutorial_view(user_id: int):
+    user = await User.get_or_create(user_id=user_id)
+    if user.tutorial_state == 0:
+        user.tutorial_state = 1
 
-    embed2 = (
-        discord.Embed(title="How to Play", color=Colors.brown)
-        .add_field(
-            name="Catch Cats",
-            value='Whenever a cat spawns you will see a message along the lines of "a cat has appeared", which will also display it\'s type.\nCat types can have varying rarities from 25% for Fine to hundredths of percent for rarest types.\nSo, after saying "cat" the cat will be added to your inventory.',
-            inline=False,
+    view = LayoutView(timeout=VIEW_TIMEOUT)
+    if user.tutorial_state in [1, 2]:
+        user.tutorial_state = 2
+        container = Container(
+            f"## Welcome to {get_emoji('staring_cat')} Cat Bot!",
+            "🐈 The main goal of the bot is to __catch cats__. You can do that by waiting for one to appear - it will look like on the image below (there is usually one every couple of minutes), then simply saying `cat` in the chat. Only __the first person__ to catch the cat will get it.",
+            "**Go try it!**",
+            discord.ui.MediaGallery(discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316534462578838/tutorial1.png")),
+            "===",
+            f"-# Tutorial Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
         )
-        .add_field(
-            name="Viewing Your Inventory",
-            value="You can view your (or anyone elses!) inventory using `/inventory` command. It will display all the cats, along with other stats.\nIt is important to note that you have a separate inventory in each server and nothing carries over, to make the experience more fair and fun.\nCheck out the leaderboards for your server by using `/leaderboards` command.\nIf you want to transfer cats, you can use the simple `/gift` or more complex `/trade` commands.",
-            inline=False,
+        view.add_item(container)
+    elif user.tutorial_state in [3, 4]:
+        user.tutorial_state = 4
+        container = Container(
+            "Well done! To see the cat you just caught, run `/inventory`!",
+            "===",
+            f"-# Tutorial Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
         )
-        .add_field(
-            name="Let's get funky!",
-            value='Cat Bot has various other mechanics to make fun funnier. You can collect various `/achievements`, for example saying "i read help", progress in the `/battlepass`, or have beef with the mafia over catnip addiction. The amount you worship is the limit!',
-            inline=False,
+        view.add_item(container)
+    elif user.tutorial_state == 5:
+        container = Container(
+            "This is your inventory. It's the place you can see your cat collection and some basic stats. You can also see anyone else's inventory by using `/inventory @username`.",
+            "Lets run `/leaderboards` to see the best cat catchers in your server!",
+            discord.ui.MediaGallery(discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316535108243608/tutorial2.png")),
+            "===",
+            f"-# Tutorial Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
         )
-        .add_field(
-            name="Other features",
-            value="Cat Bot has extra fun commands which you will discover along the way.\nAnything unclear? Check out [our wiki](https://catbot.wiki) or drop us a line at our [Discord server](https://discord.gg/staring).",
-            inline=False,
+        view.add_item(container)
+    elif user.tutorial_state == 6:
+        container = Container(
+            "Nice! Interacting with others is a big part of Cat Bot - don't be afraid to `/trade` with them or ask for advice!",
+            "Speaking about important things, let's check out `/achievements`!",
+            "===",
+            f"-# Tutorial Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
         )
-        .set_footer(
-            text=f"Cat Bot by Milenakos, {discord.utils.utcnow().year}",
-            icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png",
+        view.add_item(container)
+    elif user.tutorial_state == 7:
+        container = Container(
+            f"Cat Bot has *a bunch* of {get_emoji('ach')} achievements, from very simple ones to {get_emoji('demonic_ach')} __ones which take months to complete__. If you ever feel unsure what to do, try completing some! You will also be able to discover a bunch of Cat Bot this way.",
+            "Okay, the last important thing - run `/battlepass`.",
+            "===",
+            f"-# Tutorial Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
         )
-    )
+        view.add_item(container)
+    elif user.tutorial_state == 8:
+        container = Container(
+            "⬆️ Cat Bot's Battlepass *(or Cattlepass)* is the main non-catching way of getting cats.",
+            f"There are 3 quests which give you XP, and every couple hundred XP you will get some {get_emoji('goldpack')} __Packs__, which you can open via `/packs` to get some cats! Quests refresh 12 hours after completing them.",
+            "**Try completing some quests and opening a pack!**",
+            "===",
+            f"-# Tutorial Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
+        )
+        view.add_item(container)
+    elif user.tutorial_state == 9:
+        user.tutorial_state = 10
+        user.rain_minutes += 2
+        container = Container(
+            "Nice! One last thing - catching gets __a lot more fun__ if you use the various *power-ups* inside Cat Bot!",
+            f"These include {get_emoji('prism')} `/Prism`s, {get_emoji('catnip')} `/Catnip`, 💫 `/Bless`ings, and ☔ `/Rain`.",
+            "Speaking of the last one, for completing the tutorial you get **+2 free ☔ Rain Minutes**! You can use them via `/rain`.",
+            "===",
+            '-# ✅ Tutorial Complete! Go catch cats, do some achievements like saying "i read help", or discover the power-ups! Have fun!',
+        )
+        view.add_item(container)
+    elif user.tutorial_state == 10:
+        view.add_item(
+            TextDisplay(
+                '✅ Tutorial Complete! Go catch cats, do some achievements like saying "i read help", or discover the power-ups! Have fun!',
+            )
+        )
+    await user.save()
+    return view
 
-    await message.response.send_message(embeds=[embed1, embed2])
+
+@bot.tree.command(description="A guide to help you get started with Cat Bot!")
+async def tutorial(message: discord.Interaction):
+    await message.response.send_message(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
 
 @bot.tree.command(description="Roll the credits")
@@ -4211,6 +4277,11 @@ __Highlighted Stat__
     for ach in give_achs:
         await achemb(message, ach, "followup")
 
+    if user.tutorial_state == 4:
+        user.tutorial_state = 5
+        await user.save()
+        await message.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
+
 
 async def rain_recovery_loop(channel):
     logging.debug("Rain started, cats %d", channel.cat_rains)
@@ -4402,11 +4473,6 @@ async def rain(message: discord.Interaction):
 
     if not user.rain_minutes:
         user.rain_minutes = 0
-        await user.save()
-
-    if not user.claimed_free_rain:
-        user.rain_minutes += 2
-        user.claimed_free_rain = True
         await user.save()
 
     server_rains = ""
@@ -4958,6 +5024,12 @@ async def packs(message: discord.Interaction):
         view, _ = gen_view(user)
         await interaction.edit_original_response(view=view)
 
+        await global_user.refresh_from_db()
+        if global_user.tutorial_state == 8:
+            global_user.tutorial_state = 9
+            await global_user.save()
+            await interaction.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
+
     async def open_all_packs(interaction: discord.Interaction):
         embed = await process_pack_opening(10000)
         if not embed:
@@ -4968,7 +5040,14 @@ async def packs(message: discord.Interaction):
         view, _ = gen_view(user)
         await message.edit_original_response(view=view)
 
+        await global_user.refresh_from_db()
+        if global_user.tutorial_state == 8:
+            global_user.tutorial_state = 9
+            await global_user.save()
+            await interaction.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
+
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    global_user = await User.get_or_create(user_id=message.user.id)
     view, has_special = gen_view(user)
     description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n[Chance Info](<https://catbot.minkos.lol/packs>)"
     if has_special:
@@ -5167,6 +5246,11 @@ async def battlepass(message: discord.Interaction):
             await interaction.edit_original_response(embed=embedVar, view=view)
 
     await gen_main(message, True)
+
+    if global_user.tutorial_state == 7:
+        global_user.tutorial_state = 8
+        await global_user.save()
+        await message.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
 
 @bot.tree.command(description="vote for cat bot")
@@ -8345,6 +8429,8 @@ You can stop. That's okay. Seriously.
 async def achievements(message: discord.Interaction):
     # this is very close to /inv's ach counter
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    global_user = await User.get_or_create(user_id=message.user.id)
+
     if user.funny >= 50:
         await achemb(message, "its_not_working", "followup")
 
@@ -8493,6 +8579,11 @@ async def achievements(message: discord.Interaction):
 
     if unlocked >= 15:
         await achemb(message, "achiever", "followup")
+
+    if global_user.tutorial_state == 6:
+        global_user.tutorial_state = 7
+        await global_user.save()
+        await message.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
     await finale(message, user)
 
@@ -8873,6 +8964,11 @@ async def leaderboards(
 
         if leader:
             await achemb(message, "leader", "followup")
+
+        if global_user.tutorial_state == 5:
+            global_user.tutorial_state = 6
+            await global_user.save()
+            await interaction.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
     await lb_handler(message, leaderboard_type, False, cat_type)
 
@@ -9296,6 +9392,14 @@ async def on_error(*args, **kwargs):
 async def on_interaction(ctx):
     if ctx.command:
         logging.debug("Command %s was used", ctx.command.name)
+        bot.loop.create_task(start_tutorial(ctx))
+
+
+async def start_tutorial(ctx):
+    await asyncio.sleep(5)
+    global_user = await User.get_or_create(user_id=ctx.user.id)
+    if global_user.tutorial_state == 0:
+        await ctx.followup.send(view=await get_tutorial_view(ctx.user.id), ephemeral=True)
 
 
 async def setup(bot2):
