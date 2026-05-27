@@ -7086,6 +7086,7 @@ async def catgpt(message: discord.Interaction, query: str):
     for n in range(1, 73):
         e += math.sin(n * b) / (n * n) + ord(query[n % len(query)])
     f = math.sin(d) ** 2 + math.cos(d) ** 2 - 1
+    e = int(e)
     g = ((e & ~e) - (e & ~e)) + f
 
     # main loop
