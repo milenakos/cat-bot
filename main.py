@@ -2515,17 +2515,17 @@ async def on_message(message: discord.Message):
                 if vote_time_user.tutorial_state == 0:
                     text = f"👋 Welcome to Cat Bot! Check out the {get_command_mention('tutorial')} to get started (includes a free gift!)"
                     try:
-                        await message.reply(text)
+                        await message.reply(text, allowed_mentions=discord.AllowedMentions(users=True))
                     except Exception:
-                        await message.channel.send(f"{message.author.mention} {text}")
+                        await message.channel.send(f"{message.author.mention} {text}", allowed_mentions=discord.AllowedMentions(users=True))
                     vote_time_user.tutorial_state = 1
                     await vote_time_user.save()
                 elif vote_time_user.tutorial_state == 2:
                     text = f"✅ Run {get_command_mention('tutorial')} to continue"
                     try:
-                        await message.reply(text)
+                        await message.reply(text, allowed_mentions=discord.AllowedMentions(users=True))
                     except Exception:
-                        await message.channel.send(f"{message.author.mention} {text}")
+                        await message.channel.send(f"{message.author.mention} {text}", allowed_mentions=discord.AllowedMentions(users=True))
                     vote_time_user.tutorial_state = 3
                     await vote_time_user.save()
             finally:
