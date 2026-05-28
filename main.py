@@ -2749,7 +2749,7 @@ async def get_tutorial_view(user_id: int):
             "**Go try it!**",
             discord.ui.MediaGallery(discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316534462578838/tutorial1.png")),
             "===",
-            f"-# Tutorial Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
+            f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
         )
         view.add_item(container)
     elif user.tutorial_state in [3, 4]:
@@ -2757,7 +2757,7 @@ async def get_tutorial_view(user_id: int):
         container = Container(
             "Well done! To see the cat you just caught, run `/inventory`!",
             "===",
-            f"-# Tutorial Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
+            f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
         )
         view.add_item(container)
     elif user.tutorial_state == 5:
@@ -2766,7 +2766,7 @@ async def get_tutorial_view(user_id: int):
             "Lets run `/leaderboards` to see the best cat catchers in your server!",
             discord.ui.MediaGallery(discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316535108243608/tutorial2.png")),
             "===",
-            f"-# Tutorial Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
+            f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
         )
         view.add_item(container)
     elif user.tutorial_state == 6:
@@ -2774,7 +2774,7 @@ async def get_tutorial_view(user_id: int):
             "Nice! Interacting with others is a big part of Cat Bot - don't be afraid to `/trade` with them or ask for advice!",
             "Speaking about important things, let's check out `/achievements`!",
             "===",
-            f"-# Tutorial Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
+            f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
         )
         view.add_item(container)
     elif user.tutorial_state == 7:
@@ -2782,7 +2782,7 @@ async def get_tutorial_view(user_id: int):
             f"Cat Bot has *a bunch* of {get_emoji('ach')} achievements, from very simple ones to {get_emoji('demonic_ach')} __ones which take months to complete__. If you ever feel unsure what to do, try completing some! You will also be able to discover a bunch of Cat Bot this way.",
             "Okay, the last important thing - run `/battlepass`.",
             "===",
-            f"-# Tutorial Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
+            f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
         )
         view.add_item(container)
     elif user.tutorial_state == 8:
@@ -2791,7 +2791,7 @@ async def get_tutorial_view(user_id: int):
             f"There are 3 quests which give you XP, and every couple hundred XP you will get some {get_emoji('goldpack')} __Packs__, which you can open via `/packs` to get some cats! Quests refresh 12 hours after completing them.",
             "**Try completing some quests and opening a pack!**",
             "===",
-            f"-# Tutorial Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
+            f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
         )
         view.add_item(container)
     elif user.tutorial_state == 9:
