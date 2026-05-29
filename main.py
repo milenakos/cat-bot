@@ -5819,6 +5819,51 @@ async def gift(
         if gift_type.lower() == "rain":
             key = "rain_minutes"
             thing = "Rain Minutes"
+        if gift_type.lower() == "all":
+            user = await Profile.get_or_create(conn, guild_id=message.guild.id, user_id=message.user.id)
+            reciever = await Profile.get_or_create(conn, guild_id=message.guild.id, user_id=person_id)
+            if person_id == bot.user.id:
+                await message.response.send_message("your house has indeed been airstruck from orbit", ephemeral=True)
+                return
+
+            transfers = []
+            total = 0
+
+            for cat in cattypes:
+                key = f"cat_{cat}"
+                amt = int(user[key])
+
+                if amt > 0:
+                    user[key] -= amt
+                    reciever[key] += amt
+                    transfers.append((cat, amt))
+                    total += amt
+
+            if total <= 0:
+                await message.response.send_message("no", ephemeral=True)
+                return
+
+            user.cats_gifted += total
+            reciever.cat_gifts_recieved += total
+
+            await user.save()
+            await reciever.save()
+
+            content = (
+                f"Successfully transfered {total:,} cats across "
+                f"{len(transfers):,} types from {message.user.mention} to {person.mention}!"
+            )
+
+            await message.response.send_message(
+                content,
+                allowed_mentions=discord.AllowedMentions(users=True),
+            )
+
+            # everything will explode if we try to let this play out normally so just do this and return
+            await achemb(message, "donator", "followup")
+            await achemb(message, "anti_donator", "followup", person)
+            await progress(message, user, "gift")
+            return
         elif gift_type.lower() in [cattype.lower() for cattype in cattypes]:
             gift_type = cattype_lc_dict[gift_type.lower()]
             key = f"cat_{gift_type}"
