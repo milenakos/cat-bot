@@ -5820,8 +5820,6 @@ async def gift(
             key = "rain_minutes"
             thing = "Rain Minutes"
         if gift_type.lower() == "all":
-            user = await Profile.get_or_create(conn, guild_id=message.guild.id, user_id=message.user.id)
-            reciever = await Profile.get_or_create(conn, guild_id=message.guild.id, user_id=person_id)
             if person_id == bot.user.id:
                 await message.response.send_message("your house has indeed been airstruck from orbit", ephemeral=True)
                 return
