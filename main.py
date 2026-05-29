@@ -5799,8 +5799,9 @@ async def gift(
     amount: Optional[str],
 ):
     person_id = person.id
-    amount = amount.strip().lower() or "1"
-    if amount in ["all", "max"]:
+    if not amount:
+        amount = "1"
+    if amount.strip().lower() in ["all", "max"]:
         amount = "all"
     else:
         try:
@@ -9444,9 +9445,12 @@ async def on_error(*args, **kwargs):
 
 # this is for stats, useless otherwise
 async def on_interaction(ctx):
-    if ctx.command:
-        logging.debug("Command %s was used", ctx.command.name)
-        bot.loop.create_task(start_tutorial(ctx))
+    try:
+        if ctx.command:
+            logging.debug("Command %s was used", ctx.command.name)
+            bot.loop.create_task(start_tutorial(ctx))
+    except Exception:
+        pass
 
 
 async def start_tutorial(ctx):
