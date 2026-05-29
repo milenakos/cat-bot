@@ -2674,7 +2674,12 @@ async def on_guild_join(guild: discord.Guild):
             if patt in i.name:
                 return i
 
-    source = "external" if guild.self_role.permissions.use_external_emojis else "discord"
+    if not guild.self_role:
+        source = "unknown"
+    elif guild.self_role.permissions.use_external_emojis:
+        source = "external"
+    else:
+        source = "discord"
 
     # first to try a good channel, then whenever we cat atleast chat
     found = False
