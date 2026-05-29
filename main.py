@@ -5789,25 +5789,32 @@ async def cookie(message: discord.Interaction):
 @discord.app_commands.describe(
     person="Whom to gift?",
     gift_type="im gonna airstrike your house from orbit",
-    amount="And how much?",
+    amount='And how much? (default: 1, "all" for max)',
 )
 @discord.app_commands.autocomplete(gift_type=gift_autocomplete)
 async def gift(
     message: discord.Interaction,
     person: discord.User,
     gift_type: str,
-    amount: Optional[int],
+    amount: Optional[str],
 ):
-    if amount is None:
-        # default the amount to 1
-        amount = 1
     person_id = person.id
+    amount = amount.strip().lower() or "1"
+    if amount in ["all", "max"]:
+        amount = "all"
+    else:
+        try:
+            amount = int(amount)
+            if amount <= 0 or amount >= 2147483647:
+                raise ValueError
+        except ValueError:
+            await message.response.send_message("no", ephemeral=True)
+            return
 
-    if amount <= 0 or amount >= 2147483647 or message.user.id == person_id:
+    if message.user.id == person_id:
         # haha skill issue
         await message.response.send_message("no", ephemeral=True)
-        if message.user.id == person_id:
-            await achemb(message, "lonely", "followup")
+        await achemb(message, "lonely", "followup")
         return
 
     async with transaction() as conn:
@@ -5839,6 +5846,11 @@ async def gift(
             return
 
         # if enough
+        if amount == "all":
+            amount = user[key]
+        if amount <= 0:
+            await message.response.send_message("no", ephemeral=True)
+            return
         if user[key] >= amount:
             user[key] -= amount
             reciever[key] += amount
@@ -6138,14 +6150,17 @@ async def trade(message: discord.Interaction, other_user: discord.User):
         async def selectb(interaction: discord.Interaction):
             async def submitb(interaction2: discord.Interaction):
                 if selection == "cats":
-                    pre_cattype = modal.find_item(67).values[0].lower()
-                    amount = modal.find_item(69).value
+                    pre_cattype = modal.find_item(67).values[0].lower().strip()
+                    amount = modal.find_item(69).value.strip()
 
-                    try:
-                        amount = int(amount)
-                    except Exception:
-                        await interaction2.response.send_message("Amount must be an integer!", ephemeral=True)
-                        return
+                    if amount.lower() in ["max", "all"]:
+                        amount = "all"
+                    else:
+                        try:
+                            amount = int(amount)
+                        except Exception:
+                            await interaction2.response.send_message("Amount must be an integer!", ephemeral=True)
+                            return
 
                     cattype = {t.lower(): t for t in cattypes}.get(pre_cattype, None)
                     if cattype is None:
@@ -6155,6 +6170,9 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     await active_user.profile.refresh_from_db()
 
                     current = active_user.gives_cats.get(cattype, 0)
+                    if amount == "all":
+                        amount = active_user.profile[f"cat_{cattype}"] - current
+
                     if active_user.profile[f"cat_{cattype}"] < amount + current or current + amount < 0:
                         await interaction2.response.send_message(f"You don't have enough {cattype} cats!", ephemeral=True)
                         return
@@ -6166,14 +6184,17 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         active_user.gives_cats = {k: active_user.gives_cats[k] for k in cattypes if k in active_user.gives_cats}
                     active_user.value += (sum(type_dict.values()) / type_dict[cattype]) * amount
                 elif selection == "packs":
-                    packtype = modal.find_item(67).values[0].title()
-                    amount = modal.find_item(69).value
+                    packtype = modal.find_item(67).values[0].title().strip()
+                    amount = modal.find_item(69).value.strip()
 
-                    try:
-                        amount = int(amount)
-                    except Exception:
-                        await interaction2.response.send_message("Amount must be an integer!", ephemeral=True)
-                        return
+                    if amount.lower() in ["max", "all"]:
+                        amount = "all"
+                    else:
+                        try:
+                            amount = int(amount)
+                        except Exception:
+                            await interaction2.response.send_message("Amount must be an integer!", ephemeral=True)
+                            return
 
                     if packtype not in pack_names:
                         await interaction2.response.send_message(f"Pack {packtype} not found!", ephemeral=True)
@@ -6182,6 +6203,9 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     await active_user.profile.refresh_from_db()
 
                     current = active_user.gives_packs.get(packtype, 0)
+                    if amount == "all":
+                        amount = active_user.profile[f"pack_{packtype.lower()}"] - current
+
                     if active_user.profile[f"pack_{packtype.lower()}"] < amount + current or current + amount < 0:
                         await interaction2.response.send_message(f"You don't have enough {packtype} packs!", ephemeral=True)
                         return
@@ -6193,17 +6217,23 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         active_user.gives_packs = {k: active_user.gives_packs[k] for k in pack_names if k in active_user.gives_packs}
                     active_user.value += sum([i["totalvalue"] if i["name"] == packtype else 0 for i in pack_data]) * amount
                 elif selection == "rain":
-                    amount = modal.find_item(69).value
+                    amount = modal.find_item(69).value.strip()
 
-                    try:
-                        amount = int(amount)
-                    except Exception:
-                        await interaction2.response.send_message("Amount must be an integer!", ephemeral=True)
-                        return
+                    if amount.lower() in ["max", "all"]:
+                        amount = "all"
+                    else:
+                        try:
+                            amount = int(amount)
+                        except Exception:
+                            await interaction2.response.send_message("Amount must be an integer!", ephemeral=True)
+                            return
 
                     await active_user.global_user.refresh_from_db()
 
                     current = active_user.gives_rain
+                    if amount == "all":
+                        amount = active_user.global_user.rain_minutes - current
+
                     if active_user.global_user.rain_minutes < amount + current or current + amount < 0:
                         await interaction2.response.send_message("You don't have enough rain!", ephemeral=True)
                         return
@@ -6211,7 +6241,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     active_user.gives_rain += amount
                     active_user.value += 900 * amount
                 elif selection == "prisms":
-                    prism_elem = modal.find_item(67)
+                    prism_elem = modal.find_item(67).strip()
 
                     if isinstance(prism_elem, discord.ui.Select):
                         prism_name = prism_elem.values[0].title()
