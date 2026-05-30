@@ -4172,6 +4172,9 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
         await interaction.edit_original_response(content="Thanks for your report.", view=None)
 
     async def report_profile(interaction: discord.Interaction):
+        if person_id.id == bot.user.id:
+            await interaction.response.send_message("do you really hate me that much", ephemeral=True)
+            return
         view = View(timeout=VIEW_TIMEOUT)
         btn = Button(label="Confirm Report")
         btn.callback = confirm_report
