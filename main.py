@@ -5804,7 +5804,7 @@ async def gift(
     person_id = person.id
     if not amount:
         amount = "1"
-    if amount.strip().lower() in ["all", "max"]:
+    if amount.lower() in ["all", "max"]:
         amount = "all"
     else:
         try:
@@ -6154,8 +6154,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
         async def selectb(interaction: discord.Interaction):
             async def submitb(interaction2: discord.Interaction):
                 if selection == "cats":
-                    pre_cattype = modal.find_item(67).values[0].lower().strip()
-                    amount = modal.find_item(69).value.strip()
+                    pre_cattype = modal.find_item(67).values[0].lower()
+                    amount = modal.find_item(69).value
 
                     if amount.lower() in ["max", "all"]:
                         amount = "all"
@@ -6188,8 +6188,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         active_user.gives_cats = {k: active_user.gives_cats[k] for k in cattypes if k in active_user.gives_cats}
                     active_user.value += (sum(type_dict.values()) / type_dict[cattype]) * amount
                 elif selection == "packs":
-                    packtype = modal.find_item(67).values[0].title().strip()
-                    amount = modal.find_item(69).value.strip()
+                    packtype = modal.find_item(67).values[0].title()
+                    amount = modal.find_item(69).value
 
                     if amount.lower() in ["max", "all"]:
                         amount = "all"
@@ -6221,7 +6221,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         active_user.gives_packs = {k: active_user.gives_packs[k] for k in pack_names if k in active_user.gives_packs}
                     active_user.value += sum([i["totalvalue"] if i["name"] == packtype else 0 for i in pack_data]) * amount
                 elif selection == "rain":
-                    amount = modal.find_item(69).value.strip()
+                    amount = modal.find_item(69).value
 
                     if amount.lower() in ["max", "all"]:
                         amount = "all"
@@ -6245,7 +6245,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     active_user.gives_rain += amount
                     active_user.value += 900 * amount
                 elif selection == "prisms":
-                    prism_elem = modal.find_item(67).strip()
+                    prism_elem = modal.find_item(67)
 
                     if isinstance(prism_elem, discord.ui.Select):
                         prism_name = prism_elem.values[0].title()
