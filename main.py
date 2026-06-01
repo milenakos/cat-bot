@@ -5325,13 +5325,6 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
 
     async def confirm_craft(interaction: discord.Interaction):
         await interaction.response.defer()
-        user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
-
-        # check we still can craft
-        for i in cattypes:
-            if user["cat_" + i] < 1:
-                await interaction.followup.send("You don't have enough cats. Nice try though.", ephemeral=True)
-                return
 
         if await Prism.count("guild_id = $1", interaction.guild.id) >= len(prism_names):
             await interaction.followup.send("This server has reached the prism limit.", ephemeral=True)
@@ -5353,17 +5346,23 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
             selected_time = round(time.time())
 
         # actually take away cats
+        user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         for i in cattypes:
+            if user["cat_" + i] < 1:
+                await interaction.followup.send("You don't have enough cats. Nice try though.", ephemeral=True)
+                return
             user["cat_" + i] -= 1
-        await user.save()
 
         # create the prism
-        await Prism.create(
-            guild_id=interaction.guild.id,
-            user_id=interaction.user.id,
-            creator=interaction.user.id,
-            time=selected_time,
-            name=selected_name,
+        await asyncio.gather(
+            user.save(),
+            Prism.create(
+                guild_id=interaction.guild.id,
+                user_id=interaction.user.id,
+                creator=interaction.user.id,
+                time=selected_time,
+                name=selected_name,
+            ),
         )
 
         logging.debug("Created prism")
@@ -9446,7 +9445,6 @@ async def on_error(*args, **kwargs):
     raise
 
 
-# this is for stats, useless otherwise
 async def on_interaction(ctx):
     try:
         if ctx.command:
