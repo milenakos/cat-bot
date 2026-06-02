@@ -47,7 +47,7 @@ from PIL import Image
 
 import config
 import msg2img
-from catpg import RawSQL, transaction
+from catpg import RawSQL, pool, transaction
 from database import Channel, Prism, Profile, Reminder, Server, User
 
 try:
@@ -392,6 +392,8 @@ loop_count = 0
 
 # loops in dpy can randomly break, i check if is been over X minutes since last loop to restart it
 last_loop_time = 0
+
+server_count = 0
 
 
 def get_emoji(name):
@@ -1281,18 +1283,21 @@ async def postpone_reminder(interaction):
 
 # a loop for various maintenance which is ran every 5 minutes
 async def background_loop():
-    global pointlaugh_ratelimit, reactions_ratelimit, last_loop_time, loop_count, catchcooldown, temp_belated_storage, fakecooldown, last_vote_cursor
+    global \
+        pointlaugh_ratelimit, \
+        reactions_ratelimit, \
+        last_loop_time, \
+        loop_count, \
+        catchcooldown, \
+        temp_belated_storage, \
+        fakecooldown, \
+        last_vote_cursor, \
+        server_count
+
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     catchcooldown = {}
     fakecooldown = {}
-    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {len(bot.guilds):,} servers"))
-
-    # save chaos
-    if config.chaos_current is not None:
-        chaos = await Profile.get_or_create(guild_id=666, user_id=bot.user.id)
-        chaos.cookies = config.chaos_current
-        await chaos.save()
 
     # temp_belated_storage cleanup
     # clean up anything older than 1 minute
@@ -1301,15 +1306,36 @@ async def background_loop():
         if id < baseflake:
             del temp_belated_storage[id]
 
+    if config.CLUSTERING:
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get("http://localhost:7878/metrics") as response:
+                    data = await response.text()
+                    server_count = 0
+                    for line in data.split("\n"):
+                        if line.startswith("gateway_shard_guilds{shard="):
+                            if "NaN" in line:
+                                continue
+                            server_count += int(line.split(" ")[1])
+            except Exception:
+                pass
+    else:
+        server_count = len(bot.guilds)
+
+    if not config.CLUSTERING or config.CLUSTERING_ZERO:
+        await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {server_count:,} servers"))
+    else:
+        return
+
     if config.TOP_GG_MODERN_TOKEN:
         async with aiohttp.ClientSession() as session:
             try:
-                if not config.MIN_SERVER_SEND or len(bot.guilds) > config.MIN_SERVER_SEND:
+                if not config.MIN_SERVER_SEND or server_count > config.MIN_SERVER_SEND:
                     # send server count to top.gg
                     r = await session.post(
                         "https://top.gg/api/v1/projects/@me/metrics",
                         headers={"Authorization": f"Bearer {config.TOP_GG_MODERN_TOKEN}"},
-                        json={"server_count": len(bot.guilds), "shard_count": len(bot.shards)},
+                        json={"server_count": server_count},
                     )
                     r.close()
 
@@ -1524,13 +1550,13 @@ async def background_loop():
                     event_loop = asyncio.get_event_loop()
                     await event_loop.run_in_executor(None, exportbackup.export)
 
-                    await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.\nBackup exported.")
+                    await backupchannel.send(f"In {server_count:,} servers, loop {loop_count}.\nBackup exported.")
                 else:
-                    await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.", file=discord.File(backup_file))
+                    await backupchannel.send(f"In {server_count:,} servers, loop {loop_count}.", file=discord.File(backup_file))
             except Exception as e:
                 logging.warning(f"Error during backup: {e}")
         else:
-            await backupchannel.send(f"In {len(bot.guilds)} servers, loop {loop_count}.")
+            await backupchannel.send(f"In {server_count:,} servers, loop {loop_count}.")
 
     loop_count += 1
 
@@ -1604,9 +1630,6 @@ async def on_ready():
             "Enjoying the bot: **You <3**",
         ]
     )
-
-    chaos = await Profile.get_or_create(guild_id=666, user_id=bot.user.id)
-    config.chaos_current = chaos.cookies
 
 
 # this is all the code which is ran on every message sent
@@ -2590,15 +2613,37 @@ async def on_message(message: discord.Message):
             user.rain_minutes += int(things[2])
         user.premium = True
         await user.save()
-    if text.lower().startswith("cat!restart"):
+    if text.lower().startswith("cat!restartall"):
         try:
-            await message.reply("restarting!")
+            await message.reply("restarting all clusters!")
         except Exception:
             pass
         os.system("git pull")
-        if config.WEBHOOK_VERIFY:
+        if vote_server:
+            await vote_server.cleanup()
+        db_reload = "db" in text
+        await pool.execute(f"NOTIFY restarts, '{int(db_reload)}';")
+    elif text.lower().startswith("cat!restart"):
+        try:
+            await message.reply("restarting this cluster!")
+        except Exception:
+            pass
+        os.system("git pull")
+        if vote_server:
             await vote_server.cleanup()
         await bot.cat_bot_reload_hook("db" in text)  # pyright: ignore
+    if text.lower() == "cat!sync":
+        try:
+            await message.reply("syncing guild...")
+            await bot.tree.sync(guild=message.guild)
+        except Exception:
+            pass
+    if text.lower() == "cat!syncall":
+        try:
+            await message.reply("syncing all...")
+            await bot.tree.sync()
+        except Exception:
+            pass
     if text.lower().startswith("cat!print"):
         # just a simple one-line with no async (e.g. 2+3)
         try:
@@ -2724,7 +2769,7 @@ Have a nice day :)"""
     try:
         if config.INVITE_LOGS_CHANNEL:
             ch = bot.get_partial_messageable(config.INVITE_LOGS_CHANNEL)
-            await ch.send(f"#{len(bot.guilds):,} | {guild.member_count:,} members | Invite source: {source}")
+            await ch.send(f"~#{server_count:,} | {guild.member_count:,} members | Invite source: {source}")
     except Exception:
         pass
 
@@ -2876,11 +2921,11 @@ Hard uptime: `{format_timedelta(config.HARD_RESTART_TIME, time.time())}`
 Soft uptime: `{format_timedelta(config.SOFT_RESTART_TIME, time.time())}`
 Last code update: `{format_timedelta(git_timestamp, time.time()) if git_timestamp else "N/A"}`
 Loops since soft restart: `{loop_count + 1:,}`
-Shards: `{len(bot.shards):,}`
 Guild shard: `{message.guild.shard_id:,}`
+Clustering: `{"Yes" if config.CLUSTERING else "No"}`
 
 **__Global Stats__**
-Guilds: `{len(bot.guilds):,}`
+Guilds: `{f"{server_count:,}" if server_count else "..."}`
 DB Profiles: `{await Profile.count():,}`
 DB Users: `{await User.count():,}`
 DB Channels: `{await Channel.count():,}`
@@ -7029,19 +7074,22 @@ async def roulette(message: discord.Interaction):
 
 @bot.tree.command(description="ABSOLUTE chaos")
 async def chaos(message: discord.Interaction):
-    if config.chaos_current is None:
-        await message.response.send_message("come back later", ephemeral=True)
-        return
-
     async def click(interaction: discord.Interaction, first: Optional[bool] = False):
-        config.chaos_current += random.randint(0, 1000)
+        cookies = await pool.execute(
+            """INSERT INTO profile (guild_id, user_id, cookies)
+            VALUES (666, $1, 1)
+            ON CONFLICT (guild_id, user_id)
+            DO UPDATE SET cookies = profile.cookies + 1
+            RETURNING cookies;""",
+            bot.user.id,
+        )
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
         b = Button(label="Chaos!", style=ButtonStyle.red, emoji="💥")
         b.callback = click
         view.add_item(
             Container(
-                f"## {config.chaos_current:,}",
+                f"## {cookies:,}",
                 "the number above is global for everyone. click the button to add a random number to it.",
                 b,
             )
@@ -7453,7 +7501,7 @@ if config.WORDNIK_API_KEY:
 async def cat_fact(message: discord.Interaction):
     facts = [
         "you love cats",
-        f"cat bot is in {len(bot.guilds):,} servers",
+        f"cat bot is in {f'{server_count:,}' if server_count else '...'} servers",
         "cat",
         "cats are the best",
     ]
@@ -9481,7 +9529,8 @@ async def setup(bot2):
     bot2.on_error = on_error
     bot2.on_interaction = on_interaction
 
-    if config.WEBHOOK_VERIFY:
+    vote_server = None
+    if config.WEBHOOK_VERIFY and (not config.CLUSTERING or config.CLUSTERING_ZERO):
         app = web.Application()
         app.add_routes(
             [
@@ -9500,7 +9549,7 @@ async def setup(bot2):
 
     config.SOFT_RESTART_TIME = time.time()
 
-    app_commands = await bot.tree.sync()
+    app_commands = await bot.tree.fetch_commands()
     COMMAND_IDS = {i.name: i.id for i in app_commands}
 
     if bot.is_ready() and not on_ready_debounce:
@@ -9508,7 +9557,7 @@ async def setup(bot2):
 
 
 async def teardown(bot):
-    if config.WEBHOOK_VERIFY:
+    if vote_server:
         await vote_server.cleanup()
 
 

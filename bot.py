@@ -17,6 +17,7 @@
 import asyncio
 import importlib
 import logging
+import sys
 import time
 
 import discord
@@ -94,6 +95,20 @@ if config.SENTRY_DSN:
     sentry_sdk.init(dsn=config.SENTRY_DSN, before_send=before_send)
 
 
+if len(sys.argv) == 4:
+    start = int(sys.argv[1])
+    end = int(sys.argv[2])
+    total = int(sys.argv[3])
+    shard_ids = list(range(start, end))
+    shard_count = total
+    config.CLUSTERING = True
+    config.CLUSTERING_ZERO = start == 0
+else:
+    shard_ids = None
+    shard_count = None
+    config.CLUSTERING = False
+
+
 bot = commands.AutoShardedBot(
     command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     help_command=None,
@@ -102,12 +117,19 @@ bot = commands.AutoShardedBot(
     intents=discord.Intents(message_content=True, messages=True, guilds=True),
     member_cache_flags=discord.MemberCacheFlags.none(),
     allowed_mentions=discord.AllowedMentions.none(),
+    shard_ids=shard_ids,
+    shard_count=shard_count,
 )
 
 
 @bot.event
 async def setup_hook():
+    global listener_conn
+
     await database.connect()
+    if config.CLUSTERING:
+        listener_conn = await catpg.pool.acquire()
+        await listener_conn.add_listener("restarts", reload_call)
     await bot.load_extension("main")
 
 
@@ -124,14 +146,30 @@ async def reload(reload_db):
     await bot.load_extension("main")
 
 
+async def reload_call(conn, pid, channel, payload):
+    await reload("1" in payload)
+
+
+async def shutdown():
+    await bot.close()
+    if config.CLUSTERING:
+        await listener_conn.remove_listener("restarts", reload_call)
+        await listener_conn.release()
+    await database.close()
+
+
 config.cat_cought_rain = {}
 config.rain_starter = {}
-config.chaos_current = None
 
 bot.cat_bot_reload_hook = reload  # pyright: ignore
 
+
 try:
+    loop = asyncio.get_event_loop()
     config.HARD_RESTART_TIME = time.time()
-    bot.run(config.TOKEN, log_handler=handler, log_level=log_level)
+    loop.run_until_complete(bot.start(config.TOKEN, log_handler=handler, log_level=log_level))
+except KeyboardInterrupt:
+    pass
 finally:
-    asyncio.run(database.close())
+    loop.run_until_complete(shutdown())
+    loop.close()
