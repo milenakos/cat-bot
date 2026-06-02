@@ -1561,11 +1561,24 @@ async def background_loop():
     loop_count += 1
 
 
-# fetch app emojis early
 async def on_connect():
     global emojis
-    if len(emojis) == 0:
-        emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
+    if len(emojis) != 0:
+        return
+
+    try:
+        with open("config/emojis_cache.json", "r", encoding="utf-8") as f:
+            emojis = json.load(f)
+        return
+    except Exception:
+        pass
+
+    emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
+    try:
+        with open("config/emojis_cache.json", "w", encoding="utf-8") as f:
+            json.dump(emojis, f)
+    except Exception:
+        pass
 
 
 # some code which is run when bot is started
@@ -1575,8 +1588,6 @@ async def on_ready():
         return
     on_ready_debounce = True
     logging.info("cat is now online")
-    if len(emojis) == 0:
-        emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
     appinfo = bot.application
     if appinfo.team and appinfo.team.owner_id:
         OWNER_ID = appinfo.team.owner_id
@@ -2704,7 +2715,6 @@ bot.loop.create_task(go(message, bot))
                     image_binary.seek(0)
                     await bot.create_application_emoji(name=emoji_name, image=image_binary.getvalue())
         user.custom = cat_name if cat_name != "None" else ""
-        emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
         await user.save()
         await message.reply("success")
 
