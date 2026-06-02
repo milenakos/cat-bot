@@ -1573,7 +1573,7 @@ async def on_connect():
     except Exception:
         pass
 
-    emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
+    # emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
     try:
         with open("config/emojis_cache.json", "w", encoding="utf-8") as f:
             json.dump(emojis, f)
