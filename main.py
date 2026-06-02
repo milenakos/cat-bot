@@ -7094,17 +7094,17 @@ async def roulette(message: discord.Interaction):
         await achemb(message, "failed_gambler", "followup")
 
 
-@bot.tree.command(description="ABSOLUTE chaos")
+@bot.tree.command(description="absolute CHAOS")
 async def chaos(message: discord.Interaction):
     async def click(interaction: discord.Interaction, first: Optional[bool] = False):
-        cookies = await pool.execute(
+        cookies = await pool.fetchrow(
             """INSERT INTO profile (guild_id, user_id, cookies)
             VALUES (666, $1, 1)
             ON CONFLICT (guild_id, user_id)
             DO UPDATE SET cookies = profile.cookies + 1
             RETURNING cookies;""",
             bot.user.id,
-        )
+        )["cookies"]
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
         b = Button(label="Chaos!", style=ButtonStyle.red, emoji="💥")
