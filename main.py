@@ -1601,15 +1601,6 @@ async def on_ready():
     else:
         OWNER_ID = appinfo.owner.id
 
-    testers = [
-        712639066373619754,
-        902862104971849769,
-        709374062237057074,
-        520293520418930690,
-        1004128541853618197,
-        839458185059500032,
-    ]
-
     # fetch github contributors
     url = "https://api.github.com/repos/milenakos/cat-bot/contributors"
     contributors = []
@@ -1625,16 +1616,6 @@ async def on_ready():
             else:
                 logging.warning(f"Error: {response.status} - {await response.text()}")
 
-    # fetch testers
-    tester_users = []
-    try:
-        for i in testers:
-            user = await bot.fetch_user(i)
-            tester_users.append(user.name.replace("_", r"\_"))
-    except Exception:
-        # death
-        pass
-
     gen_credits = "\n".join(
         [
             "Made by **Lia Milenakos**",
@@ -1644,7 +1625,7 @@ async def on_ready():
             "Open Source Projects: **[discord.py](https://github.com/Rapptz/discord.py), [asyncpg](https://github.com/MagicStack/asyncpg), [gateway-proxy](https://github.com/Gelbpunkt/gateway-proxy)**",
             "Art, suggestions, and a lot more: **TheTrashCell**",
             "Banner art: **2braincelledcreature**",
-            "Testers: **" + ", ".join(tester_users) + "**",
+            "Testers: **aflyde, azalichia, amethystultrakill, thetrashcell, .ruby404, sior_.**",
             "Enjoying the bot: **You <3**",
         ]
     )
