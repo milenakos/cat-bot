@@ -1320,7 +1320,7 @@ async def background_loop():
                     data = await response.text()
                     server_count = 0
                     for line in data.split("\n"):
-                        if line.startswith("gateway_shard_guilds{shard="):
+                        if line.startswith("gateway_cache_guilds{shard="):
                             if "NaN" in line:
                                 continue
                             server_count += int(line.split(" ")[1])
