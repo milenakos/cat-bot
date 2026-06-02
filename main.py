@@ -2854,9 +2854,9 @@ async def get_tutorial_view(user_id: int):
         view.add_item(
             TextDisplay(
                 '✅ Tutorial Complete! Go catch cats, do some achievements like saying "i read help", or discover the power-ups! Have fun!',
-            ),
-            ActionRow(button),
+            )
         )
+        view.add_item(ActionRow(button))
     await user.save()
     return view
 
