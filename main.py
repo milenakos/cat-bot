@@ -7101,9 +7101,10 @@ async def chaos(message: discord.Interaction):
             """INSERT INTO profile (guild_id, user_id, cookies)
             VALUES (666, $1, 1)
             ON CONFLICT (guild_id, user_id)
-            DO UPDATE SET cookies = profile.cookies + 1
+            DO UPDATE SET cookies = profile.cookies + $2
             RETURNING cookies;""",
             bot.user.id,
+            random.randint(0, 1000),
         )
         cookies = cookies["cookies"]
 
