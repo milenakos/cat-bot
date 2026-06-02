@@ -7104,7 +7104,8 @@ async def chaos(message: discord.Interaction):
             DO UPDATE SET cookies = profile.cookies + 1
             RETURNING cookies;""",
             bot.user.id,
-        )["cookies"]
+        )
+        cookies = cookies["cookies"]
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
         b = Button(label="Chaos!", style=ButtonStyle.red, emoji="💥")
