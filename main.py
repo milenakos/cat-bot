@@ -1292,7 +1292,8 @@ async def background_loop():
         temp_belated_storage, \
         fakecooldown, \
         last_vote_cursor, \
-        server_count
+        server_count, \
+        emojis
 
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
@@ -1305,6 +1306,12 @@ async def background_loop():
     for id in temp_belated_storage.copy().keys():
         if id < baseflake:
             del temp_belated_storage[id]
+
+    try:
+        with open("config/emojis_cache.json", "r", encoding="utf-8") as f:
+            emojis = json.load(f)
+    except Exception:
+        pass
 
     if config.CLUSTERING:
         async with aiohttp.ClientSession() as session:
@@ -1573,7 +1580,7 @@ async def on_connect():
     except Exception:
         pass
 
-    # emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
+    emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
     try:
         with open("config/emojis_cache.json", "w", encoding="utf-8") as f:
             json.dump(emojis, f)
@@ -4746,6 +4753,11 @@ if config.DONOR_CHANNEL_ID:
                         new_em = await bot.create_application_emoji(name=em_name, image=image_binary.getvalue())
                 emojiss[em_name] = new_em
                 emojis = {k: str(v) for k, v in emojiss.items()}
+                try:
+                    with open("config/emojis_cache.json", "w", encoding="utf-8") as f:
+                        json.dump(emojis, f)
+                except Exception:
+                    pass
             except Exception:
                 await message.followup.send("Error creating emoji. Make sure your image is valid and below 256KB.", ephemeral=True)
                 return
