@@ -151,7 +151,6 @@ async def reload_call(conn, pid, channel, payload):
 
 
 async def shutdown():
-    await bot.close()
     if config.CLUSTERING:
         await listener_conn.remove_listener("restarts", reload_call)
         await listener_conn.release()
@@ -166,7 +165,7 @@ bot.cat_bot_reload_hook = reload  # pyright: ignore
 
 try:
     config.HARD_RESTART_TIME = time.time()
-    asyncio.run(bot.start(config.TOKEN, log_handler=handler, log_level=log_level))
+    bot.run(config.TOKEN, log_handler=handler, log_level=log_level)
 except KeyboardInterrupt:
     pass
 finally:
