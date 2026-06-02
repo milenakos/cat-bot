@@ -3557,13 +3557,16 @@ async def changeavatar(message: discord.Interaction, avatar: Optional[discord.At
         return
 
     if avatar:
-        avatar_value = discord.utils._bytes_to_base64_data(await avatar.read())
+        try:
+            avatar_value = await avatar.read()
+        except Exception:
+            await message.followup.send("your image is too weird", ephemeral=True)
+            return
     else:
         avatar_value = None
 
     try:
-        # this isnt supported by discord.py yet
-        await bot.http.request(discord.http.Route("PATCH", f"/guilds/{message.guild.id}/members/@me"), json={"avatar": avatar_value})
+        await message.guild.me.edit(avatar=avatar_value)
         await message.followup.send("Avatar changed successfully!")
     except Exception:
         await message.followup.send("Failed to change avatar! Your image is too big or you are changing avatars too quickly.", ephemeral=True)
