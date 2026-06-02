@@ -1329,9 +1329,8 @@ async def background_loop():
     else:
         server_count = len(bot.guilds)
 
-    if not config.CLUSTERING or config.CLUSTERING_ZERO:
-        await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {server_count:,} servers"))
-    else:
+    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {server_count:,} servers"))
+    if config.CLUSTERING and not config.CLUSTERING_ZERO:
         return
 
     if config.TOP_GG_MODERN_TOKEN:
