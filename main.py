@@ -2633,13 +2633,7 @@ async def on_message(message: discord.Message):
         await bot.cat_bot_reload_hook("db" in text)  # pyright: ignore
     if text.lower() == "cat!sync":
         try:
-            await message.reply("syncing guild...")
-            await bot.tree.sync(guild=message.guild)
-        except Exception:
-            pass
-    if text.lower() == "cat!syncall":
-        try:
-            await message.reply("syncing all...")
+            await message.reply("syncing commands!")
             await bot.tree.sync()
         except Exception:
             pass
