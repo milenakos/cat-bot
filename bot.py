@@ -165,11 +165,9 @@ bot.cat_bot_reload_hook = reload  # pyright: ignore
 
 
 try:
-    loop = asyncio.get_event_loop()
     config.HARD_RESTART_TIME = time.time()
-    loop.run_until_complete(bot.start(config.TOKEN, log_handler=handler, log_level=log_level))
+    asyncio.run(bot.start(config.TOKEN, log_handler=handler, log_level=log_level))
 except KeyboardInterrupt:
     pass
 finally:
-    loop.run_until_complete(shutdown())
-    loop.close()
+    asyncio.run(shutdown())
