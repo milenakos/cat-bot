@@ -2837,7 +2837,9 @@ async def get_tutorial_view(user_id: int):
         view.add_item(container)
     elif user.tutorial_state == 9:
         user.tutorial_state = 10
-        user.rain_minutes += 2
+        if not user.claimed_free_rain:
+            user.claimed_free_rain = True
+            user.rain_minutes += 2
         container = Container(
             "Nice! One last thing - catching gets __a lot more fun__ if you use the various *power-ups* inside Cat Bot!",
             f"These include {get_emoji('prism')} `/Prism`s, {get_emoji('catnip')} `/Catnip`, 💫 `/Bless`ings, and ☔ `/Rain`.",
@@ -2847,13 +2849,25 @@ async def get_tutorial_view(user_id: int):
         )
         view.add_item(container)
     elif user.tutorial_state == 10:
+        button = Button(label="Restart Tutorial")
+        button.callback = restart_tutorial
         view.add_item(
             TextDisplay(
                 '✅ Tutorial Complete! Go catch cats, do some achievements like saying "i read help", or discover the power-ups! Have fun!',
-            )
+            ),
+            ActionRow(button),
         )
     await user.save()
     return view
+
+
+async def restart_tutorial(interaction: discord.Interaction):
+    user = await User.get_or_create(user_id=interaction.user.id)
+    user.tutorial_state = 1
+    user.claimed_free_rain = True
+    await user.save()
+    await interaction.response.defer()
+    await interaction.edit_original_response(view=await get_tutorial_view(interaction.user.id))
 
 
 @bot.tree.command(description="A guide to help you get started with Cat Bot!")
@@ -4590,11 +4604,6 @@ You currently have **{user.rain_minutes:,}** minutes of rains{server_rains}.""",
 
         if not user.rain_minutes:
             user.rain_minutes = 0
-            await user.save()
-
-        if not user.claimed_free_rain:
-            user.rain_minutes += 2
-            user.claimed_free_rain = True
             await user.save()
 
         if not server.do_rain:

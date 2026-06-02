@@ -348,6 +348,7 @@ CREATE TABLE public."user" (
     color character varying(255) DEFAULT ''::character varying,
     image character varying(255) DEFAULT ''::character varying,
     premium boolean DEFAULT false,
+    claimed_free_rain boolean DEFAULT false,
     rain_minutes smallint DEFAULT 0,
     news_state character(2000) DEFAULT ''::character varying,
     reminder_vote bigint DEFAULT 0,
