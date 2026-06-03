@@ -3978,6 +3978,10 @@ async def gen_stats(profile, star):
     stats.append(["cats_blessed", "🌠", f"Cats blessed: {user.cats_blessed:,}"])
 
     # misc
+    if profile.rarest_fish.strip():
+        rarest_fish = f"{get_emoji(profile.rarest_fish.lower() + 'fish')} {profile.rarest_fish}"
+    else:
+        rarest_fish = "N/A"
     stats.append(["❓", "Misc"])
     if profile.ttt_played != 0:
         stats.append(
@@ -3989,6 +3993,7 @@ async def gen_stats(profile, star):
     stats.append(["slot_spins", "🎰", f"Slot spins: {profile.slot_spins:,}, wins: {profile.slot_wins:,}, big wins: {profile.slot_big_wins:,}"])
     stats.append(["roulette_spins", "💰", f"Roulette spins: {profile.roulette_spins:,}, wins: {profile.roulette_wins:,}"])
     stats.append(["cookies", "🍪", f"Cookies clicked: {profile.cookies:,}"])
+    stats.append(["catfishing", "🎣", f"Fish caught: {profile.fish_caught:,}, rarest: {rarest_fish}"])
     stats.append(["pig_high_score", "🎲", f"Pig high score: {profile.best_pig_score:,}"])
     stats.append(["cats_gifted", "🎁", f"Cats gifted: {profile.cats_gifted:,}{star}"])
     stats.append(["cats_received_as_gift", "🎁", f"Cats received as gift: {profile.cat_gifts_recieved:,}{star}"])
@@ -5838,7 +5843,7 @@ async def fish(message: discord.Interaction):
 
         await interaction.response.defer()
         view = LayoutView(timeout=VIEW_TIMEOUT)
-        view.add_item(TextDisplay("Fishing..."))
+        view.add_item(TextDisplay("Fishing... (wait 10-30 seconds)"))
         await interaction.edit_original_response(view=view)
 
         await asyncio.sleep(random.uniform(10, 30))
@@ -5852,12 +5857,12 @@ async def fish(message: discord.Interaction):
 
             await profile.refresh_from_db()
             profile.fish_caught += 1
-            if cattypes.index(fishtype) > cattypes.index(profile.rarest_fish.strip()):
+            if profile.rarest_fish.strip() and cattypes.index(fishtype) > cattypes.index(profile.rarest_fish.strip()):
                 profile.rarest_fish = fishtype
+            await profile.save()
             if cattypes.index(fishtype) >= 13:
                 await achemb(interaction, "pro_fisher", "followup")
             await achemb(interaction, "fisherman", "followup")
-            await profile.save()
 
             view = LayoutView(timeout=VIEW_TIMEOUT)
             button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
@@ -5892,7 +5897,12 @@ async def fish(message: discord.Interaction):
     button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
     button.callback = go_fishing
 
-    view.add_item(Container("## 🎣 catfishing", f"total fish caught: {profile.fish_caught:,}\nyour rarest fish: {profile.rarest_fish}"))
+    if profile.rarest_fish.strip():
+        rarest_fish = f"{get_emoji(profile.rarest_fish.lower() + 'fish')} {profile.rarest_fish}"
+    else:
+        rarest_fish = "none"
+
+    view.add_item(Container("## 🎣 catfishing", f"total fish caught: {profile.fish_caught:,}\nyour rarest fish: {rarest_fish}"))
     view.add_item(ActionRow(button))
 
     await message.response.send_message(view=view)
