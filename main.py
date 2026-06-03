@@ -2915,8 +2915,11 @@ def format_timedelta(start_timestamp, end_timestamp):
 async def info(message: discord.Interaction):
     embed = discord.Embed(title="Cat Bot Info", color=Colors.brown)
     try:
-        git_timestamp = int(subprocess.check_output(["git", "show", "-s", "--format=%ct"]).decode("utf-8"))
+        s = datetime.datetime.fromtimestamp(config.SOFT_RESTART_TIME, tz=datetime.timezone.utc).isoformat(timespec="seconds")
+        last_commit = subprocess.check_output(["git", "rev-list", "-n", "1", f"--before='{s}'", "HEAD"]).decode("utf-8").strip()
+        git_timestamp = int(subprocess.check_output(["git", "show", "-s", "--format=%ct", last_commit]).decode("utf-8"))
     except Exception:
+        last_commit = "N/A"
         git_timestamp = 0
 
     embed.description = f"""
@@ -2930,10 +2933,12 @@ RAM usage: `{psutil.virtual_memory().percent:.1f}%`
 **__Tech__**
 Hard uptime: `{format_timedelta(config.HARD_RESTART_TIME, time.time())}`
 Soft uptime: `{format_timedelta(config.SOFT_RESTART_TIME, time.time())}`
+Last commit: `{last_commit[:7]}`
 Last code update: `{format_timedelta(git_timestamp, time.time()) if git_timestamp else "N/A"}`
 Loops since soft restart: `{loop_count + 1:,}`
 Guild shard: `{message.guild.shard_id:,}`
-Clustering: `{"Yes" if config.CLUSTERING else "No"}`
+Guild cluster: `{int(message.guild.shard_id / len(bot.shards)) if config.CLUSTERING else "N/A"}`
+Guilds in cluster: `{len(bot.guilds) if config.CLUSTERING else "N/A"}`
 
 **__Global Stats__**
 Guilds: `{f"{server_count:,}" if server_count else "..."}`
