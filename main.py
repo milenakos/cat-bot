@@ -2633,6 +2633,14 @@ async def on_message(message: discord.Message):
             await bot.tree.sync()
         except Exception:
             pass
+    if text.lower() == "cat!emojis":
+        global emojis
+        emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
+        try:
+            with open("config/emojis_cache.json", "w", encoding="utf-8") as f:
+                json.dump(emojis, f)
+        except Exception:
+            pass
     if text.lower().startswith("cat!print"):
         # just a simple one-line with no async (e.g. 2+3)
         try:
@@ -5853,8 +5861,12 @@ async def fish(message: discord.Interaction):
 
         async def pull_fish(interaction: discord.Interaction):
             nonlocal fish_caught
+            if interaction.user != message.user:
+                await do_funny(interaction)
+                return
             fish_caught = True
 
+            await interaction.response.defer()
             await profile.refresh_from_db()
             profile.fish_caught += 1
             if profile.rarest_fish.strip() and cattypes.index(fishtype) > cattypes.index(profile.rarest_fish.strip()):
