@@ -8847,7 +8847,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Cattlepass", "Cookies", "Pig", "Roulette Dollars", "Prisms", "Fish"]],
+    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Cattlepass", "Cookies", "Fish", "Pig", "Roulette Dollars", "Prisms"]],
     cat_type: Optional[str],
     locked: Optional[bool],
 ):
@@ -8968,7 +8968,7 @@ async def leaderboards(
         elif type == "Fish":
             unit = "fishes"
             result = await Profile.collect_limit(["user_id", "fish_caught"], "guild_id = $1 AND fish_caught != 0 ORDER BY fish_caught DESC", message.guild.id)
-            final_value = "roulette_balance"
+            final_value = "fish_caught"
         else:
             # qhar
             raise ValueError("Invalid leaderboard type")
