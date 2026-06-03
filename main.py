@@ -5880,11 +5880,14 @@ async def fish(message: discord.Interaction):
             if not profile.rarest_fish.strip() or cattypes.index(fishtype) > cattypes.index(profile.rarest_fish.strip()):
                 profile.rarest_fish = fishtype
             await profile.save()
+            await achemb(interaction, "fisherman", "followup")
             if cattypes.index(fishtype) >= 13:
                 await achemb(interaction, "pro_fisher", "followup")
-            await achemb(interaction, "fisherman", "followup")
 
-            fish_lock.remove(interaction.user.id + interaction.guild.id)
+            try:
+                fish_lock.remove(interaction.user.id + interaction.guild.id)
+            except ValueError:
+                pass
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
         button = Button(label="Pull!", style=ButtonStyle.blurple)
@@ -5895,7 +5898,7 @@ async def fish(message: discord.Interaction):
 
         await interaction.edit_original_response(view=view)
 
-        await asyncio.sleep(4)
+        await asyncio.sleep(5)
 
         if not fish_caught:
             view = LayoutView(timeout=VIEW_TIMEOUT)
@@ -5904,7 +5907,10 @@ async def fish(message: discord.Interaction):
             view.add_item(TextDisplay("You weren't fast enough..."))
             view.add_item(ActionRow(button))
             await interaction.edit_original_response(view=view)
-            fish_lock.remove(interaction.user.id + interaction.guild.id)
+            try:
+                fish_lock.remove(interaction.user.id + interaction.guild.id)
+            except ValueError:
+                pass
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
 
@@ -8841,7 +8847,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Cattlepass", "Cookies", "Pig", "Roulette Dollars", "Prisms"]],
+    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Cattlepass", "Cookies", "Pig", "Roulette Dollars", "Prisms", "Fish"]],
     cat_type: Optional[str],
     locked: Optional[bool],
 ):
@@ -8959,6 +8965,10 @@ async def leaderboards(
                 add_primary_key=False,
             )
             final_value = "prism_count"
+        elif type == "Fish":
+            unit = "fishes"
+            result = await Profile.collect_limit(["user_id", "fish_caught"], "guild_id = $1 AND fish_caught != 0 ORDER BY fish_caught DESC", message.guild.id)
+            final_value = "roulette_balance"
         else:
             # qhar
             raise ValueError("Invalid leaderboard type")
@@ -9058,7 +9068,7 @@ async def leaderboards(
                     else:
                         num = round(num, 3)
                         unit = "sec"
-                elif type in ["Cookies", "Cats", "Pig", "Prisms"] and num <= 0:
+                elif type in ["Cookies", "Cats", "Pig", "Prisms", "Fish"] and num <= 0:
                     break
                 elif type == "Roulette Dollars" and num == 100:
                     break
@@ -9135,6 +9145,7 @@ async def leaderboards(
             "Slow": "💤",
             "Cattlepass": "⬆️",
             "Cookies": "🍪",
+            "Fish": "🐟",
             "Pig": "🎲",
             "Roulette Dollars": "💰",
             "Prisms": get_emoji("prism"),
