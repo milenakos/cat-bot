@@ -2938,7 +2938,7 @@ Last code update: `{format_timedelta(git_timestamp, time.time()) if git_timestam
 Loops since soft restart: `{loop_count + 1:,}`
 Guild shard: `{message.guild.shard_id:,}`
 Guild cluster: `{int(message.guild.shard_id / len(bot.shards)) if config.CLUSTERING else "N/A"}`
-Guilds in cluster: `{len(bot.guilds) if config.CLUSTERING else "N/A"}`
+Guilds in cluster: `{format(len(bot.guilds), ",") if config.CLUSTERING else "N/A"}`
 
 **__Global Stats__**
 Guilds: `{f"{server_count:,}" if server_count else "..."}`
