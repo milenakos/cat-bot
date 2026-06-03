@@ -2639,6 +2639,7 @@ async def on_message(message: discord.Message):
         try:
             with open("config/emojis_cache.json", "w", encoding="utf-8") as f:
                 json.dump(emojis, f)
+            await message.reply("emojis refreshed!")
         except Exception:
             pass
     if text.lower().startswith("cat!print"):
@@ -5866,22 +5867,23 @@ async def fish(message: discord.Interaction):
                 return
             fish_caught = True
 
+            view = LayoutView(timeout=VIEW_TIMEOUT)
+            button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
+            button.callback = go_fishing
+            view.add_item(TextDisplay(f"You caught a {get_emoji(fishtype.lower() + 'fish')} {fishtype} fish!"))
+            view.add_item(ActionRow(button))
             await interaction.response.defer()
+            await interaction.edit_original_response(view=view)
+
             await profile.refresh_from_db()
             profile.fish_caught += 1
-            if profile.rarest_fish.strip() and cattypes.index(fishtype) > cattypes.index(profile.rarest_fish.strip()):
+            if not profile.rarest_fish.strip() or cattypes.index(fishtype) > cattypes.index(profile.rarest_fish.strip()):
                 profile.rarest_fish = fishtype
             await profile.save()
             if cattypes.index(fishtype) >= 13:
                 await achemb(interaction, "pro_fisher", "followup")
             await achemb(interaction, "fisherman", "followup")
 
-            view = LayoutView(timeout=VIEW_TIMEOUT)
-            button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
-            button.callback = go_fishing
-            view.add_item(TextDisplay(f"You caught a {get_emoji(fishtype.lower() + 'fish')} {fishtype}!"))
-            view.add_item(ActionRow(button))
-            await interaction.edit_original_response(view=view)
             fish_lock.remove(interaction.user.id + interaction.guild.id)
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
