@@ -2942,9 +2942,11 @@ Guilds in cluster: `{format(len(bot.guilds), ",") if config.CLUSTERING else "N/A
 
 **__Global Stats__**
 Guilds: `{f"{server_count:,}" if server_count else "..."}`
-DB Profiles: `{await Profile.count():,}`
-DB Users: `{await User.count():,}`
-DB Channels: `{await Channel.count():,}`
+DB Profiles: `{await pool.fetchval("SELECT reltuples::bigint AS estimated_count FROM pg_class WHERE oid = 'public.profile'::regclass;"):,}`
+DB Users: `{await pool.fetchval("SELECT reltuples::bigint AS estimated_count FROM pg_class WHERE oid = 'public.profile'::regclass;"):,}`
+DB Channels: `{await pool.fetchval("SELECT reltuples::bigint AS estimated_count FROM pg_class WHERE oid = 'public.profile'::regclass;"):,}`
+DB Prisms: `{await pool.fetchval("SELECT reltuples::bigint AS estimated_count FROM pg_class WHERE oid = 'public.prism'::regclass;"):,}`
+DB Servers: `{await pool.fetchval("SELECT reltuples::bigint AS estimated_count FROM pg_class WHERE oid = 'public.server'::regclass;"):,}`
 """
 
     await message.response.send_message(embed=embed)
