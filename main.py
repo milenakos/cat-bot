@@ -345,13 +345,10 @@ catchcooldown = {}
 fakecooldown = {}
 customcatcooldown = {}
 
-# cat bot auto-claims in the channel user last ran /vote in
-# this is a failsafe to store the fact they voted until they ran that atleast once
-pending_votes = []
-
-# prevent ratelimits
+# prevent ratelimits/abuse
 casino_lock = []
 slots_lock = []
+fish_lock = []
 
 # ???
 rigged_users = []
@@ -4526,21 +4523,6 @@ async def plushbadge(message: discord.Interaction):
     )
 
 
-@bot.tree.command(description="LIMITED TIME CAT BOT PLUSH")
-async def plush(message: discord.Interaction):
-    view = LayoutView(timeout=1)
-    view.add_item(
-        Container(
-            "## Cat Bot Plush [ended]",
-            "~~[Pre-order now for $2!](https://www.makeship.com/petitions/cat-bot-plush)~~",
-            "Everyone who pre-ordered will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
-        )
-    )
-    await message.response.send_message(view=view)
-    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    await progress(message, profile, "plush")
-
-
 @bot.tree.command(description="its raining cats")
 async def rain(message: discord.Interaction):
     user = await User.get_or_create(user_id=message.user.id)
@@ -5836,6 +5818,83 @@ async def cookie(message: discord.Interaction):
     button = Button(emoji="🍪", label=f"{user.cookies:,}", style=ButtonStyle.blurple)
     button.callback = bake
     view.add_item(button)
+    await message.response.send_message(view=view)
+
+
+@bot.tree.command(description="yeah i made this solely so i could name it catfishing")
+async def fish(message: discord.Interaction):
+    profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
+
+    async def go_fishing(interaction: discord.Interaction):
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+
+        if interaction.user.id + interaction.guild.id in fish_lock:
+            await interaction.response.send_message("You're already fishing!", ephemeral=True)
+            return
+
+        fish_lock.append(interaction.user.id + interaction.guild.id)
+
+        await interaction.response.defer()
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        view.add_item(TextDisplay("Fishing..."))
+        await interaction.edit_original_response(view=view)
+
+        await asyncio.sleep(random.uniform(10, 30))
+
+        fishtype = random.choices(cattypes, weights=type_dict.values())[0]
+        fish_caught = False
+
+        async def pull_fish(interaction: discord.Interaction):
+            nonlocal fish_caught
+            fish_caught = True
+
+            await profile.refresh_from_db()
+            profile.fish_caught += 1
+            if cattypes.index(fishtype) > cattypes.index(profile.rarest_fish.strip()):
+                profile.rarest_fish = fishtype
+            if cattypes.index(fishtype) >= 13:
+                await achemb(interaction, "pro_fisher", "followup")
+            await achemb(interaction, "fisherman", "followup")
+            await profile.save()
+
+            view = LayoutView(timeout=VIEW_TIMEOUT)
+            button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
+            button.callback = go_fishing
+            view.add_item(TextDisplay(f"You caught a {get_emoji(fishtype.lower() + 'fish')} {fishtype}!"))
+            view.add_item(ActionRow(button))
+            await interaction.edit_original_response(view=view)
+            fish_lock.remove(interaction.user.id + interaction.guild.id)
+
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        button = Button(label="Pull!", style=ButtonStyle.blurple)
+        button.callback = pull_fish
+
+        view.add_item(TextDisplay(f"A {get_emoji(fishtype.lower() + 'fish')} {fishtype} is on the line! Pull!"))
+        view.add_item(ActionRow(button))
+
+        await interaction.edit_original_response(view=view)
+
+        await asyncio.sleep(4)
+
+        if not fish_caught:
+            view = LayoutView(timeout=VIEW_TIMEOUT)
+            button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
+            button.callback = go_fishing
+            view.add_item(TextDisplay("You weren't catch fast enough..."))
+            view.add_item(ActionRow(button))
+            await interaction.edit_original_response(view=view)
+            fish_lock.remove(interaction.user.id + interaction.guild.id)
+
+    view = LayoutView(timeout=VIEW_TIMEOUT)
+
+    button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
+    button.callback = go_fishing
+
+    view.add_item(Container("## 🎣 catfishing", f"total fish caught: {profile.fish_caught:,}\nyour rarest fish: {profile.rarest_fish}"))
+    view.add_item(ActionRow(button))
+
     await message.response.send_message(view=view)
 
 

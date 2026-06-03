@@ -300,7 +300,11 @@ CREATE TABLE public.profile (
     baker boolean DEFAULT false,
     pack_birthday integer DEFAULT 0,
     birthday_rain_progress smallint DEFAULT 0,
-    catgpt boolean DEFAULT false
+    catgpt boolean DEFAULT false,
+    fish_caught integer DEFAULT 0,
+    rarest_fish character varying(15) DEFAULT ''::character varying,
+    fisherman boolean DEFAULT false,
+    pro_fisher boolean DEFAULT false
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;
