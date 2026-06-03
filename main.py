@@ -5901,7 +5901,7 @@ async def fish(message: discord.Interaction):
             view = LayoutView(timeout=VIEW_TIMEOUT)
             button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
             button.callback = go_fishing
-            view.add_item(TextDisplay("You weren't catch fast enough..."))
+            view.add_item(TextDisplay("You weren't fast enough..."))
             view.add_item(ActionRow(button))
             await interaction.edit_original_response(view=view)
             fish_lock.remove(interaction.user.id + interaction.guild.id)
