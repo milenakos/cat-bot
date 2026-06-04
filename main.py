@@ -2905,7 +2905,7 @@ async def credits(message: discord.Interaction):
 @bot.tree.command(description="add cat bot to your server")
 async def invite(message: discord.Interaction):
     view = View(timeout=1)
-    invite_button = Button(label="Invite", url=discord.utils.oauth_url(bot.user.id))
+    invite_button = Button(label="Invite", url=discord.utils.oauth_url(bot.user.id, scopes=None))
     view.add_item(invite_button)
     await message.response.send_message("Click the button below to invite Cat Bot to your server!", view=view)
 
