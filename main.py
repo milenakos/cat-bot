@@ -1328,6 +1328,7 @@ async def background_loop():
 
     await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {server_count:,} servers"))
     if config.CLUSTERING and not config.CLUSTERING_ZERO:
+        loop_count += 1
         return
 
     if config.TOP_GG_MODERN_TOKEN:
@@ -2942,11 +2943,11 @@ Guilds in cluster: `{format(len(bot.guilds), ",") if config.CLUSTERING else "N/A
 
 **__Global Stats__**
 Guilds: `{f"{server_count:,}" if server_count else "..."}`
-DB Profiles: `{await pool.fetchval("SELECT reltuples::bigint AS estimated_count FROM pg_class WHERE oid = 'public.profile'::regclass;"):,}`
-DB Users: `{await pool.fetchval("SELECT reltuples::bigint AS estimated_count FROM pg_class WHERE oid = 'public.profile'::regclass;"):,}`
-DB Channels: `{await pool.fetchval("SELECT reltuples::bigint AS estimated_count FROM pg_class WHERE oid = 'public.profile'::regclass;"):,}`
-DB Prisms: `{await pool.fetchval("SELECT reltuples::bigint AS estimated_count FROM pg_class WHERE oid = 'public.prism'::regclass;"):,}`
-DB Servers: `{await pool.fetchval("SELECT reltuples::bigint AS estimated_count FROM pg_class WHERE oid = 'public.server'::regclass;"):,}`
+DB Profiles: `{await pool.fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.profile'::regclass;"):,}`
+DB Users: `{await pool.fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.profile'::regclass;"):,}`
+DB Channels: `{await pool.fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.profile'::regclass;"):,}`
+DB Prisms: `{await pool.fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.prism'::regclass;"):,}`
+DB Servers: `{await pool.fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.server'::regclass;"):,}`
 """
 
     await message.response.send_message(embed=embed)

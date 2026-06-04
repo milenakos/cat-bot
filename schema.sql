@@ -119,7 +119,7 @@ CREATE TABLE public.profile (
     "cat_Trash" integer DEFAULT 0,
     "cat_Legendary" integer DEFAULT 0,
     "cat_Mythic" integer DEFAULT 0,
-    cat_8bit integer DEFAULT 0,
+    "cat_8bit" integer DEFAULT 0,
     "cat_Corrupt" integer DEFAULT 0,
     "cat_Professor" integer DEFAULT 0,
     "cat_Divine" integer DEFAULT 0,
