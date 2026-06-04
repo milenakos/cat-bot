@@ -2902,16 +2902,6 @@ async def credits(message: discord.Interaction):
     await message.followup.send(embed=embedVar)
 
 
-def format_timedelta(start_timestamp, end_timestamp):
-    delta = datetime.timedelta(seconds=end_timestamp - start_timestamp)
-    days = delta.days
-    seconds = delta.seconds
-    hours = seconds // 3600
-    minutes = (seconds % 3600) // 60
-    seconds = seconds % 60
-    return f"{days}d {hours}h {minutes}m {seconds}s"
-
-
 @bot.tree.command(description="View various info and stats about the bot")
 async def info(message: discord.Interaction):
     embed = discord.Embed(title="Cat Bot Info", color=Colors.brown)
@@ -2932,11 +2922,12 @@ CPU usage: `{psutil.cpu_percent():.1f}%`
 RAM usage: `{psutil.virtual_memory().percent:.1f}%`
 
 **__Tech__**
-Hard uptime: `{format_timedelta(config.HARD_RESTART_TIME, time.time())}`
-Soft uptime: `{format_timedelta(config.SOFT_RESTART_TIME, time.time())}`
+Last hard restart: <t:{config.HARD_RESTART_TIME}:R>
+Last soft restart: <t:{config.SOFT_RESTART_TIME}:R>
 Last commit: `{last_commit[:7]}`
-Last code update: `{format_timedelta(git_timestamp, time.time()) if git_timestamp else "N/A"}`
+Last commit time: {f"<t:{git_timestamp}:R>" if git_timestamp else "N/A"}
 Loops since soft restart: `{loop_count + 1:,}`
+
 Guild shard: `{message.guild.shard_id:,}`
 Guild cluster: `{int(message.guild.shard_id / len(bot.shards)) if config.CLUSTERING else "N/A"}`
 Guilds in cluster: `{format(len(bot.guilds), ",") if config.CLUSTERING else "N/A"}`
