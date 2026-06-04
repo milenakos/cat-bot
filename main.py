@@ -2922,10 +2922,10 @@ CPU usage: `{psutil.cpu_percent():.1f}%`
 RAM usage: `{psutil.virtual_memory().percent:.1f}%`
 
 **__Tech__**
-Last hard restart: <t:{config.HARD_RESTART_TIME}:R>
-Last soft restart: <t:{config.SOFT_RESTART_TIME}:R>
+Last hard restart: <t:{int(config.HARD_RESTART_TIME)}:R>
+Last soft restart: <t:{int(config.SOFT_RESTART_TIME)}:R>
 Last commit: `{last_commit[:7]}`
-Last commit time: {f"<t:{git_timestamp}:R>" if git_timestamp else "N/A"}
+Last commit time: {f"<t:{int(git_timestamp)}:R>" if git_timestamp else "N/A"}
 Loops since soft restart: `{loop_count + 1:,}`
 
 Guild shard: `{message.guild.shard_id:,}`
