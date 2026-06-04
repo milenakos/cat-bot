@@ -2902,6 +2902,14 @@ async def credits(message: discord.Interaction):
     await message.followup.send(embed=embedVar)
 
 
+@bot.tree.command(description="add cat bot to your server")
+async def invite(message: discord.Interaction):
+    view = View(timeout=1)
+    invite_button = Button(label="Invite", url=discord.utils.oauth_url(bot.user.id))
+    view.add_item(invite_button)
+    await message.response.send_message("Click the button below to invite Cat Bot to your server!", view=view)
+
+
 @bot.tree.command(description="View various info and stats about the bot")
 async def info(message: discord.Interaction):
     embed = discord.Embed(title="Cat Bot Info", color=Colors.brown)
