@@ -1213,9 +1213,9 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         if not channel:
             raise Exception
     except Exception:
-        return False
+        return "channel not setup"
     if channel.cat or channel.yet_to_spawn > time.time() + 10:
-        return False
+        return "cat already spawned"
 
     if not localcat:
         localcat = random.choices(cattypes, weights=type_dict.values())[0]
@@ -1228,7 +1228,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
 
     if int(ch_id) in temp_spawns_storage:
-        return False
+        return "cat spawn already in progress"
 
     temp_spawns_storage.append(int(ch_id))
 
@@ -1238,17 +1238,19 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
             file=file,
             allowed_mentions=discord.AllowedMentions.all(),
         )
-    except discord.Forbidden:
+    except discord.Forbidden as e:
         await channel.delete()
         temp_spawns_storage.remove(int(ch_id))
-        return False
+        if e.text == "Access to file uploads has been limited for this guild":
+            return "your server is limited by discord, cat bot cant operate here"
+        return "sending message forbidden (no permissions)"
     except discord.NotFound:
         await channel.delete()
         temp_spawns_storage.remove(int(ch_id))
-        return False
-    except Exception:
+        return "not found (cant access channel)"
+    except Exception as e:
         temp_spawns_storage.remove(int(ch_id))
-        return False
+        return str(e)
 
     channel.cat = message_is_sus.id
     channel.yet_to_spawn = 0
@@ -1257,7 +1259,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
     await channel.save()
     temp_spawns_storage.remove(int(ch_id))
     logging.debug("Cat spawned, forced: %s", bool(force_spawn))
-    return True
+    return f"ok, now i will send cats in <#{ch_id}>"
 
 
 async def postpone_reminder(interaction):
@@ -9251,8 +9253,7 @@ async def setup_channel(message: discord.Interaction):
         await message.response.send_message("error. check if i have permissions to access this channel")
         return
 
-    await spawn_cat(str(message.channel.id))
-    await message.response.send_message(f"ok, now i will also send cats in <#{message.channel.id}>")
+    await message.response.send_message(await spawn_cat(str(message.channel.id)))
 
 
 @bot.tree.command(description="(ADMIN) Undo the setup/unsetup")
