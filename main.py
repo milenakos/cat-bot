@@ -324,7 +324,7 @@ class Colors:
 
 
 # rain shill message for footers
-rain_shill = "⛱️ Summer Sale! -20% /rain"
+rain_shill = "☔ Get tons of cats /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -2299,7 +2299,7 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 5) == 0:
                     # shill rains
-                    suffix_string += f"\n⛱️ Summer Sale! -20% {get_command_mention('rain')}"
+                    suffix_string += f"\n☔ get tons of cats and have fun: {get_command_mention('rain')}"
                 if random.randint(1, 20) == 0:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
@@ -4673,7 +4673,7 @@ You currently have **{user.rain_minutes:,}** minutes of rains{server_rains}.""",
 
     shopbutton = Button(
         emoji="🛒",
-        label="Store (-20%!)",
+        label="Store",
         url="https://catbot.shop",
     )
 
