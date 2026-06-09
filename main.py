@@ -1292,12 +1292,14 @@ async def background_loop():
         fakecooldown, \
         last_vote_cursor, \
         server_count, \
-        emojis
+        emojis, \
+        fish_lock
 
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     catchcooldown = {}
     fakecooldown = {}
+    fish_lock = []
 
     # temp_belated_storage cleanup
     # clean up anything older than 1 minute
@@ -5864,7 +5866,10 @@ async def fish(message: discord.Interaction):
         view.add_item(TextDisplay("Fishing... (wait 10-30 seconds)"))
         await interaction.edit_original_response(view=view)
 
-        await asyncio.sleep(random.uniform(10, 30))
+        for _ in range(random.randint(1000, 3000)):
+            if interaction.user.id + interaction.guild.id not in fish_lock:
+                fish_lock.append(interaction.user.id + interaction.guild.id)
+            await asyncio.sleep(0.01)
 
         fishtype = random.choices(cattypes, weights=type_dict.values())[0]
         fish_caught = False
