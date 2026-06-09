@@ -2974,7 +2974,7 @@ async def wiki(message: discord.Interaction):
             "[Rains](https://catbot.wiki/rains)",
             "[Packs](https://catbot.wiki/packs)",
             "[Trading](https://catbot.wiki/trading)",
-            "[Gambling](https://catbot.wiki/gambling)",
+            "[Minigames](https://catbot.wiki/minigames)",
             "[Catnip](https://catbot.wiki/catnip)",
             "[Prisms](https://catbot.wiki/prisms)",
         ]
