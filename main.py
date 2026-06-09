@@ -6001,9 +6001,6 @@ async def gift(
         elif gift_type.lower() in [i["name"].lower() for i in pack_data]:
             key = f"pack_{gift_type.lower()}"
             thing = f"{gift_type.capitalize()} packs"
-            if user.battlepass < 3 and not user.bp_history.strip().replace("0,0,0;", ""):
-                await message.response.send_message("you need to reach atleast cattlepass level 3 to gift packs.", ephemeral=True)
-                return
         else:
             await message.response.send_message("bro what", ephemeral=True)
             return
@@ -6465,9 +6462,6 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 modal.add_item(discord.ui.Label(text="Cat Type", component=discord.ui.Select(options=options, id=67)))
                 modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(placeholder="1", min_length=1, id=69)))
             elif selection == "packs":
-                if active_user.profile.battlepass < 3 and not active_user.profile.bp_history.strip().replace("0,0,0;", ""):
-                    await interaction.response.send_message("you need to reach atleast cattlepass level 3 to trade packs.", ephemeral=True)
-                    return
                 modal = Modal(title="Offer packs...")
                 options = []
                 await active_user.profile.refresh_from_db()
