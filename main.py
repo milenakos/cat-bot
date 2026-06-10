@@ -1293,13 +1293,17 @@ async def background_loop():
         last_vote_cursor, \
         server_count, \
         emojis, \
-        fish_lock
+        fish_lock, \
+        slots_lock, \
+        casino_lock
 
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     catchcooldown = {}
     fakecooldown = {}
     fish_lock = []
+    slots_lock = []
+    casino_lock = []
 
     # temp_belated_storage cleanup
     # clean up anything older than 1 minute
@@ -5859,11 +5863,11 @@ async def fish(message: discord.Interaction):
             await do_funny(interaction)
             return
 
-        if interaction.user.id + interaction.guild.id in fish_lock:
+        if (interaction.guild.id, interaction.user.id) in fish_lock:
             await interaction.response.send_message("You're already fishing!", ephemeral=True)
             return
 
-        fish_lock.append(interaction.user.id + interaction.guild.id)
+        fish_lock.append((interaction.guild.id, interaction.user.id))
 
         await interaction.response.defer()
         view = LayoutView(timeout=VIEW_TIMEOUT)
@@ -5871,8 +5875,8 @@ async def fish(message: discord.Interaction):
         await interaction.edit_original_response(view=view)
 
         for _ in range(random.randint(1000, 3000)):
-            if interaction.user.id + interaction.guild.id not in fish_lock:
-                fish_lock.append(interaction.user.id + interaction.guild.id)
+            if (interaction.guild.id, interaction.user.id) not in fish_lock:
+                fish_lock.append((interaction.guild.id, interaction.user.id))
             await asyncio.sleep(0.01)
 
         fishtype = random.choices(cattypes, weights=type_dict.values())[0]
@@ -5905,7 +5909,7 @@ async def fish(message: discord.Interaction):
                 await achemb(interaction, "pro_fisher", "followup")
 
             try:
-                fish_lock.remove(interaction.user.id + interaction.guild.id)
+                fish_lock.remove((interaction.guild.id, interaction.user.id))
             except ValueError:
                 pass
 
@@ -5928,7 +5932,7 @@ async def fish(message: discord.Interaction):
             view.add_item(ActionRow(button))
             await interaction.edit_original_response(view=view)
             try:
-                fish_lock.remove(interaction.user.id + interaction.guild.id)
+                fish_lock.remove((interaction.guild.id, interaction.user.id))
             except ValueError:
                 pass
 
@@ -6749,7 +6753,7 @@ async def bakery(message: discord.Interaction):
 
 @bot.tree.command(description="Gamble your life savings away in our totally-not-rigged catsino!")
 async def casino(message: discord.Interaction):
-    if message.user.id + message.guild.id in casino_lock:
+    if (message.guild.id, message.user.id) in casino_lock:
         await message.response.send_message(
             "you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe",
             ephemeral=True,
@@ -6771,7 +6775,7 @@ async def casino(message: discord.Interaction):
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
-        if message.user.id + message.guild.id in casino_lock:
+        if (message.guild.id, message.user.id) in casino_lock:
             await interaction.response.send_message(
                 "you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe",
                 ephemeral=True,
@@ -6786,7 +6790,7 @@ async def casino(message: discord.Interaction):
 
         await interaction.response.defer()
         amount = random.randint(1, 5)
-        casino_lock.append(message.user.id + message.guild.id)
+        casino_lock.append((message.guild.id, message.user.id))
         profile.cat_Fine += amount - 5
         profile.gambles += 1
         await profile.save()
@@ -6833,7 +6837,8 @@ async def casino(message: discord.Interaction):
         myview = View(timeout=VIEW_TIMEOUT)
         myview.add_item(button)
 
-        casino_lock.remove(message.user.id + message.guild.id)
+        if (message.guild.id, message.user.id) in casino_lock:
+            casino_lock.remove((message.guild.id, message.user.id))
 
         try:
             await interaction.edit_original_response(embed=embed, view=myview)
@@ -6851,7 +6856,7 @@ async def casino(message: discord.Interaction):
 
 @bot.tree.command(description="oh no")
 async def slots(message: discord.Interaction):
-    if message.user.id + message.guild.id in slots_lock:
+    if (message.guild.id, message.user.id) in slots_lock:
         await message.response.send_message(
             "you get kicked from the slot machine because you are already there, and two of you playing at once would cause a glitch in the universe",
             ephemeral=True,
@@ -6893,7 +6898,7 @@ async def slots(message: discord.Interaction):
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
-        if message.user.id + message.guild.id in slots_lock:
+        if (message.guild.id, message.user.id) in slots_lock:
             await interaction.response.send_message(
                 "you get kicked from the slot machine because you are already there, and two of you playing at once would cause a glitch in the universe",
                 ephemeral=True,
@@ -6902,7 +6907,7 @@ async def slots(message: discord.Interaction):
         await profile.refresh_from_db()
 
         await interaction.response.defer()
-        slots_lock.append(message.user.id + message.guild.id)
+        slots_lock.append((message.guild.id, message.user.id))
         profile.slot_spins += 1
         await profile.save()
 
@@ -6985,7 +6990,8 @@ async def slots(message: discord.Interaction):
                 button.callback = remove_debt
                 myview.add_item(button)
 
-        slots_lock.remove(message.user.id + message.guild.id)
+        if (message.guild.id, message.user.id) in slots_lock:
+            slots_lock.remove((message.guild.id, message.user.id))
 
         embed = discord.Embed(title=":slot_machine: The Slot Machine", description=desc, color=Colors.maroon)
 
