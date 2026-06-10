@@ -5880,6 +5880,8 @@ async def fish(message: discord.Interaction):
 
         async def pull_fish(interaction: discord.Interaction):
             nonlocal fish_caught
+            if fish_caught:
+                return
             if interaction.user != message.user:
                 await do_funny(interaction)
                 return
