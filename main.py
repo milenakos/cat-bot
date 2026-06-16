@@ -2471,7 +2471,7 @@ async def on_message(message: discord.Message):
 
                 await user.save()
 
-                if random.randint(0, 1000) == 69 and not user.lucky:
+                if "This message appears on" in suffix_string and not user.lucky:
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT" and not user.loud_cat:
                     await achemb(message, "loud_cat", "send")
