@@ -6274,7 +6274,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             try:
                 await interaction.edit_original_response(content="Trade finished!", view=None)
             except Exception:
-                await interaction.followup.send(content="Trade finished!", view=None)
+                await interaction.followup.send(content="Trade finished!")
 
             await achemb(message, "extrovert", "followup")
             await achemb(message, "extrovert", "followup", other_user)
@@ -6558,6 +6558,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 offer_string += f"*Total value: {round(tradeuser.value):,}\nTotal cats: {round(total):,}*"
 
             personname = tradeuser.user.name.replace("_", "\\_")
+            if len(offer_string) > 1024:
+                offer_string = re.sub(r"<:[^:]+:[^>]+> ", "", offer_string)
             coolembed.add_field(name=f"{icon} {personname}", inline=True, value=offer_string)
 
         return coolembed, view
