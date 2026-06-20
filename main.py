@@ -7816,7 +7816,7 @@ async def get_bounties(level):
                 eligible_types = cattypes[rarity_i:]
 
                 prob = sum(type_dict[t] for t in eligible_types) / sum(type_dict.values())
-                base_amount = max(1, round(avg_cats_needed * prob))
+                base_amount = max(1, round(avg_cats_needed * prob / 1.33))
                 expected_total = base_amount / prob if prob > 0 else float("inf")
 
                 if abs(expected_total - avg_cats_needed) / avg_cats_needed <= margin or rarity_i == 0:
