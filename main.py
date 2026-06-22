@@ -2208,7 +2208,7 @@ async def on_message(message: discord.Message):
                     blesser.cats_blessed += 1
                     if not blesser.username:
                         blesser.username = (await bot.fetch_user(blesser.user_id)).name
-                    asyncio.create_task(blesser.save())
+                    bot.loop.create_task(blesser.save())
 
                     logging.debug("Catch blessed")
 
@@ -2248,7 +2248,7 @@ async def on_message(message: discord.Message):
                     did_boost = True
                     user.boosted_catches += 1
                     prism_which_boosted.catches_boosted += 1
-                    asyncio.create_task(prism_which_boosted.save())
+                    bot.loop.create_task(prism_which_boosted.save())
                     logging.debug("Boosted from %s", le_emoji)
                     idx_shift = 0
                     try:
@@ -6206,7 +6206,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             ]
             fetch_prisms_task = None
             if person1.gives_prisms or person2.gives_prisms:
-                fetch_prisms_task = asyncio.create_task(fetch_all_prisms())
+                fetch_prisms_task = bot.loop.create_task(fetch_all_prisms())
                 tasks.append(fetch_prisms_task)
 
             await asyncio.gather(*tasks)
