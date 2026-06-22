@@ -2328,6 +2328,8 @@ async def on_message(message: discord.Message):
                     suffix_string += "\n✨ This message appears on *0.01%* of catches."
                 elif randnum % 1000 == 0:
                     suffix_string += "\n⭐ This message appears on 0.1% of catches."
+                elif randnum % 149 == 0:
+                    suffix_string += f"{get_emoji('emoji_13')} This message appears on 0.67% of catches."
 
                 custom_cough_strings = {
                     "Corrupt": "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!",
