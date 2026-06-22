@@ -8523,9 +8523,6 @@ You can stop. That's okay. Seriously.
                 else:
                     desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total - bounty_progress) + " more")
 
-                if bounty_total - bounty_progress == 1:
-                    desc = desc.replace("cats", "cat")
-
                 desc = desc.replace("type", f"{get_emoji(bounty_type.lower() + 'cat')} {bounty_type}")
 
             if not user.hibernation:
