@@ -242,10 +242,10 @@ with open("config/battlepass.json", "r", encoding="utf-8") as f:
 with open("config/catnip.json", "r", encoding="utf-8") as f:
     catnip_list = json.load(f)
 
-with open("facts.txt") as f:
+with open("assets/lists/facts.txt") as f:
     cat_facts_list = f.read().split("\n")
 
-with open("fanhalo.txt") as f:
+with open("assets/lists/fanhalo.txt") as f:
     fanhalo_list = f.read().split("\n")
 
 
@@ -1221,7 +1221,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         localcat = random.choices(cattypes, weights=type_dict.values())[0]
     icon = get_emoji(localcat.lower() + "cat")
     file = discord.File(
-        f"images/spawn/{localcat.lower()}_cat.png",
+        f"assets/images/spawn/{localcat.lower()}_cat.png",
     )
     channeley = bot.get_partial_messageable(int(ch_id))
 
@@ -1844,7 +1844,7 @@ async def on_message(message: discord.Message):
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
-            thing = discord.File("images/socialcredit.jpg", filename="socialcredit.jpg")
+            thing = discord.File("assets/images/socialcredit.jpg", filename="socialcredit.jpg")
             try:
                 await message.reply(file=thing)
             except Exception:
@@ -1856,7 +1856,7 @@ async def on_message(message: discord.Message):
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
-            file = discord.File("images/car.png", filename="car.png")
+            file = discord.File("assets/images/car.png", filename="car.png")
             embed = discord.Embed(title="car!", color=Colors.brown).set_image(url="attachment://car.png")
             try:
                 await message.reply(file=file, embed=embed)
@@ -1869,7 +1869,7 @@ async def on_message(message: discord.Message):
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
-            file = discord.File("images/cart.png", filename="cart.png")
+            file = discord.File("assets/images/cart.png", filename="cart.png")
             embed = discord.Embed(title="cart!", color=Colors.brown).set_image(url="attachment://cart.png")
             try:
                 await message.reply(file=file, embed=embed)
@@ -3516,7 +3516,7 @@ async def tiktok(message: discord.Interaction, text: str):
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
     if text == "bwomp":
-        file = discord.File("bwomp.mp3", filename="bwomp.mp3")
+        file = discord.File("assets/bwomp.mp3", filename="bwomp.mp3")
         await message.followup.send(file=file)
         await achemb(message, "bwomp", "followup")
         await progress(message, profile, "tiktok")
@@ -6586,20 +6586,20 @@ async def cat(message: discord.Interaction, cat_type: Optional[str]):
         await message.response.send_message("you dont have that cat", ephemeral=True)
         return
 
-    image = f"images/spawn/{cat_type.lower()}_cat.png" if cat_type else "images/cat.png"
+    image = f"assets/images/spawn/{cat_type.lower()}_cat.png" if cat_type else "assets/images/cat.png"
     file = discord.File(image, filename=image)
     await message.response.send_message(file=file)
 
 
 @bot.tree.command(description="Get Cursed Cat")
 async def cursed(message: discord.Interaction):
-    file = discord.File("images/cursed.jpg", filename="cursed.jpg")
+    file = discord.File("assets/images/cursed.jpg", filename="cursed.jpg")
     await message.response.send_message(file=file)
 
 
 @bot.tree.command(description="Get Your balance")
 async def bal(message: discord.Interaction):
-    file = discord.File("images/money.png", filename="money.png")
+    file = discord.File("assets/images/money.png", filename="money.png")
     embed = discord.Embed(title="cat coins", color=Colors.brown).set_image(url="attachment://money.png")
     await message.response.send_message(file=file, embed=embed)
 
@@ -8576,12 +8576,12 @@ You can stop. That's okay. Seriously.
 
         if name == "Lucian Jr":
             name = "LucianJr"  # i hate file name conventions
-        filename = f"images/mafia/{name}.png"
+        filename = f"assets/images/mafia/{name}.png"
 
         if name == "Whiskers" and user.catnip_level == 10:
-            filename = "images/mafia/WhiskersII.png"
+            filename = "assets/images/mafia/WhiskersII.png"
         if name == "Jeremy" and random.randint(1, 100) == 69:
-            filename = "images/mafia/sus.png"
+            filename = "assets/images/mafia/sus.png"
 
         filename = "https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/refs/heads/main/" + filename
 
@@ -9281,7 +9281,7 @@ async def fake(message: discord.Interaction):
     if message.user.id in fakecooldown and fakecooldown[message.user.id] + 60 > time.time():
         await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
         return
-    file = discord.File("images/australian cat.png", filename="australian cat.png")
+    file = discord.File("assets/images/australian cat.png", filename="australian cat.png")
     icon = get_emoji("egirlcat")
     fakecooldown[message.user.id] = time.time()
     try:

@@ -118,9 +118,9 @@ def msg2img(message: discord.Message, member: discord.Member):
             lines.append(line)
         return lines, pings
 
-    font = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 32)  # load fonts
-    font2 = ImageFont.truetype(os.path.abspath("./fonts/ggsans-Medium.ttf"), 32)  # load fonts
-    font3 = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 23)  # load fonts
+    font = ImageFont.truetype(os.path.abspath("./assets/fonts/whitneysemibold.otf"), 32)  # load fonts
+    font2 = ImageFont.truetype(os.path.abspath("./assets/fonts/ggsans-Medium.ttf"), 32)  # load fonts
+    font3 = ImageFont.truetype(os.path.abspath("./assets/fonts/whitneysemibold.otf"), 23)  # load fonts
 
     text_temp = ""
     lines, pings = break_text(text, font2, 930)
@@ -198,7 +198,7 @@ def msg2img(message: discord.Message, member: discord.Member):
             pass
 
     if is_bot or (member.primary_guild and member.primary_guild.tag):
-        botfont = ImageFont.truetype(os.path.abspath("./fonts/whitneysemibold.otf"), 20)
+        botfont = ImageFont.truetype(os.path.abspath("./assets/fonts/whitneysemibold.otf"), 20)
 
         letters = "APP" if is_bot else member.primary_guild.tag
 
