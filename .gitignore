@@ -6,7 +6,6 @@ catbot.db-wal
 data/
 app.py
 .vscode
-config.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
