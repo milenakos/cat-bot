@@ -1824,6 +1824,9 @@ async def on_message(message: discord.Message):
                 pass
             logging.debug("Response sent: %s", "test success")
         await achemb(message, "test_ach", "reply")
+        
+    if (":cat:" in text or "🐱" in text) or (":cat2:" in text or "🐈" in text):
+        await achemb(message, "xxx", "reply")
 
     if text.lower() == "please do not the cat":
         user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.author.id)

@@ -304,7 +304,8 @@ CREATE TABLE public.profile (
     fish_caught integer DEFAULT 0,
     rarest_fish character varying(15) DEFAULT ''::character varying,
     fisherman boolean DEFAULT false,
-    pro_fisher boolean DEFAULT false
+    pro_fisher boolean DEFAULT false,
+    xxx boolean DEFAULT false
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;
