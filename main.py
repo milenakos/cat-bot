@@ -1960,7 +1960,15 @@ async def play_minigame(interaction: discord.Interaction):
 
 
 async def belated_window_task(msg: discord.Message, window, chance, catch_confirm, is_rain=False):
-    await asyncio.sleep(window)
+    belated_pre = config.belated_catchers.get(msg.channel.id, {})
+    full_event = belated_pre.get("full_event")
+    if full_event:
+        try:
+            await asyncio.wait_for(full_event.wait(), timeout=window)
+        except asyncio.TimeoutError:
+            pass
+    else:
+        await asyncio.sleep(window)
     if not is_rain:
         try:
             await msg.delete()
@@ -2322,8 +2330,10 @@ async def on_message(message: discord.Message):
                         delay = abs(current_time - belated["timestamp"])
                         delay_str = f"+{round(delay, 3) if delay < 1 else round(delay, 2)}s"
                         belated["late_catchers"].append(
-                            (message.author.id, f"{message.author.name.replace('_', '\\_')} ({delay_str}, {new_count:,} total)"),
+                            (message.author.id, f"{message.author.name.replace('_', '\_')} ({delay_str}, {new_count:,} total)"),
                         )
+                        if len(belated["late_catchers"]) >= 4 and "full_event" in belated:
+                            belated["full_event"].set()
                         if channel.channel_id in config.cat_cought_rain:
                             if channel.cattype not in config.cat_cought_rain[channel.channel_id]:
                                 config.cat_cought_rain[channel.channel_id][channel.cattype] = []
@@ -2482,6 +2492,7 @@ async def on_message(message: discord.Message):
                             "cattype": channel.cattype,
                             "is_rain": cat_rain_end or channel.cat_rains > 0,
                             "late_catchers": [(message.author.id, None)],
+                            "full_event": asyncio.Event(),
                         }
                 except Exception:
                     pass
