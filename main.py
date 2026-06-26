@@ -1988,6 +1988,8 @@ async def belated_window_task(msg: discord.Message, window, chance, catch_confir
                 u[f"cat_{belated['cattype']}"] += 1
                 await u.save()
                 if msg.channel.id in config.cat_cought_rain:
+                    if belated["cattype"] not in config.cat_cought_rain[msg.channel.id]:
+                        config.cat_cought_rain[msg.channel.id][belated["cattype"]] = []
                     config.cat_cought_rain[msg.channel.id][belated["cattype"]].append(f"<@{uid[0]}>")
             icon = get_emoji(belated["cattype"].lower() + "cat")
             await catch_confirm.reply(f"🎁 Bonus {icon} {belated['cattype']} cat! Everyone who caught it gets +1 extra cat!")
@@ -2313,6 +2315,8 @@ async def on_message(message: discord.Message):
                             (message.author.id, f"{message.author.name.replace('_', '\\_')} ({delay_str}, {new_count:,} total)"),
                         )
                         if channel.channel_id in config.cat_cought_rain:
+                            if channel.cattype not in config.cat_cought_rain[channel.channel_id]:
+                                config.cat_cought_rain[channel.channel_id][channel.cattype] = []
                             config.cat_cought_rain[channel.channel_id][channel.cattype].append(f"<@{user.user_id}>")
                     if user.catnip_active >= time.time() or user.hibernation:
                         await bounty(message, user, channel.cattype)
