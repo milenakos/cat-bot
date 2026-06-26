@@ -2339,7 +2339,7 @@ async def on_message(message: discord.Message):
                         delay = abs(current_time - belated["timestamp"])
                         delay_str = f"+{round(delay, 3) if delay < 1 else round(delay, 2)}s"
                         belated["late_catchers"].append(
-                            (message.author.id, f"{message.author.name.replace('_', '\_')} ({delay_str}, {new_count:,} total)"),
+                            (message.author.id, f"{message.author.name.replace('_', '\\_')} ({delay_str}, {new_count:,} total)"),
                         )
                         if len(belated["late_catchers"]) >= 4 and "full_event" in belated:
                             belated["full_event"].set()
