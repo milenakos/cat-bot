@@ -6908,7 +6908,6 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         return
 
                     active_user.gives_rain += amount
-                    active_user.value += 900 * amount
                 elif selection == "prisms":
                     prism_elem = modal.find_item(67)
 
@@ -7035,11 +7034,13 @@ async def trade(message: discord.Interaction, other_user: discord.User):
         view.add_item(select)
 
         coolembed = discord.Embed(color=Colors.brown, title="Trade")
+        rain_suffix = False
 
         # a single field for one person
         for tradeuser in [person1, person2]:
             icon = "✅" if tradeuser.accept else "⬜"
             offer_string = ""
+            local_rain_suffix = ""
 
             total = 0
             for cattype, amount in tradeuser.gives_cats.items():
@@ -7053,17 +7054,22 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 offer_string += f"{get_short_emoji('prism')} {prism}\n"
 
             if tradeuser.gives_rain:
-                offer_string += f"☔ {tradeuser.gives_rain:,}m of Cat Rains\n"
+                offer_string += f"☔ {tradeuser.gives_rain:,}m of Cat Rains\\*\n"
+                rain_suffix = True
+                local_rain_suffix = "\\*"
 
             if not offer_string:
                 offer_string = "Nothing offered!"
             else:
-                offer_string += f"*Total value: {round(tradeuser.value):,}\nTotal cats: {round(total):,}*"
+                offer_string += f"*Total value: {round(tradeuser.value):,}{local_rain_suffix}\nTotal cats: {round(total):,}*"
 
             personname = tradeuser.user.name.replace("_", "\\_")
             if len(offer_string) > 1024:
                 offer_string = re.sub(r"<:[^:]+:[^>]+> ", "", offer_string)
             coolembed.add_field(name=f"{icon} {personname}", inline=True, value=offer_string)
+
+        if rain_suffix:
+            coolembed.set_footer(text="*rains not included in value")
 
         return coolembed, view
 
