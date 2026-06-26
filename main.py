@@ -1972,34 +1972,43 @@ async def belated_window_task(msg: discord.Message, window, chance, catch_confir
     catchers = belated["late_catchers"].copy()
     catchers.pop(0)
 
+    icon = get_emoji(belated["cattype"].lower() + "cat")
+    has_bonus = random.random() < chance
+
+    # rain bonus: process rewards and combine with late-catchers message
+    if has_bonus and belated["is_rain"]:
+        for uid in belated["late_catchers"]:
+            u = await Profile.get_or_create(user_id=uid[0], guild_id=msg.guild.id)
+            u[f"cat_{belated['cattype']}"] += 1
+            await u.save()
+            if msg.channel.id in config.cat_cought_rain:
+                if belated["cattype"] not in config.cat_cought_rain[msg.channel.id]:
+                    config.cat_cought_rain[msg.channel.id][belated["cattype"]] = []
+                config.cat_cought_rain[msg.channel.id][belated["cattype"]].append(f"<@{uid[0]}>")
+        parts = []
+        if catchers:
+            parts.append(
+                f"{get_emoji('pointlaugh')} Late {icon} {belated['cattype']} catchers:\n"
+                + "\n".join([c[1] for c in catchers])
+                + f"\n-# up to 3 late catchers within {window}s get +1 cat without boosts"
+            )
+        parts.append(f"🎁 Bonus {icon} {belated['cattype']} cat! Everyone who caught it gets +1 extra cat!")
+        await catch_confirm.reply("\n".join(parts))
+        return
+
     if catchers:
-        icon = get_emoji(belated["cattype"].lower() + "cat")
         catch_confirm = await catch_confirm.reply(
             f"{get_emoji('pointlaugh')} Late {icon} {belated['cattype']} catchers:\n"
             + "\n".join([c[1] for c in catchers])
             + f"\n-# up to 3 late catchers within {window}s get +1 cat without boosts"
         )
 
-    # bonus
-    if random.random() < chance:
-        if belated["is_rain"]:
-            for uid in belated["late_catchers"]:
-                u = await Profile.get_or_create(user_id=uid[0], guild_id=msg.guild.id)
-                u[f"cat_{belated['cattype']}"] += 1
-                await u.save()
-                if msg.channel.id in config.cat_cought_rain:
-                    if belated["cattype"] not in config.cat_cought_rain[msg.channel.id]:
-                        config.cat_cought_rain[msg.channel.id][belated["cattype"]] = []
-                    config.cat_cought_rain[msg.channel.id][belated["cattype"]].append(f"<@{uid[0]}>")
-            icon = get_emoji(belated["cattype"].lower() + "cat")
-            await catch_confirm.reply(f"🎁 Bonus {icon} {belated['cattype']} cat! Everyone who caught it gets +1 extra cat!")
-            return
-
+    # non-rain bonus: minigame button
+    if has_bonus:
         view = View(timeout=10)
         button = Button(style=discord.ButtonStyle.green, label="Go!")
         button.callback = play_minigame
         view.add_item(button)
-        icon = get_emoji(belated["cattype"].lower() + "cat")
         h = await catch_confirm.reply(
             f"🎁 **BONUS {icon} {belated['cattype'].upper()} CAT!**\nAnyone who cought this cat can play a minigame and potentially **get +3 more!**",
             view=view,
