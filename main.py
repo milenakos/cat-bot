@@ -1959,12 +1959,13 @@ async def play_minigame(interaction: discord.Interaction):
     await interaction.response.send_modal(modal)
 
 
-async def belated_window_task(msg: discord.Message, window, chance, catch_confirm):
+async def belated_window_task(msg: discord.Message, window, chance, catch_confirm, is_rain=False):
     await asyncio.sleep(window)
-    try:
-        await msg.delete()
-    except Exception:
-        pass
+    if not is_rain:
+        try:
+            await msg.delete()
+        except Exception:
+            pass
 
     belated = config.belated_catchers.get(msg.channel.id, {})
     if not belated:
@@ -2860,21 +2861,29 @@ async def on_message(message: discord.Message):
                     except Exception:
                         pass
 
+                is_rain_catch = cat_rain_end or channel.cat_rains > 0
+
                 async def send_confirm():
                     try:
                         kwargs = {}
                         if view:
                             kwargs["view"] = view
 
-                        result = await send_target.send(
+                        catch_text = (
                             coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
                             .replace("{emoji}", str(icon))
                             .replace("{type}", le_emoji)
                             .replace("{count}", f"{new_count:,}")
                             .replace("{time}", caught_time[:-1])
-                            + suffix_string,
-                            **kwargs,
+                            + suffix_string
                         )
+
+                        if is_rain_catch:
+                            cat_spawn = send_target.get_partial_message(cat_temp)
+                            result = await cat_spawn.edit(content=catch_text, **kwargs)
+                            return result
+
+                        result = await send_target.send(catch_text, **kwargs)
 
                         if server.auto_delete_catches:
                             # button do stuff = button stay... for now-
@@ -2894,9 +2903,10 @@ async def on_message(message: discord.Message):
                     bot.loop.create_task(
                         belated_window_task(
                             send_target.get_partial_message(cat_temp),
-                            1 if (cat_rain_end or channel.cat_rains > 0) else 5,
+                            1 if is_rain_catch else 5,
                             bonus_chance,
                             result,
+                            is_rain=is_rain_catch,
                         )
                     )
 
