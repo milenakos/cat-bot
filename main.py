@@ -3404,7 +3404,8 @@ You will be able to collect them until <t:1771437600> using 2 methods:
         buttons = []
         active_buttons = []
         current_state = user.news_state.strip()
-        for num, article in enumerate(news_list):
+        for num, article in enumerate(news_list[::-1]):
+            num = len(news_list) - num - 1
             try:
                 have_read_this = current_state[num] != "0"
             except Exception:
@@ -3416,12 +3417,12 @@ You will be able to collect them until <t:1771437600> using 2 methods:
                 style=ButtonStyle.green if not have_read_this else ButtonStyle.gray,
             )
             button.callback = send_news
-            if article["active"]:
+            if article["active"] and len(active_buttons) <= 3:
                 active_buttons.append(button)
             else:
                 buttons.append(button)
-        buttons.extend(active_buttons)
-        buttons = buttons[::-1]  # reverse the list so the first button is the most recent article
+        active_buttons.extend(buttons)
+        buttons = active_buttons.copy()
 
     await regen_buttons()
 
