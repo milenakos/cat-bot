@@ -1882,7 +1882,7 @@ async def play_minigame(interaction: discord.Interaction):
         options = []
         answer = correct_answer
         for answer_value in answers:
-            options.append(discord.RadioGroupOption(label=answer_value, value=answer_value))
+            options.append(discord.RadioGroupOption(label=answer_value[:100], value=answer_value[:100]))
         modal.add_item(TextDisplay(f"## {question_text}"))
         modal.add_item(discord.ui.Label(text="Answer", component=discord.ui.RadioGroup(options=options, id=67)))
     elif cattype == "Ultimate":
