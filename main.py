@@ -1985,6 +1985,12 @@ async def belated_window_task(msg: discord.Message, window, chance, catch_confir
     icon = get_emoji(belated["cattype"].lower() + "cat")
     has_bonus = random.random() < chance
 
+    async def reply_or_send(target, text, **kwargs):
+        try:
+            return await target.reply(text, **kwargs)
+        except Exception:
+            return await msg.channel.send(text, **kwargs)
+
     # rain bonus: process rewards and combine with late-catchers message
     if has_bonus and belated["is_rain"]:
         for uid in belated["late_catchers"]:
@@ -2003,14 +2009,15 @@ async def belated_window_task(msg: discord.Message, window, chance, catch_confir
                 + f"\n-# up to 3 late catchers within {window}s get +1 cat without boosts"
             )
         parts.append(f"🎁 Bonus {icon} {belated['cattype']} cat! Everyone who caught it gets +1 extra cat!")
-        await catch_confirm.reply("\n".join(parts))
+        await reply_or_send(catch_confirm, "\n".join(parts))
         return
 
     if catchers:
-        catch_confirm = await catch_confirm.reply(
+        catch_confirm = await reply_or_send(
+            catch_confirm,
             f"{get_emoji('pointlaugh')} Late {icon} {belated['cattype']} catchers:\n"
             + "\n".join([c[1] for c in catchers])
-            + f"\n-# up to 3 late catchers within {window}s get +1 cat without boosts"
+            + f"\n-# up to 3 late catchers within {window}s get +1 cat without boosts",
         )
 
     # non-rain bonus: minigame button
@@ -2019,7 +2026,8 @@ async def belated_window_task(msg: discord.Message, window, chance, catch_confir
         button = Button(style=discord.ButtonStyle.green, label="Go!")
         button.callback = play_minigame
         view.add_item(button)
-        h = await catch_confirm.reply(
+        h = await reply_or_send(
+            catch_confirm,
             f"🎁 **BONUS {icon} {belated['cattype'].upper()} CAT!**\nAnyone who cought this cat can play a minigame and potentially **get +3 more!**",
             view=view,
         )
