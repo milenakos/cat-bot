@@ -2284,7 +2284,7 @@ async def on_message(message: discord.Message):
                 current_time = message.created_at.timestamp()
                 belated = config.belated_catchers[message.channel.id]
                 is_rain = belated.get("is_rain", False)
-                catch_window = 3 if server.legacy_catching else (1.5 if is_rain else 5)
+                catch_window = 3 if server.legacy_catching else (1 if is_rain else 5)
                 if (
                     channel
                     and "users" in belated
@@ -2881,7 +2881,7 @@ async def on_message(message: discord.Message):
                     bot.loop.create_task(
                         belated_window_task(
                             send_target.get_partial_message(cat_temp),
-                            1.5 if (cat_rain_end or channel.cat_rains > 0) else 5,
+                            1 if (cat_rain_end or channel.cat_rains > 0) else 5,
                             bonus_chance,
                             result,
                         )
@@ -3849,7 +3849,7 @@ there is also a new catnip perk which makes these bonus cats more likely (only a
                     'both of the updates above can be rolled back via "Legacy Catching" toggle in /settings',
                     "3. ☔ rain",
                     """heres how these mechanics work during rain:
-- the late catching window is reduced to 1.5 seconds
+- the late catching window is reduced to 1 second
 - bonus cats give +1 cat to everyone eligible instead of a minigame
 - both are reflected in rain summaries
 these changes were made to not slow down rains. like, i pinky promise they arent slower
