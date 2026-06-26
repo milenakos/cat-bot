@@ -15,6 +15,7 @@
   "dark_market": {"title": "Shady Corner", "description": "follow the shadow", "is_hidden": true, "category": "Cat Hunt"},
   "bounty_novice": {"title": "Bounty Novice", "description": "complete 5 bounties", "is_hidden": true, "category": "Cat Hunt"},
   "bounty_hunter": {"title": "Bounty Hunter", "description": "complete 20 bounties", "is_hidden": true, "category": "Cat Hunt"},
+  "math_jumpscare": {"title": "Math Jumpscare", "description": "complete Rare bonus minigame", "is_hidden": true, "category": "Cat Hunt"},
   "news": {"title": "That's quite new", "description": "read the news", "is_hidden": false, "category": "Cat Hunt"},
   "boosted": {"title": "Boosted", "description": "get boosted by a prism", "is_hidden": false, "category": "Cat Hunt"},
 

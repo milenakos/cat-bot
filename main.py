@@ -248,6 +248,9 @@ with open("assets/lists/facts.txt") as f:
 with open("assets/lists/fanhalo.txt") as f:
     fanhalo_list = f.read().split("\n")
 
+with open("assets/lists/rickroll.txt") as f:
+    rickroll_list = [line for line in f.read().split("\n") if line]
+
 
 # convert achievement json to a few other things
 ach_names = ach_list.keys()
@@ -353,6 +356,11 @@ fish_lock = []
 # ???
 rigged_users = []
 
+try:
+    if not config.belated_catchers:
+        config.belated_catchers = {}
+except AttributeError:
+    config.belated_catchers = {}
 
 # WELCOME TO THE TEMP_.._STORAGE HELL
 
@@ -361,9 +369,6 @@ temp_catches_storage = []
 
 # to prevent double spawns
 temp_spawns_storage = []
-
-# to prevent double belated battlepass progress and for "faster than 10 seconds" belated bp quest
-temp_belated_storage = {}
 
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
@@ -453,6 +458,7 @@ news_list = [
     {"title": "Cat Bot's 4th Birthday!", "emoji": "b_gremlincat", "active": False},
     {"title": "Cat Bot Plush", "emoji": "📦", "active": False},
     {"title": "Badges", "emoji": "🎖️", "active": True},
+    {"title": "CATCHING UPDATE??", "emoji": "🐈", "active": True},
 ]
 last_active_article = [k for k, v in enumerate(news_list) if v["active"]][-1]
 
@@ -1019,7 +1025,7 @@ async def progress(
         )
 
     if is_belated:
-        embed_progress.set_footer(text="For catching within 3 seconds")
+        embed_progress.set_footer(text="For catching late")
     elif user.user_id == bot.user.id:
         embed_progress.set_footer(text="im so good at this")
 
@@ -1252,6 +1258,7 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         temp_spawns_storage.remove(int(ch_id))
         return str(e)
 
+    config.belated_catchers.pop(int(ch_id), None)
     channel.cat = message_is_sus.id
     channel.yet_to_spawn = 0
     channel.forcespawned = bool(force_spawn)
@@ -1288,7 +1295,6 @@ async def background_loop():
         last_loop_time, \
         loop_count, \
         catchcooldown, \
-        temp_belated_storage, \
         fakecooldown, \
         last_vote_cursor, \
         server_count, \
@@ -1305,12 +1311,10 @@ async def background_loop():
     slots_lock = []
     casino_lock = []
 
-    # temp_belated_storage cleanup
-    # clean up anything older than 1 minute
-    baseflake = discord.utils.time_snowflake(discord.utils.utcnow() - datetime.timedelta(minutes=1))
-    for id in temp_belated_storage.copy().keys():
-        if id < baseflake:
-            del temp_belated_storage[id]
+    # clean up anything older than 5 minutes
+    for ch_id in list(config.belated_catchers.keys()):
+        if config.belated_catchers[ch_id].get("timestamp", 0) < time.time() - 300:
+            del config.belated_catchers[ch_id]
 
     try:
         with open("config/emojis_cache.json", "r", encoding="utf-8") as f:
@@ -1636,6 +1640,371 @@ async def on_ready():
     )
 
 
+sentences = [
+    "The quick brown fox jumps over the lazy dog.",
+    "Cat Bot is a Discord bot about catching cats.",
+    "The birch canoe slid on the smooth planks.",
+    "Glue the sheet to the dark blue background.",
+    "It's easy to tell the depth of a well.",
+    "These days a chicken leg is a rare dish.",
+    "Rice is often served in round bowls.",
+    "The juice of lemons makes fine punch.",
+    "The box was thrown beside the parked truck.",
+    "The hogs were fed chopped corn and garbage.",
+    "Four hours of steady work faced us.",
+    "A large size in stockings is hard to sell.",
+    "Stop posting about Among Us, I'm tired of seeing it!",
+    "I love Cat Bot, it is great, now there is a new update!",
+    "Yo, my name is Jeremy, my parents left when I was three!",
+    "There is just a single rule, Jeremy is really cool!",
+    "I am cool and I am green, better than at first it may seem!",
+    "Cell machine sticky cell is hypothetical cell",
+    "im gonna make catbot - Poggers!",
+    "be nice or cat will punish you",
+    "Cat Bot pinned a message to this channel.",
+    "your sins will not be forgotten",
+    "Who needs friends, all i need is to have the best cats",
+    "Jane Cat Bot here, I would like to say thanks to myself",
+    "Never gonna give you up, never gonna let you down!",
+    "Now contains 32 random daily cats!",
+    "Cat Rains make cats spawn super fast for a limited period.",
+    "spice it up a bit, ban a random half of the server",
+    "ok brumbler statue building i think i eat sand sometimes",
+    "blame freshpenguin for anything bad which happens",
+    "how do i use catch, im on ipad how to use catch",
+    "Throw your phone out the window or it will explode!",
+    "okay chat an excercise, calmly welcome the new member",
+    "devlog is now a separeate channel yay",
+    "host update: previous host has been seized by authorities",
+    "You are the best Minecraft Discord server I've ever been on.",
+    "Cat Bot was permanently banned by RiskLM for silly.",
+]
+
+
+def to_roman_numeral(value):
+    roman_map = {1: "I", 4: "IV", 5: "V", 9: "IX", 10: "X", 40: "XL", 50: "L", 90: "XC", 100: "C", 400: "CD", 500: "D", 900: "CM", 1000: "M"}
+    result = ""
+    remainder = value
+    for i in sorted(roman_map.keys(), reverse=True):
+        times = remainder // i
+        remainder %= i
+        result += roman_map[i] * times
+    return result
+
+
+def is_prime(n):
+    if n < 2:
+        return False
+
+    s = [True] * (n + 1)
+    s[0] = s[1] = False
+
+    for i in range(2, int(n**0.5) + 1):
+        if s[i]:
+            for j in range(i * i, n + 1, i):
+                s[j] = False
+    return s[n]
+
+
+async def play_minigame(interaction: discord.Interaction):
+    if interaction.channel.id not in config.belated_catchers:
+        await interaction.response.send_message("No active minigame in this channel.", ephemeral=True)
+        return
+
+    belated = config.belated_catchers[interaction.channel.id]
+    if interaction.user.id not in [c[0] for c in belated["late_catchers"]]:
+        await interaction.response.send_message("You are not eligible to play this minigame.", ephemeral=True)
+        return
+
+    belated["late_catchers"] = [c for c in belated["late_catchers"] if c[0] != interaction.user.id]
+    cattype = belated["cattype"]
+    start = int(time.time())
+    end = start + 30
+
+    modal = Modal(title="Bonus Cat Minigame")
+    if cattype == "Fine":
+        random_letter = random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        random_text = random.choice(sentences)
+        answer = random_text.lower().count(random_letter.lower())
+        modal.add_item(TextDisplay(f"## Count the amount of {random_letter}'s in the sentence below\n\n{random_text}"))
+        modal.add_item(discord.ui.TextInput(label="Answer", id=67))
+    elif cattype == "Nice":
+        random_numbers = [random.randint(-100, 100) for _ in range(4)]
+        answer = " ".join(map(str, sorted(random_numbers)))
+        modal.add_item(TextDisplay(f"## Sort the numbers in ascending order\n\n{', '.join(map(str, random_numbers))}"))
+        modal.add_item(discord.ui.TextInput(label="Answer", id=67))
+    elif cattype == "Good":
+        random_text = random.choice(sentences)
+        answer = 0
+        for vowel in "AEIOU":
+            answer += random_text.lower().count(vowel.lower())
+        modal.add_item(TextDisplay(f"## Count the amount of vowels in the sentence below\n\n{random_text}"))
+        modal.add_item(discord.ui.TextInput(label="Answer", id=67))
+    elif cattype == "Rare":
+        base = random.randint(200, 900)
+        num_range = [base + (i * 10) for i in range(-2, 2)]
+        random.shuffle(num_range)
+        items = {
+            num_range[0]: str(num_range[0]),
+            num_range[1]: str(num_range[1] // 2) + " * 2",
+            num_range[2]: str(num_range[2] * 3) + "/3",
+            num_range[3]: str(num_range[3] - 111) + " + 111",
+        }
+        items = dict(random.sample(list(items.items()), len(items)))
+        options = [discord.RadioGroupOption(label=value, value=key) for key, value in items.items()]
+        modal.add_item(discord.ui.Label(text="Choose the biggest number", component=discord.ui.RadioGroup(options=options, id=67)))
+        answer = max(items.keys())
+    elif cattype == "Wild":
+        options = [discord.RadioGroupOption(label="heads", value="heads"), discord.RadioGroupOption(label="tails", value="tails")]
+        modal.add_item(discord.ui.Label(text="Pick heads or tails", component=discord.ui.RadioGroup(options=options, id=67)))
+        answer = random.choice(["heads", "tails"])
+    elif cattype == "Gremlin":
+        expr = str(random.randint(1, 15)) + " + " + str(random.randint(1, 15)) + " * " + str(random.randint(2, 10))
+        modal.add_item(discord.ui.Label(text=f"What's the result of {expr}?", component=discord.ui.TextInput(placeholder="Answer", id=67)))
+        answer = eval(expr)
+    elif cattype == "Epic":
+        random_text = random.choice(sentences)
+        answer = random_text.upper()
+        modal.add_item(TextDisplay(f"## Retype this text in UPPERCASE\n\n{random_text}"))
+        modal.add_item(discord.ui.TextInput(label="Answer", id=67))
+    elif cattype == "Sus":
+        random_text = random.choice(sentences)
+        random_letter = ""
+        while not random_letter.isalpha():
+            random_letter = random.choice(random_text).upper()
+        answer = random_text.replace(random_letter, "").replace(random_letter.lower(), "")
+        modal.add_item(TextDisplay(f"## Retype this text without the letter '{random_letter}'\n\n{random_text}"))
+        modal.add_item(discord.ui.TextInput(label="Answer", id=67))
+    elif cattype == "Brave":
+        option_texts = ["ANSWER"]
+        for i in range(1, 25):
+            option = list("ANSWER")
+            while "".join(option) in option_texts:
+                random.shuffle(option)
+            option_texts.append("".join(option))
+        random.shuffle(option_texts)
+        options = [discord.SelectOption(label=text, value=text) for text in option_texts]
+        modal.add_item(discord.ui.Label(text='Find "ANSWER"', component=discord.ui.Select(options=options, id=67)))
+        answer = "ANSWER"
+    elif cattype == "Rickroll":
+        answer = random.choice(rickroll_list)
+        modal.add_item(TextDisplay(f"## Retype this text\n\n{answer}"))
+        modal.add_item(discord.ui.TextInput(label="Answer", id=67))
+    elif cattype == "Reverse":
+        line = random.choice(sentences)
+        split_line = line.split()
+        split_line.reverse()
+        answer = " ".join(split_line)
+        modal.add_item(TextDisplay(f"## Reverse the word order of this text\n\n{line}"))
+        modal.add_item(discord.ui.TextInput(label="Answer", id=67))
+    elif cattype == "Superior":
+        number = random.randint(10_000, 99_999)
+        answer = sum(int(i) for i in str(number))
+        modal.add_item(TextDisplay(f"## What is the sum of the digits of this number\n\n{number}"))
+        modal.add_item(discord.ui.TextInput(label="Answer", id=67))
+    elif cattype == "Trash":
+        inputs = ['TRO', 'JET', 'STR', 'ADJ', 'CRA', 'ISE', 'TIC', 'INT', 'MIN', 'SCA', 'INC', 'VER', 'RED', 'TRA', 'MEN', 'KIL', 'ZAP', 'LUB', 'STA', 'REF', 'LIT', 'IST', 'MIS', 'ANG', 'REV', 'LAT', 'DIS', 'BLA', 'SYR', 'DIG', 'CAT', 'INE', 'LIN', 'RAF', 'PER', 'SAV', 'ROA', 'SCH', 'LOV', 'SOF', 'CON', 'HUN', 'LAG', 'COM', 'ICA', 'INS', 'RIS', 'GAG', 'INO', 'LOW', 'RAT', 'WOR', 'BRE', 'LOG', 'ORI', 'HAN', 'ATT', 'TIN', 'DRA', 'UNP', 'PUR', 'PAL', 'MIL', 'FOR', 'GRA', 'ATE', 'PAT', 'BER', 'BET', 'WEA', 'IOD', 'RES', 'TRI', 'BRO', 'RAN', 'PRO', 'WHI', 'FLA', 'ELL', 'ENT', 'INK', 'ABS', 'CLA', 'CAL', 'OVE', 'IMI', 'ILL', 'COK', 'SHI', 'SAT', 'CRO', 'DEP', 'STI', 'MAT', 'SIN', 'IDE', 'SPL']  # fmt: skip
+        answer = random.choice(inputs)
+        modal.add_item(
+            discord.ui.Label(text=f"Type a 6+ letter word containing {answer}", component=discord.ui.TextInput(placeholder="Answer", id=67, min_length=6))
+        )
+    elif cattype == "Legendary":
+        shift = random.randint(1, 5)
+        out = []
+        for ch in "CAT":
+            out.append(chr((ord(ch) - ord("A") + shift) % 26 + ord("A")))
+        answer = "".join(out)
+        modal.add_item(TextDisplay(f"## Shift the word CAT forwards alphabetically by {shift} letters"))
+        modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=3, max_length=3))
+    elif cattype == "Mythic":
+        answer = random.randint(15, 89)
+        modal.add_item(TextDisplay(f"## What's the value of this roman numeral?\n\n{to_roman_numeral(answer)}"))
+        modal.add_item(discord.ui.TextInput(label="Answer", id=67))
+    elif cattype == "8bit":
+        power = random.randint(3, 10)
+        answer = 2**power
+        modal.add_item(discord.ui.Label(text=f"What's 2 to the power of {power}?", component=discord.ui.TextInput(placeholder="Answer", id=67)))
+    elif cattype == "Corrupt":
+        bin_string = "".join(random.choice(["0", "1"]) for _ in range(25))
+        to_count = random.choice(["0", "1"])
+        answer = bin_string.count(to_count)
+        modal.add_item(TextDisplay(f"## How many {to_count}s are in this binary number?\n\n{bin_string}"))
+        modal.add_item(discord.ui.TextInput(label="Answer", id=67))
+    elif cattype == "Professor":
+        answer = random.choice(cattypes)
+        show = list(answer)
+        random.shuffle(show)
+        show = "".join(show).upper()
+        modal.add_item(TextDisplay(f"## Decode this cat type\n\n{show}"))
+        modal.add_item(discord.ui.TextInput(label="Answer", id=67))
+    elif cattype == "Divine":
+        letter_mappings = {
+            "A": "X",
+            "C": "R",
+            "D": "K",
+            "F": "W",
+            "G": "Y",
+            "H": "B",
+            "I": "T",
+            "L": "J",
+            "M": "N",
+            "O": "E",
+            "P": "Q",
+            "S": "Z",
+            "U": "V",
+        }
+        letter_mappings.update({v: k for k, v in letter_mappings.items()})  # reverse mappings
+        sentence = random.choice(sentences).upper()
+        pick_index = random.randint(0, len(sentence) - 1)
+        while not sentence[pick_index].isalpha():
+            pick_index = random.randint(0, len(sentence) - 1)
+        changed = sentence[:pick_index] + letter_mappings[sentence[pick_index]] + sentence[pick_index + 1 :]
+        answer = sentence[pick_index] + letter_mappings[sentence[pick_index]]
+        modal.add_item(TextDisplay(f"## Type a letter which is different in the sentences\n\n{sentence}\n\n{changed}"))
+        modal.add_item(discord.ui.TextInput(label="Answer", id=67, max_length=1))
+    elif cattype == "Real":
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    "https://the-trivia-api.com/v2/questions?limit=1&difficulties=easy",
+                    headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
+                ) as response:
+                    stuff = await response.json()
+                    question = stuff[0]
+                    question_text = question["question"]["text"]
+                    correct_answer = question["correctAnswer"]
+                    answers = question["incorrectAnswers"] + [correct_answer]
+        except Exception:
+            question_text = "Are cats awesome?"
+            answers = ["Yes", "No", "Meh", "IDK"]
+            correct_answer = "Yes"
+        random.shuffle(answers)
+        options = []
+        answer = correct_answer
+        for answer_value in answers:
+            options.append(discord.RadioGroupOption(label=answer_value, value=answer_value))
+        modal.add_item(TextDisplay(f"## {question_text}"))
+        modal.add_item(discord.ui.Label(text="Answer", component=discord.ui.RadioGroup(options=options, id=67)))
+    elif cattype == "Ultimate":
+        number = random.randint(10, 150)
+        answer = "Yes" if is_prime(number) else "No"
+        options = [discord.RadioGroupOption(label="Yes", value="Yes"), discord.RadioGroupOption(label="No", value="No")]
+        modal.add_item(discord.ui.Label(text=f"Is {number} a prime number?", component=discord.ui.RadioGroup(options=options, id=67)))
+    elif cattype == "eGirl":
+        answer = "meow"
+        modal.add_item(
+            discord.ui.Label(
+                text="Meow agressively.",
+                component=discord.ui.TextInput(placeholder="meow mrrrp miau nyaa~ :3", min_length=69, style=discord.TextStyle.long, id=67),
+            )
+        )
+    modal.add_item(TextDisplay(f"-# Times up <t:{end}:R>"))
+
+    async def check_minigame(interaction: discord.Interaction):
+        nonlocal answer
+        if time.time() > end:
+            await interaction.response.send_message("❌ You weren't fast enough!", ephemeral=True)
+            return
+        answer_item = modal.find_item(67)
+        if isinstance(answer_item, discord.ui.TextInput) or isinstance(answer_item, discord.ui.RadioGroup):
+            answer_raw = answer_item.value
+        elif isinstance(answer_item, discord.ui.Select):
+            answer_raw = answer_item.values[0]
+        answer_clean = re.sub(r"[^0-9A-Za-z \-~]+", "", answer_raw)
+        answer = re.sub(r"[^0-9A-Za-z \-~]+", "", str(answer))
+
+        if cattype == "Trash" and answer in answer_clean.upper():
+            async with aiohttp.ClientSession() as session:
+                try:
+                    async with session.get(
+                        f"https://api.wordnik.com/v4/word.json/{answer_clean.lower()}/definitions?api_key={config.WORDNIK_API_KEY}&useCanonical=true&includeTags=false&includeRelated=false&limit=1",
+                        headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
+                    ) as response:
+                        response_text = await response.text()
+                        correct = "from" in response_text
+                except Exception:
+                    # assume word is valid
+                    correct = True
+        elif cattype == "Trash":
+            correct = False
+        elif cattype == "Divine":
+            correct = answer_clean.upper() in answer
+        elif cattype == "eGirl":
+            # need atleast 10 signals
+            signals = 0
+            answer_clean = answer_clean.lower()
+            for word in ["meow", "purr", "nya", "miau", "mrrp", "www", "ppp", "uuu", "333", ":3", "~"]:
+                signals += answer_clean.count(word)
+            correct = signals >= 10
+            answer = "10+ meow signals"
+            answer_clean = f"{signals} meow signals"
+        elif cattype == "Epic":
+            correct = answer_clean == str(answer)
+        else:
+            correct = answer_clean.lower() == str(answer).lower()
+
+        if correct:
+            profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild.id)
+            profile.bonus_catches += 1
+            profile[f"cat_{cattype}"] += 3
+            await profile.save()
+            icon = get_emoji(cattype.lower() + "cat")
+            await interaction.response.send_message(f"✅ {interaction.user.mention} got +3 {icon} {cattype} bonus cats.")
+            if cattype == "Rare":
+                await achemb(interaction, "math_jumpscare", "followup")
+        else:
+            await interaction.response.send_message(f"❌ Better luck next time!\nCorrect answer: `{answer}`\nYour answer: `{answer_clean}`", ephemeral=True)
+
+    modal.on_submit = check_minigame
+    await interaction.response.send_modal(modal)
+
+
+async def belated_window_task(msg: discord.Message, window, chance, catch_confirm):
+    await asyncio.sleep(window)
+    try:
+        await msg.delete()
+    except Exception:
+        pass
+
+    belated = config.belated_catchers.get(msg.channel.id, {})
+    if not belated:
+        return
+    catchers = belated["late_catchers"].copy()
+    catchers.pop(0)
+
+    if catchers:
+        icon = get_emoji(belated["cattype"].lower() + "cat")
+        catch_confirm = await catch_confirm.reply(
+            f"{get_emoji('pointlaugh')} Late {icon} {belated['cattype']} catchers:\n"
+            + "\n".join([c[1] for c in catchers])
+            + f"\n-# up to 3 late catchers within {window}s get +1 cat without boosts"
+        )
+
+    # bonus
+    if random.random() < chance:
+        if belated["is_rain"]:
+            for uid in belated["late_catchers"]:
+                u = await Profile.get_or_create(user_id=uid[0], guild_id=msg.guild.id)
+                u[f"cat_{belated['cattype']}"] += 1
+                await u.save()
+                if msg.channel.id in config.cat_cought_rain:
+                    config.cat_cought_rain[msg.channel.id][belated["cattype"]].append(f"<@{uid[0]}>")
+            icon = get_emoji(belated["cattype"].lower() + "cat")
+            await catch_confirm.reply(f"🎁 Bonus {icon} {belated['cattype']} cat! Everyone who caught it gets +1 extra cat!")
+            return
+
+        view = View(timeout=10)
+        button = Button(style=discord.ButtonStyle.green, label="Go!")
+        button.callback = play_minigame
+        view.add_item(button)
+        icon = get_emoji(belated["cattype"].lower() + "cat")
+        h = await catch_confirm.reply(
+            f"🎁 **BONUS {icon} {belated['cattype'].upper()} CAT!**\nAnyone who cought this cat can play a minigame and potentially **get +3 more!**",
+            view=view,
+        )
+        await h.delete(delay=10)
+
+
 # this is all the code which is ran on every message sent
 # a lot of it is for easter eggs or achievements
 async def on_message(message: discord.Message):
@@ -1910,19 +2279,41 @@ async def on_message(message: discord.Message):
                 except Exception:
                     pass
 
-            # belated battlepass
-            if message.channel.id in temp_belated_storage:
+            # belated catching
+            if message.channel.id in config.belated_catchers:
                 current_time = message.created_at.timestamp()
-                belated = temp_belated_storage[message.channel.id]
+                belated = config.belated_catchers[message.channel.id]
+                is_rain = belated.get("is_rain", False)
+                catch_window = 3 if server.legacy_catching else (1.5 if is_rain else 5)
                 if (
                     channel
                     and "users" in belated
                     and "time" in belated
-                    and belated.get("timestamp", 0) + 3 > current_time
+                    and belated.get("timestamp", 0) + catch_window > current_time
                     and message.author.id not in belated["users"]
                 ):
                     belated["users"].append(message.author.id)
-                    temp_belated_storage[message.channel.id] = belated
+                    if (
+                        not server.legacy_catching
+                        and channel.cattype
+                        and user.timeout <= time.time()
+                        and len(belated["late_catchers"]) < 4
+                        and not (server.anti_double_catch and user.last_catch_channel != message.channel.id and user.last_catch + 300 > time.time())
+                    ):
+                        user[f"cat_{channel.cattype}"] += 1
+                        user.total_catches += 1
+                        user.last_catch = time.time()
+                        user.last_catch_channel = message.channel.id
+                        await user.save()
+                        icon = get_emoji(channel.cattype.lower() + "cat")
+                        new_count = user[f"cat_{channel.cattype}"]
+                        delay = abs(current_time - belated["timestamp"])
+                        delay_str = f"+{round(delay, 3) if delay < 1 else round(delay, 2)}s"
+                        belated["late_catchers"].append(
+                            (message.author.id, f"{message.author.name.replace('_', '\\_')} ({delay_str}, {new_count:,} total)"),
+                        )
+                        if channel.channel_id in config.cat_cought_rain:
+                            config.cat_cought_rain[channel.channel_id][channel.cattype].append(f"<@{user.user_id}>")
                     if user.catnip_active >= time.time() or user.hibernation:
                         await bounty(message, user, channel.cattype)
                     quests = ["3cats"]
@@ -1954,6 +2345,24 @@ async def on_message(message: discord.Message):
                             quests.append("finenice")
                             quests.append("finenice")
                     await multi_progress(message, user, quests, True)
+                    vote_time_user = await User.get_or_create(user_id=message.author.id)
+
+                    if vote_time_user.tutorial_state == 0:
+                        text = f"👋 Welcome to Cat Bot! Check out the {get_command_mention('tutorial')} to get started (includes a free gift!)"
+                        try:
+                            await message.reply(text, allowed_mentions=discord.AllowedMentions(users=True))
+                        except Exception:
+                            await message.channel.send(f"{message.author.mention} {text}", allowed_mentions=discord.AllowedMentions(users=True))
+                        vote_time_user.tutorial_state = 1
+                        await vote_time_user.save()
+                    elif vote_time_user.tutorial_state == 2:
+                        text = f"✅ Run {get_command_mention('tutorial')} to continue"
+                        try:
+                            await message.reply(text, allowed_mentions=discord.AllowedMentions(users=True))
+                        except Exception:
+                            await message.channel.send(f"{message.author.mention} {text}", allowed_mentions=discord.AllowedMentions(users=True))
+                        vote_time_user.tutorial_state = 3
+                        await vote_time_user.save()
         else:
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.append(channel.cat)
@@ -2052,7 +2461,14 @@ async def on_message(message: discord.Message):
 
                 try:
                     if time_caught >= 0:
-                        temp_belated_storage[message.channel.id] = {"time": time_caught, "users": [message.author.id], "timestamp": current_time}
+                        config.belated_catchers[message.channel.id] = {
+                            "time": time_caught,
+                            "users": [message.author.id],
+                            "timestamp": current_time,
+                            "cattype": channel.cattype,
+                            "is_rain": cat_rain_end or channel.cat_rains > 0,
+                            "late_catchers": [(message.author.id, None)],
+                        }
                 except Exception:
                     pass
 
@@ -2075,6 +2491,8 @@ async def on_message(message: discord.Message):
                 double_first = 0
                 timer_add_chance = 0
                 packs_gained = []
+                bonus_chance = 0.02 * math.log2(sum(type_dict.values()) / type_dict[channel.cattype] - 0.7)
+                bonus_chance_increase = 0
 
                 if user.perks:
                     if user.catnip_active < time.time():
@@ -2117,6 +2535,8 @@ async def on_message(message: discord.Message):
                             rain_chance += perks_info[12]["values"][rarity]
                         elif id == "double_first":
                             double_first += perks_info[13]["values"][rarity]
+                        elif id == "bonus_catcher":
+                            bonus_chance_increase += perks_info[14]["values"][rarity]
 
                     for i in packs:
                         chance = random.random() * 100
@@ -2166,6 +2586,9 @@ async def on_message(message: discord.Message):
                             triple_chance = 75
                     if none_chance < 0:
                         none_chance = 0
+                    if bonus_chance_increase > 0:
+                        bonus_chance_increase = min(2, bonus_chance_increase * 0.01 + 1)
+                        bonus_chance *= bonus_chance_increase
 
                     if random.random() * 100 < rain_chance:
                         if channel.cat_rains == 0 and server.do_rain:
@@ -2445,11 +2868,24 @@ async def on_message(message: discord.Message):
                             delay = 30 if (button and button.callback) else 10
                             await result.delete(delay=delay)
 
+                        return result
+
                     except Exception:
                         # Silently fail if we can't send the confirmation message (e.g. permission issues)
                         pass
 
-                await asyncio.gather(delete_cat(), send_confirm())
+                if server.legacy_catching:
+                    await asyncio.gather(delete_cat(), send_confirm())
+                else:
+                    result = await send_confirm()
+                    bot.loop.create_task(
+                        belated_window_task(
+                            send_target.get_partial_message(cat_temp),
+                            1.5 if (cat_rain_end or channel.cat_rains > 0) else 5,
+                            bonus_chance,
+                            result,
+                        )
+                    )
 
                 logging.debug("Caught (pre-boost) %d %s", 1, channel.cattype)
                 logging.debug("Caught (post-boost) %d %s", silly_amount, le_emoji)
@@ -2801,7 +3237,7 @@ async def get_tutorial_view(user_id: int):
         user.tutorial_state = 2
         container = Container(
             f"## Welcome to {get_emoji('staring_cat')} Cat Bot!",
-            "🐈 The main goal of the bot is to __catch cats__. You can do that by waiting for one to appear - it will look like on the image below (there is usually one every couple of minutes), then simply saying `cat` in the chat. Only __the first person__ to catch the cat will get it.",
+            "🐈 The main goal of the bot is to __catch cats__. You can do that by waiting for one to appear - it will look like on the image below (there is usually one every couple of minutes), then simply saying `cat` in the chat. Be quick - after the first person catches the cat, only the first *3 people* within *5 seconds* also get it.",
             "**Go try it!**",
             discord.ui.MediaGallery(discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316534462578838/tutorial1.png")),
             "===",
@@ -3397,6 +3833,33 @@ You will be able to collect them until <t:1771437600> using 2 methods:
             )
             view.add_item(back_row)
             await interaction.edit_original_response(view=view)
+        elif news_id == 21:
+            view.add_item(
+                Container(
+                    "## 🐈 CATCHING UPDATE",
+                    f"1. {get_emoji('pointlaugh')} late catching",
+                    """now __the first 3 people to catch within 5 seconds__ of the original catcher will also get the cat, although **without any boosts**! "first-wins-all" was one of the most popular complaints on that one survey i did back in 2024.
+here is a helpful table of what works and what doesnt when you are late:
+- ✅ Progress of catnip bounties, cattlepass quests and /tutorial all trigger within 5s, even outside of 3 people limit
+- ❌ Achievements; activations of catnip perks, prisms, blessings, etc (up to 3 late people will only get +1 unboosted cat)""",
+                    "2. 🎁 bonus cats",
+                    """there is a small chance (around 6.5% on average, *chance is higher for rarer cats*) that a cat is a __bonus cat__. such a cat will have *a minigame* after its caught, in which you can get **+3 more of it** if you succeed. only people who caught the cat can play this minigame (this includes the initial catcher + late catchers, so max of 4 people).
+each of 22 cats has a unique minigame associated with it.
+there is also a new catnip perk which makes these bonus cats more likely (only activates from initial catcher)""",
+                    'both of the updates above can be rolled back via "Legacy Catching" toggle in /settings',
+                    "3. ☔ rain",
+                    """heres how these mechanics work during rain:
+- the late catching window is reduced to 1.5 seconds
+- bonus cats give +1 cat to everyone eligible instead of a minigame
+- both are reflected in rain summaries
+these changes were made to not slow down rains. like, i pinky promise they arent slower
+unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats per minute. this results in all rains having atleast +1 more cat, and then approx. +1 more for every 5 minute of length.""",
+                    "===",
+                    "-# <t:1782500400>",
+                )
+            )
+            view.add_item(back_row)
+            await interaction.edit_original_response(view=view)
 
     async def regen_buttons():
         nonlocal buttons
@@ -3813,47 +4276,39 @@ async def settings(message: discord.Interaction):
         await server.save()
         await interaction.edit_original_response(view=await settings_view())
 
-    def make_button(parameter):
-        if server[parameter]:
-            button = Button(label="Disable", style=ButtonStyle.red, custom_id=parameter)
-        else:
-            button = Button(label="Enable", style=ButtonStyle.green, custom_id=parameter)
-        button.callback = toggle_parameter
-        return button
-
     async def settings_view():
         await server.refresh_from_db()
+
+        def make_section(key, title, description):
+            if server[key]:
+                suffix = "(✅ On)"
+                button = Button(label="Disable", style=ButtonStyle.red, custom_id=key)
+            else:
+                suffix = "(❌ Off)"
+                button = Button(label="Enable", style=ButtonStyle.green, custom_id=key)
+            button.callback = toggle_parameter
+            return Section(f"### {title} {suffix}\n{description}", button)
+
         view = LayoutView(timeout=VIEW_TIMEOUT)
         view.add_item(
             Container(
                 f"## Cat Bot Settings for {message.guild.name}",
-                Section(
-                    "### Only in Setupped",
+                make_section(
+                    "only_setupped_channels",
+                    "Only in Setupped Channels",
                     "If enabled, mutes reactions, responses, achievements and cattlepass progress outside of setupped channels",
-                    make_button("only_setupped_channels"),
                 ),
-                Section("### Reactions", "Controls all Cat Bot reactions", make_button("do_reactions")),
-                Section("### Responses", "Controls Cat Bot easter egg responses to specific messages sent", make_button("do_responses")),
-                Section("### Mute Achievements", 'If enabled, will hide all Cat Bot "achievement get" messages', make_button("mute_achievements")),
-                Section(
-                    "### Auto-Delete Achievements",
-                    'If enabled, will delete all "achievement get" messages after 10 seconds',
-                    make_button("auto_delete_achievements"),
+                make_section("do_reactions", "Reactions", "Controls all Cat Bot reactions"),
+                make_section("do_responses", "Responses", "Controls Cat Bot easter egg responses to specific messages sent"),
+                make_section("mute_achievements", "Mute Achievements", "If enabled, will hide all Cat Bot 'achievement get' messages"),
+                make_section("auto_delete_achievements", "Auto-Delete Achievements", "If enabled, will delete all 'achievement get' messages after 10 seconds"),
+                make_section("auto_delete_catches", "Auto-Delete Catches", "If enabled, will delete all 'user caught' messages after ~10 seconds"),
+                make_section("do_rain", "Cat Rains", "Controls whether Cat Rains can happen"),
+                make_section("do_catnip", "Catnip", "Controls whether catnip is accessible"),
+                make_section(
+                    "anti_double_catch", "Anti-Double Catch", "If enabled, users must wait 5 minutes after catching in one channel to catch in another"
                 ),
-                Section(
-                    "### Auto-Delete Catches",
-                    'If enabled, will delete all "user cought" messages after ~10 seconds',
-                    make_button("auto_delete_catches"),
-                ),
-                "===",
-                Section("### Cat Rains", "Controls whether Cat Rains can happen", make_button("do_rain")),
-                Section("### Catnip", "Controls whether catnip is accessible", make_button("do_catnip")),
-                "===",
-                Section(
-                    "### Anti-Double Catch",
-                    "If enabled, users must wait 5 minutes after catching in one channel to catch in another",
-                    make_button("anti_double_catch"),
-                ),
+                make_section("legacy_catching", "Legacy Catching", "If enabled, reverts to old catching (first catcher only, no bonus cats)"),
             )
         )
         return view
@@ -3928,6 +4383,7 @@ async def gen_stats(profile, star):
     else:
         stats.append(["average_time", "⏱️", f"Average catch time: N/A{star}"])
     stats.append(["purrfect_catches", "✨", f"Purrfect catches: {profile.perfection_count:,}{star}"])
+    stats.append(["bonus_catches", "🎁", f"Successful bonus catches: {profile.bonus_catches:,}{star}"])
 
     # catching boosts
     stats.append([get_emoji("prism"), "Prisms & Catnip"])
@@ -4575,7 +5031,10 @@ async def rain(message: discord.Interaction):
 You can get those by buying them at our [store](<https://catbot.shop>) or by winning them in an event.
 This bot is developed by a single person so buying one would be very appreciated.
 As a bonus, you will get access to /editprofile and /customcat commands!
-Fastest times are not saved during rains.
+- 1 Rain Minute = 22 cats
+- Fastest times are not saved during rains.
+- Late catching time is reduced to 1 second.
+- Bonus cats are +1 instead of minigame.
 
 You currently have **{user.rain_minutes:,}** minutes of rains{server_rains}.""",
         color=Colors.brown,
@@ -6700,7 +7159,7 @@ async def bakery(message: discord.Interaction):
                     json={"user": str(interaction.user.id)},
                 ) as response:
                     if response.status != 200:
-                        print(response.status, await response.text())
+                        logging.warning("Bake.gg reward failed: status=%s body=%s", response.status, await response.text())
                         raise ValueError
 
                     profile.cookies -= 120

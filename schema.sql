@@ -304,7 +304,9 @@ CREATE TABLE public.profile (
     fish_caught integer DEFAULT 0,
     rarest_fish character varying(15) DEFAULT ''::character varying,
     fisherman boolean DEFAULT false,
-    pro_fisher boolean DEFAULT false
+    pro_fisher boolean DEFAULT false,
+    bonus_catches integer DEFAULT 0,
+    math_jumpscare boolean DEFAULT false
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;
@@ -391,7 +393,8 @@ CREATE TABLE public.server (
     auto_delete_achievements boolean DEFAULT false,
     auto_delete_catches boolean DEFAULT false,
     mute_achievements boolean DEFAULT false,
-    anti_double_catch boolean DEFAULT false
+    anti_double_catch boolean DEFAULT false,
+    legacy_catching boolean DEFAULT false
 );
 
 ALTER TABLE public.server OWNER TO cat_bot;

@@ -159,6 +159,7 @@ async def shutdown():
 
 config.cat_cought_rain = {}
 config.rain_starter = {}
+config.belated_catchers = {}
 
 bot.cat_bot_reload_hook = reload  # pyright: ignore
 
