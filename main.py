@@ -5237,7 +5237,7 @@ async def battlepass(message: discord.Interaction):
             description += f"✅ ~~Vote on Top.gg~~\n- Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>{streak_string}\n"
         else:
             # inform double vote xp during weekends
-            is_weekend = now.weekday() >= 4
+            is_weekend = (now - datetime.timedelta(hours=4)).weekday() >= 4
 
             if is_weekend:
                 description += "-# *Double Vote XP During Weekends*\n"
