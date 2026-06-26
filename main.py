@@ -2267,8 +2267,8 @@ async def on_message(message: discord.Message):
                             elif idx_shift == len(cattypes):
                                 rainboost = 600
                             logging.debug("Boosted to rain: %d", rainboost)
-                            channel.cat_rains += rainboost * 22
-                            if channel.cat_rains > rainboost * 22:
+                            channel.cat_rains += int(rainboost / 60) * 22
+                            if channel.cat_rains > int(rainboost / 60) * 22:
                                 await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
                                 await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
                                 await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
