@@ -2880,7 +2880,7 @@ async def on_message(message: discord.Message):
 
                         if is_rain_catch:
                             cat_spawn = send_target.get_partial_message(cat_temp)
-                            result = await cat_spawn.edit(content=catch_text, **kwargs)
+                            result = await cat_spawn.edit(content=catch_text, attachments=[], **kwargs)
                             return result
 
                         result = await send_target.send(catch_text, **kwargs)
