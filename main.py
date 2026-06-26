@@ -5034,7 +5034,7 @@ async def rain_end(message, channel, force_summary=None):
         del config.cat_cought_rain[channel.channel_id]
         del config.rain_starter[channel.channel_id]
 
-        await asyncio.sleep(2)
+        await asyncio.sleep(4)
     except discord.Forbidden:
         pass
     finally:
