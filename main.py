@@ -1979,7 +1979,8 @@ async def belated_window_task(msg: discord.Message, window, chance, catch_confir
     if not belated:
         return
     catchers = belated["late_catchers"].copy()
-    catchers.pop(0)
+    if catchers:
+        catchers.pop(0)
 
     icon = get_emoji(belated["cattype"].lower() + "cat")
     has_bonus = random.random() < chance
