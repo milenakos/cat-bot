@@ -1738,7 +1738,7 @@ async def play_minigame(interaction: discord.Interaction):
         answer = 0
         for vowel in "AEIOU":
             answer += random_text.lower().count(vowel.lower())
-        modal.add_item(TextDisplay(f"## Count the amount of vowels in the sentence below\n\n{random_text}"))
+        modal.add_item(TextDisplay(f"## Count the amount of vowels (excluding Y) in the sentence below\n\n{random_text}"))
         modal.add_item(discord.ui.TextInput(label="Answer", id=67))
     elif cattype == "Rare":
         base = random.randint(200, 900)
