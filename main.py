@@ -2334,7 +2334,6 @@ async def on_message(message: discord.Message):
                         user.total_catches += 1
                         user.last_catch = time.time()
                         user.last_catch_channel = message.channel.id
-                        await user.save()
                         icon = get_emoji(channel.cattype.lower() + "cat")
                         new_count = user[f"cat_{channel.cattype}"]
                         delay = abs(current_time - belated["timestamp"])
@@ -2348,6 +2347,7 @@ async def on_message(message: discord.Message):
                             if channel.cattype not in config.cat_cought_rain[channel.channel_id]:
                                 config.cat_cought_rain[channel.channel_id][channel.cattype] = []
                             config.cat_cought_rain[channel.channel_id][channel.cattype].append(f"<@{user.user_id}>")
+                        await user.save()
                     if user.catnip_active >= time.time() or user.hibernation:
                         await bounty(message, user, channel.cattype)
                     quests = ["3cats"]
