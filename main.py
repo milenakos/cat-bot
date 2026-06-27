@@ -2318,7 +2318,7 @@ async def on_message(message: discord.Message):
                     channel
                     and "users" in belated
                     and "time" in belated
-                    and belated.get("timestamp", 0) + catch_window > current_time
+                    and belated.get("timestamp", 0) + 5 > current_time
                     and message.author.id not in belated["users"]
                 ):
                     belated["users"].append(message.author.id)
@@ -2327,6 +2327,7 @@ async def on_message(message: discord.Message):
                         and channel.cattype
                         and user.timeout <= time.time()
                         and len(belated["late_catchers"]) < 4
+                        and belated.get("timestamp", 0) + catch_window > current_time
                         and not (server.anti_double_catch and user.last_catch_channel != message.channel.id and user.last_catch + 300 > time.time())
                     ):
                         user[f"cat_{channel.cattype}"] += 1
