@@ -4714,7 +4714,10 @@ async def gen_inventory(message, person_id):
             {"type": 2, "name": "rain", "value": user.rain_minutes},
             {"type": 2, "name": "prisms", "value": user_count},
         ]
-        await bot.http.request("PATCH", f"/applications/{bot.user.id}/users/{person_id.id}/identities/0/profile", json={"data": {"dynamic": widget_data}})
+        await bot.http.request(
+            discord.http.Route("PATCH", f"/applications/{bot.user.id}/users/{person_id.id}/identities/0/profile"),
+            json={"data": {"dynamic": widget_data}},
+        )
 
     give_achs = []
     if me:
