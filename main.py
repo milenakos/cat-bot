@@ -1473,16 +1473,15 @@ async def background_loop():
         button.callback = postpone_reminder
         view.add_item(button)
 
-        guild = bot.get_guild(user.guild_id)
-        if not guild:
-            guild_name = "a server"
-        else:
-            guild_name = guild.name
+        guild = await Server.get_or_create(guild_id=user.guild_id)
+        if not guild.name:
+            guild.name = (await bot.fetch_guild(user.guild_id)).name
+            await guild.save()
 
         try:
             user_user = await User.get_or_create(id=user.user_id)
             user_dm = await fetch_dm_channel(user_user)
-            await user_dm.send(f"A new quest is available in {guild_name}!", embed=embed, view=view)
+            await user_dm.send(f"A new quest is available in {guild.name}!", embed=embed, view=view)
         except Exception:
             pass
         user.reminder_catch = 0
@@ -1518,16 +1517,15 @@ async def background_loop():
         button.callback = postpone_reminder
         view.add_item(button)
 
-        guild = bot.get_guild(user.guild_id)
-        if not guild:
-            guild_name = "a server"
-        else:
-            guild_name = guild.name
+        guild = await Server.get_or_create(guild_id=user.guild_id)
+        if not guild.name:
+            guild.name = (await bot.fetch_guild(user.guild_id)).name
+            await guild.save()
 
         try:
             user_user = await User.get_or_create(user_id=user.user_id)
             user_dm = await fetch_dm_channel(user_user)
-            await user_dm.send(f"A new quest is available in {guild_name}!", embed=embed, view=view)
+            await user_dm.send(f"A new quest is available in {guild.name}!", embed=embed, view=view)
         except Exception:
             pass
         user.reminder_misc = 0
@@ -3252,12 +3250,24 @@ Have a nice day :)"""
     except Exception:
         pass
 
+    server = await Server.get_or_create(guild_id=guild.id)
+    server.name = guild.name
+    await server.save()
+
     try:
         if config.INVITE_LOGS_CHANNEL:
             ch = bot.get_partial_messageable(config.INVITE_LOGS_CHANNEL)
             await ch.send(f"~#{server_count:,} | {guild.member_count:,} members | Invite source: {source}")
     except Exception:
         pass
+
+
+# keep db server name in sync
+async def on_guild_update(before: discord.Guild, after: discord.Guild):
+    if before.name != after.name:
+        server = await Server.get_or_create(guild_id=after.id)
+        server.name = after.name
+        await server.save()
 
 
 # 0 - not started
@@ -10173,6 +10183,7 @@ async def setup(bot2):
     # copy all the events
     bot2.on_ready = on_ready
     bot2.on_guild_join = on_guild_join
+    bot2.on_guild_update = on_guild_update
     bot2.on_message = on_message
     bot2.on_connect = on_connect
     bot2.on_error = on_error

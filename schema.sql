@@ -395,7 +395,8 @@ CREATE TABLE public.server (
     auto_delete_catches boolean DEFAULT false,
     mute_achievements boolean DEFAULT false,
     anti_double_catch boolean DEFAULT false,
-    legacy_catching boolean DEFAULT false
+    legacy_catching boolean DEFAULT false,
+    name text DEFAULT ''
 );
 
 ALTER TABLE public.server OWNER TO cat_bot;
