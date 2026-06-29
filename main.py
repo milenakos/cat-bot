@@ -4706,6 +4706,7 @@ async def gen_inventory(message, person_id):
     if user.widget_guild_id == message.guild.id:
         # sync widget
         widget_data = [
+            {"type": 1, "name": "username", "value": emoji_prefix + " " + person_id.name},
             {"type": 1, "name": "guild_name", "value": message.guild.name},
             {"type": 2, "name": "cats_caught", "value": person.total_catches},
             {"type": 2, "name": "inventory", "value": total},
