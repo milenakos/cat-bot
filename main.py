@@ -4703,6 +4703,19 @@ async def gen_inventory(message, person_id):
             accent_color=discord.Colour.from_str(color),
         )
 
+    if user.widget_guild_id == message.guild.id:
+        # sync widget
+        widget_data = [
+            {"type": 1, "name": "guild_name", "value": message.guild.name},
+            {"type": 2, "name": "cats_caught", "value": person.total_catches},
+            {"type": 2, "name": "inventory", "value": total},
+            {"type": 1, "name": "achs", "value": f"{unlocked}/{total_achs}{minus_achs}"},
+            {"type": 1, "name": "fastest", "value": f"{round(person.time, 3)}s"},
+            {"type": 2, "name": "rain", "value": user.rain_minutes},
+            {"type": 2, "name": "prisms", "value": user_count},
+        ]
+        await bot.http.request("PATCH", f"/applications/{bot.user.id}/users/{person_id.id}/identities/0/profile", json={"data": {"dynamic": widget_data}})
+
     give_achs = []
     if me:
         # give some aches if we are vieweing our own inventory

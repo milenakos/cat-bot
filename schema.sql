@@ -378,7 +378,8 @@ CREATE TABLE public."user" (
     puzzle_badge boolean DEFAULT false,
     plush_badge boolean DEFAULT false,
     second_birthday_badge boolean DEFAULT false,
-    tutorial_state smallint DEFAULT 0
+    tutorial_state smallint DEFAULT 0,
+    widget_guild_id bigint DEFAULT 0
 );
 
 ALTER TABLE public."user" OWNER TO cat_bot;
