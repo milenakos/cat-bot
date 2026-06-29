@@ -1473,7 +1473,7 @@ async def background_loop():
         button.callback = postpone_reminder
         view.add_item(button)
 
-        guild = await Server.get_or_create(guild_id=user.guild_id)
+        guild = await Server.get_or_create(server_id=user.guild_id)
         if not guild.name:
             guild.name = (await bot.fetch_guild(user.guild_id)).name
             await guild.save()
@@ -1517,7 +1517,7 @@ async def background_loop():
         button.callback = postpone_reminder
         view.add_item(button)
 
-        guild = await Server.get_or_create(guild_id=user.guild_id)
+        guild = await Server.get_or_create(server_id=user.guild_id)
         if not guild.name:
             guild.name = (await bot.fetch_guild(user.guild_id)).name
             await guild.save()
@@ -3250,7 +3250,7 @@ Have a nice day :)"""
     except Exception:
         pass
 
-    server = await Server.get_or_create(guild_id=guild.id)
+    server = await Server.get_or_create(server_id=guild.id)
     server.name = guild.name
     await server.save()
 
@@ -3265,7 +3265,7 @@ Have a nice day :)"""
 # keep db server name in sync
 async def on_guild_update(before: discord.Guild, after: discord.Guild):
     if before.name != after.name:
-        server = await Server.get_or_create(guild_id=after.id)
+        server = await Server.get_or_create(server_id=after.id)
         server.name = after.name
         await server.save()
 
