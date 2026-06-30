@@ -646,23 +646,25 @@
       "finenice": {"emoji": "finecat", "title": "Catch a Fine and a Nice cat", "xp_min": 340, "xp_max": 400, "progress": 3}
     },
     "misc": {
-      "slots": {"emoji": "🎰", "title": "Spin the /slots machine 10 times", "xp_min": 150, "xp_max": 250, "progress": 10},
       "slots2": {"emoji": "🎰", "title": "Spin the /slots machine 5 times", "xp_min": 250, "xp_max": 350, "progress": 5},
-      "achievement": {"emoji": "cat_throphy", "title": "Get an achievement", "xp_min": 180, "xp_max": 260, "progress": 1},
-      "trade": {"emoji": "💱", "title": "Complete a /trade", "xp_min": 280, "xp_max": 320, "progress": 1},
-      "news": {"emoji": "📰", "title": "Read a /news article", "xp_min": 150, "xp_max": 210, "progress": 1},
-      "gift": {"emoji": "🎁", "title": "/Gift someone", "xp_min": 180, "xp_max": 220, "progress": 1},
-      "reminder": {"emoji": "📝", "title": "Set a /reminder", "xp_min": 190, "xp_max": 250, "progress": 1},
-      "ttc": {"emoji": "⭕", "title": "Play a game of /tictactoe", "xp_min": 170, "xp_max": 230, "progress": 1},
-      "rate": {"emoji": "👍", "title": "/Rate something", "xp_min": 150, "xp_max": 210, "progress": 1},
-      "catball": {"emoji": "🎱", "title": "Ask the magic /8ball", "xp_min": 120, "xp_max": 220, "progress": 1},
-      "roll": {"emoji": "🎲", "title": "/Roll a dice", "xp_min": 120, "xp_max": 220, "progress": 1},
-      "ping": {"emoji": "🏓", "title": "Check cat's /ping", "xp_min": 140, "xp_max": 180, "progress": 1},
-      "tiktok": {"emoji": "sillycat", "title": "Use /tiktok TTS", "xp_min": 130, "xp_max": 210, "progress": 1},
-      "wiki": {"emoji": "🤓", "title": "Check out /wiki", "xp_min": 120, "xp_max": 200, "progress": 1},
-      "pig": {"emoji": "🎲", "title": "Get 20+ score in /pig", "xp_min": 200, "xp_max": 250, "progress": 1},
-      "roulette": {"emoji": "🎰", "title": "Win a /roulette bet", "xp_min": 175, "xp_max": 225, "progress": 1},
-      "plush": {"emoji": "📦", "title": "Run /plush", "xp_min": 180, "xp_max": 250, "progress": 1}
+      "achievement": {"emoji": "cat_throphy", "title": "Get an /achievement", "xp_min": 200, "xp_max": 300, "progress": 1},
+      "trade": {"emoji": "💱", "title": "Complete a /trade", "xp_min": 270, "xp_max": 370, "progress": 1},
+      "ttc": {"emoji": "⭕", "title": "Win a game of /tictactoe", "xp_min": 270, "xp_max": 370, "progress": 1},
+      "roll": {"emoji": "🎲", "title": "/Roll a 6 on default dice", "xp_min": 175, "xp_max": 225, "progress": 1},
+      "pig": {"emoji": "🎲", "title": "Get 50+ score in /pig", "xp_min": 300, "xp_max": 400, "progress": 1},
+      "roulette": {"emoji": "🎰", "title": "Win 3 /roulette bets", "xp_min": 300, "xp_max": 400, "progress": 3},
+      "cookie": {"emoji": "🍪", "title": "Bake 50 /cookies", "xp_min": 250, "xp_max": 350, "progress": 50},
+      "coffee": {"emoji": "☕", "title": "/Brew 50 coffees", "xp_min": 250, "xp_max": 350, "progress": 50},
+      "fish": {"emoji": "🎣", "title": "Catch 5 /fish", "xp_min": 250, "xp_max": 350, "progress": 5},
+      "chaos": {"emoji": "💥", "title": "Cause 50 /chaos", "xp_min": 250, "xp_max": 350, "progress": 50},
+      "plush": {"emoji": "📦", "title": "Run /plush", "xp_min": 250, "xp_max": 350, "progress": 1}
+    },
+    "weekly": {
+      "catch": {"emoji": "nicecat", "title": "Catch 70 cats", "progress": 70, "start_time": 0, "end_time": 604800},
+      "brave+": {"emoji": "bravecat", "title": "Catch 5 cats rarer than Brave", "progress": 5, "start_time": 604800, "end_time": 1209600},
+      "bonus": {"emoji": "🎁", "title": "Succeed in 4 bonus minigames", "progress": 4, "start_time": 1209600, "end_time": 1814400},
+      "different": {"emoji": "wildcat", "title": "Catch 13 different cattypes", "progress": 13, "start_time": 1814400, "end_time": 2419200},
+      "": {"emoji": "", "title": "", "progress": 0, "start_time": 2419200, "end_time": 300000}
     }
   }
 }
