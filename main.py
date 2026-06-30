@@ -6629,7 +6629,7 @@ async def cookie(message: discord.Interaction):
             return
         await interaction.response.defer()
         try:
-            user = await Profile.get(["cookies"], guild_id=message.guild.id, user_id=message.user.id)
+            user = await Profile.get(["cookies", "misc_quest"], guild_id=message.guild.id, user_id=message.user.id)
             user.cookies += 1
             await user.save()
         except AttributeError:
@@ -7425,7 +7425,7 @@ async def brew(message: discord.Interaction):
             return
 
         try:
-            user = await Profile.get(["coffees"], guild_id=message.guild.id, user_id=message.user.id)
+            user = await Profile.get(["coffees", "misc_quest"], guild_id=message.guild.id, user_id=message.user.id)
             user.coffees += 1
             await user.save()
         except AttributeError:
