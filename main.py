@@ -3535,7 +3535,7 @@ CAT_FORTUNE_TITLES = [
 
 
 @bot.tree.command(description="🔮 Consult the ancient cat oracle for a purrsonalized fortune")
-async def catfortune(interaction: discord.Interaction):
+async def fortune(interaction: discord.Interaction):
     rng = random.Random(interaction.user.id + discord.utils.utcnow().date().toordinal())
 
     embed = discord.Embed(
