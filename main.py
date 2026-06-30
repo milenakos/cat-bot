@@ -3479,66 +3479,78 @@ async def wiki(message: discord.Interaction):
 
 
 CAT_FORTUNES = [
-    "🐱 You will find a mysterious hairball in your shoe. It brings good luck... probably.",
-    "🐱 A cat will stare at you from across the room today. It is judging you. You will not pass.",
-    "🐱 Beware of the red dot. It leads nowhere, yet you will chase it anyway.",
-    "🐱 Your next nap will be legendary. 14 hours minimum. You've earned it.",
-    "🐱 A cardboard box will present itself. You must sit in it. This is the way.",
-    "🐱 You will knock something off a table today. Do not apologize. Maintain eye contact.",
-    "🐱 The vacuum cleaner approaches. Flee now, ask questions never.",
-    "🐱 Today's lucky number is 9. You have that many lives left... for now.",
-    "🐱 A can opener will sound in the distance. Follow it. Destiny awaits.",
-    "🐱 You will receive chin scratches from an unexpected source. Accept them graciously.",
-    "🐱 The laser pointer of fate shines upon you. Chase it with reckless abandon.",
-    "🐱 An ancient prophecy foretells: you will ignore an expensive cat toy and play with the bag it came in.",
-    "🐱 Mercury is in retrograde. This means nothing to you. You are a cat. Nap on.",
-    "🐱 You will sit on someone's keyboard today and type something profound. Or 'asdfjkl;'. Same thing.",
-    "🐱 A bird will appear at your window. You will make that weird chattering sound. It is inevitable.",
-    "🐱 Your food bowl is half empty. Scream about it at 3 AM. This is reasonable.",
-    "🐱 The bathroom door will close. You must yell. You MUST be on the other side.",
-    "🐱 A cucumber will appear behind you. Your reaction will be... disproportionate.",
-    "🐱 You will find the warmest spot in the house and defend it with your life.",
-    "🐱 Someone will call your name. Ignore them. They will call again. Ignore harder.",
-    "🐱 The stars align in the shape of a fish. This is the best possible omen.",
-    "🐱 You will bring a gift to your human today. They will not appreciate the dead bug. Ungrateful.",
-    "🐱 A door will be slightly ajar. You will not go through it. You will simply stare.",
-    "🐱 Your horoscope says: if it fits, you sits. The science is settled.",
-    "🐱 Tonight, you will perform the 3 AM zoomies. The furniture will not survive.",
-    "🐱 A mysterious force compels you to drink water from the faucet instead of your bowl.",
-    "🐱 You will claim a laptop as your bed. The human's 'important work' is irrelevant.",
-    "🐱 The prophecy is clear: you will catch between 0 and 10,000 cats today. Probably.",
-    "🐱 A great trade offer approaches. You will decline it. Then accept a worse one. This is the way of the cat.",
-    "🐱 The ancient cat council has spoken: your next pack opening will be... interesting.",
+    "You will find a mysterious hairball in your shoe. It brings good luck... probably.",
+    "A cat will stare at you from across the room today. It is judging you. You will not pass.",
+    "Beware of the red dot. It leads nowhere, yet you will chase it anyway.",
+    "Your next nap will be legendary. 14 hours minimum. You've earned it.",
+    "A cardboard box will present itself. You must sit in it. This is the way.",
+    "You will knock something off a table today. Do not apologize. Maintain eye contact.",
+    "The vacuum cleaner approaches. Flee now, ask questions never.",
+    "Today's lucky number is 9. You have that many lives left... for now.",
+    "A can opener will sound in the distance. Follow it. Destiny awaits.",
+    "You will receive chin scratches from an unexpected source. Accept them graciously.",
+    "The laser pointer of fate shines upon you. Chase it with reckless abandon.",
+    "An ancient prophecy foretells: you will ignore an expensive cat toy and play with the bag it came in.",
+    "Mercury is in retrograde. This means nothing to you. You are a cat. Nap on.",
+    "You will sit on someone's keyboard today and type something profound. Or 'asdfjkl;'. Same thing.",
+    "A bird will appear at your window. You will make that weird chattering sound. It is inevitable.",
+    "Your food bowl is half empty. Scream about it at 3 AM. This is reasonable.",
+    "The bathroom door will close. You must yell. You MUST be on the other side.",
+    "A cucumber will appear behind you. Your reaction will be... disproportionate.",
+    "You will find the warmest spot in the house and defend it with your life.",
+    "Someone will call your name. Ignore them. They will call again. Ignore harder.",
+    "The stars align in the shape of a fish. This is the best possible omen.",
+    "You will bring a gift to your human today. They will not appreciate the dead bug. Ungrateful.",
+    "A door will be slightly ajar. You will not go through it. You will simply stare.",
+    "Your horoscope says: if it fits, you sits. The science is settled.",
+    "Tonight, you will perform the 3 AM zoomies. The furniture will not survive.",
+    "A mysterious force compels you to drink water from the faucet instead of your bowl.",
+    "You will claim a laptop as your bed. The human's 'important work' is irrelevant.",
+    "The prophecy is clear: you will catch between 0 and 10,000 cats today. Probably.",
+    "A great trade offer approaches. You will decline it. Then accept a worse one. This is the way of the cat.",
+    "The ancient cat council has spoken: your next pack opening will be... interesting.",
 ]
 
+CAT_ACTIVITIES = (
+    "napping",
+    "knocking things off tables",
+    "ignoring humans",
+    "zoomies",
+    "bird watching",
+    "box sitting",
+    "keyboard walking",
+    "3 AM screaming",
+)
+
 CAT_FORTUNE_TITLES = [
-    "🔮 Madame Meowstradamus Speaks",
-    "🔮 The Crystal Yarn Ball Reveals",
-    "🔮 Purrfessor Whiskers' Prophecy",
-    "🔮 The Oracle of Meow",
-    "🔮 Fortune Paws Has Spoken",
-    "🔮 The Catstrologer's Vision",
-    "🔮 Whisker Wisdom™",
-    "🔮 The Feline Fates Decree",
+    "Madame Meowstradamus Speaks",
+    "The Crystal Yarn Ball Reveals",
+    "Purrfessor Whiskers' Prophecy",
+    "The Oracle of Meow",
+    "Fortune Paws Has Spoken",
+    "The Catstrologer's Vision",
+    "Whisker Wisdom™",
+    "The Feline Fates Decree",
 ]
 
 
 @bot.tree.command(description="🔮 Consult the ancient cat oracle for a purrsonalized fortune")
-async def catfortune(message: discord.Interaction):
-    # Use user ID + current day as seed so each user gets one fortune per day
-    today = discord.utils.now().toordinal()
-    rng = random.Random(message.user.id + today)
-    fortune = rng.choice(CAT_FORTUNES)
-    title = rng.choice(CAT_FORTUNE_TITLES)
+async def catfortune(interaction: discord.Interaction):
+    rng = Random(interaction.user.id + discord.utils.utcnow().date().toordinal())
 
-    lucky_cat = rng.choice(cattypes)
-    lucky_number = rng.randint(1, 9)
-    lucky_activity = rng.choice(["napping", "knocking things off tables", "ignoring humans", "zoomies", "bird watching", "box sitting", "keyboard walking", "3 AM screaming"])
+    embed = discord.Embed(
+        title=f"🔮 {rng.choice(CAT_FORTUNE_TITLES)}",
+        description=(
+            f"😺 {rng.choice(CAT_FORTUNES)}\n\n"
+            f"**Lucky cat type:** {rng.choice(cattypes)}\n"
+            f"**Lucky number:** {rng.randint(1, 9)}\n"
+            f"**Lucky activity:** {rng.choice(CAT_ACTIVITIES)}"
+        ),
+        color=Colors.brown,
+    )
 
-    embed = discord.Embed(title=title, color=Colors.brown)
-    embed.description = f"{fortune}\n\n**Lucky cat type:** {lucky_cat}\n**Lucky number:** {lucky_number}\n**Lucky activity:** {lucky_activity}"
     embed.set_footer(text="Fortunes reset daily • Your fate is sealed (until tomorrow)")
-    await message.response.send_message(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 
 @bot.tree.command(description="Read The Cat Bot Times™️")
