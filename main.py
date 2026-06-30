@@ -3526,7 +3526,7 @@ CAT_FORTUNE_TITLES = [
 @bot.tree.command(description="🔮 Consult the ancient cat oracle for a purrsonalized fortune")
 async def catfortune(message: discord.Interaction):
     # Use user ID + current day as seed so each user gets one fortune per day
-    today = datetime.date.today().toordinal()
+    today = discord.utils.now().toordinal()
     rng = random.Random(message.user.id + today)
     fortune = rng.choice(CAT_FORTUNES)
     title = rng.choice(CAT_FORTUNE_TITLES)
