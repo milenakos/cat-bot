@@ -3605,7 +3605,8 @@ async def catwhisper(interaction: discord.Interaction):
     ]
 
     await interaction.response.send_message(
-        f"🐱 *{rng.choice(whispers)}*"
+        f"🐱 *{rng.choice(whispers)}*",
+        ephemeral = True
     )
 
 @bot.tree.command(description="Read The Cat Bot Times™️")
