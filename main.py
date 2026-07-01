@@ -2813,7 +2813,7 @@ async def on_message(message: discord.Message):
                 if random.randint(0, 5) == 0:
                     # shill rains
                     suffix_string += f"\n☔ get tons of cats and have fun: {get_command_mention('rain')}"
-                if random.randint(1, 20) == 0:
+                if random.randint(1, 20) == 1:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
 
