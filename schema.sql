@@ -228,6 +228,9 @@ CREATE TABLE public.profile (
     misc_progress smallint DEFAULT 0,
     misc_cooldown bigint DEFAULT 1,
     misc_reward smallint DEFAULT 0,
+    weekly_quest character varying(10) DEFAULT ''::character varying,
+    weekly_progress smallint DEFAULT 0,
+    weekly_cattypes smallint[] DEFAULT '{}'::smallint[],
     reminder_catch bigint DEFAULT 0,
     reminder_misc bigint DEFAULT 0,
     reminders_enabled boolean DEFAULT false,
@@ -306,7 +309,8 @@ CREATE TABLE public.profile (
     fisherman boolean DEFAULT false,
     pro_fisher boolean DEFAULT false,
     bonus_catches integer DEFAULT 0,
-    math_jumpscare boolean DEFAULT false
+    math_jumpscare boolean DEFAULT false,
+    scratchcards smallint DEFAULT 0
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;

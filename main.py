@@ -809,7 +809,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
 async def generate_quest(user: Profile, quest_type: str):
     while True:
         quest = random.choice(list(config.battle["quests"][quest_type].keys()))
-        if quest in ["slots", "reminder", "plush"]:
+        if quest in ["plush"]:
             # removed quests
             continue
         elif quest == "prism":
@@ -818,10 +818,6 @@ async def generate_quest(user: Profile, quest_type: str):
             global_boost = 0.06 * math.log(2 * total_count + 1)
             prism_boost = global_boost + 0.05 * math.log(2 * user_count + 1)
             if prism_boost < 0.15:
-                continue
-        elif quest == "news":
-            global_user = await User.get_or_create(user_id=user.user_id)
-            if len(news_list) <= len(global_user.news_state.strip()) and "0" not in global_user.news_state.strip()[-4:]:
                 continue
         elif quest == "achievement":
             unlocked = 0
@@ -869,6 +865,10 @@ async def refresh_quests(user):
         user.misc_cooldown = 1
         user.misc_reward = 0
 
+        user.weekly_quest = list(config.battle["quests"]["weekly"].keys())[0]
+        user.weekly_progress = 0
+        user.weekly_cattypes = []
+
         user.season = full_months_passed
         await user.save()
     if 12 * 3600 < user.vote_cooldown + 12 * 3600 < time.time():
@@ -877,6 +877,18 @@ async def refresh_quests(user):
         await generate_quest(user, "catch")
     if 12 * 3600 < user.misc_cooldown + 12 * 3600 < time.time():
         await generate_quest(user, "misc")
+
+    curr_weekly = config.battle["quests"]["weekly"][user.weekly_quest]
+    month_start = datetime.datetime(current_date.year, current_date.month, 1) - datetime.timedelta(hours=4)
+    time_in_month = time.time() - int(month_start.timestamp())
+    if curr_weekly["start_time"] < time_in_month < curr_weekly["end_time"]:
+        return
+    user.weekly_progress = 0
+    for k, v in config.battle["quests"]["weekly"].items():
+        if v["start_time"] < time_in_month < v["end_time"]:
+            user.weekly_quest = k
+            await user.save()
+            return
 
 
 async def multi_progress(message: discord.Message | discord.Interaction, user: Profile, quests: list[str], is_belated: Optional[bool] = False):
@@ -938,6 +950,16 @@ async def progress(
             current_xp = user.progress + user.misc_reward
             user.misc_progress = 0
             user.reminder_misc = 1
+    elif user.weekly_quest == quest:
+        quest_data = config.battle["quests"]["weekly"][quest]
+        if user.weekly_progress >= quest_data["progress"]:
+            return user
+        user.weekly_progress += 1
+        if user.weekly_progress >= quest_data["progress"]:
+            user.weekly_progress = quest_data["progress"]
+            quest_complete = True
+            current_xp = user.progress + 2000
+            user.scratchcards += 1
     else:
         return user
 
@@ -951,7 +973,7 @@ async def progress(
     old_xp = user.progress
     level_complete_embeds = []
     if user.battlepass >= len(config.battle["seasons"][str(user.season)]):
-        level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
+        level_data = {"xp": 2000, "reward": "Mystery", "amount": 1}
         level_text = "Extra Rewards"
     else:
         level_data = config.battle["seasons"][str(user.season)][user.battlepass]
@@ -966,10 +988,16 @@ async def progress(
             xp_progress -= active_level_data["xp"]
             user.progress = xp_progress
             cat_emojis = None
+            pack_chosen = None
             if active_level_data["reward"] in cattypes:
                 user[f"cat_{active_level_data['reward']}"] += active_level_data["amount"]
             elif active_level_data["reward"] == "Rain":
                 user.rain_minutes += active_level_data["amount"]
+            elif active_level_data["reward"] == "Mystery":
+                pack_options = [pack["name"] for pack in pack_data if not pack["special"]]
+                pack_weights = [1 / pack["totalvalue"] for pack in pack_data if not pack["special"]]
+                pack_chosen = random.choices(pack_options, weights=pack_weights, k=1)[0]
+                user[f"pack_{pack_chosen.lower()}"] += 1
             else:
                 user[f"pack_{active_level_data['reward'].lower()}"] += 1
             await user.save()
@@ -981,6 +1009,8 @@ async def progress(
                     description = (
                         f"You got {get_emoji(active_level_data['reward'].lower() + 'cat')} {active_level_data['amount']} {active_level_data['reward']}!"
                     )
+                elif pack_chosen:
+                    description = f"You got a {get_emoji('mysterypack')} -> {get_emoji(pack_chosen.lower() + 'pack')} {pack_chosen} pack! Do /packs to open it!"
                 else:
                     description = (
                         f"You got a {get_emoji(active_level_data['reward'].lower() + 'pack')} {active_level_data['reward']} pack! Do /packs to open it!"
@@ -993,7 +1023,7 @@ async def progress(
             level_complete_embeds.append(embed_level_up)
 
             if user.battlepass >= len(config.battle["seasons"][str(user.season)]):
-                active_level_data = {"xp": 1500, "reward": "Stone", "amount": 1}
+                active_level_data = {"xp": 2000, "reward": "Mystery", "amount": 1}
                 new_level_text = "Extra Rewards"
             else:
                 active_level_data = config.battle["seasons"][str(user.season)][user.battlepass]
@@ -1050,6 +1080,8 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
 
     if level_data["reward"] == "Rain":
         reward_text = get_emoji(str(level_data["amount"]) + "rain")
+    elif level_data["reward"] == "Mystery":
+        reward_text = get_emoji("mysterypack")
     elif level_data["reward"] == "random cats":
         reward_text = f"{level_data['amount']}x ❓"
     elif level_data["reward"] in cattypes:
@@ -1061,6 +1093,8 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
     streak_data = get_streak_reward(global_user.vote_streak)
     if streak_data["reward"] and "top.gg" in quest_data["title"]:
         streak_reward = f"\n🔥 **Streak Bonus!** +1 {streak_data['emoji']} {streak_data['reward'].capitalize()} pack"
+    elif quest_data in config.battle["quests"]["weekly"].values():
+        streak_reward = "\n🍀 **Weekly Quest!** +1 /scratch card!"
     else:
         streak_reward = ""
 
@@ -1948,6 +1982,7 @@ async def play_minigame(interaction: discord.Interaction):
             await profile.save()
             icon = get_emoji(cattype.lower() + "cat")
             await interaction.response.send_message(f"✅ {interaction.user.mention} got +3 {icon} {cattype} bonus cats.")
+            await progress(interaction, profile, "bonus")
             if cattype == "Rare":
                 await achemb(interaction, "math_jumpscare", "followup")
         else:
@@ -2348,7 +2383,7 @@ async def on_message(message: discord.Message):
                         await user.save()
                     if user.catnip_active >= time.time() or user.hibernation:
                         await bounty(message, user, channel.cattype)
-                    quests = ["3cats"]
+                    quests = ["3cats", "catch"]
                     if channel.cattype == "Fine":
                         quests.append("2fine")
                     if channel.cattype == "Good":
@@ -2376,6 +2411,16 @@ async def on_message(message: discord.Message):
                         elif channel.cattype == "Nice" and user.catch_progress in [0, 1]:
                             quests.append("finenice")
                             quests.append("finenice")
+                    if cattypes.index(channel.cattype) > 8:
+                        quests.append("brave+")
+                    if user.weekly_quest == "different":
+                        idx = cattypes.index(channel.cattype)
+                        current = user.weekly_cattypes.copy()
+                        if idx not in current:
+                            current.append(idx)
+                            user.weekly_cattypes = current
+                            quests.append("different")
+                            await user.save()
                     await multi_progress(message, user, quests, True)
                     vote_time_user = await User.get_or_create(user_id=message.author.id)
 
@@ -2985,7 +3030,7 @@ async def on_message(message: discord.Message):
                     await achemb(message, "certified_yapper", "send")
 
                 # handle battlepass
-                quests = ["3cats"]
+                quests = ["3cats", "catch"]
                 if channel.cattype == "Fine":
                     quests.append("2fine")
                 if channel.cattype == "Good":
@@ -3010,6 +3055,16 @@ async def on_message(message: discord.Message):
                     elif channel.cattype == "Nice" and user.catch_progress in [0, 1]:
                         quests.append("finenice")
                         quests.append("finenice")
+                if cattypes.index(channel.cattype) > 8:
+                    quests.append("brave+")
+                if user.weekly_quest == "different":
+                    idx = cattypes.index(channel.cattype)
+                    current = user.weekly_cattypes.copy()
+                    if idx not in current:
+                        current.append(idx)
+                        user.weekly_cattypes = current
+                        quests.append("different")
+                        await user.save()
 
                 # handle catnip bounties
                 await bounty(message, user, channel.cattype)
@@ -3474,8 +3529,6 @@ async def wiki(message: discord.Interaction):
         ]
     )
     await message.response.send_message(embed=embed)
-    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    await progress(message, profile, "wiki")
 
 
 CAT_FORTUNES = [
@@ -3578,9 +3631,6 @@ async def news(message: discord.Interaction):
         if current_state[news_id] not in "123456789":
             user.news_state = current_state[:news_id] + "1" + current_state[news_id + 1 :]
             await user.save()
-
-        profile = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
-        await progress(interaction, profile, "news")
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
         back_button = Button(emoji="⬅️", label="Back")
@@ -4105,13 +4155,11 @@ async def tiktok(message: discord.Interaction, text: str):
             return
 
     await message.response.defer()
-    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
     if text == "bwomp":
         file = discord.File("assets/bwomp.mp3", filename="bwomp.mp3")
         await message.followup.send(file=file)
         await achemb(message, "bwomp", "followup")
-        await progress(message, profile, "tiktok")
         return
 
     async with aiohttp.ClientSession() as session:
@@ -4131,8 +4179,6 @@ async def tiktok(message: discord.Interaction, text: str):
             pass
         except Exception:
             await message.followup.send("i dont speak guacamole (remove non-english characters, make sure the message is below 300 characters)")
-
-    await progress(message, profile, "tiktok")
 
 
 @bot.tree.command(description="(ADMIN) Prevent someone from catching cats for a certain time period")
@@ -4544,7 +4590,8 @@ async def gen_stats(profile, star):
         total_xp += season_progress
         if season_lvl > 30:
             seasons_complete += 1
-            total_xp += 1500 * (season_lvl - 31)
+            extra_xp = 1500 if season_num <= 18 else 2000
+            total_xp += extra_xp * (season_lvl - 31)
         if season_lvl > max_level:
             max_level = season_lvl
 
@@ -4558,7 +4605,8 @@ async def gen_stats(profile, star):
         total_xp += profile.progress
         if profile.battlepass > 30:
             seasons_complete += 1
-            total_xp += 1500 * (profile.battlepass - 31)
+            extra_xp = 1500 if profile.season <= 18 else 2000
+            total_xp += extra_xp * (profile.battlepass - 31)
         if profile.battlepass > max_level:
             max_level = profile.battlepass
 
@@ -4705,7 +4753,7 @@ async def gen_inventory(message, person_id):
     try:
         needed_xp = config.battle["seasons"][str(person.season)][person.battlepass]["xp"]
     except Exception:
-        needed_xp = 1500
+        needed_xp = 2000
 
     stats = await gen_stats(person, "")
     highlighted_stat = None
@@ -4790,7 +4838,7 @@ async def gen_inventory(message, person_id):
     if user.widget_guild_id == message.guild.id:
         # sync widget
         widget_data = [
-            {"type": 1, "name": "username", "value": emoji_prefix + " " + person_id.name},
+            {"type": 1, "name": "username", "value": emoji_prefix + person_id.name},
             {"type": 1, "name": "guild_name", "value": message.guild.name},
             {"type": 2, "name": "cats_caught", "value": person.total_catches},
             {"type": 2, "name": "inventory", "value": total},
@@ -5510,6 +5558,135 @@ if config.DONOR_CHANNEL_ID:
         await message.followup.send(view=view)
 
 
+@bot.tree.command(description="bumbum's scratch off game")
+async def scratch(message: discord.Interaction):
+    user = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
+
+    async def scratch_callback(interaction: discord.Interaction):
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+
+        await user.refresh_from_db()
+        if user.scratchcards == 0:
+            await interaction.response.send_message("You have no scratch cards!", ephemeral=True)
+            return
+
+        opts = [
+            "1m Rain", "1m Rain",
+            "Celestial", "Celestial",
+            "Diamond", "Diamond",
+            "Platinum", "Platinum",
+            "Gold", "Gold", "Gold",
+            "Silver", "Silver", "Silver",
+            "Bronze", "Bronze", "Bronze",
+            "Stone", "Stone", "Stone", "Stone",
+            "Wooden", "Wooden", "Wooden", "Wooden",
+        ]  # fmt: skip
+
+        random.shuffle(opts)
+
+        # the entire minigame is actually a lie whoopsie daisy!!!
+        # this is solely so people who fall asleep midgame wont lose on rewards
+        picks = opts[:10]
+        winnings = ["Winnings:"]
+        user.scratchcards -= 1
+        for opt in set(opts):
+            amount = picks.count(opt) // 2
+            if amount == 0:
+                continue
+            emoji = get_emoji("1rain" if opt == "1m Rain" else f"{opt.lower()}pack")
+            winnings.append(f"{emoji} x{amount}")
+            if opt == "1m Rain":
+                user.rain_minutes += amount
+            else:
+                user[f"pack_{opt.lower()}"] += amount
+        await user.save()
+
+        # each key has a list of indices where that item appears in picks
+        positions = {}
+        for i, x in enumerate(picks):
+            if x not in positions:
+                positions[x] = []
+            positions[x].append(i)
+
+        # this is used during minigame to determine when to reveal the pair
+        pairs = {}
+        for idxs in positions.values():
+            for i in range(0, len(idxs) - 1, 2):
+                a, b = idxs[i], idxs[i + 1]
+                pairs[a] = b
+                pairs[b] = a
+
+        move_spaces = []
+
+        async def scratch_spot(interaction: discord.Interaction):
+            if interaction.user != message.user:
+                await do_funny(interaction)
+                return
+            spot = int(interaction.data["custom_id"])
+            if len(move_spaces) < 10:
+                move_spaces.append(spot)
+            await refresh_board(interaction)
+
+        async def refresh_board(interaction: discord.Interaction):
+            await interaction.response.defer()
+            view = LayoutView(timeout=VIEW_TIMEOUT)
+            buttons = []
+            empty_idx = 10
+            for i in range(25):
+                if i not in move_spaces:
+                    if len(move_spaces) != 10:
+                        button = Button(emoji=get_emoji("empty"), custom_id=str(i), style=ButtonStyle.gray)
+                        button.callback = scratch_spot
+                    else:
+                        item = opts[empty_idx]
+                        empty_idx += 1
+                        button = Button(
+                            emoji=get_emoji("1rain" if item == "1m Rain" else f"{item.lower()}pack"),
+                            disabled=True,
+                            style=ButtonStyle.gray,
+                        )
+                    buttons.append(button)
+                    continue
+                move_number = move_spaces.index(i)
+                button = Button(
+                    emoji=get_emoji("1rain" if picks[move_number] == "1m Rain" else f"{picks[move_number].lower()}pack"),
+                    style=ButtonStyle.green if move_number in pairs and len(move_spaces) > pairs[move_number] else ButtonStyle.blurple,
+                    disabled=True,
+                )
+                buttons.append(button)
+
+            view.add_item(
+                Container(
+                    f"Clicks remaining: {10 - len(move_spaces)}" if len(move_spaces) != 10 else "\n".join(winnings),
+                    *[ActionRow(*buttons[i : i + 5]) for i in range(0, 25, 5)],
+                )
+            )
+            if len(move_spaces) == 10:
+                await user.refresh_from_db()
+                button = Button(label=f"Scratch! ({user.scratchcards})", style=ButtonStyle.green, disabled=user.scratchcards == 0)
+                button.callback = scratch_callback
+                view.add_item(ActionRow(button))
+            await interaction.edit_original_response(view=view)
+
+        await refresh_board(interaction)
+
+    view = LayoutView(timeout=VIEW_TIMEOUT)
+    button = Button(label=f"Scratch! ({user.scratchcards})", style=ButtonStyle.green, disabled=user.scratchcards == 0)
+    button.callback = scratch_callback
+    view.add_item(
+        Container(
+            "## 🍀 Scratch Off",
+            f"You will be able to select **10 out of 25 spots**. Finding a __pair__ will give you it's respective prize. (example: finding 2x {get_emoji('diamondpack')} will give you a Diamond pack)",
+            "Get scratch cards by completing *Weekly Quests*.",
+            "===",
+            ActionRow(button),
+        )
+    )
+    await message.response.send_message(view=view)
+
+
 @bot.tree.command(description="View and open packs")
 async def packs(message: discord.Interaction):
     async def process_pack_opening(limit=None):
@@ -5830,9 +6007,27 @@ async def battlepass(message: discord.Interaction):
 
         next_month -= datetime.timedelta(hours=4)
 
-        timestamp = int(time.mktime(next_month.timetuple()))
+        timestamp = int(next_month.timestamp())
 
         description = f"Season ends <t:{timestamp}:R>\n\n"
+
+        # weekly
+        if user.weekly_quest:
+            weekly_quest = config.battle["quests"]["weekly"][user.weekly_quest]
+            month_start = datetime.datetime(now.year, now.month, 1) - datetime.timedelta(hours=4)
+            description += f"__Weekly Quest__ (refreshes <t:{weekly_quest['end_time'] + int(month_start.timestamp())}:R>)\n"
+            if weekly_quest["progress"] > user.weekly_progress:
+                description += f"{get_emoji(weekly_quest['emoji'])} {weekly_quest['title']} ({user.weekly_progress}/{weekly_quest['progress']})\n"
+                if user.weekly_quest != "different":
+                    colored = int(user.weekly_progress / weekly_quest["progress"] * 10)
+                    description += get_emoji("staring_square") * colored + "⬛" * (10 - colored)
+                else:
+                    for cat_index in user.weekly_cattypes:
+                        description += get_emoji(cattypes[cat_index].lower() + "cat")
+                    description += "⬛" * (13 - user.weekly_progress)
+                description += "\n- Reward: 2000 XP + 1 Scratchcard\n\n"
+            else:
+                description += f"✅ ~~{weekly_quest['title']}~~\n\n"
 
         # vote
         streak_string = ""
@@ -5888,23 +6083,23 @@ async def battlepass(message: discord.Interaction):
             description += f"{get_emoji(misc_quest['emoji'])} {misc_quest['title']}{progress_string}\n- Reward: {user.misc_reward} XP\n\n"
 
         if user.battlepass >= len(config.battle["seasons"][str(user.season)]):
-            description += f"**Extra Rewards** [{user.progress}/1500 XP]\n"
-            colored = int(user.progress / 150)
-            description += get_emoji("staring_square") * colored + "⬛" * (10 - colored) + "\nReward: " + get_emoji("stonepack") + " Stone pack\n\n"
+            description += f"**Extra Rewards** [{user.progress}/2000 XP]\n"
+            colored = min(10, int(user.progress / 2000 * 10))
+            description += get_emoji("staring_square") * colored + "⬛" * (10 - colored) + " " + get_emoji("mysterypack") + "\n\n"
         else:
             level_data = config.battle["seasons"][str(user.season)][user.battlepass]
             description += f"**Level {user.battlepass + 1}/30** [{user.progress}/{level_data['xp']} XP]\n"
             colored = int(user.progress / level_data["xp"] * 10)
-            description += f"**{user.battlepass}** " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" **{user.battlepass + 1}**\n"
+            description += get_emoji("staring_square") * colored + "⬛" * (10 - colored)
 
             if level_data["reward"] == "Rain":
-                description += f"Reward: ☔ {level_data['amount']} minutes of rain\n\n"
+                description += f" {get_emoji(str(level_data['amount']) + 'rain')}\n\n"
             elif level_data["reward"] in cattypes:
-                description += f"Reward: {get_emoji(level_data['reward'].lower() + 'cat')} {level_data['amount']} {level_data['reward']} cats\n\n"
+                description += f" {level_data['amount']}x {get_emoji(level_data['reward'].lower() + 'cat')}\n\n"
             else:
-                description += f"Reward: {get_emoji(level_data['reward'].lower() + 'pack')} {level_data['reward']} pack\n\n"
+                description += f" {get_emoji(level_data['reward'].lower() + 'pack')}\n\n"
 
-        # next reward
+        # season overview
         levels = config.battle["seasons"][str(user.season)]
         for num, level_data in enumerate(levels):
             claimed_suffix = "_claimed" if num < user.battlepass else ""
@@ -5916,8 +6111,7 @@ async def battlepass(message: discord.Interaction):
                 description += get_emoji(level_data["reward"].lower() + "pack" + claimed_suffix)
             if num % 10 == 9:
                 description += "\n"
-        if user.battlepass >= len(config.battle["seasons"][str(user.season)]) - 1:
-            description += f"*Extra:* {get_emoji('stonepack')} per 1500 XP"
+        description += f"*Then:* {get_emoji('mysterypack')} Mystery per 2000 XP"
 
         embedVar = discord.Embed(
             title=f"Cattlepass Season {user.season}",
@@ -6155,8 +6349,6 @@ async def ping(message: discord.Interaction):
         await message.response.send_message(f"🏓 cat has global brain delay of {latency} ms {get_emoji('staring_cat')}{postfix}")
     else:
         await message.response.send_message(f"🏓 cat has brain delay of {latency} ms {get_emoji('staring_cat')}")
-    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    await progress(message, user, "ping")
 
 
 @bot.tree.command(description="the most useful command ever")
@@ -6323,8 +6515,6 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
     async def end_game(winner):
         if players[0] == players[1]:
             # self-play
-            user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-            await progress(message, user, "ttc")
             return
         users = [
             await Profile.get_or_create(guild_id=message.guild.id, user_id=players[0].id),
@@ -6335,13 +6525,12 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         if winner != -1:
             users[winner].ttt_won += 1
             await achemb(message, "ttt_win", "followup", players[winner])
+            await progress(message, users[winner], "ttc")
         else:
             users[0].ttt_draws += 1
             users[1].ttt_draws += 1
         await users[0].save()
         await users[1].save()
-        await progress(message, users[0], "ttc")
-        await progress(message, users[1], "ttc")
 
     await finish_turn()
 
@@ -6439,7 +6628,7 @@ async def cookie(message: discord.Interaction):
             return
         await interaction.response.defer()
         try:
-            user = await Profile.get(["cookies"], guild_id=message.guild.id, user_id=message.user.id)
+            user = await Profile.get(["cookies", "misc_quest"], guild_id=message.guild.id, user_id=message.user.id)
             user.cookies += 1
             await user.save()
         except AttributeError:
@@ -6451,6 +6640,8 @@ async def cookie(message: discord.Interaction):
             await achemb(interaction, "cookieclicker", "followup")
         if 5100 > user.cookies >= 5000:
             await achemb(interaction, "cookiesclicked", "followup")
+        if user.misc_quest.strip() == "cookie":
+            await progress(message, user, "cookie")
 
     view = View(timeout=VIEW_TIMEOUT)
     button = Button(emoji="🍪", label=f"{user.cookies:,}", style=ButtonStyle.blurple)
@@ -6517,6 +6708,8 @@ async def fish(message: discord.Interaction):
                 fish_lock.remove((interaction.guild.id, interaction.user.id))
             except ValueError:
                 pass
+
+            await progress(message, profile, "fish")
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
         button = Button(label="Pull!", style=ButtonStyle.blurple)
@@ -6704,8 +6897,6 @@ async def gift(
         await achemb(message, "sacrifice", "followup")
     if gift_type == "Nice" and int(amount) == 69:
         await achemb(message, "nice", "followup")
-
-    await progress(message, user, "gift")
 
     if key == "rain_minutes":
         try:
@@ -7234,7 +7425,7 @@ async def brew(message: discord.Interaction):
             return
 
         try:
-            user = await Profile.get(["coffees"], guild_id=message.guild.id, user_id=message.user.id)
+            user = await Profile.get(["coffees", "misc_quest"], guild_id=message.guild.id, user_id=message.user.id)
             user.coffees += 1
             await user.save()
         except AttributeError:
@@ -7243,6 +7434,9 @@ async def brew(message: discord.Interaction):
 
         view.children[0].label = f"{user.coffees:,}"
         await interaction.edit_original_response(content="ugh fine", view=view)
+
+        if user.misc_quest.strip() == "coffee":
+            await progress(message, user, "coffee")
 
     view = View(timeout=VIEW_TIMEOUT)
     button = Button(emoji="☕", label="Retry", style=ButtonStyle.blurple)
@@ -7527,7 +7721,6 @@ async def slots(message: discord.Interaction):
 
         try:
             await achemb(interaction, "slots", "followup")
-            await progress(message, profile, "slots")
             await progress(message, profile, "slots2")
         except Exception:
             pass
@@ -7805,6 +7998,8 @@ async def roulette(message: discord.Interaction):
 
 @bot.tree.command(description="absolute CHAOS")
 async def chaos(message: discord.Interaction):
+    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+
     async def click(interaction: discord.Interaction, first: Optional[bool] = False):
         cookies = await pool.fetchrow(
             """INSERT INTO profile (guild_id, user_id, cookies)
@@ -7833,6 +8028,9 @@ async def chaos(message: discord.Interaction):
         else:
             await interaction.response.defer()
             await interaction.edit_original_response(view=view)
+
+        if profile.misc_quest.strip() == "chaos":
+            await progress(message, profile, "chaos")
 
     await click(message, True)
 
@@ -7946,8 +8144,11 @@ async def roll(message: discord.Interaction, sides: Optional[int]):
             side = "heads"
         await message.response.send_message(f"🪙 your coin lands on **{side}** ({coinflipresult})")
     else:
-        await message.response.send_message(f"🎲 your {dice} lands on **{random.randint(1, sides)}**")
-    await progress(message, user, "roll")
+        roll = random.randint(1, sides)
+        await message.response.send_message(f"🎲 your {dice} lands on **{roll}**")
+
+        if sides == 6 and roll == 6:
+            await progress(message, user, "roll")
 
 
 @bot.tree.command(description="get a super accurate rating of something")
@@ -7960,8 +8161,6 @@ async def rate(message: discord.Interaction, thing: str, stat: str):
         await message.response.send_message("/rate is 100% correct")
     else:
         await message.response.send_message(f"{thing} is {random.randint(0, 100)}% {stat}")
-    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    await progress(message, user, "rate")
 
 
 @bot.tree.command(name="8ball", description="ask the magic catball")
@@ -8003,8 +8202,7 @@ async def eightball(message: discord.Interaction, question: str):
     ]
 
     await message.response.send_message(f"{question}\n:8ball: **{random.choice(catball_responses)}**")
-    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    await progress(message, user, "catball")
+
     await achemb(message, "balling", "followup")
 
 
@@ -8113,9 +8311,8 @@ async def pig(message: discord.Interaction):
             profile.best_pig_score = score
             await profile.save()
 
-        if score >= 20:
-            await progress(message, profile, "pig")
         if score >= 50:
+            await progress(message, profile, "pig")
             await achemb(interaction, "pig50", "followup")
         if score >= 100:
             await achemb(interaction, "pig100", "followup")
@@ -8180,7 +8377,6 @@ async def remind(
     profile.reminders_set += 1
     await profile.save()
     await achemb(message, "reminder", "followup")  # the ai autocomplete thing suggested this and its actually a cool ach
-    await progress(message, profile, "reminder")  # the ai autocomplete thing also suggested this though profile wasnt defined
 
 
 @bot.tree.command(name="random", description="Get a random cat")
@@ -9613,7 +9809,7 @@ async def leaderboards(
                 interactor = position[final_value]
                 if type == "Cattlepass":
                     if position[final_value] >= len(bp_season):
-                        lv_xp_req = 1500
+                        lv_xp_req = 2000
                     else:
                         lv_xp_req = bp_season[int(position[final_value]) - 1]["xp"]
                     interactor_perc = math.floor((100 / lv_xp_req) * position["progress"])
@@ -9622,7 +9818,7 @@ async def leaderboards(
                 messager = position[final_value]
                 if type == "Cattlepass":
                     if position[final_value] >= len(bp_season):
-                        lv_xp_req = 1500
+                        lv_xp_req = 2000
                     else:
                         lv_xp_req = bp_season[int(position[final_value]) - 1]["xp"]
                     messager_perc = math.floor((100 / lv_xp_req) * position["progress"])
@@ -9668,7 +9864,7 @@ async def leaderboards(
 
             if type == "Cattlepass":
                 if i[final_value] >= len(bp_season):
-                    lv_xp_req = 1500
+                    lv_xp_req = 2000
                 else:
                     lv_xp_req = bp_season[int(i[final_value]) - 1]["xp"]
                 prog_perc = math.floor((100 / lv_xp_req) * i["progress"])
