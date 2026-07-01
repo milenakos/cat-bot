@@ -5661,7 +5661,7 @@ async def scratch(message: discord.Interaction):
                 )
                 buttons.append(button)
 
-            view.add_item(f"Clicks remaining: {10 - len(move_spaces)}" if len(move_spaces) != 10 else "\n".join(winnings))
+            view.add_item(TextDisplay(f"Clicks remaining: {10 - len(move_spaces)}" if len(move_spaces) != 10 else "\n".join(winnings)))
             view.add_item(*[ActionRow(*buttons[i : i + 5]) for i in range(0, 25, 5)])
 
             if len(move_spaces) == 10:
