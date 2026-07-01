@@ -7303,6 +7303,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             elif selection == "prisms":
                 modal = Modal(title="Offer prisms...")
                 names = [prism.name async for prism in Prism.filter("user_id = $1 AND guild_id = $2 ORDER BY time ASC", active_user.user.id, message.guild.id)]
+                names = list(dict.fromkeys(names))
                 if len(names) == 0:
                     await interaction.response.send_message("You don't have any prisms to offer!", ephemeral=True)
                     return
