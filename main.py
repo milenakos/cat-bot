@@ -3648,7 +3648,7 @@ async def news(message: discord.Interaction):
 
         if news_id == 0:
             embed = Container(
-                "## 📜 Cat Bot Survey",
+                "## 📜 Cat Bot Survey (ended)",
                 "Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nSurvey is closed!",
                 "-# <t:1731168230>",
             )
@@ -3830,8 +3830,7 @@ thanks for using cat bot!""",
             await send_yippee(interaction)
         elif news_id == 10:
             embed = Container(
-                "## 🏆 nominate cat bot for top.gg awards",
-                "(this is outdated, nominations are over. you can [vote for cat bot as finalist in Labor of Love category](https://nominations.top.gg/))"
+                "## 🏆 nominate cat bot for top.gg awards (outdated)",
                 "holy cat top.gg is doing annual awards now",
                 "you know [what to do](https://top.gg/bot/966695034340663367)...\nyou can also leave a review while you are there if you havent yet :3",
                 discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/YgQ0flQ.png")),
@@ -3863,7 +3862,7 @@ at each level you will have some bounties you have to complete within a time fra
             await interaction.edit_original_response(view=view)
         elif news_id == 12:
             embed = Container(
-                "## ❤️ vote for cat bot in top.gg awards",
+                "## ❤️ vote for cat bot in top.gg awards (outdated)",
                 'cat bot is finalist in "Labor of Love" category on top.gg awards!',
                 "make sure to [vote for it](https://nominations.top.gg/) and perhaps attend the awards ceremony on january 3rd",
                 discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/7EW2I4P.png")),
@@ -3938,7 +3937,7 @@ You will be able to collect them until <t:1771437600> using 2 methods:
             await interaction.edit_original_response(view=view)
         elif news_id == 16:
             embed = Container(
-                "## PackOrRain Event",
+                "## PackOrRain Event (ended)",
                 "everyone *who votes below* will earn a prize! the prize type will be **whatever option gets most votes**, and the prize amount will be **how many millions of catches** everyone does until the event ends!",
                 "-# the prize will be given to everyone who votes, even if their vote wasn't the winning option.",
                 "===",
