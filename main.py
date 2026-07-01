@@ -2328,7 +2328,7 @@ async def on_message(message: discord.Message):
         channel = await Channel.get_or_none(channel_id=message.channel.id)
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
-        if not channel.cattype:
+        if not channel or not channel.cattype:
             return
         if (
             not channel
