@@ -5631,10 +5631,13 @@ async def scratch(message: discord.Interaction):
             await refresh_board(interaction)
 
         async def refresh_board(interaction: discord.Interaction):
+            nonlocal move_spaces
             await interaction.response.defer()
             view = LayoutView(timeout=VIEW_TIMEOUT)
             buttons = []
             empty_idx = 10
+            if len(move_spaces) > 10:
+                move_spaces = move_spaces[:10]
             for i in range(25):
                 if i not in move_spaces:
                     if len(move_spaces) != 10:
