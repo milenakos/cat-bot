@@ -693,7 +693,7 @@
       "cookie": {"emoji": "🍪", "title": "Bake 50 /cookies", "xp_min": 250, "xp_max": 350, "progress": 50},
       "coffee": {"emoji": "☕", "title": "/Brew 50 coffees", "xp_min": 250, "xp_max": 350, "progress": 50},
       "fish": {"emoji": "🎣", "title": "Catch 5 /fish", "xp_min": 250, "xp_max": 350, "progress": 5},
-      "chaos": {"emoji": "💥", "title": "Cause 50 /chaos", "xp_min": 250, "xp_max": 350, "progress": 50},
+      "chaos": {"emoji": "💥", "title": "Cause /chaos 50 times", "xp_min": 250, "xp_max": 350, "progress": 50},
       "plush": {"emoji": "📦", "title": "Run /plush", "xp_min": 250, "xp_max": 350, "progress": 1}
     },
     "weekly": {
