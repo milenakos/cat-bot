@@ -6527,6 +6527,8 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         else:
             users[0].ttt_draws += 1
             users[1].ttt_draws += 1
+            await progress(message, users[0], "ttc")
+            await progress(message, users[1], "ttc")
         await users[0].save()
         await users[1].save()
 
