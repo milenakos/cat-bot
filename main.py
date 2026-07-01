@@ -3552,63 +3552,6 @@ async def fortune(interaction: discord.Interaction):
     embed.set_footer(text="Fortunes reset daily • Your fate is sealed (until tomorrow)")
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(description="🐱 Check your cat mood for today")
-async def catmood(interaction: discord.Interaction):
-    seed = interaction.user.id + discord.utils.utcnow().date().toordinal()
-    rng = random.Random(seed)
-
-    moods = [
-        ("😴", "Deep nap energy"),
-        ("😼", "Silent judgment mode"),
-        ("🐾", "Chaotic walking everywhere"),
-        ("🧶", "Focused on invisible missions"),
-        ("👁️", "Staring into nothingness"),
-        ("📦", "Box is life today"),
-        ("🌙", "Night zoomies incoming"),
-    ]
-
-    lines = [
-        "the world is acceptable, barely",
-        "you are being observed (not in a good way)",
-        "comfort is temporary, naps are eternal",
-        "you will ignore everyone successfully",
-        "gravity is optional today",
-        "something will be pushed off a table",
-    ]
-
-    mood = rng.choice(moods)
-    line = rng.choice(lines)
-
-    embed = discord.Embed(
-        title=f"{mood[0]} Cat Mood",
-        description=f"**{mood[1]}**\n\n_{line}_",
-        color=Colors.brown,
-    )
-
-    await interaction.response.send_message(embed=embed)
-
-@bot.tree.command(description="🐱 Receive a cat whisper")
-async def catwhisper(interaction: discord.Interaction):
-    seed = interaction.user.id + discord.utils.utcnow().date().toordinal()
-    rng = random.Random(seed)
-
-    whispers = [
-        "don’t trust open doors today",
-        "you are allowed 3 unnecessary zoomies",
-        "sit in the warmest spot, claim it legally",
-        "ignore humans until further notice",
-        "something will fall. you will not be blamed.",
-        "nap first, consequences later",
-        "the box is calling. you must respond",
-        "today’s mission: be mildly unhelpful",
-        "you are secretly the main character of this house",
-    ]
-
-    await interaction.response.send_message(
-        f"🐱 *{rng.choice(whispers)}*",
-        ephemeral = True
-    )
-
 @bot.tree.command(description="Read The Cat Bot Times™️")
 async def news(message: discord.Interaction):
     user = await User.get_or_create(user_id=message.user.id)
