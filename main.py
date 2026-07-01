@@ -7418,20 +7418,13 @@ async def bal(message: discord.Interaction):
 
 @bot.tree.command(description="Brew some coffee to catch cats more efficiently")
 async def brew(message: discord.Interaction):
-    user = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
-    retry_counter = 2
-
     async def brew_coffee(interaction: discord.Interaction):
-        nonlocal user, retry_counter, view
+        nonlocal view
         if interaction.user != message.user:
             await do_funny(interaction)
             return
 
         await interaction.response.defer()
-
-        if retry_counter != 0:
-            retry_counter -= 1
-            return
 
         try:
             user = await Profile.get(["coffees", "misc_quest"], guild_id=message.guild.id, user_id=message.user.id)
