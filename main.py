@@ -3824,7 +3824,7 @@ thanks for using cat bot!""",
         elif news_id == 10:
             embed = Container(
                 "## 🏆 nominate cat bot for top.gg awards",
-                "(this is outdated, nominations are over. you can [vote for cat bot as finalist in Labor of Love category](https://nominations.top.gg/))"
+                "(this is outdated, nominations are over. you can [vote for cat bot as finalist in Labor of Love category](https://nominations.top.gg/))",
                 "holy cat top.gg is doing annual awards now",
                 "you know [what to do](https://top.gg/bot/966695034340663367)...\nyou can also leave a review while you are there if you havent yet :3",
                 discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/YgQ0flQ.png")),
