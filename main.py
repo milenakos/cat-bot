@@ -6720,7 +6720,7 @@ async def fish(message: discord.Interaction):
 
         await interaction.edit_original_response(view=view)
 
-        catch_time = max(0.5, 5 - cattypes.index(fishtype) * 0.25)
+        catch_time = max(0.25, 5 * (0.9 ** cattypes.index(fishtype)))
         await asyncio.sleep(catch_time)
 
         if not fish_caught:
