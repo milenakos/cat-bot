@@ -1552,8 +1552,12 @@ async def background_loop():
         view.add_item(button)
 
         guild = await Server.get_or_create(server_id=user.guild_id)
-        if not guild.name:
-            guild.name = (await bot.fetch_guild(user.guild_id)).name
+        try:
+            if not guild.name:
+                guild.name = (await bot.fetch_guild(user.guild_id)).name
+                await guild.save()
+        except Exception:
+            guild.name = "Unknown Server"
             await guild.save()
 
         try:
