@@ -1985,7 +1985,10 @@ async def play_minigame(interaction: discord.Interaction):
             profile[f"cat_{cattype}"] += 3
             await profile.save()
             icon = get_emoji(cattype.lower() + "cat")
-            await interaction.response.send_message(f"✅ {interaction.user.mention} got +3 {icon} {cattype} bonus cats.")
+            suffix = ""
+            if profile.weekly_quest == "bonus" and profile.weekly_progress < 3:
+                suffix = f" Weekly progress: {profile.weekly_progress + 1}/4"
+            await interaction.response.send_message(f"✅ {interaction.user.mention} got +3 {icon} {cattype} bonus cats.{suffix}")
             await progress(interaction, profile, "bonus")
             if cattype == "Rare":
                 await achemb(interaction, "math_jumpscare", "followup")
@@ -2809,6 +2812,14 @@ async def on_message(message: discord.Message):
                         if i not in config.cat_cought_rain[channel.channel_id]:
                             config.cat_cought_rain[channel.channel_id][i] = []
                         config.cat_cought_rain[channel.channel_id][i].append(f"<@{user.user_id}>")
+
+                # show weekly quest progress
+                if user.weekly_quest == "catch" and user.weekly_progress < 69:
+                    suffix_string += f"Weekly progress: {user.weekly_progress + 1}/70 cought"
+                elif user.weekly_quest == "brave+" and user.weekly_progress < 4 and cattypes.index(channel.cattype) > 8:
+                    suffix_string += f"Weekly progress: {user.weekly_progress + 1}/5 cought"
+                elif user.weekly_quest == "different" and user.weekly_progress < 12 and cattypes.index(channel.cattype) not in user.weekly_cattypes:
+                    suffix_string += f"Weekly progress: {user.weekly_progress + 1}/13 types cought"
 
                 if random.randint(0, 5) == 0:
                     # shill rains
