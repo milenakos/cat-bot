@@ -6527,7 +6527,8 @@ async def fish(message: discord.Interaction):
 
         await interaction.edit_original_response(view=view)
 
-        await asyncio.sleep(5)
+        catch_time = max(0.5, 5 - cattypes.index(fishtype) * 0.25)
+        await asyncio.sleep(catch_time)
 
         if not fish_caught:
             view = LayoutView(timeout=VIEW_TIMEOUT)
