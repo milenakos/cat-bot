@@ -686,7 +686,7 @@
       "slots2": {"emoji": "🎰", "title": "Spin the /slots machine 5 times", "xp_min": 250, "xp_max": 350, "progress": 5},
       "achievement": {"emoji": "cat_throphy", "title": "Get an /achievement", "xp_min": 200, "xp_max": 300, "progress": 1},
       "trade": {"emoji": "💱", "title": "Complete a /trade", "xp_min": 270, "xp_max": 370, "progress": 1},
-      "ttc": {"emoji": "⭕", "title": "Win a game of /tictactoe", "xp_min": 270, "xp_max": 370, "progress": 1},
+      "ttc": {"emoji": "⭕", "title": "Tie against Cat Bot 3 times in /tictactoe", "xp_min": 270, "xp_max": 370, "progress": 3},
       "roll": {"emoji": "🎲", "title": "/Roll a 6 on default dice", "xp_min": 175, "xp_max": 225, "progress": 1},
       "pig": {"emoji": "🎲", "title": "Get 50+ score in /pig", "xp_min": 300, "xp_max": 400, "progress": 1},
       "roulette": {"emoji": "🎰", "title": "Win 3 /roulette bets", "xp_min": 300, "xp_max": 400, "progress": 3},

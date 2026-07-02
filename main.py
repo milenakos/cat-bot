@@ -6532,14 +6532,16 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         if winner != -1:
             users[winner].ttt_won += 1
             await achemb(message, "ttt_win", "followup", players[winner])
-            await progress(message, users[winner], "ttc")
         else:
             users[0].ttt_draws += 1
             users[1].ttt_draws += 1
-            await progress(message, users[0], "ttc")
-            await progress(message, users[1], "ttc")
         await users[0].save()
         await users[1].save()
+
+        if users[0] == bot.user:
+            await progress(message, users[1], "ttc")
+        if users[1] == bot.user:
+            await progress(message, users[0], "ttc")
 
     await finish_turn()
 
