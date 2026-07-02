@@ -569,7 +569,7 @@ cat_translations = [
     "wesa",
     "popoki",
     "piqtuq",
-    "negeru",
+    "ngeru",
     "poti",
     "mosi",
     "michi",
