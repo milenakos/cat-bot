@@ -8141,6 +8141,7 @@ async def roll(message: discord.Interaction, sides: Optional[int]):
 
     view = View(timeout=VIEW_TIMEOUT)
     button = Button(label="Reroll", emoji="🎲", style=ButtonStyle.blurple)
+    view.add_item(button)
 
     async def roll_and_respond(interaction: discord.Interaction, is_first=False):
         if interaction.user != message.user:
