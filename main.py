@@ -2542,20 +2542,6 @@ async def on_message(message: discord.Message):
                     do_time = False
                     caught_time = "undefined amounts of time "
 
-                try:
-                    if time_caught >= 0:
-                        config.belated_catchers[message.channel.id] = {
-                            "time": time_caught,
-                            "users": [message.author.id],
-                            "timestamp": current_time,
-                            "cattype": channel.cattype,
-                            "is_rain": cat_rain_end or channel.cat_rains > 0,
-                            "late_catchers": [(message.author.id, None)],
-                            "full_event": asyncio.Event(),
-                        }
-                except Exception:
-                    pass
-
                 if channel.cat_rains > 0 or cat_rain_end:
                     do_time = False
 
@@ -2965,6 +2951,20 @@ async def on_message(message: discord.Message):
                     except Exception:
                         # Silently fail if we can't send the confirmation message (e.g. permission issues)
                         pass
+
+                try:
+                    if time_caught >= 0:
+                        config.belated_catchers[message.channel.id] = {
+                            "time": time_caught,
+                            "users": [message.author.id],
+                            "timestamp": current_time,
+                            "cattype": channel.cattype,
+                            "is_rain": cat_rain_end or channel.cat_rains > 0,
+                            "late_catchers": [(message.author.id, None)],
+                            "full_event": asyncio.Event(),
+                        }
+                except Exception:
+                    pass
 
                 if server.legacy_catching:
                     await asyncio.gather(delete_cat(), send_confirm())
