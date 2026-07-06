@@ -5675,6 +5675,7 @@ async def scratch(message: discord.Interaction):
                 button = Button(label=f"Scratch! ({user.scratchcards})", style=ButtonStyle.green, disabled=user.scratchcards == 0)
                 button.callback = scratch_callback
                 view.add_item(ActionRow(button))
+            await interaction.response.defer()
             await interaction.edit_original_response(view=view)
 
         await refresh_board(interaction)
