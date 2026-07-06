@@ -8139,19 +8139,34 @@ async def roll(message: discord.Interaction, sides: Optional[int]):
     else:
         dice = f"d{sides}"
 
-    if sides == 2:
-        coinflipresult = random.randint(1, 2)
-        if coinflipresult == 2:
-            side = "tails"
-        else:
-            side = "heads"
-        await message.response.send_message(f"🪙 your coin lands on **{side}** ({coinflipresult})")
-    else:
+    view = View(timeout=VIEW_TIMEOUT)
+    button = Button(label="Reroll", emoji="🎲", style=ButtonStyle.blurple)
+    view.add_item(button)
+
+    async def roll_and_respond(interaction: discord.Interaction, is_first=False):
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+
         roll = random.randint(1, sides)
-        await message.response.send_message(f"🎲 your {dice} lands on **{roll}**")
+        if sides == 2:
+            side = "heads" if roll == 1 else "tails"
+            text = f"🪙 your coin lands on **{side}** ({roll})"
+        else:
+            text = f"🎲 your {dice} lands on **{roll}**"
+
+        if is_first:
+            await message.response.send_message(text, view=view)
+        else:
+            await interaction.response.defer()
+            button.label = "Reroll again"
+            await message.edit_original_response(content=text, view=view)
 
         if sides == 6 and roll == 6:
             await progress(message, user, "roll")
+
+    button.callback = roll_and_respond
+    await roll_and_respond(message, is_first=True)
 
 
 @bot.tree.command(description="get a super accurate rating of something")
