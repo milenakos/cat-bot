@@ -6475,6 +6475,8 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
             button.callback = play
             rows[cell_num // 3].add_item(button)
 
+        game_over = wins != [-1] or tie
+
         if wins != [-1]:
             if board[wins[0]] == "❌":
                 second_line = f"{players[0].mention} (X) won!"
@@ -6488,7 +6490,21 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         else:
             second_line = f"{players[current_turn].mention}'s turn ({'X' if current_turn == 0 else 'O'})"
 
-        container = Container(f"## {players[0].mention} (X) vs {players[1].mention} (O)", second_line, rows[0], rows[1], rows[2])
+        restart_row = None
+        if game_over and bot_is_playing:
+
+            async def restart(interaction):
+                nonlocal current_turn
+                await interaction.response.defer()
+                board[:] = [None] * 9
+                current_turn = 0
+                await finish_turn()
+
+            restart_btn = Button(label="Play Again", emoji="🔄", style=ButtonStyle.blurple)
+            restart_btn.callback = restart
+            restart_row = ActionRow(restart_btn)
+
+        container = Container(f"## {players[0].mention} (X) vs {players[1].mention} (O)", second_line, rows[0], rows[1], rows[2], restart_row)
         view.add_item(container)
 
         if do_edit:
