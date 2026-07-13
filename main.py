@@ -6495,9 +6495,12 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
             async def restart(interaction):
                 nonlocal current_turn
+                if interaction.user != message.user:
+                    return await do_funny(interaction)
                 await interaction.response.defer()
                 board[:] = [None] * 9
                 current_turn = 0
+                random.shuffle(players)
                 await finish_turn()
 
             restart_btn = Button(label="Play Again", emoji="🔄", style=ButtonStyle.blurple)
