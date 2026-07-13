@@ -1508,8 +1508,12 @@ async def background_loop():
         view.add_item(button)
 
         guild = await Server.get_or_create(server_id=user.guild_id)
-        if not guild.name:
-            guild.name = (await bot.fetch_guild(user.guild_id)).name
+        try:
+            if not guild.name:
+                guild.name = (await bot.fetch_guild(user.guild_id)).name
+                await guild.save()
+        except Exception:
+            guild.name = "Unknown Server"
             await guild.save()
 
         try:
@@ -6364,7 +6368,7 @@ async def bruh(message: discord.Interaction):
     await message.delete_original_response()
 
 
-@bot.tree.command(description="play a relaxing game of tic tac toe")
+@bot.tree.command(description="play a relaxing game of tic tac toe (ttt)")
 @discord.app_commands.describe(person="who do you want to play with? (choose Cat Bot for ai)")
 async def tictactoe(message: discord.Interaction, person: discord.Member):
     do_edit = False
