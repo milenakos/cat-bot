@@ -8143,11 +8143,15 @@ async def roll(message: discord.Interaction, sides: Optional[int]):
     button = Button(label="Reroll", emoji="🎲", style=ButtonStyle.blurple)
     view.add_item(button)
 
+    roll_number = 0
+
     async def roll_and_respond(interaction: discord.Interaction, is_first=False):
+        nonlocal roll_number
         if interaction.user != message.user:
             await do_funny(interaction)
             return
 
+        roll_number += 1
         roll = random.randint(1, sides)
         if sides == 2:
             side = "heads" if roll == 1 else "tails"
@@ -8159,7 +8163,7 @@ async def roll(message: discord.Interaction, sides: Optional[int]):
             await message.response.send_message(text, view=view)
         else:
             await interaction.response.defer()
-            button.label = "Reroll again"
+            button.label = f"Reroll ({roll_number})"
             await message.edit_original_response(content=text, view=view)
 
         if sides == 6 and roll == 6:
