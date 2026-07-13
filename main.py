@@ -5631,7 +5631,7 @@ async def scratch(message: discord.Interaction):
                 await do_funny(interaction)
                 return
             spot = int(interaction.data["custom_id"])
-            if len(move_spaces) < 10:
+            if len(move_spaces) < 10 and spot not in move_spaces:
                 move_spaces.append(spot)
             await refresh_board(interaction)
 
