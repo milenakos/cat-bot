@@ -5055,8 +5055,8 @@ async def randomizer(message: discord.Interaction):
 
         result = await pool.fetchrow("SELECT user_id, guild_id FROM profile TABLESAMPLE SYSTEM (1) LIMIT 1;")
         embedVar, _ = await gen_inventory(
-            result.guild_id,
-            discord.Object(result.user_id, type=discord.abc.User),
+            result["guild_id"],
+            discord.Object(result["user_id"], type=discord.abc.User),
             None,
         )
         view.add_item(embedVar)
