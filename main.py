@@ -5256,7 +5256,7 @@ async def plush(message: discord.Interaction):
             "## Cat Bot Plush! (Last Chance)",
             "If you haven't yet bought the plush, this is your last chance to do so! Afterwards, you can run `/plushbadge` to redeem a badge.",
             "===",
-            "### $29.99 | ends <t:1785870000:R>",
+            "### $29.99 | ends <t:1785956400:R>",
             discord.ui.MediaGallery(discord.MediaGalleryItem("https://f.minkos.lol/plush_photo.png")),
             "===",
             Button(label="Go", url="https://www.makeship.com/products/cat-bot-plush"),
