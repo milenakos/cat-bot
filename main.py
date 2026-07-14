@@ -327,7 +327,7 @@ class Colors:
 
 
 # rain shill message for footers
-rain_shill = "☔ Get tons of cats /rain"
+rain_shill = "📦 Cat Bot Plush! /plush (Last Chance)"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -809,7 +809,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
 async def generate_quest(user: Profile, quest_type: str):
     while True:
         quest = random.choice(list(config.battle["quests"][quest_type].keys()))
-        if quest in ["plush"]:
+        if quest in []:
             # removed quests
             continue
         elif quest == "prism":
@@ -1372,7 +1372,7 @@ async def background_loop():
     else:
         server_count = len(bot.guilds)
 
-    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {server_count:,} servers"))
+    await bot.change_presence(activity=discord.CustomActivity(name=f"📦 /plush ({server_count:,} servers)"))
     if config.CLUSTERING and not config.CLUSTERING_ZERO:
         loop_count += 1
         return
@@ -2802,7 +2802,7 @@ async def on_message(message: discord.Message):
 
                 if random.randint(0, 5) == 0:
                     # shill rains
-                    suffix_string += f"\n☔ get tons of cats and have fun: {get_command_mention('rain')}"
+                    suffix_string += f"\n📦 {get_command_mention('plush')} last chance (+badge!)"
                 if random.randint(1, 20) == 1:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(hints)
@@ -3495,8 +3495,8 @@ RAM usage: `{psutil.virtual_memory().percent:.1f}%`
 **__Tech__**
 Last hard restart: <t:{int(config.HARD_RESTART_TIME)}:R>
 Last soft restart: <t:{int(config.SOFT_RESTART_TIME)}:R>
-Last commit: `{last_commit[:7]}`
-Last commit time: {f"<t:{int(git_timestamp)}:R>" if git_timestamp else "N/A"}
+Commit: `{last_commit[:7]}`
+Commit time: {f"<t:{int(git_timestamp)}:R>" if git_timestamp else "N/A"}
 Loops since soft restart: `{loop_count + 1:,}`
 
 Guild shard: `{message.guild.shard_id:,}`
@@ -5235,11 +5235,34 @@ async def rain_end(message, channel, force_summary=None):
 
 
 @bot.tree.command(description="redeem plush badge")
-async def plushbadge(message: discord.Interaction):
-    await message.response.send_message(
-        "if you pledged to the plush campaign and didnt yet redeem your badge, please join discord.gg/staring and create a ticket.",
-        ephemeral=True,
+@discord.app_commands.describe(proof="screenshot of purchase confirmation email (dont include any personal info)")
+async def plushbadge(message: discord.Interaction, proof: discord.Attachment):
+    if proof and proof.content_type in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
+        file = await proof.to_file()
+        await (bot.get_partial_messageable(1503550891670634758)).send(message.user.id, file=file)
+        await message.response.send_message(
+            "✅ ok. you will get the badge after the purchase is confirmed. (usually under 5 mins, up to 12 hours)", ephemeral=True
+        )
+    else:
+        await message.response.send_message("❌ invalid image. please upload a png, jpeg, gif, or webp image.", ephemeral=True)
+        return
+
+
+@bot.tree.command(description="LIMITED TIME CAT BOT PLUSH")
+async def plush(message: discord.Interaction):
+    view = LayoutView(timeout=1)
+    view.add_item(
+        Container(
+            "## Cat Bot Plush! (Last Chance)",
+            "If you haven't yet bought the plush, this is your last chance to do so! Afterwards, you can run `/plushbadge` to redeem a badge.",
+            "===",
+            "### $29.99 | ends <t:1785870000:R>",
+            discord.ui.MediaGallery(discord.MediaGalleryItem("https://f.minkos.lol/plush_photo.png")),
+            "===",
+            Button(label="Go", url="https://www.makeship.com/products/cat-bot-plush"),
+        )
     )
+    await message.response.send_message(view=view)
 
 
 @bot.tree.command(description="its raining cats")
@@ -10438,6 +10461,13 @@ async def do_vote(user: User, created_at: float):
     streak_top_position = await User.count("vote_streak > $1", user.vote_streak) + 1
     top_text = f" (top #{streak_top_position}!)" if streak_top_position < 1000 else ""
 
+    embed = discord.Embed(
+        title="Cat Bot Plush (Limited Time)",
+        description="""**[Get it now for $29.99!](https://www.makeship.com/products/cat-bot-plush)**
+Everyone who buys one will also get a **badge**! Run `/plushbadge` to redeem.""",
+        color=Colors.brown,
+    ).set_thumbnail(url="https://f.minkos.lol/plush_photo.png")
+
     try:
         await channeley.send(
             "\n".join(
@@ -10448,7 +10478,8 @@ async def do_vote(user: User, created_at: float):
                     f":fire: **Streak:** {user.vote_streak:,}{top_text} expires <t:{int(created_at) + extend_time * 3600}:R>{freeze_note}",
                     f"{streak_progress}",
                 ]
-            )
+            ),
+            embed=embed,
         )
 
         logging.debug("User voted, streak %d", user.vote_streak)
