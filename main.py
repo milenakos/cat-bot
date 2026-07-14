@@ -4715,13 +4715,9 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     await message.followup.send(embed=embedVar)
 
 
-async def gen_inventory(message, person_id):
-    # check if we are viewing our own inv or some other person
-    if person_id is None:
-        person_id = message.user
-    me = bool(person_id == message.user)
-    person = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
-    user = await User.get_or_create(user_id=person_id.id)
+async def gen_inventory(guild_id: int, inv_user: discord.User, me_msg: Optional[discord.Interaction]):
+    person = await Profile.get_or_create(guild_id=guild_id, user_id=inv_user.id)
+    user = await User.get_or_create(user_id=inv_user.id)
 
     # around here we count aches
     unlocked = 0
@@ -4740,8 +4736,8 @@ async def gen_inventory(message, person_id):
     minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
 
     # count prism stuff
-    prisms = await Prism.collect_limit(["name"], "guild_id = $1 AND user_id = $2", message.guild.id, person_id.id)
-    total_count = await Prism.count("guild_id = $1", message.guild.id)
+    prisms = await Prism.collect_limit(["name"], "guild_id = $1 AND user_id = $2", guild_id, inv_user.id)
+    total_count = await Prism.count("guild_id = $1", guild_id)
     user_count = len(prisms)
     global_boost = 0.06 * math.log(2 * total_count + 1)
     prism_boost = round((global_boost + 0.05 * math.log(2 * user_count + 1)) * 100, 3)
@@ -4776,7 +4772,7 @@ async def gen_inventory(message, person_id):
             if stat[0] == "time_records":
                 highlighted_stat = stat
                 break
-    if person_id == bot.user:
+    if inv_user == bot.user:
         highlighted_stat = ["style_points", "😎", "Style points: 1000"]
 
     debt = False
@@ -4798,14 +4794,14 @@ async def gen_inventory(message, person_id):
         else:
             give_collector = False
 
-    if user.custom:
+    if user.custom and hasattr(inv_user, "name"):
         icon = get_emoji(str(user.user_id) + "cat")
         cat_desc += f"{icon} **{user.custom}** {user.custom_num:,}"
 
     if len(cat_desc) == 0:
         cat_desc = f"u hav no cats {get_emoji('cat_cry')}"
 
-    if me and (len(news_list) > len(user.news_state.strip()) or user.news_state.strip()[last_active_article] == "0"):
+    if me_msg and (len(news_list) > len(user.news_state.strip()) or user.news_state.strip()[last_active_article] == "0"):
         has_news = "You have unread news! /news"
     else:
         has_news = None
@@ -4816,7 +4812,11 @@ async def gen_inventory(message, person_id):
 {get_emoji("staring_cat")} Cats: {total:,}, Value: {round(valuenum):,}
 {get_emoji("prism")} Prisms: {prism_list} ({prism_boost}%)"""
 
-    username = f"## {emoji_prefix}{person_id.name.replace('_', r'\_')}"
+    if hasattr(inv_user, "name"):
+        uname = inv_user.name
+    else:
+        uname = "Cat Bot User"
+    username = f"## {emoji_prefix}{uname.replace('_', r'\_')}"
 
     badges = ""
     for badge in badge_list:
@@ -4828,7 +4828,7 @@ async def gen_inventory(message, person_id):
     else:
         badges = f"### {badges}"
 
-    if user.image.startswith("https://cdn.discordapp.com/attachments/"):
+    if user.image.startswith("https://cdn.discordapp.com/attachments/") and hasattr(inv_user, "name"):
         embedVar = Container(
             has_news,
             Section(username, badges, things, Thumbnail(user.image)),
@@ -4845,25 +4845,28 @@ async def gen_inventory(message, person_id):
             accent_color=discord.Colour.from_str(color),
         )
 
-    if user.widget_guild_id == message.guild.id:
-        # sync widget
-        widget_data = [
-            {"type": 1, "name": "username", "value": emoji_prefix + person_id.name},
-            {"type": 1, "name": "guild_name", "value": message.guild.name},
-            {"type": 2, "name": "cats_caught", "value": person.total_catches},
-            {"type": 2, "name": "inventory", "value": total},
-            {"type": 1, "name": "achs", "value": f"{unlocked}/{total_achs}{minus_achs}"},
-            {"type": 1, "name": "fastest", "value": f"{round(person.time, 3)}s"},
-            {"type": 2, "name": "rain", "value": user.rain_minutes},
-            {"type": 2, "name": "prisms", "value": user_count},
-        ]
-        await bot.http.request(
-            discord.http.Route("PATCH", f"/applications/{bot.user.id}/users/{person_id.id}/identities/0/profile"),
-            json={"data": {"dynamic": widget_data}},
-        )
-
     give_achs = []
-    if me:
+    if me_msg:
+        if user.widget_guild_id == guild_id:
+            # sync widget
+            async def sync_widget():
+                widget_data = [
+                    {"type": 1, "name": "username", "value": emoji_prefix + inv_user.name},
+                    {"type": 1, "name": "guild_name", "value": me_msg.guild.name},
+                    {"type": 2, "name": "cats_caught", "value": person.total_catches},
+                    {"type": 2, "name": "inventory", "value": total},
+                    {"type": 1, "name": "achs", "value": f"{unlocked}/{total_achs}{minus_achs}"},
+                    {"type": 1, "name": "fastest", "value": f"{round(person.time, 3)}s"},
+                    {"type": 2, "name": "rain", "value": user.rain_minutes},
+                    {"type": 2, "name": "prisms", "value": user_count},
+                ]
+                await bot.http.request(
+                    discord.http.Route("PATCH", f"/applications/{bot.user.id}/users/{inv_user.id}/identities/0/profile"),
+                    json={"data": {"dynamic": widget_data}},
+                )
+
+            bot.loop.create_task(sync_widget())
+
         # give some aches if we are vieweing our own inventory
         if give_collector:
             give_achs.append("collecter")
@@ -4884,7 +4887,7 @@ async def gen_inventory(message, person_id):
             give_achs.append("achiever")
 
         if debt:
-            bot.loop.create_task(debt_cutscene(message, person))
+            bot.loop.create_task(debt_cutscene(me_msg, person))
 
     return embedVar, give_achs
 
@@ -5021,11 +5024,11 @@ __Highlighted Stat__
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
 
-    embedVar, give_achs = await gen_inventory(message, person_id)
+    embedVar, give_achs = await gen_inventory(message.guild.id, person_id, message if person_id == message.user else None)
     embedVar.add_item(TextDisplay(f"-# {rain_shill}"))
     view.add_item(embedVar)
 
-    if person_id.id == message.user.id:
+    if person_id == message.user:
         btn = Button(emoji="📝", label="Edit", style=ButtonStyle.blurple)
         btn.callback = edit_profile
         view.add_item(ActionRow(btn))
@@ -5043,6 +5046,32 @@ __Highlighted Stat__
         user.tutorial_state = 5
         await user.save()
         await message.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
+
+
+@bot.tree.command(description="Browse inventories of completely random Cat Bot users")
+async def randomizer(message: discord.Interaction):
+    async def gen_random_inventory(interaction: discord.Interaction, first: bool = False):
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+
+        result = await pool.fetchrow("SELECT user_id, guild_id FROM profile TABLESAMPLE SYSTEM (1) LIMIT 1;")
+        embedVar, _ = await gen_inventory(
+            result.guild_id,
+            discord.Object(result.user_id, type=discord.abc.User),
+            None,
+        )
+        view.add_item(embedVar)
+
+        button = Button(label="Reroll", emoji="🔄", style=discord.ButtonStyle.primary)
+        button.callback = gen_random_inventory
+        view.add_item(ActionRow(button))
+
+        if first:
+            await interaction.response.send_message(view=view)
+        else:
+            await interaction.response.defer()
+            await interaction.edit_original_response(view=view)
+
+    await gen_random_inventory(message, first=True)
 
 
 async def rain_recovery_loop(channel):
@@ -5426,7 +5455,7 @@ if config.DONOR_CHANNEL_ID:
                 await message.followup.send("Error creating emoji. Make sure your image is valid and below 256KB.", ephemeral=True)
                 return
         await user.save()
-        embedVar, _ = await gen_inventory(message, message.user)
+        embedVar, _ = await gen_inventory(message.guild.id, message.user, None)
         view = LayoutView(timeout=1)
         view.add_item(TextDisplay("Success! Here is a preview:"))
         view.add_item(embedVar)
@@ -5561,7 +5590,7 @@ if config.DONOR_CHANNEL_ID:
             msg = await channeley.send(file=file)
             user.image = msg.attachments[0].url
         await user.save()
-        embedVar, _ = await gen_inventory(message, message.user)
+        embedVar, _ = await gen_inventory(message.guild.id, message.user, None)
         view = LayoutView(timeout=1)
         view.add_item(TextDisplay("Success! Here is a preview:"))
         view.add_item(embedVar)
