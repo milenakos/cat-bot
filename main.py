@@ -5053,7 +5053,7 @@ async def randomizer(message: discord.Interaction):
     async def gen_random_inventory(interaction: discord.Interaction, first: bool = False):
         view = LayoutView(timeout=VIEW_TIMEOUT)
 
-        result = await pool.fetchrow("SELECT user_id, guild_id FROM profile TABLESAMPLE SYSTEM (1) LIMIT 1;")
+        result = await pool.fetchrow("SELECT user_id, guild_id FROM profile TABLESAMPLE BERNOULLI (1) LIMIT 1;")
         embedVar, _ = await gen_inventory(
             result["guild_id"],
             discord.Object(result["user_id"], type=discord.abc.User),
