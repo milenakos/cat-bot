@@ -5072,6 +5072,7 @@ async def randomizer(message: discord.Interaction):
             await interaction.edit_original_response(view=view)
 
     await gen_random_inventory(message, first=True)
+    await achemb(message, "randomizer2", "followup")
 
 
 async def rain_recovery_loop(channel):
