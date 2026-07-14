@@ -5263,6 +5263,8 @@ async def plush(message: discord.Interaction):
         )
     )
     await message.response.send_message(view=view)
+    user = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
+    await progress(message, user, "plush")
 
 
 @bot.tree.command(description="its raining cats")
