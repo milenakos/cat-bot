@@ -8771,6 +8771,10 @@ async def get_bounties(level):
             if amount > num_max:
                 continue
 
+            if level > 4 and amount < 4:
+                # prevent too "luck based" bounties
+                continue
+
             used_types.add(cat_type)
             bounties.append(
                 {
