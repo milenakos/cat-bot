@@ -6926,7 +6926,7 @@ async def fish(message: discord.Interaction):
 @discord.app_commands.describe(
     person="Whom to gift?",
     gift_type="im gonna airstrike your house from orbit",
-    amount='And how much? (default: 1, "all" for max)',
+    raw_amount='And how much? (default: 1, "all" for max)',
 )
 @discord.app_commands.autocomplete(gift_type=gift_autocomplete)
 async def gift(
