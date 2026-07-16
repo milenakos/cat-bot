@@ -224,7 +224,7 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
     if is_bot or (member.primary_guild and member.primary_guild.tag):
         label = "APP" if is_bot else (member.primary_guild.tag or "")
         badge_color = COLOR_BOT_BADGE if is_bot else COLOR_GUILD_BADGE
-        badge_x = TEXT_X + 9 + nick_w + icon_offset
+        badge_x = TEXT_X + nick_w + icon_offset
         label_w = _text_size(badge_font, label)[0]
 
         draw.rounded_rectangle(
@@ -232,14 +232,14 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
             fill=badge_color,
             radius=3,
         )
-        draw.text((badge_x + 8, NAME_Y + 6), label, font=badge_font, fill=(255, 255, 255))
+        draw.text((badge_x + 10, NAME_Y + 6), label, font=badge_font, fill=(255, 255, 255))
         badge_offset = label_w + 20
 
     with Pilmoji(canvas) as pilmoji:
         pilmoji.text((TEXT_X, TEXT_Y), text.strip(), (255, 255, 255), body_font, emoji_scale_factor=EMOJI_SCALE)
 
     draw.text(
-        (TEXT_X + 13 + nick_w + badge_offset + icon_offset, NAME_Y + 9),
+        (TEXT_X + 7 + nick_w + badge_offset + icon_offset, NAME_Y + 9),
         _format_timestamp(message.created_at),
         font=time_font,
         fill=ImageColor.getrgb(COLOR_TIMESTAMP),
