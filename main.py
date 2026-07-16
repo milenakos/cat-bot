@@ -328,7 +328,7 @@ class Colors:
     red = 0xFF0000
 
 
-GuildMessageable = discord.TextChannel | discord.Thread | discord.VoiceChannel | discord.StageChannel
+GuildMessageable = discord.TextChannel | discord.Thread | discord.VoiceChannel | discord.StageChannel | discord.PartialMessageable
 
 
 # rain shill message for footers
