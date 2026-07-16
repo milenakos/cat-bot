@@ -2155,7 +2155,8 @@ async def on_message(message: discord.Message) -> None:
         return
 
     assert message.guild is not None
-    assert isinstance(message.channel, GuildMessageable)
+    if not isinstance(message.channel, GuildMessageable):
+        return
 
     server = None
 
