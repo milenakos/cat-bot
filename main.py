@@ -9920,11 +9920,11 @@ async def leaderboards(
 
     # this fat function handles a single page
     async def lb_handler(interaction: discord.Interaction, type: str, do_edit: bool = True, specific_cat: str | None = "All") -> None:
+        nonlocal message
         assert message.guild is not None
         if not specific_cat:
             specific_cat = "All"
 
-        nonlocal message
         await interaction.response.defer()
 
         messager = None
