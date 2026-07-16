@@ -44,7 +44,6 @@ COLOR_TIMESTAMP = "#A3A4AA"
 COLOR_BOT_BADGE = (88, 101, 242)
 COLOR_GUILD_BADGE = (70, 70, 77)
 
-FONT_WHITNEY = os.path.abspath("./assets/whitneysemibold.otf")
 FONT_GGSANS = os.path.abspath("./assets/ggsans-Medium.ttf")
 
 FETCH_TIMEOUT = (5, 10)
@@ -154,10 +153,9 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
     is_bot = member.bot
     is_pinged = message.mention_everyone
 
-    name_font = ImageFont.truetype(FONT_WHITNEY, 32)
     body_font = ImageFont.truetype(FONT_GGSANS, 32)
-    time_font = ImageFont.truetype(FONT_WHITNEY, 23)
-    badge_font = ImageFont.truetype(FONT_WHITNEY, 20)
+    time_font = ImageFont.truetype(FONT_GGSANS, 23)
+    badge_font = ImageFont.truetype(FONT_GGSANS, 20)
 
     lines, pings = _break_text(text, body_font, MAX_TEXT_WIDTH)
     text = "\n".join(lines)[:-1] if lines else ""
@@ -212,8 +210,8 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
         if deco:
             canvas.paste(deco, (4, 4), deco)
 
-    draw.text((TEXT_X, NAME_Y), nick, font=name_font, fill=color)
-    nick_w = int(_text_size(name_font, nick)[0])
+    draw.text((TEXT_X, NAME_Y), nick, font=body_font, fill=color)
+    nick_w = int(_text_size(body_font, nick)[0])
 
     icon_offset = 0
     if isinstance(member, discord.Member) and isinstance(member.display_icon, discord.Asset):
@@ -226,7 +224,7 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
     if is_bot or (member.primary_guild and member.primary_guild.tag):
         label = "APP" if is_bot else (member.primary_guild.tag or "")
         badge_color = COLOR_BOT_BADGE if is_bot else COLOR_GUILD_BADGE
-        badge_x = TEXT_X + 7 + nick_w + icon_offset
+        badge_x = TEXT_X + 9 + nick_w + icon_offset
         label_w = _text_size(badge_font, label)[0]
 
         draw.rounded_rectangle(
