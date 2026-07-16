@@ -23,26 +23,35 @@
 # this is a KISS wrapper i made for asyncpg
 
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator, TypeVar
+from typing import Any, AsyncGenerator, Self
 
 import asyncpg
+import asyncpg.pool
 
-pool = None
+# covers Connection (direct), PoolConnectionProxy (from transaction()), and Pool (module-level)
+AnyConnection = asyncpg.Connection | asyncpg.pool.PoolConnectionProxy | asyncpg.Pool
+
+pool: asyncpg.Pool | None = None
 
 
-async def connect(**kwargs):
+def _get_pool() -> asyncpg.Pool:
+    assert pool is not None, "Not connected. Call connect() first."
+    return pool
+
+
+async def connect(**kwargs) -> None:
     global pool
     pool = await asyncpg.create_pool(**kwargs)
 
 
-async def close():
+async def close() -> None:
     if pool:
         await pool.close()
 
 
 @asynccontextmanager
-async def transaction():
-    async with pool.acquire() as conn:
+async def transaction() -> AsyncGenerator[asyncpg.pool.PoolConnectionProxy, None]:
+    async with _get_pool().acquire() as conn:
         async with conn.transaction():
             yield conn
 
@@ -52,31 +61,29 @@ class RawSQL(str):
     pass
 
 
-ModelInstance = TypeVar("ModelInstance", bound="Model")
-
-
 class Model:
     _primary_key = "id"
     _capped_ints = []
 
-    def __init__(self, record: asyncpg.Record, connection: asyncpg.Connection | None = None):
+    def __init__(self, record: asyncpg.Record, connection: AnyConnection | None = None) -> None:
         # init model from asyncpg Record
-        self.__dirty_values = []
-        self.__values = dict(record.items())
+        self.__dirty_values: list[str] = []
+        self.__values: dict[str, Any] = dict(record.items())
+        self._connection: AnyConnection
         if connection is not None:
             self._connection = connection
         else:
-            self._connection = pool
+            self._connection = _get_pool()
 
     # setter sugar
-    def __setattr__(self, name: str, value) -> None:
+    def __setattr__(self, name: str, value: Any) -> None:
         if name[0] == "_":
             return super().__setattr__(name, value)
         self.__setitem__(name, value)
 
-    def __setitem__(self, name: str, value) -> None:
+    def __setitem__(self, name: str, value: Any) -> None:
         if name[0] == "_":
-            return super().__setitem__(name, value)
+            return
         if name in self.__values:
             if value != self.__values[name] and name not in self.__dirty_values:
                 self.__dirty_values.append(name)
@@ -94,7 +101,7 @@ class Model:
 
     def __getitem__(self, name: str) -> Any:
         if name[0] == "_":
-            return super().__getitem__(name)
+            raise KeyError(name)
         return self.__values[name]
 
     async def delete(self) -> None:
@@ -129,12 +136,12 @@ class Model:
         self.__dirty_values = []
 
     @classmethod
-    async def _get(cls, connection: asyncpg.Connection | None = None, fields: None | list[str | RawSQL] = None, **kwargs) -> asyncpg.Record:
+    async def _get(cls, connection: AnyConnection | None = None, fields: None | list[str | RawSQL] = None, **kwargs) -> asyncpg.Record | None:
         table = cls.__name__.lower()
         select = "*"
         for_update = False
         if not connection:
-            connection = pool
+            connection = _get_pool()
             for_update = True
 
         if fields:
@@ -165,26 +172,28 @@ class Model:
             self.__init__(result)
 
     @classmethod
-    async def get(cls, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance:
+    async def get(cls, fields: None | list[str | RawSQL] = None, **kwargs) -> Self:
         result = await cls._get(fields=fields, **kwargs)
+        if result is None:
+            raise LookupError("Record not found")
         return cls(result)
 
     @classmethod
-    async def get_or_none(cls, fields: None | list[str | RawSQL] = None, **kwargs) -> ModelInstance | None:
+    async def get_or_none(cls, fields: None | list[str | RawSQL] = None, **kwargs) -> Self | None:
         try:
             return await cls.get(fields=fields, **kwargs)
         except asyncpg.exceptions.PostgresError:
             return None
-        except AttributeError:
+        except (AttributeError, LookupError):
             return None
 
     @classmethod
-    async def get_or_create(cls, connection: asyncpg.Connection | None = None, **kwargs) -> ModelInstance:
+    async def get_or_create(cls, connection: AnyConnection | None = None, **kwargs) -> Self:
         table = cls.__name__.lower()
         values = list(kwargs.values())
         transaction = False
         if not connection:
-            connection = pool
+            connection = _get_pool()
             transaction = True
 
         # build column names and placeholders
@@ -200,22 +209,24 @@ class Model:
 
         # run the query and return the result
         result = await connection.fetchrow(query_string, *values)
+        assert result is not None
 
         # lock row if in transaction
         if transaction:
             pk_field = cls._primary_key
             lock_query = f'SELECT * FROM "{table}" WHERE "{pk_field}" = $1 FOR UPDATE;'
             result = await connection.fetchrow(lock_query, result[pk_field])
+            assert result is not None
 
         return cls(result, connection=connection)
 
     @classmethod
-    async def create(cls, connection: asyncpg.Connection | None = None, **kwargs) -> ModelInstance:
+    async def create(cls, connection: AnyConnection | None = None, **kwargs) -> Self:
         table = cls.__name__.lower()
         values = list(kwargs.values())
 
         if not connection:
-            connection = pool
+            connection = _get_pool()
 
         query_string = f'INSERT INTO "{table}" ('
         var_counter = 1
@@ -231,12 +242,13 @@ class Model:
         changes2 = ["$" + str(i) for i in range(1, var_counter)]
         query_string += ", ".join(changes2) + ") RETURNING *;"
         result = await connection.fetchrow(query_string, *values)
+        assert result is not None
         return cls(result, connection=connection)
 
     @classmethod
     async def filter(
         cls, filter: str | RawSQL | None = None, *args, refetch: bool = True, add_primary_key: bool = True, **kwargs
-    ) -> AsyncGenerator[ModelInstance, None]:
+    ) -> AsyncGenerator[Self, None]:
         table = cls.__name__.lower()
         select = "*"
         if "fields" in kwargs:
@@ -246,7 +258,7 @@ class Model:
         query = f'SELECT {select} FROM "{table}"'
         if filter:
             query += f" WHERE {filter}"
-        cur = await pool.fetch(query + ";", *args)
+        cur = await _get_pool().fetch(query + ";", *args)
         for row in cur:
             if refetch:
                 val = {cls._primary_key: row[cls._primary_key]}
@@ -268,25 +280,25 @@ class Model:
         *args,
         refetch: bool = True,
         add_primary_key: bool = True,
-    ) -> AsyncGenerator[ModelInstance, None]:
+    ) -> AsyncGenerator[Self, None]:
         if isinstance(fields, str):
             fields = [fields]
         async for row in cls.filter(filter, refetch=refetch, add_primary_key=add_primary_key, *args, fields=fields):
             yield row
 
     @classmethod
-    async def all(cls) -> AsyncGenerator[ModelInstance, None]:
+    async def all(cls) -> AsyncGenerator[Self, None]:
         async for row in cls.filter():
             yield row
 
     @classmethod
-    async def collect(cls, filter: str | RawSQL | None = None, *args, add_primary_key: bool = True) -> list[ModelInstance]:
+    async def collect(cls, filter: str | RawSQL | None = None, *args, add_primary_key: bool = True) -> list[Self]:
         return [i async for i in cls.filter(filter, *args, refetch=False, add_primary_key=add_primary_key)]
 
     @classmethod
     async def collect_limit(
         cls, fields: str | RawSQL | None | list[str | RawSQL] = None, filter: str | RawSQL | None = None, *args, add_primary_key: bool = True
-    ) -> list[ModelInstance]:
+    ) -> list[Self]:
         return [i async for i in cls.limit(fields, filter, *args, refetch=False, add_primary_key=add_primary_key)]
 
     @classmethod
@@ -297,7 +309,7 @@ class Model:
         query = f'SELECT {func}({column}) FROM "{table}"'
         if filter:
             query += f" WHERE {filter}"
-        return await pool.fetchval(query + ";", *args)
+        return await _get_pool().fetchval(query + ";", *args)
 
     @classmethod
     async def sum(cls, column: str, filter: str | RawSQL | None = None, *args) -> int:
@@ -316,7 +328,7 @@ class Model:
         return await cls.__do_function("COUNT", "*", filter, *args)
 
     @classmethod
-    async def bulk_update(cls, rows: list[ModelInstance], *columns) -> None:
+    async def bulk_update(cls, rows: list[Self], *columns: str) -> None:
         table = cls.__name__.lower()
         # build the query
         query = f'UPDATE "{table}" SET '
@@ -337,4 +349,4 @@ class Model:
             data.append(tuple(curr))
 
         # execute the query
-        await pool.executemany(query, data)
+        await _get_pool().executemany(query, data)

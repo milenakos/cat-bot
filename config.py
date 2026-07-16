@@ -42,3 +42,15 @@ REPORT_CHANNEL_ID = 967080927937323138
 
 # channel for invite logs
 INVITE_LOGS_CHANNEL = 1509292465088368640
+
+
+# config.py is used as a place to store persistent data, do not modify these
+battle = {}
+belated_catchers = {}
+cat_cought_rain = {}
+rain_starter = {}
+belated_catchers = {}
+CLUSTERING = False
+CLUSTERING_ZERO = False
+HARD_RESTART_TIME = 0
+SOFT_RESTART_TIME = 0

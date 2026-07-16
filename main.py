@@ -31,10 +31,12 @@ import subprocess
 import sys
 import time
 import traceback
-from typing import Literal, Optional
+from typing import Awaitable, Callable, Literal
 
 import aiohttp
 import discord
+import discord.gateway
+import discord.http
 import discord_emoji
 import emoji
 import psutil
@@ -47,7 +49,7 @@ from PIL import Image
 
 import config
 import msg2img
-from catpg import RawSQL, pool, transaction
+from catpg import RawSQL, _get_pool, transaction
 from database import Channel, Prism, Profile, Reminder, Server, User
 
 try:
@@ -326,6 +328,9 @@ class Colors:
     red = 0xFF0000
 
 
+GuildMessageable = discord.TextChannel | discord.Thread | discord.VoiceChannel | discord.StageChannel
+
+
 # rain shill message for footers
 rain_shill = "📦 Cat Bot Plush! /plush (Last Chance)"
 
@@ -398,7 +403,7 @@ last_loop_time = 0
 server_count = 0
 
 
-def get_emoji(name):
+def get_emoji(name: str) -> str:
     global emojis
     if name in emojis.keys():
         return emojis[name]
@@ -408,31 +413,32 @@ def get_emoji(name):
         return "🔳"
 
 
-def get_short_emoji(emoji):
+def get_short_emoji(emoji: str) -> str:
     return re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(emoji), count=1)
 
 
-def get_command_mention(name):
+def get_command_mention(name: str) -> str:
     return f"</{name}:{COMMAND_IDS[name]}>" if name in COMMAND_IDS else f"/{name}"
 
 
-async def fetch_dm_channel(user: User) -> discord.PartialMessageable:
+async def fetch_dm_channel(user: User) -> discord.abc.Messageable:
     if user.dm_channel_id:
         return bot.get_partial_messageable(user.dm_channel_id)
     else:
         person = await bot.fetch_user(user.user_id)
-        if not person.dm_channel:
+        if person.dm_channel is None:
             await person.create_dm()
+            assert person.dm_channel is not None
         user.dm_channel_id = person.dm_channel.id
         await user.save()
         return person.dm_channel
 
 
-async def check_channel_setupped(guild: Server, channel: discord.TextChannel) -> bool:
+async def check_channel_setupped(guild: Server, channel: GuildMessageable) -> bool:
     if not guild.only_setupped_channels:
         return True
-    channel = await Channel.get_or_none(channel_id=channel.id)
-    return channel is not None
+    db_channel = await Channel.get_or_none(channel_id=channel.id)
+    return db_channel is not None
 
 
 # news stuff
@@ -706,12 +712,19 @@ illegal = [
 
 
 # this is some common code which is run whether someone gets an achievement
-async def achemb(message, ach_id, send_type, author_string=None):
+async def achemb(
+    message: discord.Message | discord.Interaction,
+    ach_id: str,
+    send_type: str,
+    author_string: discord.abc.User | None = None,
+) -> None:
     if not author_string:
-        try:
+        if isinstance(message, discord.Message):
             author_string = message.author
-        except Exception:
+        elif isinstance(message, discord.Interaction):
             author_string = message.user
+        else:
+            return
     author = author_string.id
 
     if not message.guild:
@@ -773,17 +786,22 @@ async def achemb(message, ach_id, send_type, author_string=None):
     try:
         result = None
         server = await Server.get_or_create(server_id=message.guild.id)
+        assert isinstance(message.channel, GuildMessageable)
         do = not server.mute_achievements and await check_channel_setupped(server, message.channel)
         if send_type == "ephemeral":
-            result = await message.followup.send(embed=embed, ephemeral=True)
+            assert isinstance(message, discord.Interaction)
+            await message.followup.send(embed=embed, ephemeral=True)
         if send_type == "reply" and do:
+            assert isinstance(message, discord.Message)
             result = await message.reply(embed=embed)
         if send_type == "send" and do:
             result = await message.channel.send(embed=embed)
         if send_type == "followup":
-            result = await message.followup.send(embed=embed, ephemeral=not do)
+            assert isinstance(message, discord.Interaction)
+            await message.followup.send(embed=embed, ephemeral=not do)
         if send_type == "response":
-            result = await message.response.send_message(embed=embed, ephemeral=not do)
+            assert isinstance(message, discord.Interaction)
+            await message.response.send_message(embed=embed, ephemeral=not do)
         await progress(message, profile, "achievement")
         await finale(message, profile)
     except Exception:
@@ -806,7 +824,7 @@ async def achemb(message, ach_id, send_type, author_string=None):
             await result.delete(delay=30)
 
 
-async def generate_quest(user: Profile, quest_type: str):
+async def generate_quest(user: Profile, quest_type: str) -> None:
     while True:
         quest = random.choice(list(config.battle["quests"][quest_type].keys()))
         if quest in []:
@@ -843,7 +861,7 @@ async def generate_quest(user: Profile, quest_type: str):
     await user.save()
 
 
-async def refresh_quests(user):
+async def refresh_quests(user: Profile) -> None:
     await user.refresh_from_db()
     start_date = datetime.datetime(2024, 12, 1)
     current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
@@ -891,7 +909,7 @@ async def refresh_quests(user):
             return
 
 
-async def multi_progress(message: discord.Message | discord.Interaction, user: Profile, quests: list[str], is_belated: Optional[bool] = False):
+async def multi_progress(message: discord.Message | discord.Interaction, user: Profile, quests: list[str], is_belated: bool = False) -> None:
     await refresh_quests(user)
     await user.refresh_from_db()
     for quest in quests:
@@ -900,9 +918,7 @@ async def multi_progress(message: discord.Message | discord.Interaction, user: P
             user = return_user
 
 
-async def progress(
-    message: discord.Message | discord.Interaction, user: Profile, quest: str, is_belated: Optional[bool] = False, refetch: bool = True
-) -> Profile:
+async def progress(message: discord.Message | discord.Interaction, user: Profile, quest: str, is_belated: bool = False, refetch: bool = True) -> Profile:
     if refetch:
         await refresh_quests(user)
         await user.refresh_from_db()
@@ -1030,7 +1046,6 @@ async def progress(
                 new_level_text = f"Level {user.battlepass + 1}"
 
         embed_progress = await progress_embed(
-            message,
             user,
             active_level_data,
             xp_progress,
@@ -1044,7 +1059,6 @@ async def progress(
         user.progress = current_xp
         await user.save()
         embed_progress = await progress_embed(
-            message,
             user,
             level_data,
             current_xp,
@@ -1056,9 +1070,11 @@ async def progress(
 
     if is_belated:
         embed_progress.set_footer(text="For catching late")
-    elif user.user_id == bot.user.id:
+    elif bot.user and user.user_id == bot.user.id:
         embed_progress.set_footer(text="im so good at this")
 
+    assert message.guild is not None
+    assert isinstance(message.channel, GuildMessageable)
     server = await Server.get_or_create(server_id=message.guild.id)
     if await check_channel_setupped(server, message.channel):
         if level_complete_embeds:
@@ -1069,7 +1085,7 @@ async def progress(
     return user
 
 
-async def progress_embed(message, user, level_data, current_xp, old_xp, quest_data, diff, level_text) -> discord.Embed:
+async def progress_embed(user: Profile, level_data: dict, current_xp: int, old_xp: int, quest_data: dict, diff: int, level_text: str) -> discord.Embed:
     percentage_before = int(old_xp / level_data["xp"] * 10)
     percentage_after = int(current_xp / level_data["xp"] * 10)
     percenteage_left = 10 - percentage_after
@@ -1105,7 +1121,7 @@ async def progress_embed(message, user, level_data, current_xp, old_xp, quest_da
     ).set_author(name="/battlepass " + level_text)
 
 
-def get_streak_reward(streak):
+def get_streak_reward(streak: int) -> dict:
     if streak % 100 == 0:
         return {"reward": "diamond", "emoji": get_emoji("diamondpack"), "done_emoji": get_emoji("diamondpack_claimed")}
     elif streak % 25 == 0:
@@ -1117,7 +1133,8 @@ def get_streak_reward(streak):
 
 
 # handle curious people clicking buttons
-async def do_funny(message):
+async def do_funny(message: discord.Interaction) -> None:
+    assert message.guild is not None
     await message.response.send_message(random.choice(funny), ephemeral=True)
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     user.funny += 1
@@ -1128,7 +1145,7 @@ async def do_funny(message):
 
 
 # not :eyes:
-async def debt_cutscene(message, user):
+async def debt_cutscene(message: discord.Interaction, user: Profile) -> None:
     if user.debt_seen:
         return
 
@@ -1154,7 +1171,7 @@ async def debt_cutscene(message, user):
 
 
 # :eyes:
-async def finale(message, user):
+async def finale(message: discord.Interaction | discord.Message, user: Profile) -> None:
     if user.finale_seen:
         return
 
@@ -1165,10 +1182,11 @@ async def finale(message, user):
 
     user.finale_seen = True
     await user.save()
-    try:
+    if isinstance(message, discord.Message):
         author_string = message.author
-    except Exception:
+    elif isinstance(message, discord.Interaction):
         author_string = message.user
+    assert isinstance(message.channel, GuildMessageable)
     await asyncio.sleep(5)
     await message.channel.send("...")
     await asyncio.sleep(3)
@@ -1197,6 +1215,7 @@ async def cat_type_autocomplete(interaction: discord.Interaction, current: str) 
 
 # function to autocomplete /cat, it only shows the cats you have
 async def cat_command_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
+    assert interaction.guild is not None
     user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
     return [discord.app_commands.Choice(name=choice, value=choice) for choice in cattypes if current.lower() in choice.lower() and user[f"cat_{choice}"] > 0][
         :25
@@ -1204,19 +1223,23 @@ async def cat_command_autocomplete(interaction: discord.Interaction, current: st
 
 
 async def lb_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
+    assert interaction.guild is not None
     return [
         discord.app_commands.Choice(name=choice, value=choice)
-        for choice in ["All"] + await cats_in_server(interaction.guild_id)
+        for choice in ["All"] + await cats_in_server(interaction.guild.id)
         if current.lower() in choice.lower()
     ][:25]
 
 
-async def cats_in_server(guild_id):
-    return [cat_type for cat_type in cattypes if (await Profile.count(f'guild_id = $1 AND "cat_{cat_type}" > 0 LIMIT 1', guild_id))]
+async def cats_in_server(guild_id: int) -> list[str]:
+    cols = ", ".join(f'bool_or("cat_{t}" > 0) AS "cat_{t}"' for t in cattypes)
+    row = await _get_pool().fetchrow(f"SELECT {cols} FROM profile WHERE guild_id = $1;", guild_id)
+    return [t for t in cattypes if row and row[f"cat_{t}"]]
 
 
 # function to autocomplete cat_type choices for /gift, which shows only cats user has and how many of them they have
 async def gift_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
+    assert interaction.guild is not None
     user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
     actual_user = await User.get_or_create(user_id=interaction.user.id)
     choices = []
@@ -1243,13 +1266,13 @@ async def ach_autocomplete(interaction: discord.Interaction, current: str) -> li
 
 
 # converts string to lowercase alphanumeric characters only
-def alnum(string):
+def alnum(string: str) -> str:
     return "".join(item for item in string.lower() if item.isalnum())
 
 
-async def spawn_cat(ch_id, localcat=None, force_spawn=None):
+async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool = False) -> str:
     try:
-        channel = await Channel.get_or_none(channel_id=int(ch_id))
+        channel = await Channel.get_or_none(channel_id=ch_id)
         if not channel:
             raise Exception
     except Exception:
@@ -1258,19 +1281,19 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         return "cat already spawned"
 
     if not localcat:
-        localcat = random.choices(cattypes, weights=type_dict.values())[0]
+        localcat = random.choices(cattypes, weights=list(type_dict.values()))[0]
     icon = get_emoji(localcat.lower() + "cat")
     file = discord.File(
         f"assets/images/spawn/{localcat.lower()}_cat.png",
     )
-    channeley = bot.get_partial_messageable(int(ch_id))
+    channeley = bot.get_partial_messageable(ch_id)
 
     appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
 
-    if int(ch_id) in temp_spawns_storage:
+    if ch_id in temp_spawns_storage:
         return "cat spawn already in progress"
 
-    temp_spawns_storage.append(int(ch_id))
+    temp_spawns_storage.append(ch_id)
 
     try:
         message_is_sus = await channeley.send(
@@ -1280,31 +1303,33 @@ async def spawn_cat(ch_id, localcat=None, force_spawn=None):
         )
     except discord.Forbidden as e:
         await channel.delete()
-        temp_spawns_storage.remove(int(ch_id))
+        temp_spawns_storage.remove(ch_id)
         if e.text == "Access to file uploads has been limited for this guild":
             return "your server is limited by discord, cat bot cant operate here"
         return "sending message forbidden (no permissions)"
     except discord.NotFound:
         await channel.delete()
-        temp_spawns_storage.remove(int(ch_id))
+        temp_spawns_storage.remove(ch_id)
         return "not found (cant access channel)"
     except Exception as e:
-        temp_spawns_storage.remove(int(ch_id))
+        temp_spawns_storage.remove(ch_id)
         return str(e)
 
-    config.belated_catchers.pop(int(ch_id), None)
+    config.belated_catchers.pop(ch_id, None)
     channel.cat = message_is_sus.id
     channel.yet_to_spawn = 0
     channel.forcespawned = bool(force_spawn)
     channel.cattype = localcat
     await channel.save()
-    temp_spawns_storage.remove(int(ch_id))
+    temp_spawns_storage.remove(ch_id)
     logging.debug("Cat spawned, forced: %s", bool(force_spawn))
     return f"ok, now i will send cats in <#{ch_id}>"
 
 
-async def postpone_reminder(interaction):
-    reminder_type = interaction.data["custom_id"]
+async def postpone_reminder(interaction: discord.Interaction) -> None:
+    if not interaction.custom_id:
+        return
+    reminder_type = interaction.custom_id
     if reminder_type == "vote":
         user = await User.get_or_create(user_id=interaction.user.id)
         user.reminder_vote = int(time.time()) + 30 * 60
@@ -1322,7 +1347,7 @@ async def postpone_reminder(interaction):
 
 
 # a loop for various maintenance which is ran every 5 minutes
-async def background_loop():
+async def background_loop() -> None:
     global \
         pointlaugh_ratelimit, \
         reactions_ratelimit, \
@@ -1430,7 +1455,7 @@ async def background_loop():
     counter = 0
     async for channel in Channel.limit(["channel_id"], "yet_to_spawn < $1 AND cat = 0", time.time(), refetch=False):
         counter += 1
-        await spawn_cat(str(channel.channel_id))
+        await spawn_cat(channel.channel_id)
         await asyncio.sleep(0.1)
     logging.debug("Channels revived: %d", counter)
 
@@ -1617,7 +1642,7 @@ async def background_loop():
     loop_count += 1
 
 
-async def on_connect():
+async def on_connect() -> None:
     global emojis
     if len(emojis) != 0:
         return
@@ -1638,17 +1663,18 @@ async def on_connect():
 
 
 # some code which is run when bot is started
-async def on_ready():
+async def on_ready() -> None:
     global OWNER_ID, on_ready_debounce, gen_credits, emojis
     if on_ready_debounce:
         return
     on_ready_debounce = True
     logging.info("cat is now online")
     appinfo = bot.application
-    if appinfo.team and appinfo.team.owner_id:
-        OWNER_ID = appinfo.team.owner_id
-    else:
-        OWNER_ID = appinfo.owner.id
+    if appinfo is not None:
+        if appinfo.team and appinfo.team.owner_id:
+            OWNER_ID = appinfo.team.owner_id
+        else:
+            OWNER_ID = appinfo.owner.id
 
     # fetch github contributors
     url = "https://api.github.com/repos/milenakos/cat-bot/contributors"
@@ -1721,7 +1747,7 @@ sentences = [
 ]
 
 
-def to_roman_numeral(value):
+def to_roman_numeral(value: int) -> str:
     roman_map = {1: "I", 4: "IV", 5: "V", 9: "IX", 10: "X", 40: "XL", 50: "L", 90: "XC", 100: "C", 400: "CD", 500: "D", 900: "CM", 1000: "M"}
     result = ""
     remainder = value
@@ -1732,7 +1758,7 @@ def to_roman_numeral(value):
     return result
 
 
-def is_prime(n):
+def is_prime(n: int) -> bool:
     if n < 2:
         return False
 
@@ -1746,7 +1772,8 @@ def is_prime(n):
     return s[n]
 
 
-async def play_minigame(interaction: discord.Interaction):
+async def play_minigame(interaction: discord.Interaction) -> None:
+    assert isinstance(interaction.channel, GuildMessageable)
     if interaction.channel.id not in config.belated_catchers:
         await interaction.response.send_message("No active minigame in this channel.", ephemeral=True)
         return
@@ -1791,7 +1818,7 @@ async def play_minigame(interaction: discord.Interaction):
             num_range[3]: str(num_range[3] - 111) + " + 111",
         }
         items = dict(random.sample(list(items.items()), len(items)))
-        options = [discord.RadioGroupOption(label=value, value=key) for key, value in items.items()]
+        options = [discord.RadioGroupOption(label=value, value=str(key)) for key, value in items.items()]
         modal.add_item(discord.ui.Label(text="Choose the biggest number", component=discord.ui.RadioGroup(options=options, id=67)))
         answer = max(items.keys())
     elif cattype == "Wild":
@@ -1940,7 +1967,7 @@ async def play_minigame(interaction: discord.Interaction):
         )
     modal.add_item(TextDisplay(f"-# Times up <t:{end}:R>"))
 
-    async def check_minigame(interaction: discord.Interaction):
+    async def check_minigame(interaction: discord.Interaction) -> None:
         nonlocal answer
         if time.time() > end:
             await interaction.response.send_message("❌ You weren't fast enough!", ephemeral=True)
@@ -1950,6 +1977,11 @@ async def play_minigame(interaction: discord.Interaction):
             answer_raw = answer_item.value
         elif isinstance(answer_item, discord.ui.Select):
             answer_raw = answer_item.values[0]
+        else:
+            return
+
+        assert answer_raw is not None
+
         answer_clean = re.sub(r"[^0-9A-Za-z \-~]+", "", answer_raw)
         answer = re.sub(r"[^0-9A-Za-z \-~]+", "", str(answer))
 
@@ -1984,6 +2016,7 @@ async def play_minigame(interaction: discord.Interaction):
             correct = answer_clean.lower() == str(answer).lower()
 
         if correct:
+            assert interaction.guild is not None
             profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild.id)
             profile.bonus_catches += 1
             profile[f"cat_{cattype}"] += 3
@@ -2000,7 +2033,13 @@ async def play_minigame(interaction: discord.Interaction):
     await interaction.response.send_modal(modal)
 
 
-async def belated_window_task(msg: discord.Message, window, chance, catch_confirm, is_rain=False):
+async def belated_window_task(
+    msg: discord.PartialMessage,
+    window: float,
+    chance: float,
+    catch_confirm: discord.Message | None,
+    is_rain: bool = False,
+) -> None:
     belated_pre = config.belated_catchers.get(msg.channel.id, {})
     full_event = belated_pre.get("full_event")
     if full_event:
@@ -2026,8 +2065,9 @@ async def belated_window_task(msg: discord.Message, window, chance, catch_confir
     icon = get_emoji(belated["cattype"].lower() + "cat")
     has_bonus = random.random() < chance
 
-    async def reply_or_send(target, text, **kwargs):
+    async def reply_or_send(target: discord.Message | None, text: str, **kwargs) -> discord.Message:
         try:
+            assert target is not None
             return await target.reply(text, **kwargs)
         except Exception:
             return await msg.channel.send(text, **kwargs)
@@ -2035,6 +2075,7 @@ async def belated_window_task(msg: discord.Message, window, chance, catch_confir
     # rain bonus: process rewards and combine with late-catchers message
     if has_bonus and belated["is_rain"]:
         for uid in belated["late_catchers"]:
+            assert msg.guild is not None
             u = await Profile.get_or_create(user_id=uid[0], guild_id=msg.guild.id)
             u[f"cat_{belated['cattype']}"] += 1
             await u.save()
@@ -2077,7 +2118,7 @@ async def belated_window_task(msg: discord.Message, window, chance, catch_confir
 
 # this is all the code which is ran on every message sent
 # a lot of it is for easter eggs or achievements
-async def on_message(message: discord.Message):
+async def on_message(message: discord.Message) -> None:
     global emojis, last_loop_time
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
@@ -2112,6 +2153,9 @@ async def on_message(message: discord.Message):
         except Exception:
             pass
         return
+
+    assert message.guild is not None
+    assert isinstance(message.channel, GuildMessageable)
 
     server = None
 
@@ -2470,7 +2514,7 @@ async def on_message(message: discord.Message):
             else:
                 channel.yet_to_spawn = 0
                 decided_time = 0
-            force_rain_summary = None
+            force_rain_summary = {}
 
             try:
                 current_time = message.created_at.timestamp()
@@ -2849,7 +2893,7 @@ async def on_message(message: discord.Message):
                 view = None
                 button = None
 
-                async def dark_market_cutscene(interaction):
+                async def dark_market_cutscene(interaction: discord.Interaction) -> None:
                     nonlocal message
                     if interaction.user != message.author:
                         await interaction.response.send_message(
@@ -2914,7 +2958,7 @@ async def on_message(message: discord.Message):
                 user[f"cat_{le_emoji}"] += silly_amount
                 new_count = user[f"cat_{le_emoji}"]
 
-                async def delete_cat():
+                async def delete_cat() -> None:
                     try:
                         cat_spawn = send_target.get_partial_message(cat_temp)
                         await cat_spawn.delete()
@@ -2923,7 +2967,7 @@ async def on_message(message: discord.Message):
 
                 is_rain_catch = cat_rain_end or channel.cat_rains > 0
 
-                async def send_confirm():
+                async def send_confirm() -> discord.Message | None:
                     try:
                         kwargs = {}
                         if view:
@@ -3008,7 +3052,7 @@ async def on_message(message: discord.Message):
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT" and not user.loud_cat:
                     await achemb(message, "loud_cat", "send")
-                if bot.user in message.mentions and message.reference.message_id == cat_temp and not user.ping_reply:
+                if bot.user in message.mentions and message.reference and message.reference.message_id == cat_temp and not user.ping_reply:
                     await achemb(message, "ping_reply", "send")
                 if channel.cat_rains > 0 and not user.cat_rain:
                     await achemb(message, "cat_rain", "send")
@@ -3123,7 +3167,7 @@ async def on_message(message: discord.Message):
                         temp_catches_storage.remove(pls_remove_me_later_k_thanks)
                     except Exception:
                         pass
-                    await spawn_cat(str(message.channel.id))
+                    await spawn_cat(message.channel.id)
                 else:
                     await channel.save()
                     try:
@@ -3136,14 +3180,6 @@ async def on_message(message: discord.Message):
         return
 
     # those are "owner" commands which are not really interesting
-    if text.lower().startswith("cat!sweep"):
-        try:
-            channel = await Channel.get_or_none(channel_id=message.channel.id)
-            channel.cat = 0
-            await channel.save()
-            await message.reply("success")
-        except Exception:
-            pass
     if text.lower().startswith("cat!rain"):
         # syntax: cat!rain 553093932012011520 short
         things = text.split(" ")
@@ -3169,7 +3205,7 @@ async def on_message(message: discord.Message):
         if vote_server:
             await vote_server.cleanup()
         db_reload = "db" in text
-        await pool.execute(f"NOTIFY restarts, '{int(db_reload)}';")
+        await _get_pool().execute(f"NOTIFY restarts, '{int(db_reload)}';")
     elif text.lower().startswith("cat!restart"):
         try:
             await message.reply("restarting this cluster!")
@@ -3227,43 +3263,14 @@ bot.loop.create_task(go(message, bot))
                 await channeley.send(text[8:])
             except Exception:
                 pass
-    if text.lower().startswith("cat!custom"):
-        stuff = text.split(" ")
-        if stuff[1][0] not in "1234567890":
-            stuff.insert(1, message.channel.owner_id)
-        user = await User.get_or_create(user_id=int(stuff[1]))
-        cat_name = " ".join(stuff[2:])
-        if stuff[2] != "None" and message.reference and message.reference.message_id:
-            emoji_name = str(user.user_id) + "cat"
-            if emoji_name in emojis.keys():
-                await message.reply("emoji already exists")
-                return
-            og_msg = await message.channel.fetch_message(message.reference.message_id)
-            if not og_msg or len(og_msg.attachments) == 0:
-                await message.reply("no image found")
-                return
-            img_data = await og_msg.attachments[0].read()
-
-            if og_msg.attachments[0].content_type.startswith("image/gif"):
-                await bot.create_application_emoji(name=emoji_name, image=img_data)
-            else:
-                img = Image.open(io.BytesIO(img_data))
-                img.thumbnail((128, 128))
-                with io.BytesIO() as image_binary:
-                    img.save(image_binary, format="PNG")
-                    image_binary.seek(0)
-                    await bot.create_application_emoji(name=emoji_name, image=image_binary.getvalue())
-        user.custom = cat_name if cat_name != "None" else ""
-        await user.save()
-        await message.reply("success")
 
 
 # the message when cat gets added to a new server
-async def on_guild_join(guild: discord.Guild):
-    def verify(ch):
-        return ch and ch.permissions_for(guild.me).send_messages
+async def on_guild_join(guild: discord.Guild) -> None:
+    def verify(ch: discord.TextChannel | None) -> bool:
+        return bool(ch) and ch.permissions_for(guild.me).send_messages
 
-    def find(patt, channels):
+    def find(patt: str, channels: list[discord.TextChannel]) -> discord.TextChannel | None:
         for i in channels:
             if patt in i.name:
                 return i
@@ -3303,13 +3310,14 @@ Have a nice day :)"""
 
     try:
         if found:
+            assert ch is not None
             await ch.send(msg)
     except Exception:
         pass
 
     try:
         async for entry in guild.audit_logs(action=discord.AuditLogAction.bot_add, limit=20):
-            if entry.target and entry.target.id == bot.user.id:
+            if bot.user and entry.target and entry.user and entry.target.id == bot.user.id:
                 await entry.user.send(msg)
                 break
     except Exception:
@@ -3328,7 +3336,7 @@ Have a nice day :)"""
 
 
 # keep db server name in sync
-async def on_guild_update(before: discord.Guild, after: discord.Guild):
+async def on_guild_update(before: discord.Guild, after: discord.Guild) -> None:
     if before.name != after.name:
         server = await Server.get_or_create(server_id=after.id)
         server.name = after.name
@@ -3346,7 +3354,7 @@ async def on_guild_update(before: discord.Guild, after: discord.Guild):
 # 8 - /battlepass done, sixth tutorial page shown, pack open required
 # 9 - pack open done, final page shown, rain given
 # 10 - tutorial complete
-async def get_tutorial_view(user_id: int):
+async def get_tutorial_view(user_id: int) -> LayoutView:
     user = await User.get_or_create(user_id=user_id)
     if user.tutorial_state == 0:
         user.tutorial_state = 1
@@ -3431,7 +3439,7 @@ async def get_tutorial_view(user_id: int):
     return view
 
 
-async def restart_tutorial(interaction: discord.Interaction):
+async def restart_tutorial(interaction: discord.Interaction) -> None:
     user = await User.get_or_create(user_id=interaction.user.id)
     user.tutorial_state = 1
     user.claimed_free_rain = True
@@ -3467,6 +3475,7 @@ async def credits(message: discord.Interaction):
 
 @bot.tree.command(description="add cat bot to your server")
 async def invite(message: discord.Interaction):
+    assert bot.user is not None
     view = View(timeout=1)
     invite_button = Button(label="Invite", url=discord.utils.oauth_url(bot.user.id, scopes=None))
     view.add_item(invite_button)
@@ -3475,6 +3484,7 @@ async def invite(message: discord.Interaction):
 
 @bot.tree.command(description="View various info and stats about the bot")
 async def info(message: discord.Interaction):
+    assert message.guild is not None
     embed = discord.Embed(title="Cat Bot Info", color=Colors.brown)
     try:
         s = datetime.datetime.fromtimestamp(config.SOFT_RESTART_TIME, tz=datetime.timezone.utc).isoformat(timespec="seconds")
@@ -3505,11 +3515,11 @@ Guilds in cluster: `{format(len(bot.guilds), ",") if config.CLUSTERING else "N/A
 
 **__Global Stats__**
 Guilds: `{f"{server_count:,}" if server_count else "..."}`
-DB Profiles: `{await pool.fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.profile'::regclass;"):,}`
-DB Users: `{await pool.fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.profile'::regclass;"):,}`
-DB Channels: `{await pool.fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.profile'::regclass;"):,}`
-DB Prisms: `{await pool.fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.prism'::regclass;"):,}`
-DB Servers: `{await pool.fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.server'::regclass;"):,}`
+DB Profiles: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.profile'::regclass;"):,}`
+DB Users: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.user'::regclass;"):,}`
+DB Channels: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.channel'::regclass;"):,}`
+DB Prisms: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.prism'::regclass;"):,}`
+DB Servers: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.server'::regclass;"):,}`
 """
 
     await message.response.send_message(embed=embed)
@@ -3622,19 +3632,20 @@ async def news(message: discord.Interaction):
     buttons = []
     current_state = user.news_state.strip()
 
-    async def send_news(interaction: discord.Interaction):
-        news_id = int(interaction.data["custom_id"])
-        if interaction.user != message.user:
+    async def send_news(interaction: discord.Interaction) -> None:
+        if not interaction.custom_id or interaction.user != message.user:
             await do_funny(interaction)
             return
 
-        async def go_back(back_interaction: discord.Interaction):
-            if back_interaction.user != message.user:
-                await do_funny(back_interaction)
+        news_id = int(interaction.custom_id)
+
+        async def go_back(interaction: discord.Interaction) -> None:
+            if interaction.user != message.user:
+                await do_funny(interaction)
                 return
-            await back_interaction.response.defer()
+            await interaction.response.defer()
             await regen_buttons()
-            await back_interaction.edit_original_response(view=generate_page(current_page))
+            await interaction.edit_original_response(view=generate_page(current_page))
 
         await interaction.response.defer()
 
@@ -3804,17 +3815,19 @@ thanks for using cat bot!""",
             await interaction.edit_original_response(view=view)
         elif news_id == 9:
             # we hijack the cookie system to store the yippee count
+            assert bot.user is not None
             cookie_user = await Profile.get_or_create(guild_id=9, user_id=bot.user.id)
 
-            async def add_yippee(interaction):
+            async def add_yippee(interaction: discord.Interaction) -> None:
                 nonlocal cookie_user
+                assert bot.user is not None
                 await interaction.response.defer()
                 cookie_user = await Profile.get(["cookies"], guild_id=9, user_id=bot.user.id)
                 cookie_user.cookies += 1
                 await cookie_user.save()
                 await send_yippee(interaction)
 
-            async def send_yippee(interaction):
+            async def send_yippee(interaction: discord.Interaction) -> None:
                 view = LayoutView(timeout=VIEW_TIMEOUT)
                 btn = Button(label=f"yippee! ({cookie_user.cookies:,})", emoji=get_emoji("yippee"), style=ButtonStyle.primary)
                 btn.callback = add_yippee
@@ -4049,7 +4062,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
             view.add_item(back_row)
             await interaction.edit_original_response(view=view)
 
-    async def regen_buttons():
+    async def regen_buttons() -> None:
         nonlocal buttons
         await user.refresh_from_db()
         buttons = []
@@ -4083,7 +4096,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
 
     current_page = 0
 
-    async def prev_page(interaction):
+    async def prev_page(interaction: discord.Interaction) -> None:
         nonlocal current_page
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
@@ -4091,7 +4104,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
         current_page -= 1
         await interaction.response.edit_message(view=generate_page(current_page))
 
-    async def next_page(interaction):
+    async def next_page(interaction: discord.Interaction) -> None:
         nonlocal current_page
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
@@ -4099,7 +4112,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
         current_page += 1
         await interaction.response.edit_message(view=generate_page(current_page))
 
-    async def mark_all_as_read(interaction):
+    async def mark_all_as_read(interaction: discord.Interaction) -> None:
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
@@ -4108,7 +4121,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
         await regen_buttons()
         await interaction.response.edit_message(view=generate_page(current_page))
 
-    def generate_page(number):
+    def generate_page(number: int) -> LayoutView:
         view = LayoutView(timeout=VIEW_TIMEOUT)
         view.add_item(TextDisplay("Choose an article:"))
 
@@ -4195,6 +4208,7 @@ async def tiktok(message: discord.Interaction, text: str):
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.describe(person="A person to timeout!", timeout="How many seconds? (0 to reset, -1 for infinity)")
 async def preventcatch(message: discord.Interaction, person: discord.User, timeout: int):
+    assert message.guild is not None
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=person.id)
     if person == bot.user:
         await message.response.send_message("i hate you")
@@ -4232,7 +4246,7 @@ async def preventcatch(message: discord.Interaction, person: discord.User, timeo
 @bot.tree.command(description="(ADMIN) Change Cat Bot avatar")
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.describe(avatar="The avatar to use (leave empty to reset)")
-async def changeavatar(message: discord.Interaction, avatar: Optional[discord.Attachment]):
+async def changeavatar(message: discord.Interaction, avatar: discord.Attachment | None = None):
     await message.response.defer()
 
     if avatar and avatar.content_type not in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
@@ -4249,6 +4263,7 @@ async def changeavatar(message: discord.Interaction, avatar: Optional[discord.At
         avatar_value = None
 
     try:
+        assert message.guild is not None
         await message.guild.me.edit(avatar=avatar_value)
         await message.followup.send("Avatar changed successfully!")
     except Exception:
@@ -4264,9 +4279,10 @@ async def changeavatar(message: discord.Interaction, avatar: Optional[discord.At
 )
 async def changetimings(
     message: discord.Interaction,
-    minimum_time: Optional[int],
-    maximum_time: Optional[int],
+    minimum_time: int | None = None,
+    maximum_time: int | None = None,
 ):
+    assert isinstance(message.channel, GuildMessageable)
     channel = await Channel.get_or_none(channel_id=message.channel.id)
     if not channel:
         await message.response.send_message("This channel isnt setupped. Please select a valid channel.", ephemeral=True)
@@ -4303,6 +4319,7 @@ async def changetimings(
 @bot.tree.command(description="(ADMIN) Change the cat appear and cought message texts")
 @discord.app_commands.default_permissions(manage_guild=True)
 async def changemessage(message: discord.Interaction):
+    assert isinstance(message.channel, GuildMessageable)
     caller = message.user
     channel = await Channel.get_or_none(channel_id=message.channel.id)
     if not channel:
@@ -4311,7 +4328,7 @@ async def changemessage(message: discord.Interaction):
 
     # this is the silly popup when you click the button
     class InputModal(Modal):
-        def __init__(self, type):
+        def __init__(self, type: str):
             super().__init__(
                 title=f"Change {type} Message",
                 timeout=VIEW_TIMEOUT,
@@ -4338,7 +4355,7 @@ async def changemessage(message: discord.Interaction):
             )
             self.add_item(self.input)
 
-        async def on_submit(self, interaction: discord.Interaction):
+        async def on_submit(self, interaction: discord.Interaction) -> None:
             await channel.refresh_from_db()
             if not channel:
                 await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
@@ -4386,7 +4403,7 @@ async def changemessage(message: discord.Interaction):
             await channel.save()
 
     # helper to make the above popup appear
-    async def ask_appear(interaction):
+    async def ask_appear(interaction: discord.Interaction) -> None:
         nonlocal caller
 
         if interaction.user != caller:
@@ -4396,7 +4413,7 @@ async def changemessage(message: discord.Interaction):
         modal = InputModal("Appear")
         await interaction.response.send_modal(modal)
 
-    async def ask_catch(interaction):
+    async def ask_catch(interaction: discord.Interaction) -> None:
         nonlocal caller
 
         if interaction.user != caller:
@@ -4448,19 +4465,21 @@ async def getid(message: discord.Interaction, thing: discord.User | discord.Role
 @bot.tree.command(description="(ADMIN) tune various cat bot things")
 @discord.app_commands.default_permissions(manage_guild=True)
 async def settings(message: discord.Interaction):
+    assert message.guild is not None
     server = await Server.get_or_create(server_id=message.guild.id)
 
-    async def toggle_parameter(interaction: discord.Interaction):
-        if interaction.user != message.user:
+    async def toggle_parameter(interaction: discord.Interaction) -> None:
+        if not interaction.custom_id or interaction.user != message.user:
             await do_funny(interaction)
             return
         await interaction.response.defer()
-        parameter = interaction.data["custom_id"]
+        parameter = interaction.custom_id
         server[parameter] = not server[parameter]
         await server.save()
         await interaction.edit_original_response(view=await settings_view())
 
-    async def settings_view():
+    async def settings_view() -> LayoutView:
+        assert message.guild is not None
         await server.refresh_from_db()
 
         def make_section(key, title, description):
@@ -4508,10 +4527,12 @@ async def daily(message: discord.Interaction):
 
 @bot.tree.command(description="View when the last cat was caught in this channel, and when the next one might spawn")
 async def last(message: discord.Interaction):
+    assert isinstance(message.channel, GuildMessageable)
     channel = await Channel.get_or_none(channel_id=message.channel.id)
     nextpossible = ""
 
     try:
+        assert channel is not None
         lasttime = channel.lastcatches
         if int(lasttime) == 0:  # unix epoch check
             displayedtime = "forever ago"
@@ -4532,6 +4553,7 @@ async def last(message: discord.Interaction):
 
 @bot.tree.command(description="View all the juicy numbers and info behind cat types")
 async def catalogue(message: discord.Interaction):
+    assert message.guild is not None
     embed = discord.Embed(title=f"{get_emoji('staring_cat')} The Catalogue", color=Colors.brown)
     for cat_type in cattypes:
         in_server = await Profile.sum(f"cat_{cat_type}", f'guild_id = $1 AND "cat_{cat_type}" > 0', message.guild.id)
@@ -4550,7 +4572,7 @@ async def catalogue(message: discord.Interaction):
     await message.response.send_message(embed=embed)
 
 
-async def gen_stats(profile, star):
+async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
     stats = []
     user = await User.get_or_create(user_id=profile.user_id)
 
@@ -4674,10 +4696,11 @@ async def gen_stats(profile, star):
 @bot.tree.command(name="stats", description="View some advanced stats")
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="Person to view the stats of!")
-async def stats_command(message: discord.Interaction, person_id: Optional[discord.User]):
+async def stats_command(message: discord.Interaction, person_id: discord.User | discord.Member | None = None):
     await message.response.defer()
     if not person_id:
         person_id = message.user
+    assert message.guild is not None
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
     star = "*" if not profile.new_user else ""
 
@@ -4715,7 +4738,9 @@ async def stats_command(message: discord.Interaction, person_id: Optional[discor
     await message.followup.send(embed=embedVar)
 
 
-async def gen_inventory(guild_id: int, inv_user: discord.User, me_msg: Optional[discord.Interaction]):
+async def gen_inventory(
+    guild_id: int, inv_user: discord.abc.User | discord.Object, me_msg: discord.Interaction | None = None
+) -> tuple[discord.ui.Container, list[str]]:
     person = await Profile.get_or_create(guild_id=guild_id, user_id=inv_user.id)
     user = await User.get_or_create(user_id=inv_user.id)
 
@@ -4774,6 +4799,7 @@ async def gen_inventory(guild_id: int, inv_user: discord.User, me_msg: Optional[
                 break
     if inv_user == bot.user:
         highlighted_stat = ["style_points", "😎", "Style points: 1000"]
+    assert highlighted_stat is not None
 
     debt = False
     give_collector = True
@@ -4812,7 +4838,7 @@ async def gen_inventory(guild_id: int, inv_user: discord.User, me_msg: Optional[
 {get_emoji("staring_cat")} Cats: {total:,}, Value: {round(valuenum):,}
 {get_emoji("prism")} Prisms: {prism_list} ({prism_boost}%)"""
 
-    if hasattr(inv_user, "name"):
+    if isinstance(inv_user, discord.abc.User):
         uname = inv_user.name
     else:
         uname = "Cat Bot User"
@@ -4828,7 +4854,7 @@ async def gen_inventory(guild_id: int, inv_user: discord.User, me_msg: Optional[
     else:
         badges = f"### {badges}"
 
-    if user.image.startswith("https://cdn.discordapp.com/attachments/") and hasattr(inv_user, "name"):
+    if user.image.startswith("https://cdn.discordapp.com/attachments/") and isinstance(inv_user, discord.abc.User):
         embedVar = Container(
             has_news,
             Section(username, badges, things, Thumbnail(user.image)),
@@ -4845,11 +4871,13 @@ async def gen_inventory(guild_id: int, inv_user: discord.User, me_msg: Optional[
             accent_color=discord.Colour.from_str(color),
         )
 
-    give_achs = []
+    give_achs: list[str] = []
     if me_msg:
-        if user.widget_guild_id == guild_id:
+        if user.widget_guild_id == guild_id and isinstance(inv_user, discord.abc.User):
             # sync widget
-            async def sync_widget():
+            async def sync_widget() -> None:
+                assert me_msg.guild is not None
+                assert bot.user is not None
                 widget_data = [
                     {"type": 1, "name": "username", "value": emoji_prefix + inv_user.name},
                     {"type": 1, "name": "guild_name", "value": me_msg.guild.name},
@@ -4895,7 +4923,8 @@ async def gen_inventory(guild_id: int, inv_user: discord.User, me_msg: Optional[
 @bot.tree.command(description="View your inventory")
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="Person to view the inventory of!")
-async def inventory(message: discord.Interaction, person_id: Optional[discord.User]):
+async def inventory(message: discord.Interaction, person_id: discord.User | discord.Member | None = None):
+    assert message.guild is not None
     await message.response.defer()
     if not person_id:
         person_id = message.user
@@ -4904,7 +4933,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
     view_user = await User.get_or_create(user_id=person_id.id)
     stats = await gen_stats(person, "")
 
-    async def confirm_report(interaction: discord.Interaction):
+    async def confirm_report(interaction: discord.Interaction) -> None:
         try:
             ch = bot.get_partial_messageable(config.REPORT_CHANNEL_ID)
             await ch.send(f"⚠️ {person_id.id} has been reported.")
@@ -4913,7 +4942,8 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
         await interaction.response.defer()
         await interaction.edit_original_response(content="Thanks for your report.", view=None)
 
-    async def report_profile(interaction: discord.Interaction):
+    async def report_profile(interaction: discord.Interaction) -> None:
+        assert bot.user is not None
         if person_id.id == bot.user.id:
             await interaction.response.send_message("do you really hate me that much", ephemeral=True)
             return
@@ -4925,12 +4955,12 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
             f"⚠️ Are you sure you want to report {person_id} for having an inappropriate inventory image / custom cat?", view=view, ephemeral=True
         )
 
-    async def edit_profile(interaction: discord.Interaction):
+    async def edit_profile(interaction: discord.Interaction) -> None:
         if interaction.user.id != person_id.id:
             await do_funny(interaction)
             return
 
-        def stat_select(category):
+        def stat_select(category) -> discord.ui.Select:
             options = [discord.SelectOption(emoji="⬅️", label="Back", value="back")]
             track = False
             for stat in stats:
@@ -4941,7 +4971,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
 
             select = discord.ui.Select(placeholder="Edit highlighted stat... (2/2)", options=options)
 
-            async def select_callback(interaction: discord.Interaction):
+            async def select_callback(interaction: discord.Interaction) -> None:
                 await interaction.response.defer()
                 if select.values[0] == "back":
                     view = View(timeout=VIEW_TIMEOUT)
@@ -4956,7 +4986,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
             select.callback = select_callback
             return select
 
-        def category_select():
+        def category_select() -> discord.ui.Select:
             options = []
             for stat in stats:
                 if len(stat) != 2:
@@ -4965,7 +4995,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
 
             select = discord.ui.Select(placeholder="Edit highlighted stat... (1/2)", options=options)
 
-            async def select_callback(interaction: discord.Interaction):
+            async def select_callback(interaction: discord.Interaction) -> None:
                 # im 13 and this is deep (nesting)
                 # and also please dont think about the fact this is async inside of sync :3
                 await interaction.response.defer()
@@ -4986,6 +5016,7 @@ async def inventory(message: discord.Interaction, person_id: Optional[discord.Us
                 if stat[0] == "time_records":
                     highlighted_stat = stat
                     break
+        assert highlighted_stat is not None
 
         view = View(timeout=VIEW_TIMEOUT)
         view.add_item(category_select())
@@ -5050,16 +5081,19 @@ __Highlighted Stat__
 
 @bot.tree.command(description="Browse inventories of completely random Cat Bot users")
 async def randomizer(message: discord.Interaction):
-    async def gen_random_inventory(interaction: discord.Interaction, first: bool = False):
+    async def gen_random_inventory(interaction: discord.Interaction, first: bool = False) -> None:
         view = LayoutView(timeout=VIEW_TIMEOUT)
 
-        result = await pool.fetchrow("SELECT user_id, guild_id FROM profile TABLESAMPLE BERNOULLI (1) LIMIT 1;")
-        embedVar, _ = await gen_inventory(
-            result["guild_id"],
-            discord.Object(result["user_id"], type=discord.abc.User),
-            None,
-        )
-        view.add_item(embedVar)
+        result = await _get_pool().fetchrow("SELECT user_id, guild_id FROM profile TABLESAMPLE BERNOULLI (1) LIMIT 1;")
+        if result:
+            embedVar, _ = await gen_inventory(
+                result["guild_id"],
+                discord.Object(result["user_id"], type=discord.User),
+                None,
+            )
+            view.add_item(embedVar)
+        else:
+            view.add_item(TextDisplay("uhhh"))
 
         button = Button(label="Reroll", emoji="🔄", style=discord.ButtonStyle.primary)
         button.callback = gen_random_inventory
@@ -5075,7 +5109,7 @@ async def randomizer(message: discord.Interaction):
     await achemb(message, "randomizer2", "followup")
 
 
-async def rain_recovery_loop(channel):
+async def rain_recovery_loop(channel: Channel) -> None:
     logging.debug("Rain started, cats %d", channel.cat_rains)
     while True:
         await asyncio.sleep(5)
@@ -5083,12 +5117,14 @@ async def rain_recovery_loop(channel):
         if channel.cat_rains <= 0:
             break
         if channel.cat_rains and not channel.cat and time.time() - channel.rain_should_end > 5:
-            await spawn_cat(str(channel.channel_id))
+            await spawn_cat(channel.channel_id)
             channel.cat_rains -= 1
             await channel.save()
 
 
-async def rain_end(message, channel, force_summary=None):
+async def rain_end(message: discord.Message, channel: Channel, force_summary: dict) -> None:
+    assert isinstance(message.channel, GuildMessageable)
+    assert message.guild is not None
     try:
         for _ in range(3):
             await message.channel.send("# :bangbang: cat rain has ended")
@@ -5096,28 +5132,30 @@ async def rain_end(message, channel, force_summary=None):
     except Exception:
         pass
 
-    guild = await bot.fetch_guild(message.guild.id)
-    if isinstance(message.channel, discord.Thread):
-        api_channel = await guild.fetch_channel(message.channel.parent_id)
-    else:
+    if not isinstance(message.channel, discord.Thread):
+        guild = await bot.fetch_guild(message.guild.id)
         api_channel = await guild.fetch_channel(message.channel.id)
 
-    lock_success = False
-    try:
-        me_overwrites = api_channel.overwrites_for(message.guild.me)
-        me_overwrites.send_messages = True
+        lock_success = False
+        try:
+            assert not isinstance(api_channel, discord.Thread)
+            me_overwrites = api_channel.overwrites_for(message.guild.me)
+            me_overwrites.send_messages = True
 
-        everyone_overwrites = api_channel.overwrites_for(guild.default_role)
-        current_perm = everyone_overwrites.send_messages
-        everyone_overwrites.send_messages = False
+            everyone_overwrites = api_channel.overwrites_for(guild.default_role)
+            current_perm = everyone_overwrites.send_messages
+            everyone_overwrites.send_messages = False
 
-        await asyncio.gather(
-            api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites),
-            api_channel.set_permissions(message.guild.me, overwrite=me_overwrites),
-        )
-        lock_success = True
-    except Exception:
-        pass
+            await asyncio.gather(
+                api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites),
+                api_channel.set_permissions(message.guild.me, overwrite=me_overwrites),
+            )
+            lock_success = True
+        except Exception:
+            pass
+    else:
+        api_channel = None
+        lock_success = False
 
     # rain summary
     try:
@@ -5228,7 +5266,8 @@ async def rain_end(message, channel, force_summary=None):
     except discord.Forbidden:
         pass
     finally:
-        if lock_success:
+        if lock_success and api_channel:
+            assert not isinstance(api_channel, discord.Thread)
             everyone_overwrites = api_channel.overwrites_for(guild.default_role)
             everyone_overwrites.send_messages = current_perm
             await api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites)
@@ -5239,7 +5278,8 @@ async def rain_end(message, channel, force_summary=None):
 async def plushbadge(message: discord.Interaction, proof: discord.Attachment):
     if proof and proof.content_type in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
         file = await proof.to_file()
-        await (bot.get_partial_messageable(1503550891670634758)).send(message.user.id, file=file)
+        ch = bot.get_partial_messageable(1503550891670634758)
+        await ch.send(str(message.user.id), file=file)
         await message.response.send_message(
             "✅ ok. you will get the badge after the purchase is confirmed. (usually under 5 mins, up to 12 hours)", ephemeral=True
         )
@@ -5250,6 +5290,7 @@ async def plushbadge(message: discord.Interaction, proof: discord.Attachment):
 
 @bot.tree.command(description="LIMITED TIME CAT BOT PLUSH")
 async def plush(message: discord.Interaction):
+    assert message.guild is not None
     view = LayoutView(timeout=1)
     view.add_item(
         Container(
@@ -5269,6 +5310,7 @@ async def plush(message: discord.Interaction):
 
 @bot.tree.command(description="its raining cats")
 async def rain(message: discord.Interaction):
+    assert message.guild is not None
     user = await User.get_or_create(user_id=message.user.id)
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     server = await Server.get_or_create(server_id=message.guild.id)
@@ -5300,7 +5342,7 @@ You currently have **{user.rain_minutes:,}** minutes of rains{server_rains}.""",
 
     # this is the silly popup when you click the button
     class RainModal(Modal):
-        def __init__(self, type):
+        def __init__(self):
             super().__init__(
                 title="Start a Cat Rain!",
                 timeout=VIEW_TIMEOUT,
@@ -5316,7 +5358,7 @@ You currently have **{user.rain_minutes:,}** minutes of rains{server_rains}.""",
             )
             self.add_item(self.input)
 
-        async def on_submit(self, interaction: discord.Interaction):
+        async def on_submit(self, interaction: discord.Interaction) -> None:
             try:
                 duration = int(self.input.value)
             except Exception:
@@ -5324,8 +5366,10 @@ You currently have **{user.rain_minutes:,}** minutes of rains{server_rains}.""",
                 return
             await do_rain(interaction, duration)
 
-    async def do_rain(interaction, rain_length):
+    async def do_rain(interaction: discord.Interaction, rain_length: int) -> None:
         # i LOOOOVE checks
+        assert interaction.guild is not None
+        assert isinstance(interaction.channel, GuildMessageable)
         user = await User.get_or_create(user_id=interaction.user.id)
         profile = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         channel = await Channel.get_or_none(channel_id=interaction.channel.id)
@@ -5385,11 +5429,11 @@ You currently have **{user.rain_minutes:,}** minutes of rains{server_rains}.""",
 
         config.cat_cought_rain[channel.channel_id] = {}
         config.rain_starter[channel.channel_id] = interaction.user.id
-        await spawn_cat(str(interaction.channel.id))
+        await spawn_cat(interaction.channel.id)
         await rain_recovery_loop(channel)
 
-    async def rain_modal(interaction):
-        modal = RainModal(interaction.user)
+    async def rain_modal(interaction: discord.Interaction) -> None:
+        modal = RainModal()
         await interaction.response.send_modal(modal)
 
     button = Button(
@@ -5425,8 +5469,9 @@ if config.DONOR_CHANNEL_ID:
         image="Static/animated GIF, PNG, JPEG, WEBP, AVIF below 256 KB. Static images will be auto-compressed.",
         amount="The amount of your custom cat you want.",
     )
-    async def customcat(message: discord.Interaction, name: Optional[str], image: Optional[discord.Attachment], amount: Optional[int]):
+    async def customcat(message: discord.Interaction, name: str, image: discord.Attachment | None = None, amount: int | None = None):
         global emojis
+        assert message.guild is not None
         user = await User.get_or_create(user_id=message.user.id)
         if not user.premium:
             await message.response.send_message(
@@ -5461,7 +5506,7 @@ if config.DONOR_CHANNEL_ID:
                 if em_name in emojiss:
                     await emojiss[em_name].delete()
                 data = await image.read()
-                if image.content_type.startswith("image/gif"):
+                if image.content_type == "image/gif":
                     new_em = await bot.create_application_emoji(name=em_name, image=data)
                 else:
                     img = Image.open(io.BytesIO(data))
@@ -5496,7 +5541,7 @@ if config.DONOR_CHANNEL_ID:
             user.username = message.user.name
             await user.save()
 
-        async def toggle_bless(interaction):
+        async def toggle_bless(interaction: discord.Interaction) -> None:
             if interaction.user.id != message.user.id:
                 await do_funny(interaction)
                 return
@@ -5511,7 +5556,7 @@ if config.DONOR_CHANNEL_ID:
             await user.save()
             await regen(interaction)
 
-        async def toggle_anon(interaction):
+        async def toggle_anon(interaction: discord.Interaction) -> None:
             if interaction.user.id != message.user.id:
                 await do_funny(interaction)
                 return
@@ -5523,7 +5568,7 @@ if config.DONOR_CHANNEL_ID:
             await user.save()
             await regen(interaction)
 
-        async def regen(interaction):
+        async def regen(interaction: discord.Interaction) -> None:
             if user.blessings_anonymous:
                 blesser = "💫 Anonymous Supporter"
             else:
@@ -5581,10 +5626,11 @@ if config.DONOR_CHANNEL_ID:
     )
     async def editprofile(
         message: discord.Interaction,
-        color: Optional[str],
-        provided_emoji: Optional[str],
-        image: Optional[discord.Attachment],
+        color: str | None = None,
+        provided_emoji: str | None = None,
+        image: discord.Attachment | None = None,
     ):
+        assert message.guild is not None
         if not config.DONOR_CHANNEL_ID:
             return
 
@@ -5625,9 +5671,10 @@ if config.DONOR_CHANNEL_ID:
 
 @bot.tree.command(description="bumbum's scratch off game")
 async def scratch(message: discord.Interaction):
+    assert message.guild is not None
     user = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
 
-    async def scratch_callback(interaction: discord.Interaction):
+    async def scratch_callback(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
             await do_funny(interaction)
             return
@@ -5685,16 +5732,16 @@ async def scratch(message: discord.Interaction):
 
         move_spaces = []
 
-        async def scratch_spot(interaction: discord.Interaction):
-            if interaction.user != message.user:
+        async def scratch_spot(interaction: discord.Interaction) -> None:
+            if not interaction.custom_id or interaction.user != message.user:
                 await do_funny(interaction)
                 return
-            spot = int(interaction.data["custom_id"])
+            spot = int(interaction.custom_id)
             if len(move_spaces) < 10 and spot not in move_spaces:
                 move_spaces.append(spot)
             await refresh_board(interaction)
 
-        async def refresh_board(interaction: discord.Interaction):
+        async def refresh_board(interaction: discord.Interaction) -> None:
             nonlocal move_spaces
             await interaction.response.defer()
             view = LayoutView(timeout=VIEW_TIMEOUT)
@@ -5755,7 +5802,9 @@ async def scratch(message: discord.Interaction):
 
 @bot.tree.command(description="View and open packs")
 async def packs(message: discord.Interaction):
-    async def process_pack_opening(limit=None):
+    assert message.guild is not None
+
+    async def process_pack_opening(limit: int | None = None) -> discord.Embed | None:
         await user.refresh_from_db()
 
         pack_names = [pack["name"] for pack in pack_data]
@@ -5819,12 +5868,12 @@ async def packs(message: discord.Interaction):
 
         return discord.Embed(title=final_header, description=f"{pack_list}{final_result}", color=Colors.brown)
 
-    async def confirm_open_all(interaction: discord.Interaction):
+    async def confirm_open_all(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
             await do_funny(interaction)
             return
 
-        async def do_it(interaction):
+        async def do_it(interaction: discord.Interaction) -> None:
             await interaction.response.defer()
             await interaction.delete_original_response()
             await open_all_packs(interaction)
@@ -5836,7 +5885,7 @@ async def packs(message: discord.Interaction):
 
         await interaction.response.send_message("Are you sure you want to open ALL your packs?", view=confirm_view, ephemeral=True)
 
-    def gen_view(user):
+    def gen_view(user: Profile) -> tuple[View, bool]:
         view = View(timeout=VIEW_TIMEOUT)
         empty = True
         has_special = False
@@ -5865,9 +5914,9 @@ async def packs(message: discord.Interaction):
             view.add_item(button)
         return view, has_special
 
-    def get_pack_rewards(level: int, is_single=True):
+    def get_pack_rewards(level: int, is_single: bool = True) -> tuple[str, int, int, str | list[str]]:
         # returns cat_type, cat_amount, upgrades, verbal_output
-        reward_texts = []
+        reward_texts: list[str] = []
         build_string = ""
         upgrades = 0
         if not is_single:
@@ -5899,7 +5948,7 @@ async def packs(message: discord.Interaction):
         goal_value = final_level["value"]
         chosen_type = random.choice(cattypes)
         cat_emoji = get_emoji(chosen_type.lower() + "cat")
-        pre_cat_amount = goal_value / (sum(type_dict.values()) / type_dict[chosen_type])
+        pre_cat_amount: float = goal_value / (sum(type_dict.values()) / type_dict[chosen_type])
         if pre_cat_amount % 1 > random.random():
             cat_amount = math.ceil(pre_cat_amount)
         else:
@@ -5935,13 +5984,13 @@ async def packs(message: discord.Interaction):
             return chosen_type, cat_amount, upgrades, reward_texts
         return chosen_type, cat_amount, upgrades, build_string
 
-    async def open_pack(interaction: discord.Interaction):
-        if interaction.user != message.user:
+    async def open_pack(interaction: discord.Interaction) -> None:
+        if not interaction.custom_id or interaction.user != message.user:
             await do_funny(interaction)
             return
 
         await interaction.response.defer()
-        pack = interaction.data["custom_id"]
+        pack = interaction.custom_id
         await user.refresh_from_db()
         if user[f"pack_{pack.lower()}"] < 1:
             return
@@ -5973,7 +6022,7 @@ async def packs(message: discord.Interaction):
             await global_user.save()
             await interaction.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
-    async def open_all_packs(interaction: discord.Interaction):
+    async def open_all_packs(interaction: discord.Interaction) -> None:
         embed = await process_pack_opening(10000)
         if not embed:
             return
@@ -6002,12 +6051,14 @@ async def packs(message: discord.Interaction):
 
 @bot.tree.command(description="why would anyone think a cattlepass would be a good idea (bp)")
 async def battlepass(message: discord.Interaction):
+    assert message.guild is not None
     current_mode = ""
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     global_user = await User.get_or_create(user_id=message.user.id)
 
-    async def toggle_reminders(interaction: discord.Interaction):
+    async def toggle_reminders(interaction: discord.Interaction) -> None:
         nonlocal current_mode
+        assert interaction.guild is not None
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
@@ -6046,7 +6097,7 @@ async def battlepass(message: discord.Interaction):
         )
         await interaction.edit_original_response(view=view)
 
-    async def gen_main(interaction, first=False):
+    async def gen_main(interaction: discord.Interaction, first: bool = False) -> None:
         nonlocal current_mode
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
@@ -6223,7 +6274,9 @@ async def vote(message: discord.Interaction):
 
 @bot.tree.command(description="cat prisms are a special power up")
 @discord.app_commands.describe(person="Person to view the prisms of")
-async def prism(message: discord.Interaction, person: Optional[discord.User]):
+async def prism(message: discord.Interaction, person: discord.User | discord.Member | None = None):
+    assert message.guild is not None
+
     icon = get_emoji("prism")
     page_number = 0
 
@@ -6256,7 +6309,10 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
     if person == bot.user:
         prism_texts = ["dont i technically own every prism ever bc yknow"]
 
-    async def confirm_craft(interaction: discord.Interaction):
+    async def confirm_craft(interaction: discord.Interaction) -> None:
+        assert interaction.guild is not None
+        assert message.guild is not None
+
         await interaction.response.defer()
 
         if await Prism.count("guild_id = $1", interaction.guild.id) >= len(prism_names):
@@ -6304,7 +6360,9 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
         await achemb(interaction, "prism", "followup")
         await achemb(interaction, "collecter", "followup")
 
-    async def craft_prism(interaction: discord.Interaction):
+    async def craft_prism(interaction: discord.Interaction) -> None:
+        assert interaction.guild is not None
+
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
 
         found_cats = await cats_in_server(interaction.guild.id)
@@ -6335,19 +6393,19 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
         view.add_item(confirm_button)
         await interaction.response.send_message(description, view=view, ephemeral=True)
 
-    async def prev_page(interaction):
+    async def prev_page(interaction: discord.Interaction) -> None:
         nonlocal page_number
         page_number -= 1
         embed, view = gen_page()
         await interaction.response.edit_message(embed=embed, view=view)
 
-    async def next_page(interaction):
+    async def next_page(interaction: discord.Interaction) -> None:
         nonlocal page_number
         page_number += 1
         embed, view = gen_page()
         await interaction.response.edit_message(embed=embed, view=view)
 
-    def gen_page():
+    def gen_page() -> tuple[discord.Embed, View]:
         target = "" if not person else f"{person_id.name}'s"
 
         embed = discord.Embed(
@@ -6358,6 +6416,7 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
             text=f"{total_count} Total Prisms | Server boost: {round(global_boost * 100, 3)}%\n{person_id.name}'s prisms | Owned: {user_count} | Personal boost: {user_boost}%"
         )
 
+        assert embed.description is not None
         embed.description += "\n".join(prism_texts[page_number * 26 : (page_number + 1) * 26])
 
         view = View(timeout=VIEW_TIMEOUT)
@@ -6382,6 +6441,8 @@ async def prism(message: discord.Interaction, person: Optional[discord.User]):
 
 @bot.tree.command(description="Pong")
 async def ping(message: discord.Interaction):
+    assert message.guild is not None
+
     try:
         latency = round(bot.latency * 1000)
     except Exception:
@@ -6427,14 +6488,14 @@ async def bruh(message: discord.Interaction):
 @discord.app_commands.describe(person="who do you want to play with? (choose Cat Bot for ai)")
 async def tictactoe(message: discord.Interaction, person: discord.Member):
     do_edit = False
-    board = [None, None, None, None, None, None, None, None, None]
+    board: list[Literal[None, "❌", "⭕"]] = [None, None, None, None, None, None, None, None, None]
 
     players = [message.user, person]
     random.shuffle(players)
     bot_is_playing = person == bot.user
     current_turn = 0
 
-    def check_win(board):
+    def check_win(board: list[Literal[None, "❌", "⭕"]]) -> list[int]:
         combinations = [
             # rows
             [0, 1, 2],
@@ -6455,7 +6516,15 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
         return [-1]
 
-    def minimax(board, depth, is_maximizing, alpha, beta, bot_symbol, human_symbol):
+    def minimax(
+        board: list[Literal[None, "❌", "⭕"]],
+        depth: int,
+        is_maximizing: bool,
+        alpha: float,
+        beta: float,
+        bot_symbol: Literal["❌", "⭕"],
+        human_symbol: Literal["❌", "⭕"],
+    ) -> float:
         wins = check_win(board)
         if wins != [-1]:
             if board[wins[0]] == bot_symbol:
@@ -6491,7 +6560,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
                         break
             return min_eval
 
-    def get_best_move(board):
+    def get_best_move(board: list[Literal[None, "❌", "⭕"]]) -> int:
         best_score = float("-inf")
         best_move = None
 
@@ -6503,8 +6572,8 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
             else:
                 human_turn = i
 
-        bot_symbol = "❌" if bot_turn == 0 else "⭕"
-        human_symbol = "❌" if human_turn == 0 else "⭕"
+        bot_symbol: Literal["❌", "⭕"] = "❌" if bot_turn == 0 else "⭕"
+        human_symbol: Literal["❌", "⭕"] = "❌" if human_turn == 0 else "⭕"
 
         for i in range(9):
             if board[i] is None:
@@ -6516,9 +6585,10 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
                     best_score = score
                     best_move = i
 
+        assert best_move is not None
         return best_move
 
-    async def finish_turn():
+    async def finish_turn() -> None:
         nonlocal do_edit, current_turn
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
@@ -6583,9 +6653,10 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
                 current_turn = 1 - current_turn
                 await finish_turn()
 
-    async def play(interaction):
+    async def play(interaction: discord.Interaction) -> None:
         nonlocal current_turn
-        cell_num = int(interaction.data["custom_id"])
+        assert interaction.custom_id is not None
+        cell_num = int(interaction.custom_id)
         if board[cell_num] is not None:
             await interaction.response.send_message("That spot is already taken!", ephemeral=True)
             return
@@ -6597,7 +6668,9 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         current_turn = 1 - current_turn
         await finish_turn()
 
-    async def end_game(winner):
+    async def end_game(winner: int) -> None:
+        assert message.guild is not None
+
         if players[0] == players[1]:
             # self-play
             return
@@ -6625,22 +6698,25 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
 @bot.tree.command(description="dont select a person to make an everyone vs you game")
 @discord.app_commands.describe(person="Who do you want to play with?")
-async def rps(message: discord.Interaction, person: Optional[discord.Member]):
+async def rps(message: discord.Interaction, person: discord.Member | None = None):
     clean_name = message.user.name.replace("_", "\\_")
     picks = {"Rock": [], "Paper": [], "Scissors": []}
     mappings = {"Rock": ["Paper", "Rock", "Scissors"], "Paper": ["Scissors", "Paper", "Rock"], "Scissors": ["Rock", "Scissors", "Paper"]}
     vs_picks = {}
     players = []
 
-    async def pick(interaction):
+    async def pick(interaction: discord.Interaction) -> None:
         nonlocal players
+        assert bot.user is not None
+
         if person and interaction.user.id not in [message.user.id, person.id]:
             await do_funny(interaction)
             return
 
         await interaction.response.defer()
 
-        thing = interaction.data["custom_id"]
+        assert interaction.custom_id is not None
+        thing = interaction.custom_id
         if person or interaction.user != message.user:
             if interaction.user.id in players:
                 return
@@ -6707,10 +6783,12 @@ async def rps(message: discord.Interaction, person: Optional[discord.Member]):
 
 @bot.tree.command(description="you feel like making cookies")
 async def cookie(message: discord.Interaction):
+    assert message.guild is not None
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
-    async def bake(interaction):
+    async def bake(interaction: discord.Interaction) -> None:
         nonlocal user
+        assert message.guild is not None
         if interaction.user != message.user:
             await do_funny(interaction)
             return
@@ -6722,7 +6800,9 @@ async def cookie(message: discord.Interaction):
         except AttributeError:
             await interaction.edit_original_response(content="...", view=None)
             return
-        view.children[0].label = f"{user.cookies:,}"
+        btn = view.children[0]
+        assert isinstance(btn, Button)
+        btn.label = f"{user.cookies:,}"
         await interaction.edit_original_response(view=view)
         if user.cookies < 5:
             await achemb(interaction, "cookieclicker", "followup")
@@ -6740,9 +6820,11 @@ async def cookie(message: discord.Interaction):
 
 @bot.tree.command(description="yeah i made this solely so i could name it catfishing")
 async def fish(message: discord.Interaction):
+    assert message.guild is not None
     profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
 
-    async def go_fishing(interaction: discord.Interaction):
+    async def go_fishing(interaction: discord.Interaction) -> None:
+        assert interaction.guild is not None
         if interaction.user != message.user:
             await do_funny(interaction)
             return
@@ -6763,11 +6845,12 @@ async def fish(message: discord.Interaction):
                 fish_lock.append((interaction.guild.id, interaction.user.id))
             await asyncio.sleep(0.01)
 
-        fishtype = random.choices(cattypes, weights=type_dict.values())[0]
+        fishtype = random.choices(cattypes, weights=list(type_dict.values()))[0]
         fish_caught = False
 
-        async def pull_fish(interaction: discord.Interaction):
+        async def pull_fish(interaction: discord.Interaction) -> None:
             nonlocal fish_caught
+            assert interaction.guild is not None
             if fish_caught:
                 return
             if interaction.user != message.user:
@@ -6839,7 +6922,7 @@ async def fish(message: discord.Interaction):
 
 
 @bot.tree.command(description="donate (give) cats now")
-@discord.app_commands.rename(gift_type="type")
+@discord.app_commands.rename(gift_type="type", raw_amount="amount")
 @discord.app_commands.describe(
     person="Whom to gift?",
     gift_type="im gonna airstrike your house from orbit",
@@ -6850,21 +6933,21 @@ async def gift(
     message: discord.Interaction,
     person: discord.User,
     gift_type: str,
-    amount: Optional[str],
+    raw_amount: str | None = None,
 ):
+    assert message.guild is not None
+    assert bot.user is not None
     person_id = person.id
-    if not amount:
-        amount = "1"
-    if amount.lower() in ["all", "max"]:
+    if not raw_amount:
+        raw_amount = "1"
+
+    if raw_amount.lower() in ["all", "max"]:
         amount = "all"
     else:
-        try:
-            amount = int(amount)
-            if amount <= 0 or amount >= 2147483647:
-                raise ValueError
-        except ValueError:
+        if not raw_amount.isdigit() or (raw_amount.isdigit() and int(raw_amount) >= 2147483647):
             await message.response.send_message("no", ephemeral=True)
             return
+        amount = int(raw_amount)
 
     if message.user.id == person_id:
         # haha skill issue
@@ -6925,8 +7008,9 @@ async def gift(
         tax_amount = round(amount * 0.2)
         tax_debounce = False
 
-        async def pay(interaction):
+        async def pay(interaction: discord.Interaction) -> None:
             nonlocal tax_debounce
+            assert message.guild is not None
             if tax_debounce:
                 return
             if interaction.user.id != message.user.id:
@@ -6946,7 +7030,7 @@ async def gift(
             if user[f"cat_{gift_type}"] < 0:
                 bot.loop.create_task(debt_cutscene(interaction, user))
 
-        async def evade(interaction):
+        async def evade(interaction: discord.Interaction) -> None:
             if interaction.user.id != message.user.id:
                 await do_funny(interaction)
                 return
@@ -6997,8 +7081,11 @@ async def gift(
 @discord.app_commands.rename(other_user="user")
 @discord.app_commands.describe(other_user="why would you need description")
 async def trade(message: discord.Interaction, other_user: discord.User):
+    assert message.guild is not None
+
     class TradeUser:
-        def __init__(self, user: discord.User, profile: Profile, global_user: User):
+        def __init__(self, user: discord.abc.User, profile: Profile, global_user: User) -> None:
+            assert bot.user is not None
             self.user = user
             self.profile = profile
             self.global_user = global_user
@@ -7026,7 +7113,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
         await User.get_or_create(user_id=other_user.id),
     )
 
-    async def denyb(interaction: discord.Interaction):
+    async def denyb(interaction: discord.Interaction) -> None:
         nonlocal blackhole
         if interaction.user not in [person1.user, person2.user]:
             await do_funny(interaction)
@@ -7041,7 +7128,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
         except Exception:
             pass
 
-    async def acceptb(interaction: discord.Interaction):
+    async def acceptb(interaction: discord.Interaction) -> None:
         nonlocal blackhole
         if interaction.user not in [person1.user, person2.user]:
             await do_funny(interaction)
@@ -7068,7 +7155,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             # verify
             fail = False
 
-            async def fetch_all_prisms():
+            async def fetch_all_prisms() -> dict[str, Prism]:
+                assert interaction.guild is not None
                 prism_names = person1.gives_prisms + person2.gives_prisms
                 if not prism_names:
                     return {}
@@ -7082,7 +7170,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     )
                 }
 
-            tasks = [
+            tasks: list[Awaitable[object]] = [
                 person1.profile.refresh_from_db(),
                 person2.profile.refresh_from_db(),
                 person1.global_user.refresh_from_db(),
@@ -7143,9 +7231,9 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             person1.profile.trades_completed += 1
             person2.profile.trades_completed += 1
 
-            async def save_prisms():
+            async def save_prisms() -> None:
                 if temp_prisms:
-                    await Prism.bulk_update(temp_prisms.values(), "user_id")
+                    await Prism.bulk_update(list(temp_prisms.values()), "user_id")
 
             await asyncio.gather(
                 person1.profile.save(),
@@ -7190,18 +7278,22 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             await progress(message, person1.profile, "trade")
             await progress(message, person2.profile, "trade")
 
-    async def gen_embed() -> tuple[discord.Embed, View]:
+    async def gen_embed() -> tuple[discord.Embed, View | None]:
         if blackhole:
             # no way thats fun
             await achemb(message, "blackhole", "followup")
             await achemb(message, "blackhole", "followup", other_user)
             return discord.Embed(color=Colors.brown, title="Blackhole", description="How Did We Get Here?"), None
 
-        async def selectb(interaction: discord.Interaction):
-            async def submitb(interaction2: discord.Interaction):
+        async def selectb(interaction: discord.Interaction) -> None:
+            async def submitb(interaction2: discord.Interaction) -> None:
+                item1 = modal.find_item(67)
+                item2 = modal.find_item(69)
                 if selection == "cats":
-                    pre_cattype = modal.find_item(67).values[0].lower()
-                    amount = modal.find_item(69).value
+                    assert isinstance(item1, discord.ui.Select)
+                    assert isinstance(item2, discord.ui.TextInput)
+                    pre_cattype = item1.values[0].lower()
+                    amount = item2.value
 
                     if amount.lower() in ["max", "all"]:
                         amount = "all"
@@ -7234,8 +7326,10 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         active_user.gives_cats = {k: active_user.gives_cats[k] for k in cattypes if k in active_user.gives_cats}
                     active_user.value += (sum(type_dict.values()) / type_dict[cattype]) * amount
                 elif selection == "packs":
-                    packtype = modal.find_item(67).values[0].title()
-                    amount = modal.find_item(69).value
+                    assert isinstance(item1, discord.ui.Select)
+                    assert isinstance(item2, discord.ui.TextInput)
+                    packtype = item1.values[0].title()
+                    amount = item2.value
 
                     if amount.lower() in ["max", "all"]:
                         amount = "all"
@@ -7267,7 +7361,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         active_user.gives_packs = {k: active_user.gives_packs[k] for k in pack_names if k in active_user.gives_packs}
                     active_user.value += sum([i["totalvalue"] if i["name"] == packtype else 0 for i in pack_data]) * amount
                 elif selection == "rain":
-                    amount = modal.find_item(69).value
+                    assert isinstance(item2, discord.ui.TextInput)
+                    amount = item2.value
 
                     if amount.lower() in ["max", "all"]:
                         amount = "all"
@@ -7290,12 +7385,12 @@ async def trade(message: discord.Interaction, other_user: discord.User):
 
                     active_user.gives_rain += amount
                 elif selection == "prisms":
-                    prism_elem = modal.find_item(67)
-
-                    if isinstance(prism_elem, discord.ui.Select):
-                        prism_name = prism_elem.values[0].title()
+                    if isinstance(item1, discord.ui.Select):
+                        prism_name = item1.values[0].title()
+                    elif isinstance(item1, discord.ui.TextInput):
+                        prism_name = item1.value.title()
                     else:
-                        prism_name = prism_elem.value.title()
+                        raise TypeError(f"Expected Select or TextInput, got {type(item1)}")
 
                     prism_name = prism_name.replace("X-Ray", "X-ray")
 
@@ -7303,6 +7398,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         active_user.gives_prisms.remove(prism_name)
                         active_user.value -= 6271
                     else:
+                        assert interaction2.guild is not None
                         prism = await Prism.get_or_none(guild_id=interaction2.guild.id, name=prism_name)
 
                         if prism is None:
@@ -7380,6 +7476,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 )
             elif selection == "prisms":
                 modal = Modal(title="Offer prisms...")
+                assert message.guild is not None
                 names = [prism.name async for prism in Prism.filter("user_id = $1 AND guild_id = $2 ORDER BY time ASC", active_user.user.id, message.guild.id)]
                 names = list(dict.fromkeys(names))
                 if len(names) == 0:
@@ -7456,6 +7553,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
         return coolembed, view
 
     embed, view = await gen_embed()
+    assert view is not None
     await message.response.send_message(other_user.mention, embed=embed, view=view, allowed_mentions=discord.AllowedMentions(users=True))
 
     if message.user == other_user:
@@ -7466,7 +7564,9 @@ async def trade(message: discord.Interaction, other_user: discord.User):
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(cat_type="select a cat type ok")
 @discord.app_commands.autocomplete(cat_type=cat_command_autocomplete)
-async def cat(message: discord.Interaction, cat_type: Optional[str]):
+async def cat(message: discord.Interaction, cat_type: str | None = None):
+    assert message.guild is not None
+
     if cat_type and cat_type not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
         return
@@ -7497,8 +7597,9 @@ async def bal(message: discord.Interaction):
 
 @bot.tree.command(description="Brew some coffee to catch cats more efficiently")
 async def brew(message: discord.Interaction):
-    async def brew_coffee(interaction: discord.Interaction):
+    async def brew_coffee(interaction: discord.Interaction) -> None:
         nonlocal view
+        assert message.guild is not None
         if interaction.user != message.user:
             await do_funny(interaction)
             return
@@ -7513,7 +7614,9 @@ async def brew(message: discord.Interaction):
             await interaction.edit_original_response(content="...", view=None)
             return
 
-        view.children[0].label = f"{user.coffees:,}"
+        btn = view.children[0]
+        assert isinstance(btn, Button)
+        btn.label = f"{user.coffees:,}"
         await interaction.edit_original_response(content="ugh fine", view=view)
 
         if user.misc_quest.strip() == "coffee":
@@ -7527,13 +7630,13 @@ async def brew(message: discord.Interaction):
     await achemb(message, "coffee", "followup")
 
 
-def get_current_week():
+def get_current_week() -> int:
     epoch_monday = datetime.datetime(1970, 1, 5, tzinfo=datetime.timezone.utc).date()
     today = discord.utils.utcnow().date()
     return (today - epoch_monday).days // 7
 
 
-def get_timestamp_of_next_week():
+def get_timestamp_of_next_week() -> int:
     today = discord.utils.utcnow().date()
     days_until_next_monday = (7 - today.weekday()) % 7
     if days_until_next_monday == 0:
@@ -7545,6 +7648,8 @@ def get_timestamp_of_next_week():
 
 @bot.tree.command(description="Deliver orders from your bakery to get Cat Eggs and Packs!")
 async def bakery(message: discord.Interaction):
+    assert message.guild is not None
+    assert isinstance(message.channel, GuildMessageable)
     user = await User.get_or_create(user_id=message.user.id)
     profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
     if user.queued_chef_pack:
@@ -7562,7 +7667,7 @@ async def bakery(message: discord.Interaction):
         await message.response.send_message(f"You already delivered this order. Next order is <t:{get_timestamp_of_next_week()}:R>.", ephemeral=True)
         return
 
-    async def deliver(interaction: discord.Interaction):
+    async def deliver(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
             await do_funny(interaction)
             return
@@ -7642,6 +7747,7 @@ async def bakery(message: discord.Interaction):
 
 @bot.tree.command(description="Gamble your life savings away in our totally-not-rigged catsino!")
 async def casino(message: discord.Interaction):
+    assert message.guild is not None
     if (message.guild.id, message.user.id) in casino_lock:
         await message.response.send_message(
             "you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe",
@@ -7659,8 +7765,9 @@ async def casino(message: discord.Interaction):
         color=Colors.maroon,
     )
 
-    async def spin(interaction):
+    async def spin(interaction: discord.Interaction) -> None:
         nonlocal message
+        assert message.guild is not None
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
@@ -7745,6 +7852,7 @@ async def casino(message: discord.Interaction):
 
 @bot.tree.command(description="oh no")
 async def slots(message: discord.Interaction):
+    assert message.guild is not None
     if (message.guild.id, message.user.id) in slots_lock:
         await message.response.send_message(
             "you get kicked from the slot machine because you are already there, and two of you playing at once would cause a glitch in the universe",
@@ -7767,7 +7875,7 @@ async def slots(message: discord.Interaction):
         color=Colors.maroon,
     )
 
-    async def remove_debt(interaction):
+    async def remove_debt(interaction: discord.Interaction) -> None:
         nonlocal message
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
@@ -7782,8 +7890,9 @@ async def slots(message: discord.Interaction):
         await interaction.response.send_message("You have removed your debts! Life is wonderful!", ephemeral=True)
         await achemb(interaction, "debt", "followup")
 
-    async def spin(interaction):
+    async def spin(interaction: discord.Interaction) -> None:
         nonlocal message
+        assert message.guild is not None
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
@@ -7899,11 +8008,12 @@ async def slots(message: discord.Interaction):
 
 @bot.tree.command(description="what")
 async def roulette(message: discord.Interaction):
+    assert message.guild is not None
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
     # this is the silly popup when you click the button
     class RouletteModel(Modal):
-        def __init__(self):
+        def __init__(self) -> None:
             super().__init__(
                 title="place a bet idfk",
                 timeout=VIEW_TIMEOUT,
@@ -7928,7 +8038,7 @@ async def roulette(message: discord.Interaction):
             )
             self.add_item(self.betamount)
 
-        async def on_submit(self, interaction: discord.Interaction):
+        async def on_submit(self, interaction: discord.Interaction) -> None:
             await user.refresh_from_db()
 
             valids = ["red", "black", "green"] + [str(i) for i in range(37)]
@@ -8049,7 +8159,7 @@ async def roulette(message: discord.Interaction):
             if user.roulette_balance < 0:
                 await achemb(interaction, "failed_gambler", "followup")
 
-    async def modal_select(interaction: discord.Interaction):
+    async def modal_select(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
             await do_funny(interaction)
             return
@@ -8079,10 +8189,12 @@ async def roulette(message: discord.Interaction):
 
 @bot.tree.command(description="absolute CHAOS")
 async def chaos(message: discord.Interaction):
+    assert message.guild is not None
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
-    async def click(interaction: discord.Interaction, first: Optional[bool] = False):
-        cookies = await pool.fetchrow(
+    async def click(interaction: discord.Interaction, first: bool = False) -> None:
+        assert bot.user is not None
+        cookies = await _get_pool().fetchrow(
             """INSERT INTO profile (guild_id, user_id, cookies)
             VALUES (666, $1, 1)
             ON CONFLICT (guild_id, user_id)
@@ -8117,7 +8229,7 @@ async def chaos(message: discord.Interaction):
 
 
 @bot.tree.command(description="roll a dice")
-async def roll(message: discord.Interaction, sides: Optional[int]):
+async def roll(message: discord.Interaction, sides: int | None = None):
     if sides is None:
         sides = 6
 
@@ -8125,6 +8237,7 @@ async def roll(message: discord.Interaction, sides: Optional[int]):
         await message.response.send_message("???", ephemeral=True)
         return
 
+    assert message.guild is not None
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
     if sides == 0:
@@ -8223,7 +8336,7 @@ async def roll(message: discord.Interaction, sides: Optional[int]):
 
     roll_number = 0
 
-    async def roll_and_respond(interaction: discord.Interaction, is_first=False):
+    async def roll_and_respond(interaction: discord.Interaction, is_first: bool = False) -> None:
         nonlocal roll_number
         if interaction.user != message.user:
             await do_funny(interaction)
@@ -8357,11 +8470,11 @@ async def catgpt(message: discord.Interaction, query: str):
 
 @bot.tree.command(description="the most engaging boring game")
 async def pig(message: discord.Interaction):
+    assert message.guild is not None
     score = 0
-
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
-    async def roll(interaction: discord.Interaction):
+    async def roll(interaction: discord.Interaction) -> None:
         nonlocal score
         if interaction.user != message.user:
             await do_funny(interaction)
@@ -8444,11 +8557,12 @@ async def pig(message: discord.Interaction):
 )
 async def remind(
     message: discord.Interaction,
-    days: Optional[int],
-    hours: Optional[int],
-    minutes: Optional[int],
-    text: Optional[str],
+    days: int | None = None,
+    hours: int | None = None,
+    minutes: int | None = None,
+    text: str | None = None,
 ):
+    assert message.guild is not None
     if not days:
         days = 0
     if not hours:
@@ -8528,6 +8642,8 @@ if config.WORDNIK_API_KEY:
 
 @bot.tree.command(name="fact", description="get a random cat fact")
 async def cat_fact(message: discord.Interaction):
+    assert message.guild is not None
+    assert isinstance(message.channel, GuildMessageable)
     facts = [
         "you love cats",
         f"cat bot is in {f'{server_count:,}' if server_count else '...'} servers",
@@ -8555,7 +8671,7 @@ async def cat_fact(message: discord.Interaction):
         pass
 
 
-def _bounty_title(bid, total, btype):
+def _bounty_title(bid: int, total: int, btype: str) -> str:
     if bid == 0:
         return f"Catch {total} cats"
     elif bid == 1:
@@ -8564,7 +8680,7 @@ def _bounty_title(bid, total, btype):
         return f"Catch {total} {btype} or rarer cats"
 
 
-def _bounty_matches(bid, btype, cattype):
+def _bounty_matches(bid: int, btype: str, cattype: str) -> bool:
     if bid == 0:
         return True
     elif bid == 1:
@@ -8573,7 +8689,7 @@ def _bounty_matches(bid, btype, cattype):
         return cattypes.index(cattype) >= cattypes.index(btype)
 
 
-async def bounty(message, user, cattype):
+async def bounty(message: discord.Message, user: Profile, cattype: str) -> None:
     if user.hibernation or user.catnip_active < time.time():
         return
 
@@ -8639,7 +8755,7 @@ async def bounty(message, user, cattype):
         await user.save()
 
 
-async def set_mafia_offer(level, user):
+async def set_mafia_offer(level: int, user: Profile) -> None:
     if user.catnip_level == 0:
         user.catnip_amount = 0
         return
@@ -8657,7 +8773,7 @@ async def set_mafia_offer(level, user):
     await user.save()
 
 
-async def set_bounties(level, user):
+async def set_bounties(level: int, user: Profile) -> None:
     if user.catnip_level == 0:
         user.bounties = 0
         return
@@ -8694,7 +8810,7 @@ async def set_bounties(level, user):
     await user.save()
 
 
-async def get_bounties(level):
+async def get_bounties(level: int) -> list[dict]:
     level_data = catnip_list["levels"][level + 1]
     bounties = []
     num_bounties = level_data["bounty_amount"]
@@ -8789,7 +8905,7 @@ async def get_bounties(level):
     return bounties
 
 
-async def get_perks(level, user):
+async def get_perks(level: int, user: Profile) -> list[dict]:
     level_data = catnip_list["levels"][level]
     rarities = [r for r in level_data["weights"].keys()]
     weights = {rarity: level_data["weights"][rarity] for rarity in rarities}
@@ -8856,7 +8972,7 @@ async def get_perks(level, user):
     return current_perks
 
 
-async def level_down(user, message, ephemeral=False):
+async def level_down(user: Profile, message: discord.Interaction, ephemeral: bool = False) -> discord.Embed | None:
     if user.catnip_level == 0:
         return
 
@@ -8908,10 +9024,11 @@ async def level_down(user, message, ephemeral=False):
     if ephemeral:
         return embed
 
+    assert isinstance(message.channel, GuildMessageable)
     await message.channel.send(f"<@{user.user_id}>", embed=embed)
 
 
-async def mafia_cutscene(interaction: discord.Interaction, user):
+async def mafia_cutscene(interaction: discord.Interaction, user: Profile) -> None:
     # YAPPATRON
     text1 = """You feel satisfied with yourself. I just defeated the Godfather, Bailey! I'm on top of the world now!
 Little did you know, it was foolish to believe it was over just yet.
@@ -8988,7 +9105,7 @@ As you return to your hideout, you hear a howl in the distance."""
     await interaction.followup.send(content=text1, view=myview1, ephemeral=True)
 
 
-async def mafia_cutscene2(interaction: discord.Interaction, user):
+async def mafia_cutscene2(interaction: discord.Interaction, user: Profile) -> None:
     text1 = """Why? What do you gain from this? What's the point?
 You've gone too far. You defeated Bailey, and I was proud of you for that.
 But you kept going. Just for slightly more cats.
@@ -9048,6 +9165,7 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
 
 @bot.tree.command(description="..?")
 async def catnip(message: discord.Interaction):
+    assert message.guild is not None
     await message.response.defer(ephemeral=True)
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     server = await Server.get_or_create(server_id=message.guild.id)
@@ -9062,6 +9180,7 @@ async def catnip(message: discord.Interaction):
 
     if user.catnip_active < time.time() and not user.hibernation and user.catnip_level > 0:
         embed = await level_down(user, message, True)
+        assert embed is not None
         await message.followup.send(f"<@{user.user_id}>", embed=embed, ephemeral=True)
 
     if user.catnip_amount == 0:
@@ -9089,7 +9208,7 @@ async def catnip(message: discord.Interaction):
     cat_type = user.catnip_price
     amount = user.catnip_amount
 
-    async def pay_catnip(interaction):
+    async def pay_catnip(interaction: discord.Interaction) -> None:
         nonlocal user, cat_type, amount
         await user.refresh_from_db()
         if not interaction.response.is_done():
@@ -9158,7 +9277,8 @@ You can stop. That's okay. Seriously.
             await interaction.followup.send("Catnip started!", ephemeral=True)
             await main_message.edit(view=await gen_main())
 
-    async def reroll(interaction):
+    async def reroll(interaction: discord.Interaction) -> None:
+        assert interaction.guild is not None
         global_user = await User.get_or_create(user_id=interaction.user.id)
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         await user.refresh_from_db()
@@ -9183,11 +9303,11 @@ You can stop. That's okay. Seriously.
             emojied_options[index + 1] = (f"{perk_data.get('name', '')} ({rarities[perk_rarity]})", rarity_colors[perk_rarity], desc.replace("**", ""))
 
         myview = LayoutView(timeout=VIEW_TIMEOUT)
-        options = [Option(label=f"Lv{k}: {t}", emoji=e, description=d, value=str(k)) for k, (t, e, d) in emojied_options.items()]
+        options = [discord.SelectOption(label=f"Lv{k}: {t}", emoji=e, description=d, value=str(k)) for k, (t, e, d) in emojied_options.items()]
         perk_select = Select(
             "rr_type",
             placeholder="Select a perk to reroll",
-            opts=options,
+            options=options,
             on_select=lambda interaction, level: perk_screen(interaction, int(level), True),
         )
         perk_embed = Container("# Your Perks", full_desc)
@@ -9196,7 +9316,8 @@ You can stop. That's okay. Seriously.
         myview.add_item(action_row)
         await main_message.edit(view=myview)
 
-    async def view_perks(interaction):
+    async def view_perks(interaction: discord.Interaction) -> None:
+        assert interaction.guild is not None
         global_user = await User.get_or_create(user_id=interaction.user.id)
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         await user.refresh_from_db()
@@ -9225,13 +9346,14 @@ You can stop. That's okay. Seriously.
         myview.add_item(perk_embed)
         await interaction.response.send_message(view=myview, ephemeral=True)
 
-    async def perk_screen(interaction, level=0, reroll=False):
+    async def perk_screen(interaction: discord.Interaction, level: int = 0, reroll: bool = False) -> None:
+        assert interaction.guild is not None
         if not interaction.response.is_done():
             await interaction.response.defer()
         global_user = await User.get_or_create(user_id=interaction.user.id)
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
 
-        async def select_perk(interaction):
+        async def select_perk(interaction: discord.Interaction) -> None:
             await user.refresh_from_db()
             await interaction.response.defer()
 
@@ -9249,7 +9371,7 @@ You can stop. That's okay. Seriously.
             if reroll:
                 # We use level-1 because level is 1-based (Lv1, Lv2, etc) defined in the UI
                 if 0 <= level - 1 < len(h):
-                    h[level - 1] = interaction.data["custom_id"]
+                    h[level - 1] = interaction.custom_id
                 else:
                     await interaction.followup.send(f"Failed to reroll! Perk slot {level} not found. (Count: {len(h)})", ephemeral=True)
                     return
@@ -9257,7 +9379,7 @@ You can stop. That's okay. Seriously.
                 user.reroll = True
             else:
                 user.perk_selected = True
-                h.append(interaction.data["custom_id"])
+                h.append(interaction.custom_id)
             user.perks = h[:]  # black magic
 
             user.perk1 = ""
@@ -9326,7 +9448,7 @@ You can stop. That's okay. Seriously.
         myview.add_item(perk_embed)
         await main_message.edit(view=myview)
 
-    async def help_screen(interaction):
+    async def help_screen(interaction: discord.Interaction) -> None:
         desc = "Catnip is a prestige system where you pay cats to join your mafia and get perks and bounties!"
         desc += "\n\n❓ **How it works:**"
         desc += '\n- Press the "Begin" button to join the mafia and get your first perk and bounties.'
@@ -9340,7 +9462,8 @@ You can stop. That's okay. Seriously.
         help_embed = discord.Embed(title="Catnip Help", color=Colors.brown, description=desc)
         await interaction.response.send_message(embed=help_embed, ephemeral=True)
 
-    async def begin_bounties(interaction, override=False):
+    async def begin_bounties(interaction: discord.Interaction, override: bool = False) -> None:
+        nonlocalinteraction = interaction
         if not override:
             await interaction.response.defer()
 
@@ -9348,11 +9471,10 @@ You can stop. That's okay. Seriously.
             await interaction.followup.send("nice try", ephemeral=True)
             return
 
-        async def callbacks_are_so_fun(interaction2):
-            nonlocal interaction
-            await interaction2.response.defer()
-            await begin_bounties(interaction, override=True)
-            await interaction2.delete_original_response()
+        async def callbacks_are_so_fun(interaction: discord.Interaction) -> None:
+            await interaction.response.defer()
+            await begin_bounties(nonlocalinteraction, override=True)
+            await interaction.delete_original_response()
 
         if user.catnip_active > time.time() and user.catnip_level >= 2 and not override:
             myview = View(timeout=VIEW_TIMEOUT)
@@ -9390,7 +9512,7 @@ You can stop. That's okay. Seriously.
 
         await main_message.edit(view=await gen_main())
 
-    async def gen_main():
+    async def gen_main() -> LayoutView:
         await user.refresh_from_db()
         level = user.catnip_level
         level_data = catnip_list["levels"][level]
@@ -9522,17 +9644,19 @@ You can stop. That's okay. Seriously.
             action_row.add_item(button)
         elif user.catnip_level < 11:
 
-            async def reroll_warning(interaction2):
-                async def continue_pay_catnip(interaction3):
-                    await interaction3.response.defer()
-                    await interaction3.delete_original_response()
-                    await pay_catnip(interaction2)
+            async def reroll_warning(interaction: discord.Interaction):
+                nonlocalinteraction = interaction
+
+                async def continue_pay_catnip(interaction: discord.Interaction):
+                    await interaction.response.defer()
+                    await interaction.delete_original_response()
+                    await pay_catnip(nonlocalinteraction)
 
                 view2 = View(timeout=VIEW_TIMEOUT)
                 button = Button(label="Yes")
                 button.callback = continue_pay_catnip
                 view2.add_item(button)
-                await interaction2.response.send_message(
+                await interaction.response.send_message(
                     "Warning: You will lose your reroll if you level up now. Use it first.\nStill continue?", view=view2, ephemeral=True
                 )
 
@@ -9563,6 +9687,7 @@ You can stop. That's okay. Seriously.
 @bot.tree.command(description="View your achievements (achs)")
 async def achievements(message: discord.Interaction):
     # this is very close to /inv's ach counter
+    assert message.guild is not None
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     global_user = await User.get_or_create(user_id=message.user.id)
 
@@ -9587,7 +9712,7 @@ async def achievements(message: discord.Interaction):
     hidden_counter = 0
 
     # this is a single page of the achievement list
-    async def gen_new(category):
+    async def gen_new(category: str) -> discord.Embed:
         nonlocal message, unlocked, total_achs, hidden_counter
 
         unlocked = 0
@@ -9663,7 +9788,7 @@ async def achievements(message: discord.Interaction):
         return newembed
 
     # creates buttons at the bottom of the full view
-    def insane_view_generator(category):
+    def insane_view_generator(category: str) -> View:
         myview = View(timeout=VIEW_TIMEOUT)
 
         options = [
@@ -9676,7 +9801,7 @@ async def achievements(message: discord.Interaction):
         ]
         select = discord.ui.Select(placeholder=category, options=options)
 
-        async def callback_hell(interaction):
+        async def callback_hell(interaction: discord.Interaction) -> None:
             thing = select.values[0]
             await interaction.response.defer()
             try:
@@ -9732,6 +9857,9 @@ async def catch_tip(message: discord.Interaction):
 
 
 async def catch(message: discord.Interaction, msg: discord.Message):
+    assert message.guild is not None
+    assert isinstance(message.channel, GuildMessageable)
+    assert bot.user is not None
     if message.user.id in catchcooldown and catchcooldown[message.user.id] + 6 > time.time():
         await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
         return
@@ -9760,7 +9888,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         await achemb(message, "8k", "followup")
 
     try:
-        is_cat = (await Channel.get_or_none(channel_id=message.channel.id)).cat
+        is_cat = (await Channel.get(channel_id=message.channel.id)).cat
     except Exception:
         is_cat = False
 
@@ -9778,9 +9906,9 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Optional[Literal["Cats", "Value", "Fast", "Slow", "Cattlepass", "Cookies", "Fish", "Pig", "Roulette Dollars", "Prisms"]],
-    cat_type: Optional[str],
-    locked: Optional[bool],
+    leaderboard_type: Literal["Cats", "Value", "Fast", "Slow", "Cattlepass", "Cookies", "Fish", "Pig", "Roulette Dollars", "Prisms"] | None = None,
+    cat_type: str | None = None,
+    locked: bool | None = None,
 ):
     if not leaderboard_type:
         leaderboard_type = "Cats"
@@ -9791,13 +9919,12 @@ async def leaderboards(
         return
 
     # this fat function handles a single page
-    async def lb_handler(interaction, type, do_edit=None, specific_cat="All"):
+    async def lb_handler(interaction: discord.Interaction, type: str, do_edit: bool = True, specific_cat: str | None = "All") -> None:
+        assert message.guild is not None
         if not specific_cat:
             specific_cat = "All"
 
         nonlocal message
-        if do_edit is None:
-            do_edit = True
         await interaction.response.defer()
 
         messager = None
@@ -10055,16 +10182,15 @@ async def leaderboards(
         myview = View(timeout=VIEW_TIMEOUT)
 
         if type == "Cats":
-            dd_opts = [Option(label="All", emoji=get_emoji("staring_cat"), value="All")]
+            dd_opts = [discord.SelectOption(label="All", emoji=get_emoji("staring_cat"), value="All", default=specific_cat == "All")]
 
             for i in await cats_in_server(message.guild.id):
-                dd_opts.append(Option(label=i, emoji=get_emoji(i.lower() + "cat"), value=i))
+                dd_opts.append(discord.SelectOption(label=i, emoji=get_emoji(i.lower() + "cat"), value=i, default=specific_cat == i))
 
             dropdown = Select(
                 "cat_type_dd",
                 placeholder="Select a cat type",
-                opts=dd_opts,
-                selected=specific_cat,
+                options=dd_opts,
                 on_select=lambda interaction, option: lb_handler(interaction, type, True, option),
                 disabled=locked,
             )
@@ -10081,11 +10207,11 @@ async def leaderboards(
             "Roulette Dollars": "💰",
             "Prisms": get_emoji("prism"),
         }
-        options = [Option(label=k, emoji=v) for k, v in emojied_options.items()]
+        options = [discord.SelectOption(label=k, emoji=v) for k, v in emojied_options.items()]
         lb_select = Select(
             "lb_type",
             placeholder=type,
-            opts=options,
+            options=options,
             on_select=lambda interaction, type: lb_handler(interaction, type, True),
         )
 
@@ -10118,13 +10244,14 @@ async def leaderboards(
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="who", amount="how many (negatives to remove)", cat_type="what")
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
-async def givecat(message: discord.Interaction, person_id: discord.User, cat_type: str, amount: Optional[int]):
+async def givecat(message: discord.Interaction, person_id: discord.User, cat_type: str, amount: int | None = None):
     if amount is None:
         amount = 1
     if cat_type not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
         return
 
+    assert message.guild is not None
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
     user[f"cat_{cat_type}"] += amount
     await user.save()
@@ -10138,6 +10265,8 @@ async def givecat(message: discord.Interaction, person_id: discord.User, cat_typ
 @discord.app_commands.default_permissions(manage_guild=True)
 async def setup_channel(message: discord.Interaction):
     try:
+        assert message.guild is not None
+        assert isinstance(message.channel, GuildMessageable)
         guild = await bot.fetch_guild(message.guild.id)
         if isinstance(message.channel, discord.Thread):
             channel = await guild.fetch_channel(message.channel.parent_id)
@@ -10175,12 +10304,13 @@ async def setup_channel(message: discord.Interaction):
         await message.response.send_message("error. check if i have permissions to access this channel")
         return
 
-    await message.response.send_message(await spawn_cat(str(message.channel.id)))
+    await message.response.send_message(await spawn_cat(message.channel.id))
 
 
 @bot.tree.command(description="(ADMIN) Undo the setup/unsetup")
 @discord.app_commands.default_permissions(manage_guild=True)
 async def forget(message: discord.Interaction):
+    assert isinstance(message.channel, GuildMessageable)
     if channel := await Channel.get_or_none(channel_id=message.channel.id):
         await channel.delete()
         await message.response.send_message(f"ok, now i wont send cats in <#{message.channel.id}>")
@@ -10212,7 +10342,8 @@ async def fake(message: discord.Interaction):
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(cat_type="select a cat type ok")
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
-async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
+async def forcespawn(message: discord.Interaction, cat_type: str | None = None):
+    assert isinstance(message.channel, GuildMessageable)
     if cat_type and cat_type not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
         return
@@ -10226,7 +10357,7 @@ async def forcespawn(message: discord.Interaction, cat_type: Optional[str]):
         return
     ch.yet_to_spawn = 0
     await ch.save()
-    await spawn_cat(str(message.channel.id), cat_type, True)
+    await spawn_cat(message.channel.id, cat_type, True)
     await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this")
 
 
@@ -10246,6 +10377,7 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
         ach_id = ach_titles[ach_id.lower()]
         valid = True
 
+    assert message.guild is not None
     person = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
 
     if valid and ach_id == "thanksforplaying":
@@ -10288,27 +10420,28 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="who")
 async def reset(message: discord.Interaction, person_id: discord.User):
-    async def confirmed(interaction):
-        if interaction.user.id == message.user.id:
-            await interaction.response.defer()
-            try:
-                og = await interaction.original_response()
-                profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
-                profile.guild_id = og.id
-                await profile.save()
-                async for p in Prism.filter("guild_id = $1 AND user_id = $2", message.guild.id, person_id.id):
-                    p.guild_id = og.id
-                    await p.save()
-                await interaction.edit_original_response(
-                    content=f"Done! rip {person_id.mention}. f's in chat.\njoin our discord to rollback: <https://discord.gg/staring>", view=None
-                )
-            except Exception:
-                await interaction.edit_original_response(
-                    content="ummm? this person isnt even registered in cat bot wtf are you wiping?????",
-                    view=None,
-                )
-        else:
-            await do_funny(interaction)
+    async def confirmed(interaction: discord.Interaction) -> None:
+        assert message.guild is not None
+        if interaction.user.id != message.user.id:
+            return await do_funny(interaction)
+
+        await interaction.response.defer()
+        try:
+            og = await interaction.original_response()
+            profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
+            profile.guild_id = og.id
+            await profile.save()
+            async for p in Prism.filter("guild_id = $1 AND user_id = $2", message.guild.id, person_id.id):
+                p.guild_id = og.id
+                await p.save()
+            await interaction.edit_original_response(
+                content=f"Done! rip {person_id.mention}. f's in chat.\njoin our discord to rollback: <https://discord.gg/staring>", view=None
+            )
+        except Exception:
+            await interaction.edit_original_response(
+                content="ummm? this person isnt even registered in cat bot wtf are you wiping?????",
+                view=None,
+            )
 
     view = View(timeout=VIEW_TIMEOUT)
     button = Button(style=ButtonStyle.red, label="Confirm")
@@ -10326,7 +10459,7 @@ async def nuke(message: discord.Interaction):
     warning_text = "⚠️ This will completely reset **all** Cat Bot progress of **everyone** in this server. Spawn channels and their settings *will not be affected*.\nPress the button 5 times to continue."
     counter = 5
 
-    async def gen(counter):
+    async def gen(counter: int) -> View:
         lines = [
             "",
             "I'm absolutely sure! (1)",
@@ -10341,56 +10474,59 @@ async def nuke(message: discord.Interaction):
         view.add_item(button)
         return view
 
-    async def count(interaction: discord.Interaction):
+    async def count(interaction: discord.Interaction) -> None:
         nonlocal message, counter
-        if interaction.user.id == message.user.id:
-            await interaction.response.defer()
-            counter -= 1
-            if counter == 0:
-                # ~~Scary!~~ Not anymore!
-                # how this works is we basically change the server id to the message id and then add user with id of 0 to mark it as deleted
-                # this can be rolled back decently easily by asking user for the id of nuking message
+        assert message.guild is not None
+        assert interaction.message is not None
+        if interaction.user.id != message.user.id:
+            return await do_funny(interaction)
 
-                changed_profiles = []
-                changed_prisms = []
+        await interaction.response.defer()
+        counter -= 1
+        if counter == 0:
+            # ~~Scary!~~ Not anymore!
+            # how this works is we basically change the server id to the message id and then add user with id of 0 to mark it as deleted
+            # this can be rolled back decently easily by asking user for the id of nuking message
 
-                async for i in Profile.filter("guild_id = $1", message.guild.id):
-                    i.guild_id = interaction.message.id
-                    changed_profiles.append(i)
+            changed_profiles = []
+            changed_prisms = []
 
-                async for i in Prism.filter("guild_id = $1", message.guild.id):
-                    i.guild_id = interaction.message.id
-                    changed_prisms.append(i)
+            async for i in Profile.filter("guild_id = $1", message.guild.id):
+                i.guild_id = interaction.message.id
+                changed_profiles.append(i)
 
-                if changed_profiles:
-                    await Profile.bulk_update(changed_profiles, "guild_id")
-                if changed_prisms:
-                    await Prism.bulk_update(changed_prisms, "guild_id")
-                await Profile.create(guild_id=interaction.message.id, user_id=0)
+            async for i in Prism.filter("guild_id = $1", message.guild.id):
+                i.guild_id = interaction.message.id
+                changed_prisms.append(i)
 
-                try:
-                    await interaction.edit_original_response(
-                        content="Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.",
-                        view=None,
-                    )
-                except Exception:
-                    await interaction.followup.send("Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.")
-            else:
-                view = await gen(counter)
-                try:
-                    await interaction.edit_original_response(content=warning_text, view=view)
-                except Exception:
-                    pass
+            if changed_profiles:
+                await Profile.bulk_update(changed_profiles, "guild_id")
+            if changed_prisms:
+                await Prism.bulk_update(changed_prisms, "guild_id")
+            await Profile.create(guild_id=interaction.message.id, user_id=0)
+
+            try:
+                await interaction.edit_original_response(
+                    content="Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.",
+                    view=None,
+                )
+            except Exception:
+                await interaction.followup.send("Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.")
         else:
-            await do_funny(interaction)
+            view = await gen(counter)
+            try:
+                await interaction.edit_original_response(content=warning_text, view=view)
+            except Exception:
+                pass
 
     view = await gen(counter)
     await message.response.send_message(warning_text, view=view)
 
 
-async def recieve_vote(request):
+async def recieve_vote(request: web.Request) -> web.Response:
     signature = request.headers.get("x-topgg-signature", "")
     try:
+        assert config.WEBHOOK_VERIFY is not None
         signature_parts = {i.split("=")[0]: i.split("=")[1] for i in signature.split(",")}
         raw_body = await request.read()
         body = f"{signature_parts['t']}.{raw_body.decode()}".encode("utf-8")
@@ -10409,7 +10545,7 @@ async def recieve_vote(request):
     return web.Response(text="ok", status=200)
 
 
-async def do_vote(user: User, created_at: float):
+async def do_vote(user: User, created_at: float) -> None:
     if user.vote_streak < 10:
         extend_time = 24
     elif user.vote_streak < 20:
@@ -10496,7 +10632,7 @@ Everyone who buys one will also get a **badge**! Run `/plushbadge` to redeem."""
     await user.save()
 
 
-async def check_supporter(request):
+async def check_supporter(request: web.Request) -> web.Response:
     if request.headers.get("authorization", "") != config.WEBHOOK_VERIFY:
         return web.Response(text="bad", status=403)
     request_json = await request.json()
@@ -10505,7 +10641,7 @@ async def check_supporter(request):
     return web.Response(text="1" if user.premium else "0", status=200)
 
 
-async def bake_gg_reward(request):
+async def bake_gg_reward(request: web.Request) -> web.Response:
     if request.headers.get("Authorization", "") != os.environ.get("BAKE_GG_WEBHOOK_TOKEN", ""):
         return web.Response(text="Invalid or missing authorization token", status=401)
 
@@ -10535,7 +10671,7 @@ async def on_error(*args, **kwargs):
     raise
 
 
-async def on_interaction(ctx):
+async def on_interaction(ctx: discord.Interaction) -> None:
     try:
         if ctx.command:
             logging.debug("Command %s was used", ctx.command.name)
@@ -10544,14 +10680,14 @@ async def on_interaction(ctx):
         pass
 
 
-async def start_tutorial(ctx):
+async def start_tutorial(ctx: discord.Interaction) -> None:
     await asyncio.sleep(5)
     global_user = await User.get_or_create(user_id=ctx.user.id)
     if global_user.tutorial_state == 0:
         await ctx.followup.send(view=await get_tutorial_view(ctx.user.id), ephemeral=True)
 
 
-async def setup(bot2):
+async def setup(bot2: commands.AutoShardedBot) -> None:
     global bot, COMMAND_IDS, vote_server
 
     for command in bot.tree.walk_commands():
@@ -10564,13 +10700,13 @@ async def setup(bot2):
     bot2.tree.add_command(context_menu_command)
 
     # copy all the events
-    bot2.on_ready = on_ready
-    bot2.on_guild_join = on_guild_join
-    bot2.on_guild_update = on_guild_update
     bot2.on_message = on_message
-    bot2.on_connect = on_connect
-    bot2.on_error = on_error
-    bot2.on_interaction = on_interaction
+    bot2.on_error = on_error  # type: ignore
+    bot2.on_ready = on_ready  # type: ignore
+    bot2.on_guild_join = on_guild_join  # type: ignore
+    bot2.on_guild_update = on_guild_update  # type: ignore
+    bot2.on_connect = on_connect  # type: ignore
+    bot2.on_interaction = on_interaction  # type: ignore
 
     vote_server = None
     if config.WEBHOOK_VERIFY and (not config.CLUSTERING or config.CLUSTERING_ZERO):
@@ -10599,20 +10735,12 @@ async def setup(bot2):
         await on_ready()
 
 
-async def teardown(bot):
+async def teardown(bot: commands.AutoShardedBot) -> None:
     if vote_server:
         await vote_server.cleanup()
 
 
 # Reusable UI components
-class Option:
-    def __init__(self, label, emoji, description=None, value=None):
-        self.label = label
-        self.emoji = emoji
-        self.value = value if value is not None else label
-        self.description = description
-
-
 class Select(discord.ui.Select):
     on_select = None
 
@@ -10620,17 +10748,12 @@ class Select(discord.ui.Select):
         self,
         id: str,
         placeholder: str,
-        opts: list[Option],
-        selected: str = None,
-        on_select: callable = None,
+        options: list[discord.SelectOption],
+        on_select: Callable | None = None,
         disabled: bool = False,
     ):
-        options = []
         if on_select is not None:
             self.on_select = on_select
-
-        for opt in opts:
-            options.append(discord.SelectOption(label=opt.label, description=opt.description, value=opt.value, emoji=opt.emoji, default=opt.value == selected))
 
         super().__init__(
             placeholder=placeholder,

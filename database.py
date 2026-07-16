@@ -18,11 +18,11 @@ import catpg
 import config
 
 
-async def connect():
+async def connect() -> None:
     await catpg.connect(user="cat_bot", password=config.DB_PASS, database="cat_bot", host=config.DB_HOST, max_size=11)
 
 
-async def close():
+async def close() -> None:
     await catpg.close()
 
 

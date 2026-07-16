@@ -20,8 +20,10 @@ import logging
 import sys
 import time
 
+import asyncpg
 import discord
 import sentry_sdk
+import sentry_sdk.types
 import winuvloop
 from discord.ext import commands
 
@@ -40,7 +42,7 @@ try:
     # this is a messy closed source script which injects into logging module to do statistics
     # inside discord.py, it only intercepts the amount of status codes and ratelimits
     # everything else is from main.py logging.debug() statements
-    import stats  # noqa: F401
+    import stats  # type: ignore  # noqa: F401
 
     log_level = logging.DEBUG
 except ImportError:
@@ -82,7 +84,7 @@ filtered_errors = [
 ]
 
 
-def before_send(event, hint):
+def before_send(event: sentry_sdk.types.Event, hint: sentry_sdk.types.Hint) -> sentry_sdk.types.Event | None:
     if "exc_info" not in hint:
         return event
     for i in filtered_errors:
@@ -106,7 +108,6 @@ if len(sys.argv) == 4:
 else:
     shard_ids = None
     shard_count = None
-    config.CLUSTERING = False
 
 
 bot = commands.AutoShardedBot(
@@ -117,49 +118,53 @@ bot = commands.AutoShardedBot(
     intents=discord.Intents(message_content=True, messages=True, guilds=True),
     member_cache_flags=discord.MemberCacheFlags.none(),
     allowed_mentions=discord.AllowedMentions.none(),
-    shard_ids=shard_ids,
+    shard_ids=shard_ids,  # type: ignore
     shard_count=shard_count,
 )
 
 
 @bot.event
-async def setup_hook():
+async def setup_hook() -> None:
     global listener_conn
 
     await database.connect()
     if config.CLUSTERING:
-        listener_conn = await catpg.pool.acquire()
+        listener_conn = await catpg._get_pool().acquire()
         await listener_conn.add_listener("restarts", reload_call)
     await bot.load_extension("main")
 
 
-async def reload(reload_db):
+async def reload(reload_db: bool) -> None:
+    global listener_conn
+
     try:
         await bot.unload_extension("main")
     except commands.ExtensionNotLoaded:
         pass
     if reload_db:
+        if config.CLUSTERING:
+            await listener_conn.remove_listener("restarts", reload_call)
+            await catpg._get_pool().release(listener_conn)
         await database.close()
         importlib.reload(database)
         importlib.reload(catpg)
         await database.connect()
+        if config.CLUSTERING:
+            listener_conn = await catpg._get_pool().acquire()
+            await listener_conn.add_listener("restarts", reload_call)
     await bot.load_extension("main")
 
 
-async def reload_call(conn, pid, channel, payload):
+async def reload_call(conn: asyncpg.Connection, pid: int, channel: str, payload: str) -> None:
     await reload("1" in payload)
 
 
-async def shutdown():
+async def shutdown() -> None:
     if config.CLUSTERING:
         await listener_conn.remove_listener("restarts", reload_call)
-        await listener_conn.release()
+        await catpg._get_pool().release(listener_conn)
     await database.close()
 
-
-config.cat_cought_rain = {}
-config.rain_starter = {}
-config.belated_catchers = {}
 
 bot.cat_bot_reload_hook = reload  # pyright: ignore
 

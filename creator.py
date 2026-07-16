@@ -31,7 +31,7 @@ total = req.json()["shards"]
 processes = {}
 
 
-def start_cluster(start, end):
+def start_cluster(start: int, end: int) -> subprocess.Popen:
     args = [sys.executable, os.path.join(os.path.dirname(__file__), "bot.py"), str(start), str(end), str(total)]
     # this enherits env
     proc = subprocess.Popen(args)
@@ -40,7 +40,7 @@ def start_cluster(start, end):
     return proc
 
 
-def shutdown_all():
+def shutdown_all() -> None:
     print("Shutting down clusters...")
     for pid, (proc, start, end) in list(processes.items()):
         try:
