@@ -5146,9 +5146,6 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
     except Exception:
         pass
 
-    current_perm = None
-    guild = None
-    api_channel = None
     lock_success = False
     if not isinstance(message.channel, discord.Thread):
         try:
@@ -5167,7 +5164,15 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
                 api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites),
                 api_channel.set_permissions(message.guild.me, overwrite=me_overwrites),
             )
+
             lock_success = True
+
+            async def wait_and_unlock():
+                await asyncio.sleep(4)
+                everyone_overwrites.send_messages = current_perm
+                await api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites)
+
+            bot.loop.create_task(wait_and_unlock())
         except Exception:
             pass
 
@@ -5279,11 +5284,6 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
         await asyncio.sleep(4)
     except discord.Forbidden:
         pass
-    finally:
-        if guild and current_perm and lock_success and api_channel and not isinstance(api_channel, discord.Thread):
-            everyone_overwrites = api_channel.overwrites_for(guild.default_role)
-            everyone_overwrites.send_messages = current_perm
-            await api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites)
 
 
 @bot.tree.command(description="redeem plush badge")
