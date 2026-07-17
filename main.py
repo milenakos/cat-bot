@@ -6995,6 +6995,9 @@ async def gift(
         elif gift_type.lower() in [i["name"].lower() for i in pack_data]:
             key = f"pack_{gift_type.lower()}"
             thing = f"{gift_type.capitalize()} packs"
+        elif gift_type.lower() == "scratchcards":
+            key = "scratchcards"
+            thing = "Scratchcards"
         else:
             await message.response.send_message("bro what", ephemeral=True)
             return
@@ -7115,6 +7118,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             self.gives_packs = {}
             self.gives_rain = 0
             self.gives_prisms = []
+            self.gives_scratchcards = 0
 
             if user.id == bot.user.id:
                 self.gives_cats["eGirl"] = 9999999
@@ -7213,6 +7217,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         fail = f"You don't have enough {item} packs!"
                 if user.global_user.rain_minutes < user.gives_rain:
                     fail = "You don't have enough rain!"
+                if user.profile.scratchcards < user.gives_scratchcards:
+                    fail = "You don't have enough scratchcards!"
                 for prism in user.gives_prisms:
                     if prism not in temp_prisms:
                         fail = f"Prism {prism} not found!"
@@ -7242,6 +7248,9 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         bot.loop.create_task(ch.send(f"{giver.user.id} traded {giver.gives_rain}m to {getter.user.id}"))
                     except Exception:
                         pass
+                if giver.gives_scratchcards:
+                    giver.profile.scratchcards -= giver.gives_scratchcards
+                    getter.profile.scratchcards += giver.gives_scratchcards
                 for prism in giver.gives_prisms:
                     temp_prisms[prism].user_id = getter.user.id
 
@@ -7380,6 +7389,31 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         active_user.gives_packs[packtype] = amount + current
                         active_user.gives_packs = {k: active_user.gives_packs[k] for k in pack_names if k in active_user.gives_packs}
                     active_user.value += sum([i["totalvalue"] if i["name"] == packtype else 0 for i in pack_data]) * amount
+                elif selection == "scratchcards":
+                    assert isinstance(item2, discord.ui.TextInput)
+                    amount = item2.value
+
+                    await active_user.profile.refresh_from_db()
+
+                    if amount.lower() in ["max", "all"]:
+                        amount = "all"
+                    else:
+                        try:
+                            amount = int(amount)
+                        except Exception:
+                            await interaction2.response.send_message("Amount must be an integer!", ephemeral=True)
+                            return
+
+                    current = active_user.gives_scratchcards
+                    if amount == "all":
+                        amount = active_user.profile.scratchcards - current
+
+                    if active_user.profile.scratchcards < amount + current or current + amount < 0:
+                        await interaction2.response.send_message("You don't have enough scratchcards!", ephemeral=True)
+                        return
+
+                    active_user.gives_scratchcards += amount
+                    active_user.value += amount * 1085
                 elif selection == "rain":
                     assert isinstance(item2, discord.ui.TextInput)
                     amount = item2.value
@@ -7487,6 +7521,14 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     return
                 modal.add_item(discord.ui.Label(text="Pack Type", component=discord.ui.Select(options=options, id=67)))
                 modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(placeholder="1", min_length=1, id=69)))
+            elif selection == "scratchcards":
+                modal = Modal(title="Offer scratchcards...")
+                await active_user.profile.refresh_from_db()
+                modal.add_item(
+                    discord.ui.Label(
+                        text="Amount", component=discord.ui.TextInput(placeholder=f"Max: {active_user.profile.scratchcards:,}", min_length=1, id=69)
+                    )
+                )
             elif selection == "rain":
                 modal = Modal(title="Offer rain...")
                 await active_user.global_user.refresh_from_db()
@@ -7524,6 +7566,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             discord.SelectOption(label="Cats", emoji=get_emoji("finecat"), value="cats"),
             discord.SelectOption(label="Packs", emoji=get_emoji("goldpack"), value="packs"),
             discord.SelectOption(label="Prisms", emoji=get_emoji("prism"), value="prisms"),
+            discord.SelectOption(label="Scratchcards", emoji="🍀", value="scratchcards"),
             discord.SelectOption(label="Rain", emoji="☔", value="rain"),
         ]
 
@@ -7553,6 +7596,9 @@ async def trade(message: discord.Interaction, other_user: discord.User):
 
             for prism in tradeuser.gives_prisms:
                 offer_string += f"{get_short_emoji('prism')} {prism}\n"
+
+            if tradeuser.gives_scratchcards:
+                offer_string += f"🍀 {tradeuser.gives_scratchcards:,} scratchcards\n"
 
             if tradeuser.gives_rain:
                 offer_string += f"☔ {tradeuser.gives_rain:,}m of Cat Rains\\*\n"
