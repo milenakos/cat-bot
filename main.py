@@ -756,6 +756,7 @@ async def achemb(
             )
             .set_footer(text=f"Unlocked by {username}")
         )
+        embed2 = None
     else:
         embed = (
             discord.Embed(
@@ -783,11 +784,11 @@ async def achemb(
             .set_footer(text=f"Congrats to {username}!!")
         )
 
+    result = None
+    server = await Server.get_or_create(server_id=message.guild.id)
+    assert isinstance(message.channel, GuildMessageable)
+    do = not server.mute_achievements and await check_channel_setupped(server, message.channel)
     try:
-        result = None
-        server = await Server.get_or_create(server_id=message.guild.id)
-        assert isinstance(message.channel, GuildMessageable)
-        do = not server.mute_achievements and await check_channel_setupped(server, message.channel)
         if send_type == "ephemeral":
             assert isinstance(message, discord.Interaction)
             await message.followup.send(embed=embed, ephemeral=True)
@@ -808,7 +809,7 @@ async def achemb(
         pass
 
     if result:
-        if ach_id == "thanksforplaying":
+        if embed2:
             await asyncio.sleep(2)
             await result.edit(embed=embed2)
             await asyncio.sleep(2)
@@ -924,14 +925,13 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         await user.refresh_from_db()
 
     # progress
-    quest_complete = False
+    current_xp = None
     if user.catch_quest == quest:
         if user.catch_cooldown != 0:
             return user
         quest_data = config.battle["quests"]["catch"][quest]
         user.catch_progress += 1
         if user.catch_progress >= quest_data["progress"]:
-            quest_complete = True
             user.catch_cooldown = int(time.time())
             current_xp = user.progress + user.catch_reward
             user.catch_progress = 0
@@ -954,14 +954,12 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
             user[f"pack_{streak_data['reward']}"] += 1
 
         current_xp = user.progress + user.vote_reward
-        quest_complete = True
     elif user.misc_quest == quest:
         if user.misc_cooldown != 0:
             return user
         quest_data = config.battle["quests"]["misc"][quest]
         user.misc_progress += 1
         if user.misc_progress >= quest_data["progress"]:
-            quest_complete = True
             user.misc_cooldown = int(time.time())
             current_xp = user.progress + user.misc_reward
             user.misc_progress = 0
@@ -973,14 +971,13 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         user.weekly_progress += 1
         if user.weekly_progress >= quest_data["progress"]:
             user.weekly_progress = quest_data["progress"]
-            quest_complete = True
             current_xp = user.progress + 2000
             user.scratchcards += 1
     else:
         return user
 
     await user.save()
-    if not quest_complete:
+    if current_xp is None:
         return user
 
     user.quests_completed += 1
@@ -995,6 +992,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         level_data = config.battle["seasons"][str(user.season)][user.battlepass]
         level_text = f"Level {user.battlepass + 1}"
 
+    new_level_text = None
     if current_xp >= level_data["xp"]:
         logging.debug("Level complete %d", user.battlepass)
         xp_progress = current_xp
@@ -1045,6 +1043,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
                 active_level_data = config.battle["seasons"][str(user.season)][user.battlepass]
                 new_level_text = f"Level {user.battlepass + 1}"
 
+        assert new_level_text is not None
         embed_progress = await progress_embed(
             user,
             active_level_data,
@@ -1180,12 +1179,16 @@ async def finale(message: discord.Interaction | discord.Message, user: Profile) 
         if not user[k] and ach_list[k]["category"] != "Hidden":
             return
 
-    user.finale_seen = True
-    await user.save()
     if isinstance(message, discord.Message):
         author_string = message.author
     elif isinstance(message, discord.Interaction):
         author_string = message.user
+    else:
+        return
+
+    user.finale_seen = True
+    await user.save()
+
     assert isinstance(message.channel, GuildMessageable)
     await asyncio.sleep(5)
     await message.channel.send("...")
@@ -2248,6 +2251,8 @@ async def on_message(message: discord.Message) -> None:
                 resolved_emoji = get_emoji(reaction_name)
             elif reaction_type == "vanilla":
                 resolved_emoji = reaction_name
+            else:
+                continue
 
             try:
                 if not server:
@@ -2523,10 +2528,11 @@ async def on_message(message: discord.Message) -> None:
                 channel.lastcatches = current_time
                 cat_temp = channel.cat
                 channel.cat = 0
+                le_emoji = None
                 try:
                     if channel.cattype != "":
                         catchtime = discord.utils.snowflake_time(cat_temp)
-                        le_emoji = channel.cattype
+                        le_emoji = str(channel.cattype)
                     else:
                         var = await message.channel.fetch_message(cat_temp)
                         catchtime = var.created_at
@@ -2550,6 +2556,7 @@ async def on_message(message: discord.Message) -> None:
                                 if i.lower() in partial_type:
                                     le_emoji = i
                                     break
+                        assert le_emoji is not None
                 except Exception:
                     try:
                         await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
@@ -2591,6 +2598,7 @@ async def on_message(message: discord.Message) -> None:
                     # if some of the above explodes just give up
                     do_time = False
                     caught_time = "undefined amounts of time "
+                    time_caught = 0
 
                 if channel.cat_rains > 0 or cat_rain_end:
                     do_time = False
@@ -2789,6 +2797,7 @@ async def on_message(message: discord.Message) -> None:
                         boost_applied_prism = f"<@{prism_which_boosted.user_id}>'s prism " + prism_which_boosted.name
 
                     did_boost = True
+                    rainboost = None
                     user.boosted_catches += 1
                     prism_which_boosted.catches_boosted += 1
                     bot.loop.create_task(prism_which_boosted.save())
@@ -2801,13 +2810,11 @@ async def on_message(message: discord.Message) -> None:
                         else:
                             idx_shift = cattypes.index(le_emoji) + 1
                         le_emoji = cattypes[idx_shift]
-                        normal_bump = True
                     except IndexError:
-                        normal_bump = False
                         if not channel.forcespawned:
                             if idx_shift == len(cattypes) + 1:
                                 rainboost = 1200
-                            elif idx_shift == len(cattypes):
+                            else:
                                 rainboost = 600
                             logging.debug("Boosted to rain: %d", rainboost)
                             channel.cat_rains += int(rainboost / 60) * 22
@@ -2824,7 +2831,7 @@ async def on_message(message: discord.Message) -> None:
                                 config.rain_starter[channel.channel_id] = message.author.id
                                 bot.loop.create_task(rain_recovery_loop(channel))
 
-                    if normal_bump:
+                    if not rainboost:
                         if double_boost:
                             suffix_string += f"\n{get_emoji('prism')}{get_emoji('prism')} {boost_applied_prism} boosted this catch twice from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
                         else:
@@ -2971,6 +2978,7 @@ async def on_message(message: discord.Message) -> None:
 
                 async def send_confirm() -> discord.Message | None:
                     try:
+                        assert le_emoji is not None
                         kwargs = {}
                         if view:
                             kwargs["view"] = view
@@ -3286,6 +3294,7 @@ async def on_guild_join(guild: discord.Guild) -> None:
 
     # first to try a good channel, then whenever we cat atleast chat
     found = False
+    ch = None
     names = ["cat", "bot", "command", "welcome", "general"]
     for name in names:
         ch = find(name, guild.text_channels)
@@ -4130,11 +4139,12 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
         # article buttons
         if current_page == 0:
             end = (number + 1) * 4
+            row = None
         else:
             end = len(buttons)
             row = ActionRow()
         for num, button in enumerate(buttons[number * 4 : end]):
-            if current_page == 0:
+            if not row:
                 view.add_item(ActionRow(button))
             else:
                 if len(row.children) == 5:
@@ -4142,7 +4152,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
                     row = ActionRow()
                 row.add_item(button)
 
-        if current_page != 0 and len(row.children) > 0:
+        if row and len(row.children) > 0:
             view.add_item(row)
 
         last_row = ActionRow()
@@ -4536,16 +4546,16 @@ async def last(message: discord.Interaction):
     try:
         assert channel is not None
         lasttime = channel.lastcatches
-        if int(lasttime) == 0:  # unix epoch check
+        if int(lasttime) == 0:
             displayedtime = "forever ago"
         else:
             displayedtime = f"<t:{int(lasttime)}:R>"
+
+        if not channel.cat:
+            times = [channel.spawn_times_min, channel.spawn_times_max]
+            nextpossible = f"\nthe next cat will spawn between <t:{int(lasttime) + times[0]}:R> and <t:{int(lasttime) + times[1]}:R>"
     except Exception:
         displayedtime = "forever ago"
-
-    if channel and not channel.cat:
-        times = [channel.spawn_times_min, channel.spawn_times_max]
-        nextpossible = f"\nthe next cat will spawn between <t:{int(lasttime) + times[0]}:R> and <t:{int(lasttime) + times[1]}:R>"
 
     if channel and channel.cat_rains:
         nextpossible += f"\ncat rain! {channel.cat_rains} cats remaining..."
@@ -5134,6 +5144,8 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
     except Exception:
         pass
 
+    current_perm = None
+    guild = None
     if not isinstance(message.channel, discord.Thread):
         guild = await bot.fetch_guild(message.guild.id)
         api_channel = await guild.fetch_channel(message.channel.id)
@@ -5268,7 +5280,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
     except discord.Forbidden:
         pass
     finally:
-        if lock_success and api_channel:
+        if guild and current_perm and lock_success and api_channel:
             assert not isinstance(api_channel, discord.Thread)
             everyone_overwrites = api_channel.overwrites_for(guild.default_role)
             everyone_overwrites.send_messages = current_perm
@@ -6322,11 +6334,16 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
             return
 
         # determine the next name
+        selected_name = None
         for selected_name in prism_names:
             if not await Prism.get_or_none(guild_id=message.guild.id, name=selected_name):
                 break
 
-        if await Prism.get_or_none(guild_id=message.guild.id, name=selected_name) or await Prism.count("guild_id = $1", message.guild.id) >= len(prism_names):
+        if (
+            not selected_name
+            or await Prism.get_or_none(guild_id=message.guild.id, name=selected_name)
+            or await Prism.count("guild_id = $1", message.guild.id) >= len(prism_names)
+        ):
             await interaction.followup.send("This server has reached the prism limit.", ephemeral=True)
             return
 
@@ -6607,6 +6624,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 
         game_over = wins != [-1] or tie
 
+        second_line = ""
         if wins != [-1]:
             if board[wins[0]] == "❌":
                 second_line = f"{players[0].mention} (X) won!"
@@ -7288,6 +7306,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
 
         async def selectb(interaction: discord.Interaction) -> None:
             async def submitb(interaction2: discord.Interaction) -> None:
+                assert modal is not None
                 item1 = modal.find_item(67)
                 item2 = modal.find_item(69)
                 if selection == "cats":
@@ -7427,6 +7446,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
 
             active_user = person1 if interaction.user == person1.user else person2
             selection = select.values[0]
+            modal = None
             if selection == "cats":
                 modal = Modal(title="Offer cats...")
                 options = []
@@ -7488,6 +7508,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     modal.add_item(discord.ui.Label(text="Prism Type", component=discord.ui.Select(options=options, id=67)))
                 else:
                     modal.add_item(discord.ui.Label(text="Prism Type", component=discord.ui.TextInput(placeholder="Alpha", id=67)))
+            assert modal is not None
             modal.on_submit = submitb
             await interaction.response.send_modal(modal)
 
@@ -7931,11 +7952,12 @@ async def slots(message: discord.Interaction):
             col3[len(col3) - 2] = ":seven:"
 
         blank_emoji = get_emoji("empty")
+        current1, current2, current3 = 0, 0, 0
+        desc = ""
         for slot_loop_ind in range(1, max(reel_durations) - 1):
             current1 = min(len(col1) - 2, slot_loop_ind)
             current2 = min(len(col2) - 2, slot_loop_ind)
             current3 = min(len(col3) - 2, slot_loop_ind)
-            desc = ""
             for offset in [-1, 0, 1]:
                 if offset == 0:
                     desc += f"➡️ {col1[current1 + offset]} {col2[current2 + offset]} {col3[current3 + offset]} ⬅️\n"
@@ -8763,11 +8785,13 @@ async def set_mafia_offer(level: int, user: Profile) -> None:
     level_data = catnip_list["levels"][level]
     vt = level_data["cost"]
     cattype = "Fine"
+    value = None
     for _ in range(100):
         cattype = random.choice(cattypes)
         value = sum(type_dict.values()) / type_dict[cattype]
         if value <= vt:
             break
+    assert value is not None
     amount = max(1, round(vt / value))
     user.catnip_price = cattype
     user.catnip_amount = amount
@@ -8875,13 +8899,18 @@ async def get_bounties(level: int) -> list[dict]:
                 continue
 
             available_types1 = available_types.copy()
-            for i in available_types:
+            base_amount = None
+            cat_type = None
+            for _ in available_types:
                 cat_type = random.choices(available_types1)[0]
                 prob = type_dict[cat_type] / sum(type_dict.values())
                 base_amount = avg_cats_needed * prob
                 available_types1.remove(cat_type)
                 if base_amount > 0.8:
                     break
+
+            if base_amount is None or cat_type is None:
+                continue
 
             amount = max(1, round(base_amount * variation))
 
@@ -8993,6 +9022,7 @@ async def level_down(user: Profile, message: discord.Interaction, ephemeral: boo
     user.bounty_active = False
     user.first_quote_seen = False
 
+    removed_perk = None
     if user.perks:
         h = list(user.perks)
         removed_perk = h.pop()
@@ -9935,6 +9965,8 @@ async def leaderboards(
         show_amount = 15
 
         string = ""
+        bp_season = None
+        unit = None
         if type == "Cats":
             unit = "cats"
 
@@ -9952,6 +9984,7 @@ async def leaderboards(
 
                 # find rarest
                 rarest = None
+                rarest_holder = None
                 for i in cattypes[::-1]:
                     non_zero_count = await Profile.collect_limit("user_id", f'guild_id = $1 AND "cat_{i}" > 0', message.guild.id)
                     if len(non_zero_count) != 0:
@@ -9959,7 +9992,7 @@ async def leaderboards(
                         rarest_holder = non_zero_count
                         break
 
-                if rarest and specific_cat != rarest:
+                if rarest and rarest_holder and specific_cat != rarest:
                     catmoji = get_emoji(rarest.lower() + "cat")
                     rarest_holder = [f"<@{i.user_id}>" for i in rarest_holder]
                     joined = ", ".join(rarest_holder)
@@ -10035,11 +10068,14 @@ async def leaderboards(
         # find the placement of the person who ran the command and optionally the person who pressed the button
         interactor_placement = 0
         messager_placement = 0
+        interactor_perc = None
+        messager_perc = None
         for index, position in enumerate(result):
             if position["user_id"] == interaction.user.id:
                 interactor_placement = index + 1
                 interactor = position[final_value]
                 if type == "Cattlepass":
+                    assert bp_season is not None
                     if position[final_value] >= len(bp_season):
                         lv_xp_req = 2000
                     else:
@@ -10049,6 +10085,7 @@ async def leaderboards(
                 messager_placement = index + 1
                 messager = position[final_value]
                 if type == "Cattlepass":
+                    assert bp_season is not None
                     if position[final_value] >= len(bp_season):
                         lv_xp_req = 2000
                     else:
@@ -10095,6 +10132,7 @@ async def leaderboards(
             num = i[final_value]
 
             if type == "Cattlepass":
+                assert bp_season is not None
                 if i[final_value] >= len(bp_season):
                     lv_xp_req = 2000
                 else:
@@ -10131,6 +10169,7 @@ async def leaderboards(
                     break
                 elif type == "Roulette Dollars" and num == 100:
                     break
+                assert unit is not None
                 string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
 
             if message.user.id == i["user_id"] and current <= 5:
@@ -10148,11 +10187,13 @@ async def leaderboards(
             messager_line = ""
             if include_interactor:
                 if type == "Cattlepass":
+                    assert interactor_perc is not None
                     interactor_line = f"{interactor_placement}\\. Level **{interactor}** *({interactor_perc}%)*: {interaction.user.mention}\n"
                 else:
                     interactor_line = f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
             if include_messager:
                 if type == "Cattlepass":
+                    assert messager_perc is not None
                     messager_line = f"{messager_placement}\\. Level **{messager}** *({messager_perc}%)*: {message.user.mention}\n"
                 else:
                     messager_line = f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: {message.user.mention}\n"
@@ -10182,6 +10223,7 @@ async def leaderboards(
         # handle funny buttons
         myview = View(timeout=VIEW_TIMEOUT)
 
+        dropdown = None
         if type == "Cats":
             dd_opts = [discord.SelectOption(label="All", emoji=get_emoji("staring_cat"), value="All", default=specific_cat == "All")]
 
@@ -10219,6 +10261,7 @@ async def leaderboards(
         if not locked:
             myview.add_item(lb_select)
             if type == "Cats":
+                assert dropdown is not None
                 myview.add_item(dropdown)
 
         # just send if first time, otherwise edit existing
