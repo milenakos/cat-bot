@@ -1251,6 +1251,8 @@ async def gift_autocomplete(interaction: discord.Interaction, current: str) -> l
             choices.append(discord.app_commands.Choice(name=f"{choice} (x{user[f'cat_{choice}']})", value=choice))
     if current.lower() in "rain" and actual_user.rain_minutes > 0:
         choices.append(discord.app_commands.Choice(name=f"Rain ({actual_user.rain_minutes} minutes)", value="rain"))
+    if current.lower() in "scratchcards" and user.scratchcards > 0:
+        choices.append(discord.app_commands.Choice(name=f"Scratchcards (x{user.scratchcards})", value="scratchcards"))
     for choice in pack_data:
         if user[f"pack_{choice['name'].lower()}"] > 0:
             pack_name = choice["name"]
@@ -7524,6 +7526,10 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             elif selection == "scratchcards":
                 modal = Modal(title="Offer scratchcards...")
                 await active_user.profile.refresh_from_db()
+                if active_user.profile.scratchcards == 0:
+                    await interaction.response.send_message("You don't have any scratchcards to offer!", ephemeral=True)
+                    return
+
                 modal.add_item(
                     discord.ui.Label(
                         text="Amount", component=discord.ui.TextInput(placeholder=f"Max: {active_user.profile.scratchcards:,}", min_length=1, id=69)
@@ -7532,6 +7538,10 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             elif selection == "rain":
                 modal = Modal(title="Offer rain...")
                 await active_user.global_user.refresh_from_db()
+                if active_user.global_user.rain_minutes == 0:
+                    await interaction.response.send_message("You don't have any rain to offer!", ephemeral=True)
+                    return
+
                 modal.add_item(
                     discord.ui.Label(
                         text="Rain Minutes", component=discord.ui.TextInput(placeholder=f"Max: {active_user.global_user.rain_minutes}", min_length=1, id=69)
