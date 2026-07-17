@@ -6562,7 +6562,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
                         break
             return min_eval
 
-    def get_best_move(board: list[Literal[None, "❌", "⭕"]]) -> int:
+    def get_best_move(board: list[Literal[None, "❌", "⭕"]]) -> int | None:
         best_score = float("-inf")
         best_move = None
 
@@ -6587,7 +6587,6 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
                     best_score = score
                     best_move = i
 
-        assert best_move is not None
         return best_move
 
     async def finish_turn() -> None:
