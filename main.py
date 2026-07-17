@@ -5142,18 +5142,19 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
     try:
         for _ in range(3):
             await message.channel.send("# :bangbang: cat rain has ended")
-            await asyncio.sleep(0.4)
+            await asyncio.sleep(0.3)
     except Exception:
         pass
 
     current_perm = None
     guild = None
+    api_channel = None
+    lock_success = False
     if not isinstance(message.channel, discord.Thread):
-        guild = await bot.fetch_guild(message.guild.id)
-        api_channel = await guild.fetch_channel(message.channel.id)
-
-        lock_success = False
         try:
+            guild = await bot.fetch_guild(message.guild.id)
+            api_channel = await guild.fetch_channel(message.channel.id)
+
             assert not isinstance(api_channel, discord.Thread)
             me_overwrites = api_channel.overwrites_for(message.guild.me)
             me_overwrites.send_messages = True
@@ -5169,9 +5170,6 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
             lock_success = True
         except Exception:
             pass
-    else:
-        api_channel = None
-        lock_success = False
 
     # rain summary
     try:
@@ -5282,8 +5280,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
     except discord.Forbidden:
         pass
     finally:
-        if guild and current_perm and lock_success and api_channel:
-            assert not isinstance(api_channel, discord.Thread)
+        if guild and current_perm and lock_success and api_channel and not isinstance(api_channel, discord.Thread):
             everyone_overwrites = api_channel.overwrites_for(guild.default_role)
             everyone_overwrites.send_messages = current_perm
             await api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites)
@@ -8014,6 +8011,7 @@ async def slots(message: discord.Interaction):
             current1 = min(len(col1) - 2, slot_loop_ind)
             current2 = min(len(col2) - 2, slot_loop_ind)
             current3 = min(len(col3) - 2, slot_loop_ind)
+            desc = ""
             for offset in [-1, 0, 1]:
                 if offset == 0:
                     desc += f"➡️ {col1[current1 + offset]} {col2[current2 + offset]} {col3[current3 + offset]} ⬅️\n"
