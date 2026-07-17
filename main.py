@@ -2128,7 +2128,9 @@ async def on_message(message: discord.Message) -> None:
         last_loop_time = time.time()
         bot.loop.create_task(background_loop())
 
-    if message.guild is None and not message.author.bot:
+    if message.guild is None:
+        if message.author.bot:
+            return
         try:
             user = await User.get_or_create(user_id=message.author.id)
             if text.startswith("disable"):
@@ -2154,7 +2156,6 @@ async def on_message(message: discord.Message) -> None:
             pass
         return
 
-    assert message.guild is not None
     if not isinstance(message.channel, GuildMessageable):
         return
 
@@ -2191,6 +2192,9 @@ async def on_message(message: discord.Message) -> None:
 
         return
 
+    if message.author.bot or message.webhook_id is not None:
+        return
+
     react_count = 0
 
     # :staring_cat: reaction on "bullshit"
@@ -2216,9 +2220,6 @@ async def on_message(message: discord.Message) -> None:
                     logging.debug("Reaction added: %s", "staring_cat")
             except Exception:
                 pass
-
-    if message.author.bot or message.webhook_id is not None:
-        return
 
     for achievement in achs:
         match_text, match_method, achievement_name = achievement
