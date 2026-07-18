@@ -15,8 +15,10 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
+import datetime
 import importlib
 import logging
+import subprocess
 import sys
 import time
 
@@ -85,11 +87,20 @@ filtered_errors = [
 
 
 def before_send(event: sentry_sdk.types.Event, hint: sentry_sdk.types.Hint) -> sentry_sdk.types.Event | None:
+    s = datetime.datetime.fromtimestamp(
+        config.SOFT_RESTART_TIME or time.time(),
+        tz=datetime.timezone.utc,
+    ).isoformat(timespec="seconds")
+    last_commit = subprocess.check_output(["git", "rev-list", "-n", "1", f"--before='{s}'", "HEAD"]).decode("utf-8").strip()
+    event["release"] = last_commit
+
     if "exc_info" not in hint:
         return event
+
     for i in filtered_errors:
         if i.lower() in str(hint["exc_info"][0]).lower() + str(hint["exc_info"][1]).lower():
             return None
+
     return event
 
 
