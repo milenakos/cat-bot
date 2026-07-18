@@ -699,7 +699,7 @@
     "weekly": {
       "catch": {"emoji": "nicecat", "title": "Catch 70 cats", "progress": 70, "start_time": 0, "end_time": 604800},
       "brave+": {"emoji": "bravecat", "title": "Catch 5 cats rarer than Brave", "progress": 5, "start_time": 604800, "end_time": 1209600},
-      "bonus": {"emoji": "🎁", "title": "Succeed in 4 bonus minigames", "progress": 4, "start_time": 1209600, "end_time": 1814400},
+      "bonus": {"emoji": "🎁", "title": "Complete 4 bonus minigames", "progress": 4, "start_time": 1209600, "end_time": 1814400},
       "different": {"emoji": "wildcat", "title": "Catch 13 different cattypes", "progress": 13, "start_time": 1814400, "end_time": 2419200},
       "": {"emoji": "", "title": "", "progress": 0, "start_time": 2419200, "end_time": 300000}
     }

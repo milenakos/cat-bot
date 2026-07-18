@@ -6147,7 +6147,10 @@ async def battlepass(message: discord.Interaction):
             month_start = datetime.datetime(now.year, now.month, 1) - datetime.timedelta(hours=4)
             description += f"__Weekly Quest__ (refreshes <t:{weekly_quest['end_time'] + int(month_start.timestamp())}:R>)\n"
             if weekly_quest["progress"] > user.weekly_progress:
-                description += f"{get_emoji(weekly_quest['emoji'])} {weekly_quest['title']} ({user.weekly_progress}/{weekly_quest['progress']})\n"
+                title = weekly_quest["title"]
+                if user.weekly_quest == "bonus":
+                    title = "Complete 4 [bonus minigames](https://catbot.wiki/cat-types#bonus-cats)"
+                description += f"{get_emoji(weekly_quest['emoji'])} {title} ({user.weekly_progress}/{weekly_quest['progress']})\n"
                 if user.weekly_quest != "different":
                     colored = int(user.weekly_progress / weekly_quest["progress"] * 10)
                     description += get_emoji("staring_square") * colored + "⬛" * (10 - colored)
