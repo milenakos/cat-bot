@@ -8288,7 +8288,7 @@ async def chaos(message: discord.Interaction):
         view.add_item(
             Container(
                 f"## {cookies:,}",
-                "the number above is global for everyone. click the button to add a random number to it.",
+                "the number above is global for everyone. click the button to add a random number 0-999 to it.",
                 b,
             )
         )
