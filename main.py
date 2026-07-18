@@ -421,6 +421,10 @@ def get_command_mention(name: str) -> str:
     return f"</{name}:{COMMAND_IDS[name]}>" if name in COMMAND_IDS else f"/{name}"
 
 
+def log_stats(key: str, tags: dict[str, str] = {}, value: float = 1) -> None:
+    logging.debug("Cat Bot - %s", json.dumps({"name": str(key), "gauge": {"value": int(value)}, "tags": tags}))
+
+
 async def fetch_dm_channel(user: User) -> discord.abc.Messageable:
     if user.dm_channel_id:
         return bot.get_partial_messageable(user.dm_channel_id)
@@ -737,7 +741,7 @@ async def achemb(
 
     profile[ach_id] = True
     await profile.save()
-    logging.debug("Achievement unlocked: %s", ach_id)
+    log_stats("achievement", {"ach_id": ach_id})
     ach_data = ach_list[ach_id]
     desc = ach_data["description"]
     if ach_id == "dataminer":
@@ -982,7 +986,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
 
     user.quests_completed += 1
 
-    logging.debug("Quest complete: %s", quest)
+    log_stats("quest", {"quest": quest})
     old_xp = user.progress
     level_complete_embeds = []
     if user.battlepass >= len(config.battle["seasons"][str(user.season)]):
@@ -994,7 +998,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
 
     new_level_text = None
     if current_xp >= level_data["xp"]:
-        logging.debug("Level complete %d", user.battlepass)
+        log_stats("bp_lvl_complete", {"level": user.battlepass})
         xp_progress = current_xp
         active_level_data = level_data
         while xp_progress >= active_level_data["xp"]:
@@ -1327,7 +1331,7 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     channel.cattype = localcat
     await channel.save()
     temp_spawns_storage.remove(ch_id)
-    logging.debug("Cat spawned, forced: %s", bool(force_spawn))
+    log_stats("spawn", {"forced": str(force_spawn)})
     return f"ok, now i will send cats in <#{ch_id}>"
 
 
@@ -1347,7 +1351,7 @@ async def postpone_reminder(interaction: discord.Interaction) -> None:
         else:
             user.reminder_misc = int(time.time()) + 30 * 60
         await user.save()
-    logging.debug("Reminder postponed: %s", reminder_type)
+    log_stats("postpone_reminder", {"reminder_type": reminder_type})
     await interaction.response.send_message(f"ok, i will remind you <t:{int(time.time()) + 30 * 60}:R>", ephemeral=True)
 
 
@@ -1462,7 +1466,7 @@ async def background_loop() -> None:
         counter += 1
         await spawn_cat(channel.channel_id)
         await asyncio.sleep(0.1)
-    logging.debug("Channels revived: %d", counter)
+    log_stats("revived", {}, counter)
 
     # THIS IS CONSENTUAL AND TURNED OFF BY DEFAULT DONT BAN ME
     #
@@ -1507,7 +1511,7 @@ async def background_loop() -> None:
         reminder_count += 1
         await user.save()
 
-    logging.debug("Reminders sent: %d, type: %s", reminder_count, "vote")
+    log_stats("reminders", {"type": "vote"}, reminder_count)
 
     # i know the next two are similiar enough to be merged but its currently dec 30 and i cant be bothered
     # catch reminders
@@ -1556,7 +1560,7 @@ async def background_loop() -> None:
         reminder_count += 1
         await user.save()
 
-    logging.debug("Reminders sent: %d, type: %s", reminder_count, "catch")
+    log_stats("reminders", {"type": "catch"}, reminder_count)
 
     # misc reminders
     reminder_count = 0
@@ -1604,7 +1608,7 @@ async def background_loop() -> None:
         reminder_count += 1
         await user.save()
 
-    logging.debug("Reminders sent: %d, type: %s", reminder_count, "misc")
+    log_stats("reminders", {"type": "misc"}, reminder_count)
 
     # manual reminders
     async for reminder in Reminder.filter("time < $1", time.time()):
@@ -1793,6 +1797,8 @@ async def play_minigame(interaction: discord.Interaction) -> None:
     start = int(time.time())
     end = start + 30
 
+    log_stats("minigame_start", {"cattype": cattype})
+
     modal = Modal(title="Bonus Cat Minigame")
     if cattype == "Fine":
         random_letter = random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -1976,6 +1982,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         nonlocal answer
         if time.time() > end:
             await interaction.response.send_message("❌ You weren't fast enough!", ephemeral=True)
+            log_stats("minigame_timeout")
             return
         answer_item = modal.find_item(67)
         if isinstance(answer_item, discord.ui.TextInput) or isinstance(answer_item, discord.ui.RadioGroup):
@@ -2029,10 +2036,12 @@ async def play_minigame(interaction: discord.Interaction) -> None:
             icon = get_emoji(cattype.lower() + "cat")
             await interaction.response.send_message(f"✅ {interaction.user.mention} got +3 {icon} {cattype} bonus cats.")
             await progress(interaction, profile, "bonus")
+            log_stats("minigame_success", {"cattype": cattype})
             if cattype == "Rare":
                 await achemb(interaction, "math_jumpscare", "followup")
         else:
             await interaction.response.send_message(f"❌ Better luck next time!\nCorrect answer: `{answer}`\nYour answer: `{answer_clean}`", ephemeral=True)
+            log_stats("minigame_fail", {"cattype": cattype})
 
     modal.on_submit = check_minigame
     await interaction.response.send_modal(modal)
@@ -2067,6 +2076,8 @@ async def belated_window_task(
     if catchers:
         catchers.pop(0)
 
+    log_stats("late_catchers", {"count": str(len(catchers))})
+
     icon = get_emoji(belated["cattype"].lower() + "cat")
     has_bonus = random.random() < chance
 
@@ -2079,6 +2090,7 @@ async def belated_window_task(
 
     # rain bonus: process rewards and combine with late-catchers message
     if has_bonus and belated["is_rain"]:
+        log_stats("bonus_cat", {"rain": "true", "cattype": belated["cattype"]})
         for uid in belated["late_catchers"]:
             assert msg.guild is not None
             u = await Profile.get_or_create(user_id=uid[0], guild_id=msg.guild.id)
@@ -2109,6 +2121,7 @@ async def belated_window_task(
 
     # non-rain bonus: minigame button
     if has_bonus:
+        log_stats("bonus_cat", {"rain": "false", "cattype": belated["cattype"]})
         view = View(timeout=10)
         button = Button(style=discord.ButtonStyle.green, label="Go!")
         button.callback = play_minigame
@@ -2222,7 +2235,7 @@ async def on_message(message: discord.Message) -> None:
                         await message.add_reaction(get_emoji("staring_cat"))
                     react_count += 1
                     reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
-                    logging.debug("Reaction added: %s", "staring_cat")
+                    log_stats("reaction", {"reaction": "staring_cat"})
             except Exception:
                 pass
 
@@ -2263,7 +2276,7 @@ async def on_message(message: discord.Message) -> None:
                     await message.add_reaction(resolved_emoji)
                 react_count += 1
                 reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
-                logging.debug("Reaction added: %s", reaction_name)
+                log_stats("reaction", {"reaction": reaction_name})
             except Exception:
                 pass
 
@@ -2285,7 +2298,7 @@ async def on_message(message: discord.Message) -> None:
                     await message.reply(response_reply)
                 except Exception:
                     pass
-                logging.debug("Response sent: %s", response_reply)
+                log_stats("response", {"type": response_reply})
 
     try:
         if message.author in message.mentions and message.type != discord.MessageType.poll_result and reactions_ratelimit.get(message.guild.id, 0) < 100:
@@ -2295,7 +2308,7 @@ async def on_message(message: discord.Message) -> None:
                 await message.add_reaction(get_emoji("staring_cat"))
             react_count += 1
             reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
-            logging.debug("Reaction added: %s", "staring_cat")
+            log_stats("reaction", {"reaction": "staring_cat"})
     except Exception:
         pass
 
@@ -2314,7 +2327,7 @@ async def on_message(message: discord.Message) -> None:
             except Exception:
                 # test failure
                 pass
-            logging.debug("Response sent: %s", "test success")
+            log_stats("response", {"type": "test success"})
         await achemb(message, "test_ach", "reply")
 
     if text.lower() == "please do not the cat":
@@ -2329,7 +2342,7 @@ async def on_message(message: discord.Message) -> None:
                 await message.reply(f"ok then\n{personname} lost 1 fine cat!!!1!\nYou now have {user.cat_Fine:,} cats of dat type!")
             except Exception:
                 pass
-            logging.debug("Response sent: %s", "please do not the cat")
+            log_stats("response", {"type": "please do not the cat"})
         await achemb(message, "pleasedonotthecat", "reply")
 
     if text.lower() == "please do the cat":
@@ -2341,7 +2354,7 @@ async def on_message(message: discord.Message) -> None:
                 await message.reply(file=thing)
             except Exception:
                 pass
-            logging.debug("Response sent: %s", "please do the cat")
+            log_stats("response", {"type": "please do the cat"})
         await achemb(message, "pleasedothecat", "reply")
 
     if text.lower() == "car":
@@ -2354,7 +2367,7 @@ async def on_message(message: discord.Message) -> None:
                 await message.reply(file=file, embed=embed)
             except Exception:
                 pass
-            logging.debug("Response sent: %s", "car")
+            log_stats("response", {"type": "car"})
         await achemb(message, "car", "reply")
 
     if text.lower() == "cart":
@@ -2367,7 +2380,7 @@ async def on_message(message: discord.Message) -> None:
                 await message.reply(file=file, embed=embed)
             except Exception:
                 pass
-            logging.debug("Response sent: %s", "cart")
+            log_stats("response", {"type": "cart"})
 
     try:
         if (
@@ -2635,7 +2648,7 @@ async def on_message(message: discord.Message) -> None:
                     perks_info = catnip_list["perks"]
 
                     if len(perks) > 0:
-                        logging.debug("Catnip active with %d perks", len(perks))
+                        log_stats("catnip", {"perks": str(len(perks))})
 
                     for perk in perks:
                         h = perk.split("_")
@@ -2763,7 +2776,7 @@ async def on_message(message: discord.Message) -> None:
                         blesser.username = (await bot.fetch_user(blesser.user_id)).name
                     bot.loop.create_task(blesser.save())
 
-                    logging.debug("Catch blessed")
+                    log_stats("bless")
 
                     if blesser.blessings_anonymous:
                         blesser_text = "💫 Anonymous Supporter"
@@ -2803,7 +2816,7 @@ async def on_message(message: discord.Message) -> None:
                     user.boosted_catches += 1
                     prism_which_boosted.catches_boosted += 1
                     bot.loop.create_task(prism_which_boosted.save())
-                    logging.debug("Boosted from %s", le_emoji)
+                    log_stats("boost", {"from": le_emoji})
                     idx_shift = 0
                     try:
                         le_old_emoji = le_emoji
@@ -2818,7 +2831,7 @@ async def on_message(message: discord.Message) -> None:
                                 rainboost = 1200
                             else:
                                 rainboost = 600
-                            logging.debug("Boosted to rain: %d", rainboost)
+                            log_stats("boost_to_rain", {"length": str(rainboost)})
                             channel.cat_rains += int(rainboost / 60) * 22
                             if channel.cat_rains > int(rainboost / 60) * 22:
                                 await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
@@ -3040,8 +3053,8 @@ async def on_message(message: discord.Message) -> None:
                         )
                     )
 
-                logging.debug("Caught (pre-boost) %d %s", 1, channel.cattype)
-                logging.debug("Caught (post-boost) %d %s", silly_amount, le_emoji)
+                log_stats("precatch", {"amount": "1", "cattype": channel.cattype})
+                log_stats("postcatch", {"amount": str(silly_amount), "cattype": le_emoji})
 
                 user.total_catches += 1
                 user.last_catch = time.time()
@@ -3294,6 +3307,8 @@ async def on_guild_join(guild: discord.Guild) -> None:
     else:
         source = "discord"
 
+    log_stats("guild_join", {"source": source})
+
     # first to try a good channel, then whenever we cat atleast chat
     found = False
     ch = None
@@ -3325,6 +3340,7 @@ Have a nice day :)"""
         if found:
             assert ch is not None
             await ch.send(msg)
+            log_stats("welcome_message")
     except Exception:
         pass
 
@@ -3332,6 +3348,7 @@ Have a nice day :)"""
         async for entry in guild.audit_logs(action=discord.AuditLogAction.bot_add, limit=20):
             if bot.user and entry.target and entry.user and entry.target.id == bot.user.id:
                 await entry.user.send(msg)
+                log_stats("welcome_dm")
                 break
     except Exception:
         pass
@@ -3448,6 +3465,7 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
             )
         )
         view.add_item(ActionRow(button))
+    log_stats("tutorial_state_update", {"state": str(user.tutorial_state)})
     await user.save()
     return view
 
@@ -3744,7 +3762,7 @@ async def news(message: discord.Interaction):
         back_button.callback = go_back
         back_row = ActionRow(back_button)
 
-        logging.debug("Read news #%d", news_id)
+        log_stats("news", {"id": str(news_id)})
 
         if news_id == 0:
             embed = Container(
@@ -5196,7 +5214,7 @@ async def randomizer(message: discord.Interaction):
 
 
 async def rain_recovery_loop(channel: Channel) -> None:
-    logging.debug("Rain started, cats %d", channel.cat_rains)
+    log_stats("rain_start", {"cats": str(channel.cat_rains)})
     while True:
         await asyncio.sleep(5)
         await channel.refresh_from_db()
@@ -5575,6 +5593,8 @@ if config.DONOR_CHANNEL_ID:
 
         await message.response.defer(ephemeral=True)
 
+        log_stats("custom_cat_change")
+
         em_name = str(user.user_id) + "cat"
 
         if name:
@@ -5769,6 +5789,8 @@ async def scratch(message: discord.Interaction):
             await interaction.response.send_message("You have no scratch cards!", ephemeral=True)
             return
 
+        log_stats("scratchcard")
+
         opts = [
             "1m Rain", "1m Rain",
             "Celestial", "Celestial",
@@ -5912,7 +5934,7 @@ async def packs(message: discord.Interaction):
         for level, pack in enumerate(pack_names):
             if opened_so_far >= real_to_open:
                 break
-            logging.debug("Opened pack %s", pack)
+            log_stats("pack_open", {"pack": pack})
             pack_id = f"pack_{pack.lower()}"
             this_packs_count = user[pack_id]
             if this_packs_count < 1:
@@ -6088,7 +6110,7 @@ async def packs(message: discord.Interaction):
         user[f"pack_{pack.lower()}"] -= 1
         await user.save()
 
-        logging.debug("Opened pack %s", pack)
+        log_stats("pack_open", {"pack": pack})
 
         embed = discord.Embed(title=reward_texts[0], color=Colors.brown)
         await interaction.edit_original_response(embed=embed, view=None)
@@ -6447,7 +6469,7 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
             ),
         )
 
-        logging.debug("Created prism")
+        log_stats("prism_craft", {"name": selected_name})
 
         await message.followup.send(f"{icon} {interaction.user.mention} has created prism {selected_name}!")
         await achemb(interaction, "prism", "followup")
@@ -7807,6 +7829,7 @@ async def bakery(message: discord.Interaction):
         user.queued_chef_pack = False
         await user.save()
         await profile.save()
+        log_stats("chef_pack_get")
         try:
             await message.channel.send(f"{message.user.mention} got +1 {get_emoji('chefpack')} Chef Pack from Bake.gg!")
         except Exception:
@@ -7852,6 +7875,8 @@ async def bakery(message: discord.Interaction):
 
                     user.last_bakegg_send = get_current_week()
                     await user.save()
+
+                    log_stats("bakery_delivered")
 
                     view = LayoutView(timeout=1)
                     view.add_item(
@@ -8887,7 +8912,7 @@ async def bounty(message: discord.Message, user: Profile, cattype: str) -> None:
             await user.save()
 
     for title in newly_completed_titles:
-        logging.debug("Completed bounties %d", completed_count)
+        log_stats("bounty_complete", {"title": title})
         level = user.catnip_level
         colored = max(0, min(10, int(completed_count / user.bounties * 10)))
         progress_line = f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
@@ -9179,7 +9204,7 @@ async def level_down(user: Profile, message: discord.Interaction, ephemeral: boo
         description=f"**{name}**: *{quote}*\n\nLevel {user.catnip_level + 1} bounties failed!\nYou're now on level {user.catnip_level}.{removed_line}",
     )
 
-    logging.debug("Levelled down to %d", user.catnip_level)
+    log_stats("level_down", {"to": str(user.catnip_level)})
 
     if ephemeral:
         return embed
@@ -9418,7 +9443,7 @@ async def catnip(message: discord.Interaction):
         await set_bounties(user.catnip_level, user)
         await set_mafia_offer(user.catnip_level, user)
 
-        logging.debug("Levelled up to %d", user.catnip_level)
+        log_stats("level_down", {"to": str(user.catnip_level)})
 
         if user.catnip_level == 8 and user.cutscene == 0:
             await mafia_cutscene(interaction, user)
@@ -9547,7 +9572,7 @@ You can stop. That's okay. Seriously.
             user.perk3 = ""
             await user.save()
 
-            logging.debug("Selected perk on level %d", user.catnip_level)
+            log_stats("perk_select", {"level": str(user.catnip_level)})
 
             await main_message.edit(view=await gen_main())
 
@@ -9668,7 +9693,7 @@ You can stop. That's okay. Seriously.
         user.catnip_active = int(time.time()) + 3600 * duration + duration_bonus
         await user.save()
 
-        logging.debug("Started bounties on level %d", user.catnip_level)
+        log_stats("bounties_start", {"level": str(user.catnip_level)})
 
         await main_message.edit(view=await gen_main())
 
@@ -10797,7 +10822,7 @@ Everyone who buys one will also get a **badge**! Run `/plushbadge` to redeem."""
             embed=embed,
         )
 
-        logging.debug("User voted, streak %d", user.vote_streak)
+        log_stats("vote", {"streak": str(user.vote_streak)})
     except Exception:
         # Ignore errors when DMing the user (e.g. if they have DMs closed)
         pass
@@ -10847,7 +10872,7 @@ async def on_error(*args, **kwargs):
 async def on_interaction(ctx: discord.Interaction) -> None:
     try:
         if ctx.command:
-            logging.debug("Command %s was used", ctx.command.name)
+            log_stats("command_use", {"name": ctx.command.name})
             bot.loop.create_task(start_tutorial(ctx))
     except Exception:
         pass
