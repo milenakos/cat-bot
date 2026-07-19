@@ -6912,7 +6912,7 @@ async def cookie(message: discord.Interaction):
             user = await Profile.get(["cookies", "misc_quest"], guild_id=message.guild.id, user_id=message.user.id)
             user.cookies += 1
             await user.save()
-        except AttributeError:
+        except (AttributeError, LookupError):
             await interaction.edit_original_response(content="...", view=None)
             return
         btn = view.children[0]
@@ -7782,7 +7782,7 @@ async def brew(message: discord.Interaction):
             user = await Profile.get(["coffees", "misc_quest"], guild_id=message.guild.id, user_id=message.user.id)
             user.coffees += 1
             await user.save()
-        except AttributeError:
+        except (AttributeError, LookupError):
             await interaction.edit_original_response(content="...", view=None)
             return
 
