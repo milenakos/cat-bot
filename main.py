@@ -2826,6 +2826,7 @@ async def on_message(message: discord.Message) -> None:
                             idx_shift = cattypes.index(le_emoji) + 1
                         le_emoji = cattypes[idx_shift]
                     except IndexError:
+                        le_emoji = cattypes[-1]
                         if not channel.forcespawned:
                             if idx_shift == len(cattypes) + 1:
                                 rainboost = 1200
