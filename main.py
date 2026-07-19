@@ -57,6 +57,11 @@ try:
 except ImportError:
     exportbackup = None
 
+try:
+    COMMIT = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
+except Exception:
+    COMMIT = "unknown"
+
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
 
@@ -314,6 +319,40 @@ funny = [
     "oh no",
     "*steals your left kidney*",
     "meow",
+]
+
+config.filtered_errors = [
+    # inactionable/junk discord api errors
+    "Too Many Requests",
+    "You are being rate limited",
+    "Invalid Webhook Token",
+    "Unknown Interaction",
+    "Unknown Webhook",
+    "Unknown Message",
+    "Failed to convert",
+    "CommandNotFound",
+    "CommandAlreadyRegistered",
+    "Cannot send an empty message",
+    "Missing Permissions",
+    "Missing Access",
+    # connection errors and warnings (why are there so many)
+    "ClientConnectorError",
+    "ClientConnectorDNSError",
+    "NameResolutionError",
+    "DiscordServerError",
+    "WSServerHandshakeError",
+    "ConnectionClosed",
+    "ConnectionResetError",
+    "TimeoutError",
+    "ServerDisconnectedError",
+    "ClientOSError",
+    "TransferEncodingError",
+    "Request Timeout",
+    "Session is closed",
+    "Unclosed connection",
+    "unable to perform operation on",
+    "Event loop is closed",
+    "503 Service Unavailable",
 ]
 
 
@@ -3519,11 +3558,9 @@ async def info(message: discord.Interaction):
     assert message.guild is not None
     embed = discord.Embed(title="Cat Bot Info", color=Colors.brown)
     try:
-        s = datetime.datetime.fromtimestamp(config.SOFT_RESTART_TIME, tz=datetime.timezone.utc).isoformat(timespec="seconds")
-        last_commit = subprocess.check_output(["git", "rev-list", "-n", "1", f"--before='{s}'", "HEAD"]).decode("utf-8").strip()
-        git_timestamp = int(subprocess.check_output(["git", "show", "-s", "--format=%ct", last_commit]).decode("utf-8"))
+        assert COMMIT != "unknown"
+        git_timestamp = int(subprocess.check_output(["git", "show", "-s", "--format=%ct", COMMIT]).decode("utf-8"))
     except Exception:
-        last_commit = "N/A"
         git_timestamp = 0
 
     embed.description = f"""
@@ -3537,7 +3574,7 @@ RAM usage: `{psutil.virtual_memory().percent:.1f}%`
 **__Tech__**
 Last hard restart: <t:{int(config.HARD_RESTART_TIME)}:R>
 Last soft restart: <t:{int(config.SOFT_RESTART_TIME)}:R>
-Commit: `{last_commit[:7]}`
+Commit: `{COMMIT[:7]}`
 Commit time: {f"<t:{int(git_timestamp)}:R>" if git_timestamp else "N/A"}
 Loops since soft restart: `{loop_count + 1:,}`
 

@@ -15,10 +15,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
-import datetime
 import importlib
 import logging
-import subprocess
 import sys
 import time
 
@@ -53,55 +51,24 @@ except ImportError:
 
 winuvloop.install()
 
-filtered_errors = [
-    # inactionable/junk discord api errors
-    "Too Many Requests",
-    "You are being rate limited",
-    "Invalid Webhook Token",
-    "Unknown Interaction",
-    "Unknown Webhook",
-    "Unknown Message",
-    "Failed to convert",
-    "CommandNotFound",
-    "CommandAlreadyRegistered",
-    "Cannot send an empty message",
-    "Missing Permissions",
-    "Missing Access",
-    # connection errors and warnings (why are there so many)
-    "ClientConnectorError",
-    "ClientConnectorDNSError",
-    "NameResolutionError",
-    "DiscordServerError",
-    "WSServerHandshakeError",
-    "ConnectionClosed",
-    "ConnectionResetError",
-    "TimeoutError",
-    "ServerDisconnectedError",
-    "ClientOSError",
-    "TransferEncodingError",
-    "Request Timeout",
-    "Session is closed",
-    "Unclosed connection",
-    "unable to perform operation on",
-    "Event loop is closed",
-    "503 Service Unavailable",
-]
-
 
 def before_send(event: sentry_sdk.types.Event, hint: sentry_sdk.types.Hint) -> sentry_sdk.types.Event | None:
-    s = datetime.datetime.fromtimestamp(
-        config.SOFT_RESTART_TIME or time.time(),
-        tz=datetime.timezone.utc,
-    ).isoformat(timespec="seconds")
-    last_commit = subprocess.check_output(["git", "rev-list", "-n", "1", f"--before='{s}'", "HEAD"]).decode("utf-8").strip()
-    event["release"] = last_commit
-
     if "exc_info" not in hint:
         return event
 
-    for i in filtered_errors:
+    for i in config.filtered_errors:
         if i.lower() in str(hint["exc_info"][0]).lower() + str(hint["exc_info"][1]).lower():
             return None
+
+    tb = hint["exc_info"][2]
+    commit = None
+    while tb is not None:
+        frame_globals = tb.tb_frame.f_globals
+        if frame_globals.get("__name__") == "main" and "COMMIT" in frame_globals:
+            commit = frame_globals["COMMIT"]
+        tb = tb.tb_next
+    if commit:
+        event["release"] = commit
 
     return event
 

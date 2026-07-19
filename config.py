@@ -45,6 +45,7 @@ INVITE_LOGS_CHANNEL = 1509292465088368640
 
 
 # config.py is used as a place to store persistent data, do not modify these
+filtered_errors = []
 battle = {}
 belated_catchers = {}
 cat_cought_rain = {}
