@@ -443,6 +443,8 @@ CREATE INDEX reminder_time ON public.reminder USING btree ("time");
 
 CREATE INDEX idx_partial_blessings ON public."user" (rain_minutes_bought) WHERE blessings_enabled = true;
 
+CREATE INDEX idx_vote_streak ON public."user" (vote_streak) WHERE vote_streak >= 100;
+
 CREATE INDEX idx_slot_spins_partial ON public.profile (slot_spins) WHERE slot_spins > 0;
 
 CREATE INDEX idx_slot_big_wins_partial ON public.profile (slot_big_wins) WHERE slot_big_wins > 0;

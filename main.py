@@ -10799,8 +10799,10 @@ async def do_vote(user: User, created_at: float) -> None:
     if special_reward not in range(user.vote_streak, user.vote_streak + 9):
         streak_progress += f"\nNext Special Reward: {get_streak_reward(special_reward)['emoji']} at {special_reward} streak"
 
-    streak_top_position = await User.count("vote_streak > $1", user.vote_streak) + 1
-    top_text = f" (top #{streak_top_position}!)" if streak_top_position < 1000 else ""
+    top_text = ""
+    if user.vote_streak >= 100:
+        streak_top_position = await User.count("vote_streak > $1", user.vote_streak) + 1
+        top_text = f" (top #{streak_top_position}!)" if streak_top_position < 1000 else ""
 
     embed = discord.Embed(
         title="Cat Bot Plush (Limited Time)",
