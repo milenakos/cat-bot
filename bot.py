@@ -60,6 +60,7 @@ filtered_errors = [
     "Invalid Webhook Token",
     "Unknown Interaction",
     "Unknown Webhook",
+    "Unknown Message",
     "Failed to convert",
     "CommandNotFound",
     "CommandAlreadyRegistered",
