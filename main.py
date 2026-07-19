@@ -8367,10 +8367,10 @@ async def roulette(message: discord.Interaction):
 @bot.tree.command(description="absolute CHAOS")
 async def chaos(message: discord.Interaction):
     assert message.guild is not None
-    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
     async def click(interaction: discord.Interaction, first: bool = False) -> None:
         assert bot.user is not None
+        assert message.guild is not None
         cookies = await _get_pool().fetchrow(
             """INSERT INTO profile (guild_id, user_id, cookies)
             VALUES (666, $1, 1)
@@ -8399,6 +8399,7 @@ async def chaos(message: discord.Interaction):
             await interaction.response.defer()
             await interaction.edit_original_response(view=view)
 
+        profile = await Profile.get(["misc_quest"], guild_id=message.guild.id, user_id=interaction.user.id)
         if profile.misc_quest.strip() == "chaos":
             await progress(message, profile, "chaos")
 
