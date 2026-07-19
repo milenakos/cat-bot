@@ -65,6 +65,7 @@ filtered_errors = [
     "CommandAlreadyRegistered",
     "Cannot send an empty message",
     "Missing Permissions",
+    "Missing Access",
     # connection errors and warnings (why are there so many)
     "ClientConnectorError",
     "ClientConnectorDNSError",
