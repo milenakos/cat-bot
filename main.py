@@ -8399,7 +8399,11 @@ async def chaos(message: discord.Interaction):
             await interaction.response.defer()
             await interaction.edit_original_response(view=view)
 
-        if profile.misc_quest.strip() == "chaos":
+        if interaction.user != message.user:
+            clickerProfile = await Profile.get_or_create(guild_id=message.guild.id, user_id=interaction.user.id)
+            if clickerProfile.misc_quest.strip() == "chaos":
+                await progress(message, clickerProfile, "chaos")
+        elif profile.misc_quest.strip() == "chaos":
             await progress(message, profile, "chaos")
 
     await click(message, True)
