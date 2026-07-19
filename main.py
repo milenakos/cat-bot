@@ -8400,7 +8400,7 @@ async def chaos(message: discord.Interaction):
             await interaction.response.defer()
             await interaction.edit_original_response(view=view)
 
-        profile = await Profile.get(["misc_quest"], guild_id=message.guild.id, user_id=interaction.user.id)
+        profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=interaction.user.id)
         if profile.misc_quest.strip() == "chaos":
             await progress(message, profile, "chaos")
 
