@@ -1474,7 +1474,7 @@ async def background_loop() -> None:
                 if last_vote_cursor:
                     suffix = "cursor=" + last_vote_cursor
                 else:
-                    timestamp = discord.utils.utcnow() - datetime.timedelta(minutes=5)
+                    timestamp = discord.utils.utcnow() - datetime.timedelta(minutes=1)
                     suffix = "startDate=" + timestamp.replace(tzinfo=None).isoformat()
                 r = await session.get(
                     f"https://top.gg/api/v1/projects/@me/votes?{suffix}",
@@ -1664,7 +1664,7 @@ async def background_loop() -> None:
     if config.BACKUP_ID:
         backupchannel = bot.get_partial_messageable(config.BACKUP_ID)
 
-        if loop_count % 12 == 0:
+        if loop_count % 60 == 0:
             backup_file = "./backup.dump"
             try:
                 os.remove(backup_file)
@@ -1752,14 +1752,6 @@ async def on_ready() -> None:
             "Enjoying the bot: **You <3**",
         ]
     )
-
-    # revive dead catch loops
-    counter = 0
-    async for channel in Channel.limit(["channel_id"], "yet_to_spawn < $1 AND cat = 0", time.time(), refetch=False):
-        counter += 1
-        await spawn_cat(channel.channel_id)
-        await asyncio.sleep(0.1)
-    log_stats("revived", {}, counter)
 
 
 sentences = [
@@ -2189,7 +2181,7 @@ async def on_message(message: discord.Message) -> None:
     if not bot.user or message.author.id == bot.user.id:
         return
 
-    if time.time() > last_loop_time + 300:
+    if time.time() > last_loop_time + 60:
         last_loop_time = time.time()
         bot.loop.create_task(background_loop())
 
