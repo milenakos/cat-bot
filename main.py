@@ -1753,6 +1753,14 @@ async def on_ready() -> None:
         ]
     )
 
+    # revive dead catch loops
+    counter = 0
+    async for channel in Channel.limit(["channel_id"], "yet_to_spawn < $1 AND cat = 0", time.time(), refetch=False):
+        counter += 1
+        await spawn_cat(channel.channel_id)
+        await asyncio.sleep(0.1)
+    log_stats("revived", {}, counter)
+
 
 sentences = [
     "The quick brown fox jumps over the lazy dog.",
