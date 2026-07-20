@@ -2866,6 +2866,7 @@ async def on_message(message: discord.Message) -> None:
                     log_stats("boost", {"from": le_emoji})
                     idx_shift = 0
                     try:
+                        overflow = False
                         le_old_emoji = le_emoji
                         if double_boost:
                             idx_shift = cattypes.index(le_emoji) + 2
@@ -2873,6 +2874,7 @@ async def on_message(message: discord.Message) -> None:
                             idx_shift = cattypes.index(le_emoji) + 1
                         le_emoji = cattypes[idx_shift]
                     except IndexError:
+                        overflow = True
                         le_emoji = cattypes[-1]
                         if not channel.forcespawned:
                             if idx_shift == len(cattypes) + 1:
@@ -2894,15 +2896,15 @@ async def on_message(message: discord.Message) -> None:
                                 config.rain_starter[channel.channel_id] = message.author.id
                                 bot.loop.create_task(rain_recovery_loop(channel))
 
-                    if not rainboost:
-                        if double_boost:
-                            suffix_string += f"\n{get_emoji('prism')}{get_emoji('prism')} {boost_applied_prism} boosted this catch twice from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
-                        else:
-                            suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
-                    elif not channel.forcespawned:
-                        suffix_string += (
-                            f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed! A {rainboost // 60}m rain will start!"
-                        )
+                    if double_boost:
+                        suffix_string += f"\n{get_emoji('prism')}{get_emoji('prism')} {boost_applied_prism} boosted this catch twice from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
+                    elif overflow:
+                        suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed!"
+                    else:
+                        suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
+
+                    if rainboost:
+                        suffix_string += f" A {rainboost // 60}m rain will start!"
 
                 icon = get_emoji(le_emoji.lower() + "cat")
 
