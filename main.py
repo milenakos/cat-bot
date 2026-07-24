@@ -6291,7 +6291,7 @@ async def battlepass(message: discord.Interaction):
                 else:
                     for cat_index in user.weekly_cattypes:
                         description += get_emoji(cattypes[cat_index].lower() + "cat")
-                    description += "⬛" * (13 - user.weekly_progress)
+                    description += "⬛" * (weekly_quest["progress"] - user.weekly_progress)
                 description += "\n- Reward: 2000 XP + 1 Scratchcard\n\n"
             else:
                 description += f"✅ ~~{weekly_quest['title']}~~\n\n"
