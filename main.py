@@ -3630,7 +3630,7 @@ async def widget(message: discord.Interaction):
         await user.refresh_from_db()
         view = LayoutView(timeout=VIEW_TIMEOUT)
         if user.widget_guild_id != message.guild.id:
-            server = await Server.get_or_create(guild_id=user.widget_guild_id)
+            server = await Server.get_or_create(server_id=user.widget_guild_id)
 
             button = Button(label="Change to this server", style=ButtonStyle.green)
             button.callback = change_widget_guild
@@ -3663,7 +3663,7 @@ async def widget(message: discord.Interaction):
         user.widget_guild_id = interaction.guild.id
         await user.save()
 
-        server = await Server.get_or_create(guild_id=interaction.guild.id)
+        server = await Server.get_or_create(server_id=interaction.guild.id)
         server.name = interaction.guild.name
         await server.save()
 
@@ -3683,6 +3683,7 @@ async def widget(message: discord.Interaction):
                 "1. Click the button below to authorize the widget.\n"
                 + "2. Go to your Discord profile board and add the widget.\n"
                 + '3. Click the "Continue" button below to finish.',
+                "Due to a Discord limitation we have to ask for a bunch of unnecessary permissions. The authorization is used exclusively for the widget and nothing else.",
                 "===",
                 ActionRow(readd_button, button),
             ),
@@ -5054,8 +5055,10 @@ async def gen_inventory(
                     {"type": 2, "name": "rain", "value": user.rain_minutes},
                     {"type": 2, "name": "prisms", "value": user_count},
                 ]
+                # i synced my widget to identity 0 and they cant be changed afterwards. whoops!
+                identity_id = inv_user.id if inv_user.id != 553093932012011520 else 0
                 await bot.http.request(
-                    discord.http.Route("PATCH", f"/applications/{bot.user.id}/users/{inv_user.id}/identities/{inv_user.id}/profile"),
+                    discord.http.Route("PATCH", f"/applications/{bot.user.id}/users/{inv_user.id}/identities/{identity_id}/profile"),
                     json={"data": {"dynamic": widget_data}},
                 )
 
