@@ -22,8 +22,9 @@
 
 # this is a KISS wrapper i made for asyncpg
 
+from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator, Self
+from typing import Any, ClassVar, Self
 
 import asyncpg
 import asyncpg.pool
@@ -51,9 +52,8 @@ async def close() -> None:
 
 @asynccontextmanager
 async def transaction() -> AsyncGenerator[asyncpg.pool.PoolConnectionProxy, None]:
-    async with _get_pool().acquire() as conn:
-        async with conn.transaction():
-            yield conn
+    async with _get_pool().acquire() as conn, conn.transaction():
+        yield conn
 
 
 # this is used in limit() to distinguish between raw SQL and column names
@@ -62,8 +62,8 @@ class RawSQL(str):
 
 
 class Model:
-    _primary_key = "id"
-    _capped_ints = []
+    _primary_key: ClassVar[str] = "id"
+    _capped_ints: ClassVar[Sequence[str]] = ()
 
     def __init__(self, record: asyncpg.Record, connection: AnyConnection | None = None) -> None:
         # init model from asyncpg Record
@@ -154,7 +154,7 @@ class Model:
 
         # add the search parameters
         changes = []
-        for i in kwargs.keys():
+        for i in kwargs:
             changes.append(f'"{i}" = ${var_counter}')
             var_counter += 1
         query_string += " AND ".join(changes) + " LIMIT 1"
@@ -233,7 +233,7 @@ class Model:
 
         # add the column names
         changes = []
-        for i in kwargs.keys():
+        for i in kwargs:
             changes.append(f'"{i}"')
             var_counter += 1
         query_string += ", ".join(changes) + ") VALUES ("
@@ -283,7 +283,7 @@ class Model:
     ) -> AsyncGenerator[Self, None]:
         if isinstance(fields, str):
             fields = [fields]
-        async for row in cls.filter(filter, refetch=refetch, add_primary_key=add_primary_key, *args, fields=fields):
+        async for row in cls.filter(filter, *args, refetch=refetch, add_primary_key=add_primary_key, fields=fields):
             yield row
 
     @classmethod

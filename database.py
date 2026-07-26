@@ -27,7 +27,7 @@ async def close() -> None:
 
 
 class Profile(catpg.Model):
-    _capped_ints = [
+    _capped_ints = (
         "cats_gifted",
         "cat_gifts_recieved",
         "cats_traded",
@@ -53,12 +53,12 @@ class Profile(catpg.Model):
         "cat_Real",
         "cat_Ultimate",
         "cat_eGirl",
-    ]
+    )
 
 
 class User(catpg.Model):
     _primary_key = "user_id"
-    _capped_ints = ["custom_num"]
+    _capped_ints = ("custom_num",)
 
 
 class Channel(catpg.Model):

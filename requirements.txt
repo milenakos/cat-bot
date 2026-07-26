@@ -10,5 +10,4 @@ psutil
 asyncpg
 sentry-sdk
 unidecode
-numpy
-matplotlib
+anyio

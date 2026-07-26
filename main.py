@@ -31,9 +31,11 @@ import subprocess
 import sys
 import time
 import traceback
-from typing import Awaitable, Callable, Literal
+from collections.abc import Awaitable, Callable
+from typing import Literal
 
 import aiohttp
+import anyio
 import discord
 import discord.gateway
 import discord.http
@@ -59,8 +61,10 @@ except ImportError:
 
 try:
     COMMIT = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
-except Exception:
+except subprocess.CalledProcessError:
     COMMIT = "unknown"
+
+logger = logging.getLogger()
 
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
@@ -443,8 +447,7 @@ server_count = 0
 
 
 def get_emoji(name: str) -> str:
-    global emojis
-    if name in emojis.keys():
+    if name in emojis:
         return emojis[name]
     elif name in emoji.EMOJI_DATA:
         return name
@@ -460,8 +463,8 @@ def get_command_mention(name: str) -> str:
     return f"</{name}:{COMMAND_IDS[name]}>" if name in COMMAND_IDS else f"/{name}"
 
 
-def log_stats(key: str, tags: dict[str, str] = {}, value: float = 1) -> None:
-    logging.debug("Cat Bot - %s", json.dumps({"name": str(key), "gauge": {"value": int(value)}, "tags": tags}))
+def log_stats(key: str, tags: dict[str, str] | None = None, value: float = 1) -> None:
+    logger.debug("Cat Bot - %s", json.dumps({"name": str(key), "gauge": {"value": int(value)}, "tags": tags or {}}))
 
 
 async def fetch_dm_channel(user: User) -> discord.abc.Messageable:
@@ -907,7 +910,7 @@ async def generate_quest(user: Profile, quest_type: str) -> None:
 
 async def refresh_quests(user: Profile) -> None:
     await user.refresh_from_db()
-    start_date = datetime.datetime(2024, 12, 1)
+    start_date = datetime.datetime(2024, 12, 1, tzinfo=datetime.timezone.utc)
     current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
     full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
     if current_date.day < start_date.day:
@@ -927,7 +930,7 @@ async def refresh_quests(user: Profile) -> None:
         user.misc_cooldown = 1
         user.misc_reward = 0
 
-        user.weekly_quest = list(config.battle["quests"]["weekly"].keys())[0]
+        user.weekly_quest = next(iter(config.battle["quests"]["weekly"].keys()))
         user.weekly_progress = 0
         user.weekly_cattypes = []
 
@@ -941,7 +944,7 @@ async def refresh_quests(user: Profile) -> None:
         await generate_quest(user, "misc")
 
     curr_weekly = config.battle["quests"]["weekly"][user.weekly_quest]
-    month_start = datetime.datetime(current_date.year, current_date.month, 1) - datetime.timedelta(hours=4)
+    month_start = datetime.datetime(current_date.year, current_date.month, 1, tzinfo=datetime.timezone.utc) - datetime.timedelta(hours=4)
     time_in_month = time.time() - int(month_start.timestamp())
     if curr_weekly["start_time"] < time_in_month < curr_weekly["end_time"]:
         return
@@ -1319,11 +1322,8 @@ def alnum(string: str) -> str:
 
 
 async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool = False) -> str:
-    try:
-        channel = await Channel.get_or_none(channel_id=ch_id)
-        if not channel:
-            raise Exception
-    except Exception:
+    channel = await Channel.get_or_none(channel_id=ch_id)
+    if not channel:
         return "channel not setup"
     if channel.cat or channel.yet_to_spawn > time.time() + 10:
         return "cat already spawned"
@@ -1399,7 +1399,6 @@ async def background_loop() -> None:
     global \
         pointlaugh_ratelimit, \
         reactions_ratelimit, \
-        last_loop_time, \
         loop_count, \
         catchcooldown, \
         fakecooldown, \
@@ -1424,8 +1423,8 @@ async def background_loop() -> None:
             del config.belated_catchers[ch_id]
 
     try:
-        with open("config/emojis_cache.json", "r", encoding="utf-8") as f:
-            emojis = json.load(f)
+        async with await anyio.open_file("config/emojis_cache.json", "r", encoding="utf-8") as f:
+            emojis = json.loads(await f.read())
     except Exception:
         pass
 
@@ -1492,12 +1491,12 @@ async def background_loop() -> None:
                     await do_vote(vote_user, created_at)
 
                 last_vote_cursor = data.get("cursor", "")
-                with open("cursor.txt", "w") as f:
-                    f.write(last_vote_cursor)
-                logging.info(f"Fetched {len(the_votes)} votes, cursor {last_vote_cursor}")
+                async with await anyio.open_file("cursor.txt", "w") as f:
+                    await f.write(last_vote_cursor)
+                logger.info(f"Fetched {len(the_votes)} votes, cursor {last_vote_cursor}")
 
             except Exception:
-                logging.warning("Posting to top.gg failed.")
+                logger.warning("Posting to top.gg failed.")
 
     # revive dead catch loops
     counter = 0
@@ -1683,7 +1682,7 @@ async def background_loop() -> None:
                 else:
                     await backupchannel.send(f"In {server_count:,} servers, loop {loop_count}.", file=discord.File(backup_file))
             except Exception as e:
-                logging.warning(f"Error during backup: {e}")
+                logger.warning(f"Error during backup: {e}")
         else:
             await backupchannel.send(f"In {server_count:,} servers, loop {loop_count}.")
 
@@ -1696,27 +1695,27 @@ async def on_connect() -> None:
         return
 
     try:
-        with open("config/emojis_cache.json", "r", encoding="utf-8") as f:
-            emojis = json.load(f)
+        async with await anyio.open_file("config/emojis_cache.json", "r", encoding="utf-8") as f:
+            emojis = json.loads(await f.read())
         return
     except Exception:
         pass
 
     emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
     try:
-        with open("config/emojis_cache.json", "w", encoding="utf-8") as f:
-            json.dump(emojis, f)
+        async with await anyio.open_file("config/emojis_cache.json", "w", encoding="utf-8") as f:
+            await f.write(json.dumps(emojis))
     except Exception:
         pass
 
 
 # some code which is run when bot is started
 async def on_ready() -> None:
-    global OWNER_ID, on_ready_debounce, gen_credits, emojis
+    global OWNER_ID, on_ready_debounce, gen_credits
     if on_ready_debounce:
         return
     on_ready_debounce = True
-    logging.info("cat is now online")
+    logger.info("cat is now online")
     appinfo = bot.application
     if appinfo is not None:
         if appinfo.team and appinfo.team.owner_id:
@@ -1728,16 +1727,15 @@ async def on_ready() -> None:
     url = "https://api.github.com/repos/milenakos/cat-bot/contributors"
     contributors = []
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}) as response:
-            if response.status == 200:
-                data = await response.json()
-                for contributor in data:
-                    login = contributor["login"].replace("_", r"\_")
-                    if login not in ["milenakos", "ImgBotApp", "Neoexm"]:
-                        contributors.append(login)
-            else:
-                logging.warning(f"Error: {response.status} - {await response.text()}")
+    async with aiohttp.ClientSession() as session, session.get(url, headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}) as response:
+        if response.status == 200:
+            data = await response.json()
+            for contributor in data:
+                login = contributor["login"].replace("_", r"\_")
+                if login not in ["milenakos", "ImgBotApp", "Neoexm"]:
+                    contributors.append(login)
+        else:
+            logger.warning(f"Error: {response.status} - {await response.text()}")
 
     gen_credits = "\n".join(
         [
@@ -2001,16 +1999,18 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         modal.add_item(discord.ui.TextInput(label="Answer", id=67, max_length=1))
     elif cattype == "Real":
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
+            async with (
+                aiohttp.ClientSession() as session,
+                session.get(
                     "https://the-trivia-api.com/v2/questions?limit=1&difficulties=easy",
                     headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
-                ) as response:
-                    stuff = await response.json()
-                    question = stuff[0]
-                    question_text = question["question"]["text"]
-                    correct_answer = question["correctAnswer"]
-                    answers = question["incorrectAnswers"] + [correct_answer]
+                ) as response,
+            ):
+                stuff = await response.json()
+                question = stuff[0]
+                question_text = question["question"]["text"]
+                correct_answer = question["correctAnswer"]
+                answers = question["incorrectAnswers"] + [correct_answer]
         except Exception:
             question_text = "Are cats awesome?"
             answers = ["Yes", "No", "Meh", "IDK"]
@@ -2044,7 +2044,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
             log_stats("minigame_timeout")
             return
         answer_item = modal.find_item(67)
-        if isinstance(answer_item, discord.ui.TextInput) or isinstance(answer_item, discord.ui.RadioGroup):
+        if isinstance(answer_item, (discord.ui.TextInput, discord.ui.RadioGroup)):
             answer_raw = answer_item.value
         elif isinstance(answer_item, discord.ui.Select):
             answer_raw = answer_item.values[0]
@@ -2788,23 +2788,21 @@ async def on_message(message: discord.Message) -> None:
                         if 100 - triple_chance < 25:
                             none_chance = 25
                             triple_chance = 75
-                    if none_chance < 0:
-                        none_chance = 0
+                    none_chance = max(none_chance, 0)
                     if bonus_chance_increase > 0:
                         bonus_chance_increase = min(2, bonus_chance_increase * 0.01 + 1)
                         bonus_chance *= bonus_chance_increase
 
-                    if random.random() * 100 < rain_chance:
-                        if channel.cat_rains == 0 and server.do_rain:
-                            force_rain_summary = config.cat_cought_rain.get(channel.channel_id, {}).copy()
-                            channel.cat_rains = 10
-                            decided_time = random.uniform(1, 2)
-                            channel.rain_should_end = int(time.time() + decided_time)
-                            channel.yet_to_spawn = 0
-                            config.cat_cought_rain[channel.channel_id] = {}
-                            config.rain_starter[channel.channel_id] = message.author.id
-                            bot.loop.create_task(rain_recovery_loop(channel))
-                            suffix_string += "\n☔ Catnip started a short rain! 10 cats will spawn."
+                    if random.random() * 100 < rain_chance and channel.cat_rains == 0 and server.do_rain:
+                        force_rain_summary = config.cat_cought_rain.get(channel.channel_id, {}).copy()
+                        channel.cat_rains = 10
+                        decided_time = random.uniform(1, 2)
+                        channel.rain_should_end = int(time.time() + decided_time)
+                        channel.yet_to_spawn = 0
+                        config.cat_cought_rain[channel.channel_id] = {}
+                        config.rain_starter[channel.channel_id] = message.author.id
+                        bot.loop.create_task(rain_recovery_loop(channel))
+                        suffix_string += "\n☔ Catnip started a short rain! 10 cats will spawn."
 
                     chance = random.random() * 100
                     if chance <= triple_chance:
@@ -2941,7 +2939,7 @@ async def on_message(message: discord.Message) -> None:
 
                 # sparkles
                 randnum = random.randint(1, 10000000000)
-                if --randnum % 10000000000 == 0:
+                if randnum % 10000000000 == 0:
                     suffix_string += f"\n{get_emoji('staring_cat')} This message appears on __***0.00000001%***__ of catches!!!!!"
                 elif randnum % 1000000000 == 0:
                     suffix_string += "\n💀 This message appears on ***0.0000001%*** of catches!!!!!"
@@ -3290,7 +3288,7 @@ async def on_message(message: discord.Message) -> None:
             await message.reply("restarting all clusters!")
         except Exception:
             pass
-        os.system("git pull")
+        await anyio.run_process(["git", "pull"])
         if vote_server:
             await vote_server.cleanup()
         db_reload = "db" in text
@@ -3300,7 +3298,7 @@ async def on_message(message: discord.Message) -> None:
             await message.reply("restarting this cluster!")
         except Exception:
             pass
-        os.system("git pull")
+        await anyio.run_process(["git", "pull"])
         if vote_server:
             await vote_server.cleanup()
         await bot.cat_bot_reload_hook("db" in text)  # pyright: ignore
@@ -3314,8 +3312,8 @@ async def on_message(message: discord.Message) -> None:
         global emojis
         emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
         try:
-            with open("config/emojis_cache.json", "w", encoding="utf-8") as f:
-                json.dump(emojis, f)
+            async with await anyio.open_file("config/emojis_cache.json", "w", encoding="utf-8") as f:
+                await f.write(json.dumps(emojis))
             await message.reply("emojis refreshed!")
         except Exception:
             pass
@@ -3344,7 +3342,7 @@ async def on_message(message: discord.Message) -> None:
 bot.loop.create_task(go(message, bot))
         """
 
-        exec(code)
+        exec(code)  # noqa: S102
     if text.lower().startswith("cat!news"):
         async for i in Channel.all():
             try:
@@ -3550,8 +3548,6 @@ async def tutorial(message: discord.Interaction):
 
 @bot.tree.command(description="Roll the credits")
 async def credits(message: discord.Interaction):
-    global gen_credits
-
     if not gen_credits:
         await message.response.send_message(
             "credits not yet ready! this is a very rare error, congrats.",
@@ -3583,7 +3579,9 @@ async def info(message: discord.Interaction):
     embed = discord.Embed(title="Cat Bot Info", color=Colors.brown)
     try:
         assert COMMIT != "unknown"
-        git_timestamp = int(subprocess.check_output(["git", "show", "-s", "--format=%ct", COMMIT]).decode("utf-8"))
+        proc = await asyncio.create_subprocess_exec("git", "show", "-s", "--format=%ct", COMMIT, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        stdout, _ = await proc.communicate()
+        git_timestamp = int(stdout.decode("utf-8").strip())
     except Exception:
         git_timestamp = 0
 
@@ -3693,26 +3691,27 @@ async def widget(message: discord.Interaction):
 
 @bot.tree.command(description="Confused? Check out the Cat Bot Wiki!")
 async def wiki(message: discord.Interaction):
-    embed = discord.Embed(title="Cat Bot Wiki", color=Colors.brown)
-    embed.description = "\n".join(
-        [
-            "Main Page: https://catbot.wiki/",
-            "",
-            "[Cat Bot](https://catbot.wiki/cat-bot)",
-            "[Events](https://catbot.wiki/events)",
-            "[Cat Spawning](https://catbot.wiki/spawning)",
-            "[Commands](https://catbot.wiki/commands)",
-            "[Cat Types](https://catbot.wiki/cat-types)",
-            "[Badges](https://catbot.wiki/badges)",
-            "[Cattlepass](https://catbot.wiki/cattlepass)",
-            "[Achievements](https://catbot.wiki/achievements)",
-            "[Rains](https://catbot.wiki/rains)",
-            "[Packs](https://catbot.wiki/packs)",
-            "[Trading](https://catbot.wiki/trading)",
-            "[Fun](https://catbot.wiki/fun)",
-            "[Catnip](https://catbot.wiki/catnip)",
-            "[Prisms](https://catbot.wiki/prisms)",
-        ]
+    embed = discord.Embed(
+        title="Cat Bot Wiki",
+        color=Colors.brown,
+        description="""Main Page: https://catbot.wiki/
+
+[Cat Bot](https://catbot.wiki/cat-bot)
+[Events](https://catbot.wiki/events)
+[Cat Spawning](https://catbot.wiki/spawning)
+[Commands](https://catbot.wiki/commands)
+[Cat Types](https://catbot.wiki/cat-types)
+[Bonus Minigames](https://catbot.wiki/en/cat-types#bonus-cats)
+[Badges](https://catbot.wiki/badges)
+[Cattlepass](https://catbot.wiki/cattlepass)
+[Achievements](https://catbot.wiki/achievements)
+[Rains](https://catbot.wiki/rains)
+[Packs](https://catbot.wiki/packs)
+[Trading](https://catbot.wiki/trading)
+[Catnip](https://catbot.wiki/catnip)
+[Prisms](https://catbot.wiki/prisms)
+[Fun](https://catbot.wiki/fun)
+""",
     )
     await message.response.send_message(embed=embed)
 
@@ -4791,8 +4790,7 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
             seasons_complete += 1
             extra_xp = 1500 if season_num <= 18 else 2000
             total_xp += extra_xp * (season_lvl - 31)
-        if season_lvl > max_level:
-            max_level = season_lvl
+        max_level = max(max_level, season_lvl)
 
         for num, level in enumerate(config.battle["seasons"][str(season_num)]):
             if num >= season_lvl:
@@ -4806,8 +4804,7 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
             seasons_complete += 1
             extra_xp = 1500 if profile.season <= 18 else 2000
             total_xp += extra_xp * (profile.battlepass - 31)
-        if profile.battlepass > max_level:
-            max_level = profile.battlepass
+        max_level = max(max_level, profile.battlepass)
 
         for num, level in enumerate(config.battle["seasons"][str(profile.season)]):
             if num >= profile.battlepass:
@@ -5345,7 +5342,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
         rain_packs = []
         rain_cats = []
 
-        for key in rain_server.keys():
+        for key in rain_server:
             if key in cattypes:
                 rain_cats.append(key)
             if key in pack_names:
@@ -5408,7 +5405,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
             if epic_fail:
                 part_two = ""
                 for cat_type in thingtypes:
-                    if cat_type not in rain_server.keys():
+                    if cat_type not in rain_server:
                         continue
                     if len(rain_server[cat_type]) > 5:
                         part_two += f"{funny_emojis[cat_type]} *{len(rain_server[cat_type])} catches*\n"
@@ -5688,8 +5685,8 @@ if config.DONOR_CHANNEL_ID:
                 emojiss[em_name] = new_em
                 emojis = {k: str(v) for k, v in emojiss.items()}
                 try:
-                    with open("config/emojis_cache.json", "w", encoding="utf-8") as f:
-                        json.dump(emojis, f)
+                    async with await anyio.open_file("config/emojis_cache.json", "w", encoding="utf-8") as f:
+                        await f.write(json.dumps(emojis))
                 except Exception:
                     pass
             except Exception:
@@ -6290,9 +6287,9 @@ async def battlepass(message: discord.Interaction):
         now = discord.utils.utcnow() + datetime.timedelta(hours=4)
 
         if now.month == 12:
-            next_month = datetime.datetime(now.year + 1, 1, 1)
+            next_month = datetime.datetime(now.year + 1, 1, 1, tzinfo=datetime.timezone.utc)
         else:
-            next_month = datetime.datetime(now.year, now.month + 1, 1)
+            next_month = datetime.datetime(now.year, now.month + 1, 1, tzinfo=datetime.timezone.utc)
 
         next_month -= datetime.timedelta(hours=4)
 
@@ -6303,7 +6300,7 @@ async def battlepass(message: discord.Interaction):
         # weekly
         if user.weekly_quest:
             weekly_quest = config.battle["quests"]["weekly"][user.weekly_quest]
-            month_start = datetime.datetime(now.year, now.month, 1) - datetime.timedelta(hours=4)
+            month_start = datetime.datetime(now.year, now.month, 1, tzinfo=datetime.timezone.utc) - datetime.timedelta(hours=4)
             description += f"__Weekly Quest__ (refreshes <t:{weekly_quest['end_time'] + int(month_start.timestamp())}:R>)\n"
             if weekly_quest["progress"] > user.weekly_progress:
                 title = weekly_quest["title"]
@@ -6350,7 +6347,7 @@ async def battlepass(message: discord.Interaction):
         # catch
         catch_quest = config.battle["quests"]["catch"][user.catch_quest]
         if user.catch_cooldown != 0:
-            description += f"✅ ~~{catch_quest['title']}~~\n- Refreshes <t:{int(user.catch_cooldown + 12 * 3600 if user.catch_cooldown + 12 * 3600 < timestamp else timestamp)}:R>\n"
+            description += f"✅ ~~{catch_quest['title']}~~\n- Refreshes <t:{int(min(timestamp, user.catch_cooldown + 12 * 3600))}:R>\n"
         else:
             progress_string = ""
             if catch_quest["progress"] != 1:
@@ -6367,7 +6364,7 @@ async def battlepass(message: discord.Interaction):
         # misc
         misc_quest = config.battle["quests"]["misc"][user.misc_quest]
         if user.misc_cooldown != 0:
-            description += f"✅ ~~{misc_quest['title']}~~\n- Refreshes <t:{int(user.misc_cooldown + 12 * 3600 if user.misc_cooldown + 12 * 3600 < timestamp else timestamp)}:R>\n\n"
+            description += f"✅ ~~{misc_quest['title']}~~\n- Refreshes <t:{int(min(timestamp, user.misc_cooldown + 12 * 3600))}:R>\n\n"
         else:
             progress_string = ""
             if misc_quest["progress"] != 1:
@@ -6668,14 +6665,14 @@ async def bruh(message: discord.Interaction):
 @discord.app_commands.describe(person="who do you want to play with? (choose Cat Bot for ai)")
 async def tictactoe(message: discord.Interaction, person: discord.Member):
     do_edit = False
-    board: list[Literal[None, "❌", "⭕"]] = [None, None, None, None, None, None, None, None, None]
+    board: list[Literal["❌", "⭕"] | None] = [None, None, None, None, None, None, None, None, None]
 
     players = [message.user, person]
     random.shuffle(players)
     bot_is_playing = person == bot.user
     current_turn = 0
 
-    def check_win(board: list[Literal[None, "❌", "⭕"]]) -> list[int]:
+    def check_win(board: list[Literal["❌", "⭕"] | None]) -> list[int]:
         combinations = [
             # rows
             [0, 1, 2],
@@ -6697,7 +6694,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         return [-1]
 
     def minimax(
-        board: list[Literal[None, "❌", "⭕"]],
+        board: list[Literal["❌", "⭕"] | None],
         depth: int,
         is_maximizing: bool,
         alpha: float,
@@ -6740,7 +6737,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
                         break
             return min_eval
 
-    def get_best_move(board: list[Literal[None, "❌", "⭕"]]) -> int | None:
+    def get_best_move(board: list[Literal["❌", "⭕"] | None]) -> int | None:
         best_score = float("-inf")
         best_move = None
 
@@ -7929,7 +7926,7 @@ async def bakery(message: discord.Interaction):
                     json={"user": str(interaction.user.id)},
                 ) as response:
                     if response.status != 200:
-                        logging.warning("Bake.gg reward failed: status=%s body=%s", response.status, await response.text())
+                        logger.warning("Bake.gg reward failed: status=%s body=%s", response.status, await response.text())
                         raise ValueError
 
                     profile.cookies -= 120
@@ -8362,7 +8359,7 @@ async def roulette(message: discord.Interaction):
                     user.roulette_balance += bet_amount * 2
                 user.roulette_wins += 1
                 win = True
-            user.roulette_balance = int(round(user.roulette_balance))
+            user.roulette_balance = round(user.roulette_balance)
             await user.save()
 
             for wait_time in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.5]:
@@ -8568,10 +8565,7 @@ async def roll(message: discord.Interaction, sides: int | None = None):
         120: "disdyakis triacontahedron",
     }
 
-    if sides in dice_names.keys():
-        dice = dice_names[sides]
-    else:
-        dice = f"d{sides}"
+    dice = dice_names.get(sides, f"d{sides}")
 
     view = View(timeout=VIEW_TIMEOUT)
     button = Button(label="Reroll", emoji="🎲", style=ButtonStyle.blurple)
@@ -8869,16 +8863,16 @@ if config.WORDNIK_API_KEY:
 
                     # sometimes the api returns results without definitions, so we search for the first one which has a definition
                     for i in data:
-                        if "text" in i.keys():
+                        if "text" in i:
                             clean_data = re.sub(re.compile("<.*?>"), "", i["text"])
                             await message.response.send_message(
                                 f"__{word}__\n{clean_data}\n-# [{i['attributionText']}](<{i['attributionUrl']}>) Powered by [Wordnik](<{i['wordnikUrl']}>)",
-                                ephemeral=any([test in text for test in ["vulgar", "slur", "offensive", "profane", "insult", "abusive", "derogatory"]]),
+                                ephemeral=any(test in text for test in ["vulgar", "slur", "offensive", "profane", "insult", "abusive", "derogatory"]),
                             )
                             await achemb(message, "define", "followup")
                             return
 
-                    raise Exception
+                    raise LookupError
             except Exception:
                 await message.response.send_message("no definition found", ephemeral=True)
 
@@ -9157,7 +9151,7 @@ async def get_bounties(level: int) -> list[dict]:
 
 async def get_perks(level: int, user: Profile) -> list[dict]:
     level_data = catnip_list["levels"][level]
-    rarities = [r for r in level_data["weights"].keys()]
+    rarities = [r for r in level_data["weights"]]
     weights = {rarity: level_data["weights"][rarity] for rarity in rarities}
     perks = catnip_list["perks"]
 
@@ -9502,8 +9496,7 @@ async def catnip(message: discord.Interaction):
         user.first_quote_seen = False
         user.reroll = True
 
-        if user.catnip_level > user.highest_catnip_level:
-            user.highest_catnip_level = user.catnip_level
+        user.highest_catnip_level = max(user.highest_catnip_level, user.catnip_level)
 
         await user.save()
         await set_bounties(user.catnip_level, user)
@@ -9839,7 +9832,7 @@ You can stop. That's okay. Seriously.
             colored = int(bounties_complete / user.bounties * 10) if user.bounties else 10
             desc += f"\n\n**Level {level}** - {change}"
             desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {min(10, level + 1)}"
-        if not level == 0 and not user.hibernation:
+        if level != 0 and not user.hibernation:
             if user.catnip_active - int(time.time()) < 1800:
                 desc += f"\n\n**Hurry!** Levels down <t:{user.catnip_active}:R> ({duration}h total)"
             elif user.catnip_active > time.time():
@@ -10222,11 +10215,11 @@ async def leaderboards(
         elif type == "Value":
             unit = "value"
             sums = []
-            for cat_type in cattypes:
-                if not cat_type:
+            for i in cattypes:
+                if not i:
                     continue
-                weight = sum(type_dict.values()) / type_dict[cat_type]
-                sums.append(f'({weight}) * "cat_{cat_type}"')
+                weight = sum(type_dict.values()) / type_dict[i]
+                sums.append(f'({weight}) * "cat_{i}"')
             total_sum_expr = RawSQL("(" + " + ".join(sums) + ") AS final_value")
             result = await Profile.collect_limit(["user_id", total_sum_expr], "guild_id = $1 ORDER BY final_value DESC", message.guild.id)
             final_value = "final_value"
@@ -10239,7 +10232,7 @@ async def leaderboards(
             result = await Profile.collect_limit(["user_id", "timeslow"], "guild_id = $1 AND timeslow > 0 ORDER BY timeslow DESC", message.guild.id)
             final_value = "timeslow"
         elif type == "Cattlepass":
-            start_date = datetime.datetime(2024, 12, 1)
+            start_date = datetime.datetime(2024, 12, 1, tzinfo=datetime.timezone.utc)
             current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
             full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
             bp_season = config.battle["seasons"][str(full_months_passed)]
@@ -10385,9 +10378,7 @@ async def leaderboards(
                     else:
                         num = round(num, 3)
                         unit = "sec"
-                elif type in ["Cookies", "Cats", "Pig", "Prisms", "Fish"] and num <= 0:
-                    break
-                elif type == "Roulette Dollars" and num == 100:
+                elif type in ["Cookies", "Cats", "Pig", "Prisms", "Fish"] and num <= 0 or type == "Roulette Dollars" and num == 100:
                     break
                 assert unit is not None
                 string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
@@ -10487,7 +10478,7 @@ async def leaderboards(
         # just send if first time, otherwise edit existing
         try:
             if not do_edit:
-                raise Exception
+                raise ValueError
             await interaction.edit_original_response(embed=embedVar, view=myview)
         except Exception:
             await interaction.followup.send(embed=embedVar, view=myview)
@@ -10597,7 +10588,6 @@ async def fake(message: discord.Interaction):
         )
     except Exception:
         await message.response.send_message("i dont have perms lmao here is the ach anyways", ephemeral=True)
-        pass
     await achemb(message, "trolled", "ephemeral")
 
 
@@ -10637,7 +10627,7 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
     except KeyError:
         valid = False
 
-    if not valid and ach_id.lower() in ach_titles.keys():
+    if not valid and ach_id.lower() in ach_titles:
         ach_id = ach_titles[ach_id.lower()]
         valid = True
 
@@ -10793,7 +10783,7 @@ async def recieve_vote(request: web.Request) -> web.Response:
         assert config.WEBHOOK_VERIFY is not None
         signature_parts = {i.split("=")[0]: i.split("=")[1] for i in signature.split(",")}
         raw_body = await request.read()
-        body = f"{signature_parts['t']}.{raw_body.decode()}".encode("utf-8")
+        body = f"{signature_parts['t']}.{raw_body.decode()}".encode()
         key = config.WEBHOOK_VERIFY.encode("utf-8")
         if hmac.new(key, body, hashlib.sha256).hexdigest() != signature_parts["v1"]:
             raise ValueError
@@ -10830,8 +10820,7 @@ async def do_vote(user: User, created_at: float) -> None:
     if user.vote_time_topgg + extend_time * 3600 <= created_at:
         # streak end
         if user.streak_freezes < 1:
-            if user.max_vote_streak < user.vote_streak:
-                user.max_vote_streak = user.vote_streak
+            user.max_vote_streak = max(user.max_vote_streak, user.vote_streak)
             user.vote_streak = 1
         else:
             # i initially wanted streak freezes to not increase up
@@ -10869,6 +10858,8 @@ async def do_vote(user: User, created_at: float) -> None:
         streak_top_position = await User.count("vote_streak > $1", user.vote_streak) + 1
         top_text = f" (top #{streak_top_position}!)" if streak_top_position < 1000 else ""
 
+    await user.save()
+
     embed = discord.Embed(
         title="Cat Bot Plush (Limited Time)",
         description="""**[Get it now for $29.99!](https://www.makeship.com/products/cat-bot-plush)**
@@ -10891,11 +10882,8 @@ Everyone who buys one will also get a **badge**! Run `/plushbadge` to redeem."""
         )
 
         log_stats("vote", {"streak": str(user.vote_streak)})
-    except Exception:
-        # Ignore errors when DMing the user (e.g. if they have DMs closed)
+    except discord.Forbidden:
         pass
-
-    await user.save()
 
 
 async def check_supporter(request: web.Request) -> web.Response:
@@ -10914,7 +10902,7 @@ async def bake_gg_reward(request: web.Request) -> web.Response:
     try:
         request_json = await request.json()
         user_id = int(request_json["user"])
-    except Exception:
+    except (KeyError, ValueError):
         return web.Response(text="Invalid user ID", status=400)
     user = await User.get_or_create(user_id=user_id)
 
@@ -10934,7 +10922,7 @@ async def bake_gg_reward(request: web.Request) -> web.Response:
 
 # cat bot uses glitchtip (sentry alternative) for errors, here u can instead implement some other logic like dming the owner
 async def on_error(*args, **kwargs):
-    raise
+    raise  # noqa: PLE0704
 
 
 async def on_interaction(ctx: discord.Interaction) -> None:
@@ -11073,7 +11061,7 @@ class Section(discord.ui.Section):
             for child in children:
                 if not child:
                     continue
-                if isinstance(child, Button) or isinstance(child, Thumbnail):
+                if isinstance(child, (Button, Thumbnail)):
                     kwargs["accessory"] = child
                 else:
                     new_children.append(child)
