@@ -1675,9 +1675,7 @@ async def background_loop() -> None:
                 await process.wait()
 
                 if exportbackup:
-                    event_loop = asyncio.get_event_loop()
-                    await event_loop.run_in_executor(None, exportbackup.export)
-
+                    await bot.loop.run_in_executor(None, exportbackup.export)
                     await backupchannel.send(f"In {server_count:,} servers, loop {loop_count}.\nBackup exported.")
                 else:
                     await backupchannel.send(f"In {server_count:,} servers, loop {loop_count}.", file=discord.File(backup_file))
@@ -5223,7 +5221,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
             lock_success = True
 
             async def wait_and_unlock():
-                await asyncio.sleep(7)
+                await asyncio.sleep(10)
                 everyone_overwrites.send_messages = current_perm
                 await api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites)
 
@@ -10001,12 +9999,11 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         return
     await message.response.defer()
 
-    event_loop = asyncio.get_event_loop()
     try:
         member = await message.guild.fetch_member(msg.author.id)
     except Exception:
         member = msg.author
-    result = await event_loop.run_in_executor(None, msg2img.msg2img, msg, member)
+    result = await bot.loop.run_in_executor(None, msg2img.msg2img, msg, member)
 
     try:
         await message.followup.send("cought in 4k", file=result)
