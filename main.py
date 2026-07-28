@@ -32,6 +32,7 @@ import sys
 import time
 import traceback
 from collections.abc import Awaitable, Callable
+from pathlib import Path
 from typing import Literal
 
 import aiohttp
@@ -66,33 +67,15 @@ except subprocess.CalledProcessError:
 
 logger = logging.getLogger()
 
+# static data (large lists/dicts) is kept in dicts.json and loaded once here,
+# instead of being redefined as literals every time it's needed
+with Path(__file__).with_name("dicts.json").open("r", encoding="utf-8") as f:
+    STATIC_DATA = json.load(f)
+
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
 
-type_dict = {
-    "Fine": 1000,
-    "Nice": 750,
-    "Good": 500,
-    "Rare": 350,
-    "Wild": 275,
-    "Gremlin": 230,
-    "Epic": 200,
-    "Sus": 175,
-    "Brave": 150,
-    "Rickroll": 125,
-    "Reverse": 100,
-    "Superior": 80,
-    "Trash": 50,
-    "Legendary": 35,
-    "Mythic": 25,
-    "8bit": 20,
-    "Corrupt": 15,
-    "Professor": 10,
-    "Divine": 8,
-    "Real": 5,
-    "Ultimate": 3,
-    "eGirl": 2,
-}
+type_dict = STATIC_DATA["type_dict"]
 
 # this list stores unique non-duplicate cattypes
 cattypes = list(type_dict.keys())
@@ -102,146 +85,19 @@ cattype_lc_dict = {i.lower(): i for i in cattypes}
 
 allowedemojis = [i.lower() + "cat" for i in cattypes]
 
-pack_data = [
-    # event/special
-    {"name": "Christmas", "value": 30, "upgrade": 70, "totalvalue": 225, "special": True},
-    {"name": "Valentine", "value": 30, "upgrade": 70, "totalvalue": 225, "special": True},
-    {"name": "Chef", "value": 30, "upgrade": 70, "totalvalue": 225, "special": True},
-    {"name": "Birthday", "value": 30, "upgrade": 70, "totalvalue": 225, "special": True},
-    # normal
-    {"name": "Wooden", "value": 65, "upgrade": 30, "totalvalue": 75, "special": False},
-    {"name": "Stone", "value": 90, "upgrade": 30, "totalvalue": 100, "special": False},
-    {"name": "Bronze", "value": 100, "upgrade": 30, "totalvalue": 130, "special": False},
-    {"name": "Silver", "value": 115, "upgrade": 30, "totalvalue": 200, "special": False},
-    {"name": "Gold", "value": 230, "upgrade": 30, "totalvalue": 400, "special": False},
-    {"name": "Platinum", "value": 630, "upgrade": 30, "totalvalue": 800, "special": False},
-    {"name": "Diamond", "value": 860, "upgrade": 30, "totalvalue": 1200, "special": False},
-    {"name": "Celestial", "value": 2000, "upgrade": 0, "totalvalue": 2000, "special": False},  # is that a madeline celeste reference????
-]
+pack_data = STATIC_DATA["pack_data"]
 pack_names = [i["name"] for i in pack_data]
 
-badge_list = ["og_badge", "cataine_badge", "second_birthday_badge", "puzzle_badge", "plush_badge"]
+badge_list = STATIC_DATA["badge_list"]
 
-prism_names_start = [
-    "Alpha",
-    "Bravo",
-    "Charlie",
-    "Delta",
-    "Echo",
-    "Foxtrot",
-    "Golf",
-    "Hotel",
-    "India",
-    "Juliett",
-    "Kilo",
-    "Lima",
-    "Mike",
-    "November",
-    "Oscar",
-    "Papa",
-    "Quebec",
-    "Romeo",
-    "Sierra",
-    "Tango",
-    "Uniform",
-    "Victor",
-    "Whiskey",
-    "X-ray",
-    "Yankee",
-    "Zulu",
-]
-prism_names_end = [
-    "",
-    " Two",
-    " Three",
-    " Four",
-    " Five",
-    " Six",
-    " Seven",
-    " Eight",
-    " Nine",
-    " Ten",
-    " Eleven",
-    " Twelve",
-    " Thirteen",
-    " Fourteen",
-    " Fifteen",
-    " Sixteen",
-    " Seventeen",
-    " Eighteen",
-    " Nineteen",
-    " Twenty",
-]
+prism_names_start = STATIC_DATA["prism_names_start"]
+prism_names_end = STATIC_DATA["prism_names_end"]
 prism_names = [j + i for i in prism_names_end for j in prism_names_start]
 
-vote_button_texts = [
-    "You havent voted today!",
-    "I know you havent voted ;)",
-    "If vote cat will you friend :)",
-    "Vote cat for president",
-    "vote = 0.01% to escape basement",
-    "vote vote vote vote vote",
-    "mrrp mrrow go and vote now",
-    "if you vote you'll be free (no)",
-    "vote. btw, i have a pipebomb",
-    "No votes? :megamind:",
-    "Cat says you should vote",
-    "cat will be happy if you vote",
-    "VOTE NOW!!!!!",
-    "I voted and got 1000000$",
-    "I voted and found a gf",
-    "lebron james forgot to vote",
-    "vote if you like cats",
-    "vote if cats > dogs",
-    "you should vote for cat NOW!",
-    "I'd vote if I were you",
-    "Voting only takes 30s :3",
-    "uwu pls vote~~",
-    "Why haven't you voted yet :(",
-    "Stay hydrated! and vote too",
-    "hello guys im the vote button",
-    "btw, voting is free",
-    "Cats are cute, voting is too",
-]
+vote_button_texts = STATIC_DATA["vote_button_texts"]
 
 # various hints/fun facts
-hints = [
-    "Cat Bot has a wiki! <https://catbot.wiki>",
-    "Cat Bot is open source! <https://github.com/milenakos/cat-bot>",
-    "View all cats and rarities with /catalogue",
-    "Cat Bot's birthday is on the 21st of April",
-    "Unlike the normal one, Cat's /8ball isn't rigged",
-    "/rate says /rate is 100% correct",
-    "/casino is *surely* not rigged",
-    "You probably shouldn't use a Discord bot for /remind-ers",
-    "Cat /Rain is an excellent way to support development!",
-    "Cat Bot was made later than its support server",
-    "Cat Bot reached 100 servers 3 days after release",
-    "Cat died for 2+ weeks bc the servers were flooded with water",
-    "Cat Bot's top.gg page was deleted at one point",
-    "Cat Bot has an official soundtrack! <https://youtu.be/Ww1opmRwYF0>",
-    "4 with 832 zeros cats were deleted on September 5th, 2024",
-    "Cat Bot has reached top #19 on top.gg in January 2025",
-    "Cat Bot has reached top #17 on top.gg in February 2025",
-    "Cat Bot has reached top #12 on top.gg in March 2025",
-    "Cat Bot has reached top #9 on top.gg in April 2025",
-    "Cat Bot has reached top #7 on top.gg in May 2025",
-    "Cat Bot has reached top #5 on top.gg in September 2025",
-    "Cat Bot has reached top #3 on top.gg in March 2026",
-    "Most Cat Bot features were made within 2 weeks",
-    "Cat Bot was initially made for only one server",
-    "Cat Bot is made in Python with discord.py",
-    "Discord didn't verify Cat properly the first time",
-    "Looking at Cat's code won't make you regret your life choices!",
-    "Cats aren't shared between servers to make it more fair and fun",
-    "Cat Bot can go offline! Don't panic if it does",
-    "By default, cats spawn 1-10 minutes apart",
-    "View the last catch as well as the next one with /last",
-    "Make sure to leave Cat Bot [a review on top.gg](<https://top.gg/bot/966695034340663367#reviews>)!",
-    "The oldest Cat Bot bug was solved by [just upgrading](<https://blog.minkos.lol/posts/ratelimits>)",
-    "Cat Bot won top.gg Labor of Love 2025 award!",
-    "The addition of Packs doubled Cat Bot's votes!",
-]
+hints = STATIC_DATA["hints"]
 
 # laod the jsons
 with open("config/aches.json", "r") as f:
@@ -272,94 +128,9 @@ bot = commands.AutoShardedBot(
     intents=discord.Intents.default(),
 )
 
-funny = [
-    "why did you click this this arent yours",
-    "absolutely not",
-    "cat bot not responding, try again later",
-    "you cant",
-    "can you please stop",
-    "try again",
-    "403 not allowed",
-    "stop",
-    "get a life",
-    "not for you",
-    "no",
-    "nuh uh",
-    "access denied",
-    "forbidden",
-    "don't do this",
-    "cease",
-    "wrong",
-    "aw dangit",
-    "why don't you press buttons from your commands",
-    "you're only making me angrier",
-    "why are you like this",
-    "legends say you get something for clicking it 1000 times",
-    "get off me",
-    "ow stop it hurts",
-    "do you have nothing better to do?",
-    "i will bite you",
-    "whAT DO YOU WANT",
-    "you're wasting your time",
-    "want something?",
-    "The FitnessGram™ Pacer Test is a multistage aerobic capacity test that progressively gets more difficult as it continues. The 20 meter pacer test will begin in 30 seconds. Line up at the start. The running speed starts slowly, but gets faster each minute after you hear this signal. [beep] A single lap should be completed each time you hear this sound. [ding] Remember to run in a straight line, and run as long as possible. The second time you fail to complete a lap before the sound, your test is over. The test will begin on the word start. On your mark, get ready, start. ",
-    "you're annoying",
-    "did you know:",
-    "cats don't like this much attention",
-    "your time has come",
-    "why. genuenlingy why",
-    "i think we lost the plot",
-    "please do not the cat",
-    "your sphere lands far away from here",
-    "look behind you",
-    "ill take away your fingers",
-    "no you cant get free bobux",
-    "who do you think you are",
-    "could we not",
-    "hello 911 this person keeps poking me",
-    "i'm bad at math, sorry",
-    "here comes the sun",
-    "i'd rather deal with dogs than deal with you",
-    "oh no",
-    "*steals your left kidney*",
-    "meow",
-]
+funny = STATIC_DATA["funny"]
 
-config.filtered_errors = [
-    # inactionable/junk discord api errors
-    "Too Many Requests",
-    "You are being rate limited",
-    "Invalid Webhook Token",
-    "Unknown Interaction",
-    "Unknown Webhook",
-    "Unknown Message",
-    "Unknown Channel",
-    "Thread is archived",
-    "Failed to convert",
-    "CommandNotFound",
-    "CommandAlreadyRegistered",
-    "Cannot send an empty message",
-    "Missing Permissions",
-    "Missing Access",
-    # connection errors and warnings (why are there so many)
-    "ClientConnectorError",
-    "ClientConnectorDNSError",
-    "NameResolutionError",
-    "DiscordServerError",
-    "WSServerHandshakeError",
-    "ConnectionClosed",
-    "ConnectionResetError",
-    "TimeoutError",
-    "ServerDisconnectedError",
-    "ClientOSError",
-    "TransferEncodingError",
-    "Request Timeout",
-    "Session is closed",
-    "Unclosed connection",
-    "unable to perform operation on",
-    "Event loop is closed",
-    "503 Service Unavailable",
-]
+config.filtered_errors = STATIC_DATA["filtered_errors"]
 
 
 class TTLStore:
@@ -501,273 +272,20 @@ async def check_channel_setupped(guild: Server, channel: GuildMessageable) -> bo
 
 
 # news stuff
-news_list = [
-    {"title": "Cat Bot Survey - win rains!", "emoji": "📜", "active": False},
-    {"title": "New Cat Rains perks!", "emoji": "✨", "active": False},
-    {"title": "Cat Bot Christmas 2024", "emoji": "🎅", "active": False},
-    {"title": "Cattlepass Update", "emoji": "⬆️", "active": True},
-    {"title": "Packs!", "emoji": "goldpack", "active": True},
-    {"title": "Message from CEO of Cat Bot", "emoji": "finecat", "active": False},
-    {"title": "Cat Bot Turns 3", "emoji": "🥳", "active": False},
-    {"title": "100,000 SERVERS WHAT", "emoji": "🎉", "active": False},
-    {"title": "Regarding recent instabilities", "emoji": "🗒️", "active": False},
-    {"title": "cat bot reached #5 on top.gg", "emoji": "yippee", "active": False},
-    {"title": "top.gg awards", "emoji": "🏆", "active": False},
-    {"title": "Welcome to the Cat Mafia", "emoji": "catnip", "active": True},
-    {"title": "vote for cat bot as finalist in top.gg awards", "emoji": "❤️", "active": False},
-    {"title": "Cat Bot Christmas 2025", "emoji": "christmaspack", "active": False},
-    {"title": "Happy Valentine's!", "emoji": "💞", "active": False},
-    {"title": "Cat Bot Stocks", "emoji": "📈", "active": False},
-    {"title": "PackOrRain Event", "emoji": "🔥", "active": False},
-    {"title": "200,000 servers giveaway", "emoji": "insane", "active": False},
-    {"title": "Cat Bot's 4th Birthday!", "emoji": "b_gremlincat", "active": False},
-    {"title": "Cat Bot Plush", "emoji": "📦", "active": False},
-    {"title": "Badges", "emoji": "🎖️", "active": True},
-    {"title": "CATCHING UPDATE??", "emoji": "🐈", "active": True},
-]
+news_list = STATIC_DATA["news_list"]
 last_active_article = [k for k, v in enumerate(news_list) if v["active"]][-1]
 
-achs = [
-    ["cat?", "startswith", "???"],
-    ["catn", "exact", "catn"],
-    ["cat!coupon jr0f-pzka", "exact", "coupon_user"],
-    ["pineapple", "exact", "pineapple"],
-    ["cat!i_like_cat_website", "exact", "website_user"],
-    ["cat!i_clicked_there", "exact", "click_here"],
-    ["cat!lia_is_cute", "exact", "nerd"],
-    ["i read help", "exact", "patient_reader"],
-    ["lol_i_have_dmed_the_cat_bot_and_got_an_ach", "exact", "dm"],
-    ["dog", "exact", "not_quite"],
-    ["egril", "exact", "egril"],
-    ["-.-. .- -", "exact", "morse_cat"],
-    ["tac", "exact", "reverse"],
-    ["cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6", "veryexact", "dataminer"],
-]
+achs = STATIC_DATA["achs"]
 
-reactions = [
-    ["v1;", "custom", "why_v1"],
-    ["proglet", "custom", "professor_cat"],
-    ["xnopyt", "custom", "vanish"],
-    ["silly", "custom", "sillycat"],
-    ["indev", "vanilla", "🐸"],
-    ["bleh", "custom", "blepcat"],
-    ["blep", "custom", "blepcat"],
-]
+reactions = STATIC_DATA["reactions"]
 
-responses = [
-    [
-        "cellua good",
-        "in",
-        ".".join([str(random.randint(2, 254)) for _ in range(4)]),
-    ],
-    [
-        "https://tenor.com/view/this-cat-i-have-hired-this-cat-to-stare-at-you-hired-cat-cat-stare-gif-26392360",
-        "exact",
-        "https://tenor.com/view/cat-staring-cat-gif-16983064494644320763",
-    ],
-]
+# the ip address here is randomized once at startup, not on every use
+random_ip = ".".join([str(random.randint(2, 254)) for _ in range(4)])
+responses = [[item[0], item[1], random_ip if item[2] == "__RANDOM_IP__" else item[2]] for item in STATIC_DATA["responses"]]
 
-cat_translations = [
-    "mace",
-    "katu",
-    "kot",
-    "koshka",
-    "macka",
-    "gat",
-    "gata",
-    "kocka",
-    "kat",
-    "poes",
-    "kass",
-    "kissa",
-    "chat",
-    "chatte",
-    "gato",
-    "katze",
-    "gata",
-    "macska",
-    "kottur",
-    "gatto",
-    "getta",
-    "kakis",
-    "kate",
-    "qattus",
-    "qattusa",
-    "katt",
-    "kit",
-    "kishka",
-    "cath",
-    "qitta",
-    "katu",
-    "pisik",
-    "biral",
-    "kyaung",
-    "mao",
-    "pusa",
-    "kata",
-    "billi",
-    "kucing",
-    "neko",
-    "bekku",
-    "mysyq",
-    "chhma",
-    "goyangi",
-    "pucha",
-    "manjar",
-    "muur",
-    "biralo",
-    "gorbeh",
-    "punai",
-    "pilli",
-    "kedi",
-    "mushuk",
-    "meo",
-    "demat",
-    "nwamba",
-    "jangwe",
-    "adure",
-    "katsi",
-    "bisad",
-    "paka",
-    "ikati",
-    "ologbo",
-    "wesa",
-    "popoki",
-    "piqtuq",
-    "ngeru",
-    "poti",
-    "mosi",
-    "michi",
-    "pusi",
-    "oratii",
-]
+cat_translations = STATIC_DATA["cat_translations"]
 
-illegal = [
-    "bk",
-    "fq",
-    "jc",
-    "jt",
-    "mj",
-    "qh",
-    "qx",
-    "vj",
-    "wz",
-    "zh",
-    "bq",
-    "fv",
-    "jd",
-    "jv",
-    "mq",
-    "qj",
-    "qy",
-    "vk",
-    "xb",
-    "zj",
-    "bx",
-    "fx",
-    "jf",
-    "jw",
-    "mx",
-    "qk",
-    "qz",
-    "vm",
-    "xg",
-    "zn",
-    "cb",
-    "fz",
-    "jg",
-    "jx",
-    "mz",
-    "ql",
-    "sx",
-    "vn",
-    "xj",
-    "zq",
-    "cf",
-    "gq",
-    "jh",
-    "jy",
-    "pq",
-    "qm",
-    "sz",
-    "vp",
-    "xk",
-    "zr",
-    "cg",
-    "gv",
-    "jk",
-    "jz",
-    "pv",
-    "qn",
-    "tq",
-    "vq",
-    "xv",
-    "zs",
-    "cj",
-    "gx",
-    "jl",
-    "kq",
-    "px",
-    "qo",
-    "tx",
-    "vt",
-    "xz",
-    "zx",
-    "cp",
-    "hk",
-    "jm",
-    "kv",
-    "qb",
-    "qp",
-    "vb",
-    "vw",
-    "yq",
-    "cv",
-    "hv",
-    "jn",
-    "kx",
-    "qc",
-    "qr",
-    "vc",
-    "vx",
-    "yv",
-    "cw",
-    "hx",
-    "jp",
-    "kz",
-    "qd",
-    "qs",
-    "vd",
-    "vz",
-    "yz",
-    "cx",
-    "hz",
-    "jq",
-    "lq",
-    "qe",
-    "qt",
-    "vf",
-    "wq",
-    "zb",
-    "dx",
-    "iy",
-    "jr",
-    "lx",
-    "qf",
-    "qv",
-    "vg",
-    "wv",
-    "zc",
-    "fk",
-    "jb",
-    "js",
-    "mg",
-    "qg",
-    "qw",
-    "vh",
-    "wx",
-    "zg",
-]
+illegal = STATIC_DATA["illegal"]
 
 
 # this is some common code which is run whether someone gets an achievement
@@ -1202,6 +720,9 @@ async def do_funny(message: discord.Interaction) -> None:
         await achemb(message, "its_not_working", "followup")
 
 
+debt_msgs = STATIC_DATA["debt_msgs"]
+
+
 # not :eyes:
 async def debt_cutscene(message: discord.Interaction, user: Profile) -> None:
     if user.debt_seen:
@@ -1209,19 +730,6 @@ async def debt_cutscene(message: discord.Interaction, user: Profile) -> None:
 
     user.debt_seen = True
     await user.save()
-
-    debt_msgs = [
-        "**\\*BANG\\***",
-        "Your door gets slammed open and multiple man in black suits enter your room.",
-        "**???**: Hello, you have unpaid debts. You owe us money. We are here to liquidate all your assets.",
-        "*(oh for fu)*",
-        "**You**: pls dont",
-        "**???**: oh okay then we will come back to you later.",
-        "They leave the room.",
-        "**You**: Oh god this is bad",
-        "**You**: I know of a solution though!",
-        "**You**: I heard you can gamble your debts away in the slots machine!",
-    ]
 
     for debt_msg in debt_msgs:
         await asyncio.sleep(4)
@@ -1750,45 +1258,15 @@ async def on_ready() -> None:
     )
 
 
-sentences = [
-    "The quick brown fox jumps over the lazy dog.",
-    "Cat Bot is a Discord bot about catching cats.",
-    "The birch canoe slid on the smooth planks.",
-    "Glue the sheet to the dark blue background.",
-    "It's easy to tell the depth of a well.",
-    "These days a chicken leg is a rare dish.",
-    "Rice is often served in round bowls.",
-    "The juice of lemons makes fine punch.",
-    "The box was thrown beside the parked truck.",
-    "The hogs were fed chopped corn and garbage.",
-    "Four hours of steady work faced us.",
-    "A large size in stockings is hard to sell.",
-    "Stop posting about Among Us, I'm tired of seeing it!",
-    "I love Cat Bot, it is great, now there is a new update!",
-    "Yo, my name is Jeremy, my parents left when I was three!",
-    "There is just a single rule, Jeremy is really cool!",
-    "I am cool and I am green, better than at first it may seem!",
-    "Cell machine sticky cell is hypothetical cell",
-    "im gonna make catbot - Poggers!",
-    "be nice or cat will punish you",
-    "Cat Bot pinned a message to this channel.",
-    "your sins will not be forgotten",
-    "Who needs friends, all i need is to have the best cats",
-    "Jane Cat Bot here, I would like to say thanks to myself",
-    "Never gonna give you up, never gonna let you down!",
-    "Now contains 32 random daily cats!",
-    "Cat Rains make cats spawn super fast for a limited period.",
-    "spice it up a bit, ban a random half of the server",
-    "ok brumbler statue building i think i eat sand sometimes",
-    "blame freshpenguin for anything bad which ever happens",
-    "how do i use catch, im on ipad how to use catch",
-    "Throw your phone out the window or it will explode!",
-    "okay chat an exercise, calmly welcome the new member",
-    "devlog is now a separate channel yay",
-    "host update: previous host has been seized by authorities",
-    "You are the best Minecraft Discord server I've ever been on.",
-    "Cat Bot was permanently banned by RiskLM for silly.",
-]
+sentences = STATIC_DATA["sentences"]
+letter_mapping = STATIC_DATA["letter_mapping"]
+
+# ??? (used in /roll when sides=0)
+family_guy_funny_moments = STATIC_DATA["family_guy_funny_moments"]
+
+# loosely based on this wikipedia article
+# https://en.wikipedia.org/wiki/Dice
+dice_names = {int(k): v for k, v in STATIC_DATA["dice_names"].items()}
 
 
 def to_roman_numeral(value: int) -> str:
@@ -1974,21 +1452,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         modal.add_item(TextDisplay(f"## Decode this cat type\n\n{show}"))
         modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=20))
     elif cattype == "Divine":
-        letter_mappings = {
-            "A": "X",
-            "C": "D",
-            "R": "K",
-            "F": "E",
-            "W": "Y",
-            "H": "G",
-            "I": "T",
-            "L": "J",
-            "M": "N",
-            "O": "Q",
-            "P": "B",
-            "S": "Z",
-            "U": "V",
-        }
+        letter_mappings = dict(letter_mapping)
         letter_mappings.update({v: k for k, v in letter_mappings.items()})  # reverse mappings
         sentence = random.choice(sentences).upper()
         answer = random.randint(5, 9)
@@ -2197,6 +1661,10 @@ async def belated_window_task(
             view=view,
         )
         await h.delete(delay=10)
+
+
+custom_cough_strings = STATIC_DATA["custom_cough_strings"]
+dark_market_followups = STATIC_DATA["dark_market_followups"]
 
 
 # this is all the code which is ran on every message sent
@@ -2960,16 +2428,6 @@ async def on_message(message: discord.Message) -> None:
                 elif randnum % 1000 == 0:
                     suffix_string += "\n⭐ This message appears on 0.1% of catches."
 
-                custom_cough_strings = {
-                    "Corrupt": "{username} coought{type} c{emoji}at!!!!404!\nYou now BEEP {count} cats of dCORRUPTED!!\nthis fella wa- {time}!!!!",
-                    "eGirl": "{username} cowought {emoji} {type} cat~~ ^^\nYou-u now *blushes* hawe {count} cats of dat tywe~!!!\nthis fella was <3 cought in {time}!!!!",
-                    "Rickroll": "{username} cought {emoji} {type} cat!!!!1!\nYou will never give up {count} cats of dat type!!!\nYou wouldn't let them down even after {time}!!!!",
-                    "Sus": "{username} cought {emoji} {type} cat!!!!1!\nYou have vented infront of {count} cats of dat type!!!\nthis sussy baka was cought in {time}!!!!",
-                    "Professor": "{username} caught {emoji} {type} cat!\nThou now hast {count} cats of that type!\nThis fellow was caught 'i {time}!",
-                    "8bit": "{username} c0ught {emoji} {type} cat!!!!1!\nY0u n0w h0ve {count} cats 0f dat type!!!\nth1s fe11a was c0ught 1n {time}!!!!",
-                    "Reverse": "!!!!{time} in cought was fella this\n!!!type dat of cats {count} have now You\n!1!!!!cat {type} {emoji} cought {username}",
-                }
-
                 if channel.cought:
                     # custom spawn message
                     coughstring = channel.cought
@@ -2997,15 +2455,6 @@ async def on_message(message: discord.Message) -> None:
                     user.dark_market_active = True
                     await user.save()
                     await interaction.response.send_message("is someone watching after you?", ephemeral=True)
-
-                    dark_market_followups = [
-                        "you walk up to them. the dark voice says:",
-                        "**???**: Hello. We have a unique deal for you.",
-                        "**???**: To access our services, run /catnip.",
-                        "**???**: You won't be disappointed.",
-                        "before you manage to process that, the figure disappears. will you figure out whats going on?",
-                        "the only choice is to go to that place.",
-                    ]
 
                     for phrase in dark_market_followups:
                         await asyncio.sleep(5)
@@ -3614,87 +3063,21 @@ DB Servers: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class
     await message.response.send_message(embed=embed)
 
 
+wiki_lines = STATIC_DATA["wiki_lines"]
+
+
 @bot.tree.command(description="Confused? Check out the Cat Bot Wiki!")
 async def wiki(message: discord.Interaction):
-    embed = discord.Embed(
-        title="Cat Bot Wiki",
-        color=Colors.brown,
-        description="""Main Page: https://catbot.wiki/
-
-[Cat Bot](https://catbot.wiki/cat-bot)
-[Events](https://catbot.wiki/events)
-[Cat Spawning](https://catbot.wiki/spawning)
-[Commands](https://catbot.wiki/commands)
-[Cat Types](https://catbot.wiki/cat-types)
-[Bonus Minigames](https://catbot.wiki/en/cat-types#bonus-cats)
-[Badges](https://catbot.wiki/badges)
-[Cattlepass](https://catbot.wiki/cattlepass)
-[Achievements](https://catbot.wiki/achievements)
-[Rains](https://catbot.wiki/rains)
-[Packs](https://catbot.wiki/packs)
-[Trading](https://catbot.wiki/trading)
-[Catnip](https://catbot.wiki/catnip)
-[Prisms](https://catbot.wiki/prisms)
-[Fun](https://catbot.wiki/fun)
-""",
-    )
+    embed = discord.Embed(title="Cat Bot Wiki", color=Colors.brown)
+    embed.description = "\n".join(wiki_lines)
     await message.response.send_message(embed=embed)
 
 
-CAT_FORTUNES = [
-    "You will find a mysterious hairball in your shoe. It brings good luck... probably.",
-    "A cat will stare at you from across the room today. It is judging you. You will not pass.",
-    "Beware of the red dot. It leads nowhere, yet you will chase it anyway.",
-    "Your next nap will be legendary. 14 hours minimum. You've earned it.",
-    "A cardboard box will present itself. You must sit in it. This is the way.",
-    "You will knock something off a table today. Do not apologize. Maintain eye contact.",
-    "The vacuum cleaner approaches. Flee now, ask questions never.",
-    "Today's lucky number is 9. You have that many lives left... for now.",
-    "A can opener will sound in the distance. Follow it. Destiny awaits.",
-    "You will receive chin scratches from an unexpected source. Accept them graciously.",
-    "The laser pointer of fate shines upon you. Chase it with reckless abandon.",
-    "An ancient prophecy foretells: you will ignore an expensive cat toy and play with the bag it came in.",
-    "Mercury is in retrograde. This means nothing to you. You are a cat. Nap on.",
-    "You will sit on someone's keyboard today and type something profound. Or 'asdfjkl;'. Same thing.",
-    "A bird will appear at your window. You will make that weird chattering sound. It is inevitable.",
-    "Your food bowl is half empty. Scream about it at 3 AM. This is reasonable.",
-    "The bathroom door will close. You must yell. You MUST be on the other side.",
-    "A cucumber will appear behind you. Your reaction will be... disproportionate.",
-    "You will find the warmest spot in the house and defend it with your life.",
-    "Someone will call your name. Ignore them. They will call again. Ignore harder.",
-    "The stars align in the shape of a fish. This is the best possible omen.",
-    "You will bring a gift to your human today. They will not appreciate the dead bug. Ungrateful.",
-    "A door will be slightly ajar. You will not go through it. You will simply stare.",
-    "Your horoscope says: if it fits, you sits. The science is settled.",
-    "Tonight, you will perform the 3 AM zoomies. The furniture will not survive.",
-    "A mysterious force compels you to drink water from the faucet instead of your bowl.",
-    "You will claim a laptop as your bed. The human's 'important work' is irrelevant.",
-    "The prophecy is clear: you will catch between 0 and 10,000 cats today. Probably.",
-    "A great trade offer approaches. You will decline it. Then accept a worse one. This is the way of the cat.",
-    "The ancient cat council has spoken: your next pack opening will be... interesting.",
-]
+CAT_FORTUNES = STATIC_DATA["CAT_FORTUNES"]
 
-CAT_ACTIVITIES = (
-    "napping",
-    "knocking things off tables",
-    "ignoring humans",
-    "zoomies",
-    "bird watching",
-    "box sitting",
-    "keyboard walking",
-    "3 AM screaming",
-)
+CAT_ACTIVITIES = tuple(STATIC_DATA["CAT_ACTIVITIES"])
 
-CAT_FORTUNE_TITLES = [
-    "Madame Meowstradamus Speaks",
-    "The Crystal Yarn Ball Reveals",
-    "Purrfessor Whiskers' Prophecy",
-    "The Oracle of Meow",
-    "Fortune Paws Has Spoken",
-    "The Catstrologer's Vision",
-    "Whisker Wisdom™",
-    "The Feline Fates Decree",
-]
+CAT_FORTUNE_TITLES = STATIC_DATA["CAT_FORTUNE_TITLES"]
 
 
 @bot.tree.command(description="🔮 Consult the ancient cat oracle for a purrsonalized fortune")
@@ -5734,6 +5117,9 @@ if config.DONOR_CHANNEL_ID:
         await message.followup.send(view=view)
 
 
+scratch_opts = STATIC_DATA["scratch_opts"]
+
+
 @bot.tree.command(description="bumbum's scratch off game")
 async def scratch(message: discord.Interaction):
     assert message.guild is not None
@@ -5751,18 +5137,7 @@ async def scratch(message: discord.Interaction):
 
         log_stats("scratchcard")
 
-        opts = [
-            "1m Rain", "1m Rain",
-            "Celestial", "Celestial",
-            "Diamond", "Diamond",
-            "Platinum", "Platinum",
-            "Gold", "Gold", "Gold",
-            "Silver", "Silver", "Silver",
-            "Bronze", "Bronze", "Bronze",
-            "Stone", "Stone", "Stone", "Stone",
-            "Wooden", "Wooden", "Wooden", "Wooden",
-        ]  # fmt: skip
-
+        opts = scratch_opts.copy()
         random.shuffle(opts)
 
         # the entire minigame is actually a lie whoopsie daisy!!!
@@ -6559,6 +5934,9 @@ async def bruh(message: discord.Interaction):
     await message.delete_original_response()
 
 
+win_combinations = STATIC_DATA["win_combinations"]
+
+
 @bot.tree.command(description="play a relaxing game of tic tac toe (ttt)")
 @discord.app_commands.describe(person="who do you want to play with? (choose Cat Bot for ai)")
 async def tictactoe(message: discord.Interaction, person: discord.Member):
@@ -6571,21 +5949,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
     current_turn = 0
 
     def check_win(board: list[Literal["❌", "⭕"] | None]) -> list[int]:
-        combinations = [
-            # rows
-            [0, 1, 2],
-            [3, 4, 5],
-            [6, 7, 8],
-            # columns
-            [0, 3, 6],
-            [1, 4, 7],
-            [2, 5, 8],
-            # diagonals
-            [0, 4, 8],
-            [2, 4, 6],
-        ]
-
-        for combination in combinations:
+        for combination in win_combinations:
             if board[combination[0]] == board[combination[1]] == board[combination[2]] and board[combination[0]] is not None:
                 return combination
 
@@ -8135,6 +7499,10 @@ async def slots(message: discord.Interaction):
     await message.followup.send(embed=embed, view=myview)
 
 
+# mapping of colors to numbers by indexes
+roulette_colors = STATIC_DATA["roulette_colors"]
+
+
 @bot.tree.command(description="what")
 async def roulette(message: discord.Interaction):
     assert message.guild is not None
@@ -8189,46 +7557,7 @@ async def roulette(message: discord.Interaction):
 
             await interaction.response.defer()
 
-            # mapping of colors to numbers by indexes
-            colors = [
-                "green",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-                "black",
-                "red",
-            ]
+            colors = roulette_colors
 
             emoji_map = {
                 "red": "🔴",
@@ -8371,51 +7700,6 @@ async def roll(message: discord.Interaction, sides: int | None = None):
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
     if sides == 0:
-        # ???
-        family_guy_funny_moments = [
-            "your sphere doesn't land",
-            "your sphere floats in air",
-            "your sphere lands and bounces forever",
-            "your sphere breaks",
-            "your sphere gets turned inside out",
-            "your sphere lands in a dumpster",
-            "your sphere gets eaten",
-            "your sphere lands in an active volcano",
-            "your house gets striked down from orbit before your sphere lands",
-            "your sphere lands on the bottom of the Mariana trench",
-            "your sphere lands inside of a frying pan and burns",
-            "your sphere breaks into 0 pieces and the universe throws a runtime error",
-            "your sphere is getting married",
-            "your sphere turns into a pentagonal bipyramid because it's bored",
-            "your sphere defies gravity and floats into the space never to be seen again",
-            "your sphere lands in honey and gets sticky",
-            "your sphere gets compressed into a blackhole",
-            "your sphere became sentient and refused to land",
-            "your sphere lands a pretty good job",
-            "your sphere lands on a 7 somehow",
-            "you try to pick up your sphere but its just a hallucination",
-            'your sphere lands on "WAKE UP"',
-            "your sphere is in a superposition of having landed on 0 and not landed",
-            "your sphere lands on pi (get it?)",
-            "your sphere fell into sulfuric acid and dissolved",
-            "your sphere used slightly a wrong pi and therefore is just barely not a sphere",
-            "your sphere is too fast to be seen",
-            "your sphere's landing is delayed because of poor visibility at the airport",
-            "your sphere turns into a tesseract",
-            "your sphere opens a macdonalds franchise",
-            "your sphere lands in crippling debt",
-            "your sphere lands in court",
-            "your sphere lands in prison",
-            "your sphere has been sentenced to lifetime slavery",
-            "your sphere is a sphere trying its best to become a cube with no avail because of the discrimination of society",
-            "your mom is a sphere",
-            "everything in the world is sphere its a matter of perspective",
-            "did you notice most emojis are spheres?",
-            "why are you still here",
-            "your sphere ran out of jokes",
-            "your sphere finally peacefully lands on the table. you shed a (spherical) tear of happiness.",
-        ]
-
         if user.sphere_easter_egg < len(family_guy_funny_moments):
             await message.response.send_message(family_guy_funny_moments[user.sphere_easter_egg], ephemeral=True)
             user.sphere_easter_egg += 1
@@ -8427,33 +7711,6 @@ async def roll(message: discord.Interaction, sides: int | None = None):
             await message.response.send_message(random.choice(family_guy_funny_moments), ephemeral=True)
 
         return
-
-    # loosely based on this wikipedia article
-    # https://en.wikipedia.org/wiki/Dice
-    dice_names = {
-        1: '"dice"',
-        2: "coin",
-        4: "tetrahedron",
-        5: "triangular prism",
-        6: "cube",
-        7: "pentagonal prism",
-        8: "octahedron",
-        9: "hexagonal prism",
-        10: "pentagonal trapezohedron",
-        12: "dodecahedron",
-        14: "heptagonal trapezohedron",
-        16: "octagonal bipyramid",
-        18: "rounded rhombicuboctahedron",
-        20: "icosahedron",
-        24: "triakis octahedron",
-        30: "rhombic triacontahedron",
-        34: "heptadecagonal trapezohedron",
-        48: "disdyakis dodecahedron",
-        50: "icosipentagonal trapezohedron",
-        60: "deltoidal hexecontahedron",
-        100: "zocchihedron",
-        120: "disdyakis triacontahedron",
-    }
 
     dice = dice_names.get(sides, f"d{sides}")
 
@@ -8491,6 +7748,9 @@ async def roll(message: discord.Interaction, sides: int | None = None):
     await roll_and_respond(message, is_first=True)
 
 
+catball_responses = STATIC_DATA["catball_responses"]
+
+
 @bot.tree.command(description="get a super accurate rating of something")
 @discord.app_commands.describe(thing="The thing or person to check", stat="The stat to check")
 async def rate(message: discord.Interaction, thing: str, stat: str):
@@ -8509,37 +7769,6 @@ async def eightball(message: discord.Interaction, question: str):
     if len(question) > 300:
         await message.response.send_message("thats kinda long", ephemeral=True)
         return
-
-    catball_responses = [
-        # positive
-        "it is certain",
-        "it is decidedly so",
-        "without a doubt",
-        "yes definitely",
-        "you may rely on it",
-        "as i see it, yes",
-        "most likely",
-        "outlook good",
-        "yes",
-        "signs point to yes",
-        # negative
-        "dont count on it",
-        "my reply is no",
-        "my sources say no",
-        "outlook not so good",
-        "very doubtful",
-        "most likely not",
-        "unlikely",
-        "no definitely",
-        "no",
-        "signs point to no",
-        # neutral
-        "reply hazy, try again",
-        "ask again later",
-        "better not tell you now",
-        "cannot predict now",
-        "concetrate and ask again",
-    ]
 
     await message.response.send_message(f"{question}\n:8ball: **{random.choice(catball_responses)}**")
 
@@ -10596,6 +9825,9 @@ async def reset(message: discord.Interaction, person_id: discord.User):
     await message.response.send_message(thing, view=view, allowed_mentions=discord.AllowedMentions(users=True))
 
 
+nuke_confirmation_lines = STATIC_DATA["nuke_confirmation_lines"]
+
+
 @bot.tree.command(description="(HIGH ADMIN) [VERY DANGEROUS] Reset/wipe all Cat Bot data of this server")
 @discord.app_commands.default_permissions(administrator=True)
 async def nuke(message: discord.Interaction):
@@ -10603,16 +9835,8 @@ async def nuke(message: discord.Interaction):
     counter = 5
 
     async def gen(counter: int) -> View:
-        lines = [
-            "",
-            "I'm absolutely sure! (1)",
-            "I understand! (2)",
-            "You can't undo this! (3)",
-            "This is dangerous! (4)",
-            "Reset everything! (5)",
-        ]
         view = View(timeout=VIEW_TIMEOUT)
-        button = Button(label=lines[max(1, counter)], style=ButtonStyle.red)
+        button = Button(label=nuke_confirmation_lines[max(1, counter)], style=ButtonStyle.red)
         button.callback = count
         view.add_item(button)
         return view
