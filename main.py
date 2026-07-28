@@ -5221,7 +5221,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
             lock_success = True
 
             async def wait_and_unlock():
-                await asyncio.sleep(10)
+                await asyncio.sleep(min(5, len(reverse_mapping)))
                 everyone_overwrites.send_messages = current_perm
                 await api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites)
 
