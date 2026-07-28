@@ -701,7 +701,7 @@
       "brave+": {"emoji": "bravecat", "title": "Catch 9 cats rarer than Brave", "progress": 9, "start_time": 604800, "end_time": 1209600},
       "bonus": {"emoji": "🎁", "title": "Complete 3 bonus minigames", "progress": 3, "start_time": 1209600, "end_time": 1814400},
       "different": {"emoji": "wildcat", "title": "Catch 14 different cat types", "progress": 14, "start_time": 1814400, "end_time": 2419200},
-      "": {"emoji": "", "title": "", "progress": 0, "start_time": 2419200, "end_time": 300000}
+      "": {"emoji": "", "title": "", "progress": 0, "start_time": 2419200, "end_time": 3000000}
     }
   }
 }
