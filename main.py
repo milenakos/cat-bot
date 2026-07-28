@@ -32,8 +32,7 @@ import sys
 import time
 import traceback
 from collections.abc import Awaitable, Callable
-from pathlib import Path
-from typing import Literal
+from typing import Literal, TypedDict
 
 import aiohttp
 import anyio
@@ -67,37 +66,84 @@ except subprocess.CalledProcessError:
 
 logger = logging.getLogger()
 
-# static data (large lists/dicts) is kept in dicts.json and loaded once here,
-# instead of being redefined as literals every time it's needed
-with Path(__file__).with_name("dicts.json").open("r", encoding="utf-8") as f:
-    STATIC_DATA = json.load(f)
-
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
 
-type_dict = STATIC_DATA["type_dict"]
+
+class PackEntry(TypedDict):
+    name: str
+    value: int
+    upgrade: int
+    totalvalue: int
+    special: bool
+
+
+class NewsEntry(TypedDict):
+    title: str
+    emoji: str
+    active: bool
+
+
+class DataWrapper:
+    type_dict: dict[str, int]
+    filtered_errors: list[str]
+    pack_data: list[PackEntry]
+    badge_list: list[str]
+    prism_names_start: list[str]
+    prism_names_end: list[str]
+    vote_button_texts: list[str]
+    hints: list[str]
+    funny: list[str]
+    news_list: list[NewsEntry]
+    achs: dict[str, str]
+    reactions: dict[str, str]
+    responses: dict[str, str]
+    letter_mapping: dict[str, str]
+    dark_market_followups: list[str]
+    custom_cough_strings: dict[str, str]
+    roulette_colors: list[str]  # mapping of colors to numbers by indexes
+    cat_translations: list[str]
+    wiki_lines: list[str]
+    illegal: list[str]
+    sentences: list[str]
+    cat_fortunes: list[str]
+    cat_fortune_titles: list[str]
+    cat_activities: list[str]
+    debt_msgs: list[str]
+    family_guy_funny_moments: list[str]  # ??? (used in /roll when sides=0)
+    catball_responses: list[str]
+    dice_names: dict[str, str]  # loosely based on https://en.wikipedia.org/wiki/Dice
+    scratch_opts: list[str]
+    win_combinations: list[list[int]]
+    nuke_confirmation_lines: list[str]
+
+    def __init__(self, data):
+        self.data = data
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __getattr__(self, key):
+        return self.data[key]
+
+
+# static data (large lists/dicts) is kept in dicts.json and loaded once here
+with open("dicts.json", "r", encoding="utf-8") as f:
+    data = DataWrapper(json.load(f))
 
 # this list stores unique non-duplicate cattypes
-cattypes = list(type_dict.keys())
+cattypes: list[str] = list(data.type_dict.keys())
 
-# generate a dict with lowercase'd keys
 cattype_lc_dict = {i.lower(): i for i in cattypes}
-
 allowedemojis = [i.lower() + "cat" for i in cattypes]
 
-pack_data = STATIC_DATA["pack_data"]
-pack_names = [i["name"] for i in pack_data]
+pack_names = [i["name"] for i in data.pack_data]
+prism_names = [j + i for i in data.prism_names_end for j in data.prism_names_start]
 
-badge_list = STATIC_DATA["badge_list"]
+config.filtered_errors = data.filtered_errors
 
-prism_names_start = STATIC_DATA["prism_names_start"]
-prism_names_end = STATIC_DATA["prism_names_end"]
-prism_names = [j + i for i in prism_names_end for j in prism_names_start]
+last_active_article = [k for k, v in enumerate(data.news_list) if v["active"]][-1]
 
-vote_button_texts = STATIC_DATA["vote_button_texts"]
-
-# various hints/fun facts
-hints = STATIC_DATA["hints"]
 
 # laod the jsons
 with open("config/aches.json", "r") as f:
@@ -127,10 +173,6 @@ bot = commands.AutoShardedBot(
     command_prefix="this is a placebo bot which will be replaced when this will get loaded",
     intents=discord.Intents.default(),
 )
-
-funny = STATIC_DATA["funny"]
-
-config.filtered_errors = STATIC_DATA["filtered_errors"]
 
 
 class TTLStore:
@@ -269,23 +311,6 @@ async def check_channel_setupped(guild: Server, channel: GuildMessageable) -> bo
         return True
     db_channel = await Channel.get_or_none(channel_id=channel.id)
     return db_channel is not None
-
-
-# news stuff
-news_list = STATIC_DATA["news_list"]
-last_active_article = [k for k, v in enumerate(news_list) if v["active"]][-1]
-
-achs = STATIC_DATA["achs"]
-
-reactions = STATIC_DATA["reactions"]
-
-# the ip address here is randomized once at startup, not on every use
-random_ip = ".".join([str(random.randint(2, 254)) for _ in range(4)])
-responses = [[item[0], item[1], random_ip if item[2] == "__RANDOM_IP__" else item[2]] for item in STATIC_DATA["responses"]]
-
-cat_translations = STATIC_DATA["cat_translations"]
-
-illegal = STATIC_DATA["illegal"]
 
 
 # this is some common code which is run whether someone gets an achievement
@@ -585,8 +610,8 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
             elif active_level_data["reward"] == "Rain":
                 user.rain_minutes += active_level_data["amount"]
             elif active_level_data["reward"] == "Mystery":
-                pack_options = [pack["name"] for pack in pack_data if not pack["special"]]
-                pack_weights = [1 / pack["totalvalue"] for pack in pack_data if not pack["special"]]
+                pack_options = [pack["name"] for pack in data.pack_data if not pack["special"]]
+                pack_weights = [1 / pack["totalvalue"] for pack in data.pack_data if not pack["special"]]
                 pack_chosen = random.choices(pack_options, weights=pack_weights, k=1)[0]
                 user[f"pack_{pack_chosen.lower()}"] += 1
             else:
@@ -711,16 +736,13 @@ def get_streak_reward(streak: int) -> dict:
 # handle curious people clicking buttons
 async def do_funny(message: discord.Interaction) -> None:
     assert message.guild is not None
-    await message.response.send_message(random.choice(funny), ephemeral=True)
+    await message.response.send_message(random.choice(data.funny), ephemeral=True)
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     user.funny += 1
     await user.save()
     await achemb(message, "curious", "reply")
     if user.funny >= 50:
         await achemb(message, "its_not_working", "followup")
-
-
-debt_msgs = STATIC_DATA["debt_msgs"]
 
 
 # not :eyes:
@@ -731,7 +753,7 @@ async def debt_cutscene(message: discord.Interaction, user: Profile) -> None:
     user.debt_seen = True
     await user.save()
 
-    for debt_msg in debt_msgs:
+    for debt_msg in data.debt_msgs:
         await asyncio.sleep(4)
         await message.followup.send(debt_msg, ephemeral=True)
 
@@ -820,7 +842,7 @@ async def gift_autocomplete(interaction: discord.Interaction, current: str) -> l
         choices.append(discord.app_commands.Choice(name=f"Rain ({actual_user.rain_minutes} minutes)", value="rain"))
     if current.lower() in "scratchcards" and user.scratchcards > 0:
         choices.append(discord.app_commands.Choice(name=f"Scratchcards (x{user.scratchcards})", value="scratchcards"))
-    for choice in pack_data:
+    for choice in data.pack_data:
         if user[f"pack_{choice['name'].lower()}"] > 0:
             pack_name = choice["name"]
             pack_amount = user[f"pack_{pack_name.lower()}"]
@@ -850,7 +872,7 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
         return "cat already spawned"
 
     if not localcat:
-        localcat = random.choices(cattypes, weights=list(type_dict.values()))[0]
+        localcat = random.choices(cattypes, weights=list(data.type_dict.values()))[0]
     icon = get_emoji(localcat.lower() + "cat")
     file = discord.File(
         f"assets/images/spawn/{localcat.lower()}_cat.png",
@@ -940,9 +962,9 @@ async def background_loop() -> None:
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get("http://localhost:7878/metrics") as response:
-                    data = await response.text()
+                    metrics_data = await response.text()
                     server_count = 0
-                    for line in data.split("\n"):
+                    for line in metrics_data.split("\n"):
                         if line.startswith("gateway_cache_guilds{shard="):
                             if "NaN" in line:
                                 continue
@@ -987,10 +1009,10 @@ async def background_loop() -> None:
                     f"https://top.gg/api/v1/projects/@me/votes?{suffix}",
                     headers={"Authorization": f"Bearer {config.TOP_GG_MODERN_TOKEN}"},
                 )
-                data = await r.json()
+                response_data = await r.json()
                 r.close()
 
-                the_votes = data.get("data", [])
+                the_votes = response_data.get("data", [])
                 for vote_data in the_votes:
                     if not vote_data.get("created_at", 0) or not vote_data.get("platform_id", 0):
                         continue
@@ -998,7 +1020,7 @@ async def background_loop() -> None:
                     vote_user = await User.get_or_create(user_id=int(vote_data["platform_id"]))
                     await do_vote(vote_user, created_at)
 
-                last_vote_cursor = data.get("cursor", "")
+                last_vote_cursor = response_data.get("cursor", "")
                 async with await anyio.open_file("cursor.txt", "w") as f:
                     await f.write(last_vote_cursor)
                 logger.info(f"Fetched {len(the_votes)} votes, cursor {last_vote_cursor}")
@@ -1034,7 +1056,7 @@ async def background_loop() -> None:
         view = View(timeout=VIEW_TIMEOUT)
         button = Button(
             emoji=get_emoji("topgg"),
-            label=random.choice(vote_button_texts),
+            label=random.choice(data.vote_button_texts),
             url="https://top.gg/bot/966695034340663367/vote",
         )
         view.add_item(button)
@@ -1258,17 +1280,6 @@ async def on_ready() -> None:
     )
 
 
-sentences = STATIC_DATA["sentences"]
-letter_mapping = STATIC_DATA["letter_mapping"]
-
-# ??? (used in /roll when sides=0)
-family_guy_funny_moments = STATIC_DATA["family_guy_funny_moments"]
-
-# loosely based on this wikipedia article
-# https://en.wikipedia.org/wiki/Dice
-dice_names = {int(k): v for k, v in STATIC_DATA["dice_names"].items()}
-
-
 def to_roman_numeral(value: int) -> str:
     roman_map = {1: "I", 4: "IV", 5: "V", 9: "IX", 10: "X", 40: "XL", 50: "L", 90: "XC", 100: "C", 400: "CD", 500: "D", 900: "CM", 1000: "M"}
     result = ""
@@ -1318,7 +1329,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         index = random.randint(0, 25)
         random_letter = letters[index]
         next_letter = letters[index + 1 if index < 25 else 0]
-        random_text = random.choice(sentences)
+        random_text = random.choice(data.sentences)
         answer = random_text.lower().count(random_letter.lower())
         modal.add_item(TextDisplay(f"## Find the letter before {next_letter}, then count the amount of it in the sentence below\n\n{random_text}"))
         modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
@@ -1328,7 +1339,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         modal.add_item(TextDisplay(f"## Sort the numbers in ascending order\n\n{', '.join(map(str, random_numbers))}"))
         modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=100))
     elif cattype == "Good":
-        random_text = random.choice(sentences)
+        random_text = random.choice(data.sentences)
         answer = 0
         for vowel in "AEIOU":
             answer += random_text.lower().count(vowel.lower())
@@ -1364,12 +1375,12 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         )
         answer = eval(expr)
     elif cattype == "Epic":
-        random_text = random.choice(sentences)
+        random_text = random.choice(data.sentences)
         answer = random_text.upper()
         modal.add_item(TextDisplay(f"## Retype this text in UPPERCASE\n\n{random_text}"))
         modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=100))
     elif cattype == "Sus":
-        random_text = random.choice(sentences)
+        random_text = random.choice(data.sentences)
         random_letter = ""
         while not random_letter.isalpha():
             random_letter = random.choice(random_text).upper()
@@ -1400,7 +1411,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         modal.add_item(TextDisplay(f"## Retype this text\n\n{answer}"))
         modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=200))
     elif cattype == "Reverse":
-        line = random.choice(sentences)
+        line = random.choice(data.sentences)
         split_line = line.split()
         split_line.reverse()
         answer = " ".join(split_line)
@@ -1420,7 +1431,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
             )
         )
     elif cattype == "Legendary":
-        raw_words = random.choice(sentences).split()
+        raw_words = random.choice(data.sentences).split()
         words = [re.sub(r"[^a-zA-Z]", "", w) for w in raw_words]
         words = [w for w in words if w][:4]
         shuffled = words.copy()
@@ -1452,9 +1463,9 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         modal.add_item(TextDisplay(f"## Decode this cat type\n\n{show}"))
         modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=20))
     elif cattype == "Divine":
-        letter_mappings = dict(letter_mapping)
+        letter_mappings = dict(data.letter_mapping)
         letter_mappings.update({v: k for k, v in letter_mappings.items()})  # reverse mappings
-        sentence = random.choice(sentences).upper()
+        sentence = random.choice(data.sentences).upper()
         answer = random.randint(5, 9)
         valid_indices = [i for i, c in enumerate(sentence) if c in letter_mappings]
         random.shuffle(valid_indices)
@@ -1663,10 +1674,6 @@ async def belated_window_task(
         await h.delete(delay=10)
 
 
-custom_cough_strings = STATIC_DATA["custom_cough_strings"]
-dark_market_followups = STATIC_DATA["dark_market_followups"]
-
-
 # this is all the code which is ran on every message sent
 # a lot of it is for easter eggs or achievements
 async def on_message(message: discord.Message) -> None:
@@ -1755,7 +1762,7 @@ async def on_message(message: discord.Message) -> None:
         total_illegal = 0
         for i in "aeuio":
             total_vow += s.count(i)
-        for j in illegal:
+        for j in data.illegal:
             if j in s:
                 total_illegal += 1
         vow_perc = total_vow / len(text)
@@ -1772,58 +1779,34 @@ async def on_message(message: discord.Message) -> None:
             except Exception:
                 pass
 
-    for achievement in achs:
-        match_text, match_method, achievement_name = achievement
-        text_lowered = text.lower()
-        if any(
-            [
-                match_method == "startswith" and text_lowered.startswith(match_text),
-                match_method == "re" and re.search(match_text, text_lowered),
-                match_method == "exact" and match_text == text_lowered,
-                match_method == "veryexact" and match_text == text,
-                match_method == "in" and match_text in text_lowered,
-            ]
-        ):
+    for match_text, achievement_name in data.achs.items():
+        if match_text == text.lower():
             await achemb(message, achievement_name, "reply")
 
-    if unidecode.unidecode(text).lower().strip() in cat_translations:
+    if text == "cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6":
+        await achemb(message, "dataminer", "reply")
+
+    if unidecode.unidecode(text).lower().strip() in data.cat_translations:
         await achemb(message, "multilingual", "reply")
 
     if str(bot.user.id) in message.content:
         await achemb(message, "who_ping", "reply")
 
-    for reaction in reactions:
-        reaction_prompt, reaction_type, reaction_name = reaction
+    for reaction_prompt, reaction_name in data.reactions.items():
         if reaction_prompt in text.lower() and reactions_ratelimit.get(message.guild.id, 0) < 30:
-            if reaction_type == "custom":
-                resolved_emoji = get_emoji(reaction_name)
-            elif reaction_type == "vanilla":
-                resolved_emoji = reaction_name
-            else:
-                continue
-
             try:
                 if not server:
                     server = await Server.get_or_create(server_id=message.guild.id)
                 if server.do_reactions and await check_channel_setupped(server, message.channel):
-                    await message.add_reaction(resolved_emoji)
+                    await message.add_reaction(get_emoji(reaction_name))
                 react_count += 1
                 reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
                 log_stats("reaction", {"reaction": reaction_name})
             except Exception:
                 pass
 
-    for response in responses:
-        match_text, match_method, response_reply = response
-        text_lowered = text.lower()
-        if any(
-            [
-                match_method == "startswith" and text_lowered.startswith(match_text),
-                match_method == "re" and re.search(match_text, text_lowered),
-                match_method == "exact" and match_text == text_lowered,
-                match_method == "in" and match_text in text_lowered,
-            ]
-        ):
+    for response_prompt, response_reply in data.responses.items():
+        if response_prompt in text.lower():
             if not server:
                 server = await Server.get_or_create(server_id=message.guild.id)
             if server.do_responses and await check_channel_setupped(server, message.channel):
@@ -2167,7 +2150,7 @@ async def on_message(message: discord.Message) -> None:
                 double_first = 0
                 timer_add_chance = 0
                 packs_gained = []
-                bonus_chance = 0.02 * math.log2(sum(type_dict.values()) / type_dict[channel.cattype] - 0.7)
+                bonus_chance = 0.02 * math.log2(sum(data.type_dict.values()) / data.type_dict[channel.cattype] - 0.7)
                 bonus_chance_increase = 0
 
                 if user.perks:
@@ -2197,7 +2180,7 @@ async def on_message(message: discord.Message) -> None:
                             none_chance += perks_info[1]["values"][rarity] / 2
                             single_chance -= perks_info[1]["values"][rarity] * (1.5)
                         elif "pack" in id:
-                            for num, pack in enumerate(pack_data):
+                            for num, pack in enumerate(data.pack_data):
                                 if pack["name"].lower() in id:
                                     packs.append((num, perks_info[type - 1]["values"][rarity]))
                                     break
@@ -2217,9 +2200,9 @@ async def on_message(message: discord.Message) -> None:
                     for i in packs:
                         chance = random.random() * 100
                         if chance <= i[1]:
-                            packs_gained.append(pack_data[i[0]]["name"])
-                            user[f"pack_{pack_data[i[0]]['name'].lower()}"] += 1
-                            suffix_string += f"\n{get_emoji(pack_data[i[0]]['name'].lower() + 'pack')} You got a {pack_data[i[0]]['name']} pack! You now have {user[f'pack_{pack_data[i[0]]["name"].lower()}']:,} packs of this type!"
+                            packs_gained.append(data.pack_data[i[0]]["name"])
+                            user[f"pack_{data.pack_data[i[0]]['name'].lower()}"] += 1
+                            suffix_string += f"\n{get_emoji(data.pack_data[i[0]]['name'].lower() + 'pack')} You got a {data.pack_data[i[0]]['name']} pack! You now have {user[f'pack_{data.pack_data[i[0]]['name'].lower()}']:,} packs of this type!"
 
                     chance = random.random() * 100
                     if chance <= double_boost_chance:
@@ -2407,7 +2390,7 @@ async def on_message(message: discord.Message) -> None:
                     suffix_string += f"\n📦 {get_command_mention('plush')} last chance (+badge!)"
                 if random.randint(1, 20) == 1:
                     # diplay a hint/fun fact
-                    suffix_string += "\n💡 " + random.choice(hints)
+                    suffix_string += "\n💡 " + random.choice(data.hints)
 
                 # sparkles
                 randnum = random.randint(1, 10000000000)
@@ -2431,9 +2414,9 @@ async def on_message(message: discord.Message) -> None:
                 if channel.cought:
                     # custom spawn message
                     coughstring = channel.cought
-                elif le_emoji in custom_cough_strings:
+                elif le_emoji in data.custom_cough_strings:
                     # custom type message
-                    coughstring = custom_cough_strings[le_emoji]
+                    coughstring = data.custom_cough_strings[le_emoji]
                 else:
                     # default
                     coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
@@ -2456,7 +2439,7 @@ async def on_message(message: discord.Message) -> None:
                     await user.save()
                     await interaction.response.send_message("is someone watching after you?", ephemeral=True)
 
-                    for phrase in dark_market_followups:
+                    for phrase in data.dark_market_followups:
                         await asyncio.sleep(5)
                         await interaction.followup.send(phrase, ephemeral=True)
 
@@ -2469,7 +2452,7 @@ async def on_message(message: discord.Message) -> None:
                 elif config.WEBHOOK_VERIFY and vote_time_user.vote_time_topgg + 43200 < time.time():
                     button = Button(
                         emoji=get_emoji("topgg"),
-                        label=random.choice(vote_button_texts),
+                        label=random.choice(data.vote_button_texts),
                         url="https://top.gg/bot/966695034340663367/vote",
                     )
                 elif random.randint(0, 20) == 0:
@@ -3063,34 +3046,22 @@ DB Servers: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class
     await message.response.send_message(embed=embed)
 
 
-wiki_lines = STATIC_DATA["wiki_lines"]
-
-
 @bot.tree.command(description="Confused? Check out the Cat Bot Wiki!")
 async def wiki(message: discord.Interaction):
-    embed = discord.Embed(title="Cat Bot Wiki", color=Colors.brown)
-    embed.description = "\n".join(wiki_lines)
-    await message.response.send_message(embed=embed)
+    await message.response.send_message(embed=discord.Embed(title="Cat Bot Wiki", color=Colors.brown, description="\n".join(data.wiki_lines)))
 
 
-CAT_FORTUNES = STATIC_DATA["CAT_FORTUNES"]
-
-CAT_ACTIVITIES = tuple(STATIC_DATA["CAT_ACTIVITIES"])
-
-CAT_FORTUNE_TITLES = STATIC_DATA["CAT_FORTUNE_TITLES"]
-
-
-@bot.tree.command(description="🔮 Consult the ancient cat oracle for a purrsonalized fortune")
+@bot.tree.command(description="Consult the ancient cat oracle for a purrsonalized fortune")
 async def fortune(interaction: discord.Interaction):
     rng = random.Random(interaction.user.id + discord.utils.utcnow().date().toordinal())
 
     embed = discord.Embed(
-        title=f"🔮 {rng.choice(CAT_FORTUNE_TITLES)}",
+        title=f"🔮 {rng.choice(data.cat_fortune_titles)}",
         description=(
-            f"😺 {rng.choice(CAT_FORTUNES)}\n\n"
+            f"😺 {rng.choice(data.cat_fortunes)}\n\n"
             f"**Lucky cat type:** {rng.choice(cattypes)}\n"
             f"**Lucky number:** {rng.randint(1, 9)}\n"
-            f"**Lucky activity:** {rng.choice(CAT_ACTIVITIES)}"
+            f"**Lucky activity:** {rng.choice(data.cat_activities)}"
         ),
         color=Colors.brown,
     )
@@ -3541,8 +3512,8 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
         buttons = []
         active_buttons = []
         current_state = user.news_state.strip()
-        for num, article in enumerate(news_list[::-1]):
-            num = len(news_list) - num - 1
+        for num, article in enumerate(data.news_list[::-1]):
+            num = len(data.news_list) - num - 1
             try:
                 have_read_this = current_state[num] != "0"
             except Exception:
@@ -3563,8 +3534,8 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
 
     await regen_buttons()
 
-    if len(news_list) > len(current_state):
-        user.news_state = current_state + "0" * (len(news_list) - len(current_state))
+    if len(data.news_list) > len(current_state):
+        user.news_state = current_state + "0" * (len(data.news_list) - len(current_state))
         await user.save()
 
     current_page = 0
@@ -3589,7 +3560,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
-        user.news_state = "1" * len(news_list)
+        user.news_state = "1" * len(data.news_list)
         await user.save()
         await regen_buttons()
         await interaction.response.edit_message(view=generate_page(current_page))
@@ -4036,11 +4007,11 @@ async def catalogue(message: discord.Interaction):
             in_server = 0
             title = f"{get_emoji('mysterycat')} ???"
 
-        title += f" ({round((type_dict[cat_type] / sum(type_dict.values())) * 100, 2)}%)"
+        title += f" ({round((data.type_dict[cat_type] / sum(data.type_dict.values())) * 100, 2)}%)"
 
         embed.add_field(
             name=title,
-            value=f"{round(sum(type_dict.values()) / type_dict[cat_type], 2)} value\n{in_server:,} in this server",
+            value=f"{round(sum(data.type_dict.values()) / data.type_dict[cat_type], 2)} value\n{in_server:,} in this server",
         )
 
     await message.response.send_message(embed=embed)
@@ -4119,7 +4090,7 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
                 break
             total_xp += level["xp"]
     current_packs = 0
-    for pack in pack_data:
+    for pack in data.pack_data:
         current_packs += profile[f"pack_{pack['name'].lower()}"]
     stats.append(["quests_completed", "✅", f"Quests completed: {profile.quests_completed:,}{star}"])
     stats.append(["seasons_completed", "🏅", f"Cattlepass seasons completed: {seasons_complete:,}"])
@@ -4287,7 +4258,7 @@ async def gen_inventory(
             debt = True
         if cat_num != 0:
             total += cat_num
-            valuenum += (sum(type_dict.values()) / type_dict[i]) * cat_num
+            valuenum += (sum(data.type_dict.values()) / data.type_dict[i]) * cat_num
             cat_desc += f"{icon} **{i}** {cat_num:,}\n"
         else:
             give_collector = False
@@ -4299,7 +4270,7 @@ async def gen_inventory(
     if len(cat_desc) == 0:
         cat_desc = f"u hav no cats {get_emoji('cat_cry')}"
 
-    if me_msg and (len(news_list) > len(user.news_state.strip()) or user.news_state.strip()[last_active_article] == "0"):
+    if me_msg and (len(data.news_list) > len(user.news_state.strip()) or user.news_state.strip()[last_active_article] == "0"):
         has_news = "You have unread news! /news"
     else:
         has_news = None
@@ -4317,7 +4288,7 @@ async def gen_inventory(
     username = f"## {emoji_prefix}{uname.replace('_', r'\_')}"
 
     badges = ""
-    for badge in badge_list:
+    for badge in data.badge_list:
         if user[badge]:
             badges += f"{get_emoji(badge)} "
 
@@ -4653,7 +4624,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 show_cats = ""
                 shortened_types = False
-                dictdict = type_dict | pack_yeah
+                dictdict = data.type_dict | pack_yeah
                 cat_types.sort(reverse=True, key=lambda x: dictdict[x])
                 pack_amount = 0
                 for cat_type_two in cat_types:
@@ -5117,9 +5088,6 @@ if config.DONOR_CHANNEL_ID:
         await message.followup.send(view=view)
 
 
-scratch_opts = STATIC_DATA["scratch_opts"]
-
-
 @bot.tree.command(description="bumbum's scratch off game")
 async def scratch(message: discord.Interaction):
     assert message.guild is not None
@@ -5137,7 +5105,7 @@ async def scratch(message: discord.Interaction):
 
         log_stats("scratchcard")
 
-        opts = scratch_opts.copy()
+        opts = data.scratch_opts.copy()
         random.shuffle(opts)
 
         # the entire minigame is actually a lie whoopsie daisy!!!
@@ -5249,7 +5217,7 @@ async def packs(message: discord.Interaction):
     async def process_pack_opening(limit: int | None = None) -> discord.Embed | None:
         await user.refresh_from_db()
 
-        pack_names = [pack["name"] for pack in pack_data]
+        pack_names = [pack["name"] for pack in data.pack_data]
         total_pack_count = sum(user[f"pack_{pack_id.lower()}"] for pack_id in pack_names)
 
         if total_pack_count < 1:
@@ -5332,7 +5300,7 @@ async def packs(message: discord.Interaction):
         empty = True
         has_special = False
         total_amount = 0
-        for pack in pack_data:
+        for pack in data.pack_data:
             if user[f"pack_{pack['name'].lower()}"] < 1:
                 continue
             empty = False
@@ -5362,27 +5330,27 @@ async def packs(message: discord.Interaction):
         build_string = ""
         upgrades = 0
         if not is_single:
-            build_string = get_emoji(pack_data[level]["name"].lower() + "pack")
+            build_string = get_emoji(data.pack_data[level]["name"].lower() + "pack")
 
-        is_special = pack_data[level]["special"]
+        is_special = data.pack_data[level]["special"]
         bump_boost = 7 / 3 if is_special else 1
         first_boost = 1
         if is_special:
             # find first non-special level
-            while pack_data[level + first_boost]["special"]:
+            while data.pack_data[level + first_boost]["special"]:
                 first_boost += 1
 
         # bump rarity
-        while random.uniform(1, 100) <= pack_data[level]["upgrade"] * bump_boost:
+        while random.uniform(1, 100) <= data.pack_data[level]["upgrade"] * bump_boost:
             if is_single:
-                reward_texts.append(f"{get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}\n" + build_string)
-                build_string = f"Upgraded from {get_emoji(pack_data[level]['name'].lower() + 'pack')} {pack_data[level]['name']}!\n" + build_string
+                reward_texts.append(f"{get_emoji(data.pack_data[level]['name'].lower() + 'pack')} {data.pack_data[level]['name']}\n" + build_string)
+                build_string = f"Upgraded from {get_emoji(data.pack_data[level]['name'].lower() + 'pack')} {data.pack_data[level]['name']}!\n" + build_string
             else:
-                build_string += f" -> {get_emoji(pack_data[level + first_boost]['name'].lower() + 'pack')}"
+                build_string += f" -> {get_emoji(data.pack_data[level + first_boost]['name'].lower() + 'pack')}"
             level += first_boost
             first_boost = 1
             upgrades += 1
-        final_level = pack_data[level]
+        final_level = data.pack_data[level]
         if is_single:
             reward_texts.append(f"{get_emoji(final_level['name'].lower() + 'pack')} {final_level['name']}\n" + build_string)
 
@@ -5390,7 +5358,7 @@ async def packs(message: discord.Interaction):
         goal_value = final_level["value"]
         chosen_type = random.choice(cattypes)
         cat_emoji = get_emoji(chosen_type.lower() + "cat")
-        pre_cat_amount: float = goal_value / (sum(type_dict.values()) / type_dict[chosen_type])
+        pre_cat_amount: float = goal_value / (sum(data.type_dict.values()) / data.type_dict[chosen_type])
         if pre_cat_amount % 1 > random.random():
             cat_amount = math.ceil(pre_cat_amount)
         else:
@@ -5436,7 +5404,7 @@ async def packs(message: discord.Interaction):
         await user.refresh_from_db()
         if user[f"pack_{pack.lower()}"] < 1:
             return
-        level = next((i for i, p in enumerate(pack_data) if p["name"] == pack), 0)
+        level = next((i for i, p in enumerate(data.pack_data) if p["name"] == pack), 0)
 
         chosen_type, cat_amount, upgrades, reward_texts = get_pack_rewards(level)
         user[f"cat_{chosen_type}"] += cat_amount
@@ -5693,7 +5661,7 @@ async def battlepass(message: discord.Interaction):
         button.callback = toggle_reminders
         view.add_item(button)
 
-        if len(news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
+        if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
             embedVar.set_author(name="You have unread news! /news")
 
         if first:
@@ -5934,9 +5902,6 @@ async def bruh(message: discord.Interaction):
     await message.delete_original_response()
 
 
-win_combinations = STATIC_DATA["win_combinations"]
-
-
 @bot.tree.command(description="play a relaxing game of tic tac toe (ttt)")
 @discord.app_commands.describe(person="who do you want to play with? (choose Cat Bot for ai)")
 async def tictactoe(message: discord.Interaction, person: discord.Member):
@@ -5949,7 +5914,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
     current_turn = 0
 
     def check_win(board: list[Literal["❌", "⭕"] | None]) -> list[int]:
-        for combination in win_combinations:
+        for combination in data.win_combinations:
             if board[combination[0]] == board[combination[1]] == board[combination[2]] and board[combination[0]] is not None:
                 return combination
 
@@ -6284,7 +6249,7 @@ async def fish(message: discord.Interaction):
                 fish_lock.add((interaction.guild.id, interaction.user.id))
             await asyncio.sleep(0.01)
 
-        fishtype = random.choices(cattypes, weights=list(type_dict.values()))[0]
+        fishtype = random.choices(cattypes, weights=list(data.type_dict.values()))[0]
         fish_caught = False
 
         async def pull_fish(interaction: discord.Interaction) -> None:
@@ -6406,7 +6371,7 @@ async def gift(
             gift_type = cattype_lc_dict[gift_type.lower()]
             key = f"cat_{gift_type}"
             thing = f"{gift_type} cats"
-        elif gift_type.lower() in [i["name"].lower() for i in pack_data]:
+        elif gift_type.lower() in [i["name"].lower() for i in data.pack_data]:
             key = f"pack_{gift_type.lower()}"
             thing = f"{gift_type.capitalize()} packs"
         elif gift_type.lower() == "scratchcards":
@@ -6536,7 +6501,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
 
             if user.id == bot.user.id:
                 self.gives_cats["eGirl"] = 9999999
-                self.value += (sum(type_dict.values()) / type_dict["eGirl"]) * 9999999
+                self.value += (sum(data.type_dict.values()) / data.type_dict["eGirl"]) * 9999999
 
     blackhole: bool = False
     person1: TradeUser = TradeUser(
@@ -6767,7 +6732,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     else:
                         active_user.gives_cats[cattype] = amount + current
                         active_user.gives_cats = {k: active_user.gives_cats[k] for k in cattypes if k in active_user.gives_cats}
-                    active_user.value += (sum(type_dict.values()) / type_dict[cattype]) * amount
+                    active_user.value += (sum(data.type_dict.values()) / data.type_dict[cattype]) * amount
                 elif selection == "packs":
                     assert isinstance(item1, discord.ui.Select)
                     assert isinstance(item2, discord.ui.TextInput)
@@ -6802,7 +6767,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     else:
                         active_user.gives_packs[packtype] = amount + current
                         active_user.gives_packs = {k: active_user.gives_packs[k] for k in pack_names if k in active_user.gives_packs}
-                    active_user.value += sum([i["totalvalue"] if i["name"] == packtype else 0 for i in pack_data]) * amount
+                    active_user.value += sum([i["totalvalue"] if i["name"] == packtype else 0 for i in data.pack_data]) * amount
                 elif selection == "scratchcards":
                     assert isinstance(item2, discord.ui.TextInput)
                     amount = item2.value
@@ -6901,7 +6866,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 await active_user.profile.refresh_from_db()
                 for cattype in cattypes:
                     if (ca := active_user.profile[f"cat_{cattype}"]) > 0:
-                        value = sum(type_dict.values()) / type_dict[cattype]
+                        value = sum(data.type_dict.values()) / data.type_dict[cattype]
                         options.append(
                             discord.SelectOption(
                                 value=cattype,
@@ -6921,7 +6886,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 await active_user.profile.refresh_from_db()
                 for pack in pack_names:
                     if (pa := active_user.profile[f"pack_{pack.lower()}"]) > 0:
-                        value = sum([i["totalvalue"] if i["name"] == pack else 0 for i in pack_data])
+                        value = sum([i["totalvalue"] if i["name"] == pack else 0 for i in data.pack_data])
                         options.append(
                             discord.SelectOption(
                                 value=pack,
@@ -7499,10 +7464,6 @@ async def slots(message: discord.Interaction):
     await message.followup.send(embed=embed, view=myview)
 
 
-# mapping of colors to numbers by indexes
-roulette_colors = STATIC_DATA["roulette_colors"]
-
-
 @bot.tree.command(description="what")
 async def roulette(message: discord.Interaction):
     assert message.guild is not None
@@ -7557,7 +7518,7 @@ async def roulette(message: discord.Interaction):
 
             await interaction.response.defer()
 
-            colors = roulette_colors
+            colors = data.roulette_colors
 
             emoji_map = {
                 "red": "🔴",
@@ -7700,19 +7661,19 @@ async def roll(message: discord.Interaction, sides: int | None = None):
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
     if sides == 0:
-        if user.sphere_easter_egg < len(family_guy_funny_moments):
-            await message.response.send_message(family_guy_funny_moments[user.sphere_easter_egg], ephemeral=True)
+        if user.sphere_easter_egg < len(data.family_guy_funny_moments):
+            await message.response.send_message(data.family_guy_funny_moments[user.sphere_easter_egg], ephemeral=True)
             user.sphere_easter_egg += 1
             await user.save()
 
-            if user.sphere_easter_egg == len(family_guy_funny_moments):
+            if user.sphere_easter_egg == len(data.family_guy_funny_moments):
                 await achemb(message, "sphere_ach", "followup")
         else:
-            await message.response.send_message(random.choice(family_guy_funny_moments), ephemeral=True)
+            await message.response.send_message(random.choice(data.family_guy_funny_moments), ephemeral=True)
 
         return
 
-    dice = dice_names.get(sides, f"d{sides}")
+    dice = data.dice_names.get(str(sides), f"d{sides}")
 
     view = View(timeout=VIEW_TIMEOUT)
     button = Button(label="Reroll", emoji="🎲", style=ButtonStyle.blurple)
@@ -7748,9 +7709,6 @@ async def roll(message: discord.Interaction, sides: int | None = None):
     await roll_and_respond(message, is_first=True)
 
 
-catball_responses = STATIC_DATA["catball_responses"]
-
-
 @bot.tree.command(description="get a super accurate rating of something")
 @discord.app_commands.describe(thing="The thing or person to check", stat="The stat to check")
 async def rate(message: discord.Interaction, thing: str, stat: str):
@@ -7770,7 +7728,7 @@ async def eightball(message: discord.Interaction, question: str):
         await message.response.send_message("thats kinda long", ephemeral=True)
         return
 
-    await message.response.send_message(f"{question}\n:8ball: **{random.choice(catball_responses)}**")
+    await message.response.send_message(f"{question}\n:8ball: **{random.choice(data.catball_responses)}**")
 
     await achemb(message, "balling", "followup")
 
@@ -8121,7 +8079,7 @@ async def set_mafia_offer(level: int, user: Profile) -> None:
     value = None
     for _ in range(100):
         cattype = random.choice(cattypes)
-        value = sum(type_dict.values()) / type_dict[cattype]
+        value = sum(data.type_dict.values()) / data.type_dict[cattype]
         if value <= vt:
             break
     assert value is not None
@@ -8197,7 +8155,7 @@ async def get_bounties(level: int) -> list[dict]:
                 rarity = cattypes[rarity_i]
                 eligible_types = cattypes[rarity_i:]
 
-                prob = sum(type_dict[t] for t in eligible_types) / sum(type_dict.values())
+                prob = sum(data.type_dict[t] for t in eligible_types) / sum(data.type_dict.values())
                 base_amount = max(1, round(avg_cats_needed * prob))
                 expected_total = base_amount / prob if prob > 0 else float("inf")
 
@@ -8236,7 +8194,7 @@ async def get_bounties(level: int) -> list[dict]:
             cat_type = None
             for _ in available_types:
                 cat_type = random.choices(available_types1)[0]
-                prob = type_dict[cat_type] / sum(type_dict.values())
+                prob = data.type_dict[cat_type] / sum(data.type_dict.values())
                 base_amount = avg_cats_needed * prob
                 available_types1.remove(cat_type)
                 if base_amount > 0.8:
@@ -9114,7 +9072,7 @@ async def achievements(message: discord.Interaction):
         ).set_footer(text=rain_shill)
 
         global_user = await User.get_or_create(user_id=message.user.id)
-        if len(news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
+        if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
             newembed.set_author(name="You have unread news! /news")
 
         for k, v in ach_list.items():
@@ -9336,7 +9294,7 @@ async def leaderboards(
             for i in cattypes:
                 if not i:
                     continue
-                weight = sum(type_dict.values()) / type_dict[i]
+                weight = sum(data.type_dict.values()) / data.type_dict[i]
                 sums.append(f'({weight}) * "cat_{i}"')
             total_sum_expr = RawSQL("(" + " + ".join(sums) + ") AS final_value")
             result = await Profile.collect_limit(["user_id", total_sum_expr], "guild_id = $1 ORDER BY final_value DESC", message.guild.id)
@@ -9546,7 +9504,7 @@ async def leaderboards(
 
         global_user = await User.get_or_create(user_id=message.user.id)
 
-        if len(news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
+        if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
             embedVar.set_author(name=f"{message.user} has unread news! /news")
 
         # handle funny buttons
@@ -9825,9 +9783,6 @@ async def reset(message: discord.Interaction, person_id: discord.User):
     await message.response.send_message(thing, view=view, allowed_mentions=discord.AllowedMentions(users=True))
 
 
-nuke_confirmation_lines = STATIC_DATA["nuke_confirmation_lines"]
-
-
 @bot.tree.command(description="(HIGH ADMIN) [VERY DANGEROUS] Reset/wipe all Cat Bot data of this server")
 @discord.app_commands.default_permissions(administrator=True)
 async def nuke(message: discord.Interaction):
@@ -9836,7 +9791,7 @@ async def nuke(message: discord.Interaction):
 
     async def gen(counter: int) -> View:
         view = View(timeout=VIEW_TIMEOUT)
-        button = Button(label=nuke_confirmation_lines[max(1, counter)], style=ButtonStyle.red)
+        button = Button(label=data.nuke_confirmation_lines[max(1, counter)], style=ButtonStyle.red)
         button.callback = count
         view.add_item(button)
         return view

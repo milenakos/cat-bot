@@ -429,127 +429,34 @@
       "active": true
     }
   ],
-  "achs": [
-    [
-      "cat?",
-      "startswith",
-      "???"
-    ],
-    [
-      "catn",
-      "exact",
-      "catn"
-    ],
-    [
-      "cat!coupon jr0f-pzka",
-      "exact",
-      "coupon_user"
-    ],
-    [
-      "pineapple",
-      "exact",
-      "pineapple"
-    ],
-    [
-      "cat!i_like_cat_website",
-      "exact",
-      "website_user"
-    ],
-    [
-      "cat!i_clicked_there",
-      "exact",
-      "click_here"
-    ],
-    [
-      "cat!lia_is_cute",
-      "exact",
-      "nerd"
-    ],
-    [
-      "i read help",
-      "exact",
-      "patient_reader"
-    ],
-    [
-      "lol_i_have_dmed_the_cat_bot_and_got_an_ach",
-      "exact",
-      "dm"
-    ],
-    [
-      "dog",
-      "exact",
-      "not_quite"
-    ],
-    [
-      "egril",
-      "exact",
-      "egril"
-    ],
-    [
-      "-.-. .- -",
-      "exact",
-      "morse_cat"
-    ],
-    [
-      "tac",
-      "exact",
-      "reverse"
-    ],
-    [
-      "cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6",
-      "veryexact",
-      "dataminer"
-    ]
-  ],
-  "reactions": [
-    [
-      "v1;",
-      "custom",
-      "why_v1"
-    ],
-    [
-      "proglet",
-      "custom",
-      "professor_cat"
-    ],
-    [
-      "xnopyt",
-      "custom",
-      "vanish"
-    ],
-    [
-      "silly",
-      "custom",
-      "sillycat"
-    ],
-    [
-      "indev",
-      "vanilla",
-      "🐸"
-    ],
-    [
-      "bleh",
-      "custom",
-      "blepcat"
-    ],
-    [
-      "blep",
-      "custom",
-      "blepcat"
-    ]
-  ],
-  "responses": [
-    [
-      "cellua good",
-      "in",
-      "__RANDOM_IP__"
-    ],
-    [
-      "https://tenor.com/view/this-cat-i-have-hired-this-cat-to-stare-at-you-hired-cat-cat-stare-gif-26392360",
-      "exact",
-      "https://tenor.com/view/cat-staring-cat-gif-16983064494644320763"
-    ]
-  ],
+  "achs": {
+    "cat?": "???",
+    "catn": "catn",
+    "cat!coupon jr0f-pzka": "coupon_user",
+    "pineapple": "pineapple",
+    "cat!i_like_cat_website": "website_user",
+    "cat!i_clicked_there": "click_here",
+    "cat!lia_is_cute": "nerd",
+    "i read help": "patient_reader",
+    "lol_i_have_dmed_the_cat_bot_and_got_an_ach": "dm",
+    "dog": "not_quite",
+    "egril": "egril",
+    "-.-. .- -": "morse_cat",
+    "tac": "reverse"
+  },
+  "reactions": {
+    "v1;": "why_v1",
+    "proglet": "professor_cat",
+    "xnopyt": "vanish",
+    "silly": "sillycat",
+    "indev": "🐸",
+    "bleh": "blepcat",
+    "blep": "blepcat"
+  },
+  "responses": {
+    "cellua good": "152.53.83.134",
+    "https://tenor.com/view/this-cat-i-have-hired-this-cat-to-stare-at-you-hired-cat-cat-stare-gif-26392360": "https://tenor.com/view/cat-staring-cat-gif-16983064494644320763"
+  },
   "letter_mapping": {
     "A": "X",
     "C": "D",
@@ -879,7 +786,7 @@
     "You are the best Minecraft Discord server I've ever been on.",
     "Cat Bot was permanently banned by RiskLM for silly."
   ],
-  "CAT_FORTUNES": [
+  "cat_fortunes": [
     "You will find a mysterious hairball in your shoe. It brings good luck... probably.",
     "A cat will stare at you from across the room today. It is judging you. You will not pass.",
     "Beware of the red dot. It leads nowhere, yet you will chase it anyway.",
@@ -911,7 +818,7 @@
     "A great trade offer approaches. You will decline it. Then accept a worse one. This is the way of the cat.",
     "The ancient cat council has spoken: your next pack opening will be... interesting."
   ],
-  "CAT_FORTUNE_TITLES": [
+  "cat_fortune_titles": [
     "Madame Meowstradamus Speaks",
     "The Crystal Yarn Ball Reveals",
     "Purrfessor Whiskers' Prophecy",
@@ -921,7 +828,7 @@
     "Whisker Wisdom™",
     "The Feline Fates Decree"
   ],
-  "CAT_ACTIVITIES": [
+  "cat_activities": [
     "napping",
     "knocking things off tables",
     "ignoring humans",
