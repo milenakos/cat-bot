@@ -362,6 +362,26 @@ config.filtered_errors = [
 ]
 
 
+class TTLStore:
+    def __init__(self, ttl: float) -> None:
+        self.ttl = ttl
+        self._data: dict = {}
+
+    def add(self, key) -> None:
+        self._data[key] = time.time()
+
+    def discard(self, key) -> None:
+        self._data.pop(key, None)
+
+    def __contains__(self, key) -> bool:
+        ts = self._data.get(key)
+        return ts is not None and ts + self.ttl > time.time()
+
+    def expire(self, now: float) -> None:
+        cutoff = now - self.ttl
+        self._data = {k: t for k, t in self._data.items() if t > cutoff}
+
+
 class Colors:
     brown = 0x6E593C
     gray = 0xCCCCCC
@@ -387,38 +407,29 @@ VIEW_TIMEOUT = 3600 * 24
 gen_credits = {}
 
 # due to some stupid individuals spamming the hell out of reactions, we ratelimit them
-# you can do 50 reactions before they stop, limit resets on global cat loop
 reactions_ratelimit = {}
 
 # sort of the same thing but for pointlaughs and per channel instead of peruser
 pointlaugh_ratelimit = {}
 
 # cooldowns for some commands
-catchcooldown = {}
-fakecooldown = {}
-customcatcooldown = {}
+catchcooldown = TTLStore(6)
+fakecooldown = TTLStore(30)
+customcatcooldown = TTLStore(300)
 
 # prevent ratelimits/abuse
-casino_lock = []
-slots_lock = []
-fish_lock = []
+casino_lock = TTLStore(60)
+slots_lock = TTLStore(60)
+fish_lock = TTLStore(60)
 
 # ???
 rigged_users = []
 
-try:
-    if not config.belated_catchers:
-        config.belated_catchers = {}
-except AttributeError:
-    config.belated_catchers = {}
-
-# WELCOME TO THE TEMP_.._STORAGE HELL
-
 # to prevent double catches
-temp_catches_storage = []
+temp_catches_storage = TTLStore(60)
 
 # to prevent double spawns
-temp_spawns_storage = []
+temp_spawns_storage = TTLStore(60)
 
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
@@ -1343,7 +1354,7 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     if ch_id in temp_spawns_storage:
         return "cat spawn already in progress"
 
-    temp_spawns_storage.append(ch_id)
+    temp_spawns_storage.add(ch_id)
 
     try:
         message_is_sus = await channeley.send(
@@ -1353,16 +1364,16 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
         )
     except discord.Forbidden as e:
         await channel.delete()
-        temp_spawns_storage.remove(ch_id)
+        temp_spawns_storage.discard(ch_id)
         if e.text == "Access to file uploads has been limited for this guild":
             return "your server is limited by discord, cat bot cant operate here"
         return "sending message forbidden (no permissions)"
     except discord.NotFound:
         await channel.delete()
-        temp_spawns_storage.remove(ch_id)
+        temp_spawns_storage.discard(ch_id)
         return "not found (cant access channel)"
     except Exception as e:
-        temp_spawns_storage.remove(ch_id)
+        temp_spawns_storage.discard(ch_id)
         return str(e)
 
     config.belated_catchers.pop(ch_id, None)
@@ -1371,7 +1382,7 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     channel.forcespawned = bool(force_spawn)
     channel.cattype = localcat
     await channel.save()
-    temp_spawns_storage.remove(ch_id)
+    temp_spawns_storage.discard(ch_id)
     log_stats("spawn", {"forced": str(force_spawn)})
     return f"ok, now i will send cats in <#{ch_id}>"
 
@@ -1396,28 +1407,15 @@ async def postpone_reminder(interaction: discord.Interaction) -> None:
     await interaction.response.send_message(f"ok, i will remind you <t:{int(time.time()) + 30 * 60}:R>", ephemeral=True)
 
 
-# a loop for various maintenance which is ran every 5 minutes
+# a loop for various maintenance which is ran every minute
 async def background_loop() -> None:
-    global \
-        pointlaugh_ratelimit, \
-        reactions_ratelimit, \
-        loop_count, \
-        catchcooldown, \
-        fakecooldown, \
-        last_vote_cursor, \
-        server_count, \
-        emojis, \
-        fish_lock, \
-        slots_lock, \
-        casino_lock
+    global pointlaugh_ratelimit, reactions_ratelimit, loop_count, last_vote_cursor, server_count, emojis
 
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
-    catchcooldown = {}
-    fakecooldown = {}
-    fish_lock = []
-    slots_lock = []
-    casino_lock = []
+
+    for store in (catchcooldown, fakecooldown, customcatcooldown, casino_lock, slots_lock, fish_lock, temp_catches_storage, temp_spawns_storage):
+        store.expire(time.time())
 
     # clean up anything older than 5 minutes
     for ch_id in list(config.belated_catchers.keys()):
@@ -2297,7 +2295,7 @@ async def on_message(message: discord.Message) -> None:
         vow_perc = total_vow / len(text)
         if (vow_perc >= 0.82) or total_illegal >= 2:
             try:
-                if reactions_ratelimit.get(message.guild.id, 0) < 100:
+                if reactions_ratelimit.get(message.guild.id, 0) < 30:
                     if not server:
                         server = await Server.get_or_create(server_id=message.guild.id)
                     if server.do_reactions and await check_channel_setupped(server, message.channel):
@@ -2330,7 +2328,7 @@ async def on_message(message: discord.Message) -> None:
 
     for reaction in reactions:
         reaction_prompt, reaction_type, reaction_name = reaction
-        if reaction_prompt in text.lower() and reactions_ratelimit.get(message.guild.id, 0) < 100:
+        if reaction_prompt in text.lower() and reactions_ratelimit.get(message.guild.id, 0) < 30:
             if reaction_type == "custom":
                 resolved_emoji = get_emoji(reaction_name)
             elif reaction_type == "vanilla":
@@ -2370,7 +2368,7 @@ async def on_message(message: discord.Message) -> None:
                 log_stats("response", {"type": response_reply})
 
     try:
-        if message.author in message.mentions and message.type != discord.MessageType.poll_result and reactions_ratelimit.get(message.guild.id, 0) < 100:
+        if message.author in message.mentions and message.type != discord.MessageType.poll_result and reactions_ratelimit.get(message.guild.id, 0) < 30:
             if not server:
                 server = await Server.get_or_create(server_id=message.guild.id)
             if server.do_reactions and await check_channel_setupped(server, message.channel):
@@ -2587,7 +2585,7 @@ async def on_message(message: discord.Message) -> None:
                         await vote_time_user.save()
         else:
             pls_remove_me_later_k_thanks = channel.cat
-            temp_catches_storage.append(channel.cat)
+            temp_catches_storage.add(channel.cat)
             decided_time = random.uniform(channel.spawn_times_min, channel.spawn_times_max)
 
             cat_rain_end = False
@@ -3258,17 +3256,11 @@ async def on_message(message: discord.Message) -> None:
                     await channel.save()
 
                     await asyncio.sleep(decided_time)
-                    try:
-                        temp_catches_storage.remove(pls_remove_me_later_k_thanks)
-                    except Exception:
-                        pass
+                    temp_catches_storage.discard(pls_remove_me_later_k_thanks)
                     await spawn_cat(message.channel.id)
                 else:
                     await channel.save()
-                    try:
-                        temp_catches_storage.remove(pls_remove_me_later_k_thanks)
-                    except Exception:
-                        pass
+                    temp_catches_storage.discard(pls_remove_me_later_k_thanks)
 
     # only letting the owner of the bot access anything past this point
     if message.author.id != OWNER_ID:
@@ -5247,7 +5239,6 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
                 return
             rain_server = config.cat_cought_rain[channel.channel_id]
 
-        # you can throw out the name of the emoji to save on characters
         pack_names = ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]
         pack_yeah = {"Wooden": 1, "Stone": 0.9, "Bronze": 0.8, "Silver": 0.7, "Gold": 0.6, "Platinum": 0.5, "Diamond": 0.4, "Celestial": 0.3}
         rain_packs = []
@@ -5343,8 +5334,6 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
 
         del config.cat_cought_rain[channel.channel_id]
         del config.rain_starter[channel.channel_id]
-
-        await asyncio.sleep(4)
     except discord.Forbidden:
         pass
 
@@ -5575,10 +5564,10 @@ if config.DONOR_CHANNEL_ID:
         if amount:
             user.custom_num = amount
         if image:
-            if customcatcooldown.get(message.user.id, 0) + 300 > time.time():
+            if message.user.id in customcatcooldown:
                 await message.followup.send("You can only upload a new custom cat image every 5 minutes.", ephemeral=True)
                 return
-            customcatcooldown[message.user.id] = time.time()
+            customcatcooldown.add(message.user.id)
             try:
                 emojiss = {emoji.name: emoji for emoji in await bot.fetch_application_emojis()}
                 if em_name in emojiss:
@@ -6921,7 +6910,7 @@ async def fish(message: discord.Interaction):
             await interaction.response.send_message("You're already fishing!", ephemeral=True)
             return
 
-        fish_lock.append((interaction.guild.id, interaction.user.id))
+        fish_lock.add((interaction.guild.id, interaction.user.id))
 
         await interaction.response.defer()
         view = LayoutView(timeout=VIEW_TIMEOUT)
@@ -6930,7 +6919,7 @@ async def fish(message: discord.Interaction):
 
         for _ in range(random.randint(1000, 3000)):
             if (interaction.guild.id, interaction.user.id) not in fish_lock:
-                fish_lock.append((interaction.guild.id, interaction.user.id))
+                fish_lock.add((interaction.guild.id, interaction.user.id))
             await asyncio.sleep(0.01)
 
         fishtype = random.choices(cattypes, weights=list(type_dict.values()))[0]
@@ -6963,10 +6952,7 @@ async def fish(message: discord.Interaction):
             if cattypes.index(fishtype) >= 13:
                 await achemb(interaction, "pro_fisher", "followup")
 
-            try:
-                fish_lock.remove((interaction.guild.id, interaction.user.id))
-            except ValueError:
-                pass
+            fish_lock.discard((interaction.guild.id, interaction.user.id))
 
             await progress(message, profile, "fish")
 
@@ -6988,10 +6974,7 @@ async def fish(message: discord.Interaction):
             view.add_item(TextDisplay("You weren't fast enough..."))
             view.add_item(ActionRow(button))
             await interaction.edit_original_response(view=view)
-            try:
-                fish_lock.remove((interaction.guild.id, interaction.user.id))
-            except ValueError:
-                pass
+            fish_lock.discard((interaction.guild.id, interaction.user.id))
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
 
@@ -7934,7 +7917,7 @@ async def casino(message: discord.Interaction):
 
         await interaction.response.defer()
         amount = random.randint(1, 5)
-        casino_lock.append((message.guild.id, message.user.id))
+        casino_lock.add((message.guild.id, message.user.id))
         profile.cat_Fine += amount - 5
         profile.gambles += 1
         await profile.save()
@@ -7981,8 +7964,7 @@ async def casino(message: discord.Interaction):
         myview = View(timeout=VIEW_TIMEOUT)
         myview.add_item(button)
 
-        if (message.guild.id, message.user.id) in casino_lock:
-            casino_lock.remove((message.guild.id, message.user.id))
+        casino_lock.discard((message.guild.id, message.user.id))
 
         try:
             await interaction.edit_original_response(embed=embed, view=myview)
@@ -8053,7 +8035,7 @@ async def slots(message: discord.Interaction):
         await profile.refresh_from_db()
 
         await interaction.response.defer()
-        slots_lock.append((message.guild.id, message.user.id))
+        slots_lock.add((message.guild.id, message.user.id))
         profile.slot_spins += 1
         await profile.save()
 
@@ -8137,8 +8119,7 @@ async def slots(message: discord.Interaction):
                 button.callback = remove_debt
                 myview.add_item(button)
 
-        if (message.guild.id, message.user.id) in slots_lock:
-            slots_lock.remove((message.guild.id, message.user.id))
+        slots_lock.discard((message.guild.id, message.user.id))
 
         embed = discord.Embed(title=":slot_machine: The Slot Machine", description=desc, color=Colors.maroon)
 
@@ -10015,7 +9996,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
     assert message.guild is not None
     assert isinstance(message.channel, GuildMessageable)
     assert bot.user is not None
-    if message.user.id in catchcooldown and catchcooldown[message.user.id] + 6 > time.time():
+    if message.user.id in catchcooldown:
         await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
         return
     await message.response.defer()
@@ -10035,7 +10016,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         except Exception:
             pass
 
-    catchcooldown[message.user.id] = time.time()
+    catchcooldown.add(message.user.id)
 
     await achemb(message, "4k", "followup")
 
@@ -10486,12 +10467,12 @@ async def forget(message: discord.Interaction):
 
 @bot.tree.command(description="LMAO TROLLED SO HARD :JOY:")
 async def fake(message: discord.Interaction):
-    if message.user.id in fakecooldown and fakecooldown[message.user.id] + 60 > time.time():
+    if message.user.id in fakecooldown:
         await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
         return
     file = discord.File("assets/images/australian cat.png", filename="australian cat.png")
     icon = get_emoji("egirlcat")
-    fakecooldown[message.user.id] = time.time()
+    fakecooldown.add(message.user.id)
     try:
         await message.response.send_message(
             str(icon) + ' eGirl cat hasn\'t appeared! Type "cat" to catch ratio!',
