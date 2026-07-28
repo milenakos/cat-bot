@@ -3616,79 +3616,6 @@ DB Servers: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class
     await message.response.send_message(embed=embed)
 
 
-# @bot.tree.command(description="get the cat bot widget on your profile!")
-async def widget(message: discord.Interaction):
-    assert bot.user is not None
-    user = await User.get_or_create(user_id=message.user.id)
-
-    widget_link = f"https://discord.com/oauth2/authorize?client_id={bot.user.id}&response_type=token&redirect_uri=https%3A%2F%2Fcatbot.minkos.lol%2Fsuccess%2F&scope=sdk.social_layer_presence"
-
-    async def get_widget_view():
-        assert message.guild is not None
-        await user.refresh_from_db()
-        view = LayoutView(timeout=VIEW_TIMEOUT)
-        if user.widget_guild_id != message.guild.id:
-            server = await Server.get_or_create(server_id=user.widget_guild_id)
-
-            button = Button(label="Change to this server", style=ButtonStyle.green)
-            button.callback = change_widget_guild
-
-            view.add_item(
-                Container(
-                    f"Your Widget is currently active for **{server.name}**",
-                    "Click the button below to change it to this server.",
-                    "===",
-                    ActionRow(button),
-                ),
-            )
-        else:
-            view.add_item(
-                Container(
-                    "Your Widget is currently **active** for this server.",
-                    "It will refresh whenever you run `/inventory`. Use the button below if it breaks.",
-                    "===",
-                    ActionRow(Button(label="Re-authorize", url=widget_link)),
-                ),
-            )
-        return view
-
-    async def change_widget_guild(interaction: discord.Interaction):
-        assert interaction.guild is not None
-        if interaction.user != message.user:
-            return await do_funny(interaction)
-
-        await user.refresh_from_db()
-        user.widget_guild_id = interaction.guild.id
-        await user.save()
-
-        server = await Server.get_or_create(server_id=interaction.guild.id)
-        server.name = interaction.guild.name
-        await server.save()
-
-        await interaction.response.defer()
-        await interaction.edit_original_response(view=await get_widget_view())
-
-    if user.widget_guild_id:
-        await message.response.send_message(view=await get_widget_view())
-    else:
-        view = LayoutView(timeout=VIEW_TIMEOUT)
-        readd_button = Button(label="Authorize", url=widget_link)
-        button = Button(label="Continue", style=ButtonStyle.green)
-        button.callback = change_widget_guild
-        view.add_item(
-            Container(
-                "## Cat Bot Widget",
-                "1. Click the button below to authorize the widget.\n"
-                + "2. Go to your Discord profile board and add the widget.\n"
-                + '3. Click the "Continue" button below to finish.',
-                "Due to a Discord limitation we have to ask for a bunch of unnecessary permissions. The authorization is used exclusively for the widget and nothing else.",
-                "===",
-                ActionRow(readd_button, button),
-            ),
-        )
-        await message.response.send_message(view=view)
-
-
 @bot.tree.command(description="Confused? Check out the Cat Bot Wiki!")
 async def wiki(message: discord.Interaction):
     embed = discord.Embed(
@@ -5037,30 +4964,6 @@ async def gen_inventory(
 
     give_achs: list[str] = []
     if me_msg:
-        if user.widget_guild_id == guild_id and isinstance(inv_user, discord.abc.User):
-            # sync widget
-            async def sync_widget() -> None:
-                assert me_msg.guild is not None
-                assert bot.user is not None
-                widget_data = [
-                    {"type": 1, "name": "username", "value": emoji_prefix + inv_user.name},
-                    {"type": 1, "name": "guild_name", "value": me_msg.guild.name},
-                    {"type": 2, "name": "cats_caught", "value": person.total_catches},
-                    {"type": 2, "name": "inventory", "value": total},
-                    {"type": 1, "name": "achs", "value": f"{unlocked}/{total_achs}{minus_achs}"},
-                    {"type": 1, "name": "fastest", "value": f"{round(person.time, 3)}s"},
-                    {"type": 2, "name": "rain", "value": user.rain_minutes},
-                    {"type": 2, "name": "prisms", "value": user_count},
-                ]
-                # i synced my widget to identity 0 and they cant be changed afterwards. whoops!
-                identity_id = inv_user.id if inv_user.id != 553093932012011520 else 0
-                await bot.http.request(
-                    discord.http.Route("PATCH", f"/applications/{bot.user.id}/users/{inv_user.id}/identities/{identity_id}/profile"),
-                    json={"data": {"dynamic": widget_data}},
-                )
-
-            bot.loop.create_task(sync_widget())
-
         # give some aches if we are vieweing our own inventory
         if give_collector:
             give_achs.append("collecter")
