@@ -132,7 +132,11 @@ async def reload(reload_db: bool) -> None:
 
 
 async def reload_call(conn: asyncpg.Connection, pid: int, channel: str, payload: str) -> None:
-    await reload("1" in payload)
+    if "config" in payload:
+        importlib.reload(config)
+    if "msg2img" in payload:
+        importlib.reload(__import__("msg2img"))
+    await reload("db" in payload)
 
 
 async def shutdown() -> None:

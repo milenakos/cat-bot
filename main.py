@@ -2727,8 +2727,7 @@ async def on_message(message: discord.Message) -> None:
         await anyio.run_process(["git", "pull"])
         if vote_server:
             await vote_server.cleanup()
-        db_reload = "db" in text
-        await _get_pool().execute(f"NOTIFY restarts, '{int(db_reload)}';")
+        await _get_pool().execute("SELECT pg_notify('restarts', $1)", text)
     elif text.lower().startswith("cat!restart"):
         try:
             await message.reply("restarting this cluster!")
@@ -2756,7 +2755,7 @@ async def on_message(message: discord.Message) -> None:
     if text.lower().startswith("cat!print"):
         # just a simple one-line with no async (e.g. 2+3)
         try:
-            await message.reply(eval(text[9:]))
+            await message.reply(eval(text.removeprefix("cat!print ")))
         except Exception:
             try:
                 await message.reply(traceback.format_exc())
@@ -2764,7 +2763,7 @@ async def on_message(message: discord.Message) -> None:
                 pass
     if text.lower().startswith("cat!eval"):
         # complex eval, multi-line + async support
-        silly_billy = text[9:]
+        silly_billy = text.removeprefix("cat!eval ")
 
         spaced = ""
         for i in silly_billy.split("\n"):
@@ -2779,11 +2778,116 @@ bot.loop.create_task(go(message, bot))
         """
 
         exec(code)  # noqa: S102
+    if text.lower().startswith("cat!sql"):
+        result = await _get_pool().fetch(text.removeprefix("cat!sql "))
+        result = "\n".join(str(i).replace("<Record ", "").replace(">", "") for i in result)
+        await message.reply(file=discord.File(io.StringIO(result), filename="result.txt"))  # pyright: ignore[reportArgumentType]
+    if text.lower().startswith("cat!transfer"):
+        args = text.removeprefix("cat!transfer ").split()
+        if len(args) != 2:
+            await message.reply("usage: cat!transfer <from_guild_id> <to_guild_id>")
+            return
+        from_id = int(args[0])
+        to_id = int(args[1])
+
+        async for i in Profile.filter("guild_id = $1", to_id):
+            await i.delete()
+        async for i in Prism.filter("guild_id = $1", to_id):
+            await i.delete()
+
+        changed_profiles = []
+        changed_prisms = []
+
+        async for profile in Profile.filter("guild_id = $1", from_id):
+            profile.guild_id = to_id
+            changed_profiles.append(profile)
+
+        async for prism in Prism.filter("guild_id = $1", from_id):
+            prism.guild_id = to_id
+            changed_prisms.append(prism)
+
+        if changed_profiles:
+            await Profile.bulk_update(changed_profiles, "guild_id")
+        if changed_prisms:
+            await Prism.bulk_update(changed_prisms, "guild_id")
+
+        p = await Profile.get_or_none(guild_id=to_id, user_id=0)
+        if p:
+            await p.delete()
+
+        await message.reply(f"transferred {len(changed_profiles)} profiles and {len(changed_prisms)} prisms")
+    if text.lower().startswith("cat!undoreset"):
+        args = text.removeprefix("cat!undoreset ").split()
+        if len(args) != 3:
+            await message.reply("usage: cat!undoreset <guild_id> <user_id> <reset_id>")
+            return
+        guild_id = int(args[0])
+        user_id = int(args[1])
+        reset_id = int(args[2])
+
+        from_profile = await Profile.get_or_none(guild_id=reset_id, user_id=user_id)
+        if not from_profile:
+            await message.reply(f"no profile found for {user_id} in {reset_id}")
+            return
+
+        to_profile = await Profile.get_or_none(guild_id=guild_id, user_id=user_id)
+        if to_profile:
+            await to_profile.delete()
+
+        from_profile.guild_id = guild_id
+        await from_profile.save()
+
+        async for p in Prism.filter("guild_id = $1 AND user_id = $2", reset_id, user_id):
+            p.guild_id = guild_id
+            await p.save()
+
+        await message.reply(f"successfully undone reset for {user_id} in {guild_id}")
+    if text.lower().startswith("cat!merge"):
+        args = text.removeprefix("cat!merge ").split()
+        if len(args) != 3:
+            await message.reply("usage: cat!merge <guild_id> <from_user_id> <to_user_id>")
+            return
+        guild_id = int(args[0])
+        from_user_id = int(args[1])
+        to_user_id = int(args[2])
+
+        from_profile = await Profile.get_or_create(guild_id=guild_id, user_id=from_user_id)
+        to_profile = await Profile.get_or_create(guild_id=guild_id, user_id=to_user_id)
+
+        # prisms
+        prism_count = 0
+        async for p in Prism.filter("guild_id = $1 AND user_id = $2", guild_id, from_user_id):
+            p.user_id = to_user_id
+            await p.save()
+            prism_count += 1
+
+        # cats
+        cat_count = 0
+        for i in cattypes:
+            to_profile[f"cat_{i}"] += from_profile[f"cat_{i}"]
+            cat_count += from_profile[f"cat_{i}"]
+            from_profile[f"cat_{i}"] = 0
+
+        # achs
+        ach_count = 0
+        for ach in ach_list:
+            if not from_profile[ach] or to_profile[ach]:
+                continue
+            to_profile[ach] = True
+            from_profile[ach] = False
+            ach_count += 1
+
+        await to_profile.save()
+        await from_profile.save()
+
+        await message.reply(
+            f"successfully merged {from_user_id} into {to_user_id} in {guild_id} ({prism_count:,} prisms, {cat_count:,} cats, {ach_count:,} achs)"
+        )
     if text.lower().startswith("cat!news"):
         async for i in Channel.all():
             try:
                 channeley = bot.get_partial_messageable(int(i.channel_id))
-                await channeley.send(text[8:])
+                await channeley.send(text.removeprefix("cat!news "))
             except Exception:
                 pass
 
@@ -4581,7 +4685,10 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
             lock_success = True
 
             async def wait_and_unlock():
-                await asyncio.sleep(min(5, len(reverse_mapping)))
+                try:
+                    await asyncio.sleep(min(5, len(reverse_mapping)))
+                except NameError:
+                    await asyncio.sleep(5)
                 everyone_overwrites.send_messages = current_perm
                 await api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites)
 
