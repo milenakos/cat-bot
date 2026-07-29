@@ -60,15 +60,11 @@ def before_send(event: sentry_sdk.types.Event, hint: sentry_sdk.types.Hint) -> s
         if i.lower() in str(hint["exc_info"][0]).lower() + str(hint["exc_info"][1]).lower():
             return None
 
-    tb = hint["exc_info"][2]
-    commit = None
-    while tb is not None:
-        frame_globals = tb.tb_frame.f_globals
-        if frame_globals.get("__name__") == "main" and "COMMIT" in frame_globals:
-            commit = frame_globals["COMMIT"]
-        tb = tb.tb_next
-    if commit:
-        event["release"] = commit
+    main_mod = sys.modules.get("main")
+    if main_mod is not None:
+        commit = getattr(main_mod, "COMMIT", None)
+        if commit:
+            event["release"] = commit
 
     return event
 
