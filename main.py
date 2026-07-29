@@ -6421,7 +6421,7 @@ async def fish(message: discord.Interaction):
 
         buttons = []
         for upgrade in ["rod", "bait", "clover"]:
-            if profile[f"fish_{upgrade}_level"] > len(data.fishing_upgrades[upgrade]):
+            if profile[f"fish_{upgrade}_level"] >= len(data.fishing_upgrades[upgrade]):
                 btn = Button(label="maxxed out!", style=ButtonStyle.green, disabled=True)
                 buttons.append(btn)
             else:
