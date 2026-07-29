@@ -31,6 +31,7 @@ import subprocess
 import sys
 import time
 import traceback
+from collections import Counter
 from collections.abc import Awaitable, Callable
 from typing import Literal, TypedDict
 
@@ -9585,8 +9586,8 @@ async def givecat(message: discord.Interaction, person_id: discord.User, cat_typ
     assert message.guild is not None
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
     if cat_type == "random":
-        for _ in range(amount):
-            rolled_type = random.choices(cattypes, weights=list(data.type_dict.values()))[0]
+        weights = list(data.type_dict.values())
+        for rolled_type in random.choices(cattypes, weights=weights, k=amount):
             user[f"cat_{rolled_type}"] += 1
     else:
         user[f"cat_{cat_type}"] += amount
