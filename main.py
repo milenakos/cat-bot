@@ -6441,20 +6441,20 @@ async def fish(message: discord.Interaction):
                 "## 🐟 catfishing",
                 f"🪙 fish coins: {profile.fish_coins:,}\ntotal fish caught: {profile.fish_caught:,}\nyour rarest fish: {rarest_fish}",
                 "===",
-                "### 🎣 fishing rod",
+                "### 🎣 fishing rod (speed)",
                 Section(
                     f"level: **{profile.fish_rod_level:,}** ({data.fishing_upgrades['rod'][profile.fish_rod_level]['value']}x fishing duration)", buttons[0]
                 ),
                 Section(f"durability: **{profile.fish_rod_durability:,}**", buttons[1]),
                 "===",
-                "### 🍥 bait",
+                "### 🍥 bait (rarity)",
                 Section(
                     f"level: **{profile.fish_bait_level:,}** (best of {data.fishing_upgrades['bait'][profile.fish_bait_level]['value']} rarities)",
                     buttons[2],
                 ),
                 Section(f"durability: **{profile.fish_bait_durability:,}**", buttons[3]),
                 "===",
-                "### 🍀 clover",
+                "### 🍀 clover (money)",
                 Section(
                     f"level: **{profile.fish_clover_level:,}** ({data.fishing_upgrades['clover'][profile.fish_clover_level]['value']}x coins on sell)",
                     buttons[4],
