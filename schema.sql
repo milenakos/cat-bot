@@ -310,7 +310,14 @@ CREATE TABLE public.profile (
     pro_fisher boolean DEFAULT false,
     bonus_catches integer DEFAULT 0,
     math_jumpscare boolean DEFAULT false,
-    scratchcards smallint DEFAULT 0
+    scratchcards smallint DEFAULT 0,
+    fish_coins bigint DEFAULT 0,
+    fish_rod_level smallint DEFAULT 0,
+    fish_rod_durability integer DEFAULT 0,
+    fish_bait_level smallint DEFAULT 0,
+    fish_bait_durability integer DEFAULT 0,
+    fish_clover_level smallint DEFAULT 0,
+    fish_clover_durability integer DEFAULT 0
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;

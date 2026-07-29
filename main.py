@@ -84,6 +84,11 @@ class NewsEntry(TypedDict):
     active: bool
 
 
+class FishingEntry(TypedDict):
+    cost: int
+    value: float
+
+
 class DataWrapper:
     type_dict: dict[str, int]
     filtered_errors: list[str]
@@ -116,6 +121,7 @@ class DataWrapper:
     scratch_opts: list[str]
     win_combinations: list[list[int]]
     nuke_confirmation_lines: list[str]
+    fishing_upgrades: dict[str, list[FishingEntry]]
 
     def __init__(self, data):
         self.data = data
@@ -6241,15 +6247,31 @@ async def fish(message: discord.Interaction):
 
         await interaction.response.defer()
         view = LayoutView(timeout=VIEW_TIMEOUT)
-        view.add_item(TextDisplay("Fishing... (wait 10-30 seconds)"))
+        view.add_item(TextDisplay("Fishing... (wait a bit)"))
         await interaction.edit_original_response(view=view)
+        await profile.refresh_from_db()
 
-        for _ in range(random.randint(1000, 3000)):
+        attempts = 1
+        used_bait = False
+        if profile.fish_bait_durability > 0:
+            attempts = int(data.fishing_upgrades["bait"][profile.fish_bait_level]["value"])
+            used_bait = True
+        max_index = 0
+        for _ in range(attempts):
+            fishtype = random.choices(cattypes, weights=list(data.type_dict.values()))[0]
+            max_index = max(max_index, cattypes.index(fishtype))
+        fishtype = cattypes[max_index]
+
+        mult = 1
+        used_rod = False
+        if profile.fish_rod_durability > 0:
+            mult = data.fishing_upgrades["rod"][profile.fish_rod_level]["value"]
+            used_rod = True
+        for _ in range(random.randint(int(1000 * mult), int(3000 * mult))):
             if (interaction.guild.id, interaction.user.id) not in fish_lock:
                 fish_lock.add((interaction.guild.id, interaction.user.id))
             await asyncio.sleep(0.01)
 
-        fishtype = random.choices(cattypes, weights=list(data.type_dict.values()))[0]
         fish_caught = False
 
         async def pull_fish(interaction: discord.Interaction) -> None:
@@ -6261,17 +6283,37 @@ async def fish(message: discord.Interaction):
                 await do_funny(interaction)
                 return
             fish_caught = True
+            await profile.refresh_from_db()
+
+            used_clover = False
+            coin_mult = 1
+            if profile.fish_clover_durability > 0:
+                used_clover = True
+                coin_mult = data.fishing_upgrades["clover"][profile.fish_clover_level]["value"]
+
+            coins_gained = int(coin_mult * sum(data.type_dict.values()) / data.type_dict[fishtype])
 
             view = LayoutView(timeout=VIEW_TIMEOUT)
             button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
             button.callback = go_fishing
-            view.add_item(TextDisplay(f"You caught a {get_emoji(fishtype.lower() + 'fish')} {fishtype} fish!"))
-            view.add_item(ActionRow(button))
+            main_button = Button(emoji="⬅️", label="Main")
+            main_button.callback = show_main
+            usage_suffix = "".join([k for k, v in {"🎣": used_rod, "🍥": used_bait, "🍀": used_clover}.items() if v])
+            if usage_suffix:
+                usage_suffix = "\n-# Used: " + usage_suffix
+            view.add_item(TextDisplay(f"You caught a {get_emoji(fishtype.lower() + 'fish')} {fishtype} fish and got 🪙 {coins_gained:,} coins!{usage_suffix}"))
+            view.add_item(ActionRow(button, main_button))
             await interaction.response.defer()
             await interaction.edit_original_response(view=view)
 
-            await profile.refresh_from_db()
             profile.fish_caught += 1
+            profile.fish_coins += coins_gained
+            if used_bait:
+                profile.fish_bait_durability -= 1
+            if used_rod:
+                profile.fish_rod_durability -= 1
+            if used_clover:
+                profile.fish_clover_durability -= 1
             if not profile.rarest_fish.strip() or cattypes.index(fishtype) > cattypes.index(profile.rarest_fish.strip()):
                 profile.rarest_fish = fishtype
             await profile.save()
@@ -6298,25 +6340,130 @@ async def fish(message: discord.Interaction):
             view = LayoutView(timeout=VIEW_TIMEOUT)
             button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
             button.callback = go_fishing
+            main_button = Button(emoji="⬅️", label="Main")
+            main_button.callback = show_main
             view.add_item(TextDisplay("You weren't fast enough..."))
-            view.add_item(ActionRow(button))
+            view.add_item(ActionRow(button, main_button))
             await interaction.edit_original_response(view=view)
             fish_lock.discard((interaction.guild.id, interaction.user.id))
 
-    view = LayoutView(timeout=VIEW_TIMEOUT)
+    async def show_main(interaction: discord.Interaction) -> None:
+        await interaction.edit_original_response(view=main_view())
 
-    button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
-    button.callback = go_fishing
+    async def upgrade_upgrade(interaction: discord.Interaction) -> None:
+        if interaction.user != message.user:
+            return await do_funny(interaction)
+        upgrade = interaction.custom_id
+        assert upgrade is not None
+        await profile.refresh_from_db()
 
-    if profile.rarest_fish.strip():
-        rarest_fish = f"{get_emoji(profile.rarest_fish.lower() + 'fish')} {profile.rarest_fish}"
-    else:
-        rarest_fish = "none"
+        cost = data.fishing_upgrades[upgrade][profile[f"fish_{upgrade}_level"] + 1]["cost"]
+        if profile.fish_coins < cost:
+            await interaction.response.send_message("LMAOOOO your too broke", ephemeral=True)
+            return
+        profile[f"fish_{upgrade}_level"] += 1
+        profile.fish_coins -= cost
+        await profile.save()
 
-    view.add_item(Container("## 🎣 catfishing", f"total fish caught: {profile.fish_caught:,}\nyour rarest fish: {rarest_fish}"))
-    view.add_item(ActionRow(button))
+        await interaction.response.defer()
+        await show_main(interaction)
 
-    await message.response.send_message(view=view)
+    async def durability_upgrade(interaction: discord.Interaction) -> None:
+        if interaction.user != message.user:
+            return await do_funny(interaction)
+        upgrade = interaction.custom_id
+        assert upgrade is not None
+        await profile.refresh_from_db()
+
+        async def durability_callback(interaction: discord.Interaction) -> None:
+            await profile.refresh_from_db()
+            try:
+                item = modal.find_item(69)
+                assert isinstance(item, discord.ui.TextInput)
+                wanted = int(item.value)
+                if wanted <= 0:
+                    raise ValueError
+            except ValueError:
+                await interaction.response.send_message("??? number pls", ephemeral=True)
+                return
+
+            if wanted * 25 > profile.fish_coins:
+                await interaction.response.send_message("LMAOOOO your too broke", ephemeral=True)
+                return
+
+            profile.fish_coins -= wanted * 25
+            profile[f"fish_{upgrade}_durability"] += wanted
+            await profile.save()
+            await show_main(interaction)
+
+        modal = Modal(title="add durability...")
+        modal.add_item(
+            discord.ui.Label(
+                text="durability to add (1 dura = 25 🪙)",
+                component=discord.ui.TextInput(placeholder=f"max: {(profile.fish_coins // 25):,}", min_length=1, id=69),
+            )
+        )
+        modal.on_submit = durability_callback
+        await interaction.response.send_modal(modal)
+
+    def main_view() -> LayoutView:
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+
+        button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
+        button.callback = go_fishing
+
+        if profile.rarest_fish.strip():
+            rarest_fish = f"{get_emoji(profile.rarest_fish.lower() + 'fish')} {profile.rarest_fish}"
+        else:
+            rarest_fish = "none"
+
+        buttons = []
+        for upgrade in ["rod", "bait", "clover"]:
+            if profile[f"fish_{upgrade}_level"] > len(data.fishing_upgrades[upgrade]):
+                btn = Button(label="maxxed out!", style=ButtonStyle.green, disabled=True)
+                buttons.append(btn)
+            else:
+                cost = data.fishing_upgrades[upgrade][profile[f"fish_{upgrade}_level"] + 1]["cost"]
+                btn = Button(label=f"upgrade (🪙 {cost:,})", style=ButtonStyle.green, custom_id=upgrade)
+                btn.callback = upgrade_upgrade
+                buttons.append(btn)
+
+            btn = Button(label="add...", style=ButtonStyle.blurple, custom_id=upgrade)
+            btn.callback = durability_upgrade
+            buttons.append(btn)
+
+        view.add_item(
+            Container(
+                "## 🐟 catfishing",
+                f"🪙 fish coins: {profile.fish_coins:,}\ntotal fish caught: {profile.fish_caught:,}\nyour rarest fish: {rarest_fish}",
+                "===",
+                "### 🎣 fishing rod",
+                Section(
+                    f"level: **{profile.fish_rod_level:,}** ({data.fishing_upgrades['rod'][profile.fish_rod_level]['value']}x fishing duration)", buttons[0]
+                ),
+                Section(f"durability: **{profile.fish_rod_durability:,}**", buttons[1]),
+                "===",
+                "### 🍥 bait",
+                Section(
+                    f"level: **{profile.fish_bait_level:,}** (best of {data.fishing_upgrades['bait'][profile.fish_bait_level]['value']} rarities)",
+                    buttons[2],
+                ),
+                Section(f"durability: **{profile.fish_bait_durability:,}**", buttons[3]),
+                "===",
+                "### 🍀 clover",
+                Section(
+                    f"level: **{profile.fish_clover_level:,}** ({data.fishing_upgrades['clover'][profile.fish_clover_level]['value']}x coins on sell)",
+                    buttons[4],
+                ),
+                Section(f"durability: **{profile.fish_clover_durability:,}**", buttons[5]),
+                "===",
+                "-# upgrades temporarily deactivate (act as lvl 0) if they run out of durability",
+            )
+        )
+        view.add_item(ActionRow(button))
+        return view
+
+    await message.response.send_message(view=main_view())
 
 
 @bot.tree.command(description="donate (give) cats now")

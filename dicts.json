@@ -1020,5 +1020,46 @@
     "You can't undo this! (3)",
     "This is dangerous! (4)",
     "Reset everything! (5)"
-  ]
+  ],
+  "fishing_upgrades": {
+    "rod": [
+      {"cost": 0, "value": 1},
+      {"cost": 100, "value": 0.9},
+      {"cost": 200, "value": 0.8},
+      {"cost": 400, "value": 0.7},
+      {"cost": 800, "value": 0.6},
+      {"cost": 1600, "value": 0.5},
+      {"cost": 3200, "value": 0.4},
+      {"cost": 6400, "value": 0.3},
+      {"cost": 12800, "value": 0.2},
+      {"cost": 25600, "value": 0.1},
+      {"cost": 51200, "value": 0.05}
+    ],
+    "bait": [
+      {"cost": 0, "value": 1},
+      {"cost": 100, "value": 2},
+      {"cost": 200, "value": 3},
+      {"cost": 400, "value": 4},
+      {"cost": 800, "value": 5},
+      {"cost": 1600, "value": 6},
+      {"cost": 3200, "value": 7},
+      {"cost": 6400, "value": 8},
+      {"cost": 12800, "value": 9},
+      {"cost": 25600, "value": 10},
+      {"cost": 51200, "value": 11}
+    ],
+    "clover": [
+      {"cost": 0, "value": 1},
+      {"cost": 100, "value": 1.05},
+      {"cost": 200, "value": 1.2},
+      {"cost": 400, "value": 1.45},
+      {"cost": 800, "value": 1.8},
+      {"cost": 1600, "value": 2.25},
+      {"cost": 3200, "value": 2.8},
+      {"cost": 6400, "value": 3.45},
+      {"cost": 12800, "value": 4.2},
+      {"cost": 25600, "value": 5.05},
+      {"cost": 51200, "value": 6}
+    ]
+  }
 }
