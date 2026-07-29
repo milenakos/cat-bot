@@ -9586,9 +9586,9 @@ async def givecat(message: discord.Interaction, person_id: discord.User, cat_typ
     assert message.guild is not None
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
     if cat_type == "random":
-        weights = list(data.type_dict.values())
-        for rolled_type in random.choices(cattypes, weights=weights, k=amount):
-            user[f"cat_{rolled_type}"] += 1
+        rolled_counts = Counter(random.choices(cattypes, weights=list(data.type_dict.values()), k=amount))
+        for rolled_type, count in rolled_counts.items():
+            user[f"cat_{rolled_type}"] += count
     else:
         user[f"cat_{cat_type}"] += amount
     await user.save()
