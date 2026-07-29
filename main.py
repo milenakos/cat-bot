@@ -6348,6 +6348,8 @@ async def fish(message: discord.Interaction):
             fish_lock.discard((interaction.guild.id, interaction.user.id))
 
     async def show_main(interaction: discord.Interaction) -> None:
+        if interaction.user != message.user:
+            return await do_funny(interaction)
         await interaction.response.defer()
         await interaction.edit_original_response(view=main_view())
 
