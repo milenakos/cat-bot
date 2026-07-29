@@ -6291,7 +6291,7 @@ async def fish(message: discord.Interaction):
                 used_clover = True
                 coin_mult = data.fishing_upgrades["clover"][profile.fish_clover_level]["value"]
 
-            coins_gained = int(coin_mult * sum(data.type_dict.values()) / data.type_dict[fishtype])
+            coins_gained = round(coin_mult * sum(data.type_dict.values()) / data.type_dict[fishtype])
 
             view = LayoutView(timeout=VIEW_TIMEOUT)
             button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
