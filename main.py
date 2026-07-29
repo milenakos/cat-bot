@@ -6348,6 +6348,7 @@ async def fish(message: discord.Interaction):
             fish_lock.discard((interaction.guild.id, interaction.user.id))
 
     async def show_main(interaction: discord.Interaction) -> None:
+        await interaction.response.defer()
         await interaction.edit_original_response(view=main_view())
 
     async def upgrade_upgrade(interaction: discord.Interaction) -> None:
@@ -6366,7 +6367,6 @@ async def fish(message: discord.Interaction):
         profile.fish_coins -= cost
         await profile.save()
 
-        await interaction.response.defer()
         await show_main(interaction)
 
     async def durability_upgrade(interaction: discord.Interaction) -> None:
