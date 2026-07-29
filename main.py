@@ -2779,7 +2779,11 @@ bot.loop.create_task(go(message, bot))
 
         exec(code)  # noqa: S102
     if text.lower().startswith("cat!sql"):
-        result = await _get_pool().fetch(text.removeprefix("cat!sql "))
+        try:
+            result = await _get_pool().fetch(text.removeprefix("cat!sql "))
+        except Exception as e:
+            await message.reply(f"ERROR: {e}")
+            return
         result = "\n".join(str(i).replace("<Record ", "").replace(">", "") for i in result)
         await message.reply(file=discord.File(io.StringIO(result), filename="result.txt"))  # pyright: ignore[reportArgumentType]
     if text.lower().startswith("cat!transfer"):
