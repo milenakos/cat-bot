@@ -6355,6 +6355,7 @@ async def fish(message: discord.Interaction):
             return await do_funny(interaction)
         upgrade = interaction.custom_id
         assert upgrade is not None
+        upgrade = upgrade.removesuffix("_upgrade")
         await profile.refresh_from_db()
 
         cost = data.fishing_upgrades[upgrade][profile[f"fish_{upgrade}_level"] + 1]["cost"]
@@ -6373,6 +6374,7 @@ async def fish(message: discord.Interaction):
             return await do_funny(interaction)
         upgrade = interaction.custom_id
         assert upgrade is not None
+        upgrade = upgrade.removesuffix("_durability")
         await profile.refresh_from_db()
 
         async def durability_callback(interaction: discord.Interaction) -> None:
@@ -6424,11 +6426,11 @@ async def fish(message: discord.Interaction):
                 buttons.append(btn)
             else:
                 cost = data.fishing_upgrades[upgrade][profile[f"fish_{upgrade}_level"] + 1]["cost"]
-                btn = Button(label=f"upgrade (🪙 {cost:,})", style=ButtonStyle.green, custom_id=upgrade)
+                btn = Button(label=f"upgrade (🪙 {cost:,})", style=ButtonStyle.green, custom_id=upgrade + "_upgrade")
                 btn.callback = upgrade_upgrade
                 buttons.append(btn)
 
-            btn = Button(label="add...", style=ButtonStyle.blurple, custom_id=upgrade)
+            btn = Button(label="add...", style=ButtonStyle.blurple, custom_id=upgrade + "_durability")
             btn.callback = durability_upgrade
             buttons.append(btn)
 
