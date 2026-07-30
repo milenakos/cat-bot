@@ -445,6 +445,8 @@ CREATE INDEX prism_user_id_guild_id ON public.prism USING btree (user_id, guild_
 
 CREATE UNIQUE INDEX profile_user_id_guild_id ON public.profile USING btree (user_id, guild_id);
 
+CREATE UNIQUE INDEX prism_guild_id_name ON public.prism USING btree (guild_id, name);
+
 CREATE INDEX reminder_time ON public.reminder USING btree ("time");
 
 CREATE INDEX idx_partial_blessings ON public."user" (rain_minutes_bought) WHERE blessings_enabled = true;

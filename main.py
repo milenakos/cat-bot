@@ -38,7 +38,6 @@ import aiohttp
 import anyio
 import discord
 import discord.gateway
-import discord.http
 import discord_emoji
 import emoji
 import psutil
@@ -1125,7 +1124,7 @@ async def background_loop() -> None:
             await guild.save()
 
         try:
-            user_user = await User.get_or_create(id=user.user_id)
+            user_user = await User.get_or_create(user_id=user.user_id)
             user_dm = await fetch_dm_channel(user_user)
             await user_dm.send(f"A new quest is available in {guild.name}!", embed=embed, view=view)
         except Exception:
@@ -2785,7 +2784,10 @@ bot.loop.create_task(go(message, bot))
             await message.reply(f"ERROR: {e}")
             return
         result = "\n".join(str(i).replace("<Record ", "").replace(">", "") for i in result)
-        await message.reply(file=discord.File(io.StringIO(result), filename="result.txt"))  # pyright: ignore[reportArgumentType]
+        if len(result) < 4000:
+            await message.reply(result)
+        else:
+            await message.reply(file=discord.File(io.StringIO(result), filename="result.txt"))  # pyright: ignore[reportArgumentType]
     if text.lower().startswith("cat!transfer"):
         args = text.removeprefix("cat!transfer ").split()
         if len(args) != 2:
@@ -7582,6 +7584,8 @@ async def slots(message: discord.Interaction):
 
     await message.response.defer()
 
+    debt_debounce = False
+
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     total_spins, total_wins, total_big_wins = (
         await Profile.sum("slot_spins", "slot_spins > 0"),
@@ -7595,10 +7599,11 @@ async def slots(message: discord.Interaction):
     )
 
     async def remove_debt(interaction: discord.Interaction) -> None:
-        nonlocal message
-        if interaction.user.id != message.user.id:
+        nonlocal message, debt_debounce
+        if interaction.user.id != message.user.id or debt_debounce:
             await do_funny(interaction)
             return
+        debt_debounce = True
         await profile.refresh_from_db()
 
         # remove debt
@@ -7610,7 +7615,7 @@ async def slots(message: discord.Interaction):
         await achemb(interaction, "debt", "followup")
 
     async def spin(interaction: discord.Interaction) -> None:
-        nonlocal message
+        nonlocal message, debt_debounce
         assert message.guild is not None
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
@@ -7703,6 +7708,7 @@ async def slots(message: discord.Interaction):
                     has_debt = True
                     break
             if has_debt:
+                debt_debounce = False
                 desc += "\n\n**You can remove your debt!**"
                 button = Button(label="Remove Debt", style=ButtonStyle.blurple)
                 button.callback = remove_debt
@@ -8808,15 +8814,15 @@ async def catnip(message: discord.Interaction):
             ):
                 await interaction.followup.send("You haven't completed your bounties yet!", ephemeral=True)
                 return
+        if not user.perk_selected:
+            await interaction.followup.send("You haven't selected a perk from your previous level yet!", ephemeral=True)
+            return
         if user.catnip_price:
             if user[f"cat_{user.catnip_price}"] < user.catnip_amount:
                 need_more = user.catnip_amount - user[f"cat_{user.catnip_price}"]
                 await interaction.followup.send(f"You don't have enough cats to pay up!\nYou need {need_more} more {user.catnip_price} cats.", ephemeral=True)
                 return
             user[f"cat_{user.catnip_price}"] -= user.catnip_amount
-        if not user.perk_selected:
-            await interaction.followup.send("You haven't selected a perk from your previous level yet!", ephemeral=True)
-            return
 
         trigger_cutscene = False
         if user.catnip_level != 10:
