@@ -5992,6 +5992,7 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
             "Prisms are a tradeable power-up which occasionally bumps cat rarity up by one. Each prism crafted gives the entire server an increased chance to get upgraded, plus additional chance for prism owner.",
             "\n".join(prism_texts[page_number * 26 : (page_number + 1) * 26]),
             f"-# Server Prisms: {total_count} | Boost Chance: {round(global_boost * 100, 3)}%\n-# {person_id.name}'s Prisms: {user_count} | Boost Chance: {user_boost}%",
+            "===",
             ActionRow(*buttons),
             ActionRow(user_select),
         )
