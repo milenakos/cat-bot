@@ -2841,12 +2841,17 @@ bot.loop.create_task(go(message, bot))
             await to_profile.delete()
 
         from_profile.guild_id = guild_id
-        await from_profile.save()
 
+        prism_count = 0
         async for p in Prism.filter("guild_id = $1 AND user_id = $2", reset_id, user_id):
-            p.guild_id = guild_id
-            await p.save()
+            await p.delete()
+            prism_count += 1
 
+        for c in cattypes:
+            # refund prisms as cats
+            from_profile[f"cat_{c}"] += prism_count
+
+        await from_profile.save()
         await message.reply(f"successfully undone reset for {user_id} in {guild_id}")
     if text.lower().startswith("cat!merge"):
         args = text.removeprefix("cat!merge ").split()
@@ -5817,29 +5822,33 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
     else:
         person_id = person
 
-    user_prisms = await Prism.collect("guild_id = $1 AND user_id = $2", message.guild.id, person_id.id)
-    all_prisms = await Prism.collect("guild_id = $1", message.guild.id)
-    total_count = len(all_prisms)
-    user_count = len(user_prisms)
-    global_boost = 0.06 * math.log(2 * total_count + 1)
-    user_boost = round((global_boost + 0.05 * math.log(2 * user_count + 1)) * 100, 3)
-    prism_texts = []
+    async def regen_texts() -> tuple[int, int, float, float, list[str]]:
+        assert message.guild is not None
+        user_prisms = await Prism.collect("guild_id = $1 AND user_id = $2", message.guild.id, person_id.id)
+        all_prisms = await Prism.collect("guild_id = $1", message.guild.id)
+        total_count = len(all_prisms)
+        user_count = len(user_prisms)
+        global_boost = 0.06 * math.log(2 * total_count + 1)
+        user_boost = round((global_boost + 0.05 * math.log(2 * user_count + 1)) * 100, 3)
+        prism_texts = []
 
-    if person_id == message.user and user_count != 0:
-        await achemb(message, "prism", "followup")
+        if person_id == message.user and user_count != 0:
+            await achemb(message, "prism", "followup")
 
-    order_map = {name: index for index, name in enumerate(prism_names)}
-    prisms = all_prisms if not person else user_prisms
-    prisms.sort(key=lambda p: order_map.get(p.name, float("inf")))
+        order_map = {name: index for index, name in enumerate(prism_names)}
+        prisms = all_prisms if not person else user_prisms
+        prisms.sort(key=lambda p: order_map.get(p.name, float("inf")))
 
-    for prism in prisms:
-        prism_texts.append(f"{icon} **{prism.name}** {f'Owner: <@{prism.user_id}>' if not person else ''}\n<@{prism.creator}> crafted <t:{prism.time}:D>")
+        for prism in prisms:
+            prism_texts.append(f"{icon} {f"<@{prism.user_id}>'s" if not person else ''} **{prism.name}** (<@{prism.creator}> crafted <t:{prism.time}:d>)")
 
-    if len(prisms) == 0:
-        prism_texts.append("No prisms found!")
+        if len(prisms) == 0:
+            prism_texts.append("No prisms found!")
 
-    if person == bot.user:
-        prism_texts = ["dont i technically own every prism ever bc yknow"]
+        if person == bot.user:
+            prism_texts = ["dont i technically own every prism ever bc yknow"]
+
+        return total_count, user_count, global_boost, user_boost, prism_texts
 
     async def confirm_craft(interaction: discord.Interaction) -> None:
         assert interaction.guild is not None
@@ -5930,50 +5939,73 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
         view.add_item(confirm_button)
         await interaction.response.send_message(description, view=view, ephemeral=True)
 
-    async def prev_page(interaction: discord.Interaction) -> None:
+    async def change_page(interaction: discord.Interaction) -> None:
         nonlocal page_number
-        page_number -= 1
-        embed, view = gen_page()
-        await interaction.response.edit_message(embed=embed, view=view)
+        wanted_page = interaction.custom_id
+        if wanted_page == "first":
+            page_number = 0
+        elif wanted_page == "last":
+            page_number = max(0, (len(prism_texts) - 1) // 26)
+        else:
+            assert wanted_page is not None
+            page_number = int(wanted_page)
+        await interaction.response.defer()
+        await interaction.edit_original_response(view=gen_page())
 
-    async def next_page(interaction: discord.Interaction) -> None:
-        nonlocal page_number
-        page_number += 1
-        embed, view = gen_page()
-        await interaction.response.edit_message(embed=embed, view=view)
-
-    def gen_page() -> tuple[discord.Embed, View]:
+    def gen_page() -> LayoutView:
         target = "" if not person else f"{person_id.name}'s"
 
-        embed = discord.Embed(
-            title=f"{icon} {target} Cat Prisms",
-            color=Colors.brown,
-            description="Prisms are a tradeable power-up which occasionally bumps cat rarity up by one. Each prism crafted gives the entire server an increased chance to get upgraded, plus additional chance for prism owner.\n\n",
-        ).set_footer(
-            text=f"{total_count} Total Prisms | Server boost: {round(global_boost * 100, 3)}%\n{person_id.name}'s prisms | Owned: {user_count} | Personal boost: {user_boost}%"
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+
+        last_page = max(0, (len(prism_texts) - 1) // 26)
+        buttons = [
+            Button(emoji="⏪", disabled=bool(page_number == 0), custom_id="first"),
+            Button(emoji="⬅️", disabled=bool(page_number == 0), custom_id=str(page_number - 1)),
+            Button(emoji="➡️", disabled=bool(page_number >= last_page), custom_id=str(page_number + 1)),
+            Button(emoji="⏩", disabled=bool(page_number >= last_page), custom_id="last"),
+        ]
+        for button in buttons:
+            button.callback = change_page
+
+        async def filter_by_owner(interaction: discord.Interaction) -> None:
+            nonlocal page_number, person, person_id, total_count, user_count, global_boost, user_boost, prism_texts
+            page_number = 0
+            if not user_select.values:
+                person = None
+                person_id = message.user
+            else:
+                person = user_select.values[0]
+                person_id = person
+            assert person_id is not None
+            total_count, user_count, global_boost, user_boost, prism_texts = await regen_texts()
+            await interaction.response.defer()
+            await interaction.edit_original_response(view=gen_page())
+
+        if person:
+            user_select = discord.ui.UserSelect(placeholder="Filter by owner...", min_values=0, max_values=1, default_values=[person])
+        else:
+            user_select = discord.ui.UserSelect(placeholder="Filter by owner...", min_values=0, max_values=1)
+        user_select.callback = filter_by_owner
+
+        embed = Container(
+            f"## {icon} {target} Cat Prisms",
+            "Prisms are a tradeable power-up which occasionally bumps cat rarity up by one. Each prism crafted gives the entire server an increased chance to get upgraded, plus additional chance for prism owner.",
+            "\n".join(prism_texts[page_number * 26 : (page_number + 1) * 26]),
+            f"-# Server Prisms: {total_count} | Boost Chance: {round(global_boost * 100, 3)}%\n-# {person_id.name}'s Prisms: {user_count} | Boost Chance: {user_boost}%",
+            ActionRow(*buttons),
+            ActionRow(user_select),
         )
 
-        assert embed.description is not None
-        embed.description += "\n".join(prism_texts[page_number * 26 : (page_number + 1) * 26])
-
-        view = View(timeout=VIEW_TIMEOUT)
+        view.add_item(embed)
 
         craft_button = Button(label="Craft!", style=ButtonStyle.blurple, emoji=icon)
         craft_button.callback = craft_prism
-        view.add_item(craft_button)
+        view.add_item(ActionRow(craft_button))
 
-        prev_button = Button(label="<-", disabled=bool(page_number == 0))
-        prev_button.callback = prev_page
-        view.add_item(prev_button)
+        return view
 
-        next_button = Button(label="->", disabled=bool(page_number == (len(prism_texts) + 1) // 26))
-        next_button.callback = next_page
-        view.add_item(next_button)
-
-        return embed, view
-
-    embed, view = gen_page()
-    await message.response.send_message(embed=embed, view=view)
+    total_count, user_count, global_boost, user_boost, prism_texts = await regen_texts()
+    await message.response.send_message(view=gen_page())
 
 
 @bot.tree.command(description="Pong")
