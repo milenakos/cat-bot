@@ -808,7 +808,7 @@ async def finale(message: discord.Interaction | discord.Message, user: Profile) 
 
 # function to autocomplete cat_type choices for /givecat, and /forcespawn, which also allows more than 25 options
 async def cat_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
-    return [discord.app_commands.Choice(name=choice, value=choice) for choice in [*cattypes, "random"] if current.lower() in choice.lower()][:25]
+    return [discord.app_commands.Choice(name=choice, value=choice) for choice in [*cattypes, "Random"] if current.lower() in choice.lower()][:25]
 
 
 # function to autocomplete /cat, it only shows the cats you have
@@ -9880,13 +9880,13 @@ async def leaderboards(
 async def givecat(message: discord.Interaction, person_id: discord.User, cat_type: str, amount: int | None = None):
     if amount is None:
         amount = 1
-    if cat_type not in [*cattypes, "random"] or (cat_type == "random" and amount < 0):
+    if cat_type not in [*cattypes, "Random"] or (cat_type == "Random" and amount < 0):
         await message.response.send_message("bro what", ephemeral=True)
         return
 
     assert message.guild is not None
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
-    if cat_type == "random":
+    if cat_type == "Random":
         rolled_counts = Counter(random.choices(cattypes, weights=list(data.type_dict.values()), k=amount))
         for rolled_type, count in rolled_counts.items():
             user[f"cat_{rolled_type}"] += count
@@ -9981,7 +9981,7 @@ async def fake(message: discord.Interaction):
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
 async def forcespawn(message: discord.Interaction, cat_type: str | None = None):
     assert isinstance(message.channel, GuildMessageable)
-    if cat_type == "random":
+    if cat_type == "Random":
         cat_type = None
     elif cat_type and cat_type not in cattypes:
         await message.response.send_message("bro what", ephemeral=True)
