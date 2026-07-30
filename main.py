@@ -5953,7 +5953,7 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
         await interaction.edit_original_response(view=gen_page())
 
     def gen_page() -> LayoutView:
-        target = "" if not person else f"{person_id.name}'s"
+        target = "" if not person else f" {person_id.name}'s"
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
 
@@ -5988,7 +5988,7 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
         user_select.callback = filter_by_owner
 
         embed = Container(
-            f"## {icon} {target} Cat Prisms",
+            f"## {icon}{target} Cat Prisms",
             "Prisms are a tradeable power-up which occasionally bumps cat rarity up by one. Each prism crafted gives the entire server an increased chance to get upgraded, plus additional chance for prism owner.",
             "\n".join(prism_texts[page_number * 26 : (page_number + 1) * 26]),
             f"-# Server Prisms: {total_count} | Boost Chance: {round(global_boost * 100, 3)}%\n-# {person_id.name}'s Prisms: {user_count} | Boost Chance: {user_boost}%",
