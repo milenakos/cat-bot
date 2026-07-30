@@ -5841,7 +5841,7 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
         prisms.sort(key=lambda p: order_map.get(p.name, float("inf")))
 
         for prism in prisms:
-            prism_texts.append(f"{icon} {f"<@{prism.user_id}>'s" if not person else ''} **{prism.name}** (<@{prism.creator}> crafted <t:{prism.time}:d>)")
+            prism_texts.append(f"{icon}{f" <@{prism.user_id}>'s" if not person else ''} **{prism.name}** (<@{prism.creator}> crafted <t:{prism.time}:d>)")
 
         if len(prisms) == 0:
             prism_texts.append("No prisms found!")
@@ -5988,8 +5988,11 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
             user_select = discord.ui.UserSelect(placeholder="Filter by owner...", min_values=0, max_values=1)
         user_select.callback = filter_by_owner
 
+        craft_button = Button(label="Craft!", style=ButtonStyle.blurple, emoji=icon)
+        craft_button.callback = craft_prism
+
         embed = Container(
-            f"## {icon}{target} Cat Prisms",
+            Section(f"## {icon}{target} Cat Prisms", craft_button),
             "Prisms are a tradeable power-up which occasionally bumps cat rarity up by one. Each prism crafted gives the entire server an increased chance to get upgraded, plus additional chance for prism owner.",
             "\n".join(prism_texts[page_number * 26 : (page_number + 1) * 26]),
             f"-# Server Prisms: {total_count} | Boost Chance: {round(global_boost * 100, 3)}%\n-# {person_id.name}'s Prisms: {user_count} | Boost Chance: {user_boost}%",
@@ -5999,10 +6002,6 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
         )
 
         view.add_item(embed)
-
-        craft_button = Button(label="Craft!", style=ButtonStyle.blurple, emoji=icon)
-        craft_button.callback = craft_prism
-        view.add_item(ActionRow(craft_button))
 
         return view
 
