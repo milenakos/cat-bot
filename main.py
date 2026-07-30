@@ -5747,9 +5747,9 @@ async def battlepass(message: discord.Interaction):
             embedVar.set_author(name="You have unread news! /news")
 
         if first:
-            await interaction.followup.send(embed=embedVar, view=view)
+            await interaction.response.send_message(embed=embedVar, view=view)
         else:
-            await interaction.edit_original_response(embed=embedVar, view=view)
+            await interaction.response.edit_message(embed=embedVar, view=view)
 
     await gen_main(message, True)
 
@@ -9771,7 +9771,7 @@ async def leaderboards(
                 raise ValueError
             await interaction.response.edit_message(embed=embedVar, view=myview)
         except Exception:
-            await interaction.followup.send(embed=embedVar, view=myview)
+            await interaction.response.send_message(embed=embedVar, view=myview)
 
         if leader:
             await achemb(message, "leader", "followup")
