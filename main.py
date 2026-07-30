@@ -1570,6 +1570,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
             correct = answer_clean == str(answer)
         elif cattype == "Wild":
             correct = answer_clean != str(answer)
+            answer = "not " + answer
         else:
             correct = answer_clean.lower() == str(answer).lower()
 
