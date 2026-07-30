@@ -3089,8 +3089,7 @@ async def restart_tutorial(interaction: discord.Interaction) -> None:
     user.tutorial_state = 1
     user.claimed_free_rain = True
     await user.save()
-    await interaction.response.defer()
-    await interaction.edit_original_response(view=await get_tutorial_view(interaction.user.id))
+    await interaction.response.edit_message(view=await get_tutorial_view(interaction.user.id))
 
 
 @bot.tree.command(description="A guide to help you get started with Cat Bot!")
@@ -3107,13 +3106,11 @@ async def credits(message: discord.Interaction):
         )
         return
 
-    await message.response.defer()
-
     embedVar = discord.Embed(title="Cat Bot", color=Colors.brown, description=gen_credits).set_thumbnail(
         url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png"
     )
 
-    await message.followup.send(embed=embedVar)
+    await message.response.send_message(embed=embedVar)
 
 
 @bot.tree.command(description="add cat bot to your server")
@@ -3209,11 +3206,8 @@ async def news(message: discord.Interaction):
             if interaction.user != message.user:
                 await do_funny(interaction)
                 return
-            await interaction.response.defer()
             await regen_buttons()
-            await interaction.edit_original_response(view=generate_page(current_page))
-
-        await interaction.response.defer()
+            await interaction.response.edit_message(view=generate_page(current_page))
 
         current_state = user.news_state.strip()
         if current_state[news_id] not in "123456789":
@@ -3235,7 +3229,7 @@ async def news(message: discord.Interaction):
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 1:
             embed = Container(
                 "## ✨ New Cat Rains perks!",
@@ -3245,7 +3239,7 @@ async def news(message: discord.Interaction):
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 2:
             embed = Container(
                 "## ☃️ Cat Bot Christmas",
@@ -3254,7 +3248,7 @@ async def news(message: discord.Interaction):
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 3:
             embed = Container(
                 "## Cattlepass is getting an update!",
@@ -3277,7 +3271,7 @@ There are currently no plans to sell a paid cattlepass.""",
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 4:
             embed = Container(
                 f"## {get_emoji('goldpack')} Packs!",
@@ -3290,7 +3284,7 @@ the extra reward is now a stone pack instead of 5 random cats too!
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 5:
             embed = Container(
                 "## Important Message from CEO of Cat Bot",
@@ -3312,7 +3306,7 @@ Best regards,
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 6:
             embed = Container(
                 "## 🥳 Cat Bot Turns 3",
@@ -3329,7 +3323,7 @@ update: the puzzle piece event has concluded""",
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 7:
             embed = Container(
                 "## 🎉 100,000 SERVERS WHAT",
@@ -3359,7 +3353,7 @@ aaaaaaaaaaaaaaa""",
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
 
         elif news_id == 8:
             embed = Container(
@@ -3378,7 +3372,7 @@ thanks for using cat bot!""",
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 9:
             # we hijack the cookie system to store the yippee count
             assert bot.user is not None
@@ -3387,7 +3381,6 @@ thanks for using cat bot!""",
             async def add_yippee(interaction: discord.Interaction) -> None:
                 nonlocal cookie_user
                 assert bot.user is not None
-                await interaction.response.defer()
                 cookie_user = await Profile.get(["cookies"], guild_id=9, user_id=bot.user.id)
                 cookie_user.cookies += 1
                 await cookie_user.save()
@@ -3408,7 +3401,7 @@ thanks for using cat bot!""",
                 )
                 view.add_item(embed)
                 view.add_item(back_row)
-                await interaction.edit_original_response(view=view)
+                await interaction.response.edit_message(view=view)
 
             await send_yippee(interaction)
         elif news_id == 10:
@@ -3422,7 +3415,7 @@ thanks for using cat bot!""",
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 11:
             embed = Container(
                 f"## {get_emoji('catnip')} Welcome to the Cat Mafia",
@@ -3442,7 +3435,7 @@ at each level you will have some bounties you have to complete within a time fra
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 12:
             embed = Container(
                 "## ❤️ vote for cat bot in top.gg awards (outdated)",
@@ -3454,7 +3447,7 @@ at each level you will have some bounties you have to complete within a time fra
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 13:
             embed = Container(
                 f"## {get_emoji('christmaspack')} Cat Bot Christmas 2025 (event over)",
@@ -3482,7 +3475,7 @@ This means catching an eGirl cat will give you 4 Christmas packs!
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 14:
             embed = Container(
                 "## 💝 Valentine's Day!",
@@ -3508,7 +3501,7 @@ You will be able to collect them until <t:1771437600> using 2 methods:
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 15:
             embed = Container(
                 "## 📈 Welcome to the Stock Market",
@@ -3517,7 +3510,7 @@ You will be able to collect them until <t:1771437600> using 2 methods:
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 16:
             embed = Container(
                 "## PackOrRain Event (ended)",
@@ -3531,7 +3524,7 @@ You will be able to collect them until <t:1771437600> using 2 methods:
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 17:
             embed = Container(
                 f"## {get_emoji('insane')} cat bot has reached 200k servers!",
@@ -3544,7 +3537,7 @@ You will be able to collect them until <t:1771437600> using 2 methods:
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 18:
             embed = Container(
                 f"## {get_emoji('b_gremlincat')} It's Cat Bot's 4th birthday!!",
@@ -3569,7 +3562,7 @@ You will be able to collect them until <t:1771437600> using 2 methods:
             )
             view.add_item(embed)
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 19:
             view.add_item(
                 Container(
@@ -3581,7 +3574,7 @@ You will be able to collect them until <t:1771437600> using 2 methods:
                 )
             )
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 20:
             view.add_item(
                 Container(
@@ -3599,7 +3592,7 @@ You will be able to collect them until <t:1771437600> using 2 methods:
                 )
             )
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
         elif news_id == 21:
             view.add_item(
                 Container(
@@ -3626,7 +3619,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
                 )
             )
             view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
 
     async def regen_buttons() -> None:
         nonlocal buttons
@@ -3744,11 +3737,9 @@ async def tiktok(message: discord.Interaction, text: str):
             await message.response.send_message("Do not.", ephemeral=True)
             return
 
-    await message.response.defer()
-
     if text == "bwomp":
         file = discord.File("assets/bwomp.mp3", filename="bwomp.mp3")
-        await message.followup.send(file=file)
+        await message.response.send_message(file=file)
         await achemb(message, "bwomp", "followup")
         return
 
@@ -3814,17 +3805,15 @@ async def preventcatch(message: discord.Interaction, person: discord.User, timeo
 @discord.app_commands.default_permissions(manage_guild=True)
 @discord.app_commands.describe(avatar="The avatar to use (leave empty to reset)")
 async def changeavatar(message: discord.Interaction, avatar: discord.Attachment | None = None):
-    await message.response.defer()
-
     if avatar and avatar.content_type not in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
-        await message.followup.send("Invalid file type! Please upload a PNG, JPEG, GIF, or WebP image.", ephemeral=True)
+        await message.response.send_message("Invalid file type! Please upload a PNG, JPEG, GIF, or WebP image.", ephemeral=True)
         return
 
     if avatar:
         try:
             avatar_value = await avatar.read()
         except Exception:
-            await message.followup.send("your image is too weird", ephemeral=True)
+            await message.response.send_message("your image is too weird", ephemeral=True)
             return
     else:
         avatar_value = None
@@ -3832,9 +3821,9 @@ async def changeavatar(message: discord.Interaction, avatar: discord.Attachment 
     try:
         assert message.guild is not None
         await message.guild.me.edit(avatar=avatar_value)
-        await message.followup.send("Avatar changed successfully!")
+        await message.response.send_message("Avatar changed successfully!")
     except Exception:
-        await message.followup.send("Failed to change avatar! Your image is too big or you are changing avatars too quickly.", ephemeral=True)
+        await message.response.send_message("Failed to change avatar! Your image is too big or you are changing avatars too quickly.", ephemeral=True)
         return
 
 
@@ -4039,11 +4028,10 @@ async def settings(message: discord.Interaction):
         if not interaction.custom_id or interaction.user != message.user:
             await do_funny(interaction)
             return
-        await interaction.response.defer()
         parameter = interaction.custom_id
         server[parameter] = not server[parameter]
         await server.save()
-        await interaction.edit_original_response(view=await settings_view())
+        await interaction.response.edit_message(view=await settings_view())
 
     async def settings_view() -> LayoutView:
         assert message.guild is not None
@@ -4262,7 +4250,6 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="Person to view the stats of!")
 async def stats_command(message: discord.Interaction, person_id: discord.User | discord.Member | None = None):
-    await message.response.defer()
     if not person_id:
         person_id = message.user
     assert message.guild is not None
@@ -4300,7 +4287,7 @@ async def stats_command(message: discord.Interaction, person_id: discord.User | 
     if person_id == bot.user:
         embedVar.set_footer(text="dont believe the lies i every stat maxxed")
 
-    await message.followup.send(embed=embedVar)
+    await message.response.send_message(embed=embedVar)
 
 
 async def gen_inventory(
@@ -4468,7 +4455,6 @@ async def gen_inventory(
 @discord.app_commands.describe(person_id="Person to view the inventory of!")
 async def inventory(message: discord.Interaction, person_id: discord.User | discord.Member | None = None):
     assert message.guild is not None
-    await message.response.defer()
     if not person_id:
         person_id = message.user
     person = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
@@ -4482,8 +4468,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
             await ch.send(f"⚠️ {person_id.id} has been reported.")
         except Exception:
             pass
-        await interaction.response.defer()
-        await interaction.edit_original_response(content="Thanks for your report.", view=None)
+        await interaction.response.edit_message(content="Thanks for your report.", view=None)
 
     async def report_profile(interaction: discord.Interaction) -> None:
         assert bot.user is not None
@@ -4515,16 +4500,15 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
             select = discord.ui.Select(placeholder="Edit highlighted stat... (2/2)", options=options)
 
             async def select_callback(interaction: discord.Interaction) -> None:
-                await interaction.response.defer()
                 if select.values[0] == "back":
                     view = View(timeout=VIEW_TIMEOUT)
                     view.add_item(category_select())
-                    await interaction.edit_original_response(view=view)
+                    await interaction.response.edit_message(view=view)
                 else:
                     # update the stat
                     person.highlighted_stat = select.values[0]
                     await person.save()
-                    await interaction.edit_original_response(content="Highlighted stat updated!", embed=None, view=None)
+                    await interaction.response.edit_message(content="Highlighted stat updated!", embed=None, view=None)
 
             select.callback = select_callback
             return select
@@ -4541,10 +4525,9 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
             async def select_callback(interaction: discord.Interaction) -> None:
                 # im 13 and this is deep (nesting)
                 # and also please dont think about the fact this is async inside of sync :3
-                await interaction.response.defer()
                 view = View(timeout=VIEW_TIMEOUT)
                 view.add_item(stat_select(select.values[0]))
-                await interaction.edit_original_response(view=view)
+                await interaction.response.edit_message(view=view)
 
             select.callback = select_callback
             return select
@@ -4611,7 +4594,7 @@ __Highlighted Stat__
         btn.callback = report_profile
         view.add_item(ActionRow(btn))
 
-    await message.followup.send(view=view)
+    await message.response.send_message(view=view)
 
     for ach in give_achs:
         await achemb(message, ach, "followup")
@@ -4645,8 +4628,7 @@ async def randomizer(message: discord.Interaction):
         if first:
             await interaction.response.send_message(view=view)
         else:
-            await interaction.response.defer()
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
 
     await gen_random_inventory(message, first=True)
     await achemb(message, "randomizer2", "followup")
@@ -5030,8 +5012,6 @@ if config.DONOR_CHANNEL_ID:
             await message.response.send_message("Name must be 20 characters or less.", ephemeral=True)
             return
 
-        await message.response.defer(ephemeral=True)
-
         log_stats("custom_cat_change")
 
         em_name = str(user.user_id) + "cat"
@@ -5042,7 +5022,7 @@ if config.DONOR_CHANNEL_ID:
             user.custom_num = amount
         if image:
             if message.user.id in customcatcooldown:
-                await message.followup.send("You can only upload a new custom cat image every 5 minutes.", ephemeral=True)
+                await message.response.send_message("You can only upload a new custom cat image every 5 minutes.", ephemeral=True)
                 return
             customcatcooldown.add(message.user.id)
             try:
@@ -5067,14 +5047,14 @@ if config.DONOR_CHANNEL_ID:
                 except Exception:
                     pass
             except Exception:
-                await message.followup.send("Error creating emoji. Make sure your image is valid and below 256KB.", ephemeral=True)
+                await message.response.send_message("Error creating emoji. Make sure your image is valid and below 256KB.", ephemeral=True)
                 return
         await user.save()
         embedVar, _ = await gen_inventory(message.guild.id, message.user, None)
         view = LayoutView(timeout=1)
         view.add_item(TextDisplay("Success! Here is a preview:"))
         view.add_item(embedVar)
-        await message.followup.send(view=view, ephemeral=True)
+        await message.response.send_message(view=view, ephemeral=True)
 
     @bot.tree.command(description="(SUPPORTER) Bless random Cat Bot users with doubled cats!")
     async def bless(message: discord.Interaction):
@@ -5091,9 +5071,9 @@ if config.DONOR_CHANNEL_ID:
                 return
             nonlocal do_edit, user
             do_edit = True
-            await interaction.response.defer()
             await user.refresh_from_db()
             if not user.premium:
+                await interaction.response.defer()
                 return
             user.blessings_enabled = not user.blessings_enabled
             user.username = message.user.name
@@ -5106,7 +5086,6 @@ if config.DONOR_CHANNEL_ID:
                 return
             nonlocal do_edit, user
             do_edit = True
-            await interaction.response.defer()
             await user.refresh_from_db()
             user.blessings_anonymous = not user.blessings_anonymous
             await user.save()
@@ -5155,9 +5134,9 @@ if config.DONOR_CHANNEL_ID:
             view.add_item(container)
 
             if do_edit:
-                await message.edit_original_response(view=view)
+                await interaction.response.edit_message(view=view)
             else:
-                await message.response.send_message(view=view)
+                await interaction.response.send_message(view=view)
 
         await regen(message)
 
@@ -5185,8 +5164,6 @@ if config.DONOR_CHANNEL_ID:
             )
             return
 
-        await message.response.defer()
-
         if provided_emoji and discord_emoji.to_discord(provided_emoji.strip(), get_all=False, put_colons=False):
             user.emoji = provided_emoji.strip()
 
@@ -5210,7 +5187,7 @@ if config.DONOR_CHANNEL_ID:
         view = LayoutView(timeout=1)
         view.add_item(TextDisplay("Success! Here is a preview:"))
         view.add_item(embedVar)
-        await message.followup.send(view=view)
+        await message.response.send_message(view=view)
 
 
 @bot.tree.command(description="bumbum's scratch off game")
@@ -5278,7 +5255,6 @@ async def scratch(message: discord.Interaction):
 
         async def refresh_board(interaction: discord.Interaction) -> None:
             nonlocal move_spaces
-            await interaction.response.defer()
             view = LayoutView(timeout=VIEW_TIMEOUT)
             buttons = []
             empty_idx = 10
@@ -5316,7 +5292,7 @@ async def scratch(message: discord.Interaction):
                 button = Button(label=f"Scratch! ({user.scratchcards})", style=ButtonStyle.green, disabled=user.scratchcards == 0)
                 button.callback = scratch_callback
                 view.add_item(ActionRow(button))
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
 
         await refresh_board(interaction)
 
@@ -5411,7 +5387,6 @@ async def packs(message: discord.Interaction):
         async def do_it(interaction: discord.Interaction) -> None:
             await interaction.response.defer()
             await interaction.delete_original_response()
-            await open_all_packs(interaction)
 
         confirm_view = View(timeout=VIEW_TIMEOUT)
         yes_btn = Button(label="Yes, Open All", style=ButtonStyle.green)
@@ -5524,10 +5499,10 @@ async def packs(message: discord.Interaction):
             await do_funny(interaction)
             return
 
-        await interaction.response.defer()
         pack = interaction.custom_id
         await user.refresh_from_db()
         if user[f"pack_{pack.lower()}"] < 1:
+            await interaction.response.defer()
             return
         level = next((i for i, p in enumerate(data.pack_data) if p["name"] == pack), 0)
 
@@ -5541,7 +5516,7 @@ async def packs(message: discord.Interaction):
         log_stats("pack_open", {"pack": pack})
 
         embed = discord.Embed(title=reward_texts[0], color=Colors.brown)
-        await interaction.edit_original_response(embed=embed, view=None)
+        await interaction.response.edit_message(embed=embed, view=None)
         for reward_text in reward_texts[1:]:
             await asyncio.sleep(1)
             things = reward_text.split("\n", 1)
@@ -5550,22 +5525,6 @@ async def packs(message: discord.Interaction):
         await asyncio.sleep(1)
         view, _ = gen_view(user)
         await interaction.edit_original_response(view=view)
-
-        await global_user.refresh_from_db()
-        if global_user.tutorial_state == 8:
-            global_user.tutorial_state = 9
-            await global_user.save()
-            await interaction.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
-
-    async def open_all_packs(interaction: discord.Interaction) -> None:
-        embed = await process_pack_opening(10000)
-        if not embed:
-            return
-
-        await message.edit_original_response(embed=embed, view=None)
-        await asyncio.sleep(1)
-        view, _ = gen_view(user)
-        await message.edit_original_response(view=view)
 
         await global_user.refresh_from_db()
         if global_user.tutorial_state == 8:
@@ -5597,7 +5556,6 @@ async def battlepass(message: discord.Interaction):
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
-        await interaction.response.defer()
         await user.refresh_from_db()
         if not user.reminders_enabled:
             try:
@@ -5606,7 +5564,7 @@ async def battlepass(message: discord.Interaction):
                     f"You have enabled reminders in {interaction.guild.name}. You can disable them in the /battlepass command in that server or by saying `disable {interaction.guild.id}` here any time."
                 )
             except Exception:
-                await interaction.followup.send(
+                await interaction.response.send_message(
                     "Failed. Ensure you have DMs open by going to Server > Privacy Settings > Allow direct messages from server members."
                 )
                 return
@@ -5626,7 +5584,7 @@ async def battlepass(message: discord.Interaction):
         button.callback = toggle_reminders
         view.add_item(button)
 
-        await interaction.followup.send(
+        await interaction.response.send_message(
             f"Reminders are now {'enabled' if user.reminders_enabled else 'disabled'}.",
             ephemeral=True,
         )
@@ -5637,7 +5595,6 @@ async def battlepass(message: discord.Interaction):
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
-        await interaction.response.defer()
         current_mode = "Main"
 
         await refresh_quests(user)
@@ -5855,10 +5812,8 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
         assert interaction.guild is not None
         assert message.guild is not None
 
-        await interaction.response.defer()
-
         if await Prism.count("guild_id = $1", interaction.guild.id) >= len(prism_names):
-            await interaction.followup.send("This server has reached the prism limit.", ephemeral=True)
+            await interaction.response.send_message("This server has reached the prism limit.", ephemeral=True)
             return
 
         # determine the next name
@@ -5872,7 +5827,7 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
             or await Prism.get_or_none(guild_id=message.guild.id, name=selected_name)
             or await Prism.count("guild_id = $1", message.guild.id) >= len(prism_names)
         ):
-            await interaction.followup.send("This server has reached the prism limit.", ephemeral=True)
+            await interaction.response.send_message("This server has reached the prism limit.", ephemeral=True)
             return
 
         youngest_prism = await Prism.collect("guild_id = $1 ORDER BY time DESC LIMIT 1", message.guild.id)
@@ -5885,7 +5840,7 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         for i in cattypes:
             if user["cat_" + i] < 1:
-                await interaction.followup.send("You don't have enough cats. Nice try though.", ephemeral=True)
+                await interaction.response.send_message("You don't have enough cats. Nice try though.", ephemeral=True)
                 return
             user["cat_" + i] -= 1
 
@@ -5950,8 +5905,7 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
         else:
             assert wanted_page is not None
             page_number = int(wanted_page)
-        await interaction.response.defer()
-        await interaction.edit_original_response(view=gen_page())
+        await interaction.response.edit_message(view=gen_page())
 
     def gen_page() -> LayoutView:
         target = "" if not person else f" {person_id.name}'s"
@@ -5979,8 +5933,7 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
                 person_id = person
             assert person_id is not None
             total_count, user_count, global_boost, user_boost, prism_texts = await regen_texts()
-            await interaction.response.defer()
-            await interaction.edit_original_response(view=gen_page())
+            await interaction.response.edit_message(view=gen_page())
 
         if person:
             user_select = discord.ui.UserSelect(placeholder="Filter by owner...", min_values=0, max_values=1, default_values=[person])
@@ -6219,7 +6172,6 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         if players[current_turn] != interaction.user:
             await interaction.response.send_message("It's not your turn!", ephemeral=True)
             return
-        await interaction.response.defer()
         board[cell_num] = "❌" if current_turn == 0 else "⭕"
         current_turn = 1 - current_turn
         await finish_turn()
@@ -6269,12 +6221,11 @@ async def rps(message: discord.Interaction, person: discord.Member | None = None
             await do_funny(interaction)
             return
 
-        await interaction.response.defer()
-
         assert interaction.custom_id is not None
         thing = interaction.custom_id
         if person or interaction.user != message.user:
             if interaction.user.id in players:
+                await interaction.response.defer()
                 return
             if person:
                 vs_picks[interaction.user.name.replace("_", "\\_")] = thing
@@ -6285,7 +6236,7 @@ async def rps(message: discord.Interaction, person: discord.Member | None = None
                 players.append(bot.user.id)
                 vs_picks[bot.user.name.replace("_", "\\_")] = mappings[thing][0]
             if not person or len(players) == 1:
-                await interaction.edit_original_response(content=f"Players picked: {len(players)}")
+                await interaction.response.edit_message(content=f"Players picked: {len(players)}")
                 return
 
         result = mappings[thing]
@@ -6313,7 +6264,7 @@ async def rps(message: discord.Interaction, person: discord.Member | None = None
             description=description,
             color=Colors.brown,
         )
-        await interaction.edit_original_response(content=None, embed=embed, view=None)
+        await interaction.response.edit_message(content=None, embed=embed, view=None)
 
     if person:
         clean_name_2 = person.name.replace("_", "\\_")
@@ -6348,18 +6299,17 @@ async def cookie(message: discord.Interaction):
         if interaction.user != message.user:
             await do_funny(interaction)
             return
-        await interaction.response.defer()
         try:
             user = await Profile.get(["cookies", "misc_quest"], guild_id=message.guild.id, user_id=message.user.id)
             user.cookies += 1
             await user.save()
         except (AttributeError, LookupError):
-            await interaction.edit_original_response(content="...", view=None)
+            await interaction.response.edit_message(content="...", view=None)
             return
         btn = view.children[0]
         assert isinstance(btn, Button)
         btn.label = f"{user.cookies:,}"
-        await interaction.edit_original_response(view=view)
+        await interaction.response.edit_message(view=view)
         if user.cookies < 5:
             await achemb(interaction, "cookieclicker", "followup")
         if 5100 > user.cookies >= 5000:
@@ -6391,10 +6341,9 @@ async def fish(message: discord.Interaction):
 
         fish_lock.add((interaction.guild.id, interaction.user.id))
 
-        await interaction.response.defer()
         view = LayoutView(timeout=VIEW_TIMEOUT)
         view.add_item(TextDisplay("Fishing... (wait a bit)"))
-        await interaction.edit_original_response(view=view)
+        await interaction.response.edit_message(view=view)
         await profile.refresh_from_db()
 
         attempts = 1
@@ -6449,8 +6398,7 @@ async def fish(message: discord.Interaction):
                 usage_suffix = "\n-# Used: " + usage_suffix
             view.add_item(TextDisplay(f"You caught a {get_emoji(fishtype.lower() + 'fish')} {fishtype} fish and got 🪙 {coins_gained:,} coins!{usage_suffix}"))
             view.add_item(ActionRow(button, main_button))
-            await interaction.response.defer()
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
 
             profile.fish_caught += 1
             profile.fish_coins += coins_gained
@@ -6496,8 +6444,7 @@ async def fish(message: discord.Interaction):
     async def show_main(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
             return await do_funny(interaction)
-        await interaction.response.defer()
-        await interaction.edit_original_response(view=main_view())
+        await interaction.response.edit_message(view=main_view())
 
     async def upgrade_upgrade(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
@@ -6716,13 +6663,12 @@ async def gift(
                 return
 
             tax_debounce = True
-            await interaction.response.defer()
 
             user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
             user[f"cat_{gift_type}"] -= tax_amount
             await user.save()
 
-            await interaction.edit_original_response(view=None)
+            await interaction.response.edit_message(view=None)
             await interaction.followup.send(f"You paid the tax of {tax_amount:,} {gift_type} cats!")
             await achemb(message, "good_citizen", "followup")
             if user[f"cat_{gift_type}"] < 0:
@@ -6733,8 +6679,7 @@ async def gift(
                 await do_funny(interaction)
                 return
 
-            await interaction.response.defer()
-            await interaction.edit_original_response(view=None)
+            await interaction.response.edit_message(view=None)
             await interaction.followup.send(f"You evaded the tax of {tax_amount:,} {gift_type} cats.")
             await achemb(message, "secret", "followup")
 
@@ -6822,8 +6767,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
         person1.accept = False
         person2.accept = False
         try:
-            await interaction.response.defer()
-            await interaction.edit_original_response(content=f"{interaction.user.mention} has cancelled the trade.", embed=None, view=None)
+            await interaction.response.edit_message(content=f"{interaction.user.mention} has cancelled the trade.", embed=None, view=None)
         except Exception:
             pass
 
@@ -6833,8 +6777,6 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             await do_funny(interaction)
             return
 
-        await interaction.response.defer()
-
         active_user = person1 if interaction.user == person1.user else person2
         active_user.accept = not active_user.accept
 
@@ -6842,7 +6784,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             await achemb(message, "desperate", "followup")
 
         embed, view = await gen_embed()
-        await interaction.edit_original_response(embed=embed, view=view)
+        await interaction.response.edit_message(embed=embed, view=view)
 
         if blackhole:
             return
@@ -7147,8 +7089,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 person2.accept = False
 
                 embed, view = await gen_embed()
-                await interaction2.response.defer()
-                await interaction.edit_original_response(embed=embed, view=view)
+                await interaction2.response.edit_message(embed=embed, view=view)
 
             if interaction.user not in [person1.user, person2.user]:
                 await do_funny(interaction)
@@ -7356,20 +7297,18 @@ async def brew(message: discord.Interaction):
             await do_funny(interaction)
             return
 
-        await interaction.response.defer()
-
         try:
             user = await Profile.get(["coffees", "misc_quest"], guild_id=message.guild.id, user_id=message.user.id)
             user.coffees += 1
             await user.save()
         except (AttributeError, LookupError):
-            await interaction.edit_original_response(content="...", view=None)
+            await interaction.response.edit_message(content="...", view=None)
             return
 
         btn = view.children[0]
         assert isinstance(btn, Button)
         btn.label = f"{user.coffees:,}"
-        await interaction.edit_original_response(content="ugh fine", view=view)
+        await interaction.response.edit_message(content="ugh fine", view=view)
 
         if user.misc_quest.strip() == "coffee":
             await progress(message, user, "coffee")
@@ -7425,15 +7364,13 @@ async def bakery(message: discord.Interaction):
             await do_funny(interaction)
             return
 
-        await interaction.response.defer()
-
         await profile.refresh_from_db()
         await user.refresh_from_db()
         if profile.cookies < 120 or profile.coffees < 140 or profile.cat_Nice < 2:
-            await interaction.followup.send("Your order is not ready yet.", ephemeral=True)
+            await interaction.response.send_message("Your order is not ready yet.", ephemeral=True)
             return
         if user.last_bakegg_send == get_current_week():
-            await interaction.followup.send("You've already delivered this order.", ephemeral=True)
+            await interaction.response.send_message("You've already delivered this order.", ephemeral=True)
             return
 
         async with aiohttp.ClientSession() as session:
@@ -7471,7 +7408,7 @@ async def bakery(message: discord.Interaction):
                             Button(label="Bake.gg", url="https://bake.gg/"),
                         )
                     )
-                    await interaction.edit_original_response(view=view)
+                    await interaction.response.edit_message(view=view)
                     await achemb(message, "baker", "followup")
             except Exception:
                 await interaction.followup.send("Failed! Try again later.", ephemeral=True)
@@ -7539,7 +7476,6 @@ async def casino(message: discord.Interaction):
             await achemb(interaction, "broke", "followup")
             return
 
-        await interaction.response.defer()
         amount = random.randint(1, 5)
         casino_lock.add((message.guild.id, message.user.id))
         profile.cat_Fine += amount - 5
@@ -7615,8 +7551,6 @@ async def slots(message: discord.Interaction):
         await achemb(message, "paradoxical_gambler", "followup")
         return
 
-    await message.response.defer()
-
     debt_debounce = False
 
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
@@ -7661,7 +7595,6 @@ async def slots(message: discord.Interaction):
             return
         await profile.refresh_from_db()
 
-        await interaction.response.defer()
         slots_lock.add((message.guild.id, message.user.id))
         profile.slot_spins += 1
         await profile.save()
@@ -7762,7 +7695,7 @@ async def slots(message: discord.Interaction):
     myview = View(timeout=VIEW_TIMEOUT)
     myview.add_item(button)
 
-    await message.followup.send(embed=embed, view=myview)
+    await message.response.send_message(embed=embed, view=myview)
 
 
 @bot.tree.command(description="what")
@@ -7816,8 +7749,6 @@ async def roulette(message: discord.Interaction):
             except ValueError:
                 await interaction.response.send_message("invalid bet amount", ephemeral=True)
                 return
-
-            await interaction.response.defer()
 
             colors = data.roulette_colors
 
@@ -7939,8 +7870,7 @@ async def chaos(message: discord.Interaction):
         if first:
             await interaction.response.send_message(view=view)
         else:
-            await interaction.response.defer()
-            await interaction.edit_original_response(view=view)
+            await interaction.response.edit_message(view=view)
 
         profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=interaction.user.id)
         if profile.misc_quest.strip() == "chaos":
@@ -7999,9 +7929,8 @@ async def roll(message: discord.Interaction, sides: int | None = None):
         if is_first:
             await message.response.send_message(text, view=view)
         else:
-            await interaction.response.defer()
             button.label = f"Reroll ({roll_number})"
-            await message.edit_original_response(content=text, view=view)
+            await interaction.response.edit_message(content=text, view=view)
 
         if sides == 6 and roll == 6:
             await progress(message, user, "roll")
@@ -8095,8 +8024,6 @@ async def pig(message: discord.Interaction):
             await do_funny(interaction)
             return
 
-        await interaction.response.defer()
-
         if score == 0:
             # dont roll 1 on first roll
             roll_result = random.randint(2, 6)
@@ -8111,7 +8038,7 @@ async def pig(message: discord.Interaction):
             button = Button(label="Play Again", emoji="🎲", style=ButtonStyle.blurple)
             button.callback = roll
             view.add_item(button)
-            await interaction.edit_original_response(
+            await interaction.response.edit_message(
                 content=f"*Oops!* You rolled a **1** and lost your {last_score} score...\nFinal score: 0\nBetter luck next time!", view=view
             )
         else:
@@ -8123,15 +8050,13 @@ async def pig(message: discord.Interaction):
             button2.callback = finish
             view.add_item(button)
             view.add_item(button2)
-            await interaction.edit_original_response(content=f"🎲 +{roll_result}\nCurrent score: {score:,}", view=view)
+            await interaction.response.edit_message(content=f"🎲 +{roll_result}\nCurrent score: {score:,}", view=view)
 
     async def finish(interaction: discord.Interaction):
         nonlocal score
         if interaction.user != message.user:
             await do_funny(interaction)
             return
-
-        await interaction.response.defer()
 
         await profile.refresh_from_db()
 
@@ -8151,7 +8076,7 @@ async def pig(message: discord.Interaction):
         button = Button(label="Play Again", emoji="🎲", style=ButtonStyle.blurple)
         button.callback = roll
         view.add_item(button)
-        await interaction.edit_original_response(content=f"*Congrats!*\nYou finished with {last_score} score!", view=view)
+        await interaction.response.edit_message(content=f"*Congrats!*\nYou finished with {last_score} score!", view=view)
 
     view = View(timeout=VIEW_TIMEOUT)
     button = Button(label="Play!", emoji="🎲", style=ButtonStyle.blurple)
@@ -8210,17 +8135,16 @@ async def remind(
 
 @bot.tree.command(name="random", description="Get a random cat")
 async def random_cat(message: discord.Interaction):
-    await message.response.defer()
     async with aiohttp.ClientSession() as session:
         try:
             async with session.get(
                 "https://api.thecatapi.com/v1/images/search", headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}
             ) as response:
                 data = await response.json()
-                await message.followup.send(data[0]["url"])
+                await message.response.send_message(data[0]["url"])
                 await achemb(message, "randomizer", "followup")
         except Exception:
-            await message.followup.send("no cats :(")
+            await message.response.send_message("no cats :(")
 
 
 if config.WORDNIK_API_KEY:
@@ -8684,8 +8608,7 @@ You and your crew chase after him. He runs, until you corner him. He goes into t
 As you return to your hideout, you hear a howl in the distance."""
 
     async def button3_callback(interaction: discord.Interaction):
-        await interaction.response.defer()
-        await interaction.edit_original_response(content=text4, view=None)
+        await interaction.response.edit_message(content=text4, view=None)
         user.thanksforplaying = False
         user.cutscene = 1
         await user.save()
@@ -8696,16 +8619,14 @@ As you return to your hideout, you hear a howl in the distance."""
         button3 = Button(label="Next", style=ButtonStyle.blurple)
         button3.callback = button3_callback
         myview3.add_item(button3)
-        await interaction.response.defer()
-        await interaction.edit_original_response(content=text3a, view=myview3)
+        await interaction.response.edit_message(content=text3a, view=myview3)
 
     async def button2b_callback(interaction: discord.Interaction):
         myview3 = View(timeout=VIEW_TIMEOUT)
         button3 = Button(label="Next", style=ButtonStyle.blurple)
         button3.callback = button3_callback
         myview3.add_item(button3)
-        await interaction.response.defer()
-        await interaction.edit_original_response(content=text3b, view=myview3)
+        await interaction.response.edit_message(content=text3b, view=myview3)
 
     async def button1_callback(interaction: discord.Interaction):
         myview2 = View(timeout=VIEW_TIMEOUT)
@@ -8715,8 +8636,7 @@ As you return to your hideout, you hear a howl in the distance."""
         button2b.callback = button2b_callback
         myview2.add_item(button2a)
         myview2.add_item(button2b)
-        await interaction.response.defer()
-        await interaction.edit_original_response(content=text2, view=myview2)
+        await interaction.response.edit_message(content=text2, view=myview2)
 
     user.thanksforplaying = True
     await user.save()
@@ -8746,16 +8666,14 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
     text4b = """woa you looked at the code! crazy. btw stella is cute"""
 
     async def button3a_callback(interaction: discord.Interaction):
-        await interaction.response.defer()
-        await interaction.edit_original_response(content=text4a, view=None)
+        await interaction.response.edit_message(content=text4a, view=None)
         user.mafia_win = False
         user.cutscene = 2
         await user.save()
         await achemb(interaction, "mafia_win", "followup")
 
     async def button3b_callback(interaction: discord.Interaction):
-        await interaction.response.defer()
-        await interaction.edit_original_response(content=text4b, view=None)
+        await interaction.response.edit_message(content=text4b, view=None)
 
     async def button2_callback(interaction: discord.Interaction):
         myview3 = View(timeout=VIEW_TIMEOUT)
@@ -8765,16 +8683,14 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
         button3b.callback = button3b_callback
         myview3.add_item(button3a)
         myview3.add_item(button3b)
-        await interaction.response.defer()
-        await interaction.edit_original_response(content=text3, view=myview3)
+        await interaction.response.edit_message(content=text3, view=myview3)
 
     async def button1_callback(interaction: discord.Interaction):
         myview2 = View(timeout=VIEW_TIMEOUT)
         button2 = Button(label="Next", style=ButtonStyle.blurple)
         button2.callback = button2_callback
         myview2.add_item(button2)
-        await interaction.response.defer()
-        await interaction.edit_original_response(content=text2, view=myview2)
+        await interaction.response.edit_message(content=text2, view=myview2)
 
     user.mafia_win = True
     await user.save()
@@ -9425,9 +9341,8 @@ async def achievements(message: discord.Interaction):
 
         async def callback_hell(interaction: discord.Interaction) -> None:
             thing = select.values[0]
-            await interaction.response.defer()
             try:
-                await interaction.edit_original_response(embed=await gen_new(thing), view=insane_view_generator(thing))
+                await interaction.response.edit_message(embed=await gen_new(thing), view=insane_view_generator(thing))
             except Exception:
                 pass
 
@@ -9545,8 +9460,6 @@ async def leaderboards(
         assert message.guild is not None
         if not specific_cat:
             specific_cat = "All"
-
-        await interaction.response.defer()
 
         messager = None
         interactor = None
@@ -9856,7 +9769,7 @@ async def leaderboards(
         try:
             if not do_edit:
                 raise ValueError
-            await interaction.edit_original_response(embed=embedVar, view=myview)
+            await interaction.response.edit_message(embed=embedVar, view=myview)
         except Exception:
             await interaction.followup.send(embed=embedVar, view=myview)
 
@@ -10063,7 +9976,6 @@ async def reset(message: discord.Interaction, person_id: discord.User):
         if interaction.user.id != message.user.id:
             return await do_funny(interaction)
 
-        await interaction.response.defer()
         try:
             og = await interaction.original_response()
             profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
@@ -10072,11 +9984,11 @@ async def reset(message: discord.Interaction, person_id: discord.User):
             async for p in Prism.filter("guild_id = $1 AND user_id = $2", message.guild.id, person_id.id):
                 p.guild_id = og.id
                 await p.save()
-            await interaction.edit_original_response(
+            await interaction.response.edit_message(
                 content=f"Done! rip {person_id.mention}. f's in chat.\njoin our discord to rollback: <https://discord.gg/staring>", view=None
             )
         except Exception:
-            await interaction.edit_original_response(
+            await interaction.response.edit_message(
                 content="ummm? this person isnt even registered in cat bot wtf are you wiping?????",
                 view=None,
             )
@@ -10111,7 +10023,6 @@ async def nuke(message: discord.Interaction):
         if interaction.user.id != message.user.id:
             return await do_funny(interaction)
 
-        await interaction.response.defer()
         counter -= 1
         if counter == 0:
             # ~~Scary!~~ Not anymore!
@@ -10136,7 +10047,7 @@ async def nuke(message: discord.Interaction):
             await Profile.create(guild_id=interaction.message.id, user_id=0)
 
             try:
-                await interaction.edit_original_response(
+                await interaction.response.edit_message(
                     content="Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.",
                     view=None,
                 )
@@ -10145,7 +10056,7 @@ async def nuke(message: discord.Interaction):
         else:
             view = await gen(counter)
             try:
-                await interaction.edit_original_response(content=warning_text, view=view)
+                await interaction.response.edit_message(content=warning_text, view=view)
             except Exception:
                 pass
 
