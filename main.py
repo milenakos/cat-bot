@@ -1336,7 +1336,9 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         next_letter = letters[index + 1 if index < 25 else 0]
         random_text = random.choice(data.sentences)
         answer = random_text.lower().count(random_letter.lower())
-        modal.add_item(TextDisplay(f"## Find the letter before {next_letter}, then count the amount of it in the sentence below\n\n{random_text}"))
+        modal.add_item(
+            TextDisplay(f"## Find the letter before {next_letter} alphabetically, then count the amount of it in the sentence below\n\n{random_text}")
+        )
         modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
     elif cattype == "Nice":
         random_numbers = [random.randint(-100, 100) for _ in range(4)]
