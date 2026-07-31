@@ -406,7 +406,8 @@ CREATE TABLE public.server (
     mute_achievements boolean DEFAULT false,
     anti_double_catch boolean DEFAULT false,
     legacy_catching boolean DEFAULT false,
-    name text DEFAULT ''
+    name text DEFAULT '',
+    name_style_set boolean DEFAULT false
 );
 
 ALTER TABLE public.server OWNER TO cat_bot;

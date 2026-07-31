@@ -38,6 +38,7 @@ import aiohttp
 import anyio
 import discord
 import discord.gateway
+import discord.http
 import discord_emoji
 import emoji
 import psutil
@@ -1922,6 +1923,17 @@ async def on_message(message: discord.Message) -> None:
         channel = await Channel.get_or_none(channel_id=message.channel.id)
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
+        if not server.name_style_set:
+            try:
+                # set the bot display name style
+                await bot.http.request(
+                    discord.http.Route("PATCH", f"/guilds/{message.guild.id}/members/@me"),
+                    json={"display_name_font_id": 3, "display_name_effect_id": 5, "display_name_colors": [16738816]},
+                )
+                server.name_style_set = True
+                await server.save()
+            except Exception:
+                pass
         if not channel or not channel.cattype:
             return
         if (
@@ -2971,6 +2983,17 @@ Have a nice day :)"""
 
     server = await Server.get_or_create(server_id=guild.id)
     server.name = guild.name
+
+    try:
+        # set the bot display name style
+        await bot.http.request(
+            discord.http.Route("PATCH", f"/guilds/{guild.id}/members/@me"),
+            json={"display_name_font_id": 3, "display_name_effect_id": 5, "display_name_colors": [16738816]},
+        )
+        server.name_style_set = True
+    except Exception:
+        pass
+
     await server.save()
 
     try:
