@@ -1538,7 +1538,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         assert answer_raw is not None
 
         answer_clean = re.sub(r"[^0-9A-Za-z \-~]+", "", " ".join(answer_raw.replace(",", " ").split()))  # user answer
-        answer = re.sub(r"[^0-9A-Za-z \-~]+", "", str(" ".join(answer_raw.replace(",", " ").split())))  # correct answer
+        answer = re.sub(r"[^0-9A-Za-z \-~]+", "", str(" ".join(answer.replace(",", " ").split())))  # correct answer
 
         if cattype == "Trash" and answer in answer_clean.upper():
             async with aiohttp.ClientSession() as session:
