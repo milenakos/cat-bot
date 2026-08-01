@@ -192,6 +192,11 @@ UNINTERESTED_RESPONSES = [
 async def hisstest(interaction: discord.Interaction, item: str):
     # Clean up whitespace from input
     clean_item = item.strip()
+    if not clean_item:
+        await interaction.response.send_message(
+            "Please provide an item or emoji."
+        )
+        return
 
     # Check if the offered item exists in our special list
     if clean_item in CAT_REACTIONS:
