@@ -201,11 +201,21 @@ async def hisstest(interaction: discord.Interaction, item: str):
     # Check if the offered item exists in our special list
     if clean_item in CAT_REACTIONS:
         reaction = CAT_REACTIONS[clean_item]
-        response_text = f"**You offered:** {clean_item}\n**Cat's Reaction:** {reaction['emoji']} {reaction['text']}"
+    clean_item = item.strip()
+    safe_item = discord.utils.escape_markdown(
+        discord.utils.escape_mentions(clean_item)
+    )
+
+    if clean_item in CAT_REACTIONS:
+        reaction = CAT_REACTIONS[clean_item]
+        response_text = f"**You offered:** {safe_item}\n**Cat's Reaction:** {reaction['emoji']} {reaction['text']}"
     else:
         # Pick a random "not interested" response for any other emoji
         random_response = random.choice(UNINTERESTED_RESPONSES)
-        response_text = f"**You offered:** {clean_item}\n**Cat's Reaction:** {random_response}"
+        response_text = f"**You offered:** {safe_item}\n**Cat's Reaction:** {random_response}"
 
     # Send the response back in Discord
-    await interaction.response.send_message(response_text)
+    await interaction.response.send_message(
+        response_text,
+        allowed_mentions=discord.AllowedMentions.none(),
+    )
