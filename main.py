@@ -4423,7 +4423,7 @@ async def gen_inventory(
 
     if len(cat_elements) == 0:
         cat_desc = f"u hav no cats {get_emoji('cat_cry')}"
-    elif len(cat_elements) <= 10:
+    elif len(cat_elements) <= 10 or user.compact_inventory:
         cat_desc = "\n".join(cat_elements)
     else:
         cat_desc = ""
@@ -4639,6 +4639,14 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
             select.callback = select_callback
             return select
 
+        async def toggle_compact_inventory(interaction: discord.Interaction) -> None:
+            person.compact_inventory = not person.compact_inventory
+            await person.save()
+            await interaction.response.defer()
+            await interaction.edit_original_response(
+                content=f"Compact inventory is now {'enabled' if person.compact_inventory else 'disabled'}.", embed=None, view=None
+            )
+
         highlighted_stat = None
         for stat in stats:
             if stat[0] == person.highlighted_stat:
@@ -4652,6 +4660,9 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
         assert highlighted_stat is not None
 
         view = View(timeout=VIEW_TIMEOUT)
+        button = Button(style=discord.ButtonStyle.blurple, label="Toggle Compact Inventory")
+        button.callback = toggle_compact_inventory
+        view.add_item(button)
         view.add_item(category_select())
 
         if user.premium:
@@ -4664,7 +4675,10 @@ Global, change with `/editprofile`.
 **Image**: {"Yes" if user.image.startswith("https://cdn.discordapp.com/attachments/") else "No"}
 
 __Highlighted Stat__
-{highlighted_stat[1]} {highlighted_stat[2]}"""
+{highlighted_stat[1]} {highlighted_stat[2]}
+
+__Compact Inventory__
+{"✅ True" if user.compact_inventory else "❌ False"}"""
 
             embed = discord.Embed(
                 title=f"{(user.emoji + ' ') if user.emoji else ''}Edit Profile", description=description, color=discord.Colour.from_str(user.color)
