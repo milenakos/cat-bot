@@ -48,9 +48,9 @@ FETCH_TIMEOUT = (5, 10)
 
 
 def _fetch_url(url: str) -> bytes:
-    with requests.get(url, stream=True, timeout=FETCH_TIMEOUT) as resp:
+    with requests.get(url, timeout=FETCH_TIMEOUT) as resp:
         resp.raise_for_status()
-        return resp.raw
+        return resp.content
 
 
 FONTS = {
@@ -76,7 +76,7 @@ def _fetch_image(url: str, size: tuple[int, int] | None = None) -> Image.Image |
         resp = _fetch_url(url)
         if not resp:
             return None
-        img = Image.open(resp).convert("RGBA")
+        img = Image.open(io.BytesIO(resp)).convert("RGBA")
         if size:
             img = img.resize(size, Image.Resampling.LANCZOS)
         return img
