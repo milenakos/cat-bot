@@ -60,10 +60,10 @@ FONTS = {
     "bold_italic": _fetch_url("https://discord.com/assets/ce3b8055f5114434.woff2"),
 }
 
-body_font = ImageFont.truetype(FONTS["normal"], 32)
-body_fonts = {style: ImageFont.truetype(f, 32) for style, f in FONTS.items()}
-time_font = ImageFont.truetype(FONTS["normal"], 23)
-badge_font = ImageFont.truetype(FONTS["bold"], 20)
+body_font = ImageFont.truetype(io.BytesIO(FONTS["normal"]), 32)
+body_fonts = {style: ImageFont.truetype(io.BytesIO(f), 32) for style, f in FONTS.items()}
+time_font = ImageFont.truetype(io.BytesIO(FONTS["normal"]), 23)
+badge_font = ImageFont.truetype(io.BytesIO(FONTS["bold"]), 20)
 
 
 def _text_size(font: ImageFont.FreeTypeFont, text: str) -> tuple[float, float]:
