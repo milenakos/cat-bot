@@ -60,7 +60,6 @@ FONTS = {
     "bold_italic": _fetch_url("https://discord.com/assets/ce3b8055f5114434.woff2"),
 }
 
-body_font = ImageFont.truetype(io.BytesIO(FONTS["normal"]), 32)
 body_fonts = {style: ImageFont.truetype(io.BytesIO(f), 32) for style, f in FONTS.items()}
 time_font = ImageFont.truetype(io.BytesIO(FONTS["normal"]), 23)
 badge_font = ImageFont.truetype(io.BytesIO(FONTS["bold"]), 20)
@@ -257,8 +256,8 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
         if deco:
             canvas.paste(deco, (4, 4), deco)
 
-    draw.text((TEXT_X, NAME_Y), nick, font=body_font, fill=color)
-    nick_w = int(_text_size(body_font, nick)[0])
+    draw.text((TEXT_X, NAME_Y), nick, font=body_fonts["bold"], fill=color)
+    nick_w = int(_text_size(body_fonts["bold"], nick)[0])
 
     icon_offset = 0
     if isinstance(member, discord.Member) and isinstance(member.display_icon, discord.Asset):
