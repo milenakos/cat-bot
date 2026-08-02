@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# ts is so vibecoded im sorry this rendering bs is too much for my brain
+
 import datetime
 import io
 import re
@@ -21,7 +23,7 @@ import re
 import discord
 import requests
 from PIL import Image, ImageColor, ImageDraw, ImageFont
-from pilmoji import Pilmoji
+from pilmoji import Pilmoji, getsize
 from pilmoji.helpers import NodeType, to_nodes
 
 CANVAS_WIDTH = 1067
@@ -71,17 +73,11 @@ def _text_size(font: ImageFont.FreeTypeFont, text: str) -> tuple[float, float]:
 
 
 def _measure(text: str, font: ImageFont.FreeTypeFont) -> int:
-    width = 0
-    for node in to_nodes(text)[0] if text else []:
-        if node.type is NodeType.text:
-            width += int(font.getlength(node.content))
-        else:
-            width += int(EMOJI_SCALE * font.size)
-    return width
+    return getsize(text, font, emoji_scale_factor=EMOJI_SCALE)[0] if text else 0
 
 
 def _split_keep_spaces(segment: str) -> list[str]:
-    return [t + " " for t in segment.split(" ")]
+    return re.findall(r"\S+|\s+", segment)
 
 
 def _fetch_image(url: str, size: tuple[int, int] | None = None) -> Image.Image | None:
@@ -162,54 +158,98 @@ def _break_text(text: str, fonts: dict[str, ImageFont.FreeTypeFont], max_width: 
         else:
             line.append((style, chunk))
 
+    def runs_width(runs: list[tuple[str, str]]) -> int:
+        return sum(_measure(chunk, fonts[style]) for style, chunk in runs)
+
     for paragraph in text.split("\n"):
         line_w = 0
         current: list[tuple[str, str]] = []
+        pending_space: list[tuple[str, str]] = []
+        word: list[tuple[str, str]] = []
 
-        tokens: list[tuple[str, str]] = []
+        def append_runs(target: list[tuple[str, str]], runs: list[tuple[str, str]]) -> None:
+            for style, chunk in runs:
+                push_run(target, style, chunk)
+
+        def finish_line() -> None:
+            nonlocal line_w, current
+            if current:
+                lines.append(current)
+            current = []
+            line_w = 0
+
+        def take_fitting_prefix(runs: list[tuple[str, str]], available: int) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+            prefix: list[tuple[str, str]] = []
+            used = 0
+
+            for run_index, (style, chunk) in enumerate(runs):
+                offset = 0
+                for node in to_nodes(chunk)[0]:
+                    pieces = list(node.content) if node.type is NodeType.text else [node.content]
+                    for piece in pieces:
+                        width = _measure(piece, fonts[style])
+                        if used + width > available and (prefix or offset or current):
+                            rest = [(style, chunk[offset:]), *runs[run_index + 1 :]]
+                            return prefix, rest
+                        # An emoji or glyph wider than an empty line must still render.
+                        used += width
+                        offset += len(piece)
+
+                if offset:
+                    push_run(prefix, style, chunk[:offset])
+
+            return prefix, []
+
+        def place_word(runs: list[tuple[str, str]]) -> None:
+            nonlocal line_w
+            remaining = runs
+            while remaining:
+                prefix, remaining = take_fitting_prefix(remaining, max_width - line_w)
+                append_runs(current, prefix)
+                line_w += runs_width(prefix)
+                if remaining:
+                    finish_line()
+
+        def commit_word() -> None:
+            nonlocal pending_space, word, line_w
+            if not word:
+                return
+
+            gap_w = runs_width(pending_space)
+            word_w = runs_width(word)
+            if current and line_w + gap_w + word_w <= max_width:
+                append_runs(current, pending_space)
+                line_w += gap_w
+            elif current:
+                finish_line()
+            # Whitespace at the start of a wrapped line is intentionally omitted.
+            pending_space = []
+            place_word(word)
+            word = []
+
         for style, segment in _parse_markdown(paragraph):
             for token in _split_keep_spaces(segment):
-                tokens.append((style, token))
+                if token.isspace():
+                    commit_word()
+                    push_run(pending_space, style, token)
+                else:
+                    push_run(word, style, token)
 
-        for style, token in tokens:
-            font = fonts[style]
-            token_w = _measure(token, font)
-            token_x = line_w
-            token_y = len(lines) * LINE_HEIGHT
-
-            if line_w + token_w < max_width:
-                push_run(current, style, token)
-                line_w += token_w
-            elif token_w >= max_width:
-                char_x = line_w
-                for ch in token:
-                    ch_w = _measure(ch, font)
-                    if char_x + ch_w < max_width:
-                        push_run(current, style, ch)
-                        char_x += ch_w
-                    else:
-                        lines.append(current)
-                        current = []
-                        push_run(current, style, ch)
-                        char_x = ch_w
-                line_w = char_x
-            else:
-                lines.append(current)
-                current = [(style, token)]
-                line_w = token_w
-                token_x = 0
-                token_y = len(lines) * LINE_HEIGHT - LINE_HEIGHT
-
-            if token[0] == "@" and style == "normal":
-                pings.append((token_x, token_y, line_w, token_y + LINE_HEIGHT))
-
-        # drop the trailing space at each line's end (it's never visible)
-        while current and not current[-1][1].rstrip(" "):
-            current.pop()
-        if current:
-            style, chunk = current[-1]
-            current[-1] = (style, chunk.rstrip(" "))
+        commit_word()
+        # Trailing whitespace is never visible and should not consume line width.
         lines.append(current)
+
+    # Ping rectangles are derived from the final layout, using the same widths
+    # Pilmoji uses while rendering the styled runs.
+    for y, line in enumerate(lines):
+        x = 0
+        for style, chunk in line:
+            font = fonts[style]
+            for m in re.finditer(r"@\S+", chunk):
+                x0 = x + _measure(chunk[: m.start()], font)
+                x1 = x + _measure(chunk[: m.end()], font)
+                pings.append((x0, y * LINE_HEIGHT, x1, y * LINE_HEIGHT + LINE_HEIGHT))
+            x += _measure(chunk, font)
 
     return lines, pings
 
@@ -305,7 +345,7 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
             for style, chunk in line:
                 font = body_fonts[style]
                 pilmoji.text((x, y), chunk, (255, 255, 255), font, emoji_scale_factor=EMOJI_SCALE)
-                x += _measure(chunk, font)
+                x += pilmoji.getsize(chunk, font, emoji_scale_factor=EMOJI_SCALE)[0]
 
     draw.text(
         (TEXT_X + 7 + nick_w + badge_offset + icon_offset, NAME_Y + 9),
