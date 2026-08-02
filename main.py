@@ -4423,7 +4423,7 @@ async def gen_inventory(
 
     if len(cat_elements) == 0:
         cat_desc = f"u hav no cats {get_emoji('cat_cry')}"
-    elif len(cat_elements) <= 10 or user.compact_inventory:
+    elif len(cat_elements) <= 10 or person.compact_inventory:
         cat_desc = "\n".join(cat_elements)
     else:
         cat_desc = ""
