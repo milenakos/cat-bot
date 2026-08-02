@@ -4701,6 +4701,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
         pass
 
     lock_success = False
+    unlock_info = None
     if not isinstance(message.channel, discord.Thread):
         try:
             guild = await bot.fetch_guild(message.guild.id)
@@ -4720,24 +4721,28 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
             )
 
             lock_success = True
-
-            async def wait_and_unlock():
-                try:
-                    await asyncio.sleep(min(5, len(reverse_mapping)))
-                except NameError:
-                    await asyncio.sleep(5)
-                everyone_overwrites.send_messages = current_perm
-                await api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites)
-
-            bot.loop.create_task(wait_and_unlock())
+            unlock_info = (api_channel, guild.default_role, everyone_overwrites, current_perm)
         except Exception:
             pass
+
+    def schedule_unlock(delay: float) -> None:
+        if unlock_info is None:
+            return
+        api_channel, default_role, everyone_overwrites, current_perm = unlock_info
+
+        async def wait_and_unlock():
+            await asyncio.sleep(delay)
+            everyone_overwrites.send_messages = current_perm
+            await api_channel.set_permissions(default_role, overwrite=everyone_overwrites)
+
+        bot.loop.create_task(wait_and_unlock())
 
     # rain summary
     try:
         rain_server = force_summary
         if not rain_server:
             if channel.channel_id not in config.rain_starter or channel.channel_id not in config.cat_cought_rain:
+                schedule_unlock(10)
                 return
             rain_server = config.cat_cought_rain[channel.channel_id]
 
@@ -4764,6 +4769,8 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
                 if user_id not in reverse_mapping:
                     reverse_mapping[user_id] = []
                 reverse_mapping[user_id].append(thing_type)
+
+        schedule_unlock(min(10, len(reverse_mapping) * 2))
 
         evil_types = []
         epic_fail = False
