@@ -16,7 +16,7 @@
 
 import datetime
 import io
-import os
+import re
 
 import discord
 import requests
@@ -44,9 +44,26 @@ COLOR_TIMESTAMP = "#A3A4AA"
 COLOR_BOT_BADGE = (88, 101, 242)
 COLOR_GUILD_BADGE = (70, 70, 77)
 
-FONT_GGSANS = os.path.abspath("./assets/ggsans-Medium.ttf")
-
 FETCH_TIMEOUT = (5, 10)
+
+
+def _fetch_url(url: str) -> bytes:
+    with requests.get(url, stream=True, timeout=FETCH_TIMEOUT) as resp:
+        resp.raise_for_status()
+        return resp.raw
+
+
+FONTS = {
+    "normal": _fetch_url("https://discord.com/assets/66d715454104d24e.woff2"),
+    "bold": _fetch_url("https://discord.com/assets/2df2c3ff74408972.woff2"),
+    "italic": _fetch_url("https://discord.com/assets/dd24010f3cf7def7.woff2"),
+    "bold_italic": _fetch_url("https://discord.com/assets/397887842652672.woff2"),
+}
+
+body_font = ImageFont.truetype(FONTS["normal"], 32)
+body_fonts = {style: ImageFont.truetype(f, 32) for style, f in FONTS.items()}
+time_font = ImageFont.truetype(FONTS["normal"], 23)
+badge_font = ImageFont.truetype(FONTS["bold"], 20)
 
 
 def _text_size(font: ImageFont.FreeTypeFont, text: str) -> tuple[float, float]:
@@ -56,9 +73,10 @@ def _text_size(font: ImageFont.FreeTypeFont, text: str) -> tuple[float, float]:
 
 def _fetch_image(url: str, size: tuple[int, int] | None = None) -> Image.Image | None:
     try:
-        with requests.get(url, stream=True, timeout=FETCH_TIMEOUT) as resp:
-            resp.raise_for_status()
-            img = Image.open(resp.raw).convert("RGBA")
+        resp = _fetch_url(url)
+        if not resp:
+            return None
+        img = Image.open(resp).convert("RGBA")
         if size:
             img = img.resize(size, Image.Resampling.LANCZOS)
         return img
@@ -95,50 +113,84 @@ def _format_timestamp(dt: datetime.datetime) -> str:
     return dt.strftime(fmt)
 
 
-def _break_text(text: str, font: ImageFont.FreeTypeFont, max_width: int) -> tuple[list[str], list[tuple[int, int, int, int]]]:
+_MD_RE = re.compile(r"\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*")
+
+
+def _parse_markdown(text: str) -> list[tuple[str, str]]:
+    """Split text into (style, text) runs. Style is a key into FONTS."""
+    segments: list[tuple[str, str]] = []
+    pos = 0
+    for m in _MD_RE.finditer(text):
+        if m.start() > pos:
+            segments.append(("normal", text[pos : m.start()]))
+        if m.group(1) is not None:
+            segments.append(("bold_italic", m.group(1)))
+        elif m.group(2) is not None:
+            segments.append(("bold", m.group(2)))
+        else:
+            segments.append(("italic", m.group(3)))
+        pos = m.end()
+    if pos < len(text):
+        segments.append(("normal", text[pos:]))
+    return segments
+
+
+def _break_text(text: str, fonts: dict[str, ImageFont.FreeTypeFont], max_width: int) -> tuple[list[list[tuple[str, str]]], list[tuple[int, int, int, int]]]:
     if not text:
         return [], []
 
-    lines: list[str] = []
+    lines: list[list[tuple[str, str]]] = []
     pings: list[tuple[int, int, int, int]] = []
     ruler = Pilmoji(Image.new("RGBA", (1, 1)), emoji_scale_factor=EMOJI_SCALE)
 
+    def push_run(line: list[tuple[str, str]], style: str, chunk: str) -> None:
+        if line and line[-1][0] == style:
+            line[-1] = (style, line[-1][1] + chunk)
+        else:
+            line.append((style, chunk))
+
     for paragraph in text.split("\n"):
         line_w = 0
-        current = ""
+        current: list[tuple[str, str]] = []
 
-        for word in paragraph.split():
-            token = word + " "
+        tokens: list[tuple[str, str]] = []
+        for style, segment in _parse_markdown(paragraph):
+            for word in segment.split():
+                tokens.append((style, word + " "))
+
+        for style, token in tokens:
+            font = fonts[style]
             token_w = ruler.getsize(token, font)[0]
             token_x = line_w
             token_y = len(lines) * LINE_HEIGHT
 
             if line_w + token_w < max_width:
-                current += token
+                push_run(current, style, token)
                 line_w += token_w
             elif token_w >= max_width:
                 char_x = line_w
-                fragment = current
-                current = ""
+                fragment_style, fragment = style, ""
                 for ch in token:
                     ch_w = ruler.getsize(ch, font)[0]
                     char_x += ch_w
                     if char_x < max_width:
                         fragment += ch
                     else:
-                        lines.append(fragment)
+                        push_run(current, fragment_style, fragment)
+                        lines.append(current)
+                        current = []
                         fragment = ch
                         char_x = ch_w
-                current = fragment
+                push_run(current, style, fragment)
                 line_w = char_x
             else:
                 lines.append(current)
-                current = token
+                current = [(style, token)]
                 line_w = token_w
                 token_x = 0
                 token_y = len(lines) * LINE_HEIGHT - LINE_HEIGHT
 
-            if token[0] == "@":
+            if token[0] == "@" and style == "normal":
                 pings.append((token_x, token_y, line_w, token_y + LINE_HEIGHT))
 
         lines.append(current)
@@ -153,12 +205,8 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
     is_bot = member.bot
     is_pinged = message.mention_everyone
 
-    body_font = ImageFont.truetype(FONT_GGSANS, 32)
-    time_font = ImageFont.truetype(FONT_GGSANS, 23)
-    badge_font = ImageFont.truetype(FONT_GGSANS, 20)
-
-    lines, pings = _break_text(text, body_font, MAX_TEXT_WIDTH)
-    text = "\n".join(lines)[:-1] if lines else ""
+    lines, pings = _break_text(text, body_fonts, MAX_TEXT_WIDTH)
+    n_lines = len(lines)
 
     attachment: Image.Image | None = None
     for a in message.attachments:
@@ -170,12 +218,11 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
         attachment = _scale_to_width(raw, MAX_ATTACH_WIDTH)
         break
 
-    n_lines = len(text.split("\n"))
     text_block_h = n_lines * LINE_HEIGHT_H
 
     if attachment:
         attach_h = attachment.size[1]
-        if text:
+        if lines:
             attach_y = TEXT_Y + text_block_h + 18
             canvas_h = 75 + text_block_h + 18 + attach_h
         else:
@@ -236,7 +283,12 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
         badge_offset = label_w + 20
 
     with Pilmoji(canvas) as pilmoji:
-        pilmoji.text((TEXT_X, TEXT_Y), text.strip(), (255, 255, 255), body_font, emoji_scale_factor=EMOJI_SCALE)
+        for i, line in enumerate(lines):
+            x = TEXT_X
+            y = TEXT_Y + i * LINE_HEIGHT
+            for style, chunk in line:
+                pilmoji.text((x, y), chunk, (255, 255, 255), body_fonts[style], emoji_scale_factor=EMOJI_SCALE)
+                x += pilmoji.getsize(chunk, body_fonts[style])[0]
 
     draw.text(
         (TEXT_X + 7 + nick_w + badge_offset + icon_offset, NAME_Y + 9),
