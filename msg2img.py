@@ -123,6 +123,7 @@ def _format_timestamp(dt: datetime.datetime) -> str:
 
 
 _MD_RE = re.compile(r"\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*")
+_DISCORD_EMOJI_RE = re.compile(r"<a?:[A-Za-z0-9_]+:\d+>")
 
 
 def _parse_markdown(text: str) -> list[tuple[str, str]]:
@@ -171,71 +172,91 @@ def _break_text(text: str, fonts: dict[str, ImageFont.FreeTypeFont], max_width: 
             for style, chunk in runs:
                 push_run(target, style, chunk)
 
-        def finish_line() -> None:
-            nonlocal line_w, current
-            if current:
-                lines.append(current)
-            current = []
-            line_w = 0
+        def finish_line(line: list[tuple[str, str]], width: int) -> tuple[list[tuple[str, str]], int]:
+            if line:
+                lines.append(line)
+            return [], 0
 
-        def take_fitting_prefix(runs: list[tuple[str, str]], available: int) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+        def emoji_aware_pieces(chunk: str) -> list[str]:
+            """Split text safely for hard wrapping without splitting emoji markup."""
+            pieces: list[str] = []
+            pos = 0
+            for match in _DISCORD_EMOJI_RE.finditer(chunk):
+                before = chunk[pos : match.start()]
+                for node in to_nodes(before)[0] if before else []:
+                    pieces.extend(node.content if node.type is NodeType.text else [node.content])
+                # Pilmoji stores only a Discord emoji's ID in its Node, so retain
+                # the original markup here rather than deriving offsets from it.
+                pieces.append(match.group())
+                pos = match.end()
+            after = chunk[pos:]
+            for node in to_nodes(after)[0] if after else []:
+                pieces.extend(node.content if node.type is NodeType.text else [node.content])
+            return pieces
+
+        def take_fitting_prefix(runs: list[tuple[str, str]], available: int, has_current: bool) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+            """Take as much as fits, treating each emoji as an indivisible unit."""
             prefix: list[tuple[str, str]] = []
             used = 0
 
             for run_index, (style, chunk) in enumerate(runs):
-                offset = 0
-                for node in to_nodes(chunk)[0]:
-                    pieces = list(node.content) if node.type is NodeType.text else [node.content]
-                    for piece in pieces:
-                        width = _measure(piece, fonts[style])
-                        if used + width > available and (prefix or offset or current):
-                            rest = [(style, chunk[offset:]), *runs[run_index + 1 :]]
-                            return prefix, rest
-                        # An emoji or glyph wider than an empty line must still render.
-                        used += width
-                        offset += len(piece)
+                pieces = emoji_aware_pieces(chunk)
+                kept: list[str] = []
+                for piece_index, piece in enumerate(pieces):
+                    width = _measure(piece, fonts[style])
+                    if used + width > available and (prefix or kept or has_current):
+                        if kept:
+                            push_run(prefix, style, "".join(kept))
+                        rest = [(style, "".join(pieces[piece_index:])), *runs[run_index + 1 :]]
+                        return prefix, rest
+                    # An emoji or glyph wider than an empty line must still render.
+                    used += width
+                    kept.append(piece)
 
-                if offset:
-                    push_run(prefix, style, chunk[:offset])
+                if kept:
+                    push_run(prefix, style, "".join(kept))
 
             return prefix, []
 
-        def place_word(runs: list[tuple[str, str]]) -> None:
-            nonlocal line_w
+        def place_word(runs: list[tuple[str, str]], line: list[tuple[str, str]], width: int) -> tuple[list[tuple[str, str]], int]:
             remaining = runs
             while remaining:
-                prefix, remaining = take_fitting_prefix(remaining, max_width - line_w)
-                append_runs(current, prefix)
-                line_w += runs_width(prefix)
+                prefix, remaining = take_fitting_prefix(remaining, max_width - width, bool(line))
+                append_runs(line, prefix)
+                width += runs_width(prefix)
                 if remaining:
-                    finish_line()
+                    line, width = finish_line(line, width)
+            return line, width
 
-        def commit_word() -> None:
-            nonlocal pending_space, word, line_w
-            if not word:
-                return
+        def commit_word(
+            line: list[tuple[str, str]],
+            spaces: list[tuple[str, str]],
+            pending_word: list[tuple[str, str]],
+            width: int,
+        ) -> tuple[list[tuple[str, str]], list[tuple[str, str]], list[tuple[str, str]], int]:
+            if not pending_word:
+                return line, spaces, pending_word, width
 
-            gap_w = runs_width(pending_space)
-            word_w = runs_width(word)
-            if current and line_w + gap_w + word_w <= max_width:
-                append_runs(current, pending_space)
-                line_w += gap_w
-            elif current:
-                finish_line()
+            gap_w = runs_width(spaces)
+            word_w = runs_width(pending_word)
+            if line and width + gap_w + word_w <= max_width:
+                append_runs(line, spaces)
+                width += gap_w
+            elif line:
+                line, width = finish_line(line, width)
             # Whitespace at the start of a wrapped line is intentionally omitted.
-            pending_space = []
-            place_word(word)
-            word = []
+            line, width = place_word(pending_word, line, width)
+            return line, [], [], width
 
         for style, segment in _parse_markdown(paragraph):
             for token in _split_keep_spaces(segment):
                 if token.isspace():
-                    commit_word()
+                    current, pending_space, word, line_w = commit_word(current, pending_space, word, line_w)
                     push_run(pending_space, style, token)
                 else:
                     push_run(word, style, token)
 
-        commit_word()
+        current, pending_space, word, line_w = commit_word(current, pending_space, word, line_w)
         # Trailing whitespace is never visible and should not consume line width.
         lines.append(current)
 
