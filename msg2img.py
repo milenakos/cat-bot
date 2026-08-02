@@ -22,6 +22,7 @@ import discord
 import requests
 from PIL import Image, ImageColor, ImageDraw, ImageFont
 from pilmoji import Pilmoji
+from pilmoji.helpers import NodeType, to_nodes
 
 CANVAS_WIDTH = 1067
 AVATAR_SIZE = 80
@@ -67,6 +68,20 @@ badge_font = ImageFont.truetype(io.BytesIO(FONTS["bold"]), 20)
 def _text_size(font: ImageFont.FreeTypeFont, text: str) -> tuple[float, float]:
     bbox = font.getbbox(text)
     return bbox[2] - bbox[0], bbox[3] - bbox[1]
+
+
+def _measure(text: str, font: ImageFont.FreeTypeFont) -> int:
+    width = 0
+    for node in to_nodes(text)[0] if text else []:
+        if node.type is NodeType.text:
+            width += int(font.getlength(node.content))
+        else:
+            width += int(EMOJI_SCALE * font.size)
+    return width
+
+
+def _split_keep_spaces(segment: str) -> list[str]:
+    return [t + " " for t in segment.split(" ")]
 
 
 def _fetch_image(url: str, size: tuple[int, int] | None = None) -> Image.Image | None:
@@ -138,9 +153,10 @@ def _break_text(text: str, fonts: dict[str, ImageFont.FreeTypeFont], max_width: 
 
     lines: list[list[tuple[str, str]]] = []
     pings: list[tuple[int, int, int, int]] = []
-    ruler = Pilmoji(Image.new("RGBA", (1, 1)), emoji_scale_factor=EMOJI_SCALE)
 
     def push_run(line: list[tuple[str, str]], style: str, chunk: str) -> None:
+        if not chunk:
+            return
         if line and line[-1][0] == style:
             line[-1] = (style, line[-1][1] + chunk)
         else:
@@ -152,12 +168,12 @@ def _break_text(text: str, fonts: dict[str, ImageFont.FreeTypeFont], max_width: 
 
         tokens: list[tuple[str, str]] = []
         for style, segment in _parse_markdown(paragraph):
-            for word in segment.split():
-                tokens.append((style, word + " "))
+            for token in _split_keep_spaces(segment):
+                tokens.append((style, token))
 
         for style, token in tokens:
             font = fonts[style]
-            token_w = ruler.getsize(token, font)[0]
+            token_w = _measure(token, font)
             token_x = line_w
             token_y = len(lines) * LINE_HEIGHT
 
@@ -166,19 +182,16 @@ def _break_text(text: str, fonts: dict[str, ImageFont.FreeTypeFont], max_width: 
                 line_w += token_w
             elif token_w >= max_width:
                 char_x = line_w
-                fragment_style, fragment = style, ""
                 for ch in token:
-                    ch_w = ruler.getsize(ch, font)[0]
-                    char_x += ch_w
-                    if char_x < max_width:
-                        fragment += ch
+                    ch_w = _measure(ch, font)
+                    if char_x + ch_w < max_width:
+                        push_run(current, style, ch)
+                        char_x += ch_w
                     else:
-                        push_run(current, fragment_style, fragment)
                         lines.append(current)
                         current = []
-                        fragment = ch
+                        push_run(current, style, ch)
                         char_x = ch_w
-                push_run(current, style, fragment)
                 line_w = char_x
             else:
                 lines.append(current)
@@ -190,6 +203,12 @@ def _break_text(text: str, fonts: dict[str, ImageFont.FreeTypeFont], max_width: 
             if token[0] == "@" and style == "normal":
                 pings.append((token_x, token_y, line_w, token_y + LINE_HEIGHT))
 
+        # drop the trailing space at each line's end (it's never visible)
+        while current and not current[-1][1].rstrip(" "):
+            current.pop()
+        if current:
+            style, chunk = current[-1]
+            current[-1] = (style, chunk.rstrip(" "))
         lines.append(current)
 
     return lines, pings
@@ -220,8 +239,8 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
     if attachment:
         attach_h = attachment.size[1]
         if lines:
-            attach_y = TEXT_Y + text_block_h + 18
-            canvas_h = 60 + text_block_h + 18 + attach_h
+            attach_y = TEXT_Y + text_block_h + 10
+            canvas_h = 60 + text_block_h + 10 + attach_h
         else:
             attach_y = TEXT_Y
             canvas_h = 60 + attach_h
@@ -284,8 +303,9 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
             x = TEXT_X
             y = TEXT_Y + i * LINE_HEIGHT
             for style, chunk in line:
-                pilmoji.text((x, y), chunk, (255, 255, 255), body_fonts[style], emoji_scale_factor=EMOJI_SCALE)
-                x += pilmoji.getsize(chunk, body_fonts[style])[0]
+                font = body_fonts[style]
+                pilmoji.text((x, y), chunk, (255, 255, 255), font, emoji_scale_factor=EMOJI_SCALE)
+                x += _measure(chunk, font)
 
     draw.text(
         (TEXT_X + 7 + nick_w + badge_offset + icon_offset, NAME_Y + 9),
