@@ -4397,7 +4397,7 @@ async def gen_inventory(
     valuenum = 0
 
     # for every cat
-    cat_desc = ""
+    cat_elements = []
     for i in cattypes:
         icon = get_emoji(i.lower() + "cat")
         cat_num = person[f"cat_{i}"]
@@ -4406,16 +4406,72 @@ async def gen_inventory(
         if cat_num != 0:
             total += cat_num
             valuenum += (sum(data.type_dict.values()) / data.type_dict[i]) * cat_num
-            cat_desc += f"{icon} **{i}** {cat_num:,}\n"
+            cat_elements.append(f"{icon} **{i}** {cat_num:,}")
         else:
             give_collector = False
 
     if user.custom and hasattr(inv_user, "name"):
         icon = get_emoji(str(user.user_id) + "cat")
-        cat_desc += f"{icon} **{user.custom}** {user.custom_num:,}"
+        cat_elements.append(f"{icon} **{user.custom}** {user.custom_num:,}")
 
-    if len(cat_desc) == 0:
+    if len(cat_elements) == 0:
         cat_desc = f"u hav no cats {get_emoji('cat_cry')}"
+    else:
+        cat_desc = ""
+        odds = cat_elements[0::2]
+        evens = cat_elements[1::2]
+
+        def closest_sum(increase):
+            shift_values = {"　": 32, " ": 18, " ": 16, " ": 10, " ": 8, " ": 7, " ": 6, " ": 5, " ": 2}
+            nums = list(shift_values.values())
+            num_to_key = {v: k for k, v in shift_values.items()}
+
+            dp: dict[int, tuple[int, int | None, int | None]] = {0: (0, None, None)}
+
+            for s in range(1, 1000):
+                best = None
+                for n in nums:
+                    prev = s - n
+                    if prev in dp:
+                        count = dp[prev][0] + 1
+                        if best is None or count < best[0]:
+                            best = (count, prev, n)
+                if best is not None:
+                    dp[s] = best
+
+            best_sum = None
+            best_dist = None
+            best_count = None
+
+            for s, (count, _, _) in dp.items():
+                dist = abs(s - increase)
+                if best_sum is None or dist < best_dist or (dist == best_dist and best_count is not None and count < best_count):
+                    best_sum = s
+                    best_dist = dist
+                    best_count = count
+
+            used_keys = []
+            s = best_sum
+            while s != 0 and s is not None:
+                _, prev, n = dp[s]
+                assert n is not None
+                used_keys.append(num_to_key[n])
+                s = prev
+
+            return "".join(used_keys)
+
+        def markdown_width(text: str) -> int:
+            return sum(msg2img._measure(chunk, msg2img.body_fonts[style]) for style, chunk in msg2img._parse_markdown(text))
+
+        lens = {i: markdown_width(i) for i in odds}
+        goal = max(lens.values()) + 50
+        for idx, elem in enumerate(odds):
+            try:
+                even = evens[idx]
+            except IndexError:
+                cat_desc += "\n" + elem
+                break
+            cat_desc += "\n" + elem + closest_sum(goal - lens[elem]) + even
 
     if me_msg and (len(data.news_list) > len(user.news_state.strip()) or user.news_state.strip()[last_active_article] == "0"):
         has_news = "You have unread news! /news"
