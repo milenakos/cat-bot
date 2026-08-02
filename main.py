@@ -4770,7 +4770,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
                     reverse_mapping[user_id] = []
                 reverse_mapping[user_id].append(thing_type)
 
-        schedule_unlock(min(10, len(reverse_mapping) * 2))
+        schedule_unlock(max(10, len(reverse_mapping) * 2))
 
         evil_types = []
         epic_fail = False
