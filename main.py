@@ -4420,8 +4420,8 @@ async def gen_inventory(
         cat_desc = "\n".join(cat_elements)
     else:
         cat_desc = ""
-        odds = cat_elements[0::2]
-        evens = cat_elements[1::2]
+        mid = (len(cat_elements) + 1) // 2
+        odds, evens = cat_elements[:mid], cat_elements[mid:]
 
         def closest_sum(increase):
             shift_values = {"　": 32, " ": 18, " ": 16, " ": 10, " ": 8, " ": 7, " ": 6, " ": 5, " ": 2}
