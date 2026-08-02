@@ -29,12 +29,11 @@ AVATAR_X = 12
 AVATAR_Y = 12
 TEXT_X = 122
 NAME_Y = 8
-TEXT_Y = 55
-LINE_HEIGHT = 37
-LINE_HEIGHT_H = 36
+TEXT_Y = 50
+LINE_HEIGHT = 45
 MAX_TEXT_WIDTH = 930
 MAX_ATTACH_WIDTH = 930
-EMOJI_SCALE = 45 / 33
+EMOJI_SCALE = 1.4
 
 BG_DEFAULT = (49, 51, 56)
 BG_PINGED = (73, 68, 60)
@@ -116,7 +115,6 @@ _MD_RE = re.compile(r"\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*")
 
 
 def _parse_markdown(text: str) -> list[tuple[str, str]]:
-    """Split text into (style, text) runs. Style is a key into FONTS."""
     segments: list[tuple[str, str]] = []
     pos = 0
     for m in _MD_RE.finditer(text):
@@ -217,18 +215,18 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
         attachment = _scale_to_width(raw, MAX_ATTACH_WIDTH)
         break
 
-    text_block_h = n_lines * LINE_HEIGHT_H
+    text_block_h = n_lines * LINE_HEIGHT
 
     if attachment:
         attach_h = attachment.size[1]
         if lines:
             attach_y = TEXT_Y + text_block_h + 18
-            canvas_h = 75 + text_block_h + 18 + attach_h
+            canvas_h = 60 + text_block_h + 18 + attach_h
         else:
             attach_y = TEXT_Y
-            canvas_h = 75 + attach_h
+            canvas_h = 60 + attach_h
     else:
-        canvas_h = 75 + text_block_h
+        canvas_h = 60 + text_block_h
         attach_y = 0  # unused
 
     bg = BG_PINGED if is_pinged else BG_DEFAULT
@@ -263,8 +261,8 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
     if isinstance(member, discord.Member) and isinstance(member.display_icon, discord.Asset):
         icon = _fetch_image(member.display_icon.url, (30, 30))
         if icon:
-            canvas.paste(icon, (TEXT_X + 5 + nick_w, NAME_Y + 7), icon)
-            icon_offset = 35
+            canvas.paste(icon, (TEXT_X + 8 + nick_w, NAME_Y + 7), icon)
+            icon_offset = 38
 
     badge_offset = 0
     if is_bot or (member.primary_guild and member.primary_guild.tag):
