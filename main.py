@@ -4368,7 +4368,7 @@ async def gen_inventory(
     elif len(prisms) == 1:
         prism_list = f"1 Prism: {prisms[0].name}"
     else:
-        prism_list = f"{len(prisms)} Prisms: {prism_short_name(prisms[0].name)}, {prism_short_name(prisms[1].name)}" + "..." if len(prisms) > 2 else ""
+        prism_list = f"{len(prisms)} Prisms: {prism_short_name(prisms[0].name)}, {prism_short_name(prisms[1].name)}" + ("..." if len(prisms) > 2 else "")
 
     emoji_prefix = str(user.emoji) + " " if user.emoji else ""
 
