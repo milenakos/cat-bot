@@ -4350,18 +4350,25 @@ async def gen_inventory(
     total_achs = len(ach_list) - minus_achs_count
     minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
 
+    def prism_short_name(name):
+        if " " not in name:
+            return name
+        parts = name.split(" ")
+        second_part = data.prism_names_end.index(" " + parts[-1]) + 1
+        return f"{parts[0]} {second_part}"
+
     # count prism stuff
     prisms = await Prism.collect_limit(["name"], "guild_id = $1 AND user_id = $2", guild_id, inv_user.id)
     total_count = await Prism.count("guild_id = $1", guild_id)
     user_count = len(prisms)
     global_boost = 0.06 * math.log(2 * total_count + 1)
-    prism_boost = round((global_boost + 0.05 * math.log(2 * user_count + 1)) * 100, 2)
+    prism_boost = round((global_boost + 0.05 * math.log(2 * user_count + 1)) * 100, 3)
     if len(prisms) == 0:
         prism_list = "None"
     elif len(prisms) <= 3:
         prism_list = ", ".join([i.name for i in prisms])
     else:
-        prism_list = f"{prisms[0].name}, {prisms[1].name}, +{len(prisms) - 2}..."
+        prism_list = f"{prism_short_name(prisms[0].name)}, {prism_short_name(prisms[1].name)}, +{len(prisms) - 2} more..."
 
     emoji_prefix = str(user.emoji) + " " if user.emoji else ""
 
