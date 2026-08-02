@@ -57,7 +57,7 @@ FONTS = {
     "normal": _fetch_url("https://discord.com/assets/66d715454104d24e.woff2"),
     "bold": _fetch_url("https://discord.com/assets/2df2c3ff74408972.woff2"),
     "italic": _fetch_url("https://discord.com/assets/dd24010f3cf7def7.woff2"),
-    "bold_italic": _fetch_url("https://discord.com/assets/397887842652672.woff2"),
+    "bold_italic": _fetch_url("https://discord.com/assets/ce3b8055f5114434.woff2"),
 }
 
 body_font = ImageFont.truetype(FONTS["normal"], 32)
