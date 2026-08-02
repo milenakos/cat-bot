@@ -4355,13 +4355,13 @@ async def gen_inventory(
     total_count = await Prism.count("guild_id = $1", guild_id)
     user_count = len(prisms)
     global_boost = 0.06 * math.log(2 * total_count + 1)
-    prism_boost = round((global_boost + 0.05 * math.log(2 * user_count + 1)) * 100, 3)
+    prism_boost = round((global_boost + 0.05 * math.log(2 * user_count + 1)) * 100, 2)
     if len(prisms) == 0:
         prism_list = "None"
     elif len(prisms) <= 3:
         prism_list = ", ".join([i.name for i in prisms])
     else:
-        prism_list = f"{prisms[0].name}, {prisms[1].name}, {len(prisms) - 2} more..."
+        prism_list = f"{prisms[0].name}, {prisms[1].name}, +{len(prisms) - 2}..."
 
     emoji_prefix = str(user.emoji) + " " if user.emoji else ""
 
@@ -4484,7 +4484,7 @@ async def gen_inventory(
 {get_emoji("ach")} Achievements: {unlocked}/{total_achs}{minus_achs}
 ⬆️ Cattlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)
 {get_emoji("staring_cat")} Cats: {total:,}, Value: {round(valuenum):,}
-{get_emoji("prism")} Prisms: {prism_list} ({prism_boost}%)"""
+{get_emoji("prism")} {prism_list} ({prism_boost}%)"""
 
     if isinstance(inv_user, discord.abc.User):
         uname = inv_user.name
