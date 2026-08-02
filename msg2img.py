@@ -217,7 +217,7 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
     if isinstance(member, discord.Member) and isinstance(member.display_icon, discord.Asset):
         icon = _fetch_image(member.display_icon.url, (30, 30))
         if icon:
-            canvas.paste(icon, (TEXT_X + 10 + nick_w, NAME_Y + 5), icon)
+            canvas.paste(icon, (TEXT_X + 5 + nick_w, NAME_Y + 7), icon)
             icon_offset = 35
 
     badge_offset = 0
