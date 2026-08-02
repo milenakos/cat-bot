@@ -4423,7 +4423,7 @@ async def gen_inventory(
 
     if len(cat_elements) == 0:
         cat_desc = f"u hav no cats {get_emoji('cat_cry')}"
-    elif len(cat_elements) <= 10 or person.compact_inventory:
+    elif len(cat_elements) <= 10 or not person.compact_inventory:
         cat_desc = "\n".join(cat_elements)
     else:
         cat_desc = ""
@@ -4678,7 +4678,7 @@ __Highlighted Stat__
 {highlighted_stat[1]} {highlighted_stat[2]}
 
 __Compact Inventory__
-{"✅ True" if user.compact_inventory else "❌ False"}"""
+{"✅ True" if person.compact_inventory else "❌ False"}"""
 
             embed = discord.Embed(
                 title=f"{(user.emoji + ' ') if user.emoji else ''}Edit Profile", description=description, color=discord.Colour.from_str(user.color)
