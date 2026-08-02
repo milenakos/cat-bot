@@ -4364,11 +4364,11 @@ async def gen_inventory(
     global_boost = 0.06 * math.log(2 * total_count + 1)
     prism_boost = round((global_boost + 0.05 * math.log(2 * user_count + 1)) * 100, 3)
     if len(prisms) == 0:
-        prism_list = "None"
-    elif len(prisms) <= 3:
-        prism_list = ", ".join([i.name for i in prisms])
+        prism_list = "No Prisms"
+    elif len(prisms) == 1:
+        prism_list = f"1 Prism: {prisms[0].name}"
     else:
-        prism_list = f"{prism_short_name(prisms[0].name)}, {prism_short_name(prisms[1].name)}, +{len(prisms) - 2} more..."
+        prism_list = f"{len(prisms)} Prisms: {prism_short_name(prisms[0].name)}, {prism_short_name(prisms[1].name)}" + "..." if len(prisms) > 2 else ""
 
     emoji_prefix = str(user.emoji) + " " if user.emoji else ""
 
