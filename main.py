@@ -7601,12 +7601,11 @@ async def bakery(message: discord.Interaction):
             "In collaboration with [Bake.gg](https://bake.gg)",
             "__Order Details__",
             f"""{get_emoji("bakegg_cookie")} {min(profile.cookies, 120)}/120 {"✅" if profile.cookies >= 120 else "(`/cookie`)"}
-    {get_emoji("bakegg_coffee")} {min(profile.coffees, 140)}/140 {"✅" if profile.coffees >= 140 else "(`/brew`)"}
-    {get_emoji("nicecat")} {min(profile.cat_Nice, 2)}/2 {"✅" if profile.cat_Nice >= 2 else ""}""",
+{get_emoji("bakegg_coffee")} {min(profile.coffees, 140)}/140 {"✅" if profile.coffees >= 140 else "(`/brew`)"}
+{get_emoji("nicecat")} {min(profile.cat_Nice, 2)}/2 {"✅" if profile.cat_Nice >= 2 else ""}""",
             "===",
             "__Order Reward__",
-            f"""{get_emoji("bakegg_egg")} 1 Bake.gg Cat Egg
-    {get_emoji("silverpack")} 1 Silver Pack""",
+            f"""{get_emoji("bakegg_egg")} 1 Bake.gg Cat Egg\n{get_emoji("silverpack")} 1 Silver Pack""",
             "-# orders can only be done once a week per user",
             "===",
             ActionRow(button, refresh_button),
