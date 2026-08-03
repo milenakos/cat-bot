@@ -7511,104 +7511,110 @@ def get_timestamp_of_next_week() -> int:
 
 @bot.tree.command(description="Deliver orders from your bakery to get Cat Eggs and Packs!")
 async def bakery(message: discord.Interaction):
-    assert message.guild is not None
-    assert isinstance(message.channel, GuildMessageable)
-    user = await User.get_or_create(user_id=message.user.id)
-    profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
-    if user.queued_chef_pack:
-        profile.pack_chef += 1
-        user.queued_chef_pack = False
-        await user.save()
-        await profile.save()
-        log_stats("chef_pack_get")
-        try:
-            await message.channel.send(f"{message.user.mention} got +1 {get_emoji('chefpack')} Chef Pack from Bake.gg!")
-        except Exception:
-            pass
+    async def refresh(interaction: discord.Interaction) -> None:
+        await interaction.response.edit_message(view=await gen_bakery())
 
-    if user.last_bakegg_send == get_current_week():
-        # order already delivered for this week
-        await message.response.send_message(f"You already delivered this order. Next order is <t:{get_timestamp_of_next_week()}:R>.", ephemeral=True)
-        return
-
-    async def deliver(interaction: discord.Interaction) -> None:
-        if interaction.user != message.user:
-            await do_funny(interaction)
-            return
-
-        await interaction.response.defer()
-
-        await profile.refresh_from_db()
-        await user.refresh_from_db()
-        if profile.cookies < 120 or profile.coffees < 140 or profile.cat_Nice < 2:
-            await interaction.followup.send("Your order is not ready yet.", ephemeral=True)
-            return
-        if user.last_bakegg_send == get_current_week():
-            await interaction.followup.send("You've already delivered this order.", ephemeral=True)
-            return
-
-        async with aiohttp.ClientSession() as session:
+    async def gen_bakery() -> LayoutView:
+        assert message.guild is not None
+        assert isinstance(message.channel, GuildMessageable)
+        user = await User.get_or_create(user_id=message.user.id)
+        profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
+        if user.queued_chef_pack:
+            profile.pack_chef += 1
+            user.queued_chef_pack = False
+            await user.save()
+            await profile.save()
+            log_stats("chef_pack_get")
             try:
-                async with session.post(
-                    "https://auth.bake.gg:2053/reward/catbot",
-                    headers={"Authorization": os.environ.get("BAKE_GG_TOKEN", "")},  # i dont believe anyone would ever need to change this
-                    json={"user": str(interaction.user.id)},
-                ) as response:
-                    if response.status != 200:
-                        logger.warning("Bake.gg reward failed: status=%s body=%s", response.status, await response.text())
-                        raise ValueError
-
-                    profile.cookies -= 120
-                    profile.coffees -= 140
-                    profile.cat_Nice -= 2
-                    profile.pack_silver += 1
-                    await profile.save()
-
-                    user.last_bakegg_send = get_current_week()
-                    await user.save()
-
-                    log_stats("bakery_delivered")
-
-                    view = LayoutView(timeout=1)
-                    view.add_item(
-                        Container(
-                            "## ✅ Order Delivered!",
-                            f"+1 {get_emoji('silverpack')} Silver pack, +1 {get_emoji('bakegg_egg')} Bake.gg Cat Egg",
-                            f"Next order <t:{get_timestamp_of_next_week()}:R>",
-                            "===",
-                            f"➡️ Opening any {get_emoji('bakegg_egg')} Cat Egg in Bake.gg will give you an **exclusive {get_emoji('chefpack')} Chef Pack** in Cat Bot, so head over to not miss out!",
-                            "-# 1 Chef Pack per user per week",
-                            "===",
-                            Button(label="Bake.gg", url="https://bake.gg/"),
-                        )
-                    )
-                    await interaction.edit_original_response(view=view)
-                    await achemb(message, "baker", "followup")
+                await message.channel.send(f"{message.user.mention} got +1 {get_emoji('chefpack')} Chef Pack from Bake.gg!")
             except Exception:
-                await interaction.followup.send("Failed! Try again later.", ephemeral=True)
-                raise
+                pass
 
-    view = LayoutView(timeout=VIEW_TIMEOUT)
-    order_complete = profile.cookies >= 120 and profile.coffees >= 140 and profile.cat_Nice >= 2
-    button = Button(label="Deliver!", style=ButtonStyle.green, disabled=not order_complete)
-    button.callback = deliver
-    embed = Container(
-        "## 📝 Bakery Order",
-        "In collaboration with [Bake.gg](https://bake.gg)",
-        "__Order Details__",
-        f"""{get_emoji("bakegg_cookie")} {min(profile.cookies, 120)}/120 {"✅" if profile.cookies >= 120 else "(`/cookie`)"}
-{get_emoji("bakegg_coffee")} {min(profile.coffees, 140)}/140 {"✅" if profile.coffees >= 140 else "(`/brew`)"}
-{get_emoji("nicecat")} {min(profile.cat_Nice, 2)}/2 {"✅" if profile.cat_Nice >= 2 else ""}""",
-        "===",
-        "__Order Reward__",
-        f"""{get_emoji("bakegg_egg")} 1 Bake.gg Cat Egg
-{get_emoji("silverpack")} 1 Silver Pack""",
-        "-# orders can only be done once a week per user",
-        "===",
-        button,
-    )
-    view.add_item(embed)
-    await message.response.send_message(view=view)
+        refresh_button = Button(label="Refresh", emoji="🔄")
+        refresh_button.callback = refresh
+
+        if user.last_bakegg_send == get_current_week():
+            # order already delivered for this week
+            view = LayoutView(timeout=VIEW_TIMEOUT)
+            view.add_item(
+                Container(
+                    "## ✅ Order Delivered!",
+                    f"+1 {get_emoji('silverpack')} Silver pack, +1 {get_emoji('bakegg_egg')} Bake.gg Cat Egg",
+                    f"Next order <t:{get_timestamp_of_next_week()}:R>",
+                    "===",
+                    f"➡️ Opening any {get_emoji('bakegg_egg')} Cat Egg in Bake.gg will give you an **exclusive {get_emoji('chefpack')} Chef Pack** in Cat Bot, so head over to not miss out!",
+                    "-# 1 Chef Pack per user per week",
+                    "===",
+                    ActionRow(Button(label="Bake.gg", url="https://bake.gg/"), refresh_button),
+                )
+            )
+            return view
+
+        async def deliver(interaction: discord.Interaction) -> None:
+            if interaction.user != message.user:
+                await do_funny(interaction)
+                return
+
+            await profile.refresh_from_db()
+            await user.refresh_from_db()
+            if profile.cookies < 120 or profile.coffees < 140 or profile.cat_Nice < 2:
+                await interaction.response.send_message("Your order is not ready yet.", ephemeral=True)
+                return
+            if user.last_bakegg_send == get_current_week():
+                await interaction.response.send_message("You've already delivered this order.", ephemeral=True)
+                return
+
+            async with aiohttp.ClientSession() as session:
+                try:
+                    async with session.post(
+                        "https://auth.bake.gg:2053/reward/catbot",
+                        headers={"Authorization": os.environ.get("BAKE_GG_TOKEN", "")},  # i dont believe anyone would ever need to change this
+                        json={"user": str(interaction.user.id)},
+                    ) as response:
+                        if response.status != 200:
+                            logger.warning("Bake.gg reward failed: status=%s body=%s", response.status, await response.text())
+                            raise ValueError
+
+                        profile.cookies -= 120
+                        profile.coffees -= 140
+                        profile.cat_Nice -= 2
+                        profile.pack_silver += 1
+                        await profile.save()
+
+                        user.last_bakegg_send = get_current_week()
+                        await user.save()
+
+                        log_stats("bakery_delivered")
+
+                        await interaction.response.edit_message(view=await gen_bakery())
+                        await achemb(message, "baker", "followup")
+                except Exception:
+                    await interaction.response.send_message("Failed! Try again later.", ephemeral=True)
+                    raise
+
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        order_complete = profile.cookies >= 120 and profile.coffees >= 140 and profile.cat_Nice >= 2
+        button = Button(label="Deliver!", style=ButtonStyle.green, disabled=not order_complete)
+        button.callback = deliver
+        embed = Container(
+            "## 📝 Bakery Order",
+            "In collaboration with [Bake.gg](https://bake.gg)",
+            "__Order Details__",
+            f"""{get_emoji("bakegg_cookie")} {min(profile.cookies, 120)}/120 {"✅" if profile.cookies >= 120 else "(`/cookie`)"}
+    {get_emoji("bakegg_coffee")} {min(profile.coffees, 140)}/140 {"✅" if profile.coffees >= 140 else "(`/brew`)"}
+    {get_emoji("nicecat")} {min(profile.cat_Nice, 2)}/2 {"✅" if profile.cat_Nice >= 2 else ""}""",
+            "===",
+            "__Order Reward__",
+            f"""{get_emoji("bakegg_egg")} 1 Bake.gg Cat Egg
+    {get_emoji("silverpack")} 1 Silver Pack""",
+            "-# orders can only be done once a week per user",
+            "===",
+            ActionRow(button, refresh_button),
+        )
+        view.add_item(embed)
+        return view
+
+    await message.response.send_message(view=await gen_bakery())
 
 
 @bot.tree.command(description="Gamble your life savings away in our totally-not-rigged catsino!")
