@@ -5952,7 +5952,9 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
         prisms.sort(key=lambda p: order_map.get(p.name, float("inf")))
 
         for prism in prisms:
-            prism_texts.append(f"{icon}{f" <@{prism.user_id}>'s" if not person else ''} **{prism.name}** (<@{prism.creator}> crafted <t:{prism.time}:d>)")
+            owner = f" <@{prism.user_id}>'s" if not person else ""
+            crafter = f"<@{prism.creator}> " if prism.creator and prism.creator != prism.user_id else ""
+            prism_texts.append(f"{icon}{owner} **{prism.name}** ({crafter}crafted <t:{prism.time}:d>)")
 
         if len(prisms) == 0:
             prism_texts.append("No prisms found!")
