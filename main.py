@@ -736,7 +736,7 @@ def get_streak_reward(streak: int) -> dict:
     elif streak % 5 == 0 and streak not in [0, 5]:
         return {"reward": "gold", "emoji": get_emoji("goldpack"), "done_emoji": get_emoji("goldpack_claimed")}
     else:
-        return {"reward": None, "emoji": "⬛", "done_emoji": "🟦"}
+        return {"reward": None, "emoji": "⬛", "done_emoji": get_emoji("staring_square")}
 
 
 # handle curious people clicking buttons
@@ -10372,7 +10372,7 @@ async def do_vote(user: User, created_at: float) -> None:
     channeley = await fetch_dm_channel(user)
 
     if user.vote_streak == 1:
-        streak_progress = "🟦⬛⬛⬛⬛⬛⬛⬛⬛⬛\n⬆️"
+        streak_progress = f"{get_emoji('staring_square')}⬛⬛⬛⬛⬛⬛⬛⬛⬛\n⬆️"
     else:
         streak_progress = ""
         if user.vote_streak > 0:
