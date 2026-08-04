@@ -9021,7 +9021,6 @@ async def catnip(message: discord.Interaction):
             user.catnip_active += 86400
             trigger_cutscene = True
         user.catnip_bought += 1
-        user.catnip_total_cats = 0
         user.first_quote_seen = False
         user.reroll = True
 
@@ -9039,8 +9038,7 @@ async def catnip(message: discord.Interaction):
             text = """The point of catnip IS NOT TO KEEP LEVELLING UP FOREVER.
 You are meant to go up and down levels.
 You get absolutely no benefit from completing level 10.
-You can stop. That's okay. Seriously.
-"""
+You can stop. That's okay. Seriously."""
             await interaction.followup.send(content=text, ephemeral=True)
         elif trigger_cutscene and user.cutscene <= 1:
             await mafia_cutscene2(interaction, user)
@@ -9264,6 +9262,7 @@ You can stop. That's okay. Seriously.
         level_data = catnip_list["levels"][user.catnip_level]
         duration = level_data["duration"]
         user.hibernation = False
+        user.catnip_total_cats = 0
         duration_bonus = 0
         perks = catnip_list["perks"]
 
