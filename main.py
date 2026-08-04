@@ -6552,6 +6552,17 @@ async def fish(message: discord.Interaction):
 
             coins_gained = round(coin_mult * sum(data.type_dict.values()) / data.type_dict[fishtype])
 
+            profile.fish_caught += 1
+            profile.fish_coins += coins_gained
+            if used_bait:
+                profile.fish_bait_durability -= 1
+            if used_rod:
+                profile.fish_rod_durability -= 1
+            if used_clover:
+                profile.fish_clover_durability -= 1
+            if not profile.rarest_fish.strip() or cattypes.index(fishtype) > cattypes.index(profile.rarest_fish.strip()):
+                profile.rarest_fish = fishtype
+
             view = LayoutView(timeout=VIEW_TIMEOUT)
             button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
             button.callback = go_fishing
@@ -6575,16 +6586,6 @@ async def fish(message: discord.Interaction):
             await interaction.response.defer()
             await interaction.edit_original_response(view=view)
 
-            profile.fish_caught += 1
-            profile.fish_coins += coins_gained
-            if used_bait:
-                profile.fish_bait_durability -= 1
-            if used_rod:
-                profile.fish_rod_durability -= 1
-            if used_clover:
-                profile.fish_clover_durability -= 1
-            if not profile.rarest_fish.strip() or cattypes.index(fishtype) > cattypes.index(profile.rarest_fish.strip()):
-                profile.rarest_fish = fishtype
             await profile.save()
             await achemb(interaction, "fisherman", "followup")
             if cattypes.index(fishtype) >= 13:
