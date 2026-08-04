@@ -6555,7 +6555,17 @@ async def fish(message: discord.Interaction):
             button.callback = go_fishing
             main_button = Button(emoji="⬅️", label="Main")
             main_button.callback = show_main
-            usage_suffix = "".join([k for k, v in {"🎣": used_rod, "🍥": used_bait, "🍀": used_clover}.items() if v])
+            usage_suffix = ", ".join(
+                [
+                    k
+                    for k, v in {
+                        f"🎣 ({profile.fish_rod_durability:,} left)": used_rod,
+                        f"🍥 ({profile.fish_bait_durability:,} left)": used_bait,
+                        f"🍀 ({profile.fish_clover_durability:,} left)": used_clover,
+                    }.items()
+                    if v
+                ]
+            )
             if usage_suffix:
                 usage_suffix = "\n-# Used: " + usage_suffix
             view.add_item(TextDisplay(f"You caught a {get_emoji(fishtype.lower() + 'fish')} {fishtype} fish and got 🪙 {coins_gained:,} coins!{usage_suffix}"))
@@ -6594,12 +6604,35 @@ async def fish(message: discord.Interaction):
         await asyncio.sleep(5)
 
         if not fish_caught:
+            await profile.refresh_from_db()
+            used_clover = False
+            if used_bait:
+                profile.fish_bait_durability -= 1
+            if used_rod:
+                profile.fish_rod_durability -= 1
+            if profile.fish_clover_durability > 0:
+                used_clover = True
+                profile.fish_clover_durability -= 1
+            await profile.save()
+            usage_suffix = ", ".join(
+                [
+                    k
+                    for k, v in {
+                        f"🎣 ({profile.fish_rod_durability:,} left)": used_rod,
+                        f"🍥 ({profile.fish_bait_durability:,} left)": used_bait,
+                        f"🍀 ({profile.fish_clover_durability:,} left)": used_clover,
+                    }.items()
+                    if v
+                ]
+            )
+            if usage_suffix:
+                usage_suffix = "\n-# Used: " + usage_suffix
             view = LayoutView(timeout=VIEW_TIMEOUT)
             button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
             button.callback = go_fishing
             main_button = Button(emoji="⬅️", label="Main")
             main_button.callback = show_main
-            view.add_item(TextDisplay("You weren't fast enough..."))
+            view.add_item(TextDisplay("You weren't fast enough..." + usage_suffix))
             view.add_item(ActionRow(button, main_button))
             await interaction.edit_original_response(view=view)
             fish_lock.discard((interaction.guild.id, interaction.user.id))
