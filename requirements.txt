@@ -11,3 +11,5 @@ asyncpg
 sentry-sdk
 unidecode
 anyio
+numpy
+matplotlib

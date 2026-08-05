@@ -306,6 +306,9 @@ class Model:
         table = cls.__name__.lower()
         if column != "*":
             column = f'"{column}"'
+        if "MEDIAN" in func:
+            func = "percentile_cont(0.5) WITHIN GROUP "
+            column = f"ORDER BY {column}"
         query = f'SELECT {func}({column}) FROM "{table}"'
         if filter:
             query += f" WHERE {filter}"
@@ -322,6 +325,14 @@ class Model:
     @classmethod
     async def min(cls, column: str, filter: str | RawSQL | None = None, *args) -> int:
         return await cls.__do_function("MIN", column, filter, *args)
+
+    @classmethod
+    async def avg(cls, column: str, filter: str | RawSQL | None = None, *args) -> int:
+        return await cls.__do_function("AVG", column, filter, *args)
+
+    @classmethod
+    async def median(cls, column: str, filter: str | RawSQL | None = None, *args) -> int:
+        return await cls.__do_function("MEDIAN", column, filter, *args)
 
     @classmethod
     async def count(cls, filter: str | RawSQL | None = None, *args) -> int:

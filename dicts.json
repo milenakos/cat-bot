@@ -396,7 +396,7 @@
     {
       "title": "Cat Bot Stocks",
       "emoji": "📈",
-      "active": false
+      "active": true
     },
     {
       "title": "PackOrRain Event",
@@ -617,6 +617,7 @@
     "[Rains](https://catbot.wiki/rains)",
     "[Packs](https://catbot.wiki/packs)",
     "[Trading](https://catbot.wiki/trading)",
+    "[Stocks](https://catbot.wiki/stocks)",
     "[Catnip](https://catbot.wiki/catnip)",
     "[Prisms](https://catbot.wiki/prisms)",
     "[Fun](https://catbot.wiki/fun)"
@@ -1061,5 +1062,12 @@
       {"cost": 25600, "value": 5.05},
       {"cost": 51200, "value": 6}
     ]
-  }
+  },
+  "stock_data": [
+    {"name": "Prisms", "ticker": "PRSM", "emoji": "prism", "amount": 5000, "init_price": 40},
+    {"name": "Catnip", "ticker": "CTNP", "emoji": "catnip", "amount": 5000, "init_price": 40},
+    {"name": "Cattlepass", "ticker": "PASS", "emoji": "⬆️", "amount": 5000, "init_price": 40},
+    {"name": "Achievements", "ticker": "ACHS", "emoji": "ach", "amount": 5000, "init_price": 40},
+    {"name": "Rain", "ticker": "RAIN", "emoji": "☔", "amount": 5000, "init_price": 40}
+  ]
 }
