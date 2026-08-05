@@ -3053,7 +3053,7 @@ async def on_message(message: discord.Message) -> None:
         if vote_server:
             await vote_server.cleanup()
         await bot.cat_bot_reload_hook("db" in text)  # pyright: ignore
-    if text.lower() == "cat!sync":
+    if text.lower() == "cat!sync" and len(list(bot.tree.walk_commands())) > 5:
         try:
             await message.reply("syncing commands!")
             await bot.tree.sync()
