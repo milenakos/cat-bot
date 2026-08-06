@@ -1585,7 +1585,7 @@ async def on_ready() -> None:
             "Open Source Projects: **[discord.py](https://github.com/Rapptz/discord.py), [asyncpg](https://github.com/MagicStack/asyncpg), [gateway-proxy](https://github.com/Gelbpunkt/gateway-proxy)**",
             "Art, suggestions, and a lot more: **TheTrashCell**",
             "Banner art: **2braincelledcreature**",
-            "Testers: **aflyde, azalichia, amethystultrakill, thetrashcell, .ruby404, sior_.**",
+            "Testers: **aflyde, azalichia, amethystultrakill, thetrashcell, ruby404._., sior_.**",
             "Enjoying the bot: **You <3**",
         ]
     )
