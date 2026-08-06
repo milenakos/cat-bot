@@ -150,6 +150,10 @@ with open("dicts.json", "r", encoding="utf-8") as f:
 # this list stores unique non-duplicate cattypes
 cattypes: list[str] = list(data.type_dict.keys())
 
+TOTAL_CAT_WEIGHT = sum(data.type_dict.values())
+CAT_VALUES = {ct: TOTAL_CAT_WEIGHT / data.type_dict[ct] for ct in cattypes}
+PRISM_VALUE = round(sum(CAT_VALUES.values()), 2)
+
 cattype_lc_dict = {i.lower(): i for i in cattypes}
 allowedemojis = [i.lower() + "cat" for i in cattypes]
 
@@ -2471,7 +2475,7 @@ async def on_message(message: discord.Message) -> None:
                 double_first = 0
                 timer_add_chance = 0
                 packs_gained = []
-                bonus_chance = 0.02 * math.log2(sum(data.type_dict.values()) / data.type_dict[channel.cattype] - 0.7)
+                bonus_chance = 0.02 * math.log2(CAT_VALUES[channel.cattype] - 0.7)
                 bonus_chance_increase = 0
 
                 if user.perks:
@@ -4465,11 +4469,11 @@ async def catalogue(message: discord.Interaction):
             in_server = 0
             title = f"{get_emoji('mysterycat')} ???"
 
-        title += f" ({round((data.type_dict[cat_type] / sum(data.type_dict.values())) * 100, 2)}%)"
+        title += f" ({round((data.type_dict[cat_type] / TOTAL_CAT_WEIGHT) * 100, 2)}%)"
 
         embed.add_field(
             name=title,
-            value=f"{round(sum(data.type_dict.values()) / data.type_dict[cat_type], 2)} value\n{in_server:,} in this server",
+            value=f"{round(CAT_VALUES[cat_type], 2)} value\n{in_server:,} in this server",
         )
 
     await message.response.send_message(embed=embed)
@@ -4730,7 +4734,7 @@ async def gen_inventory(
             debt = True
         if cat_num != 0:
             total += cat_num
-            valuenum += (sum(data.type_dict.values()) / data.type_dict[i]) * cat_num
+            valuenum += CAT_VALUES[i] * cat_num
             cat_elements.append(f"{icon} **{i}** {cat_num:,}")
         else:
             give_collector = False
@@ -5892,7 +5896,7 @@ async def packs(message: discord.Interaction):
         goal_value = final_level["value"]
         chosen_type = random.choice(cattypes)
         cat_emoji = get_emoji(chosen_type.lower() + "cat")
-        pre_cat_amount: float = goal_value / (sum(data.type_dict.values()) / data.type_dict[chosen_type])
+        pre_cat_amount: float = goal_value / CAT_VALUES[chosen_type]
         if pre_cat_amount % 1 > random.random():
             cat_amount = math.ceil(pre_cat_amount)
         else:
@@ -7500,7 +7504,7 @@ async def fish(message: discord.Interaction):
                 used_clover = True
                 coin_mult = data.fishing_upgrades["clover"][profile.fish_clover_level]["value"]
 
-            coins_gained = round(coin_mult * sum(data.type_dict.values()) / data.type_dict[fishtype])
+            coins_gained = round(coin_mult * CAT_VALUES[fishtype])
 
             profile.fish_caught += 1
             profile.fish_coins += coins_gained
@@ -7902,7 +7906,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
 
             if user.id == bot.user.id:
                 self.gives_cats["eGirl"] = 9999999
-                self.value += (sum(data.type_dict.values()) / data.type_dict["eGirl"]) * 9999999
+                self.value += CAT_VALUES["eGirl"] * 9999999
 
     blackhole: bool = False
     person1: TradeUser = TradeUser(
@@ -8133,7 +8137,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     else:
                         active_user.gives_cats[cattype] = amount + current
                         active_user.gives_cats = {k: active_user.gives_cats[k] for k in cattypes if k in active_user.gives_cats}
-                    active_user.value += (sum(data.type_dict.values()) / data.type_dict[cattype]) * amount
+                    active_user.value += CAT_VALUES[cattype] * amount
                 elif selection == "packs":
                     assert isinstance(item1, discord.ui.Select)
                     assert isinstance(item2, discord.ui.TextInput)
@@ -8230,7 +8234,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
 
                     if prism_name in active_user.gives_prisms:
                         active_user.gives_prisms.remove(prism_name)
-                        active_user.value -= 6271
+                        active_user.value -= PRISM_VALUE
                     else:
                         assert interaction2.guild is not None
                         prism = await Prism.get_or_none(guild_id=interaction2.guild.id, name=prism_name)
@@ -8245,7 +8249,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         active_user.gives_prisms.append(prism_name)
                         order_index = {k: i for i, k in enumerate(prism_names)}
                         active_user.gives_prisms.sort(key=lambda x: order_index.get(x, float("inf")))
-                        active_user.value += 6271
+                        active_user.value += PRISM_VALUE
 
                 person1.accept = False
                 person2.accept = False
@@ -8267,7 +8271,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 await active_user.profile.refresh_from_db()
                 for cattype in cattypes:
                     if (ca := active_user.profile[f"cat_{cattype}"]) > 0:
-                        value = sum(data.type_dict.values()) / data.type_dict[cattype]
+                        value = CAT_VALUES[cattype]
                         options.append(
                             discord.SelectOption(
                                 value=cattype,
@@ -8313,7 +8317,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
 
                 modal.add_item(
                     discord.ui.Label(
-                        text="Amount", component=discord.ui.TextInput(placeholder=f"Max: {active_user.profile.scratchcards:,}", min_length=1, id=69)
+                        text="Amount (1085 value each)",
+                        component=discord.ui.TextInput(placeholder=f"Max: {active_user.profile.scratchcards:,}", min_length=1, id=69),
                     )
                 )
             elif selection == "rain":
@@ -8338,9 +8343,13 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     return
                 if len(names) <= 25:
                     options = [discord.SelectOption(label=name, emoji=get_emoji("prism")) for name in names]
-                    modal.add_item(discord.ui.Label(text="Prism Type", component=discord.ui.Select(options=options, id=67)))
+                    modal.add_item(
+                        discord.ui.Label(text=f"Prism Type ({PRISM_VALUE} value each)", component=discord.ui.Select(options=options, id=67))
+                    )
                 else:
-                    modal.add_item(discord.ui.Label(text="Prism Type", component=discord.ui.TextInput(placeholder="Alpha", id=67)))
+                    modal.add_item(
+                        discord.ui.Label(text=f"Prism Type ({PRISM_VALUE} value each)", component=discord.ui.TextInput(placeholder="Alpha", id=67))
+                    )
             assert modal is not None
             modal.on_submit = submitb
             await interaction.response.send_modal(modal)
@@ -9492,7 +9501,7 @@ async def set_mafia_offer(level: int, user: Profile) -> None:
     value = None
     for _ in range(100):
         cattype = random.choice(cattypes)
-        value = sum(data.type_dict.values()) / data.type_dict[cattype]
+        value = CAT_VALUES[cattype]
         if value <= vt:
             break
     assert value is not None
@@ -9568,7 +9577,7 @@ async def get_bounties(level: int) -> list[dict]:
                 rarity = cattypes[rarity_i]
                 eligible_types = cattypes[rarity_i:]
 
-                prob = sum(data.type_dict[t] for t in eligible_types) / sum(data.type_dict.values())
+                prob = sum(data.type_dict[t] for t in eligible_types) / TOTAL_CAT_WEIGHT
                 base_amount = max(1, round(avg_cats_needed * prob))
                 expected_total = base_amount / prob if prob > 0 else float("inf")
 
@@ -9607,7 +9616,7 @@ async def get_bounties(level: int) -> list[dict]:
             cat_type = None
             for _ in available_types:
                 cat_type = random.choices(available_types1)[0]
-                prob = data.type_dict[cat_type] / sum(data.type_dict.values())
+                prob = data.type_dict[cat_type] / TOTAL_CAT_WEIGHT
                 base_amount = avg_cats_needed * prob
                 available_types1.remove(cat_type)
                 if base_amount > 0.8:
@@ -10707,7 +10716,7 @@ async def leaderboards(
             for i in cattypes:
                 if not i:
                     continue
-                weight = sum(data.type_dict.values()) / data.type_dict[i]
+                weight = CAT_VALUES[i]
                 sums.append(f'({weight}) * "cat_{i}"')
             total_sum_expr = RawSQL("(" + " + ".join(sums) + ") AS final_value")
             result = await Profile.collect_limit(["user_id", total_sum_expr], "guild_id = $1 ORDER BY final_value DESC", message.guild.id)
