@@ -6245,7 +6245,7 @@ The displayed graph records the market price after completed trades."""
 async def rewards_help(interaction: discord.Interaction):
     text = """Rewards are random events which happen every days or two. You will know of when an award is about to be given out **24 hours** in advance to prepare and buy the stock if you want it.
 Rewards have a *random* chance to give you a *random* amount of :coin: **coins** per *stock* you own.
-For example, if the reward is "50% chance to get :coin: 10/stock" and you have 5 of that stock, then when the time comes you will either get +50 or +0 coins added to your balance.
+For example, if the reward is "50% chance to earn :coin: 10/stock" and you have 5 of that stock, then when the time comes you will either get +50 or +0 coins added to your balance.
 
 These rewards are global and equal for everyone, and whether you get the reward or not is also the same for everyone (if your chance failed, everyone else's did as well!)
 To spice it up, sometimes the chance percentage will be randomly hidden. Be more careful when trading such a stock.
@@ -6757,7 +6757,7 @@ async def stocks(message: discord.Interaction):
         reward = await Reward.get_or_create(ticker=stock["ticker"])
         reward_suffix = ""
         if reward and reward.active:
-            reward_suffix = f"\n⭐ {reward.chance if not reward.chance_hidden else '???'}% to get 🪙 {reward.amount}/stock <t:{reward.end_time}:R>"
+            reward_suffix = f"\n⭐ {reward.chance if not reward.chance_hidden else '???'}% to earn 🪙 {reward.amount}/stock <t:{reward.end_time}:R>"
 
         market = await market_snapshot(stock_ticker)
 
@@ -6826,7 +6826,7 @@ async def stocks(message: discord.Interaction):
             reward = await Reward.get_or_create(ticker=item["ticker"])
             reward_suffix = ""
             if reward and reward.active:
-                reward_suffix = f"\n⭐ {reward.chance if not reward.chance_hidden else '???'}% to get 🪙 {reward.amount}/stock <t:{reward.end_time}:R>"
+                reward_suffix = f"\n⭐ {reward.chance if not reward.chance_hidden else '???'}% to earn 🪙 {reward.amount}/stock <t:{reward.end_time}:R>"
 
             container.add_item(
                 Section(
