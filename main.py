@@ -7531,6 +7531,7 @@ async def fish(message: discord.Interaction):
             )
             if usage_suffix:
                 usage_suffix = "\n-# Used: " + usage_suffix
+            usage_suffix = f"\n-# New Balance: 🪙 {profile.fish_coins:,}" + usage_suffix
             view.add_item(TextDisplay(f"You caught a {get_emoji(fishtype.lower() + 'fish')} {fishtype} fish and got 🪙 {coins_gained:,} coins!{usage_suffix}"))
             view.add_item(ActionRow(button, main_button))
             await interaction.response.defer()
