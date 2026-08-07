@@ -12,6 +12,10 @@ DB_PASS = os.environ.get("psql_password", "")
 # all the following are optional (setting to None will disable the feature)
 #
 
+# theme for cat catching emojis, set to None for the default set
+# can be "birthday", "halloween", or "old"; see emojis.py to download a theme
+EMOJI = None
+
 # dsn of a sentry-compatible service for error logging
 SENTRY_DSN = os.environ.get("sentry_dsn")
 
