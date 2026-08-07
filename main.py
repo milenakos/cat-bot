@@ -3991,7 +3991,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
             if not catemojilist:
                 catemojilist = "*None*"
 
-            catches = await _get_pool().fetchval("SELECT sum_catches FROM profile_sums_mv;") - 123123123  # TODO
+            catches = await _get_pool().fetchval("SELECT sum_catches FROM profile_sums_mv;") - 215298618
             reward_data = data.pack_data[catches // 1_000_000]
             curr_reward = get_emoji(reward_data["name"].lower() + "pack") + " " + reward_data["name"]
             catches_remaining = 1_000_000 - catches % 1_000_000
