@@ -1289,6 +1289,10 @@ async def background_loop() -> None:
 
     assert bot.user is not None
 
+    # refresh materialized views
+    await _get_pool().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY profile_sums_mv;")
+    await _get_pool().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY user_sums_mv;")
+
     # payout stock market rewards/set up future rewards
     for stock_info in data.stock_data:
         stock = await Reward.get_or_create(ticker=stock_info["ticker"])
@@ -2598,7 +2602,7 @@ async def on_message(message: discord.Message) -> None:
                         suffix_string += "\n🚫 catnip failed! your cat was uncought. tragic."
 
                 # blessings
-                bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001 * 0.01
+                bless_chance = await _get_pool().fetchval("SELECT sum_blessing_minutes FROM user_sums_mv;") * 0.0001 * 0.01
                 if bless_chance > random.random():
                     # woo we got blessed thats pretty cool
                     if silly_amount == 0:
@@ -5529,7 +5533,7 @@ if config.DONOR_CHANNEL_ID:
                 blesser = f"{user.emoji or '💫'} {message.user.name}"
 
             user_bless_chance = user.rain_minutes_bought * 0.0001
-            global_bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001
+            global_bless_chance = await _get_pool().fetchval("SELECT sum_blessing_minutes FROM user_sums_mv;") * 0.0001
 
             view = View(timeout=VIEW_TIMEOUT)
             if not user.premium:
@@ -8634,7 +8638,7 @@ async def casino(message: discord.Interaction):
 
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     # funny global gamble counter cus funny
-    total_sum = await Profile.sum("gambles", "gambles > 0")
+    total_sum = await _get_pool().fetchval("SELECT sum_gambles FROM profile_sums_mv;")
     embed = discord.Embed(
         title="🎲 The Catsino",
         description=f"One spin costs 5 {get_emoji('finecat')} Fine cats\nSo far you gambled {profile.gambles} times.\nAll Cat Bot users gambled {total_sum:,} times.",
@@ -8741,11 +8745,8 @@ async def slots(message: discord.Interaction):
     debt_debounce = False
 
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    total_spins, total_wins, total_big_wins = (
-        await Profile.sum("slot_spins", "slot_spins > 0"),
-        await Profile.sum("slot_wins", "slot_wins > 0"),
-        await Profile.sum("slot_big_wins", "slot_big_wins > 0"),
-    )
+    totals = await _get_pool().fetchrow("SELECT sum_spins, sum_wins, sum_big_wins FROM profile_sums_mv;")
+    total_spins, total_wins, total_big_wins = totals["sum_spins"], totals["sum_wins"], totals["sum_big_wins"]
     embed = discord.Embed(
         title=":slot_machine: The Slot Machine",
         description=f"__Your stats__\n{profile.slot_spins:,} spins\n{profile.slot_wins:,} wins\n{profile.slot_big_wins:,} big wins\n\n__Global stats__\n{total_spins:,} spins\n{total_wins:,} wins\n{total_big_wins:,} big wins",
