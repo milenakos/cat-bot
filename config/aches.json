@@ -111,6 +111,7 @@
   "blackhole": {"title": "Blackhole", "description": "WHERE THE FU ARE WE", "is_hidden": true, "category": "Hidden"},
   "cat_rain": {"title": "It's Raining Cats", "description": "participate in a cat rain", "is_hidden": true, "category": "Hidden"},
   "mafia_win": {"title": "Mafia Destroyer", "description": "complete the story... more", "is_hidden": true, "category": "Hidden"},
+  "master_baiter": {"title": "Master Baiter", "description": "catfishmaxxing", "is_hidden": true, "category": "Hidden"},
 
   "thanksforplaying": {"title": "Thanks For Playing", "description": "complete the story", "is_hidden": false, "category": "Cat Hunt"}
 }
