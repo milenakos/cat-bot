@@ -2019,20 +2019,6 @@ async def belated_window_task(
         await h.delete(delay=10)
 
 
-def apply_rain_duration(user, duration_str: str, track_purchase: bool = False) -> None:
-    match duration_str:
-        case "short":
-            user.rain_minutes += 2
-        case "medium":
-            user.rain_minutes += 10
-        case "long":
-            user.rain_minutes += 20
-        case _:
-            user.rain_minutes += int(duration_str)
-            if track_purchase:
-                user.rain_minutes_bought += int(duration_str)
-
-
 # this is all the code which is ran on every message sent
 # a lot of it is for easter eggs or achievements
 async def on_message(message: discord.Message) -> None:
@@ -2086,7 +2072,8 @@ async def on_message(message: discord.Message) -> None:
         if not user.rain_minutes:
             user.rain_minutes = 0
 
-        apply_rain_duration(user, rain_duration, track_purchase=True)
+        user.rain_minutes += int(rain_duration)
+        user.rain_minutes_bought += int(rain_duration)
         user.premium = True
         await user.save()
 
@@ -3062,12 +3049,12 @@ async def on_message(message: discord.Message) -> None:
 
     # those are "owner" commands which are not really interesting
     if text.lower().startswith("cat!rain"):
-        # syntax: cat!rain 553093932012011520 short
+        # syntax: cat!rain 553093932012011520 20
         things = text.split(" ")
         user = await User.get_or_create(user_id=int(things[1]))
         if not user.rain_minutes:
             user.rain_minutes = 0
-        apply_rain_duration(user, things[2])
+        user.rain_minutes += int(things[2])
         user.premium = True
         await user.save()
     if text.lower().startswith("cat!restartall"):
@@ -6014,17 +6001,17 @@ async def packs(message: discord.Interaction):
     await message.response.send_message(embed=embed, view=view)
 
 
-def add_refresh_and_reminder_buttons(view, user, gen_main_cb, toggle_reminders_cb) -> None:
-    button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
-    button.callback = gen_main_cb
-    view.add_item(button)
+def make_refresh_and_reminder_buttons(user, gen_main_cb, toggle_reminders_cb) -> tuple[Button, Button]:
+    refresh_button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
+    refresh_button.callback = gen_main_cb
 
     if user.reminders_enabled:
-        button = Button(emoji="🔕", style=ButtonStyle.blurple)
+        reminder_button = Button(emoji="🔕", style=ButtonStyle.blurple)
     else:
-        button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
-    button.callback = toggle_reminders_cb
-    view.add_item(button)
+        reminder_button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
+    reminder_button.callback = toggle_reminders_cb
+
+    return refresh_button, reminder_button
 
 
 @bot.tree.command(description="why would anyone think a cattlepass would be a good idea (bp)")
@@ -6058,7 +6045,8 @@ async def battlepass(message: discord.Interaction):
         await user.save()
 
         view = View(timeout=VIEW_TIMEOUT)
-        add_refresh_and_reminder_buttons(view, user, gen_main, toggle_reminders)
+        for button in make_refresh_and_reminder_buttons(user, gen_main, toggle_reminders):
+            view.add_item(button)
 
         await interaction.followup.send(
             f"Reminders are now {'enabled' if user.reminders_enabled else 'disabled'}.",
@@ -6208,7 +6196,8 @@ async def battlepass(message: discord.Interaction):
             color=Colors.brown,
         ).set_footer(text=rain_shill)
         view = View(timeout=VIEW_TIMEOUT)
-        add_refresh_and_reminder_buttons(view, user, gen_main, toggle_reminders)
+        for button in make_refresh_and_reminder_buttons(user, gen_main, toggle_reminders):
+            view.add_item(button)
 
         if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
             embedVar.set_author(name="You have unread news! /news")
