@@ -3985,8 +3985,9 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
             view.add_item(back_row)
             await interaction.edit_original_response(view=view)
         elif news_id == 22:
+            profile = await Profile.get_or_create(user_id=interaction.user.id)
             catemojilist = ""
-            for cat_index in user.weekly_cattypes:
+            for cat_index in profile.weekly_cattypes:
                 catemojilist += get_emoji(cattypes[cat_index].lower() + "cat")
             if not catemojilist:
                 catemojilist = "*None*"
@@ -3999,9 +4000,9 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
                 "## 😻 250k/Cat Day Event",
                 f"-# quarter million lets go! and happy international cat day! and {get_command_mention('stocks')} are back!",
                 "A new catching event, ending <t:1786651200:R>! For every *unique cat type* you catch, you will get a pack! The pack type will be determined by *how many catches everyone globally does*. See below for current event state!",
-                f"*Your cat types:* {len(user.weekly_cattypes)} ({catemojilist})",
+                f"*Your cat types:* {len(profile.weekly_cattypes)} ({catemojilist})",
                 f"*Current pack:* {curr_reward} (next in {catches_remaining:,} catches)",
-                f"**Your reward:** {len(user.weekly_cattypes)}x {curr_reward}",
+                f"**Your reward:** {len(profile.weekly_cattypes)}x {curr_reward}",
                 "===",
                 "## 🔥 Cat Day Sale!",
                 "Also ending <t:1786651200:R>, there is a -20% sale over on [catbot.shop](https://catbot.shop)! Yippee!",
