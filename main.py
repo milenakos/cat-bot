@@ -2226,10 +2226,11 @@ async def on_message(message: discord.Message) -> None:
 
     # this is run whether someone says "cat" (very complex)
     if text.lower() == "cat":
-        user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.author.id)
-        channel = await Channel.get_or_none(channel_id=message.channel.id)
-        if not server:
-            server = await Server.get_or_create(server_id=message.guild.id)
+        user, channel, server = await asyncio.gather(
+            Profile.get_or_create(guild_id=message.guild.id, user_id=message.author.id),
+            Channel.get_or_none(channel_id=message.channel.id),
+            Server.get_or_create(server_id=message.guild.id),
+        )
         if not server.name_style_set:
             try:
                 # set the bot display name style
@@ -2315,8 +2316,10 @@ async def on_message(message: discord.Message) -> None:
                         quests.append("odd")
                     if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
                         quests.append("rare+")
-                    total_count = await Prism.count("guild_id = $1", message.guild.id)
-                    user_count = await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id)
+                    total_count, user_count = await asyncio.gather(
+                        Prism.count("guild_id = $1", message.guild.id),
+                        Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id),
+                    )
                     prism_boost = 0.06 * math.log(2 * total_count + 1) + 0.05 * math.log(2 * user_count + 1)
                     if prism_boost > random.random():
                         quests.append("prism")
@@ -2423,6 +2426,12 @@ async def on_message(message: discord.Message) -> None:
                     return
 
                 send_target = message.channel
+                precatch_reads = asyncio.gather(
+                    _get_pool().fetchval("SELECT sum_blessing_minutes FROM user_sums_mv;"),
+                    Prism.count("guild_id = $1", message.guild.id),
+                    Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id),
+                    User.get_or_create(user_id=message.author.id),
+                )
                 try:
                     # some math to make time look cool
                     then = catchtime.timestamp()
@@ -2602,8 +2611,10 @@ async def on_message(message: discord.Message) -> None:
                         silly_amount *= 0
                         suffix_string += "\n🚫 catnip failed! your cat was uncought. tragic."
 
+                blessing_minutes, total_count, user_count, vote_time_user = await precatch_reads
+
                 # blessings
-                bless_chance = await _get_pool().fetchval("SELECT sum_blessing_minutes FROM user_sums_mv;") * 0.0001 * 0.01
+                bless_chance = blessing_minutes * 0.0001 * 0.01
                 if bless_chance > random.random():
                     # woo we got blessed thats pretty cool
                     if silly_amount == 0:
@@ -2631,8 +2642,6 @@ async def on_message(message: discord.Message) -> None:
                         suffix_string += f"\n{blesser_text} blessed your catch and it got saved!"
 
                 # calculate prism boost
-                total_count = await Prism.count("guild_id = $1", message.guild.id)
-                user_count = await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id)
                 global_boost = 0.06 * math.log(2 * total_count + 1)
                 user_boost = global_boost + 0.05 * math.log(2 * user_count + 1)
                 did_boost = False
@@ -2773,7 +2782,6 @@ async def on_message(message: discord.Message) -> None:
 
                     await achemb(message, "dark_market", "followup")
 
-                vote_time_user = await User.get_or_create(user_id=message.author.id)
                 if random.randint(0, 10) == 0 and user.total_catches > 50 and not user.dark_market_active:
                     button = Button(label="You see a shadow...", style=ButtonStyle.red)
                     button.callback = dark_market_cutscene
