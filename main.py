@@ -1642,12 +1642,10 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         next_letter = letters[index + 1 if index < 25 else 0]
         random_text = random.choice(data.sentences)
         answer = random_text.lower().count(random_letter.lower())
-        modal.add_item(
-            TextDisplay(f"## Find the letter before {next_letter} alphabetically, then count the amount of it in the sentence below\n\n{random_text}")
-        )
+        modal.add_item(TextDisplay(f"## Find the letter before {next_letter} in the alphabet, then count the amount of it in this sentence\n\n{random_text}"))
         modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
     elif cattype == "Nice":
-        random_numbers = [random.randint(-100, 100) for _ in range(4)]
+        random_numbers = [random.randint(-100, 100) for _ in range(5)]
         answer = " ".join(map(str, sorted(random_numbers)))
         modal.add_item(TextDisplay(f"## Sort the numbers in ascending order\n\n{', '.join(map(str, random_numbers))}"))
         modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=100))
@@ -1660,7 +1658,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
     elif cattype == "Rare":
         base = random.randint(200, 900)
-        num_range = [base + (i * 50) for i in range(-2, 2)]
+        num_range = [base + (i * 100) for i in range(-2, 2)]
         random.shuffle(num_range)
         items = {
             num_range[0]: str(num_range[0]),
@@ -1757,11 +1755,10 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         modal.add_item(TextDisplay(f"## What's the value of this roman numeral?\n\n{to_roman_numeral(answer)}"))
         modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=3))
     elif cattype == "8bit":
-        power = random.randint(3, 6)
-        answer = 2**power
-        modal.add_item(
-            discord.ui.Label(text=f"What's 2 to the power of {power}?", component=discord.ui.TextInput(placeholder="Answer", id=67, min_length=1, max_length=3))
-        )
+        powers = {"³": 2**3, "⁴": 2**4, "⁵": 2**5, "⁶": 2**6}
+        power = random.choice(list(powers.keys()))
+        answer = powers[power]
+        modal.add_item(discord.ui.Label(text=f"What's 2{power}?", component=discord.ui.TextInput(placeholder="Answer", id=67, min_length=1, max_length=3)))
     elif cattype == "Corrupt":
         bin_string = "".join(random.choice(["0", "1"]) for _ in range(50))
         to_count = random.choice(["0", "1"])
@@ -1779,7 +1776,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         letter_mappings = dict(data.letter_mapping)
         letter_mappings.update({v: k for k, v in letter_mappings.items()})  # reverse mappings
         sentence = random.choice(data.sentences).upper()
-        answer = random.randint(5, 9)
+        answer = random.randint(2, 5)
         valid_indices = [i for i, c in enumerate(sentence) if c in letter_mappings]
         random.shuffle(valid_indices)
         swap_indices = valid_indices[:answer]
@@ -1827,7 +1824,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
                 component=discord.ui.TextInput(placeholder="meow mrrrp miau nyaa~ :3", min_length=69, max_length=2000, style=discord.TextStyle.long, id=67),
             )
         )
-    modal.add_item(TextDisplay(f"-# Times up <t:{end}:R>\nIf you don't see the question, update your Discord app."))
+    modal.add_item(TextDisplay(f"-# Times up <t:{end}:R>\n-# If you don't see the question, update your Discord app."))
 
     async def check_minigame(interaction: discord.Interaction) -> None:
         nonlocal answer
