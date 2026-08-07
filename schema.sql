@@ -599,10 +599,11 @@ FROM public.profile;
 CREATE UNIQUE INDEX profile_sums_mv_id_idx ON profile_sums_mv (id);
 
 CREATE MATERIALIZED VIEW user_sums_mv AS SELECT
+    1 as id,
     COALESCE(SUM(rain_minutes_bought) FILTER (WHERE blessings_enabled = true), 0) AS sum_blessing_minutes
 FROM public."user";
 
-CREATE UNIQUE INDEX user_sums_mv_id_idx ON user_sums_mv ((1));
+CREATE UNIQUE INDEX user_sums_mv_id_idx ON user_sums_mv (id);
 
 
 REVOKE USAGE ON SCHEMA public FROM PUBLIC;
