@@ -3985,7 +3985,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
             view.add_item(back_row)
             await interaction.edit_original_response(view=view)
         elif news_id == 22:
-            profile = await Profile.get_or_create(user_id=interaction.user.id)
+            profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild_id)
             catemojilist = ""
             for cat_index in profile.weekly_cattypes:
                 catemojilist += get_emoji(cattypes[cat_index].lower() + "cat")
