@@ -230,7 +230,7 @@ GuildMessageable = discord.TextChannel | discord.Thread | discord.VoiceChannel |
 
 
 # rain shill message for footers
-rain_shill = "☔ Get tons of cats /rain"
+rain_shill = "😻 Cat Day + 250k sale! -20% /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -1322,6 +1322,9 @@ async def background_loop() -> None:
 
     assert bot.user is not None
 
+    # refresh materialized view
+    await _get_pool().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY profile_sums_mv;")
+
     # payout stock market rewards/set up future rewards
     for stock_info in data.stock_data:
         stock = await Reward.get_or_create(ticker=stock_info["ticker"])
@@ -1677,11 +1680,11 @@ async def play_minigame(interaction: discord.Interaction) -> None:
             random_text = random.choice(data.sentences)
             answer = random_text.lower().count(random_letter.lower())
             modal.add_item(
-                TextDisplay(f"## Find the letter before {next_letter} alphabetically, then count the amount of it in the sentence below\n\n{random_text}")
+                TextDisplay(f"## Find the letter before {next_letter} in the alphabet, then count the amount of it in this sentence\n\n{random_text}")
             )
             modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
         case "Nice":
-            random_numbers = [random.randint(-100, 100) for _ in range(4)]
+            random_numbers = [random.randint(-100, 100) for _ in range(5)]
             answer = " ".join(map(str, sorted(random_numbers)))
             modal.add_item(TextDisplay(f"## Sort the numbers in ascending order\n\n{', '.join(map(str, random_numbers))}"))
             modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=100))
@@ -1694,7 +1697,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
             modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
         case "Rare":
             base = random.randint(200, 900)
-            num_range = [base + (i * 50) for i in range(-2, 2)]
+            num_range = [base + (i * 100) for i in range(-2, 2)]
             random.shuffle(num_range)
             items = {
                 num_range[0]: str(num_range[0]),
@@ -1787,11 +1790,10 @@ async def play_minigame(interaction: discord.Interaction) -> None:
             modal.add_item(TextDisplay(f"## What's the value of this roman numeral?\n\n{to_roman_numeral(answer)}"))
             modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=3))
         case "8bit":
-            power = random.randint(3, 6)
-            answer = 2**power
-            modal.add_item(
-                discord.ui.Label(text=f"What's 2 to the power of {power}?", component=discord.ui.TextInput(placeholder="Answer", id=67, min_length=1, max_length=3))
-            )
+            powers = {"³": 2**3, "⁴": 2**4, "⁵": 2**5, "⁶": 2**6}
+            power = random.choice(list(powers.keys()))
+            answer = powers[power]
+            modal.add_item(discord.ui.Label(text=f"What's 2{power}?", component=discord.ui.TextInput(placeholder="Answer", id=67, min_length=1, max_length=3)))
         case "Corrupt":
             bin_string = "".join(random.choice(["0", "1"]) for _ in range(50))
             to_count = random.choice(["0", "1"])
@@ -1809,7 +1811,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
             letter_mappings = dict(data.letter_mapping)
             letter_mappings.update({v: k for k, v in letter_mappings.items()})  # reverse mappings
             sentence = random.choice(data.sentences).upper()
-            answer = random.randint(5, 9)
+            answer = random.randint(2, 5)
             valid_indices = [i for i, c in enumerate(sentence) if c in letter_mappings]
             random.shuffle(valid_indices)
             swap_indices = valid_indices[:answer]
@@ -1857,7 +1859,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
                     component=discord.ui.TextInput(placeholder="meow mrrrp miau nyaa~ :3", min_length=69, max_length=2000, style=discord.TextStyle.long, id=67),
                 )
             )
-    modal.add_item(TextDisplay(f"-# Times up <t:{end}:R>\nIf you don't see the question, update your Discord app."))
+    modal.add_item(TextDisplay(f"-# Times up <t:{end}:R>\n-# If you don't see the question, update your Discord app."))
 
     async def check_minigame(interaction: discord.Interaction) -> None:
         nonlocal answer
@@ -2077,6 +2079,8 @@ async def on_message(message: discord.Message) -> None:
         user.premium = True
         await user.save()
 
+        await _get_pool().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY user_sums_mv;")
+
         # try to dm the user the thanks msg
         try:
             person = await fetch_dm_channel(user)
@@ -2248,10 +2252,11 @@ async def on_message(message: discord.Message) -> None:
 
     # this is run whether someone says "cat" (very complex)
     if text.lower() == "cat":
-        user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.author.id)
-        channel = await Channel.get_or_none(channel_id=message.channel.id)
-        if not server:
-            server = await Server.get_or_create(server_id=message.guild.id)
+        user, channel, server = await asyncio.gather(
+            Profile.get_or_create(guild_id=message.guild.id, user_id=message.author.id),
+            Channel.get_or_none(channel_id=message.channel.id),
+            Server.get_or_create(server_id=message.guild.id),
+        )
         if not server.name_style_set:
             try:
                 # set the bot display name style
@@ -2337,8 +2342,10 @@ async def on_message(message: discord.Message) -> None:
                         quests.append("odd")
                     if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
                         quests.append("rare+")
-                    total_count = await Prism.count("guild_id = $1", message.guild.id)
-                    user_count = await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id)
+                    total_count, user_count = await asyncio.gather(
+                        Prism.count("guild_id = $1", message.guild.id),
+                        Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id),
+                    )
                     prism_boost = 0.06 * math.log(2 * total_count + 1) + 0.05 * math.log(2 * user_count + 1)
                     if prism_boost > random.random():
                         quests.append("prism")
@@ -2445,6 +2452,12 @@ async def on_message(message: discord.Message) -> None:
                     return
 
                 send_target = message.channel
+                precatch_reads = asyncio.gather(
+                    _get_pool().fetchval("SELECT sum_blessing_minutes FROM user_sums_mv;"),
+                    Prism.count("guild_id = $1", message.guild.id),
+                    Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id),
+                    User.get_or_create(user_id=message.author.id),
+                )
                 try:
                     # some math to make time look cool
                     then = catchtime.timestamp()
@@ -2625,8 +2638,10 @@ async def on_message(message: discord.Message) -> None:
                         silly_amount *= 0
                         suffix_string += "\n🚫 catnip failed! your cat was uncought. tragic."
 
+                blessing_minutes, total_count, user_count, vote_time_user = await precatch_reads
+
                 # blessings
-                bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001 * 0.01
+                bless_chance = blessing_minutes * 0.0001 * 0.01
                 if bless_chance > random.random():
                     # woo we got blessed thats pretty cool
                     if silly_amount == 0:
@@ -2654,8 +2669,6 @@ async def on_message(message: discord.Message) -> None:
                         suffix_string += f"\n{blesser_text} blessed your catch and it got saved!"
 
                 # calculate prism boost
-                total_count = await Prism.count("guild_id = $1", message.guild.id)
-                user_count = await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id)
                 global_boost = 0.06 * math.log(2 * total_count + 1)
                 user_boost = global_boost + 0.05 * math.log(2 * user_count + 1)
                 did_boost = False
@@ -2738,7 +2751,7 @@ async def on_message(message: discord.Message) -> None:
 
                 if random.randint(0, 5) == 0:
                     # shill rains
-                    suffix_string += f"\n☔ get tons of cats and have fun: {get_command_mention('rain')}"
+                    suffix_string += f"\n😻 Cat Day + 250k sale! -20% {get_command_mention('rain')}"
                 if random.randint(1, 20) == 1:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(data.hints)
@@ -2761,6 +2774,15 @@ async def on_message(message: discord.Message) -> None:
                     suffix_string += "\n✨ This message appears on *0.01%* of catches."
                 elif randnum % 1000 == 0:
                     suffix_string += "\n⭐ This message appears on 0.1% of catches."
+
+                # event
+                idx = cattypes.index(channel.cattype)
+                if idx not in user.weekly_cattypes:
+                    current = user.weekly_cattypes.copy()
+                    current.append(idx)
+                    user.weekly_cattypes = current
+                    emoji = get_emoji(channel.cattype.lower() + "cat")
+                    suffix_string += f"\n{emoji} New type! Total: {len(user.weekly_cattypes)} packs <t:1786651200:R> {get_command_mention('news')}"
 
                 if channel.cought:
                     # custom spawn message
@@ -2796,7 +2818,6 @@ async def on_message(message: discord.Message) -> None:
 
                     await achemb(message, "dark_market", "followup")
 
-                vote_time_user = await User.get_or_create(user_id=message.author.id)
                 if random.randint(0, 10) == 0 and user.total_catches > 50 and not user.dark_market_active:
                     button = Button(label="You see a shadow...", style=ButtonStyle.red)
                     button.callback = dark_market_cutscene
@@ -3985,6 +4006,36 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
                         "-# <t:1782500400>",
                     )
                 )
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 22:
+                profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild_id)
+                catemojilist = ""
+                for cat_index in profile.weekly_cattypes:
+                    catemojilist += get_emoji(cattypes[cat_index].lower() + "cat")
+                if not catemojilist:
+                    catemojilist = "*None*"
+
+                catches = await _get_pool().fetchval("SELECT sum_catches FROM profile_sums_mv;") - 215298618
+                reward_data = data.pack_data[catches // 1_000_000 + 4]
+                curr_reward = get_emoji(reward_data["name"].lower() + "pack") + " " + reward_data["name"]
+                catches_remaining = 1_000_000 - catches % 1_000_000
+                embed = Container(
+                    "## 😻 250k/Cat Day Event",
+                    f"-# quarter million lets go! and happy international cat day! and {get_command_mention('stocks')} are back!",
+                    "A new catching event, ending <t:1786651200:R>! For every *unique cat type* you catch, you will get a pack! The pack type will be determined by *how many catches everyone globally does*. See below for current event state!",
+                    f"*Your cat types:* {len(profile.weekly_cattypes)} ({catemojilist})",
+                    f"*Current pack:* {curr_reward} (next in {catches_remaining:,} catches)",
+                    f"**Your reward:** {len(profile.weekly_cattypes)}x {curr_reward}",
+                    "===",
+                    "## 🔥 Cat Day Sale!",
+                    "Also ending <t:1786651200:R>, there is a -20% sale over on [catbot.shop](https://catbot.shop)! Yippee!",
+                    ActionRow(
+                        Button(label="Cat Bot Shop", url="https://catbot.shop"),
+                    ),
+                    "-# <t:1786132800>",
+                )
+                view.add_item(embed)
                 view.add_item(back_row)
                 await interaction.edit_original_response(view=view)
 
@@ -5404,7 +5455,7 @@ You currently have **{user.rain_minutes:,}** minutes of rains{server_rains}.""",
 
     shopbutton = Button(
         emoji="🛒",
-        label="Store",
+        label="Store (-20%!)",
         url="https://catbot.shop",
     )
 
@@ -5515,6 +5566,7 @@ if config.DONOR_CHANNEL_ID:
             user.blessings_enabled = not user.blessings_enabled
             user.username = message.user.name
             await user.save()
+            await _get_pool().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY user_sums_mv;")
             await regen(interaction)
 
         async def toggle_anon(interaction: discord.Interaction) -> None:
@@ -5536,7 +5588,7 @@ if config.DONOR_CHANNEL_ID:
                 blesser = f"{user.emoji or '💫'} {message.user.name}"
 
             user_bless_chance = user.rain_minutes_bought * 0.0001
-            global_bless_chance = await User.sum("rain_minutes_bought", "blessings_enabled = true") * 0.0001
+            global_bless_chance = await _get_pool().fetchval("SELECT sum_blessing_minutes FROM user_sums_mv;") * 0.0001
 
             view = View(timeout=VIEW_TIMEOUT)
             if not user.premium:
@@ -6468,13 +6520,13 @@ async def stocks(message: discord.Interaction):
         await profile.refresh_from_db()
         pack_name = interaction.custom_id
         assert pack_name is not None
+        if pack_name not in ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]:
+            return
         if profile[f"pack_{pack_name.lower()}"] < 1:
             await interaction.followup.send("u dont have any packs of such type", ephemeral=True)
             return
         profile[f"pack_{pack_name.lower()}"] -= 1
         og = profile.coins
-        if pack_name not in ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]:
-            return
         for pack in data.pack_data:
             if pack["name"].lower() == pack_name.lower():
                 profile.coins += pack["totalvalue"]
@@ -7533,7 +7585,12 @@ async def fish(message: discord.Interaction):
             await achemb(interaction, "fisherman", "followup")
             if cattypes.index(fishtype) >= 13:
                 await achemb(interaction, "pro_fisher", "followup")
-            if used_bait and used_rod and used_clover and all(profile[f"fish_{u}_level"] + 1 >= len(data.fishing_upgrades[u]) for u in ["rod", "bait", "clover"]):
+            if (
+                used_bait
+                and used_rod
+                and used_clover
+                and all(profile[f"fish_{u}_level"] + 1 >= len(data.fishing_upgrades[u]) for u in ["rod", "bait", "clover"])
+            ):
                 await achemb(interaction, "master_baiter", "followup")
 
             fish_lock.discard((interaction.guild.id, interaction.user.id))
@@ -8608,7 +8665,7 @@ async def casino(message: discord.Interaction):
 
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     # funny global gamble counter cus funny
-    total_sum = await Profile.sum("gambles", "gambles > 0")
+    total_sum = await _get_pool().fetchval("SELECT sum_gambles FROM profile_sums_mv;")
     embed = discord.Embed(
         title="🎲 The Catsino",
         description=f"One spin costs 5 {get_emoji('finecat')} Fine cats\nSo far you gambled {profile.gambles} times.\nAll Cat Bot users gambled {total_sum:,} times.",
@@ -8715,11 +8772,8 @@ async def slots(message: discord.Interaction):
     debt_debounce = False
 
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    total_spins, total_wins, total_big_wins = (
-        await Profile.sum("slot_spins", "slot_spins > 0"),
-        await Profile.sum("slot_wins", "slot_wins > 0"),
-        await Profile.sum("slot_big_wins", "slot_big_wins > 0"),
-    )
+    totals = await _get_pool().fetchrow("SELECT sum_spins, sum_wins, sum_big_wins FROM profile_sums_mv;")
+    total_spins, total_wins, total_big_wins = totals["sum_spins"], totals["sum_wins"], totals["sum_big_wins"]
     embed = discord.Embed(
         title=":slot_machine: The Slot Machine",
         description=f"__Your stats__\n{profile.slot_spins:,} spins\n{profile.slot_wins:,} wins\n{profile.slot_big_wins:,} big wins\n\n__Global stats__\n{total_spins:,} spins\n{total_wins:,} wins\n{total_big_wins:,} big wins",
@@ -9258,11 +9312,11 @@ async def pig(message: discord.Interaction):
     )
 
 
-@bot.tree.command(description="get a reminder in the future (+- 5 minutes)")
+@bot.tree.command(description="get a reminder in the future (+- 1 minute)")
 @discord.app_commands.describe(
     days="in how many days",
     hours="in how many hours",
-    minutes="in how many minutes (+- 5 minutes)",
+    minutes="in how many minutes (+- 1 minute)",
     text="what to remind",
 )
 async def remind(
@@ -9292,7 +9346,7 @@ async def remind(
     if goal_time < 0:
         await message.response.send_message("cat cant time travel (yet)", ephemeral=True)
         return
-    await message.response.send_message(f"🔔 ok, <t:{goal_time}:R> (+- 5 min) ill remind you of:\n{text}")
+    await message.response.send_message(f"🔔 ok, <t:{goal_time}:R> (+- 1 min) ill remind you of:\n{text}")
     msg = await message.original_response()
     message_link = msg.jump_url
     text += f"\n\n*This is a [reminder](<{message_link}>) you set.*"
