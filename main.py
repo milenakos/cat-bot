@@ -7650,7 +7650,8 @@ async def fish(message: discord.Interaction):
             button.callback = go_fishing
             main_button = Button(emoji="⬅️", label="Main")
             main_button.callback = show_main
-            view.add_item(TextDisplay("You weren't fast enough..." + usage_suffix))
+            view.add_item(TextDisplay(
+                f"Your {get_emoji(fishtype.lower() + 'fish')} {fishtype} was eaten..." + usage_suffix))
             view.add_item(ActionRow(button, main_button))
             await interaction.edit_original_response(view=view)
             fish_lock.discard((interaction.guild.id, interaction.user.id))
