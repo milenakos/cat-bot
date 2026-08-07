@@ -7545,7 +7545,12 @@ async def fish(message: discord.Interaction):
             await achemb(interaction, "fisherman", "followup")
             if cattypes.index(fishtype) >= 13:
                 await achemb(interaction, "pro_fisher", "followup")
-            if used_bait and used_rod and used_clover and all(profile[f"fish_{u}_level"] + 1 >= len(data.fishing_upgrades[u]) for u in ["rod", "bait", "clover"]):
+            if (
+                used_bait
+                and used_rod
+                and used_clover
+                and all(profile[f"fish_{u}_level"] + 1 >= len(data.fishing_upgrades[u]) for u in ["rod", "bait", "clover"])
+            ):
                 await achemb(interaction, "master_baiter", "followup")
 
             fish_lock.discard((interaction.guild.id, interaction.user.id))
@@ -8342,13 +8347,9 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     return
                 if len(names) <= 25:
                     options = [discord.SelectOption(label=name, emoji=get_emoji("prism")) for name in names]
-                    modal.add_item(
-                        discord.ui.Label(text=f"Prism Type ({PRISM_VALUE} value each)", component=discord.ui.Select(options=options, id=67))
-                    )
+                    modal.add_item(discord.ui.Label(text=f"Prism Type ({PRISM_VALUE} value each)", component=discord.ui.Select(options=options, id=67)))
                 else:
-                    modal.add_item(
-                        discord.ui.Label(text=f"Prism Type ({PRISM_VALUE} value each)", component=discord.ui.TextInput(placeholder="Alpha", id=67))
-                    )
+                    modal.add_item(discord.ui.Label(text=f"Prism Type ({PRISM_VALUE} value each)", component=discord.ui.TextInput(placeholder="Alpha", id=67)))
             assert modal is not None
             modal.on_submit = submitb
             await interaction.response.send_modal(modal)
