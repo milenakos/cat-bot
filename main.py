@@ -1289,9 +1289,8 @@ async def background_loop() -> None:
 
     assert bot.user is not None
 
-    # refresh materialized views
+    # refresh materialized view
     await _get_pool().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY profile_sums_mv;")
-    await _get_pool().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY user_sums_mv;")
 
     # payout stock market rewards/set up future rewards
     for stock_info in data.stock_data:
@@ -2053,6 +2052,8 @@ async def on_message(message: discord.Message) -> None:
             user.rain_minutes_bought += int(rain_duration)
         user.premium = True
         await user.save()
+
+        await _get_pool().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY user_sums_mv;")
 
         # try to dm the user the thanks msg
         try:
@@ -5512,6 +5513,7 @@ if config.DONOR_CHANNEL_ID:
             user.blessings_enabled = not user.blessings_enabled
             user.username = message.user.name
             await user.save()
+            await _get_pool().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY user_sums_mv;")
             await regen(interaction)
 
         async def toggle_anon(interaction: discord.Interaction) -> None:

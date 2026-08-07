@@ -54,7 +54,8 @@
     "Unclosed connection",
     "unable to perform operation on",
     "Event loop is closed",
-    "503 Service Unavailable"
+    "503 Service Unavailable",
+    "Not enough data to satisfy"
   ],
   "pack_data": [
     {
