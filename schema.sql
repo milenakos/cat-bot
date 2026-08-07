@@ -330,7 +330,8 @@ CREATE TABLE public.profile (
     fish_bait_durability integer DEFAULT 0,
     fish_clover_level smallint DEFAULT 0,
     fish_clover_durability integer DEFAULT 0,
-    compact_inventory boolean DEFAULT true
+    compact_inventory boolean DEFAULT true,
+    master_baiter boolean DEFAULT false
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;
