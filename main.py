@@ -6472,13 +6472,13 @@ async def stocks(message: discord.Interaction):
         await profile.refresh_from_db()
         pack_name = interaction.custom_id
         assert pack_name is not None
+        if pack_name not in ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]:
+            return
         if profile[f"pack_{pack_name.lower()}"] < 1:
             await interaction.followup.send("u dont have any packs of such type", ephemeral=True)
             return
         profile[f"pack_{pack_name.lower()}"] -= 1
         og = profile.coins
-        if pack_name not in ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]:
-            return
         for pack in data.pack_data:
             if pack["name"].lower() == pack_name.lower():
                 profile.coins += pack["totalvalue"]
