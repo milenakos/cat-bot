@@ -9295,11 +9295,11 @@ async def pig(message: discord.Interaction):
     )
 
 
-@bot.tree.command(description="get a reminder in the future (+- 5 minutes)")
+@bot.tree.command(description="get a reminder in the future (+- 1 minute)")
 @discord.app_commands.describe(
     days="in how many days",
     hours="in how many hours",
-    minutes="in how many minutes (+- 5 minutes)",
+    minutes="in how many minutes (+- 1 minute)",
     text="what to remind",
 )
 async def remind(
@@ -9329,7 +9329,7 @@ async def remind(
     if goal_time < 0:
         await message.response.send_message("cat cant time travel (yet)", ephemeral=True)
         return
-    await message.response.send_message(f"🔔 ok, <t:{goal_time}:R> (+- 5 min) ill remind you of:\n{text}")
+    await message.response.send_message(f"🔔 ok, <t:{goal_time}:R> (+- 1 min) ill remind you of:\n{text}")
     msg = await message.original_response()
     message_link = msg.jump_url
     text += f"\n\n*This is a [reminder](<{message_link}>) you set.*"
