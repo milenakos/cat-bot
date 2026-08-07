@@ -2751,7 +2751,9 @@ async def on_message(message: discord.Message) -> None:
                 # event
                 idx = cattypes.index(channel.cattype)
                 if idx not in user.weekly_cattypes:
-                    user.weekly_cattypes.append(idx)
+                    current = user.weekly_cattypes.copy()
+                    current.append(idx)
+                    user.weekly_cattypes = current
                     emoji = get_emoji(channel.cattype.lower() + "cat")
                     suffix_string += f"\n{emoji} New type! Total: {len(user.weekly_cattypes)} packs <t:1786651200:R> {get_command_mention('news')}"
 
@@ -3993,7 +3995,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
                 catemojilist = "*None*"
 
             catches = await _get_pool().fetchval("SELECT sum_catches FROM profile_sums_mv;") - 215298618
-            reward_data = data.pack_data[catches // 1_000_000]
+            reward_data = data.pack_data[catches // 1_000_000 + 4]
             curr_reward = get_emoji(reward_data["name"].lower() + "pack") + " " + reward_data["name"]
             catches_remaining = 1_000_000 - catches % 1_000_000
             embed = Container(
