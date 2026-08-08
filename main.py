@@ -962,7 +962,7 @@ async def do_funny(message: discord.Interaction) -> None:
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     user.funny += 1
     await user.save()
-    await achemb(message, "curious", "reply")
+    await achemb(message, "curious", "ephemeral")
     if user.funny >= 50:
         await achemb(message, "its_not_working", "followup")
 
