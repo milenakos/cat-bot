@@ -4662,7 +4662,7 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
     stats.append(["casino_spins", "🎰", f"Casino spins: {profile.gambles:,}"])
     stats.append(["slot_spins", "🎰", f"Slot spins: {profile.slot_spins:,}, wins: {profile.slot_wins:,}, big wins: {profile.slot_big_wins:,}"])
     stats.append(["roulette_spins", "💰", f"Roulette spins: {profile.roulette_spins:,}, wins: {profile.roulette_wins:,}"])
-    stats.append(["portfolio_value", "🪙", f"Portfolio value: {portfolio_value:,}"])
+    stats.append(["portfolio_value", "🪙", f"Portfolio value: {int(portfolio_value):,}"])
     stats.append(["cookies", "🍪", f"Cookies clicked: {profile.cookies:,}"])
     stats.append(["catfishing", "🎣", f"Fish caught: {profile.fish_caught:,}, rarest: {rarest_fish}"])
     stats.append(["pig_high_score", "🎲", f"Pig high score: {profile.best_pig_score:,}"])
@@ -6377,7 +6377,7 @@ async def view_portfolio(interaction: discord.Interaction, person: discord.Membe
     growth_emoji = "📈" if value_diff >= 0 else "📉"
     emoji_prefix = (user.emoji + " ") if user.emoji else ""
 
-    first_lines = (f"## {emoji_prefix}{person}", f"### 🪙 {portfolio_value:,}", f"{growth_emoji} {value_diff:+.2f}% *(Lifetime)*")
+    first_lines = (f"## {emoji_prefix}{person}", f"### 🪙 {int(portfolio_value):,}", f"{growth_emoji} {value_diff:+.2f}% *(Lifetime)*")
 
     async def refresh_portfolio(interaction):
         await view_portfolio(interaction, person, refresh=True, hidden=False)
