@@ -626,7 +626,7 @@ async def achemb(
             await message.response.send_message(embed=embed, ephemeral=not do)
         await progress(message, profile, "achievement")
         await finale(message, profile)
-    except Exception:
+    except (discord.NotFound, discord.Forbidden):
         pass
 
     if result:
