@@ -420,6 +420,19 @@ async def get_stock_price(ticker: str) -> int:
         return stock_info(ticker)["init_price"]
 
 
+async def compute_portfolio(profile) -> tuple[float, list[str]]:
+    portfolio_value = 0.0
+    share_strs = []
+    for stock in data.stock_data:
+        stock_price = await get_stock_price(stock["ticker"])
+        amount_owned = profile[f"stock_{stock['ticker'].lower()}"]
+        item_value = stock_price * amount_owned
+        portfolio_value += item_value
+        if amount_owned > 0:
+            share_strs.append(f"{get_emoji(stock['emoji'])} {amount_owned:,}x (🪙 *{item_value:,}*)")
+    return portfolio_value, share_strs
+
+
 async def inject_market_liquidity(ticker: str, shares: int, target_price: int) -> None:
     if shares <= 0:
         return
@@ -500,6 +513,23 @@ async def check_channel_setupped(guild: Server, channel: GuildMessageable) -> bo
         return True
     db_channel = await Channel.get_or_none(channel_id=channel.id)
     return db_channel is not None
+
+
+def count_achievements(profile) -> tuple[int, int, int]:
+    """Returns (unlocked non-hidden count, unlocked hidden count, total hidden count)."""
+    unlocked = 0
+    minus_achs = 0
+    minus_achs_count = 0
+    for k in ach_names:
+        is_ach_hidden = ach_list[k]["category"] == "Hidden"
+        if is_ach_hidden:
+            minus_achs_count += 1
+        if profile[k]:
+            if is_ach_hidden:
+                minus_achs += 1
+            else:
+                unlocked += 1
+    return unlocked, minus_achs, minus_achs_count
 
 
 # this is some common code which is run whether someone gets an achievement
@@ -619,37 +649,39 @@ async def achemb(
 async def generate_quest(user: Profile, quest_type: str) -> None:
     while True:
         quest = random.choice(list(config.battle["quests"][quest_type].keys()))
-        if quest in ["plush"]:
-            # removed quests
-            continue
-        elif quest == "prism":
-            total_count = await Prism.count("guild_id = $1", user.guild_id)
-            user_count = await Prism.count("guild_id = $1 AND user_id = $2", user.guild_id, user.user_id)
-            global_boost = 0.06 * math.log(2 * total_count + 1)
-            prism_boost = global_boost + 0.05 * math.log(2 * user_count + 1)
-            if prism_boost < 0.15:
+        match quest:
+            case "plush":
+                # removed quests
                 continue
-        elif quest == "achievement":
-            unlocked = 0
-            for k in ach_names:
-                if user[k] and ach_list[k]["category"] != "Hidden":
-                    unlocked += 1
-            if unlocked > 30:
-                continue
+            case "prism":
+                total_count = await Prism.count("guild_id = $1", user.guild_id)
+                user_count = await Prism.count("guild_id = $1 AND user_id = $2", user.guild_id, user.user_id)
+                global_boost = 0.06 * math.log(2 * total_count + 1)
+                prism_boost = global_boost + 0.05 * math.log(2 * user_count + 1)
+                if prism_boost < 0.15:
+                    continue
+            case "achievement":
+                unlocked = 0
+                for k in ach_names:
+                    if user[k] and ach_list[k]["category"] != "Hidden":
+                        unlocked += 1
+                if unlocked > 30:
+                    continue
         break
 
     quest_data = config.battle["quests"][quest_type][quest]
-    if quest_type == "vote":
-        user.vote_reward = random.randint(quest_data["xp_min"] // 10, quest_data["xp_max"] // 10) * 10
-        user.vote_cooldown = 0
-    elif quest_type == "catch":
-        user.catch_reward = random.randint(quest_data["xp_min"] // 10, quest_data["xp_max"] // 10) * 10
-        user.catch_quest = quest
-        user.catch_cooldown = 0
-    elif quest_type == "misc":
-        user.misc_reward = random.randint(quest_data["xp_min"] // 10, quest_data["xp_max"] // 10) * 10
-        user.misc_quest = quest
-        user.misc_cooldown = 0
+    match quest_type:
+        case "vote":
+            user.vote_reward = random.randint(quest_data["xp_min"] // 10, quest_data["xp_max"] // 10) * 10
+            user.vote_cooldown = 0
+        case "catch":
+            user.catch_reward = random.randint(quest_data["xp_min"] // 10, quest_data["xp_max"] // 10) * 10
+            user.catch_quest = quest
+            user.catch_cooldown = 0
+        case "misc":
+            user.misc_reward = random.randint(quest_data["xp_min"] // 10, quest_data["xp_max"] // 10) * 10
+            user.misc_quest = quest
+            user.misc_cooldown = 0
     await user.save()
 
 
@@ -884,16 +916,17 @@ async def progress_embed(user: Profile, level_data: dict, current_xp: int, old_x
 
     title = quest_data["title"] if "top.gg" not in quest_data["title"] else "Vote on Top.gg"
 
-    if level_data["reward"] == "Rain":
-        reward_text = get_emoji(str(level_data["amount"]) + "rain")
-    elif level_data["reward"] == "Mystery":
-        reward_text = get_emoji("mysterypack")
-    elif level_data["reward"] == "random cats":
-        reward_text = f"{level_data['amount']}x ❓"
-    elif level_data["reward"] in cattypes:
-        reward_text = f"{level_data['amount']}x {get_emoji(level_data['reward'].lower() + 'cat')}"
-    else:
-        reward_text = get_emoji(level_data["reward"].lower() + "pack")
+    match level_data["reward"]:
+        case "Rain":
+            reward_text = get_emoji(str(level_data["amount"]) + "rain")
+        case "Mystery":
+            reward_text = get_emoji("mysterypack")
+        case "random cats":
+            reward_text = f"{level_data['amount']}x ❓"
+        case _ if level_data["reward"] in cattypes:
+            reward_text = f"{level_data['amount']}x {get_emoji(level_data['reward'].lower() + 'cat')}"
+        case _:
+            reward_text = get_emoji(level_data["reward"].lower() + "pack")
 
     global_user = await User.get_or_create(user_id=user.user_id)
     streak_data = get_streak_reward(global_user.vote_streak)
@@ -1638,195 +1671,194 @@ async def play_minigame(interaction: discord.Interaction) -> None:
     log_stats("minigame_start", {"cattype": cattype})
 
     modal = Modal(title="Bonus Cat Minigame")
-    if cattype == "Fine":
-        letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-        index = random.randint(0, 25)
-        random_letter = letters[index]
-        next_letter = letters[index + 1 if index < 25 else 0]
-        random_text = random.choice(data.sentences)
-        answer = random_text.lower().count(random_letter.lower())
-        modal.add_item(TextDisplay(f"## Find the letter before {next_letter} in the alphabet, then count the amount of it in this sentence\n\n{random_text}"))
-        modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
-    elif cattype == "Nice":
-        random_numbers = [random.randint(-100, 100) for _ in range(5)]
-        answer = " ".join(map(str, sorted(random_numbers)))
-        modal.add_item(TextDisplay(f"## Sort the numbers in ascending order\n\n{', '.join(map(str, random_numbers))}"))
-        modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=100))
-    elif cattype == "Good":
-        random_text = random.choice(data.sentences)
-        answer = 0
-        for vowel in "AEIOU":
-            answer += random_text.lower().count(vowel.lower())
-        modal.add_item(TextDisplay(f"## Count the amount of vowels (AEIOU, no Y) in the sentence below\n\n{random_text}"))
-        modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
-    elif cattype == "Rare":
-        base = random.randint(200, 900)
-        num_range = [base + (i * 100) for i in range(-2, 2)]
-        random.shuffle(num_range)
-        items = {
-            num_range[0]: str(num_range[0]),
-            num_range[1]: str(num_range[1] // 2) + " * 2",
-            num_range[2]: str(num_range[2] * 3) + "/3",
-            num_range[3]: str(num_range[3] - 111) + " + 111",
-        }
-        items = dict(random.sample(list(items.items()), len(items)))
-        options = [discord.RadioGroupOption(label=value, value=str(key)) for key, value in items.items()]
-        modal.add_item(discord.ui.Label(text="Choose the biggest number", component=discord.ui.RadioGroup(options=options, id=67)))
-        answer = max(items.keys())
-    elif cattype == "Wild":
-        options = [
-            discord.RadioGroupOption(label="red"),
-            discord.RadioGroupOption(label="yellow"),
-            discord.RadioGroupOption(label="blue"),
-            discord.RadioGroupOption(label="green"),
-        ]
-        modal.add_item(discord.ui.Label(text="Three options are safe, and one is a fail", component=discord.ui.RadioGroup(options=options, id=67)))
-        answer = random.choice(["red", "yellow", "blue", "green"])
-    elif cattype == "Gremlin":
-        expr = str(random.randint(1, 15)) + " + " + str(random.randint(1, 15)) + " * " + str(random.randint(2, 10))
-        modal.add_item(
-            discord.ui.Label(text=f"What's the result of {expr}?", component=discord.ui.TextInput(placeholder="Answer", id=67, min_length=1, max_length=3))
-        )
-        answer = eval(expr)
-    elif cattype == "Epic":
-        random_text = random.choice(data.sentences)
-        answer = random_text.upper()
-        modal.add_item(TextDisplay(f"## Retype this text in UPPERCASE\n\n{random_text}"))
-        modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=100))
-    elif cattype == "Sus":
-        random_text = random.choice(data.sentences)
-        random_letter = ""
-        while not random_letter.isalpha():
-            random_letter = random.choice(random_text).upper()
-        answer = random_text.replace(random_letter, "").replace(random_letter.lower(), "")
-        modal.add_item(
-            TextDisplay(
-                f"## Retype this text without the letter '{random_letter}/{random_letter.lower()}'\n\n{random_text}",
+    match cattype:
+        case "Fine":
+            letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+            index = random.randint(0, 25)
+            random_letter = letters[index]
+            next_letter = letters[index + 1 if index < 25 else 0]
+            random_text = random.choice(data.sentences)
+            answer = random_text.lower().count(random_letter.lower())
+            modal.add_item(
+                TextDisplay(f"## Find the letter before {next_letter} in the alphabet, then count the amount of it in this sentence\n\n{random_text}")
             )
-        )
-        modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=100))
-    elif cattype == "Brave":
-        asc_digits = sorted(random.sample(range(1, 10), 6))
-        answer = "".join(map(str, asc_digits))
-        option_texts = [answer]
-        while len(option_texts) < 25:
-            candidate_digits = [random.randint(1, 9) for _ in range(6)]
-            candidate = "".join(map(str, candidate_digits))
-            if candidate in option_texts:
-                continue
-            if all(candidate_digits[i] < candidate_digits[i + 1] for i in range(5)):
-                continue
-            option_texts.append(candidate)
-        random.shuffle(option_texts)
-        options = [discord.SelectOption(label=text, value=text) for text in option_texts]
-        modal.add_item(discord.ui.Label(text="Find the number whose digits only ascend", component=discord.ui.Select(options=options, id=67)))
-    elif cattype == "Rickroll":
-        answer = random.choice(rickroll_list) + ". " + random.choice(rickroll_list)
-        modal.add_item(TextDisplay(f"## Retype this text\n\n{answer}"))
-        modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=200))
-    elif cattype == "Reverse":
-        line = random.choice(data.sentences)
-        split_line = line.split()
-        split_line.reverse()
-        answer = " ".join(split_line)
-        modal.add_item(TextDisplay(f"## Reverse the word order of this text\n\n{line}"))
-        modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=100))
-    elif cattype == "Superior":
-        number = random.randint(10_000, 99_999)
-        answer = sum(int(i) for i in str(number))
-        modal.add_item(TextDisplay(f"## What is the sum of the digits of this number\n\n{number}"))
-        modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
-    elif cattype == "Trash":
-        inputs = ['TRO', 'JET', 'STR', 'ADJ', 'CRA', 'ISE', 'TIC', 'INT', 'MIN', 'SCA', 'INC', 'VER', 'RED', 'TRA', 'MEN', 'KIL', 'ZAP', 'LUB', 'STA', 'REF', 'LIT', 'IST', 'MIS', 'ANG', 'REV', 'LAT', 'DIS', 'BLA', 'SYR', 'DIG', 'CAT', 'INE', 'LIN', 'RAF', 'PER', 'SAV', 'ROA', 'SCH', 'LOV', 'SOF', 'CON', 'HUN', 'LAG', 'COM', 'ICA', 'INS', 'RIS', 'GAG', 'INO', 'LOW', 'RAT', 'WOR', 'BRE', 'LOG', 'ORI', 'HAN', 'ATT', 'TIN', 'DRA', 'UNP', 'PUR', 'PAL', 'MIL', 'FOR', 'GRA', 'ATE', 'PAT', 'BER', 'BET', 'WEA', 'IOD', 'RES', 'TRI', 'BRO', 'RAN', 'PRO', 'WHI', 'FLA', 'ELL', 'ENT', 'INK', 'ABS', 'CLA', 'CAL', 'OVE', 'IMI', 'ILL', 'COK', 'SHI', 'SAT', 'CRO', 'DEP', 'STI', 'MAT', 'SIN', 'IDE', 'SPL']  # fmt: skip
-        answer = random.choice(inputs)
-        modal.add_item(
-            discord.ui.Label(
-                text=f"Type a 6+ letter word containing {answer}", component=discord.ui.TextInput(placeholder="Answer", id=67, min_length=6, max_length=50)
+            modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
+        case "Nice":
+            random_numbers = [random.randint(-100, 100) for _ in range(5)]
+            answer = " ".join(map(str, sorted(random_numbers)))
+            modal.add_item(TextDisplay(f"## Sort the numbers in ascending order\n\n{', '.join(map(str, random_numbers))}"))
+            modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=100))
+        case "Good":
+            random_text = random.choice(data.sentences)
+            answer = 0
+            for vowel in "AEIOU":
+                answer += random_text.lower().count(vowel.lower())
+            modal.add_item(TextDisplay(f"## Count the amount of vowels (AEIOU, no Y) in the sentence below\n\n{random_text}"))
+            modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
+        case "Rare":
+            base = random.randint(200, 900)
+            num_range = [base + (i * 100) for i in range(-2, 2)]
+            random.shuffle(num_range)
+            items = {
+                num_range[0]: str(num_range[0]),
+                num_range[1]: str(num_range[1] // 2) + " * 2",
+                num_range[2]: str(num_range[2] * 3) + "/3",
+                num_range[3]: str(num_range[3] - 111) + " + 111",
+            }
+            items = dict(random.sample(list(items.items()), len(items)))
+            options = [discord.RadioGroupOption(label=value, value=str(key)) for key, value in items.items()]
+            modal.add_item(discord.ui.Label(text="Choose the biggest number", component=discord.ui.RadioGroup(options=options, id=67)))
+            answer = max(items.keys())
+        case "Wild":
+            colors = ["red", "yellow", "blue", "green"]
+            options = [discord.RadioGroupOption(label=color) for color in colors]
+            modal.add_item(discord.ui.Label(text="Three options are safe, and one is a fail", component=discord.ui.RadioGroup(options=options, id=67)))
+            answer = random.choice(colors)
+        case "Gremlin":
+            expr = str(random.randint(1, 15)) + " + " + str(random.randint(1, 15)) + " * " + str(random.randint(2, 10))
+            modal.add_item(
+                discord.ui.Label(text=f"What's the result of {expr}?", component=discord.ui.TextInput(placeholder="Answer", id=67, min_length=1, max_length=3))
             )
-        )
-    elif cattype == "Legendary":
-        raw_words = random.choice(data.sentences).split()
-        words = [re.sub(r"[^a-zA-Z]", "", w) for w in raw_words]
-        words = [w for w in words if w][:4]
-        shuffled = words.copy()
-        random.shuffle(shuffled)
-        answer = " ".join(sorted(words, key=str.lower))
-        modal.add_item(TextDisplay(f"## Put these words in alphabetical order\n\n{' '.join(shuffled)}"))
-        modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=100))
-    elif cattype == "Mythic":
-        answer = random.randint(15, 89)
-        modal.add_item(TextDisplay(f"## What's the value of this roman numeral?\n\n{to_roman_numeral(answer)}"))
-        modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=3))
-    elif cattype == "8bit":
-        powers = {"³": 2**3, "⁴": 2**4, "⁵": 2**5, "⁶": 2**6}
-        power = random.choice(list(powers.keys()))
-        answer = powers[power]
-        modal.add_item(discord.ui.Label(text=f"What's 2{power}?", component=discord.ui.TextInput(placeholder="Answer", id=67, min_length=1, max_length=3)))
-    elif cattype == "Corrupt":
-        bin_string = "".join(random.choice(["0", "1"]) for _ in range(50))
-        to_count = random.choice(["0", "1"])
-        answer = bin_string.count(to_count)
-        modal.add_item(TextDisplay(f"## How many {to_count}s are in this binary number?\n\n{bin_string}"))
-        modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
-    elif cattype == "Professor":
-        answer = random.choice(cattypes)
-        show = list(answer)
-        random.shuffle(show)
-        show = "".join(show).upper()
-        modal.add_item(TextDisplay(f"## Decode this cat type\n\n{show}"))
-        modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=20))
-    elif cattype == "Divine":
-        letter_mappings = dict(data.letter_mapping)
-        letter_mappings.update({v: k for k, v in letter_mappings.items()})  # reverse mappings
-        sentence = random.choice(data.sentences).upper()
-        answer = random.randint(2, 5)
-        valid_indices = [i for i, c in enumerate(sentence) if c in letter_mappings]
-        random.shuffle(valid_indices)
-        swap_indices = valid_indices[:answer]
-        changed = list(sentence)
-        for idx in swap_indices:
-            changed[idx] = letter_mappings[sentence[idx]]
-        changed = "".join(changed)
-        modal.add_item(TextDisplay(f"## How many letters are different between the sentences?\n\n{sentence}\n\n{changed}"))
-        modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
-    elif cattype == "Real":
-        try:
-            async with (
-                aiohttp.ClientSession() as session,
-                session.get(
-                    "https://the-trivia-api.com/v2/questions?limit=1&difficulties=easy",
-                    headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
-                ) as response,
-            ):
-                stuff = await response.json()
-                question = stuff[0]
-                question_text = question["question"]["text"]
-                correct_answer = question["correctAnswer"]
-                answers = question["incorrectAnswers"] + [correct_answer]
-        except Exception:
-            question_text = "Are cats awesome?"
-            answers = ["Yes", "No", "Meh", "IDK"]
-            correct_answer = "Yes"
-        random.shuffle(answers)
-        options = []
-        answer = correct_answer
-        for answer_value in answers:
-            options.append(discord.RadioGroupOption(label=answer_value[:100], value=answer_value[:100]))
-        modal.add_item(TextDisplay(f"## {question_text}"))
-        modal.add_item(discord.ui.Label(text="Answer", component=discord.ui.RadioGroup(options=options, id=67)))
-    elif cattype == "Ultimate":
-        number = random.randint(10, 150)
-        answer = "Yes" if is_prime(number) else "No"
-        options = [discord.RadioGroupOption(label="Yes", value="Yes"), discord.RadioGroupOption(label="No", value="No")]
-        modal.add_item(discord.ui.Label(text=f"Is {number} a prime number?", component=discord.ui.RadioGroup(options=options, id=67)))
-    elif cattype == "eGirl":
-        answer = "meow"
-        modal.add_item(
-            discord.ui.Label(
-                text="Meow agressively.",
-                component=discord.ui.TextInput(placeholder="meow mrrrp miau nyaa~ :3", min_length=69, max_length=2000, style=discord.TextStyle.long, id=67),
+            answer = eval(expr)
+        case "Epic":
+            random_text = random.choice(data.sentences)
+            answer = random_text.upper()
+            modal.add_item(TextDisplay(f"## Retype this text in UPPERCASE\n\n{random_text}"))
+            modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=100))
+        case "Sus":
+            random_text = random.choice(data.sentences)
+            random_letter = ""
+            while not random_letter.isalpha():
+                random_letter = random.choice(random_text).upper()
+            answer = random_text.replace(random_letter, "").replace(random_letter.lower(), "")
+            modal.add_item(
+                TextDisplay(
+                    f"## Retype this text without the letter '{random_letter}/{random_letter.lower()}'\n\n{random_text}",
+                )
             )
-        )
+            modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=100))
+        case "Brave":
+            asc_digits = sorted(random.sample(range(1, 10), 6))
+            answer = "".join(map(str, asc_digits))
+            option_texts = [answer]
+            while len(option_texts) < 25:
+                candidate_digits = [random.randint(1, 9) for _ in range(6)]
+                candidate = "".join(map(str, candidate_digits))
+                if candidate in option_texts:
+                    continue
+                if all(candidate_digits[i] < candidate_digits[i + 1] for i in range(5)):
+                    continue
+                option_texts.append(candidate)
+            random.shuffle(option_texts)
+            options = [discord.SelectOption(label=text, value=text) for text in option_texts]
+            modal.add_item(discord.ui.Label(text="Find the number whose digits only ascend", component=discord.ui.Select(options=options, id=67)))
+        case "Rickroll":
+            answer = random.choice(rickroll_list) + ". " + random.choice(rickroll_list)
+            modal.add_item(TextDisplay(f"## Retype this text\n\n{answer}"))
+            modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=200))
+        case "Reverse":
+            line = random.choice(data.sentences)
+            split_line = line.split()
+            split_line.reverse()
+            answer = " ".join(split_line)
+            modal.add_item(TextDisplay(f"## Reverse the word order of this text\n\n{line}"))
+            modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=100))
+        case "Superior":
+            number = random.randint(10_000, 99_999)
+            answer = sum(int(i) for i in str(number))
+            modal.add_item(TextDisplay(f"## What is the sum of the digits of this number\n\n{number}"))
+            modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
+        case "Trash":
+            inputs = ['TRO', 'JET', 'STR', 'ADJ', 'CRA', 'ISE', 'TIC', 'INT', 'MIN', 'SCA', 'INC', 'VER', 'RED', 'TRA', 'MEN', 'KIL', 'ZAP', 'LUB', 'STA', 'REF', 'LIT', 'IST', 'MIS', 'ANG', 'REV', 'LAT', 'DIS', 'BLA', 'SYR', 'DIG', 'CAT', 'INE', 'LIN', 'RAF', 'PER', 'SAV', 'ROA', 'SCH', 'LOV', 'SOF', 'CON', 'HUN', 'LAG', 'COM', 'ICA', 'INS', 'RIS', 'GAG', 'INO', 'LOW', 'RAT', 'WOR', 'BRE', 'LOG', 'ORI', 'HAN', 'ATT', 'TIN', 'DRA', 'UNP', 'PUR', 'PAL', 'MIL', 'FOR', 'GRA', 'ATE', 'PAT', 'BER', 'BET', 'WEA', 'IOD', 'RES', 'TRI', 'BRO', 'RAN', 'PRO', 'WHI', 'FLA', 'ELL', 'ENT', 'INK', 'ABS', 'CLA', 'CAL', 'OVE', 'IMI', 'ILL', 'COK', 'SHI', 'SAT', 'CRO', 'DEP', 'STI', 'MAT', 'SIN', 'IDE', 'SPL']  # fmt: skip
+            answer = random.choice(inputs)
+            modal.add_item(
+                discord.ui.Label(
+                    text=f"Type a 6+ letter word containing {answer}", component=discord.ui.TextInput(placeholder="Answer", id=67, min_length=6, max_length=50)
+                )
+            )
+        case "Legendary":
+            raw_words = random.choice(data.sentences).split()
+            words = [re.sub(r"[^a-zA-Z]", "", w) for w in raw_words]
+            words = [w for w in words if w][:4]
+            shuffled = words.copy()
+            random.shuffle(shuffled)
+            answer = " ".join(sorted(words, key=str.lower))
+            modal.add_item(TextDisplay(f"## Put these words in alphabetical order\n\n{' '.join(shuffled)}"))
+            modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=100))
+        case "Mythic":
+            answer = random.randint(15, 89)
+            modal.add_item(TextDisplay(f"## What's the value of this roman numeral?\n\n{to_roman_numeral(answer)}"))
+            modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=3))
+        case "8bit":
+            powers = {"³": 2**3, "⁴": 2**4, "⁵": 2**5, "⁶": 2**6}
+            power = random.choice(list(powers.keys()))
+            answer = powers[power]
+            modal.add_item(discord.ui.Label(text=f"What's 2{power}?", component=discord.ui.TextInput(placeholder="Answer", id=67, min_length=1, max_length=3)))
+        case "Corrupt":
+            bin_string = "".join(random.choice(["0", "1"]) for _ in range(50))
+            to_count = random.choice(["0", "1"])
+            answer = bin_string.count(to_count)
+            modal.add_item(TextDisplay(f"## How many {to_count}s are in this binary number?\n\n{bin_string}"))
+            modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
+        case "Professor":
+            answer = random.choice(cattypes)
+            show = list(answer)
+            random.shuffle(show)
+            show = "".join(show).upper()
+            modal.add_item(TextDisplay(f"## Decode this cat type\n\n{show}"))
+            modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=20))
+        case "Divine":
+            letter_mappings = dict(data.letter_mapping)
+            letter_mappings.update({v: k for k, v in letter_mappings.items()})  # reverse mappings
+            sentence = random.choice(data.sentences).upper()
+            answer = random.randint(2, 5)
+            valid_indices = [i for i, c in enumerate(sentence) if c in letter_mappings]
+            random.shuffle(valid_indices)
+            swap_indices = valid_indices[:answer]
+            changed = list(sentence)
+            for idx in swap_indices:
+                changed[idx] = letter_mappings[sentence[idx]]
+            changed = "".join(changed)
+            modal.add_item(TextDisplay(f"## How many letters are different between the sentences?\n\n{sentence}\n\n{changed}"))
+            modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
+        case "Real":
+            try:
+                async with (
+                    aiohttp.ClientSession() as session,
+                    session.get(
+                        "https://the-trivia-api.com/v2/questions?limit=1&difficulties=easy",
+                        headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
+                    ) as response,
+                ):
+                    stuff = await response.json()
+                    question = stuff[0]
+                    question_text = question["question"]["text"]
+                    correct_answer = question["correctAnswer"]
+                    answers = question["incorrectAnswers"] + [correct_answer]
+            except Exception:
+                question_text = "Are cats awesome?"
+                answers = ["Yes", "No", "Meh", "IDK"]
+                correct_answer = "Yes"
+            random.shuffle(answers)
+            options = []
+            answer = correct_answer
+            for answer_value in answers:
+                options.append(discord.RadioGroupOption(label=answer_value[:100], value=answer_value[:100]))
+            modal.add_item(TextDisplay(f"## {question_text}"))
+            modal.add_item(discord.ui.Label(text="Answer", component=discord.ui.RadioGroup(options=options, id=67)))
+        case "Ultimate":
+            number = random.randint(10, 150)
+            answer = "Yes" if is_prime(number) else "No"
+            options = [discord.RadioGroupOption(label="Yes", value="Yes"), discord.RadioGroupOption(label="No", value="No")]
+            modal.add_item(discord.ui.Label(text=f"Is {number} a prime number?", component=discord.ui.RadioGroup(options=options, id=67)))
+        case "eGirl":
+            answer = "meow"
+            modal.add_item(
+                discord.ui.Label(
+                    text="Meow agressively.",
+                    component=discord.ui.TextInput(placeholder="meow mrrrp miau nyaa~ :3", min_length=69, max_length=2000, style=discord.TextStyle.long, id=67),
+                )
+            )
     modal.add_item(TextDisplay(f"-# Times up <t:{end}:R>\n-# If you don't see the question, update your Discord app."))
 
     async def check_minigame(interaction: discord.Interaction) -> None:
@@ -1848,38 +1880,39 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         answer_clean = " ".join(re.sub(r"[^0-9A-Za-z \-~]+", "", answer_raw.replace(",", " ")).split())  # user answer
         answer = " ".join(re.sub(r"[^0-9A-Za-z \-~]+", "", str(answer).replace(",", " ")).split())  # correct answer
 
-        if cattype == "Trash" and answer in answer_clean.upper():
-            async with aiohttp.ClientSession() as session:
-                try:
-                    async with session.get(
-                        f"https://api.wordnik.com/v4/word.json/{answer_clean.lower()}/definitions?api_key={config.WORDNIK_API_KEY}&useCanonical=true&includeTags=false&includeRelated=false&limit=1",
-                        headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
-                    ) as response:
-                        response_text = await response.text()
-                        correct = "from" in response_text
-                except Exception:
-                    # assume word is valid
-                    correct = True
-        elif cattype == "Trash":
-            correct = False
-        elif cattype == "Divine":
-            correct = answer_clean.upper() in answer
-        elif cattype == "eGirl":
-            # need atleast 10 signals
-            signals = 0
-            answer_clean = answer_clean.lower()
-            for word in ["meow", "purr", "nya", "miau", "mrrp", "www", "ppp", "uuu", "333", ":3", "~"]:
-                signals += answer_clean.count(word)
-            correct = signals >= 10
-            answer = "10+ meow signals"
-            answer_clean = f"{signals} meow signals"
-        elif cattype == "Epic":
-            correct = answer_clean == str(answer)
-        elif cattype == "Wild":
-            correct = answer_clean != str(answer)
-            answer = "not " + answer
-        else:
-            correct = answer_clean.lower() == str(answer).lower()
+        match cattype:
+            case "Trash" if answer in answer_clean.upper():
+                async with aiohttp.ClientSession() as session:
+                    try:
+                        async with session.get(
+                            f"https://api.wordnik.com/v4/word.json/{answer_clean.lower()}/definitions?api_key={config.WORDNIK_API_KEY}&useCanonical=true&includeTags=false&includeRelated=false&limit=1",
+                            headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
+                        ) as response:
+                            response_text = await response.text()
+                            correct = "from" in response_text
+                    except Exception:
+                        # assume word is valid
+                        correct = True
+            case "Trash":
+                correct = False
+            case "Divine":
+                correct = answer_clean.upper() in answer
+            case "eGirl":
+                # need atleast 10 signals
+                signals = 0
+                answer_clean = answer_clean.lower()
+                for word in ["meow", "purr", "nya", "miau", "mrrp", "www", "ppp", "uuu", "333", ":3", "~"]:
+                    signals += answer_clean.count(word)
+                correct = signals >= 10
+                answer = "10+ meow signals"
+                answer_clean = f"{signals} meow signals"
+            case "Epic":
+                correct = answer_clean == str(answer)
+            case "Wild":
+                correct = answer_clean != str(answer)
+                answer = "not " + answer
+            case _:
+                correct = answer_clean.lower() == str(answer).lower()
 
         if correct:
             assert interaction.guild is not None
@@ -2041,15 +2074,8 @@ async def on_message(message: discord.Message) -> None:
         if not user.rain_minutes:
             user.rain_minutes = 0
 
-        if rain_duration == "short":
-            user.rain_minutes += 2
-        elif rain_duration == "medium":
-            user.rain_minutes += 10
-        elif rain_duration == "long":
-            user.rain_minutes += 20
-        else:
-            user.rain_minutes += int(rain_duration)
-            user.rain_minutes_bought += int(rain_duration)
+        user.rain_minutes += int(rain_duration)
+        user.rain_minutes_bought += int(rain_duration)
         user.premium = True
         await user.save()
 
@@ -2509,30 +2535,31 @@ async def on_message(message: discord.Message) -> None:
                         type = int(h[1])
                         id = perks_info[type - 1]["id"]
 
-                        if id == "double":
-                            double_chance += perks_info[0]["values"][rarity]
-                            single_chance -= perks_info[0]["values"][rarity]
-                        elif id == "triple_none":
-                            triple_chance += perks_info[1]["values"][rarity]
-                            none_chance += perks_info[1]["values"][rarity] / 2
-                            single_chance -= perks_info[1]["values"][rarity] * (1.5)
-                        elif "pack" in id and user.pack_attempts > 0:
-                            for num, pack in enumerate(data.pack_data):
-                                if pack["name"].lower() in id:
-                                    packs.append((num, perks_info[type - 1]["values"][rarity]))
-                                    break
-                        elif id == "double_boost":
-                            double_boost_chance += perks_info[8]["values"][rarity]
-                        elif id == "triple_ach":
-                            purr_all_triple = True
-                        elif id == "timer_add":
-                            timer_add_chance += perks_info[10]["values"][rarity]
-                        elif id == "rain_boost":
-                            rain_chance += perks_info[12]["values"][rarity]
-                        elif id == "double_first":
-                            double_first += perks_info[13]["values"][rarity]
-                        elif id == "bonus_catcher":
-                            bonus_chance_increase += perks_info[14]["values"][rarity]
+                        match id:
+                            case "double":
+                                double_chance += perks_info[0]["values"][rarity]
+                                single_chance -= perks_info[0]["values"][rarity]
+                            case "triple_none":
+                                triple_chance += perks_info[1]["values"][rarity]
+                                none_chance += perks_info[1]["values"][rarity] / 2
+                                single_chance -= perks_info[1]["values"][rarity] * (1.5)
+                            case _ if "pack" in id and user.pack_attempts > 0:
+                                for num, pack in enumerate(data.pack_data):
+                                    if pack["name"].lower() in id:
+                                        packs.append((num, perks_info[type - 1]["values"][rarity]))
+                                        break
+                            case "double_boost":
+                                double_boost_chance += perks_info[8]["values"][rarity]
+                            case "triple_ach":
+                                purr_all_triple = True
+                            case "timer_add":
+                                timer_add_chance += perks_info[10]["values"][rarity]
+                            case "rain_boost":
+                                rain_chance += perks_info[12]["values"][rarity]
+                            case "double_first":
+                                double_first += perks_info[13]["values"][rarity]
+                            case "bonus_catcher":
+                                bonus_chance_increase += perks_info[14]["values"][rarity]
 
                     for i in packs:
                         chance = random.random() * 100
@@ -3043,19 +3070,12 @@ async def on_message(message: discord.Message) -> None:
 
     # those are "owner" commands which are not really interesting
     if text.lower().startswith("cat!rain"):
-        # syntax: cat!rain 553093932012011520 short
+        # syntax: cat!rain 553093932012011520 20
         things = text.split(" ")
         user = await User.get_or_create(user_id=int(things[1]))
         if not user.rain_minutes:
             user.rain_minutes = 0
-        if things[2] == "short":
-            user.rain_minutes += 2
-        elif things[2] == "medium":
-            user.rain_minutes += 10
-        elif things[2] == "long":
-            user.rain_minutes += 20
-        else:
-            user.rain_minutes += int(things[2])
+        user.rain_minutes += int(things[2])
         user.premium = True
         await user.save()
     if text.lower().startswith("cat!restartall"):
@@ -3354,81 +3374,82 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
         user.tutorial_state = 1
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
-    if user.tutorial_state in [1, 2]:
-        user.tutorial_state = 2
-        container = Container(
-            f"## Welcome to {get_emoji('staring_cat')} Cat Bot!",
-            "🐈 The main goal of the bot is to __catch cats__. You can do that by waiting for one to appear - it will look like on the image below (there is usually one every couple of minutes), then simply saying `cat` in the chat. Be quick - after the first person catches the cat, only the first *3 people* within *5 seconds* also get it.",
-            "**Go try it!**",
-            discord.ui.MediaGallery(discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316534462578838/tutorial1.png")),
-            "===",
-            f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
-        )
-        view.add_item(container)
-    elif user.tutorial_state in [3, 4]:
-        user.tutorial_state = 4
-        container = Container(
-            "Well done! To see the cat you just caught, run `/inventory`!",
-            "===",
-            f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
-        )
-        view.add_item(container)
-    elif user.tutorial_state == 5:
-        container = Container(
-            "This is your inventory. It's the place you can see your cat collection and some basic stats. You can also see anyone else's inventory by using `/inventory @username`.",
-            "Lets run `/leaderboards` to see the best cat catchers in your server!",
-            discord.ui.MediaGallery(discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316535108243608/tutorial2.png")),
-            "===",
-            f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
-        )
-        view.add_item(container)
-    elif user.tutorial_state == 6:
-        container = Container(
-            "Nice! Interacting with others is a big part of Cat Bot - don't be afraid to `/trade` with them or ask for advice!",
-            "Speaking about important things, let's check out `/achievements`!",
-            "===",
-            f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
-        )
-        view.add_item(container)
-    elif user.tutorial_state == 7:
-        container = Container(
-            f"Cat Bot has *a bunch* of {get_emoji('ach')} achievements, from very simple ones to {get_emoji('demonic_ach')} __ones which take months to complete__. If you ever feel unsure what to do, try completing some! You will also be able to discover a bunch of Cat Bot this way.",
-            "Okay, the last important thing - run `/battlepass`.",
-            "===",
-            f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
-        )
-        view.add_item(container)
-    elif user.tutorial_state == 8:
-        container = Container(
-            "⬆️ Cat Bot's Battlepass *(or Cattlepass)* is the main non-catching way of getting cats.",
-            f"There are 3 quests which give you XP, and every couple hundred XP you will get some {get_emoji('goldpack')} __Packs__, which you can open via `/packs` to get some cats! Quests refresh 12 hours after completing them.",
-            "**Try completing some quests and opening a pack!**",
-            "===",
-            f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
-        )
-        view.add_item(container)
-    elif user.tutorial_state == 9:
-        user.tutorial_state = 10
-        if not user.claimed_free_rain:
-            user.claimed_free_rain = True
-            user.rain_minutes += 2
-        container = Container(
-            "Nice! One last thing - catching gets __a lot more fun__ if you use the various *power-ups* inside Cat Bot!",
-            f"These include {get_emoji('prism')} `/Prism`s, {get_emoji('catnip')} `/Catnip`, 💫 `/Bless`ings, and ☔ `/Rain`.",
-            "Speaking of the last one, for completing the tutorial you get **+2 free ☔ Rain Minutes**! You can use them via `/rain`.",
-            "===",
-            '-# ✅ Tutorial Complete! Go catch cats, do some achievements like saying "i read help", or discover the power-ups! Have fun!',
-        )
-        view.add_item(container)
-    elif user.tutorial_state == 10:
-        button = Button(label="Restart Tutorial")
-        button.callback = restart_tutorial
-        view.add_item(
-            TextDisplay(
-                '✅ Tutorial Complete! Go catch cats, do some achievements like saying "i read help", or discover the power-ups! Have fun!',
+    match user.tutorial_state:
+        case 1 | 2:
+            user.tutorial_state = 2
+            container = Container(
+                f"## Welcome to {get_emoji('staring_cat')} Cat Bot!",
+                "🐈 The main goal of the bot is to __catch cats__. You can do that by waiting for one to appear - it will look like on the image below (there is usually one every couple of minutes), then simply saying `cat` in the chat. Be quick - after the first person catches the cat, only the first *3 people* within *5 seconds* also get it.",
+                "**Go try it!**",
+                discord.ui.MediaGallery(discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316534462578838/tutorial1.png")),
+                "===",
+                f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
             )
-        )
-        view.add_item(ActionRow(button))
+            view.add_item(container)
+        case 3 | 4:
+            user.tutorial_state = 4
+            container = Container(
+                "Well done! To see the cat you just caught, run `/inventory`!",
+                "===",
+                f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
+            )
+            view.add_item(container)
+        case 5:
+            container = Container(
+                "This is your inventory. It's the place you can see your cat collection and some basic stats. You can also see anyone else's inventory by using `/inventory @username`.",
+                "Lets run `/leaderboards` to see the best cat catchers in your server!",
+                discord.ui.MediaGallery(discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316535108243608/tutorial2.png")),
+                "===",
+                f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
+            )
+            view.add_item(container)
+        case 6:
+            container = Container(
+                "Nice! Interacting with others is a big part of Cat Bot - don't be afraid to `/trade` with them or ask for advice!",
+                "Speaking about important things, let's check out `/achievements`!",
+                "===",
+                f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
+            )
+            view.add_item(container)
+        case 7:
+            container = Container(
+                f"Cat Bot has *a bunch* of {get_emoji('ach')} achievements, from very simple ones to {get_emoji('demonic_ach')} __ones which take months to complete__. If you ever feel unsure what to do, try completing some! You will also be able to discover a bunch of Cat Bot this way.",
+                "Okay, the last important thing - run `/battlepass`.",
+                "===",
+                f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
+            )
+            view.add_item(container)
+        case 8:
+            container = Container(
+                "⬆️ Cat Bot's Battlepass *(or Cattlepass)* is the main non-catching way of getting cats.",
+                f"There are 3 quests which give you XP, and every couple hundred XP you will get some {get_emoji('goldpack')} __Packs__, which you can open via `/packs` to get some cats! Quests refresh 12 hours after completing them.",
+                "**Try completing some quests and opening a pack!**",
+                "===",
+                f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
+            )
+            view.add_item(container)
+        case 9:
+            user.tutorial_state = 10
+            if not user.claimed_free_rain:
+                user.claimed_free_rain = True
+                user.rain_minutes += 2
+            container = Container(
+                "Nice! One last thing - catching gets __a lot more fun__ if you use the various *power-ups* inside Cat Bot!",
+                f"These include {get_emoji('prism')} `/Prism`s, {get_emoji('catnip')} `/Catnip`, 💫 `/Bless`ings, and ☔ `/Rain`.",
+                "Speaking of the last one, for completing the tutorial you get **+2 free ☔ Rain Minutes**! You can use them via `/rain`.",
+                "===",
+                '-# ✅ Tutorial Complete! Go catch cats, do some achievements like saying "i read help", or discover the power-ups! Have fun!',
+            )
+            view.add_item(container)
+        case 10:
+            button = Button(label="Restart Tutorial")
+            button.callback = restart_tutorial
+            view.add_item(
+                TextDisplay(
+                    '✅ Tutorial Complete! Go catch cats, do some achievements like saying "i read help", or discover the power-ups! Have fun!',
+                )
+            )
+            view.add_item(ActionRow(button))
     log_stats("tutorial_state_update", {"state": str(user.tutorial_state)})
     await user.save()
     return view
@@ -3577,38 +3598,39 @@ async def news(message: discord.Interaction):
 
         log_stats("news", {"id": str(news_id)})
 
-        if news_id == 0:
-            embed = Container(
-                "## 📜 Cat Bot Survey (ended)",
-                "Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nSurvey is closed!",
-                "-# <t:1731168230>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 1:
-            embed = Container(
-                "## ✨ New Cat Rains perks!",
-                "Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).\nEveryone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have received 10 minutes of Rains as compensation.\n\nThis is a really cool perk and I hope you like it!",
-                Button(label="Cat Bot Store", url="https://catbot.shop"),
-                "-# <t:1732377932>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 2:
-            embed = Container(
-                "## ☃️ Cat Bot Christmas",
-                f"⚡ **Cat Bot Wrapped 2024**\nIn 2024 Cat Bot got...\n- 🖥️ *45777* new servers!\n- 👋 *286607* new profiles!\n- {get_emoji('staring_cat')} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though\n- {get_emoji('cat_throphy')} *1518096* achievements get!\nSee last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).\n\n❓ **New Year Update**\nSomething is coming...",
-                "-# <t:1734458962>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 3:
-            embed = Container(
-                "## Cattlepass is getting an update!",
-                """### qhar?
+        match news_id:
+            case 0:
+                embed = Container(
+                    "## 📜 Cat Bot Survey (ended)",
+                    "Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nSurvey is closed!",
+                    "-# <t:1731168230>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 1:
+                embed = Container(
+                    "## ✨ New Cat Rains perks!",
+                    "Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).\nEveryone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have received 10 minutes of Rains as compensation.\n\nThis is a really cool perk and I hope you like it!",
+                    Button(label="Cat Bot Store", url="https://catbot.shop"),
+                    "-# <t:1732377932>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 2:
+                embed = Container(
+                    "## ☃️ Cat Bot Christmas",
+                    f"⚡ **Cat Bot Wrapped 2024**\nIn 2024 Cat Bot got...\n- 🖥️ *45777* new servers!\n- 👋 *286607* new profiles!\n- {get_emoji('staring_cat')} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though\n- {get_emoji('cat_throphy')} *1518096* achievements get!\nSee last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).\n\n❓ **New Year Update**\nSomething is coming...",
+                    "-# <t:1734458962>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 3:
+                embed = Container(
+                    "## Cattlepass is getting an update!",
+                    """### qhar?
 - Huge stuff!
 - Cattlepass will now reset every month
 - You will have 3 quests, including voting
@@ -3623,28 +3645,28 @@ Don't worry, quests are very easy and to complete the cattlepass you will need t
 
 ### will you sell paid cattlepass? its joever
 There are currently no plans to sell a paid cattlepass.""",
-                "-# <t:1735689601>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 4:
-            embed = Container(
-                f"## {get_emoji('goldpack')} Packs!",
-                f"""you want more gambling? we heard you!
+                    "-# <t:1735689601>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 4:
+                embed = Container(
+                    f"## {get_emoji('goldpack')} Packs!",
+                    f"""you want more gambling? we heard you!
 instead of predetermined cat rewards you now unlock Packs! packs have different rarities and have a 30% chance to upgrade a rarity when opening, then 30% for one more upgrade and so on. this means even the most common packs have a small chance to upgrade to the rarest one!
 the rarities are - Wooden {get_emoji("woodenpack")}, Stone {get_emoji("stonepack")}, Bronze {get_emoji("bronzepack")}, Silver {get_emoji("silverpack")}, Gold {get_emoji("goldpack")}, Platinum {get_emoji("platinumpack")}, Diamond {get_emoji("diamondpack")} and Celestial {get_emoji("celestialpack")}!
 the extra reward is now a stone pack instead of 5 random cats too!
 *LETS GO GAMBLING*""",
-                "-# <t:1740787200>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 5:
-            embed = Container(
-                "## Important Message from CEO of Cat Bot",
-                """(April Fools 2025)
+                    "-# <t:1740787200>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 5:
+                embed = Container(
+                    "## Important Message from CEO of Cat Bot",
+                    """(April Fools 2025)
 
 Dear Cat Bot users,
 
@@ -3658,15 +3680,15 @@ We are committed to resolving these challenges and aim to have everything back o
 
 Best regards,
 [Your Name]""",
-                "-# <t:1743454803>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 6:
-            embed = Container(
-                "## 🥳 Cat Bot Turns 3",
-                """april 21st is a special day for cat bot! on this day is its birthday, and in 2025 its turning three!
+                    "-# <t:1743454803>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 6:
+                embed = Container(
+                    "## 🥳 Cat Bot Turns 3",
+                    """april 21st is a special day for cat bot! on this day is its birthday, and in 2025 its turning three!
 happy birthda~~
 ...
 hold on...
@@ -3675,15 +3697,15 @@ the puzzle pieces say something about having to collect a million of them...
 how interesting!
 
 update: the puzzle piece event has concluded""",
-                "-# <t:1745242856>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 7:
-            embed = Container(
-                "## 🎉 100,000 SERVERS WHAT",
-                """wow! cat bot has reached 100,000 servers! this beyond insane i never thought this would happen thanks everyone
+                    "-# <t:1745242856>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 7:
+                embed = Container(
+                    "## 🎉 100,000 SERVERS WHAT",
+                    """wow! cat bot has reached 100,000 servers! this beyond insane i never thought this would happen thanks everyone
 giving away a whole bunch of rain as celebration!
 
 1. cat stand giveaway (ENDED)
@@ -3701,20 +3723,20 @@ starting june 30th, for the next 5 days you will get points randomly on every ca
 starting june 30th, [catbot.shop](<https://catbot.shop>) will have a sale for the next 5 days! if everything above wasnt enough rain for your fancy you can buy some more with a discount!
 
 aaaaaaaaaaaaaaa""",
-                ActionRow(
-                    Button(label="Join our Server", url="https://discord.gg/staring"),
-                    Button(label="Cat Bot Store", url="https://catbot.shop"),
-                ),
-                "-# <t:1751252181>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+                    ActionRow(
+                        Button(label="Join our Server", url="https://discord.gg/staring"),
+                        Button(label="Cat Bot Store", url="https://catbot.shop"),
+                    ),
+                    "-# <t:1751252181>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
 
-        elif news_id == 8:
-            embed = Container(
-                "## Regarding recent instabilities",
-                """hello!
+            case 8:
+                embed = Container(
+                    "## Regarding recent instabilities",
+                    """hello!
 
 stuff has been kinda broken the past few days, and the past 24 hours in paricular.
 
@@ -3723,60 +3745,60 @@ it was mostly my fault, but i worked hard to fix everything and i think its most
 as a compensation i will give everyone who voted in the past 3 days 2 free gold packs! you can press the button below to claim them. (note you can only claim it in 1 server, choose wisely)
 
 thanks for using cat bot!""",
-                Button(label="Expired!", disabled=True),
-                "-# <t:1752689941>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 9:
-            # we hijack the cookie system to store the yippee count
-            assert bot.user is not None
-            cookie_user = await Profile.get_or_create(guild_id=9, user_id=bot.user.id)
-
-            async def add_yippee(interaction: discord.Interaction) -> None:
-                nonlocal cookie_user
-                assert bot.user is not None
-                await interaction.response.defer()
-                cookie_user = await Profile.get(["cookies"], guild_id=9, user_id=bot.user.id)
-                cookie_user.cookies += 1
-                await cookie_user.save()
-                await send_yippee(interaction)
-
-            async def send_yippee(interaction: discord.Interaction) -> None:
-                view = LayoutView(timeout=VIEW_TIMEOUT)
-                btn = Button(label=f"yippee! ({cookie_user.cookies:,})", emoji=get_emoji("yippee"), style=ButtonStyle.primary)
-                btn.callback = add_yippee
-                embed = Container(
-                    "## cat bot is now top 5 on top.gg",
-                    "thanks for voting",
-                    discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/MSZF3ly.png")),
-                    "also pls still [go vote](https://top.gg/bot/966695034340663367/vote) incase OwO will rebeat us!!",
-                    "===",
-                    btn,
-                    "-# <t:1757794211>",
+                    Button(label="Expired!", disabled=True),
+                    "-# <t:1752689941>",
                 )
                 view.add_item(embed)
                 view.add_item(back_row)
                 await interaction.edit_original_response(view=view)
+            case 9:
+                # we hijack the cookie system to store the yippee count
+                assert bot.user is not None
+                cookie_user = await Profile.get_or_create(guild_id=9, user_id=bot.user.id)
 
-            await send_yippee(interaction)
-        elif news_id == 10:
-            embed = Container(
-                "## 🏆 nominate cat bot for top.gg awards (outdated)",
-                "holy cat top.gg is doing annual awards now",
-                "you know [what to do](https://top.gg/bot/966695034340663367)...\nyou can also leave a review while you are there if you havent yet :3",
-                discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/YgQ0flQ.png")),
-                Button(label="Vote for Cat Bot", url="https://nominations.top.gg/", emoji="🏆"),
-                "-# <t:1759513848>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 11:
-            embed = Container(
-                f"## {get_emoji('catnip')} Welcome to the Cat Mafia",
-                f"""after the dog mafia got arrested, cats got inspired and started their own mafia!
+                async def add_yippee(interaction: discord.Interaction) -> None:
+                    nonlocal cookie_user
+                    assert bot.user is not None
+                    await interaction.response.defer()
+                    cookie_user = await Profile.get(["cookies"], guild_id=9, user_id=bot.user.id)
+                    cookie_user.cookies += 1
+                    await cookie_user.save()
+                    await send_yippee(interaction)
+
+                async def send_yippee(interaction: discord.Interaction) -> None:
+                    view = LayoutView(timeout=VIEW_TIMEOUT)
+                    btn = Button(label=f"yippee! ({cookie_user.cookies:,})", emoji=get_emoji("yippee"), style=ButtonStyle.primary)
+                    btn.callback = add_yippee
+                    embed = Container(
+                        "## cat bot is now top 5 on top.gg",
+                        "thanks for voting",
+                        discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/MSZF3ly.png")),
+                        "also pls still [go vote](https://top.gg/bot/966695034340663367/vote) incase OwO will rebeat us!!",
+                        "===",
+                        btn,
+                        "-# <t:1757794211>",
+                    )
+                    view.add_item(embed)
+                    view.add_item(back_row)
+                    await interaction.edit_original_response(view=view)
+
+                await send_yippee(interaction)
+            case 10:
+                embed = Container(
+                    "## 🏆 nominate cat bot for top.gg awards (outdated)",
+                    "holy cat top.gg is doing annual awards now",
+                    "you know [what to do](https://top.gg/bot/966695034340663367)...\nyou can also leave a review while you are there if you havent yet :3",
+                    discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/YgQ0flQ.png")),
+                    Button(label="Vote for Cat Bot", url="https://nominations.top.gg/", emoji="🏆"),
+                    "-# <t:1759513848>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 11:
+                embed = Container(
+                    f"## {get_emoji('catnip')} Welcome to the Cat Mafia",
+                    f"""after the dog mafia got arrested, cats got inspired and started their own mafia!
 
 - the dark market is being replaced by {get_emoji("catnip")} catnip
 - the biggest update ever (probably)
@@ -3788,27 +3810,27 @@ thanks for using cat bot!""",
 
 👉 okay now let me explain:
 at each level you will have some bounties you have to complete within a time frame. if you complete the bounties and pay the price, you will be able to choose one of 3 different perks of random rarities {get_emoji("common")}{get_emoji("uncommon")}{get_emoji("rare")}{get_emoji("epic")}{get_emoji("legendary")}. the perks will stack while catnip is active! failing to complete the bounties will bring you one level down and you will lose your last perk. higher levels are harder but give you better perks!""",
-                "-# <t:1761325200>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 12:
-            embed = Container(
-                "## ❤️ vote for cat bot in top.gg awards (outdated)",
-                'cat bot is finalist in "Labor of Love" category on top.gg awards!',
-                "make sure to [vote for it](https://nominations.top.gg/) and perhaps attend the awards ceremony on january 3rd",
-                discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/7EW2I4P.png")),
-                Button(label="Vote for Cat Bot", url="https://nominations.top.gg/", emoji="🏆"),
-                "-# <t:1765747278>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 13:
-            embed = Container(
-                f"## {get_emoji('christmaspack')} Cat Bot Christmas 2025 (event over)",
-                f"""Merry Christmas!
+                    "-# <t:1761325200>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 12:
+                embed = Container(
+                    "## ❤️ vote for cat bot in top.gg awards (outdated)",
+                    'cat bot is finalist in "Labor of Love" category on top.gg awards!',
+                    "make sure to [vote for it](https://nominations.top.gg/) and perhaps attend the awards ceremony on january 3rd",
+                    discord.ui.MediaGallery(discord.MediaGalleryItem("https://i.imgur.com/7EW2I4P.png")),
+                    Button(label="Vote for Cat Bot", url="https://nominations.top.gg/", emoji="🏆"),
+                    "-# <t:1765747278>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 13:
+                embed = Container(
+                    f"## {get_emoji('christmaspack')} Cat Bot Christmas 2025 (event over)",
+                    f"""Merry Christmas!
 
 {get_emoji("christmaspack")} **Christmas Packs**
 Christmas packs are a new pack type with a twist: when opening them the upgrade chances are 70% instead of 30%!
@@ -3825,18 +3847,18 @@ This means catching an eGirl cat will give you 4 Christmas packs!
 🎅 **Christmas Sale**
 -20% sale starts now on the Cat Bot Store!
 :point_right: **[catbot.shop](<https://catbot.shop>)**""",
-                ActionRow(
-                    Button(label="Cat Bot Store", url="https://catbot.shop"),
-                ),
-                "-# <t:1766433600>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 14:
-            embed = Container(
-                "## 💝 Valentine's Day!",
-                f"""💞 **Pick a Valentine** (event over)
+                    ActionRow(
+                        Button(label="Cat Bot Store", url="https://catbot.shop"),
+                    ),
+                    "-# <t:1766433600>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 14:
+                embed = Container(
+                    "## 💝 Valentine's Day!",
+                    f"""💞 **Pick a Valentine** (event over)
 Use `/valentine` to pick a valentine - your progress and rewards will be shared with them for the duration of the event.
 You can't change this after you picked someone, so choose wisely!
 
@@ -3851,18 +3873,18 @@ You will be able to collect them until <t:1771437600> using 2 methods:
 🥰 **Valentine's Sale** (over)
 -20% sale starts now on the Cat Bot Store and will end on <t:1771437600>!
 :point_right: **[catbot.shop](<https://catbot.shop>)**""",
-                ActionRow(
-                    Button(label="Cat Bot Store", url="https://catbot.shop"),
-                ),
-                "-# <t:1771005600>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 15:
-            embed = Container(
-                "## 📈 Welcome to the Stock Market",
-                """ever wanted to invest your cats into stocks? no? well now you can!
+                    ActionRow(
+                        Button(label="Cat Bot Store", url="https://catbot.shop"),
+                    ),
+                    "-# <t:1771005600>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 15:
+                embed = Container(
+                    "## 📈 Welcome to the Stock Market",
+                    """ever wanted to invest your cats into stocks? no? well now you can!
 - /stocks and /portfolio
 - deposit packs to get coins
 - trade shares of stocks with other cat bot users globally
@@ -3872,150 +3894,150 @@ You will be able to collect them until <t:1771437600> using 2 methods:
 i understand this might be overwhelming which is why i added a ton of help buttons throughout the thing! those have much better explanations than this brief overview
 
 ummm good luck and let the line go up!""",
-                "-# <t:1772308800>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 16:
-            embed = Container(
-                "## PackOrRain Event (ended)",
-                "everyone *who votes below* will earn a prize! the prize type will be **whatever option gets most votes**, and the prize amount will be **how many millions of catches** everyone does until the event ends!",
-                "-# the prize will be given to everyone who votes, even if their vote wasn't the winning option.",
-                "===",
-                "**Final Prize**: 2 ☔ Rain Minutes",
-                "**Event ended** <t:1773856800>",
-                "===",
-                "-# <t:1773424800>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 17:
-            embed = Container(
-                f"## {get_emoji('insane')} cat bot has reached 200k servers!",
-                "wow big number!!",
-                "to celebrate im ~~doing a 200 rain minute giveaway~~ ended!! in our [discord server](https://discord.com/channels/966586000417619998/1021844042654417017/1492510874458394655)",
-                ActionRow(
-                    Button(label="Join the server", url="https://discord.gg/staring"),
-                ),
-                "-# <t:1775913490>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 18:
-            embed = Container(
-                f"## {get_emoji('b_gremlincat')} It's Cat Bot's 4th birthday!!",
-                Section(
-                    f"### {get_emoji('b_gremlincat')} Baby cat becomes an adult 🥳 [ended]",
-                    "Help decide Baby cat's new name via a poll in our [Discord server](https://discord.com/channels/966586000417619998/1021844042654417017)!",
-                    Button(label="Vote!", url="https://discord.com/channels/966586000417619998/1021844042654417017"),
-                ),
-                f"### {get_emoji('birthdaypack')} Birthday Packs [ended]",
-                f"For the next 5 days, you will get a {get_emoji('birthdaypack')} Birthday Pack for every {get_emoji('b_gremlincat')} Baby cat you catch!\nCollect 10 of them to get ☔ **2 free Rain Minutes**!",
-                Section(
-                    "### 🎨 Birthday Art Contest [ended]",
-                    "Join our [Discord server](https://discord.gg/staring) to participate in the Birthday Art Contest! 3 winners will get ☔ **100 Rain Minutes** each.",
-                    Button(label="Join the server", url="https://discord.gg/staring"),
-                ),
-                Section(
-                    f"### {get_emoji('insane')} -50% off Sale [ended]",
-                    "This is **much higher** than normal sale amounts!!",
-                    Button(label="catbot.shop", emoji="☔", url="https://catbot.shop"),
-                ),
-                "-# <t:1776778856>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 19:
-            view.add_item(
-                Container(
-                    "## Cat Bot Plush [ended]",
-                    "~~[Pre-order now for $2!](https://www.makeship.com/petitions/cat-bot-plush)~~",
-                    "Everyone who pre-ordered will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
-                    "===",
-                    "-# <t:1777921200>",
+                    "-# <t:1772308800>",
                 )
-            )
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 20:
-            view.add_item(
-                Container(
-                    "## 🎖️ Badges!",
-                    "have you ever wanted to flex that *you were there* but had no proof? well now you can! here are the badges i retroactively added:",
-                    f"""- {get_emoji("og_badge")} *OG Badge* - Interact with Cat Bot before it got verified (71 people)
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 16:
+                embed = Container(
+                    "## PackOrRain Event (ended)",
+                    "everyone *who votes below* will earn a prize! the prize type will be **whatever option gets most votes**, and the prize amount will be **how many millions of catches** everyone does until the event ends!",
+                    "-# the prize will be given to everyone who votes, even if their vote wasn't the winning option.",
+                    "===",
+                    "**Final Prize**: 2 ☔ Rain Minutes",
+                    "**Event ended** <t:1773856800>",
+                    "===",
+                    "-# <t:1773424800>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 17:
+                embed = Container(
+                    f"## {get_emoji('insane')} cat bot has reached 200k servers!",
+                    "wow big number!!",
+                    "to celebrate im ~~doing a 200 rain minute giveaway~~ ended!! in our [discord server](https://discord.com/channels/966586000417619998/1021844042654417017/1492510874458394655)",
+                    ActionRow(
+                        Button(label="Join the server", url="https://discord.gg/staring"),
+                    ),
+                    "-# <t:1775913490>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 18:
+                embed = Container(
+                    f"## {get_emoji('b_gremlincat')} It's Cat Bot's 4th birthday!!",
+                    Section(
+                        f"### {get_emoji('b_gremlincat')} Baby cat becomes an adult 🥳 [ended]",
+                        "Help decide Baby cat's new name via a poll in our [Discord server](https://discord.com/channels/966586000417619998/1021844042654417017)!",
+                        Button(label="Vote!", url="https://discord.com/channels/966586000417619998/1021844042654417017"),
+                    ),
+                    f"### {get_emoji('birthdaypack')} Birthday Packs [ended]",
+                    f"For the next 5 days, you will get a {get_emoji('birthdaypack')} Birthday Pack for every {get_emoji('b_gremlincat')} Baby cat you catch!\nCollect 10 of them to get ☔ **2 free Rain Minutes**!",
+                    Section(
+                        "### 🎨 Birthday Art Contest [ended]",
+                        "Join our [Discord server](https://discord.gg/staring) to participate in the Birthday Art Contest! 3 winners will get ☔ **100 Rain Minutes** each.",
+                        Button(label="Join the server", url="https://discord.gg/staring"),
+                    ),
+                    Section(
+                        f"### {get_emoji('insane')} -50% off Sale [ended]",
+                        "This is **much higher** than normal sale amounts!!",
+                        Button(label="catbot.shop", emoji="☔", url="https://catbot.shop"),
+                    ),
+                    "-# <t:1776778856>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 19:
+                view.add_item(
+                    Container(
+                        "## Cat Bot Plush [ended]",
+                        "~~[Pre-order now for $2!](https://www.makeship.com/petitions/cat-bot-plush)~~",
+                        "Everyone who pre-ordered will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
+                        "===",
+                        "-# <t:1777921200>",
+                    )
+                )
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 20:
+                view.add_item(
+                    Container(
+                        "## 🎖️ Badges!",
+                        "have you ever wanted to flex that *you were there* but had no proof? well now you can! here are the badges i retroactively added:",
+                        f"""- {get_emoji("og_badge")} *OG Badge* - Interact with Cat Bot before it got verified (71 people)
 - {get_emoji("cataine_badge")} *Cataine Badge* - Defeat the Dog Mafia prior to Oct 13 2025 (4200 people)
 - {get_emoji("second_birthday_badge")} *Second Birthday Badge* - Join the Cat Bot Birthday Server on Apr 21 2024 (1708 people)
 - {get_emoji("puzzle_badge")} *Puzzle Badge* - Collect at least 25 puzzle pieces during 2025 Birthday event (8893 people)
 - {get_emoji("plush_badge")} *Plush Badge* - Pre-order the Cat Bot Plush and run `/plushbadge`""",
-                    "we hit the petition goal! i will give everyone who pre-orders (or already did) ☔ **60 Rain Minutes** as well! so",
-                    "-# june update will be hype, sry for all the shilling",
-                    "===",
-                    "-# <t:1778544574>",
+                        "we hit the petition goal! i will give everyone who pre-orders (or already did) ☔ **60 Rain Minutes** as well! so",
+                        "-# june update will be hype, sry for all the shilling",
+                        "===",
+                        "-# <t:1778544574>",
+                    )
                 )
-            )
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 21:
-            view.add_item(
-                Container(
-                    "## 🐈 CATCHING UPDATE",
-                    f"1. {get_emoji('pointlaugh')} late catching",
-                    """now __the first 3 people to catch within 5 seconds__ of the original catcher will also get the cat, although **without any boosts**! "first-wins-all" was one of the most popular complaints on that one survey i did back in 2024.
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 21:
+                view.add_item(
+                    Container(
+                        "## 🐈 CATCHING UPDATE",
+                        f"1. {get_emoji('pointlaugh')} late catching",
+                        """now __the first 3 people to catch within 5 seconds__ of the original catcher will also get the cat, although **without any boosts**! "first-wins-all" was one of the most popular complaints on that one survey i did back in 2024.
 here is a helpful table of what works and what doesnt when you are late:
 - ✅ Progress of catnip bounties, cattlepass quests and /tutorial all trigger within 5s, even outside of 3 people limit
 - ❌ Achievements; activations of catnip perks, prisms, blessings, etc (up to 3 late people will only get +1 unboosted cat)""",
-                    "2. 🎁 bonus cats",
-                    """there is a small chance (around 6.5% on average, *chance is higher for rarer cats*) that a cat is a __bonus cat__. such a cat will have *a minigame* after its caught, in which you can get **+3 more of it** if you succeed. only people who caught the cat can play this minigame (this includes the initial catcher + late catchers, so max of 4 people).
+                        "2. 🎁 bonus cats",
+                        """there is a small chance (around 6.5% on average, *chance is higher for rarer cats*) that a cat is a __bonus cat__. such a cat will have *a minigame* after its caught, in which you can get **+3 more of it** if you succeed. only people who caught the cat can play this minigame (this includes the initial catcher + late catchers, so max of 4 people).
 each of 22 cats has a unique minigame associated with it.
 there is also a new catnip perk which makes these bonus cats more likely (only activates from initial catcher)""",
-                    'both of the updates above can be rolled back via "Legacy Catching" toggle in /settings',
-                    "3. ☔ rain",
-                    """heres how these mechanics work during rain:
+                        'both of the updates above can be rolled back via "Legacy Catching" toggle in /settings',
+                        "3. ☔ rain",
+                        """heres how these mechanics work during rain:
 - the late catching window is reduced to 1 second
 - bonus cats give +1 cat to everyone eligible instead of a minigame
 - both are reflected in rain summaries
 these changes were made to not slow down rains. like, i pinky promise they arent slower
 unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats per minute. this results in all rains having atleast +1 more cat, and then approx. +1 more for every 5 minute of length.""",
-                    "===",
-                    "-# <t:1782500400>",
+                        "===",
+                        "-# <t:1782500400>",
+                    )
                 )
-            )
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
-        elif news_id == 22:
-            profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild_id)
-            catemojilist = ""
-            for cat_index in profile.weekly_cattypes:
-                catemojilist += get_emoji(cattypes[cat_index].lower() + "cat")
-            if not catemojilist:
-                catemojilist = "*None*"
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
+            case 22:
+                profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild_id)
+                catemojilist = ""
+                for cat_index in profile.weekly_cattypes:
+                    catemojilist += get_emoji(cattypes[cat_index].lower() + "cat")
+                if not catemojilist:
+                    catemojilist = "*None*"
 
-            catches = await _get_pool().fetchval("SELECT sum_catches FROM profile_sums_mv;") - 215298618
-            reward_data = data.pack_data[catches // 1_000_000 + 4]
-            curr_reward = get_emoji(reward_data["name"].lower() + "pack") + " " + reward_data["name"]
-            catches_remaining = 1_000_000 - catches % 1_000_000
-            embed = Container(
-                "## 😻 250k/Cat Day Event",
-                f"-# quarter million lets go! and happy international cat day! and {get_command_mention('stocks')} are back!",
-                "A new catching event, ending <t:1786651200:R>! For every *unique cat type* you catch, you will get a pack! The pack type will be determined by *how many catches everyone globally does*. See below for current event state!",
-                f"*Your cat types:* {len(profile.weekly_cattypes)} ({catemojilist})",
-                f"*Current pack:* {curr_reward} (next in {catches_remaining:,} catches)",
-                f"**Your reward:** {len(profile.weekly_cattypes)}x {curr_reward}",
-                "===",
-                "## 🔥 Cat Day Sale!",
-                "Also ending <t:1786651200:R>, there is a -20% sale over on [catbot.shop](https://catbot.shop)! Yippee!",
-                ActionRow(
-                    Button(label="Cat Bot Shop", url="https://catbot.shop"),
-                ),
-                "-# <t:1786132800>",
-            )
-            view.add_item(embed)
-            view.add_item(back_row)
-            await interaction.edit_original_response(view=view)
+                catches = await _get_pool().fetchval("SELECT sum_catches FROM profile_sums_mv;") - 215298618
+                reward_data = data.pack_data[catches // 1_000_000 + 4]
+                curr_reward = get_emoji(reward_data["name"].lower() + "pack") + " " + reward_data["name"]
+                catches_remaining = 1_000_000 - catches % 1_000_000
+                embed = Container(
+                    "## 😻 250k/Cat Day Event",
+                    f"-# quarter million lets go! and happy international cat day! and {get_command_mention('stocks')} are back!",
+                    "A new catching event, ending <t:1786651200:R>! For every *unique cat type* you catch, you will get a pack! The pack type will be determined by *how many catches everyone globally does*. See below for current event state!",
+                    f"*Your cat types:* {len(profile.weekly_cattypes)} ({catemojilist})",
+                    f"*Current pack:* {curr_reward} (next in {catches_remaining:,} catches)",
+                    f"**Your reward:** {len(profile.weekly_cattypes)}x {curr_reward}",
+                    "===",
+                    "## 🔥 Cat Day Sale!",
+                    "Also ending <t:1786651200:R>, there is a -20% sale over on [catbot.shop](https://catbot.shop)! Yippee!",
+                    ActionRow(
+                        Button(label="Cat Bot Shop", url="https://catbot.shop"),
+                    ),
+                    "-# <t:1786132800>",
+                )
+                view.add_item(embed)
+                view.add_item(back_row)
+                await interaction.edit_original_response(view=view)
 
     async def regen_buttons() -> None:
         nonlocal buttons
@@ -4626,12 +4648,7 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
     else:
         rarest_fish = "N/A"
     stats.append(["❓", "Misc"])
-    portfolio_value = 0
-    for stock in data.stock_data:
-        stock_price = await get_stock_price(stock["ticker"])
-        amount_owned = profile[f"stock_{stock['ticker'].lower()}"]
-        item_value = stock_price * amount_owned
-        portfolio_value += item_value
+    portfolio_value, _ = await compute_portfolio(profile)
     if profile.ttt_played != 0:
         stats.append(
             ["ttc_win_rate", "⭕", f"Tic Tac Toe wins: {profile.ttt_won:,} (winrate: {(profile.ttt_won + profile.ttt_draws) / profile.ttt_played * 100:.2f}%)"]
@@ -4706,18 +4723,7 @@ async def gen_inventory(
     user = await User.get_or_create(user_id=inv_user.id)
 
     # around here we count aches
-    unlocked = 0
-    minus_achs = 0
-    minus_achs_count = 0
-    for k in ach_names:
-        is_ach_hidden = ach_list[k]["category"] == "Hidden"
-        if is_ach_hidden:
-            minus_achs_count += 1
-        if person[k]:
-            if is_ach_hidden:
-                minus_achs += 1
-            else:
-                unlocked += 1
+    unlocked, minus_achs, minus_achs_count = count_achievements(person)
     total_achs = len(ach_list) - minus_achs_count
     minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
 
@@ -6047,6 +6053,19 @@ async def packs(message: discord.Interaction):
     await message.response.send_message(embed=embed, view=view)
 
 
+def make_refresh_and_reminder_buttons(user, gen_main_cb, toggle_reminders_cb) -> tuple[Button, Button]:
+    refresh_button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
+    refresh_button.callback = gen_main_cb
+
+    if user.reminders_enabled:
+        reminder_button = Button(emoji="🔕", style=ButtonStyle.blurple)
+    else:
+        reminder_button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
+    reminder_button.callback = toggle_reminders_cb
+
+    return refresh_button, reminder_button
+
+
 @bot.tree.command(description="why would anyone think a cattlepass would be a good idea (bp)")
 async def battlepass(message: discord.Interaction):
     assert message.guild is not None
@@ -6078,16 +6097,8 @@ async def battlepass(message: discord.Interaction):
         await user.save()
 
         view = View(timeout=VIEW_TIMEOUT)
-        button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
-        button.callback = gen_main
-        view.add_item(button)
-
-        if user.reminders_enabled:
-            button = Button(emoji="🔕", style=ButtonStyle.blurple)
-        else:
-            button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
-        button.callback = toggle_reminders
-        view.add_item(button)
+        for button in make_refresh_and_reminder_buttons(user, gen_main, toggle_reminders):
+            view.add_item(button)
 
         await interaction.followup.send(
             f"Reminders are now {'enabled' if user.reminders_enabled else 'disabled'}.",
@@ -6237,17 +6248,8 @@ async def battlepass(message: discord.Interaction):
             color=Colors.brown,
         ).set_footer(text=rain_shill)
         view = View(timeout=VIEW_TIMEOUT)
-
-        button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
-        button.callback = gen_main
-        view.add_item(button)
-
-        if user.reminders_enabled:
-            button = Button(emoji="🔕", style=ButtonStyle.blurple)
-        else:
-            button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
-        button.callback = toggle_reminders
-        view.add_item(button)
+        for button in make_refresh_and_reminder_buttons(user, gen_main, toggle_reminders):
+            view.add_item(button)
 
         if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
             embedVar.set_author(name="You have unread news! /news")
@@ -6330,17 +6332,9 @@ async def view_portfolio(interaction: discord.Interaction, person: discord.Membe
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
 
-    portfolio_value = profile.coins
-    share_strs = [f"🪙 {profile.coins:,}"]
-
-    for stock in data.stock_data:
-        stock_price = await get_stock_price(stock["ticker"])
-        emoji = get_emoji(stock["emoji"])
-        amount_owned = profile[f"stock_{stock['ticker'].lower()}"]
-        item_value = stock_price * amount_owned
-        portfolio_value += item_value
-        if amount_owned > 0:
-            share_strs.append(f"{emoji} {amount_owned:,}x (🪙 *{item_value:,}*)")
+    stock_value, share_strs = await compute_portfolio(profile)
+    portfolio_value = profile.coins + stock_value
+    share_strs = [f"🪙 {profile.coins:,}"] + share_strs
 
     shares_display = "\n".join(share_strs)
 
@@ -6353,20 +6347,21 @@ async def view_portfolio(interaction: discord.Interaction, person: discord.Membe
 
     portfolio_history = []
     async for history in PortfolioHistory.filter("user_id = $1 ORDER BY time DESC LIMIT 13", profile.id):
-        if history.type == "d":
-            portfolio_history.append(f"📥 Deposited 🪙 {history.price:,} coins <t:{history.time}:R>")
-        elif history.type == "w":
-            portfolio_history.append(f"📤 Withdrew 🪙 {history.price:,} coins <t:{history.time}:R>")
-        elif history.type == "s":
-            portfolio_history.append(f"🔴 Sold {history.quantity:,}x {history.ticker} at 🪙 {history.price:,}/share <t:{history.time}:R>")
-        elif history.type == "b":
-            portfolio_history.append(f"🟢 Bought {history.quantity:,}x {history.ticker} at 🪙 {history.price:,}/share <t:{history.time}:R>")
-        elif history.type == "r":
-            portfolio_history.append(f"⭐ Got rewarded 🪙 {history.quantity:,} by {history.ticker} <t:{history.time}:R>")
-        elif history.type == "c":
-            portfolio_history.append(f":x: Cancelled BUY, refunded 🪙 {history.quantity:,} <t:{history.time}:R>")
-        elif history.type == "C":
-            portfolio_history.append(f":x: Cancelled SELL, refunded {history.quantity:,}x {history.ticker} shares <t:{history.time}:R>")
+        match history.type:
+            case "d":
+                portfolio_history.append(f"📥 Deposited 🪙 {history.price:,} coins <t:{history.time}:R>")
+            case "w":
+                portfolio_history.append(f"📤 Withdrew 🪙 {history.price:,} coins <t:{history.time}:R>")
+            case "s":
+                portfolio_history.append(f"🔴 Sold {history.quantity:,}x {history.ticker} at 🪙 {history.price:,}/share <t:{history.time}:R>")
+            case "b":
+                portfolio_history.append(f"🟢 Bought {history.quantity:,}x {history.ticker} at 🪙 {history.price:,}/share <t:{history.time}:R>")
+            case "r":
+                portfolio_history.append(f"⭐ Got rewarded 🪙 {history.quantity:,} by {history.ticker} <t:{history.time}:R>")
+            case "c":
+                portfolio_history.append(f":x: Cancelled BUY, refunded 🪙 {history.quantity:,} <t:{history.time}:R>")
+            case "C":
+                portfolio_history.append(f":x: Cancelled SELL, refunded {history.quantity:,}x {history.ticker} shares <t:{history.time}:R>")
 
     deposits = await PortfolioHistory.sum("price", "user_id = $1 AND type = $2", profile.id, "d")
     deposits -= await PortfolioHistory.sum("price", "user_id = $1 AND type = $2", profile.id, "w")
@@ -6847,17 +6842,9 @@ async def stocks(message: discord.Interaction):
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
 
-        portfolio_value = profile.coins
-        share_strs = [f"🪙 {profile.coins:,}"]
-
-        for stock in data.stock_data:
-            stock_price = await get_stock_price(stock["ticker"])
-            emoji = get_emoji(stock["emoji"])
-            amount_owned = profile[f"stock_{stock['ticker'].lower()}"]
-            item_value = stock_price * amount_owned
-            portfolio_value += item_value
-            if amount_owned > 0:
-                share_strs.append(f"{emoji} {amount_owned:,}x (🪙 *{item_value:,}*)")
+        stock_value, share_strs = await compute_portfolio(profile)
+        portfolio_value = profile.coins + stock_value
+        share_strs = [f"🪙 {profile.coins:,}"] + share_strs
 
         deposits = await PortfolioHistory.sum("price", "user_id = $1 AND type = $2", profile.id, "d")
         deposits -= await PortfolioHistory.sum("price", "user_id = $1 AND type = $2", profile.id, "w")
@@ -7940,6 +7927,15 @@ async def gift(
             pass
 
 
+def parse_trade_amount(raw: str) -> int | Literal["all"] | None:
+    if raw.lower() in ["max", "all"]:
+        return "all"
+    try:
+        return int(raw)
+    except ValueError:
+        return None
+
+
 @bot.tree.command(description="Trade stuff!")
 @discord.app_commands.rename(other_user="user")
 @discord.app_commands.describe(other_user="why would you need description")
@@ -8159,154 +8155,131 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 assert modal is not None
                 item1 = modal.find_item(67)
                 item2 = modal.find_item(69)
-                if selection == "cats":
-                    assert isinstance(item1, discord.ui.Select)
-                    assert isinstance(item2, discord.ui.TextInput)
-                    pre_cattype = item1.values[0].lower()
-                    amount = item2.value
-
-                    if amount.lower() in ["max", "all"]:
-                        amount = "all"
-                    else:
-                        try:
-                            amount = int(amount)
-                        except Exception:
+                match selection:
+                    case "cats":
+                        assert isinstance(item1, discord.ui.Select)
+                        assert isinstance(item2, discord.ui.TextInput)
+                        pre_cattype = item1.values[0].lower()
+                        amount = parse_trade_amount(item2.value)
+                        if amount is None:
                             await interaction2.response.send_message("Amount must be an integer!", ephemeral=True)
                             return
 
-                    cattype = {t.lower(): t for t in cattypes}.get(pre_cattype, None)
-                    if cattype is None:
-                        await interaction2.response.send_message("Invalid cat type!", ephemeral=True)
-                        return
+                        cattype = {t.lower(): t for t in cattypes}.get(pre_cattype, None)
+                        if cattype is None:
+                            await interaction2.response.send_message("Invalid cat type!", ephemeral=True)
+                            return
 
-                    await active_user.profile.refresh_from_db()
+                        await active_user.profile.refresh_from_db()
 
-                    current = active_user.gives_cats.get(cattype, 0)
-                    if amount == "all":
-                        amount = active_user.profile[f"cat_{cattype}"] - current
+                        current = active_user.gives_cats.get(cattype, 0)
+                        if amount == "all":
+                            amount = active_user.profile[f"cat_{cattype}"] - current
 
-                    if active_user.profile[f"cat_{cattype}"] < amount + current or current + amount < 0:
-                        await interaction2.response.send_message(f"You don't have enough {cattype} cats!", ephemeral=True)
-                        return
+                        if active_user.profile[f"cat_{cattype}"] < amount + current or current + amount < 0:
+                            await interaction2.response.send_message(f"You don't have enough {cattype} cats!", ephemeral=True)
+                            return
 
-                    if current + amount == 0:
-                        active_user.gives_cats.pop(cattype, None)
-                    else:
-                        active_user.gives_cats[cattype] = amount + current
-                        active_user.gives_cats = {k: active_user.gives_cats[k] for k in cattypes if k in active_user.gives_cats}
-                    active_user.value += CAT_VALUES[cattype] * amount
-                elif selection == "packs":
-                    assert isinstance(item1, discord.ui.Select)
-                    assert isinstance(item2, discord.ui.TextInput)
-                    packtype = item1.values[0].title()
-                    amount = item2.value
-
-                    if amount.lower() in ["max", "all"]:
-                        amount = "all"
-                    else:
-                        try:
-                            amount = int(amount)
-                        except Exception:
+                        if current + amount == 0:
+                            active_user.gives_cats.pop(cattype, None)
+                        else:
+                            active_user.gives_cats[cattype] = amount + current
+                            active_user.gives_cats = {k: active_user.gives_cats[k] for k in cattypes if k in active_user.gives_cats}
+                        active_user.value += CAT_VALUES[cattype] * amount
+                    case "packs":
+                        assert isinstance(item1, discord.ui.Select)
+                        assert isinstance(item2, discord.ui.TextInput)
+                        packtype = item1.values[0].title()
+                        amount = parse_trade_amount(item2.value)
+                        if amount is None:
                             await interaction2.response.send_message("Amount must be an integer!", ephemeral=True)
                             return
 
-                    if packtype not in pack_names:
-                        await interaction2.response.send_message(f"Pack {packtype} not found!", ephemeral=True)
-                        return
+                        if packtype not in pack_names:
+                            await interaction2.response.send_message(f"Pack {packtype} not found!", ephemeral=True)
+                            return
 
-                    await active_user.profile.refresh_from_db()
+                        await active_user.profile.refresh_from_db()
 
-                    current = active_user.gives_packs.get(packtype, 0)
-                    if amount == "all":
-                        amount = active_user.profile[f"pack_{packtype.lower()}"] - current
+                        current = active_user.gives_packs.get(packtype, 0)
+                        if amount == "all":
+                            amount = active_user.profile[f"pack_{packtype.lower()}"] - current
 
-                    if active_user.profile[f"pack_{packtype.lower()}"] < amount + current or current + amount < 0:
-                        await interaction2.response.send_message(f"You don't have enough {packtype} packs!", ephemeral=True)
-                        return
+                        if active_user.profile[f"pack_{packtype.lower()}"] < amount + current or current + amount < 0:
+                            await interaction2.response.send_message(f"You don't have enough {packtype} packs!", ephemeral=True)
+                            return
 
-                    if current + amount == 0:
-                        active_user.gives_packs.pop(packtype, None)
-                    else:
-                        active_user.gives_packs[packtype] = amount + current
-                        active_user.gives_packs = {k: active_user.gives_packs[k] for k in pack_names if k in active_user.gives_packs}
-                    active_user.value += sum([i["totalvalue"] if i["name"] == packtype else 0 for i in data.pack_data]) * amount
-                elif selection == "scratchcards":
-                    assert isinstance(item2, discord.ui.TextInput)
-                    amount = item2.value
-
-                    await active_user.profile.refresh_from_db()
-
-                    if amount.lower() in ["max", "all"]:
-                        amount = "all"
-                    else:
-                        try:
-                            amount = int(amount)
-                        except Exception:
+                        if current + amount == 0:
+                            active_user.gives_packs.pop(packtype, None)
+                        else:
+                            active_user.gives_packs[packtype] = amount + current
+                            active_user.gives_packs = {k: active_user.gives_packs[k] for k in pack_names if k in active_user.gives_packs}
+                        active_user.value += sum([i["totalvalue"] if i["name"] == packtype else 0 for i in data.pack_data]) * amount
+                    case "scratchcards":
+                        assert isinstance(item2, discord.ui.TextInput)
+                        amount = parse_trade_amount(item2.value)
+                        if amount is None:
                             await interaction2.response.send_message("Amount must be an integer!", ephemeral=True)
                             return
 
-                    current = active_user.gives_scratchcards
-                    if amount == "all":
-                        amount = active_user.profile.scratchcards - current
+                        await active_user.profile.refresh_from_db()
 
-                    if active_user.profile.scratchcards < amount + current or current + amount < 0:
-                        await interaction2.response.send_message("You don't have enough scratchcards!", ephemeral=True)
-                        return
+                        current = active_user.gives_scratchcards
+                        if amount == "all":
+                            amount = active_user.profile.scratchcards - current
 
-                    active_user.gives_scratchcards += amount
-                    active_user.value += amount * 1085
-                elif selection == "rain":
-                    assert isinstance(item2, discord.ui.TextInput)
-                    amount = item2.value
+                        if active_user.profile.scratchcards < amount + current or current + amount < 0:
+                            await interaction2.response.send_message("You don't have enough scratchcards!", ephemeral=True)
+                            return
 
-                    if amount.lower() in ["max", "all"]:
-                        amount = "all"
-                    else:
-                        try:
-                            amount = int(amount)
-                        except Exception:
+                        active_user.gives_scratchcards += amount
+                        active_user.value += amount * 1085
+                    case "rain":
+                        assert isinstance(item2, discord.ui.TextInput)
+                        amount = parse_trade_amount(item2.value)
+                        if amount is None:
                             await interaction2.response.send_message("Amount must be an integer!", ephemeral=True)
                             return
 
-                    await active_user.global_user.refresh_from_db()
+                        await active_user.global_user.refresh_from_db()
 
-                    current = active_user.gives_rain
-                    if amount == "all":
-                        amount = active_user.global_user.rain_minutes - current
+                        current = active_user.gives_rain
+                        if amount == "all":
+                            amount = active_user.global_user.rain_minutes - current
 
-                    if active_user.global_user.rain_minutes < amount + current or current + amount < 0:
-                        await interaction2.response.send_message("You don't have enough rain!", ephemeral=True)
-                        return
-
-                    active_user.gives_rain += amount
-                elif selection == "prisms":
-                    if isinstance(item1, discord.ui.Select):
-                        prism_name = item1.values[0].title()
-                    elif isinstance(item1, discord.ui.TextInput):
-                        prism_name = item1.value.title()
-                    else:
-                        raise TypeError(f"Expected Select or TextInput, got {type(item1)}")
-
-                    prism_name = prism_name.replace("X-Ray", "X-ray")
-
-                    if prism_name in active_user.gives_prisms:
-                        active_user.gives_prisms.remove(prism_name)
-                        active_user.value -= PRISM_VALUE
-                    else:
-                        assert interaction2.guild is not None
-                        prism = await Prism.get_or_none(guild_id=interaction2.guild.id, name=prism_name)
-
-                        if prism is None:
-                            await interaction2.response.send_message(f"Prism {prism_name} not found!", ephemeral=True)
-                            return
-                        if prism.user_id != active_user.user.id:
-                            await interaction2.response.send_message(f"You don't own the {prism_name} prism!", ephemeral=True)
+                        if active_user.global_user.rain_minutes < amount + current or current + amount < 0:
+                            await interaction2.response.send_message("You don't have enough rain!", ephemeral=True)
                             return
 
-                        active_user.gives_prisms.append(prism_name)
-                        order_index = {k: i for i, k in enumerate(prism_names)}
-                        active_user.gives_prisms.sort(key=lambda x: order_index.get(x, float("inf")))
-                        active_user.value += PRISM_VALUE
+                        active_user.gives_rain += amount
+                    case "prisms":
+                        if isinstance(item1, discord.ui.Select):
+                            prism_name = item1.values[0].title()
+                        elif isinstance(item1, discord.ui.TextInput):
+                            prism_name = item1.value.title()
+                        else:
+                            raise TypeError(f"Expected Select or TextInput, got {type(item1)}")
+
+                        prism_name = prism_name.replace("X-Ray", "X-ray")
+
+                        if prism_name in active_user.gives_prisms:
+                            active_user.gives_prisms.remove(prism_name)
+                            active_user.value -= PRISM_VALUE
+                        else:
+                            assert interaction2.guild is not None
+                            prism = await Prism.get_or_none(guild_id=interaction2.guild.id, name=prism_name)
+
+                            if prism is None:
+                                await interaction2.response.send_message(f"Prism {prism_name} not found!", ephemeral=True)
+                                return
+                            if prism.user_id != active_user.user.id:
+                                await interaction2.response.send_message(f"You don't own the {prism_name} prism!", ephemeral=True)
+                                return
+
+                            active_user.gives_prisms.append(prism_name)
+                            order_index = {k: i for i, k in enumerate(prism_names)}
+                            active_user.gives_prisms.sort(key=lambda x: order_index.get(x, float("inf")))
+                            active_user.value += PRISM_VALUE
 
                 person1.accept = False
                 person2.accept = False
@@ -8322,87 +8295,92 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             active_user = person1 if interaction.user == person1.user else person2
             selection = select.values[0]
             modal = None
-            if selection == "cats":
-                modal = Modal(title="Offer cats...")
-                options = []
-                await active_user.profile.refresh_from_db()
-                for cattype in cattypes:
-                    if (ca := active_user.profile[f"cat_{cattype}"]) > 0:
-                        value = CAT_VALUES[cattype]
-                        options.append(
-                            discord.SelectOption(
-                                value=cattype,
-                                label=f"{cattype} ({ca})",
-                                emoji=get_emoji(f"{cattype.lower()}cat"),
-                                description=f"{round(value, 2)} value",
+            match selection:
+                case "cats":
+                    modal = Modal(title="Offer cats...")
+                    options = []
+                    await active_user.profile.refresh_from_db()
+                    for cattype in cattypes:
+                        if (ca := active_user.profile[f"cat_{cattype}"]) > 0:
+                            value = CAT_VALUES[cattype]
+                            options.append(
+                                discord.SelectOption(
+                                    value=cattype,
+                                    label=f"{cattype} ({ca})",
+                                    emoji=get_emoji(f"{cattype.lower()}cat"),
+                                    description=f"{round(value, 2)} value",
+                                )
                             )
-                        )
-                if len(options) == 0:
-                    await interaction.response.send_message("You don't have any cats to offer!", ephemeral=True)
-                    return
-                modal.add_item(discord.ui.Label(text="Cat Type", component=discord.ui.Select(options=options, id=67)))
-                modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(placeholder="1", min_length=1, id=69)))
-            elif selection == "packs":
-                if not active_user.profile.bp_history.strip().replace("0,0,0;", ""):
-                    await interaction.response.send_message("your profile needs to be older than 1 cattlepass season to trade packs.", ephemeral=True)
-                    return
-                modal = Modal(title="Offer packs...")
-                options = []
-                await active_user.profile.refresh_from_db()
-                for pack in pack_names:
-                    if (pa := active_user.profile[f"pack_{pack.lower()}"]) > 0:
-                        value = sum([i["totalvalue"] if i["name"] == pack else 0 for i in data.pack_data])
-                        options.append(
-                            discord.SelectOption(
-                                value=pack,
-                                label=f"{pack} ({pa})",
-                                emoji=get_emoji(f"{pack.lower()}pack"),
-                                description=f"{round(value, 2)} value",
+                    if len(options) == 0:
+                        await interaction.response.send_message("You don't have any cats to offer!", ephemeral=True)
+                        return
+                    modal.add_item(discord.ui.Label(text="Cat Type", component=discord.ui.Select(options=options, id=67)))
+                    modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(placeholder="1", min_length=1, id=69)))
+                case "packs":
+                    if not active_user.profile.bp_history.strip().replace("0,0,0;", ""):
+                        await interaction.response.send_message("your profile needs to be older than 1 cattlepass season to trade packs.", ephemeral=True)
+                        return
+                    modal = Modal(title="Offer packs...")
+                    options = []
+                    await active_user.profile.refresh_from_db()
+                    for pack in pack_names:
+                        if (pa := active_user.profile[f"pack_{pack.lower()}"]) > 0:
+                            value = sum([i["totalvalue"] if i["name"] == pack else 0 for i in data.pack_data])
+                            options.append(
+                                discord.SelectOption(
+                                    value=pack,
+                                    label=f"{pack} ({pa})",
+                                    emoji=get_emoji(f"{pack.lower()}pack"),
+                                    description=f"{round(value, 2)} value",
+                                )
                             )
+                    if len(options) == 0:
+                        await interaction.response.send_message("You don't have any packs to offer!", ephemeral=True)
+                        return
+                    modal.add_item(discord.ui.Label(text="Pack Type", component=discord.ui.Select(options=options, id=67)))
+                    modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(placeholder="1", min_length=1, id=69)))
+                case "scratchcards":
+                    modal = Modal(title="Offer scratchcards...")
+                    await active_user.profile.refresh_from_db()
+                    if active_user.profile.scratchcards == 0:
+                        await interaction.response.send_message("You don't have any scratchcards to offer!", ephemeral=True)
+                        return
+
+                    modal.add_item(
+                        discord.ui.Label(
+                            text="Amount (1085 value each)",
+                            component=discord.ui.TextInput(placeholder=f"Max: {active_user.profile.scratchcards:,}", min_length=1, id=69),
                         )
-                if len(options) == 0:
-                    await interaction.response.send_message("You don't have any packs to offer!", ephemeral=True)
-                    return
-                modal.add_item(discord.ui.Label(text="Pack Type", component=discord.ui.Select(options=options, id=67)))
-                modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(placeholder="1", min_length=1, id=69)))
-            elif selection == "scratchcards":
-                modal = Modal(title="Offer scratchcards...")
-                await active_user.profile.refresh_from_db()
-                if active_user.profile.scratchcards == 0:
-                    await interaction.response.send_message("You don't have any scratchcards to offer!", ephemeral=True)
-                    return
-
-                modal.add_item(
-                    discord.ui.Label(
-                        text="Amount (1085 value each)",
-                        component=discord.ui.TextInput(placeholder=f"Max: {active_user.profile.scratchcards:,}", min_length=1, id=69),
                     )
-                )
-            elif selection == "rain":
-                modal = Modal(title="Offer rain...")
-                await active_user.global_user.refresh_from_db()
-                if active_user.global_user.rain_minutes == 0:
-                    await interaction.response.send_message("You don't have any rain to offer!", ephemeral=True)
-                    return
+                case "rain":
+                    modal = Modal(title="Offer rain...")
+                    await active_user.global_user.refresh_from_db()
+                    if active_user.global_user.rain_minutes == 0:
+                        await interaction.response.send_message("You don't have any rain to offer!", ephemeral=True)
+                        return
 
-                modal.add_item(
-                    discord.ui.Label(
-                        text="Rain Minutes", component=discord.ui.TextInput(placeholder=f"Max: {active_user.global_user.rain_minutes}", min_length=1, id=69)
+                    modal.add_item(
+                        discord.ui.Label(
+                            text="Rain Minutes", component=discord.ui.TextInput(placeholder=f"Max: {active_user.global_user.rain_minutes}", min_length=1, id=69)
+                        )
                     )
-                )
-            elif selection == "prisms":
-                modal = Modal(title="Offer prisms...")
-                assert message.guild is not None
-                names = [prism.name async for prism in Prism.filter("user_id = $1 AND guild_id = $2 ORDER BY time ASC", active_user.user.id, message.guild.id)]
-                names = list(dict.fromkeys(names))
-                if len(names) == 0:
-                    await interaction.response.send_message("You don't have any prisms to offer!", ephemeral=True)
-                    return
-                if len(names) <= 25:
-                    options = [discord.SelectOption(label=name, emoji=get_emoji("prism")) for name in names]
-                    modal.add_item(discord.ui.Label(text=f"Prism Type ({PRISM_VALUE} value each)", component=discord.ui.Select(options=options, id=67)))
-                else:
-                    modal.add_item(discord.ui.Label(text=f"Prism Type ({PRISM_VALUE} value each)", component=discord.ui.TextInput(placeholder="Alpha", id=67)))
+                case "prisms":
+                    modal = Modal(title="Offer prisms...")
+                    assert message.guild is not None
+                    names = [prism.name async for prism in Prism.filter("user_id = $1 AND guild_id = $2 ORDER BY time ASC", active_user.user.id, message.guild.id)]
+                    names = list(dict.fromkeys(names))
+                    if len(names) == 0:
+                        await interaction.response.send_message("You don't have any prisms to offer!", ephemeral=True)
+                        return
+                    if len(names) <= 25:
+                        options = [discord.SelectOption(label=name, emoji=get_emoji("prism")) for name in names]
+                        modal.add_item(
+                            discord.ui.Label(text=f"Prism Type ({PRISM_VALUE} value each)", component=discord.ui.Select(options=options, id=67))
+                        )
+                    else:
+                        modal.add_item(
+                            discord.ui.Label(text=f"Prism Type ({PRISM_VALUE} value each)", component=discord.ui.TextInput(placeholder="Alpha", id=67))
+                        )
             assert modal is not None
             modal.on_submit = submitb
             await interaction.response.send_modal(modal)
@@ -9957,6 +9935,19 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
     await interaction.followup.send(content=text1, view=myview1, ephemeral=True)
 
 
+def describe_perk(perk: str, perks: list, global_user: User) -> tuple[int, dict, str]:
+    perk_rarity = int(perk.split("_")[0])
+    perk_data = perks[int(perk.split("_")[1]) - 1]
+    effect = perk_data["values"][perk_rarity]
+    desc = (
+        perk_data.get("desc", "")
+        .replace("percent", f"{effect:,}")
+        .replace("triple_none", f"{effect / 2:g}")
+        .replace("timer_add_streak", f"{global_user.vote_streak:,}")
+    )
+    return perk_rarity, perk_data, desc
+
+
 @bot.tree.command(description="..?")
 async def catnip(message: discord.Interaction):
     assert message.guild is not None
@@ -10081,15 +10072,7 @@ You can stop. That's okay. Seriously."""
         full_desc = ""
 
         for index, perk in enumerate(user_perks):
-            perk_rarity = int(perk.split("_")[0])
-            perk_data = perks[int(perk.split("_")[1]) - 1]
-            effect = perk_data["values"][int(perk.split("_")[0])]
-            desc = (
-                perk_data.get("desc", "")
-                .replace("percent", f"{effect:,}")
-                .replace("triple_none", f"{effect / 2:g}")
-                .replace("timer_add_streak", f"{global_user.vote_streak:,}")
-            )
+            perk_rarity, perk_data, desc = describe_perk(perk, perks, global_user)
             full_desc += f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')} ({rarities[perk_rarity]})\n{desc}\n\n"
             emojied_options[index + 1] = (f"{perk_data.get('name', '')} ({rarities[perk_rarity]})", rarity_colors[perk_rarity], desc.replace("**", ""))
 
@@ -10119,15 +10102,7 @@ You can stop. That's okay. Seriously."""
         full_desc = ""
 
         for perk in user_perks:
-            perk_rarity = int(perk.split("_")[0])
-            perk_data = perks[int(perk.split("_")[1]) - 1]
-            effect = perk_data["values"][int(perk.split("_")[0])]
-            desc = (
-                perk_data.get("desc", "")
-                .replace("percent", f"{effect:,}")
-                .replace("triple_none", f"{effect / 2:g}")
-                .replace("timer_add_streak", f"{global_user.vote_streak:,}")
-            )
+            perk_rarity, perk_data, desc = describe_perk(perk, perks, global_user)
             full_desc += f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')} ({rarities[perk_rarity]})\n{desc}\n\n"
 
         if not user_perks:
@@ -10487,18 +10462,7 @@ async def achievements(message: discord.Interaction):
     if user.funny >= 50:
         await achemb(message, "its_not_working", "followup")
 
-    unlocked = 0
-    minus_achs = 0
-    minus_achs_count = 0
-    for k in ach_names:
-        is_ach_hidden = ach_list[k]["category"] == "Hidden"
-        if is_ach_hidden:
-            minus_achs_count += 1
-        if user[k]:
-            if is_ach_hidden:
-                minus_achs += 1
-            else:
-                unlocked += 1
+    unlocked, minus_achs, minus_achs_count = count_achievements(user)
     total_achs = len(ach_list) - minus_achs_count
     minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
 
@@ -10508,20 +10472,7 @@ async def achievements(message: discord.Interaction):
     async def gen_new(category: str) -> discord.Embed:
         nonlocal message, unlocked, total_achs, hidden_counter
 
-        unlocked = 0
-        minus_achs = 0
-        minus_achs_count = 0
-
-        for k in ach_names:
-            is_ach_hidden = ach_list[k]["category"] == "Hidden"
-            if is_ach_hidden:
-                minus_achs_count += 1
-            if user[k]:
-                if is_ach_hidden:
-                    minus_achs += 1
-                else:
-                    unlocked += 1
-
+        unlocked, minus_achs, minus_achs_count = count_achievements(user)
         total_achs = len(ach_list) - minus_achs_count
 
         if minus_achs != 0:
@@ -10728,103 +10679,104 @@ async def leaderboards(
         string = ""
         bp_season = None
         unit = None
-        if type == "Cats":
-            unit = "cats"
+        match type:
+            case "Cats":
+                unit = "cats"
 
-            if specific_cat != "All":
-                result = await Profile.collect_limit(
-                    ["user_id", f"cat_{specific_cat}"], f'guild_id = $1 AND "cat_{specific_cat}" > 0 ORDER BY "cat_{specific_cat}" DESC', message.guild.id
-                )
-                final_value = f"cat_{specific_cat}"
-            else:
-                # dynamically generate sum expression, cast each value to bigint first to handle large totals
-                cat_columns = [f'CAST("cat_{c}" AS BIGINT)' for c in cattypes]
-                sum_expression = RawSQL("(" + " + ".join(cat_columns) + ") AS final_value")
-                result = await Profile.collect_limit(["user_id", sum_expression], "guild_id = $1 ORDER BY final_value DESC", message.guild.id)
+                if specific_cat != "All":
+                    result = await Profile.collect_limit(
+                        ["user_id", f"cat_{specific_cat}"], f'guild_id = $1 AND "cat_{specific_cat}" > 0 ORDER BY "cat_{specific_cat}" DESC', message.guild.id
+                    )
+                    final_value = f"cat_{specific_cat}"
+                else:
+                    # dynamically generate sum expression, cast each value to bigint first to handle large totals
+                    cat_columns = [f'CAST("cat_{c}" AS BIGINT)' for c in cattypes]
+                    sum_expression = RawSQL("(" + " + ".join(cat_columns) + ") AS final_value")
+                    result = await Profile.collect_limit(["user_id", sum_expression], "guild_id = $1 ORDER BY final_value DESC", message.guild.id)
+                    final_value = "final_value"
+
+                    # find rarest
+                    rarest = None
+                    rarest_holder = None
+                    for i in cattypes[::-1]:
+                        non_zero_count = await Profile.collect_limit("user_id", f'guild_id = $1 AND "cat_{i}" > 0', message.guild.id)
+                        if len(non_zero_count) != 0:
+                            rarest = i
+                            rarest_holder = non_zero_count
+                            break
+
+                    if rarest and rarest_holder and specific_cat != rarest:
+                        catmoji = get_emoji(rarest.lower() + "cat")
+                        rarest_holder = [f"<@{i.user_id}>" for i in rarest_holder]
+                        joined = ", ".join(rarest_holder)
+                        if len(rarest_holder) > 10:
+                            joined = f"{len(rarest_holder)} people"
+                        string = f"Rarest cat: {catmoji} ({joined}'s)\n\n"
+            case "Value":
+                unit = "value"
+                sums = []
+                for i in cattypes:
+                    if not i:
+                        continue
+                    weight = CAT_VALUES[i]
+                    sums.append(f'({weight}) * "cat_{i}"')
+                total_sum_expr = RawSQL("(" + " + ".join(sums) + ") AS final_value")
+                result = await Profile.collect_limit(["user_id", total_sum_expr], "guild_id = $1 ORDER BY final_value DESC", message.guild.id)
                 final_value = "final_value"
-
-                # find rarest
-                rarest = None
-                rarest_holder = None
-                for i in cattypes[::-1]:
-                    non_zero_count = await Profile.collect_limit("user_id", f'guild_id = $1 AND "cat_{i}" > 0', message.guild.id)
-                    if len(non_zero_count) != 0:
-                        rarest = i
-                        rarest_holder = non_zero_count
-                        break
-
-                if rarest and rarest_holder and specific_cat != rarest:
-                    catmoji = get_emoji(rarest.lower() + "cat")
-                    rarest_holder = [f"<@{i.user_id}>" for i in rarest_holder]
-                    joined = ", ".join(rarest_holder)
-                    if len(rarest_holder) > 10:
-                        joined = f"{len(rarest_holder)} people"
-                    string = f"Rarest cat: {catmoji} ({joined}'s)\n\n"
-        elif type == "Value":
-            unit = "value"
-            sums = []
-            for i in cattypes:
-                if not i:
-                    continue
-                weight = CAT_VALUES[i]
-                sums.append(f'({weight}) * "cat_{i}"')
-            total_sum_expr = RawSQL("(" + " + ".join(sums) + ") AS final_value")
-            result = await Profile.collect_limit(["user_id", total_sum_expr], "guild_id = $1 ORDER BY final_value DESC", message.guild.id)
-            final_value = "final_value"
-        elif type == "Fast":
-            unit = "sec"
-            result = await Profile.collect_limit(["user_id", "time"], "guild_id = $1 AND time < 99999999999999 ORDER BY time ASC", message.guild.id)
-            final_value = "time"
-        elif type == "Slow":
-            unit = "h"
-            result = await Profile.collect_limit(["user_id", "timeslow"], "guild_id = $1 AND timeslow > 0 ORDER BY timeslow DESC", message.guild.id)
-            final_value = "timeslow"
-        elif type == "Cattlepass":
-            start_date = datetime.datetime(2024, 12, 1, tzinfo=datetime.timezone.utc)
-            current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
-            full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
-            bp_season = config.battle["seasons"][str(full_months_passed)]
-            if current_date.day < start_date.day:
-                full_months_passed -= 1
-            result = await Profile.collect_limit(
-                ["user_id", "battlepass", "progress"],
-                "guild_id = $1 AND season = $2 AND (battlepass > 0 OR progress > 0) ORDER BY battlepass DESC, progress DESC",
-                message.guild.id,
-                full_months_passed,
-            )
-            final_value = "battlepass"
-        elif type == "Cookies":
-            unit = "cookies"
-            result = await Profile.collect_limit(["user_id", "cookies"], "guild_id = $1 AND cookies > 0 ORDER BY cookies DESC", message.guild.id)
-            final_value = "cookies"
-        elif type == "Pig":
-            unit = "score"
-            result = await Profile.collect_limit(
-                ["user_id", "best_pig_score"], "guild_id = $1 AND best_pig_score > 0 ORDER BY best_pig_score DESC", message.guild.id
-            )
-            final_value = "best_pig_score"
-        elif type == "Roulette Dollars":
-            unit = "cat dollars"
-            result = await Profile.collect_limit(
-                ["user_id", "roulette_balance"], "guild_id = $1 AND roulette_balance != 100 ORDER BY roulette_balance DESC", message.guild.id
-            )
-            final_value = "roulette_balance"
-        elif type == "Prisms":
-            unit = "prisms"
-            result = await Prism.collect_limit(
-                ["user_id", RawSQL("COUNT(*) as prism_count")],
-                "guild_id = $1 GROUP BY user_id ORDER BY prism_count DESC",
-                message.guild.id,
-                add_primary_key=False,
-            )
-            final_value = "prism_count"
-        elif type == "Fish":
-            unit = "fishes"
-            result = await Profile.collect_limit(["user_id", "fish_caught"], "guild_id = $1 AND fish_caught != 0 ORDER BY fish_caught DESC", message.guild.id)
-            final_value = "fish_caught"
-        else:
-            # qhar
-            raise ValueError("Invalid leaderboard type")
+            case "Fast":
+                unit = "sec"
+                result = await Profile.collect_limit(["user_id", "time"], "guild_id = $1 AND time < 99999999999999 ORDER BY time ASC", message.guild.id)
+                final_value = "time"
+            case "Slow":
+                unit = "h"
+                result = await Profile.collect_limit(["user_id", "timeslow"], "guild_id = $1 AND timeslow > 0 ORDER BY timeslow DESC", message.guild.id)
+                final_value = "timeslow"
+            case "Cattlepass":
+                start_date = datetime.datetime(2024, 12, 1, tzinfo=datetime.timezone.utc)
+                current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
+                full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
+                bp_season = config.battle["seasons"][str(full_months_passed)]
+                if current_date.day < start_date.day:
+                    full_months_passed -= 1
+                result = await Profile.collect_limit(
+                    ["user_id", "battlepass", "progress"],
+                    "guild_id = $1 AND season = $2 AND (battlepass > 0 OR progress > 0) ORDER BY battlepass DESC, progress DESC",
+                    message.guild.id,
+                    full_months_passed,
+                )
+                final_value = "battlepass"
+            case "Cookies":
+                unit = "cookies"
+                result = await Profile.collect_limit(["user_id", "cookies"], "guild_id = $1 AND cookies > 0 ORDER BY cookies DESC", message.guild.id)
+                final_value = "cookies"
+            case "Pig":
+                unit = "score"
+                result = await Profile.collect_limit(
+                    ["user_id", "best_pig_score"], "guild_id = $1 AND best_pig_score > 0 ORDER BY best_pig_score DESC", message.guild.id
+                )
+                final_value = "best_pig_score"
+            case "Roulette Dollars":
+                unit = "cat dollars"
+                result = await Profile.collect_limit(
+                    ["user_id", "roulette_balance"], "guild_id = $1 AND roulette_balance != 100 ORDER BY roulette_balance DESC", message.guild.id
+                )
+                final_value = "roulette_balance"
+            case "Prisms":
+                unit = "prisms"
+                result = await Prism.collect_limit(
+                    ["user_id", RawSQL("COUNT(*) as prism_count")],
+                    "guild_id = $1 GROUP BY user_id ORDER BY prism_count DESC",
+                    message.guild.id,
+                    add_primary_key=False,
+                )
+                final_value = "prism_count"
+            case "Fish":
+                unit = "fishes"
+                result = await Profile.collect_limit(["user_id", "fish_caught"], "guild_id = $1 AND fish_caught != 0 ORDER BY fish_caught DESC", message.guild.id)
+                final_value = "fish_caught"
+            case _:
+                # qhar
+                raise ValueError("Invalid leaderboard type")
 
         # find the placement of the person who ran the command and optionally the person who pressed the button
         interactor_placement = 0
