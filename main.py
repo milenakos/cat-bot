@@ -3144,7 +3144,7 @@ bot.loop.create_task(go(message, bot))
             await message.reply(f"ERROR: {e}")
             return
         result = "\n".join(str(i).replace("<Record ", "").replace(">", "") for i in result)
-        if len(result) < 4000:
+        if len(result) < 2000:
             await message.reply(result)
         else:
             await message.reply(file=discord.File(io.StringIO(result), filename="result.txt"))  # pyright: ignore[reportArgumentType]
