@@ -9388,12 +9388,11 @@ def _bounties_are_complete(user: Profile) -> bool:
 
 def _bounty_progress_segments(user: Profile, segments: int = 10) -> int:
     slots = BOUNTY_SLOTS[: user.bounties]
-    total_required = sum(user[f"bounty_total_{slot}"] for slot in slots)
-    if not total_required:
+    if not slots:
         return segments
 
-    total_progress = sum(user[f"bounty_progress_{slot}"] for slot in slots)
-    return max(0, min(segments, int(total_progress / total_required * segments)))
+    average_progress = sum(user[f"bounty_progress_{slot}"] / user[f"bounty_total_{slot}"] for slot in slots) / len(slots)
+    return max(0, min(segments, int(average_progress * segments)))
 
 
 async def bounty(message: discord.Message, user: Profile, cattype: str) -> None:
