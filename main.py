@@ -5311,27 +5311,6 @@ async def rain(message: discord.Interaction):
         user.rain_minutes = 0
         await user.save()
 
-    server_rains = ""
-    server_minutes = profile.rain_minutes
-    if server_minutes > 0:
-        server_rains = f" (+**{server_minutes}** bonus minutes)"
-
-    embed = discord.Embed(
-        title="☔ Cat Rains",
-        description=f"""Cat Rains are power-ups which spawn cats super fast for a limited amounts of time in a channel of your choice.
-
-You can get those by buying them at our [store](<https://catbot.shop>) or by winning them in an event.
-This bot is developed by a single person so buying one would be very appreciated.
-As a bonus, you will get access to /editprofile and /customcat commands!
-- 1 Rain Minute = 22 cats
-- Fastest times are not saved during rains.
-- Late catching time is reduced to 1 second.
-- Bonus cats are +1 instead of minigame.
-
-You currently have **{user.rain_minutes:,}** minutes of rains{server_rains}.""",
-        color=Colors.brown,
-    )
-
     # this is the silly popup when you click the button
     class RainModal(Modal):
         def __init__(self):
@@ -5429,23 +5408,42 @@ You currently have **{user.rain_minutes:,}** minutes of rains{server_rains}.""",
         await interaction.response.send_modal(modal)
 
     button = Button(
+        emoji="☔",
         label="Rain!" + (" (disabled by server)" if not server.do_rain else ""),
         style=ButtonStyle.blurple,
         disabled=not server.do_rain,
     )
     button.callback = rain_modal
 
-    shopbutton = Button(
-        emoji="🛒",
-        label="Store (-20%!)",
-        url="https://catbot.shop",
-    )
+    shopbutton = Button(emoji="🛒", label="Store (-20%!)", url="https://catbot.shop")
 
     view = View(timeout=VIEW_TIMEOUT)
-    view.add_item(button)
-    view.add_item(shopbutton)
 
-    await message.response.send_message(embed=embed, view=view)
+    server_rains = ""
+    server_minutes = profile.rain_minutes
+    if server_minutes > 0:
+        server_rains = f" (+**{server_minutes}** bonus minutes)"
+
+    view = LayoutView(timeout=VIEW_TIMEOUT)
+
+    embed = Container(
+        "## ☔ Cat Rains",
+        "Cat Rains are power-ups which spawn cats super fast for a limited amounts of time in a channel of your choice.",
+        f"""You can get those by buying them at our [store](<https://catbot.shop>) or by winning them in an event.
+This bot is developed by a single person so buying one would be very appreciated.
+As a bonus, you will get access to {get_command_mention("editprofile")} and {get_command_mention("customcat")} commands!
+- 1 Rain Minute = 22 cats
+- Fastest times are not saved during rains.
+- Late catching time is reduced to 1 second.
+- Bonus cats are +1 instead of minigame.""",
+        "===",
+        f"You currently have **{user.rain_minutes:,}** minutes of rains!{server_rains}",
+        ActionRow(button, shopbutton),
+    )
+
+    view.add_item(embed)
+
+    await message.response.send_message(view=view)
 
 
 @bot.tree.command(description="Buy Cat Rains!")
