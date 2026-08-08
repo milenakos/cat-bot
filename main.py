@@ -2816,7 +2816,7 @@ async def on_message(message: discord.Message) -> None:
                         await asyncio.sleep(5)
                         await interaction.followup.send(phrase, ephemeral=True)
 
-                    await achemb(message, "dark_market", "followup")
+                    await achemb(interaction, "dark_market", "followup")
 
                 if random.randint(0, 10) == 0 and user.total_catches > 50 and not user.dark_market_active:
                     button = Button(label="You see a shadow...", style=ButtonStyle.red)
