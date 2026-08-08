@@ -1666,7 +1666,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
     belated["late_catchers"] = [c for c in belated["late_catchers"] if c[0] != interaction.user.id]
     cattype = belated["cattype"]
     start = int(time.time())
-    end = start + 30
+    end = start + 45
 
     log_stats("minigame_start", {"cattype": cattype})
 
@@ -1859,7 +1859,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
                     component=discord.ui.TextInput(placeholder="meow mrrrp miau nyaa~ :3", min_length=69, max_length=2000, style=discord.TextStyle.long, id=67),
                 )
             )
-    modal.add_item(TextDisplay(f"-# Times up <t:{end}:R>\n-# If you don't see the question, update your Discord app."))
+    modal.add_item(TextDisplay(f"-# Time's up <t:{end}:R>\n-# If you don't see the question, update your Discord app."))
 
     async def check_minigame(interaction: discord.Interaction) -> None:
         nonlocal answer
