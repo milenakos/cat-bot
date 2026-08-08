@@ -1877,7 +1877,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
 
         assert answer_raw is not None
 
-        answer_clean = " ".join(re.sub(r"[^0-9A-Za-z \-~]+", "", answer_raw.replace(",", " ")).split())  # user answer
+        answer_clean = " ".join(re.sub(r"[^0-9A-Za-z \-~:]+", "", answer_raw.replace(",", " ")).split())  # user answer
         answer = " ".join(re.sub(r"[^0-9A-Za-z \-~]+", "", str(answer).replace(",", " ")).split())  # correct answer
 
         match cattype:
