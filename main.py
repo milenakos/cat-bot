@@ -9272,9 +9272,9 @@ async def remind(
     if goal_time < 0:
         await message.response.send_message("cat cant time travel (yet)", ephemeral=True)
         return
-    await message.response.send_message(f"🔔 ok, <t:{goal_time}:R> (+- 1 min) ill remind you of:\n{text}")
-    msg = await message.original_response()
-    message_link = msg.jump_url
+    msg = await message.response.send_message(f"🔔 ok, <t:{goal_time}:R> (+- 1 min) ill remind you of:\n{text}")
+    assert isinstance(msg.resource, discord.InteractionMessage)
+    message_link = msg.resource.jump_url
     text += f"\n\n*This is a [reminder](<{message_link}>) you set.*"
     await Reminder.create(user_id=message.user.id, text=text, time=goal_time)
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
@@ -11111,12 +11111,11 @@ async def reset(message: discord.Interaction, person_id: discord.User):
             return await do_funny(interaction)
 
         try:
-            og = await interaction.original_response()
             profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
-            profile.guild_id = og.id
+            profile.guild_id = the_id
             await profile.save()
             async for p in Prism.filter("guild_id = $1 AND user_id = $2", message.guild.id, person_id.id):
-                p.guild_id = og.id
+                p.guild_id = the_id
                 await p.save()
             await interaction.response.edit_message(
                 content=f"Done! rip {person_id.mention}. f's in chat.\njoin our discord to rollback: <https://discord.gg/staring>", view=None
@@ -11134,7 +11133,8 @@ async def reset(message: discord.Interaction, person_id: discord.User):
     thing = f"Are you sure you want to reset {person_id.mention}?"
     if person_id == bot.user:
         thing += " (this will make me sad)"
-    await message.response.send_message(thing, view=view, allowed_mentions=discord.AllowedMentions(users=True))
+    res = await message.response.send_message(thing, view=view, allowed_mentions=discord.AllowedMentions(users=True))
+    the_id = res.message_id
 
 
 @bot.tree.command(description="(HIGH ADMIN) [VERY DANGEROUS] Reset/wipe all Cat Bot data of this server")
