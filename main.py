@@ -3381,7 +3381,9 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
                 f"## Welcome to {get_emoji('staring_cat')} Cat Bot!",
                 "🐈 The main goal of the bot is to __catch cats__. You can do that by waiting for one to appear - it will look like on the image below (there is usually one every couple of minutes), then simply saying `cat` in the chat. Be quick - after the first person catches the cat, only the first *3 people* within *5 seconds* also get it.",
                 "**Go try it!**",
-                discord.ui.MediaGallery(discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316534462578838/tutorial1.png")),
+                discord.ui.MediaGallery(
+                    discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316534462578838/tutorial1.png")
+                ),
                 "===",
                 f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
             )
@@ -3398,7 +3400,9 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
             container = Container(
                 "This is your inventory. It's the place you can see your cat collection and some basic stats. You can also see anyone else's inventory by using `/inventory @username`.",
                 "Lets run `/leaderboards` to see the best cat catchers in your server!",
-                discord.ui.MediaGallery(discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316535108243608/tutorial2.png")),
+                discord.ui.MediaGallery(
+                    discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316535108243608/tutorial2.png")
+                ),
                 "===",
                 f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
             )
@@ -6842,8 +6846,7 @@ async def stocks(message: discord.Interaction):
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
 
-        stock_value, share_strs = await compute_portfolio(profile)
-        portfolio_value = profile.coins + stock_value
+        _, share_strs = await compute_portfolio(profile)
         share_strs = [f"🪙 {profile.coins:,}"] + share_strs
 
         deposits = await PortfolioHistory.sum("price", "user_id = $1 AND type = $2", profile.id, "d")
@@ -8367,16 +8370,16 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 case "prisms":
                     modal = Modal(title="Offer prisms...")
                     assert message.guild is not None
-                    names = [prism.name async for prism in Prism.filter("user_id = $1 AND guild_id = $2 ORDER BY time ASC", active_user.user.id, message.guild.id)]
+                    names = [
+                        prism.name async for prism in Prism.filter("user_id = $1 AND guild_id = $2 ORDER BY time ASC", active_user.user.id, message.guild.id)
+                    ]
                     names = list(dict.fromkeys(names))
                     if len(names) == 0:
                         await interaction.response.send_message("You don't have any prisms to offer!", ephemeral=True)
                         return
                     if len(names) <= 25:
                         options = [discord.SelectOption(label=name, emoji=get_emoji("prism")) for name in names]
-                        modal.add_item(
-                            discord.ui.Label(text=f"Prism Type ({PRISM_VALUE} value each)", component=discord.ui.Select(options=options, id=67))
-                        )
+                        modal.add_item(discord.ui.Label(text=f"Prism Type ({PRISM_VALUE} value each)", component=discord.ui.Select(options=options, id=67)))
                     else:
                         modal.add_item(
                             discord.ui.Label(text=f"Prism Type ({PRISM_VALUE} value each)", component=discord.ui.TextInput(placeholder="Alpha", id=67))
@@ -10772,7 +10775,9 @@ async def leaderboards(
                 final_value = "prism_count"
             case "Fish":
                 unit = "fishes"
-                result = await Profile.collect_limit(["user_id", "fish_caught"], "guild_id = $1 AND fish_caught != 0 ORDER BY fish_caught DESC", message.guild.id)
+                result = await Profile.collect_limit(
+                    ["user_id", "fish_caught"], "guild_id = $1 AND fish_caught != 0 ORDER BY fish_caught DESC", message.guild.id
+                )
                 final_value = "fish_caught"
             case _:
                 # qhar
