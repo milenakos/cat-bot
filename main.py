@@ -9361,6 +9361,9 @@ async def cat_fact(message: discord.Interaction):
         pass
 
 
+BOUNTY_SLOTS = ("one", "two", "three")
+
+
 def _bounty_title(bid: int, total: int, btype: str) -> str:
     if bid == 0:
         return f"Catch {total} cats"
@@ -9379,24 +9382,36 @@ def _bounty_matches(bid: int, btype: str, cattype: str) -> bool:
         return cattypes.index(cattype) >= cattypes.index(btype)
 
 
+def _bounties_are_complete(user: Profile) -> bool:
+    return all(user[f"bounty_progress_{slot}"] >= user[f"bounty_total_{slot}"] for slot in BOUNTY_SLOTS[: user.bounties])
+
+
+def _bounty_progress_segments(user: Profile, segments: int = 10) -> int:
+    slots = BOUNTY_SLOTS[: user.bounties]
+    total_required = sum(user[f"bounty_total_{slot}"] for slot in slots)
+    if not total_required:
+        return segments
+
+    total_progress = sum(user[f"bounty_progress_{slot}"] for slot in slots)
+    return max(0, min(segments, int(total_progress / total_required * segments)))
+
+
 async def bounty(message: discord.Message, user: Profile, cattype: str) -> None:
     if user.hibernation or user.catnip_active < time.time():
         return
 
-    slots = ("one", "two", "three")
     newly_completed_titles = []
     completed_count = 0
 
-    for i in range(user.bounties):
-        slot = slots[i]
-        bid = getattr(user, f"bounty_id_{slot}")
-        progress = getattr(user, f"bounty_progress_{slot}")
-        total = getattr(user, f"bounty_total_{slot}")
-        btype = getattr(user, f"bounty_type_{slot}")
+    for slot in BOUNTY_SLOTS[: user.bounties]:
+        bid = user[f"bounty_id_{slot}"]
+        progress = user[f"bounty_progress_{slot}"]
+        total = user[f"bounty_total_{slot}"]
+        btype = user[f"bounty_type_{slot}"]
 
         if progress < total and _bounty_matches(bid, btype, cattype):
             progress = min(progress + 1, total)
-            setattr(user, f"bounty_progress_{slot}", progress)
+            user[f"bounty_progress_{slot}"] = progress
             if progress >= total:
                 newly_completed_titles.append(_bounty_title(bid, total, btype))
 
@@ -9427,7 +9442,7 @@ async def bounty(message: discord.Message, user: Profile, cattype: str) -> None:
     for title in newly_completed_titles:
         log_stats("bounty_complete", {"title": title})
         level = user.catnip_level
-        colored = max(0, min(10, int(completed_count / user.bounties * 10)))
+        colored = _bounty_progress_segments(user)
         progress_line = f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
         if completed_count == user.bounties:
             description = f"{progress_line}\nAll Bounties Complete!\nGo to `/catnip` to pay up and pick a perk!"
@@ -9483,21 +9498,12 @@ async def set_bounties(level: int, user: Profile) -> None:
         bounties = bounties[:-1]
     user.bounties = len(bounties)
 
-    user.bounty_id_one = bounties[0]["id"] if bounties else None
-    user.bounty_id_two = bounties[1]["id"] if len(bounties) > 1 else None
-    user.bounty_id_three = bounties[2]["id"] if len(bounties) > 2 else None
-
-    user.bounty_type_one = bounties[0]["cat_type"] if bounties else None
-    user.bounty_type_two = bounties[1]["cat_type"] if len(bounties) > 1 else None
-    user.bounty_type_three = bounties[2]["cat_type"] if len(bounties) > 2 else None
-
-    user.bounty_total_one = bounties[0]["amount"] if bounties else 1
-    user.bounty_total_two = bounties[1]["amount"] if len(bounties) > 1 else 1
-    user.bounty_total_three = bounties[2]["amount"] if len(bounties) > 2 else 1
-
-    user.bounty_progress_one = bounties[0]["progress"] if bounties else 0
-    user.bounty_progress_two = bounties[1]["progress"] if len(bounties) > 1 else 0
-    user.bounty_progress_three = bounties[2]["progress"] if len(bounties) > 2 else 0
+    for index, slot in enumerate(BOUNTY_SLOTS):
+        bounty = bounties[index] if index < len(bounties) else None
+        user[f"bounty_id_{slot}"] = bounty["id"] if bounty else None
+        user[f"bounty_type_{slot}"] = bounty["cat_type"] if bounty else None
+        user[f"bounty_total_{slot}"] = bounty["amount"] if bounty else 1
+        user[f"bounty_progress_{slot}"] = bounty["progress"] if bounty else 0
 
     await user.save()
 
@@ -9678,7 +9684,7 @@ async def level_down(user: Profile, message: discord.Interaction, ephemeral: boo
 
     user.hibernation = True
 
-    for number in ["one", "two", "three"]:
+    for number in BOUNTY_SLOTS:
         user[f"bounty_id_{number}"] = 0
         user[f"bounty_type_{number}"] = ""
         user[f"bounty_total_{number}"] = 1
@@ -9796,7 +9802,7 @@ As you return to your hideout, you hear a howl in the distance."""
     button1 = Button(label="RUN!", style=ButtonStyle.blurple)
     button1.callback = button1_callback
     myview1.add_item(button1)
-    await interaction.followup.send(content=text1, view=myview1, ephemeral=True)
+    await interaction.response.send_message(content=text1, view=myview1, ephemeral=True)
 
 
 async def mafia_cutscene2(interaction: discord.Interaction, user: Profile) -> None:
@@ -9850,7 +9856,7 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
     button1 = Button(label="'uhhhh'", style=ButtonStyle.blurple)
     button1.callback = button1_callback
     myview1.add_item(button1)
-    await interaction.followup.send(content=text1, view=myview1, ephemeral=True)
+    await interaction.response.send_message(content=text1, view=myview1, ephemeral=True)
 
 
 def describe_perk(perk: str, perks: list, global_user: User) -> tuple[int, dict, str]:
@@ -9869,35 +9875,27 @@ def describe_perk(perk: str, perks: list, global_user: User) -> tuple[int, dict,
 @bot.tree.command(description="..?")
 async def catnip(message: discord.Interaction):
     assert message.guild is not None
-    await message.response.defer(ephemeral=True)
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     server = await Server.get_or_create(server_id=message.guild.id)
 
     if not server.do_catnip:
-        await message.followup.send("catnip is disabled in this server.", ephemeral=True)
+        await message.response.send_message("catnip is disabled in this server.", ephemeral=True)
         return
 
     if not user.dark_market_active:
-        await message.followup.send("You don't have access to the catnip yet. Catch more cats to unlock it!")
+        await message.response.send_message("You don't have access to the catnip yet. Catch more cats to unlock it!", ephemeral=True)
         return
 
+    level_down_embed = None
     if user.catnip_active < time.time() and not user.hibernation and user.catnip_level > 0:
-        embed = await level_down(user, message, True)
-        assert embed is not None
-        await message.followup.send(f"<@{user.user_id}>", embed=embed, ephemeral=True)
+        level_down_embed = await level_down(user, message, True)
+        assert level_down_embed is not None
 
     if user.catnip_amount == 0:
         await set_mafia_offer(user.catnip_level, user)
 
     if user.bounties == 0:
         await set_bounties(user.catnip_level, user)
-
-    await achemb(message, "dark_market", "followup")
-
-    if user.cutscene >= 1:
-        await achemb(message, "thanksforplaying", "followup")
-    if user.cutscene == 2:
-        await achemb(message, "mafia_win", "followup")
 
     if len(user.perks) + 1 < user.catnip_level:
         user.perk_selected = False
@@ -9908,32 +9906,24 @@ async def catnip(message: discord.Interaction):
         await user.save()
 
     level = user.catnip_level
-    cat_type = user.catnip_price
-    amount = user.catnip_amount
 
     async def pay_catnip(interaction: discord.Interaction) -> None:
-        nonlocal user, cat_type, amount
         await user.refresh_from_db()
-        if not interaction.response.is_done():
-            await interaction.response.defer()
         if level != user.catnip_level:
-            await interaction.followup.send("nice try", ephemeral=True)
+            await interaction.response.send_message("nice try", ephemeral=True)
             return
-        for i in range(user.bounties):
-            if (
-                (i == 0 and user.bounty_progress_one < user.bounty_total_one)
-                or (i == 1 and user.bounty_progress_two < user.bounty_total_two)
-                or (i == 2 and user.bounty_progress_three < user.bounty_total_three)
-            ):
-                await interaction.followup.send("You haven't completed your bounties yet!", ephemeral=True)
-                return
+        if not _bounties_are_complete(user):
+            await interaction.response.send_message("You haven't completed your bounties yet!", ephemeral=True)
+            return
         if not user.perk_selected:
-            await interaction.followup.send("You haven't selected a perk from your previous level yet!", ephemeral=True)
+            await interaction.response.send_message("You haven't selected a perk from your previous level yet!", ephemeral=True)
             return
         if user.catnip_price:
             if user[f"cat_{user.catnip_price}"] < user.catnip_amount:
                 need_more = user.catnip_amount - user[f"cat_{user.catnip_price}"]
-                await interaction.followup.send(f"You don't have enough cats to pay up!\nYou need {need_more} more {user.catnip_price} cats.", ephemeral=True)
+                await interaction.response.send_message(
+                    f"You don't have enough cats to pay up!\nYou need {need_more} more {user.catnip_price} cats.", ephemeral=True
+                )
                 return
             user[f"cat_{user.catnip_price}"] -= user.catnip_amount
 
@@ -9968,14 +9958,13 @@ async def catnip(message: discord.Interaction):
 You are meant to go up and down levels.
 You get absolutely no benefit from completing level 10.
 You can stop. That's okay. Seriously."""
-            await interaction.followup.send(content=text, ephemeral=True)
+            await interaction.response.send_message(content=text, ephemeral=True)
         elif trigger_cutscene and user.cutscene <= 1:
             await mafia_cutscene2(interaction, user)
         elif user.catnip_level > 1:
             await perk_screen(interaction)
         else:
-            await interaction.followup.send("Catnip started!", ephemeral=True)
-            await main_message.edit(view=await gen_main())
+            await interaction.response.edit_message(view=await gen_main())
 
     async def reroll(interaction: discord.Interaction) -> None:
         assert interaction.guild is not None
@@ -10006,7 +9995,7 @@ You can stop. That's okay. Seriously."""
         myview.add_item(perk_embed)
         action_row = ActionRow(perk_select)
         myview.add_item(action_row)
-        await main_message.edit(view=myview)
+        await interaction.response.edit_message(view=myview)
 
     async def view_perks(interaction: discord.Interaction) -> None:
         assert interaction.guild is not None
@@ -10032,23 +10021,20 @@ You can stop. That's okay. Seriously."""
 
     async def perk_screen(interaction: discord.Interaction, level: int = 0, reroll: bool = False) -> None:
         assert interaction.guild is not None
-        if not interaction.response.is_done():
-            await interaction.response.defer()
         global_user = await User.get_or_create(user_id=interaction.user.id)
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
 
         async def select_perk(interaction: discord.Interaction) -> None:
             await user.refresh_from_db()
-            await interaction.response.defer()
 
             if user.perk_selected and not reroll:
-                await interaction.followup.send("You have already selected a perk.", ephemeral=True)
+                await interaction.response.send_message("You have already selected a perk.", ephemeral=True)
                 return
             if reroll and user.reroll:
-                await interaction.followup.send("your die rerolls through the floor", ephemeral=True)
+                await interaction.response.send_message("your die rerolls through the floor", ephemeral=True)
                 return
             if reroll and user.reroll_level and user.reroll_level != level:
-                await interaction.followup.send(f"you already chose to reroll level {user.reroll_level}", ephemeral=True)
+                await interaction.response.send_message(f"you already chose to reroll level {user.reroll_level}", ephemeral=True)
                 return
 
             h = list(user.perks) if user.perks else []
@@ -10057,7 +10043,7 @@ You can stop. That's okay. Seriously."""
                 if 0 <= level - 1 < len(h):
                     h[level - 1] = interaction.custom_id
                 else:
-                    await interaction.followup.send(f"Failed to reroll! Perk slot {level} not found. (Count: {len(h)})", ephemeral=True)
+                    await interaction.response.send_message(f"Failed to reroll! Perk slot {level} not found. (Count: {len(h)})", ephemeral=True)
                     return
                 # Mark reroll as consumed
                 user.reroll = True
@@ -10073,13 +10059,13 @@ You can stop. That's okay. Seriously."""
 
             log_stats("perk_select", {"level": str(user.catnip_level)})
 
-            await main_message.edit(view=await gen_main())
+            await interaction.response.edit_message(view=await gen_main())
 
         if user.perk_selected and not reroll:
-            await interaction.followup.send("You have already selected a perk.", ephemeral=True)
+            await interaction.response.send_message("You have already selected a perk.", ephemeral=True)
             return
         if reroll and user.reroll:
-            await interaction.followup.send("your die rerolls through the floor", ephemeral=True)
+            await interaction.response.send_message("your die rerolls through the floor", ephemeral=True)
             return
 
         perks_data = catnip_list["perks"]
@@ -10130,7 +10116,7 @@ You can stop. That's okay. Seriously."""
 
         perk_embed.add_item(TextDisplay("-# The catnip timer will not start until you begin your bounties."))
         myview.add_item(perk_embed)
-        await main_message.edit(view=myview)
+        await interaction.response.edit_message(view=myview)
 
     async def help_screen(interaction: discord.Interaction) -> None:
         desc = "Catnip is a prestige system where you pay cats to join your mafia and get perks and bounties!"
@@ -10146,57 +10132,53 @@ You can stop. That's okay. Seriously."""
         help_embed = discord.Embed(title="Catnip Help", color=Colors.brown, description=desc)
         await interaction.response.send_message(embed=help_embed, ephemeral=True)
 
-    async def begin_bounties(interaction: discord.Interaction, override: bool = False) -> None:
-        nonlocalinteraction = interaction
-        if not override:
-            await interaction.response.defer()
+    async def start_bounties(user_id: int) -> None:
+        duration = catnip_list["levels"][user.catnip_level]["duration"]
+        duration_bonus = 0
 
+        for perk in user.perks or []:
+            perk_data = catnip_list["perks"][int(perk.split("_")[1]) - 1]
+            if perk_data["id"] != "timer_add_streak":
+                continue
+
+            global_user = await User.get_or_create(user_id=user_id)
+            hundreds, remainder = divmod(global_user.vote_streak, 100)
+            duration_bonus = sum(6000 / level for level in range(1, hundreds + 1))
+            duration_bonus += 60 * remainder / (hundreds + 1)
+            break
+
+        user.hibernation = False
+        user.catnip_total_cats = 0
+        user.catnip_active = int(time.time()) + 3600 * duration + duration_bonus
+        user.pack_attempts = (3600 * duration + duration_bonus) // 60
+        await user.save()
+        log_stats("bounties_start", {"level": str(user.catnip_level)})
+
+    async def begin_bounties(interaction: discord.Interaction) -> None:
         if not user.hibernation:
-            await interaction.followup.send("nice try", ephemeral=True)
+            await interaction.response.send_message("nice try", ephemeral=True)
             return
 
-        async def callbacks_are_so_fun(interaction: discord.Interaction) -> None:
-            await interaction.response.defer()
-            await begin_bounties(nonlocalinteraction, override=True)
-            await interaction.delete_original_response()
+        async def confirm_begin(interaction: discord.Interaction) -> None:
+            await start_bounties(interaction.user.id)
+            await interaction.response.edit_message(content="Bounties started!", view=None)
+            await main_message.edit(view=await gen_main())
 
-        if user.catnip_active > time.time() and user.catnip_level >= 2 and not override:
-            myview = View(timeout=VIEW_TIMEOUT)
+        should_confirm = user.catnip_active > time.time() and user.catnip_level >= 2
+        if should_confirm:
+            confirmation_view = View(timeout=VIEW_TIMEOUT)
             button = Button(label="Begin Anyway", style=ButtonStyle.red)
-            button.callback = callbacks_are_so_fun
-            myview.add_item(button)
-            await interaction.followup.send(
+            button.callback = confirm_begin
+            confirmation_view.add_item(button)
+            await interaction.response.send_message(
                 f"Your catnip expires <t:{user.catnip_active}:R>.\nAre you sure you want to start your bounties now?\nThis will remove the remaining catnip time you have.",
-                view=myview,
+                view=confirmation_view,
                 ephemeral=True,
             )
             return
 
-        level_data = catnip_list["levels"][user.catnip_level]
-        duration = level_data["duration"]
-        user.hibernation = False
-        user.catnip_total_cats = 0
-        duration_bonus = 0
-        perks = catnip_list["perks"]
-
-        if user.perks:
-            for perk in user.perks:
-                perk_data = perks[int(perk.split("_")[1]) - 1]
-                if perk_data["id"] == "timer_add_streak":
-                    global_user = await User.get_or_create(user_id=interaction.user.id)
-                    duration_bonus = 0
-                    for i in range(int(global_user.vote_streak / 100)):
-                        i = i + 1
-                        duration_bonus += 6000 / i
-                    duration_bonus += 60 * (global_user.vote_streak % 100) / (int(global_user.vote_streak / 100) + 1)
-
-        user.catnip_active = int(time.time()) + 3600 * duration + duration_bonus
-        user.pack_attempts = (3600 * duration + duration_bonus) // 60
-        await user.save()
-
-        log_stats("bounties_start", {"level": str(user.catnip_level)})
-
-        await main_message.edit(view=await gen_main())
+        await start_bounties(interaction.user.id)
+        await interaction.response.edit_message(view=await gen_main())
 
     async def gen_main() -> LayoutView:
         await user.refresh_from_db()
@@ -10221,7 +10203,7 @@ You can stop. That's okay. Seriously."""
 
         if user.catnip_level > 0 and user.catnip_level < 11:
 
-            def format_bounty(bounty_numstr, single=False):
+            def format_bounty(bounty_numstr: str) -> None:
                 nonlocal desc, all_complete, bonus_complete, bounties_complete
                 bounty_id = user[f"bounty_id_{bounty_numstr}"]
                 bounty_type = user[f"bounty_type_{bounty_numstr}"]
@@ -10250,13 +10232,8 @@ You can stop. That's okay. Seriously."""
                     desc += "\n**__Bounty:__**"
                 else:
                     desc += "\n**__Bounties:__**"
-                for i in range(user.bounties):
-                    if i == 0:
-                        format_bounty("one")
-                    if i == 1:
-                        format_bounty("two")
-                    if i == 2:
-                        format_bounty("three")
+                for slot in BOUNTY_SLOTS[: user.bounties]:
+                    format_bounty(slot)
                 if bonus:
                     desc += "\n**__Bonus Bounty:__**"
                     format_bounty("bonus")
@@ -10271,7 +10248,7 @@ You can stop. That's okay. Seriously."""
                     desc += f"\nPerks expire <t:{user.catnip_active}:R>"
                 all_complete = False
 
-            colored = int(bounties_complete / user.bounties * 10) if user.bounties else 10
+            colored = _bounty_progress_segments(user)
             desc += f"\n\n**Level {level}** - {change}"
             desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {min(10, level + 1)}"
         if level != 0 and not user.hibernation:
@@ -10331,12 +10308,8 @@ You can stop. That's okay. Seriously."""
         elif user.catnip_level < 11:
 
             async def reroll_warning(interaction: discord.Interaction):
-                nonlocalinteraction = interaction
-
                 async def continue_pay_catnip(interaction: discord.Interaction):
-                    await interaction.response.defer()
-                    await interaction.delete_original_response()
-                    await pay_catnip(nonlocalinteraction)
+                    await pay_catnip(interaction)
 
                 view2 = View(timeout=VIEW_TIMEOUT)
                 button = Button(label="Yes")
@@ -10367,7 +10340,16 @@ You can stop. That's okay. Seriously."""
         myview.add_item(embed)
         return myview
 
-    main_message = await message.followup.send(view=await gen_main(), ephemeral=True, wait=True)
+    await message.response.send_message(view=await gen_main(), ephemeral=True)
+    main_message = await message.original_response()
+
+    if level_down_embed:
+        await message.followup.send(f"<@{user.user_id}>", embed=level_down_embed, ephemeral=True)
+    await achemb(message, "dark_market", "followup")
+    if user.cutscene >= 1:
+        await achemb(message, "thanksforplaying", "followup")
+    if user.cutscene == 2:
+        await achemb(message, "mafia_win", "followup")
 
 
 @bot.tree.command(description="View your achievements (achs)")
