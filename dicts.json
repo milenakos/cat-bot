@@ -1076,5 +1076,17 @@
     {"name": "Cattlepass", "ticker": "PASS", "emoji": "⬆️", "amount": 5000, "init_price": 40},
     {"name": "Achievements", "ticker": "ACHS", "emoji": "ach", "amount": 5000, "init_price": 40},
     {"name": "Rain", "ticker": "RAIN", "emoji": "☔", "amount": 5000, "init_price": 40}
-  ]
+  ],
+  "transfer_stat_add_fields": [
+    "total_catches", "total_catch_time", "perfection_count", "gambles", "slot_spins", "slot_wins",
+    "slot_big_wins", "roulette_spins", "roulette_wins", "roulette_balance", "facts", "ttt_played",
+    "ttt_won", "ttt_draws", "funny", "boosted_catches", "rain_participations", "rain_minutes_started",
+    "rain_minutes", "cat_gifts_recieved", "cats_gifted", "trades_completed", "cats_traded", "packs_opened",
+    "pack_upgrades", "quests_completed", "catnip_activations", "catnip_bought", "bounties_complete",
+    "cookies", "coffees", "reminders_set", "puzzle_pieces", "event_rain_points", "snowflakes", "coins",
+    "stock_prsm", "stock_ctnp", "stock_pass", "stock_achs", "stock_rain", "fish_caught", "fish_coins",
+    "bonus_catches", "ultimates_gifted"
+  ],
+  "transfer_stat_max_fields": ["timeslow", "cutscene", "sphere_easter_egg", "best_pig_score", "highest_catnip_level"],
+  "transfer_stat_min_fields": ["time"]
 }

@@ -8430,22 +8430,12 @@ async def trade(message: discord.Interaction, other_user: discord.User):
         await achemb(message, "introvert", "followup")
 
 
-# stat fields that just accumulate over time - safe to add together
-TRANSFER_STAT_ADD_FIELDS = [
-    "total_catches", "total_catch_time", "perfection_count", "gambles", "slot_spins", "slot_wins",
-    "slot_big_wins", "roulette_spins", "roulette_wins", "roulette_balance", "facts", "ttt_played",
-    "ttt_won", "ttt_draws", "funny", "boosted_catches", "rain_participations", "rain_minutes_started",
-    "rain_minutes", "cat_gifts_recieved", "cats_gifted", "trades_completed", "cats_traded", "packs_opened",
-    "pack_upgrades", "quests_completed", "catnip_activations", "catnip_bought", "bounties_complete",
-    "cookies", "coffees", "reminders_set", "puzzle_pieces", "event_rain_points", "snowflakes", "coins",
-    "stock_prsm", "stock_ctnp", "stock_pass", "stock_achs", "stock_rain", "fish_caught", "fish_coins",
-    "bonus_catches", "ultimates_gifted",
-]  # fmt: skip
-# personal records - keep the better one instead of adding, or it'd make no sense
-TRANSFER_STAT_MAX_FIELDS = ["timeslow", "cutscene", "sphere_easter_egg", "best_pig_score", "highest_catnip_level"]
-TRANSFER_STAT_MIN_FIELDS = ["time"]  # fastest catch, lower is better
-# deliberately not included: quest/bounty/catnip-session/cooldown fields. those are mid-flight state,
-# not stats, and merging two timestamps or two active bounties doesn't have a sane answer
+# see dicts.json for the field lists - deliberately excludes quest/bounty/catnip-session/cooldown
+# fields, since those are mid-flight state, not stats, and merging two timestamps or two active
+# bounties doesn't have a sane answer
+TRANSFER_STAT_ADD_FIELDS = data.transfer_stat_add_fields  # accumulate over time - safe to add together
+TRANSFER_STAT_MAX_FIELDS = data.transfer_stat_max_fields  # personal records - keep the better one, not the sum
+TRANSFER_STAT_MIN_FIELDS = data.transfer_stat_min_fields  # fastest catch, lower is better
 
 
 def merge_transfer_stats(from_profile, to_profile) -> None:
