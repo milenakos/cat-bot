@@ -73,7 +73,7 @@ async def main() -> None:
             print("cleared all existing application emojis")
 
         if UPLOAD_BASE_EMOJIS:
-            await upload_emoji_folder(client, LOCAL_CLONE_DIR)
+            await upload_emoji_folder(client, os.path.join(LOCAL_CLONE_DIR, "base"))
             print("uploaded base (non-spawning) emojis")
 
         if UPLOAD_FISH_EMOJIS:
