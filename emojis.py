@@ -46,15 +46,18 @@ SPAWN_EMOJI_THEMES = {
 
 
 async def upload_emoji_folder(client: discord.Client, folder: str) -> None:
-    for filename in os.listdir(folder):
-        if not filename.endswith(".png"):
-            continue
-        emoji_name = filename.removesuffix(".png")
-        try:
-            with open(os.path.join(folder, filename), "rb") as image:
-                await client.create_application_emoji(name=emoji_name, image=image.read())
-        except discord.HTTPException as e:
-            print(f"couldn't upload {emoji_name}: {e}")
+    # walks subfolders too, since base/ is split into categories (packs/, badges/, etc.)
+    for root, _dirs, filenames in os.walk(folder):
+        for filename in filenames:
+            name, ext = os.path.splitext(filename)
+            if ext not in (".png", ".gif"):
+                continue
+            emoji_name = name
+            try:
+                with open(os.path.join(root, filename), "rb") as image:
+                    await client.create_application_emoji(name=emoji_name, image=image.read())
+            except discord.HTTPException as e:
+                print(f"couldn't upload {emoji_name}: {e}")
 
 
 async def main() -> None:
