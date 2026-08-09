@@ -32,9 +32,8 @@ LOCAL_CLONE_DIR = "cat-bot-emojis-tmp"
 # wipe every emoji already on the application before uploading (useful for switching themes cleanly)
 REPLACE_EXISTING_EMOJIS = False
 
-# the non-themed icons (achievements, packs, prisms, etc.) and the /fish icons - always needed regardless of theme
+# the non-themed icons - achievements, packs, prisms, /fish icons, etc. - always needed regardless of theme
 UPLOAD_BASE_EMOJIS = True
-UPLOAD_FISH_EMOJIS = True
 
 # which cat-catching spawn emoji themes to upload; "default" is the theme config.EMOJI = None uses
 SPAWN_EMOJI_THEMES = {
@@ -78,10 +77,6 @@ async def main() -> None:
         if UPLOAD_BASE_EMOJIS:
             await upload_emoji_folder(client, os.path.join(LOCAL_CLONE_DIR, "base"))
             print("uploaded base (non-spawning) emojis")
-
-        if UPLOAD_FISH_EMOJIS:
-            await upload_emoji_folder(client, os.path.join(LOCAL_CLONE_DIR, "spawning", "fish"))
-            print("uploaded /fish emojis")
 
         for theme, enabled in SPAWN_EMOJI_THEMES.items():
             if not enabled:
