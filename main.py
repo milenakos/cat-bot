@@ -301,12 +301,9 @@ last_loop_time = 0
 server_count = 0
 
 
-EMOJI_THEME_PREFIXES = {"birthday": "b_", "halloween": "p_", "old": "o_"}
-
-
 def get_emoji(name: str) -> str:
     if config.EMOJI and name in allowedemojis:
-        themed_name = EMOJI_THEME_PREFIXES[config.EMOJI] + name
+        themed_name = data.emoji_theme_prefixes[config.EMOJI] + name
         if themed_name in emojis:
             return emojis[themed_name]
     if name in emojis:

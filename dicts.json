@@ -1,4 +1,9 @@
 {
+  "emoji_theme_prefixes": {
+    "birthday": "b_",
+    "halloween": "p_",
+    "old": "o_"
+  },
   "type_dict": {
     "Fine": 1000,
     "Nice": 750,
