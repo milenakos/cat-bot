@@ -8430,6 +8430,151 @@ async def trade(message: discord.Interaction, other_user: discord.User):
         await achemb(message, "introvert", "followup")
 
 
+# stat fields that just accumulate over time - safe to add together
+TRANSFER_STAT_ADD_FIELDS = [
+    "total_catches", "total_catch_time", "perfection_count", "gambles", "slot_spins", "slot_wins",
+    "slot_big_wins", "roulette_spins", "roulette_wins", "roulette_balance", "facts", "ttt_played",
+    "ttt_won", "ttt_draws", "funny", "boosted_catches", "rain_participations", "rain_minutes_started",
+    "rain_minutes", "cat_gifts_recieved", "cats_gifted", "trades_completed", "cats_traded", "packs_opened",
+    "pack_upgrades", "quests_completed", "catnip_activations", "catnip_bought", "bounties_complete",
+    "cookies", "coffees", "reminders_set", "puzzle_pieces", "event_rain_points", "snowflakes", "coins",
+    "stock_prsm", "stock_ctnp", "stock_pass", "stock_achs", "stock_rain", "fish_caught", "fish_coins",
+    "bonus_catches", "ultimates_gifted",
+]  # fmt: skip
+# personal records - keep the better one instead of adding, or it'd make no sense
+TRANSFER_STAT_MAX_FIELDS = ["timeslow", "cutscene", "sphere_easter_egg", "best_pig_score", "highest_catnip_level"]
+TRANSFER_STAT_MIN_FIELDS = ["time"]  # fastest catch, lower is better
+# deliberately not included: quest/bounty/catnip-session/cooldown fields. those are mid-flight state,
+# not stats, and merging two timestamps or two active bounties doesn't have a sane answer
+
+
+def merge_transfer_stats(from_profile, to_profile) -> None:
+    for field in TRANSFER_STAT_ADD_FIELDS:
+        to_profile[field] = to_profile[field] + from_profile[field]
+        from_profile[field] = 0
+    for field in TRANSFER_STAT_MAX_FIELDS:
+        to_profile[field] = max(to_profile[field], from_profile[field])
+        from_profile[field] = 0
+    for field in TRANSFER_STAT_MIN_FIELDS:
+        to_profile[field] = min(to_profile[field], from_profile[field])
+        from_profile[field] = 99999999999999
+
+    if from_profile.rarest_fish and (
+        not to_profile.rarest_fish or cattypes.index(from_profile.rarest_fish) > cattypes.index(to_profile.rarest_fish)
+    ):
+        to_profile.rarest_fish = from_profile.rarest_fish
+    from_profile.rarest_fish = ""
+
+
+@bot.tree.command(description="Move your cats/packs/achievements/stats from this account to another one")
+@discord.app_commands.describe(to_user="the account to transfer your stuff to")
+async def transfer(message: discord.Interaction, to_user: discord.User):
+    assert message.guild is not None
+
+    if to_user.id == message.user.id:
+        await message.response.send_message("you can't transfer to yourself.", ephemeral=True)
+        return
+    if to_user.bot:
+        await message.response.send_message("you can't transfer to a bot.", ephemeral=True)
+        return
+
+    category_options = [
+        discord.SelectOption(label="Cats", emoji=get_emoji("finecat"), value="cats"),
+        discord.SelectOption(label="Packs", emoji=get_emoji("goldpack"), value="packs"),
+        discord.SelectOption(label="Achievements", emoji="🎖️", value="achievements"),
+        discord.SelectOption(label="Stats", emoji="🧮", value="stats"),
+    ]
+    picked: list[str] = []
+
+    async def on_category_select(interaction: discord.Interaction) -> None:
+        if interaction.user.id != message.user.id:
+            await do_funny(interaction)
+            return
+        nonlocal picked
+        picked = category_select.values
+        await interaction.response.defer()
+
+    async def on_confirm(interaction: discord.Interaction) -> None:
+        if interaction.user.id != message.user.id:
+            await do_funny(interaction)
+            return
+        if not picked:
+            await interaction.response.send_message("select at least one thing to transfer first.", ephemeral=True)
+            return
+
+        assert message.guild is not None
+        from_profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        to_profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=to_user.id)
+        await from_profile.refresh_from_db()
+        await to_profile.refresh_from_db()
+
+        moved = []
+
+        if "cats" in picked:
+            cats_moved = 0
+            for cattype in cattypes:
+                amount = from_profile[f"cat_{cattype}"]
+                if amount:
+                    to_profile[f"cat_{cattype}"] += amount
+                    from_profile[f"cat_{cattype}"] = 0
+                    cats_moved += amount
+            moved.append(f"{cats_moved:,} cats")
+
+        if "packs" in picked:
+            packs_moved = 0
+            for pack in pack_names:
+                key = f"pack_{pack.lower()}"
+                amount = from_profile[key]
+                if amount:
+                    to_profile[key] += amount
+                    from_profile[key] = 0
+                    packs_moved += amount
+            moved.append(f"{packs_moved:,} packs")
+
+        if "achievements" in picked:
+            achs_moved = 0
+            for ach in ach_names:
+                if from_profile[ach] and not to_profile[ach]:
+                    to_profile[ach] = True
+                    achs_moved += 1
+                from_profile[ach] = False
+            moved.append(f"{achs_moved:,} achievements")
+
+        if "stats" in picked:
+            merge_transfer_stats(from_profile, to_profile)
+            moved.append("stats")
+
+        async with transaction() as conn:
+            to_profile._connection = conn
+            from_profile._connection = conn
+            await to_profile.save()
+            await from_profile.save()
+
+        embed = discord.Embed(
+            title="✅ Transfer complete",
+            description=f"Moved {', '.join(moved)} from {message.user.mention} to {to_user.mention} (in this server).",
+            color=Colors.brown,
+        )
+        await interaction.response.edit_message(content=None, embed=embed, view=None)
+
+    category_select = discord.ui.Select(placeholder="What do you want to transfer?", options=category_options, min_values=1, max_values=4)
+    category_select.callback = on_category_select
+
+    confirm_button = Button(label="Confirm Transfer", style=ButtonStyle.red)
+    confirm_button.callback = on_confirm
+
+    view = View(timeout=VIEW_TIMEOUT)
+    view.add_item(category_select)
+    view.add_item(confirm_button)
+
+    await message.response.send_message(
+        f"Pick what to move from your account to {to_user.mention}, then confirm.\n"
+        "-# This only affects your data in this server, and can't be undone - whatever you pick will be removed from your account and added to theirs.",
+        view=view,
+        ephemeral=True,
+    )
+
+
 @bot.tree.command(description="Get Cat Image, does not add a cat to your inventory")
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(cat_type="select a cat type ok")
