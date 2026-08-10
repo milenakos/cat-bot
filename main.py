@@ -1592,29 +1592,32 @@ async def on_ready() -> None:
     )
 
 
+ROMAN_NUMERALS = (
+    (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"),
+    (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
+)  # fmt: skip
+
+
 def to_roman_numeral(value: int) -> str:
-    roman_map = {1: "I", 4: "IV", 5: "V", 9: "IX", 10: "X", 40: "XL", 50: "L", 90: "XC", 100: "C", 400: "CD", 500: "D", 900: "CM", 1000: "M"}
     result = ""
     remainder = value
-    for i in sorted(roman_map.keys(), reverse=True):
-        times = remainder // i
-        remainder %= i
-        result += roman_map[i] * times
+    for i, symbol in ROMAN_NUMERALS:
+        times, remainder = divmod(remainder, i)
+        result += symbol * times
     return result
 
 
 def is_prime(n: int) -> bool:
     if n < 2:
         return False
-
-    s = [True] * (n + 1)
-    s[0] = s[1] = False
-
-    for i in range(2, int(n**0.5) + 1):
-        if s[i]:
-            for j in range(i * i, n + 1, i):
-                s[j] = False
-    return s[n]
+    if n < 4:
+        return True
+    if n % 2 == 0:
+        return False
+    for i in range(3, int(n**0.5) + 1, 2):
+        if n % i == 0:
+            return False
+    return True
 
 
 async def play_minigame(interaction: discord.Interaction) -> None:
