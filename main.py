@@ -1636,10 +1636,9 @@ async def play_minigame(interaction: discord.Interaction) -> None:
 
     modal = Modal(title="Bonus Cat Minigame")
     if cattype == "Fine":
-        letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
         index = random.randint(0, 25)
-        random_letter = letters[index]
-        next_letter = letters[index + 1 if index < 25 else 0]
+        random_letter = chr(ord("A") + index)
+        next_letter = chr(ord("A") + (index + 1) % 26)
         random_text = random.choice(data.sentences)
         answer = random_text.lower().count(random_letter.lower())
         modal.add_item(
