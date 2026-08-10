@@ -6593,7 +6593,7 @@ async def stocks(message: discord.Interaction):
             await profile.save()
             await PortfolioHistory.create(user_id=profile.id, time=int(time.time()), type="w", price=packs * 100)
             await interaction.response.send_message(
-                f"📤 You withdrew {packs} stone {plural('pack', packs)}! 🪙 -{packs * 100} {plural('coin', packs * 100)}.", ephemeral=True
+                f"📤 You withdrew {packs} stone {plural('pack', packs)}! 🪙 -{packs * 100} coins.", ephemeral=True
             )
 
     class OrderModal(Modal):
@@ -8694,17 +8694,17 @@ async def casino(message: discord.Interaction):
             await achemb(message, "gambling_two", "followup")
 
         variants = [
-            f"{get_emoji('egirlcat')} 1 eGirl {plural('cat', 1)}",
-            f"{get_emoji('egirlcat')} 3 eGirl {plural('cat', 3)}",
-            f"{get_emoji('ultimatecat')} 2 Ultimate {plural('cat', 2)}",
-            f"{get_emoji('corruptcat')} 7 Corrupt {plural('cat', 7)}",
-            f"{get_emoji('divinecat')} 4 Divine {plural('cat', 4)}",
-            f"{get_emoji('epiccat')} 10 Epic {plural('cat', 10)}",
-            f"{get_emoji('professorcat')} 5 Professor {plural('cat', 5)}",
-            f"{get_emoji('realcat')} 2 Real {plural('cat', 2)}",
-            f"{get_emoji('legendarycat')} 5 Legendary {plural('cat', 5)}",
-            f"{get_emoji('mythiccat')} 2 Mythic {plural('cat', 2)}",
-            f"{get_emoji('8bitcat')} 7 8bit {plural('cat', 7)}",
+            f"{get_emoji('egirlcat')} 1 eGirl cat",
+            f"{get_emoji('egirlcat')} 3 eGirl cats",
+            f"{get_emoji('ultimatecat')} 2 Ultimate cats",
+            f"{get_emoji('corruptcat')} 7 Corrupt cats",
+            f"{get_emoji('divinecat')} 4 Divine cats",
+            f"{get_emoji('epiccat')} 10 Epic cats",
+            f"{get_emoji('professorcat')} 5 Professor cats",
+            f"{get_emoji('realcat')} 2 Real cats",
+            f"{get_emoji('legendarycat')} 5 Legendary cats",
+            f"{get_emoji('mythiccat')} 2 Mythic cats",
+            f"{get_emoji('8bitcat')} 7 8bit cats",
         ]
 
         random.shuffle(variants)
