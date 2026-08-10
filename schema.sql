@@ -571,11 +571,11 @@ ALTER TABLE ONLY public.market
 
 CREATE INDEX idx_guild_id ON public.profile USING btree (guild_id);
 
+CREATE UNIQUE INDEX profile_user_id_guild_id ON public.profile USING btree (user_id, guild_id);
+
 CREATE INDEX prism_guild_id ON public.prism USING btree (guild_id);
 
 CREATE INDEX prism_user_id_guild_id ON public.prism USING btree (user_id, guild_id);
-
-CREATE UNIQUE INDEX profile_user_id_guild_id ON public.profile USING btree (user_id, guild_id);
 
 CREATE UNIQUE INDEX prism_guild_id_name ON public.prism USING btree (guild_id, name);
 
@@ -585,15 +585,25 @@ CREATE INDEX idx_partial_blessings ON public."user" (rain_minutes_bought) WHERE 
 
 CREATE INDEX idx_vote_streak ON public."user" (vote_streak) WHERE vote_streak >= 100;
 
-CREATE INDEX idx_slot_spins_partial ON public.profile (slot_spins) WHERE slot_spins > 0;
-
-CREATE INDEX idx_slot_big_wins_partial ON public.profile (slot_big_wins) WHERE slot_big_wins > 0;
-
-CREATE INDEX idx_slot_wins_partial ON public.profile (slot_wins) WHERE slot_wins > 0;
-
-CREATE INDEX idx_gambles_partial ON public.profile (gambles) WHERE gambles > 0;
-
 CREATE INDEX idx_yet_to_spawn ON public.channel (yet_to_spawn);
+
+CREATE MATERIALIZED VIEW profile_sums_mv AS SELECT
+    1 as id,
+    COALESCE(SUM(slot_spins), 0) AS sum_spins,
+    COALESCE(SUM(slot_big_wins), 0) AS sum_big_wins,
+    COALESCE(SUM(slot_wins), 0) AS sum_wins,
+    COALESCE(SUM(gambles), 0) AS sum_gambles,
+    COALESCE(SUM(total_catches), 0) AS sum_catches
+FROM public.profile;
+
+CREATE UNIQUE INDEX profile_sums_mv_id_idx ON profile_sums_mv (id);
+
+CREATE MATERIALIZED VIEW user_sums_mv AS SELECT
+    1 as id,
+    COALESCE(SUM(rain_minutes_bought) FILTER (WHERE blessings_enabled = true), 0) AS sum_blessing_minutes
+FROM public."user";
+
+CREATE UNIQUE INDEX user_sums_mv_id_idx ON user_sums_mv (id);
 
 
 REVOKE USAGE ON SCHEMA public FROM PUBLIC;
