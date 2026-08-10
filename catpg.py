@@ -92,6 +92,8 @@ class Model:
                 self.__values[name] = max(-2147483648, min(2147483647, value))
             else:
                 self.__values[name] = value
+        else:
+            raise KeyError(name)
 
     # getter sugar
     def __getattr__(self, name: str) -> Any:
@@ -191,10 +193,10 @@ class Model:
     async def get_or_create(cls, connection: AnyConnection | None = None, **kwargs) -> Self:
         table = cls.__name__.lower()
         values = list(kwargs.values())
-        transaction = False
-        if not connection:
+        transaction = True
+        if connection is None:
             connection = _get_pool()
-            transaction = True
+            transaction = False
 
         # build column names and placeholders
         columns = list(kwargs.keys())

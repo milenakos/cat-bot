@@ -54,7 +54,8 @@
     "Unclosed connection",
     "unable to perform operation on",
     "Event loop is closed",
-    "503 Service Unavailable"
+    "503 Service Unavailable",
+    "Not enough data to satisfy"
   ],
   "pack_data": [
     {
@@ -427,6 +428,11 @@
       "title": "CATCHING UPDATE??",
       "emoji": "🐈",
       "active": true
+    },
+    {
+      "title": "250k/Cat Day Event",
+      "emoji": "😻",
+      "active": true
     }
   ],
   "achs": {
@@ -761,16 +767,6 @@
   "sentences": [
     "The quick brown fox jumps over the lazy dog.",
     "Cat Bot is a Discord bot about catching cats.",
-    "The birch canoe slid on the smooth planks.",
-    "Glue the sheet to the dark blue background.",
-    "It's easy to tell the depth of a well.",
-    "These days a chicken leg is a rare dish.",
-    "Rice is often served in round bowls.",
-    "The juice of lemons makes fine punch.",
-    "The box was thrown beside the parked truck.",
-    "The hogs were fed chopped corn and garbage.",
-    "Four hours of steady work faced us.",
-    "A large size in stockings is hard to sell.",
     "Stop posting about Among Us, I'm tired of seeing it!",
     "I love Cat Bot, it is great, now there is a new update!",
     "Yo, my name is Jeremy, my parents left when I was three!",
@@ -801,8 +797,30 @@
     "At the crossroads, don't turn left",
     "why cant you pin pin messages, hm",
     "bill gates when he plays something - bill games",
-    "24th of april shall be declared the cat stand day of drama",
-    "i have hired this cat to stare at you"
+    "i have hired this cat to stare at you",
+    "So come and stay just a little too long",
+    "And let me hear Some More of That Song!",
+    "Cat Bot Ratelimits Postmortem, or how Pi solved pollution",
+    "did you know? cat rains are not peta approved!",
+    "why would anyone think a cattlepass would be a good idea",
+    "now it will replace normal cat with da cat",
+    "you made a bot for this? you're the one who coded it?",
+    "uses a forklift without certification",
+    "you should make embeds the same color as the cat's fur",
+    "i should make misspelling cat as car send this",
+    "You feel like making cookies.",
+    "Your cookies are popular with your dog.",
+    "but nothing could conceal the smots i am gaming",
+    "Just breathe. Why are you so nervous?",
+    "I guess it can't be helped, it's just a matter of when",
+    "Rolling on until the dawn, beneath the lanterns, we'll meet",
+    "Baby, do you know what you wanna hear?",
+    "Cause you can say the word, make it all so clear",
+    "Sitting down in silence, I approach the speed of sound",
+    "Hit me with the flap down, crashing with a loud sound",
+    "So can we wander for a spell, and live in parallel?",
+    "I mix my yellows and my blues to make a shade of green",
+    "ANYWAY @everyone WHERE MY CATCHERS AT"
   ],
   "cat_fortunes": [
     "You will find a mysterious hairball in your shoe. It brings good luck... probably.",
