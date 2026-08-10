@@ -647,17 +647,10 @@ async def generate_quest(user: Profile, quest_type: str) -> None:
         break
 
     quest_data = config.battle["quests"][quest_type][quest]
-    if quest_type == "vote":
-        user.vote_reward = random.randint(quest_data["xp_min"] // 10, quest_data["xp_max"] // 10) * 10
-        user.vote_cooldown = 0
-    elif quest_type == "catch":
-        user.catch_reward = random.randint(quest_data["xp_min"] // 10, quest_data["xp_max"] // 10) * 10
-        user.catch_quest = quest
-        user.catch_cooldown = 0
-    elif quest_type == "misc":
-        user.misc_reward = random.randint(quest_data["xp_min"] // 10, quest_data["xp_max"] // 10) * 10
-        user.misc_quest = quest
-        user.misc_cooldown = 0
+    user[f"{quest_type}_reward"] = random.randint(quest_data["xp_min"] // 10, quest_data["xp_max"] // 10) * 10
+    user[f"{quest_type}_cooldown"] = 0
+    if quest_type != "vote":
+        user[f"{quest_type}_quest"] = quest
     await user.save()
 
 
