@@ -2719,23 +2719,20 @@ async def on_message(message: discord.Message) -> None:
                     suffix_string += "\n💡 " + random.choice(data.hints)
 
                 # sparkles
-                randnum = random.randint(1, 10000000000)
-                if randnum % 10000000000 == 0:
-                    suffix_string += f"\n{get_emoji('staring_cat')} This message appears on __***0.00000001%***__ of catches!!!!!"
-                elif randnum % 1000000000 == 0:
-                    suffix_string += "\n💀 This message appears on ***0.0000001%*** of catches!!!!!"
-                elif randnum % 100000000 == 0:
-                    suffix_string += f"\n{get_emoji('insane')} This message appears on ***0.000001%*** of catches!!!"
-                elif randnum % 10000000 == 0:
-                    suffix_string += f"\n{get_emoji('rainbow_sparkles')} This message appears on **0.00001%** of catches!!!"
-                elif randnum % 1000000 == 0:
-                    suffix_string += "\n💫 This message appears on **0.0001%** of catches!"
-                elif randnum % 100000 == 0:
-                    suffix_string += "\n🌟 This message appears on *0.001%* of catches!"
-                elif randnum % 10000 == 0:
-                    suffix_string += "\n✨ This message appears on *0.01%* of catches."
-                elif randnum % 1000 == 0:
-                    suffix_string += "\n⭐ This message appears on 0.1% of catches."
+                sparkle_roll = random.random()
+                for sparkle_odds, sparkle_message in (
+                    (1e-10, f"{get_emoji('staring_cat')} This message appears on __***0.00000001%***__ of catches!!!!!"),
+                    (1e-9, "💀 This message appears on ***0.0000001%*** of catches!!!!!"),
+                    (1e-8, f"{get_emoji('insane')} This message appears on ***0.000001%*** of catches!!!"),
+                    (1e-7, f"{get_emoji('rainbow_sparkles')} This message appears on **0.00001%** of catches!!!"),
+                    (1e-6, "💫 This message appears on **0.0001%** of catches!"),
+                    (1e-5, "🌟 This message appears on *0.001%* of catches!"),
+                    (1e-4, "✨ This message appears on *0.01%* of catches."),
+                    (1e-3, "⭐ This message appears on 0.1% of catches."),
+                ):
+                    if sparkle_roll < sparkle_odds:
+                        suffix_string += f"\n{sparkle_message}"
+                        break
 
                 if channel.cought:
                     # custom spawn message
