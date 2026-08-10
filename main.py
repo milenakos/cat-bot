@@ -85,6 +85,13 @@ class NewsEntry(TypedDict):
     active: bool
 
 
+class SparkleEntry(TypedDict):
+    odds: float
+    emoji: str
+    percent: str
+    punct: str
+
+
 class FishingEntry(TypedDict):
     cost: int
     value: float
@@ -115,6 +122,7 @@ class DataWrapper:
     letter_mapping: dict[str, str]
     dark_market_followups: list[str]
     custom_cough_strings: dict[str, str]
+    sparkle_messages: list[SparkleEntry]
     roulette_colors: list[str]  # mapping of colors to numbers by indexes
     cat_translations: list[str]
     wiki_lines: list[str]
@@ -2720,18 +2728,11 @@ async def on_message(message: discord.Message) -> None:
 
                 # sparkles
                 sparkle_roll = random.random()
-                for sparkle_odds, sparkle_message in (
-                    (1e-10, f"{get_emoji('staring_cat')} This message appears on __***0.00000001%***__ of catches!!!!!"),
-                    (1e-9, "💀 This message appears on ***0.0000001%*** of catches!!!!!"),
-                    (1e-8, f"{get_emoji('insane')} This message appears on ***0.000001%*** of catches!!!"),
-                    (1e-7, f"{get_emoji('rainbow_sparkles')} This message appears on **0.00001%** of catches!!!"),
-                    (1e-6, "💫 This message appears on **0.0001%** of catches!"),
-                    (1e-5, "🌟 This message appears on *0.001%* of catches!"),
-                    (1e-4, "✨ This message appears on *0.01%* of catches."),
-                    (1e-3, "⭐ This message appears on 0.1% of catches."),
-                ):
-                    if sparkle_roll < sparkle_odds:
-                        suffix_string += f"\n{sparkle_message}"
+                sparkle_fired = False
+                for sparkle in data.sparkle_messages:
+                    if sparkle_roll < sparkle["odds"]:
+                        suffix_string += f"\n{get_emoji(sparkle['emoji'])} This message appears on {sparkle['percent']} of catches{sparkle['punct']}"
+                        sparkle_fired = True
                         break
 
                 if channel.cought:
@@ -2894,7 +2895,7 @@ async def on_message(message: discord.Message) -> None:
 
                 await user.save()
 
-                if "This message appears on" in suffix_string and not user.lucky:
+                if sparkle_fired and not user.lucky:
                     await achemb(message, "lucky", "send")
                 if message.content == "CAT" and not user.loud_cat:
                     await achemb(message, "loud_cat", "send")
