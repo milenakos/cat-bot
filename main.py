@@ -1592,18 +1592,14 @@ async def on_ready() -> None:
     )
 
 
-ROMAN_NUMERALS = (
-    (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"),
-    (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
-)  # fmt: skip
-
-
 def to_roman_numeral(value: int) -> str:
+    roman_map = {1: "I", 4: "IV", 5: "V", 9: "IX", 10: "X", 40: "XL", 50: "L", 90: "XC", 100: "C", 400: "CD", 500: "D", 900: "CM", 1000: "M"}
     result = ""
     remainder = value
-    for i, symbol in ROMAN_NUMERALS:
-        times, remainder = divmod(remainder, i)
-        result += symbol * times
+    for i in sorted(roman_map.keys(), reverse=True):
+        times = remainder // i
+        remainder %= i
+        result += roman_map[i] * times
     return result
 
 
