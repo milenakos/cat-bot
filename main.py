@@ -979,11 +979,13 @@ async def progress_embed(user: Profile, level_data: dict, current_xp: int, old_x
 
 
 def get_streak_reward(streak: int) -> dict:
-    if streak % 100 == 0:
+    if streak == 0:
+        return {"reward": None, "emoji": "⬛", "done_emoji": get_emoji("staring_square")}
+    elif streak % 100 == 0:
         return {"reward": "diamond", "emoji": get_emoji("diamondpack"), "done_emoji": get_emoji("diamondpack_claimed")}
     elif streak % 25 == 0:
         return {"reward": "platinum", "emoji": get_emoji("platinumpack"), "done_emoji": get_emoji("platinumpack_claimed")}
-    elif streak % 5 == 0 and streak not in [0, 5]:
+    elif streak % 5 == 0 and streak != 5:
         return {"reward": "gold", "emoji": get_emoji("goldpack"), "done_emoji": get_emoji("goldpack_claimed")}
     else:
         return {"reward": None, "emoji": "⬛", "done_emoji": get_emoji("staring_square")}
@@ -1263,6 +1265,56 @@ async def postpone_reminder(interaction: discord.Interaction) -> None:
     await interaction.response.send_message(f"ok, i will remind you <t:{int(time.time()) + 30 * 60}:R>", ephemeral=True)
 
 
+async def send_quest_reminders(quest_type: str, start_time: int) -> None:
+    reminder_count = 0
+    while True:
+        user = await Profile.collect(
+            f"(reminders_enabled = true AND reminder_{quest_type} != 0) AND "
+            f"(({quest_type}_cooldown != 0 AND {quest_type}_cooldown + 43200 < {start_time}) OR (reminder_{quest_type} > 1 AND reminder_{quest_type} < {start_time})) LIMIT 1",
+        )
+        if not user or not user[0]:
+            break
+        user = user[0]
+        await asyncio.sleep(0.2)
+
+        await refresh_quests(user)
+        await user.refresh_from_db()
+
+        quest_data = config.battle["quests"][quest_type][user[f"{quest_type}_quest"]]
+
+        embed = discord.Embed(
+            title=f"{get_emoji(quest_data['emoji'])} {quest_data['title']}",
+            description=f"Reward: **{user[f'{quest_type}_reward']}** XP",
+            color=Colors.green,
+        )
+
+        view = View(timeout=VIEW_TIMEOUT)
+        button = Button(label="Postpone", custom_id=f"{quest_type}_{user.guild_id}")
+        button.callback = postpone_reminder
+        view.add_item(button)
+
+        guild = await Server.get_or_create(server_id=user.guild_id)
+        try:
+            if not guild.name:
+                guild.name = (await bot.fetch_guild(user.guild_id)).name
+                await guild.save()
+        except Exception:
+            guild.name = "Unknown Server"
+            await guild.save()
+
+        try:
+            user_user = await User.get_or_create(user_id=user.user_id)
+            user_dm = await fetch_dm_channel(user_user)
+            await user_dm.send(f"A new quest is available in {guild.name}!", embed=embed, view=view)
+        except Exception:
+            pass
+        user[f"reminder_{quest_type}"] = 0
+        reminder_count += 1
+        await user.save()
+
+    log_stats("reminders", {"type": quest_type}, reminder_count)
+
+
 # a loop for various maintenance which is ran every minute
 async def background_loop() -> None:
     global pointlaugh_ratelimit, reactions_ratelimit, loop_count, last_vote_cursor, server_count, emojis
@@ -1462,102 +1514,9 @@ async def background_loop() -> None:
 
     log_stats("reminders", {"type": "vote"}, reminder_count)
 
-    # i know the next two are similiar enough to be merged but its currently dec 30 and i cant be bothered
-    # catch reminders
-    reminder_count = 0
-    while True:
-        user = await Profile.collect(
-            f"(reminders_enabled = true AND reminder_catch != 0) AND ((catch_cooldown != 0 AND catch_cooldown + 43200 < {start_time}) OR (reminder_catch > 1 AND reminder_catch < {start_time})) LIMIT 1",
-        )
-        if not user or not user[0]:
-            break
-        user = user[0]
-        await asyncio.sleep(0.2)
-
-        await refresh_quests(user)
-        await user.refresh_from_db()
-
-        quest_data = config.battle["quests"]["catch"][user.catch_quest]
-
-        embed = discord.Embed(
-            title=f"{get_emoji(quest_data['emoji'])} {quest_data['title']}",
-            description=f"Reward: **{user.catch_reward}** XP",
-            color=Colors.green,
-        )
-
-        view = View(timeout=VIEW_TIMEOUT)
-        button = Button(label="Postpone", custom_id=f"catch_{user.guild_id}")
-        button.callback = postpone_reminder
-        view.add_item(button)
-
-        guild = await Server.get_or_create(server_id=user.guild_id)
-        try:
-            if not guild.name:
-                guild.name = (await bot.fetch_guild(user.guild_id)).name
-                await guild.save()
-        except Exception:
-            guild.name = "Unknown Server"
-            await guild.save()
-
-        try:
-            user_user = await User.get_or_create(user_id=user.user_id)
-            user_dm = await fetch_dm_channel(user_user)
-            await user_dm.send(f"A new quest is available in {guild.name}!", embed=embed, view=view)
-        except Exception:
-            pass
-        user.reminder_catch = 0
-        reminder_count += 1
-        await user.save()
-
-    log_stats("reminders", {"type": "catch"}, reminder_count)
-
-    # misc reminders
-    reminder_count = 0
-    while True:
-        user = await Profile.collect(
-            f"(reminders_enabled = true AND reminder_misc != 0) AND ((misc_cooldown != 0 AND misc_cooldown + 43200 < {start_time}) OR (reminder_misc > 1 AND reminder_misc < {start_time})) LIMIT 1",
-        )
-        if not user or not user[0]:
-            break
-        user = user[0]
-        await asyncio.sleep(0.2)
-
-        await refresh_quests(user)
-        await user.refresh_from_db()
-
-        quest_data = config.battle["quests"]["misc"][user.misc_quest]
-
-        embed = discord.Embed(
-            title=f"{get_emoji(quest_data['emoji'])} {quest_data['title']}",
-            description=f"Reward: **{user.misc_reward}** XP",
-            color=Colors.green,
-        )
-
-        view = View(timeout=VIEW_TIMEOUT)
-        button = Button(label="Postpone", custom_id=f"misc_{user.guild_id}")
-        button.callback = postpone_reminder
-        view.add_item(button)
-
-        guild = await Server.get_or_create(server_id=user.guild_id)
-        try:
-            if not guild.name:
-                guild.name = (await bot.fetch_guild(user.guild_id)).name
-                await guild.save()
-        except Exception:
-            guild.name = "Unknown Server"
-            await guild.save()
-
-        try:
-            user_user = await User.get_or_create(user_id=user.user_id)
-            user_dm = await fetch_dm_channel(user_user)
-            await user_dm.send(f"A new quest is available in {guild.name}!", embed=embed, view=view)
-        except Exception:
-            pass
-        user.reminder_misc = 0
-        reminder_count += 1
-        await user.save()
-
-    log_stats("reminders", {"type": "misc"}, reminder_count)
+    # catch and misc quest reminders
+    await send_quest_reminders("catch", start_time)
+    await send_quest_reminders("misc", start_time)
 
     # manual reminders
     async for reminder in Reminder.filter("time < $1", time.time()):
