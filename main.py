@@ -8561,33 +8561,39 @@ async def bakery(message: discord.Interaction):
                 await interaction.response.send_message("You've already delivered this order.", ephemeral=True)
                 return
 
-            async with aiohttp.ClientSession() as session:
-                try:
-                    async with session.post(
+            success = False
+            try:
+                async with (
+                    aiohttp.ClientSession() as session,
+                    session.post(
                         "https://auth.bake.gg:2053/reward/catbot",
                         headers={"Authorization": os.environ.get("BAKE_GG_TOKEN", "")},  # i dont believe anyone would ever need to change this
                         json={"user": str(interaction.user.id)},
-                    ) as response:
-                        if response.status != 200:
-                            logger.warning("Bake.gg reward failed: status=%s body=%s", response.status, await response.text())
-                            raise ValueError
+                    ) as response,
+                ):
+                    if response.status != 200:
+                        logger.warning("Bake.gg reward failed: status=%s body=%s", response.status, await response.text())
+                        raise ValueError
 
-                        profile.cookies -= 120
-                        profile.coffees -= 140
-                        profile.cat_Nice -= 2
-                        profile.pack_silver += 1
-                        await profile.save()
+                    profile.cookies -= 120
+                    profile.coffees -= 140
+                    profile.cat_Nice -= 2
+                    profile.pack_silver += 1
+                    await profile.save()
 
-                        user.last_bakegg_send = get_current_week()
-                        await user.save()
+                    user.last_bakegg_send = get_current_week()
+                    await user.save()
 
-                        log_stats("bakery_delivered")
+                    log_stats("bakery_delivered")
 
-                        await interaction.response.edit_message(view=await gen_bakery())
-                        await achemb(message, "baker", "followup")
-                except Exception:
-                    await interaction.response.send_message("Failed! Try again later.", ephemeral=True)
-                    raise
+                    await interaction.response.edit_message(view=await gen_bakery())
+                    success = True
+            except Exception:
+                await interaction.response.send_message("Failed! Try again later.", ephemeral=True)
+                raise
+
+            if success:
+                await achemb(message, "baker", "followup")
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
         order_complete = profile.cookies >= 120 and profile.coffees >= 140 and profile.cat_Nice >= 2
