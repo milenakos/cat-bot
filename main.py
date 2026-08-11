@@ -669,10 +669,7 @@ async def generate_quest(user: Profile, quest_type: str) -> None:
                 if prism_boost < 0.15:
                     continue
             case "achievement":
-                unlocked = 0
-                for k in ach_names:
-                    if user[k] and ach_list[k]["category"] != "Hidden":
-                        unlocked += 1
+                unlocked, _, _ = count_achievements(user)
                 if unlocked > 30:
                     continue
         break
@@ -731,6 +728,43 @@ async def refresh_quests(user: Profile) -> None:
             user.weekly_quest = k
             await user.save()
             return
+
+
+async def build_catch_quests(user: Profile, cattype: str, time_seconds: float, got_prism_boost: bool) -> list[str]:
+    quests = ["3cats", "catch"]
+    if cattype == "Fine":
+        quests.append("2fine")
+    if cattype == "Good":
+        quests.append("good")
+    if time_seconds >= 0 and time_seconds < 10:
+        quests.append("under10")
+    if time_seconds >= 0:
+        quests.append("even" if int(time_seconds) % 2 == 0 else "odd")
+    if cattype and cattype not in ["Fine", "Nice", "Good"]:
+        quests.append("rare+")
+    if got_prism_boost:
+        quests.append("prism")
+    if user.catch_quest == "finenice":
+        # 0 none
+        # 1 fine
+        # 2 nice
+        # 3 both
+        if cattype == "Fine" and user.catch_progress in [0, 2]:
+            quests.append("finenice")
+        elif cattype == "Nice" and user.catch_progress in [0, 1]:
+            quests.append("finenice")
+            quests.append("finenice")
+    if cattypes.index(cattype) > 8:
+        quests.append("brave+")
+    if user.weekly_quest == "different":
+        idx = cattypes.index(cattype)
+        current = user.weekly_cattypes.copy()
+        if idx not in current:
+            current.append(idx)
+            user.weekly_cattypes = current
+            quests.append("different")
+            await user.save()
+    return quests
 
 
 async def multi_progress(message: discord.Message | discord.Interaction, user: Profile, quests: list[str], is_belated: bool = False) -> None:
@@ -986,9 +1020,9 @@ async def finale(message: discord.Interaction | discord.Message, user: Profile) 
         return
 
     # check ach req
-    for k in ach_names:
-        if not user[k] and ach_list[k]["category"] != "Hidden":
-            return
+    unlocked, _, hidden_count = count_achievements(user)
+    if unlocked < len(ach_names) - hidden_count:
+        return
 
     if isinstance(message, discord.Message):
         author_string = message.author
@@ -2327,46 +2361,13 @@ async def on_message(message: discord.Message) -> None:
                         await user.save()
                     if user.catnip_active >= time.time() or user.hibernation:
                         await bounty(message, user, channel.cattype)
-                    quests = ["3cats", "catch"]
-                    if channel.cattype == "Fine":
-                        quests.append("2fine")
-                    if channel.cattype == "Good":
-                        quests.append("good")
-                    if belated.get("time", 10) + current_time - belated.get("timestamp", 0) < 10:
-                        quests.append("under10")
-                    if random.randint(0, 1) == 0:
-                        quests.append("even")
-                    else:
-                        quests.append("odd")
-                    if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
-                        quests.append("rare+")
                     total_count, user_count = await asyncio.gather(
                         Prism.count("guild_id = $1", message.guild.id),
                         Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id),
                     )
                     prism_boost = 0.06 * math.log(2 * total_count + 1) + 0.05 * math.log(2 * user_count + 1)
-                    if prism_boost > random.random():
-                        quests.append("prism")
-                    if user.catch_quest == "finenice":
-                        # 0 none
-                        # 1 fine
-                        # 2 nice
-                        # 3 both
-                        if channel.cattype == "Fine" and user.catch_progress in [0, 2]:
-                            quests.append("finenice")
-                        elif channel.cattype == "Nice" and user.catch_progress in [0, 1]:
-                            quests.append("finenice")
-                            quests.append("finenice")
-                    if cattypes.index(channel.cattype) > 8:
-                        quests.append("brave+")
-                    if user.weekly_quest == "different":
-                        idx = cattypes.index(channel.cattype)
-                        current = user.weekly_cattypes.copy()
-                        if idx not in current:
-                            current.append(idx)
-                            user.weekly_cattypes = current
-                            quests.append("different")
-                            await user.save()
+                    time_proxy = belated.get("time", 10) + current_time - belated.get("timestamp", 0)
+                    quests = await build_catch_quests(user, channel.cattype, time_proxy, prism_boost > random.random())
                     await multi_progress(message, user, quests, True)
                     vote_time_user = await User.get_or_create(user_id=message.author.id)
 
@@ -2967,41 +2968,7 @@ async def on_message(message: discord.Message) -> None:
                     await achemb(message, "certified_yapper", "send")
 
                 # handle battlepass
-                quests = ["3cats", "catch"]
-                if channel.cattype == "Fine":
-                    quests.append("2fine")
-                if channel.cattype == "Good":
-                    quests.append("good")
-                if time_caught >= 0 and time_caught < 10:
-                    quests.append("under10")
-                if time_caught >= 0 and int(time_caught) % 2 == 0:
-                    quests.append("even")
-                if time_caught >= 0 and int(time_caught) % 2 == 1:
-                    quests.append("odd")
-                if channel.cattype and channel.cattype not in ["Fine", "Nice", "Good"]:
-                    quests.append("rare+")
-                if did_boost:
-                    quests.append("prism")
-                if user.catch_quest == "finenice":
-                    # 0 none
-                    # 1 fine
-                    # 2 nice
-                    # 3 both
-                    if channel.cattype == "Fine" and user.catch_progress in [0, 2]:
-                        quests.append("finenice")
-                    elif channel.cattype == "Nice" and user.catch_progress in [0, 1]:
-                        quests.append("finenice")
-                        quests.append("finenice")
-                if cattypes.index(channel.cattype) > 8:
-                    quests.append("brave+")
-                if user.weekly_quest == "different":
-                    idx = cattypes.index(channel.cattype)
-                    current = user.weekly_cattypes.copy()
-                    if idx not in current:
-                        current.append(idx)
-                        user.weekly_cattypes = current
-                        quests.append("different")
-                        await user.save()
+                quests = await build_catch_quests(user, channel.cattype, time_caught, did_boost)
 
                 # handle catnip bounties
                 await bounty(message, user, channel.cattype)
@@ -7874,6 +7841,18 @@ def parse_trade_amount(raw: str) -> int | Literal["all"] | None:
         return None
 
 
+async def resolve_trade_delta(
+    current: int, available: int, requested: int | Literal["all"], item_label: str, interaction: discord.Interaction
+) -> int | None:
+    """Resolves 'all' against what's available and validates bounds. Returns the delta to apply, or None if invalid (a response has already been sent)."""
+    if requested == "all":
+        requested = available - current
+    if available < requested + current or current + requested < 0:
+        await interaction.response.send_message(f"You don't have enough {item_label}!", ephemeral=True)
+        return None
+    return requested
+
+
 @bot.tree.command(description="Trade stuff!")
 @discord.app_commands.rename(other_user="user")
 @discord.app_commands.describe(other_user="why would you need description")
@@ -8102,11 +8081,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         await active_user.profile.refresh_from_db()
 
                         current = active_user.gives_cats.get(cattype, 0)
-                        if amount == "all":
-                            amount = active_user.profile[f"cat_{cattype}"] - current
-
-                        if active_user.profile[f"cat_{cattype}"] < amount + current or current + amount < 0:
-                            await interaction2.response.send_message(f"You don't have enough {cattype} cats!", ephemeral=True)
+                        amount = await resolve_trade_delta(current, active_user.profile[f"cat_{cattype}"], amount, f"{cattype} cats", interaction2)
+                        if amount is None:
                             return
 
                         if current + amount == 0:
@@ -8131,11 +8107,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         await active_user.profile.refresh_from_db()
 
                         current = active_user.gives_packs.get(packtype, 0)
-                        if amount == "all":
-                            amount = active_user.profile[f"pack_{packtype.lower()}"] - current
-
-                        if active_user.profile[f"pack_{packtype.lower()}"] < amount + current or current + amount < 0:
-                            await interaction2.response.send_message(f"You don't have enough {packtype} packs!", ephemeral=True)
+                        amount = await resolve_trade_delta(current, active_user.profile[f"pack_{packtype.lower()}"], amount, f"{packtype} packs", interaction2)
+                        if amount is None:
                             return
 
                         if current + amount == 0:
@@ -8154,11 +8127,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         await active_user.profile.refresh_from_db()
 
                         current = active_user.gives_scratchcards
-                        if amount == "all":
-                            amount = active_user.profile.scratchcards - current
-
-                        if active_user.profile.scratchcards < amount + current or current + amount < 0:
-                            await interaction2.response.send_message("You don't have enough scratchcards!", ephemeral=True)
+                        amount = await resolve_trade_delta(current, active_user.profile.scratchcards, amount, "scratchcards", interaction2)
+                        if amount is None:
                             return
 
                         active_user.gives_scratchcards += amount
@@ -8173,11 +8143,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         await active_user.global_user.refresh_from_db()
 
                         current = active_user.gives_rain
-                        if amount == "all":
-                            amount = active_user.global_user.rain_minutes - current
-
-                        if active_user.global_user.rain_minutes < amount + current or current + amount < 0:
-                            await interaction2.response.send_message("You don't have enough rain!", ephemeral=True)
+                        amount = await resolve_trade_delta(current, active_user.global_user.rain_minutes, amount, "rain", interaction2)
+                        if amount is None:
                             return
 
                         active_user.gives_rain += amount
