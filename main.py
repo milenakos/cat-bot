@@ -2427,22 +2427,22 @@ async def on_message(message: discord.Message) -> None:
                     hours, time_left = divmod(time_left, 3600)
                     minutes, seconds = divmod(time_left, 60)
 
-                    time_parts = []
+                    caught_time = ""
                     if days:
-                        time_parts.append(f"{int(days)} days")
+                        caught_time = caught_time + str(int(days)) + " days "
                     if hours:
-                        time_parts.append(f"{int(hours)} hours")
+                        caught_time = caught_time + str(int(hours)) + " hours "
                     if minutes:
-                        time_parts.append(f"{int(minutes)} minutes")
+                        caught_time = caught_time + str(int(minutes)) + " minutes "
                     if seconds:
                         pre_time = round(seconds, 3)
                         if pre_time % 1 == 0:
                             # replace .0 with .00 basically
-                            pre_time = f"{int(pre_time)}.00"
-                        time_parts.append(f"{pre_time} seconds")
-
-                    caught_time = f"{' '.join(time_parts)} " if time_parts else "0.000 seconds (woah) "
+                            pre_time = str(int(pre_time)) + ".00"
+                        caught_time = caught_time + str(pre_time) + " seconds "
                     do_time = True
+                    if not caught_time:
+                        caught_time = "0.000 seconds (woah) "
                     if time_caught <= 0:
                         do_time = False
                 except Exception:
