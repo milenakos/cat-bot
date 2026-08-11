@@ -1251,18 +1251,17 @@ async def background_loop() -> None:
         pass
 
     if config.CLUSTERING:
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get("http://localhost:7878/metrics") as response:
-                    metrics_data = await response.text()
-                    server_count = 0
-                    for line in metrics_data.split("\n"):
-                        if line.startswith("gateway_cache_guilds{shard="):
-                            if "NaN" in line:
-                                continue
-                            server_count += int(line.split(" ")[1])
-            except Exception:
-                pass
+        try:
+            async with aiohttp.ClientSession() as session, session.get("http://localhost:7878/metrics") as response:
+                metrics_data = await response.text()
+                server_count = 0
+                for line in metrics_data.split("\n"):
+                    if line.startswith("gateway_cache_guilds{shard="):
+                        if "NaN" in line:
+                            continue
+                        server_count += int(line.split(" ")[1])
+        except Exception:
+            pass
     else:
         server_count = len(bot.guilds)
 
@@ -1272,8 +1271,8 @@ async def background_loop() -> None:
         return
 
     if config.TOP_GG_MODERN_TOKEN:
-        async with aiohttp.ClientSession() as session:
-            try:
+        try:
+            async with aiohttp.ClientSession() as session:
                 if not config.MIN_SERVER_SEND or server_count > config.MIN_SERVER_SEND:
                     # send server count to top.gg
                     r = await session.post(
@@ -1317,8 +1316,8 @@ async def background_loop() -> None:
                     await f.write(last_vote_cursor)
                 logger.info(f"Fetched {len(the_votes)} votes, cursor {last_vote_cursor}")
 
-            except Exception:
-                logger.warning("Posting to top.gg failed.")
+        except Exception:
+            logger.warning("Posting to top.gg failed.")
 
     assert bot.user is not None
 
@@ -1882,17 +1881,19 @@ async def play_minigame(interaction: discord.Interaction) -> None:
 
         match cattype:
             case "Trash" if answer in answer_clean.upper():
-                async with aiohttp.ClientSession() as session:
-                    try:
-                        async with session.get(
+                try:
+                    async with (
+                        aiohttp.ClientSession() as session,
+                        session.get(
                             f"https://api.wordnik.com/v4/word.json/{answer_clean.lower()}/definitions?api_key={config.WORDNIK_API_KEY}&useCanonical=true&includeTags=false&includeRelated=false&limit=1",
                             headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
-                        ) as response:
-                            response_text = await response.text()
-                            correct = "from" in response_text
-                    except Exception:
-                        # assume word is valid
-                        correct = True
+                        ) as response,
+                    ):
+                        response_text = await response.text()
+                        correct = "from" in response_text
+                except Exception:
+                    # assume word is valid
+                    correct = True
             case "Trash":
                 correct = False
             case "Divine":
@@ -4179,23 +4180,23 @@ async def tiktok(message: discord.Interaction, text: str):
         await achemb(message, "bwomp", "followup")
         return
 
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.post(
+    try:
+        async with (
+            aiohttp.ClientSession() as session,
+            session.post(
                 "https://tiktok-tts.weilnet.workers.dev/api/generation",
                 json={"text": text, "voice": "en_us_001"},
                 headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
-            ) as response:
-                stuff = await response.json()
-                with io.BytesIO() as f:
-                    ba = "data:audio/mpeg;base64," + stuff["data"]
-                    f.write(base64.b64decode(ba))
-                    f.seek(0)
-                    await message.response.send_message(file=discord.File(fp=f, filename="output.mp3"))
-        except discord.NotFound:
-            pass
-        except Exception:
-            await message.response.send_message("i dont speak guacamole (remove non-english characters, make sure the message is below 300 characters)")
+            ) as response,
+        ):
+            stuff = await response.json()
+            with io.BytesIO() as f:
+                ba = "data:audio/mpeg;base64," + stuff["data"]
+                f.write(base64.b64decode(ba))
+                f.seek(0)
+                await message.response.send_message(file=discord.File(fp=f, filename="output.mp3"))
+    except Exception:
+        await message.response.send_message("i dont speak guacamole (remove non-english characters, make sure the message is below 300 characters)")
 
 
 @bot.tree.command(description="(ADMIN) Prevent someone from catching cats for a certain time period")
@@ -7102,27 +7103,26 @@ async def ping(message: discord.Interaction):
         latency = "infinite"
     if latency == 0:
         # probably using gateway proxy, try fetching latency from metrics
-        async with aiohttp.ClientSession() as session:
-            shard_latency = 0
-            try:
-                async with session.get("http://localhost:7878/metrics") as response:
-                    data = await response.text()
-                    total_latencies = 0
-                    total_shards = 0
-                    for line in data.split("\n"):
-                        if line.startswith("gateway_shard_latency{shard="):
-                            if "NaN" in line:
-                                continue
-                            if f'shard="{message.guild.shard_id}"' in line:
-                                shard_latency = int(float(line.split(" ")[1]) * 1000)
-                            try:
-                                total_latencies += float(line.split(" ")[1])
-                                total_shards += 1
-                            except Exception:
-                                pass
-                    latency = round((total_latencies / total_shards) * 1000)
-            except Exception:
-                pass
+        shard_latency = 0
+        try:
+            async with aiohttp.ClientSession() as session, session.get("http://localhost:7878/metrics") as response:
+                data = await response.text()
+                total_latencies = 0
+                total_shards = 0
+                for line in data.split("\n"):
+                    if line.startswith("gateway_shard_latency{shard="):
+                        if "NaN" in line:
+                            continue
+                        if f'shard="{message.guild.shard_id}"' in line:
+                            shard_latency = int(float(line.split(" ")[1]) * 1000)
+                        try:
+                            total_latencies += float(line.split(" ")[1])
+                            total_shards += 1
+                        except Exception:
+                            pass
+                latency = round((total_latencies / total_shards) * 1000)
+        except Exception:
+            pass
         postfix = ""
         if shard_latency:
             postfix = f"\nthe neuron for this server has a delay of {shard_latency} ms {get_emoji('staring_cat')}{get_emoji('staring_cat')}"
@@ -9313,15 +9313,15 @@ async def remind(
 
 @bot.tree.command(name="random", description="Get a random cat")
 async def random_cat(message: discord.Interaction):
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(
-                "https://api.thecatapi.com/v1/images/search", headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}
-            ) as response:
-                data = await response.json()
-                await message.response.send_message(data[0]["url"])
-        except Exception:
-            await message.response.send_message("no cats :(")
+    try:
+        async with (
+            aiohttp.ClientSession() as session,
+            session.get("https://api.thecatapi.com/v1/images/search", headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}) as response,
+        ):
+            data = await response.json()
+            await message.response.send_message(data[0]["url"])
+    except Exception:
+        await message.response.send_message("no cats :(")
 
     await achemb(message, "randomizer", "followup")
 
@@ -9331,31 +9331,33 @@ if config.WORDNIK_API_KEY:
     @bot.tree.command(description="define a word")
     async def define(message: discord.Interaction, word: str):
         word = word.lower()
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(
+        try:
+            async with (
+                aiohttp.ClientSession() as session,
+                session.get(
                     f"https://api.wordnik.com/v4/word.json/{word}/definitions?api_key={config.WORDNIK_API_KEY}&useCanonical=true&includeTags=false&includeRelated=false&limit=69",
                     headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
-                ) as response:
-                    data = await response.json()
+                ) as response,
+            ):
+                data = await response.json()
 
-                    # lazily filter some things
-                    text = (await response.text()).lower()
+                # lazily filter some things
+                text = (await response.text()).lower()
 
-                    # sometimes the api returns results without definitions, so we search for the first one which has a definition
-                    for i in data:
-                        if "text" in i:
-                            clean_data = re.sub(re.compile("<.*?>"), "", i["text"])
-                            await message.response.send_message(
-                                f"__{word}__\n{clean_data}\n-# [{i['attributionText']}](<{i['attributionUrl']}>) Powered by [Wordnik](<{i['wordnikUrl']}>)",
-                                ephemeral=any(test in text for test in ["vulgar", "slur", "offensive", "profane", "insult", "abusive", "derogatory"]),
-                            )
-                            await achemb(message, "define", "followup")
-                            return
+                # sometimes the api returns results without definitions, so we search for the first one which has a definition
+                for i in data:
+                    if "text" in i:
+                        clean_data = re.sub(re.compile("<.*?>"), "", i["text"])
+                        await message.response.send_message(
+                            f"__{word}__\n{clean_data}\n-# [{i['attributionText']}](<{i['attributionUrl']}>) Powered by [Wordnik](<{i['wordnikUrl']}>)",
+                            ephemeral=any(test in text for test in ["vulgar", "slur", "offensive", "profane", "insult", "abusive", "derogatory"]),
+                        )
+                        await achemb(message, "define", "followup")
+                        return
 
-                    raise LookupError
-            except Exception:
-                await message.response.send_message("no definition found", ephemeral=True)
+                raise LookupError
+        except Exception:
+            await message.response.send_message("no definition found", ephemeral=True)
 
 
 @bot.tree.command(name="fact", description="get a random cat fact")
