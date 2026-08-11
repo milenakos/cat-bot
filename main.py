@@ -10337,16 +10337,17 @@ You can stop. That's okay. Seriously."""
         elif user.catnip_level < 11:
 
             async def reroll_warning(interaction: discord.Interaction):
-                async def continue_pay_catnip(interaction: discord.Interaction):
-                    await pay_catnip(interaction)
+                async def abandon_ship(interaction: discord.Interaction):
+                    await interaction.response.edit_message(view=await gen_main())
 
-                view2 = View(timeout=VIEW_TIMEOUT)
-                button = Button(label="Yes")
-                button.callback = continue_pay_catnip
-                view2.add_item(button)
-                await interaction.response.send_message(
-                    "Warning: You will lose your reroll if you level up now. Use it first.\nStill continue?", view=view2, ephemeral=True
-                )
+                view2 = LayoutView(timeout=VIEW_TIMEOUT)
+                button = Button(label="Continue", style=ButtonStyle.red)
+                button.callback = pay_catnip
+                cancel_button = Button(label="Hold on...")
+                cancel_button.callback = abandon_ship
+                view2.add_item(TextDisplay("Warning: You will lose your reroll if you level up now. Use it first.\nStill continue?"))
+                view2.add_item(ActionRow(button, cancel_button))
+                await interaction.response.edit_message(view=view2)
 
             button = Button(label="Pay Up!", style=ButtonStyle.blurple)
             if user.bounty_progress_bonus == user.bounty_total_bonus and user.catnip_level >= 7 and not user.reroll:
