@@ -2955,10 +2955,10 @@ async def on_message(message: discord.Message) -> None:
                 if not user.first:
                     await achemb(message, "first", "send")
 
-                if user.time <= 5 and not user.fast_catcher:
+                if user.time < 5 and not user.fast_catcher:
                     await achemb(message, "fast_catcher", "send")
 
-                if user.timeslow >= 3600 and not user.slow_catcher:
+                if user.timeslow > 3600 and not user.slow_catcher:
                     await achemb(message, "slow_catcher", "send")
 
                 if time_caught in [3.14, 31.41, 31.42, 194.15, 194.16, 1901.59, 11655.92, 11655.93] and not user.pie:
@@ -4781,7 +4781,7 @@ async def gen_inventory(
             total += cat_num
             valuenum += CAT_VALUES[i] * cat_num
             cat_elements.append(f"{icon} **{i}** {cat_num:,}")
-        else:
+        if cat_num <= 0:
             give_collector = False
 
     if user.custom and hasattr(inv_user, "name"):
@@ -4899,9 +4899,9 @@ async def gen_inventory(
         if give_collector:
             give_achs.append("collecter")
 
-        if person.time <= 5:
+        if person.time < 5:
             give_achs.append("fast_catcher")
-        if person.timeslow >= 3600:
+        if person.timeslow > 3600:
             give_achs.append("slow_catcher")
 
         if total >= 100:
@@ -5900,15 +5900,14 @@ async def packs(message: discord.Interaction):
             build_string = get_emoji(data.pack_data[level]["name"].lower() + "pack")
 
         is_special = data.pack_data[level]["special"]
-        bump_boost = 7 / 3 if is_special else 1
         first_boost = 1
         if is_special:
             # find first non-special level
             while data.pack_data[level + first_boost]["special"]:
                 first_boost += 1
 
-        # bump rarity
-        while random.uniform(1, 100) <= data.pack_data[level]["upgrade"] * bump_boost:
+        # bump rarity - dicts.json's "upgrade" already accounts for the special-pack boost (70 vs the normal 30)
+        while random.uniform(1, 100) <= data.pack_data[level]["upgrade"]:
             if is_single:
                 reward_texts.append(f"{get_emoji(data.pack_data[level]['name'].lower() + 'pack')} {data.pack_data[level]['name']}\n" + build_string)
                 build_string = f"Upgraded from {get_emoji(data.pack_data[level]['name'].lower() + 'pack')} {data.pack_data[level]['name']}!\n" + build_string
@@ -8057,7 +8056,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             await achemb(message, "extrovert", "followup")
             await achemb(message, "extrovert", "followup", other_user)
 
-            if cat_count >= 1000:
+            if cat_count > 1000:
                 await achemb(message, "capitalism", "followup")
                 await achemb(message, "capitalism", "followup", other_user)
 
@@ -10120,7 +10119,7 @@ You can stop. That's okay. Seriously."""
     async def help_screen(interaction: discord.Interaction) -> None:
         desc = "Catnip is a prestige system where you pay cats to join your mafia and get perks and bounties!"
         desc += "\n\n❓ **How it works:**"
-        desc += '\n- Press the "Begin" button to join the mafia and get your first perk and bounties.'
+        desc += '\n- Press the "Begin" button to join the mafia and get your bounties.'
         desc += "\n- Complete your bounties and pay the fee again to level up and get more perks and better bounties!"
         desc += "\n- If you fail to pay in time, you will level down and lose your most recent perk."
         desc += "\n- The timer only starts after you press 'Begin Bounties'."
@@ -11201,17 +11200,21 @@ async def recieve_vote(request: web.Request) -> web.Response:
     return web.Response(text="ok", status=200)
 
 
-async def do_vote(user: User, created_at: float) -> None:
-    if user.vote_streak < 10:
-        extend_time = 24
-    elif user.vote_streak < 20:
-        extend_time = 36
-    elif user.vote_streak < 50:
-        extend_time = 48
-    elif user.vote_streak < 100:
-        extend_time = 60
+def get_streak_extend_hours(streak: int) -> int:
+    if streak < 10:
+        return 24
+    elif streak < 20:
+        return 36
+    elif streak < 50:
+        return 48
+    elif streak < 100:
+        return 60
     else:
-        extend_time = 72
+        return 72
+
+
+async def do_vote(user: User, created_at: float) -> None:
+    extend_time = get_streak_extend_hours(user.vote_streak)
 
     if created_at - user.vote_time_topgg < 3600:
         return
@@ -11235,6 +11238,7 @@ async def do_vote(user: User, created_at: float) -> None:
         user.vote_streak += 1
 
     user.vote_time_topgg = created_at
+    extend_time = get_streak_extend_hours(user.vote_streak)
 
     channeley = await fetch_dm_channel(user)
 
