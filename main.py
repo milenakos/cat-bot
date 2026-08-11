@@ -2429,17 +2429,17 @@ async def on_message(message: discord.Message) -> None:
 
                     caught_time = ""
                     if days:
-                        caught_time = caught_time + str(int(days)) + " days "
+                        caught_time += str(int(days)) + " days "
                     if hours:
-                        caught_time = caught_time + str(int(hours)) + " hours "
+                        caught_time += str(int(hours)) + " hours "
                     if minutes:
-                        caught_time = caught_time + str(int(minutes)) + " minutes "
+                        caught_time += str(int(minutes)) + " minutes "
                     if seconds:
                         pre_time = round(seconds, 3)
                         if pre_time % 1 == 0:
                             # replace .0 with .00 basically
                             pre_time = str(int(pre_time)) + ".00"
-                        caught_time = caught_time + str(pre_time) + " seconds "
+                        caught_time += str(pre_time) + " seconds "
                     do_time = True
                     if not caught_time:
                         caught_time = "0.000 seconds (woah) "
