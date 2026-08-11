@@ -2097,6 +2097,28 @@ async def on_message(message: discord.Message) -> None:
 
     react_count = 0
 
+    # :staring_cat: reaction on some system messages
+    if reactions_ratelimit.get(message.guild.id, 0) < 30 and message.type in [
+        discord.MessageType.channel_follow_add,
+        discord.MessageType.recipient_remove,
+        discord.MessageType.guild_discovery_disqualified,
+        discord.MessageType.guild_discovery_grace_period_initial_warning,
+        discord.MessageType.guild_discovery_grace_period_final_warning,
+        discord.MessageType.role_subscription_purchase,
+        discord.MessageType.stage_end,
+        discord.MessageType.guild_incident_report_false_alarm,
+        discord.MessageType.purchase_notification,
+    ]:
+        if not server:
+            server = await Server.get_or_create(server_id=message.guild.id)
+        if server.do_reactions and await check_channel_setupped(server, message.channel):
+            await message.add_reaction(get_emoji("staring_cat"))
+        react_count += 1
+        reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
+        log_stats("reaction", {"reaction": "staring_cat"})
+    elif message.type not in [discord.MessageType.default, discord.MessageType.reply]:
+        return
+
     # :staring_cat: reaction on "bullshit"
     if " " not in text and len(text) > 7 and text.isalnum():
         s = text.lower()
