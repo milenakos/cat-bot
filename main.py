@@ -980,19 +980,15 @@ async def progress_embed(user: Profile, level_data: dict, current_xp: int, old_x
 
 def get_streak_reward(streak: int) -> dict:
     if streak == 0:
-        tier = None
-    elif streak % 100 == 0:
-        tier = "diamond"
-    elif streak % 25 == 0:
-        tier = "platinum"
-    elif streak % 5 == 0 and streak != 5:
-        tier = "gold"
-    else:
-        tier = None
-
-    if not tier:
         return {"reward": None, "emoji": "⬛", "done_emoji": get_emoji("staring_square")}
-    return {"reward": tier, "emoji": get_emoji(f"{tier}pack"), "done_emoji": get_emoji(f"{tier}pack_claimed")}
+    elif streak % 100 == 0:
+        return {"reward": "diamond", "emoji": get_emoji("diamondpack"), "done_emoji": get_emoji("diamondpack_claimed")}
+    elif streak % 25 == 0:
+        return {"reward": "platinum", "emoji": get_emoji("platinumpack"), "done_emoji": get_emoji("platinumpack_claimed")}
+    elif streak % 5 == 0 and streak != 5:
+        return {"reward": "gold", "emoji": get_emoji("goldpack"), "done_emoji": get_emoji("goldpack_claimed")}
+    else:
+        return {"reward": None, "emoji": "⬛", "done_emoji": get_emoji("staring_square")}
 
 
 # handle curious people clicking buttons
