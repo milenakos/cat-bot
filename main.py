@@ -10119,7 +10119,7 @@ You can stop. That's okay. Seriously."""
     async def help_screen(interaction: discord.Interaction) -> None:
         desc = "Catnip is a prestige system where you pay cats to join your mafia and get perks and bounties!"
         desc += "\n\n❓ **How it works:**"
-        desc += '\n- Press the "Begin" button to join the mafia and get your bounties.'
+        desc += '\n- Press the "Begin" button to join the mafia and get your first perk and bounties.'
         desc += "\n- Complete your bounties and pay the fee again to level up and get more perks and better bounties!"
         desc += "\n- If you fail to pay in time, you will level down and lose your most recent perk."
         desc += "\n- The timer only starts after you press 'Begin Bounties'."
@@ -11200,21 +11200,17 @@ async def recieve_vote(request: web.Request) -> web.Response:
     return web.Response(text="ok", status=200)
 
 
-def get_streak_extend_hours(streak: int) -> int:
-    if streak < 10:
-        return 24
-    elif streak < 20:
-        return 36
-    elif streak < 50:
-        return 48
-    elif streak < 100:
-        return 60
-    else:
-        return 72
-
-
 async def do_vote(user: User, created_at: float) -> None:
-    extend_time = get_streak_extend_hours(user.vote_streak)
+    if user.vote_streak < 10:
+        extend_time = 24
+    elif user.vote_streak < 20:
+        extend_time = 36
+    elif user.vote_streak < 50:
+        extend_time = 48
+    elif user.vote_streak < 100:
+        extend_time = 60
+    else:
+        extend_time = 72
 
     if created_at - user.vote_time_topgg < 3600:
         return
@@ -11238,7 +11234,6 @@ async def do_vote(user: User, created_at: float) -> None:
         user.vote_streak += 1
 
     user.vote_time_topgg = created_at
-    extend_time = get_streak_extend_hours(user.vote_streak)
 
     channeley = await fetch_dm_channel(user)
 
