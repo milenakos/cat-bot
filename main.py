@@ -690,7 +690,7 @@ async def refresh_quests(user: Profile) -> None:
     if current_date.day < start_date.day:
         full_months_passed -= 1
     if user.season != full_months_passed:
-        user.bp_history = user.bp_history + f"{user.season},{user.battlepass},{user.progress};"
+        user.bp_history += f"{user.season},{user.battlepass},{user.progress};"
         user.battlepass = 0
         user.progress = 0
 
@@ -10692,7 +10692,7 @@ async def leaderboards(
                 elif type in ["Cookies", "Cats", "Pig", "Prisms", "Fish"] and num <= 0 or type == "Roulette Dollars" and num == 100:
                     break
                 assert unit is not None
-                string = string + f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
+                string += f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
 
             if message.user.id == i["user_id"] and current <= 5:
                 leader = True
@@ -10700,7 +10700,7 @@ async def leaderboards(
 
         # add the messager and interactor
         if messager_placement > show_amount or interactor_placement > show_amount:
-            string = string + "...\n"
+            string += "...\n"
 
             # setting up names
             include_interactor = interactor_placement > show_amount and str(interaction.user.id) not in string
