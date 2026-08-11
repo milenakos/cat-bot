@@ -419,8 +419,7 @@ async def market_snapshot(ticker: str):
 
 
 async def get_stock_price(ticker: str) -> int:
-    market = await _get_pool().fetchrow("SELECT * FROM market WHERE ticker = $1", ticker)
-    if market:
+    if (market := await _get_pool().fetchrow("SELECT * FROM market WHERE ticker = $1", ticker)):
         return market_spot_price(market)
     try:
         return (await PriceHistory.collect("ticker = $1 ORDER BY time DESC LIMIT 1", ticker))[0].price
@@ -529,8 +528,7 @@ def count_achievements(profile) -> tuple[int, int, int]:
     minus_achs = 0
     minus_achs_count = 0
     for k in ach_names:
-        is_ach_hidden = ach_list[k]["category"] == "Hidden"
-        if is_ach_hidden:
+        if (is_ach_hidden := ach_list[k]["category"] == "Hidden"):
             minus_achs_count += 1
         if profile[k]:
             if is_ach_hidden:
@@ -771,8 +769,7 @@ async def multi_progress(message: discord.Message | discord.Interaction, user: P
     await refresh_quests(user)
     await user.refresh_from_db()
     for quest in quests:
-        return_user = await progress(message, user, quest, is_belated, False)
-        if return_user:
+        if (return_user := await progress(message, user, quest, is_belated, False)):
             user = return_user
 
 
@@ -1123,8 +1120,7 @@ def alnum(string: str) -> str:
 
 
 async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool = False) -> str:
-    channel = await Channel.get_or_none(channel_id=ch_id)
-    if not channel:
+    if not (channel := await Channel.get_or_none(channel_id=ch_id)):
         return "channel not setup"
     if channel.cat or channel.yet_to_spawn > time.time() + 10:
         return "cat already spawned"
@@ -1450,8 +1446,7 @@ async def background_loop() -> None:
             try:
                 async with transaction() as conn:
                     market = await locked_market(ticker, conn)
-                    sell_quantity = max_queued_quantity(market, quantity, False, 0)
-                    if sell_quantity:
+                    if (sell_quantity := max_queued_quantity(market, quantity, False, 0)):
                         await execute_market_trade(conn, profile.id, ticker, sell_quantity, False, QUEUED_SPREAD)
             except ValueError:
                 logger.warning("Could not auto-sell %s shares of %s for inactive profile %s", quantity, ticker, profile.id)
@@ -1933,8 +1928,7 @@ async def belated_window_task(
     is_rain: bool = False,
 ) -> None:
     belated_pre = config.belated_catchers.get(msg.channel.id, {})
-    full_event = belated_pre.get("full_event")
-    if full_event:
+    if (full_event := belated_pre.get("full_event")):
         try:
             await asyncio.wait_for(full_event.wait(), timeout=window)
         except asyncio.TimeoutError:
@@ -1947,11 +1941,9 @@ async def belated_window_task(
         except Exception:
             pass
 
-    belated = config.belated_catchers.get(msg.channel.id, {})
-    if not belated:
+    if not (belated := config.belated_catchers.get(msg.channel.id, {})):
         return
-    catchers = belated["late_catchers"].copy()
-    if catchers:
+    if (catchers := belated["late_catchers"].copy()):
         catchers.pop(0)
 
     log_stats("late_catchers", {"count": str(len(catchers))})
@@ -3091,8 +3083,7 @@ bot.loop.create_task(go(message, bot))
         if changed_prisms:
             await Prism.bulk_update(changed_prisms, "guild_id")
 
-        p = await Profile.get_or_none(guild_id=to_id, user_id=0)
-        if p:
+        if (p := await Profile.get_or_none(guild_id=to_id, user_id=0)):
             await p.delete()
 
         await message.reply(f"transferred {len(changed_profiles)} profiles and {len(changed_prisms)} prisms")
@@ -3105,13 +3096,11 @@ bot.loop.create_task(go(message, bot))
         user_id = int(args[1])
         reset_id = int(args[2])
 
-        from_profile = await Profile.get_or_none(guild_id=reset_id, user_id=user_id)
-        if not from_profile:
+        if not (from_profile := await Profile.get_or_none(guild_id=reset_id, user_id=user_id)):
             await message.reply(f"no profile found for {user_id} in {reset_id}")
             return
 
-        to_profile = await Profile.get_or_none(guild_id=guild_id, user_id=user_id)
-        if to_profile:
+        if (to_profile := await Profile.get_or_none(guild_id=guild_id, user_id=user_id)):
             await to_profile.delete()
 
         from_profile.guild_id = guild_id
@@ -4167,8 +4156,7 @@ async def changetimings(
     maximum_time: int | None = None,
 ):
     assert isinstance(message.channel, GuildMessageable)
-    channel = await Channel.get_or_none(channel_id=message.channel.id)
-    if not channel:
+    if not (channel := await Channel.get_or_none(channel_id=message.channel.id)):
         await message.response.send_message("This channel isnt setupped. Please select a valid channel.", ephemeral=True)
         return
 
@@ -4205,8 +4193,7 @@ async def changetimings(
 async def changemessage(message: discord.Interaction):
     assert isinstance(message.channel, GuildMessageable)
     caller = message.user
-    channel = await Channel.get_or_none(channel_id=message.channel.id)
-    if not channel:
+    if not (channel := await Channel.get_or_none(channel_id=message.channel.id)):
         await message.response.send_message("pls setup this channel first", ephemeral=True)
         return
 
@@ -5005,8 +4992,7 @@ async def randomizer(message: discord.Interaction):
     async def gen_random_inventory(interaction: discord.Interaction, first: bool = False) -> None:
         view = LayoutView(timeout=VIEW_TIMEOUT)
 
-        result = await _get_pool().fetchrow("SELECT user_id, guild_id FROM profile TABLESAMPLE BERNOULLI (1) LIMIT 1;")
-        if result:
+        if (result := await _get_pool().fetchrow("SELECT user_id, guild_id FROM profile TABLESAMPLE BERNOULLI (1) LIMIT 1;")):
             embedVar, _ = await gen_inventory(
                 result["guild_id"],
                 discord.Object(result["user_id"], type=discord.User),
@@ -5091,8 +5077,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
 
     # rain summary
     try:
-        rain_server = force_summary
-        if not rain_server:
+        if not (rain_server := force_summary):
             if channel.channel_id not in config.rain_starter or channel.channel_id not in config.cat_cought_rain:
                 schedule_unlock(10)
                 return
@@ -5548,8 +5533,7 @@ if config.DONOR_CHANNEL_ID:
             user.emoji = provided_emoji.strip()
 
         if color:
-            match = re.search(r"^#(?:[0-9a-fA-F]{3}){1,2}$", color)
-            if match:
+            if (match := re.search(r"^#(?:[0-9a-fA-F]{3}){1,2}$", color)):
                 user.color = match.group(0)
         if image and image.content_type in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
             # reupload image
@@ -5913,8 +5897,7 @@ async def packs(message: discord.Interaction):
             await interaction.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
     async def open_all_packs(interaction: discord.Interaction) -> None:
-        embed = await process_pack_opening(10000)
-        if not embed:
+        if not (embed := await process_pack_opening(10000)):
             return
 
         await message.edit_original_response(embed=embed, view=None)
@@ -6369,8 +6352,7 @@ async def settle_queued_orders() -> None:
             if order is None:
                 continue
             market = await locked_market(order["ticker"], conn)
-            quantity = max_queued_quantity(market, order["quantity"], order["type_buy"], order["price"])
-            if quantity:
+            if (quantity := max_queued_quantity(market, order["quantity"], order["type_buy"], order["price"])):
                 try:
                     await execute_market_trade(
                         conn, order["user_id"], order["ticker"], quantity, order["type_buy"], QUEUED_SPREAD, order["price"] if order["type_buy"] else 1
@@ -6854,8 +6836,7 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
             await interaction.response.send_message("This server has reached the prism limit.", ephemeral=True)
             return
 
-        youngest_prism = await Prism.collect("guild_id = $1 ORDER BY time DESC LIMIT 1", message.guild.id)
-        if youngest_prism:
+        if (youngest_prism := await Prism.collect("guild_id = $1 ORDER BY time DESC LIMIT 1", message.guild.id)):
             selected_time = max(round(time.time()), youngest_prism[0].time + 1)
         else:
             selected_time = round(time.time())
@@ -7887,8 +7868,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
 
             async def fetch_all_prisms() -> dict[str, Prism]:
                 assert interaction.guild is not None
-                prism_names = person1.gives_prisms + person2.gives_prisms
-                if not prism_names:
+                if not (prism_names := person1.gives_prisms + person2.gives_prisms):
                     return {}
                 return {
                     p.name: p
@@ -9301,8 +9281,7 @@ def _bounties_are_complete(user: Profile) -> bool:
 
 
 def _bounty_progress_segments(user: Profile, segments: int = 10) -> int:
-    slots = BOUNTY_SLOTS[: user.bounties]
-    if not slots:
+    if not (slots := BOUNTY_SLOTS[: user.bounties]):
         return segments
 
     average_progress = sum(user[f"bounty_progress_{slot}"] / user[f"bounty_total_{slot}"] for slot in slots) / len(slots)
@@ -9480,8 +9459,7 @@ async def get_bounties(level: int) -> list[dict]:
             bounties.append({"id": 0, "progress": 0, "cat_type": "", "amount": amount, "desc": f"Catch {amount} cats of any kind"})
         else:
             # pick a specific cat type not already used
-            available_types = [cat for cat in cattypes if cat not in used_types]
-            if not available_types:
+            if not (available_types := [cat for cat in cattypes if cat not in used_types]):
                 continue
 
             available_types1 = available_types.copy()
@@ -10826,8 +10804,7 @@ async def givecat(message: discord.Interaction, person_id: discord.User, cat_typ
         for rolled_type, weight in zip(cattypes, weights):
             if remaining_amount <= 0 or remaining_weight <= 0:
                 break
-            count = random.binomialvariate(remaining_amount, weight / remaining_weight)
-            if count:
+            if (count := random.binomialvariate(remaining_amount, weight / remaining_weight)):
                 user[f"cat_{rolled_type}"] += count
             remaining_amount -= count
             remaining_weight -= weight
