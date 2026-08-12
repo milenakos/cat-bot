@@ -10980,7 +10980,7 @@ async def undo(message: discord.Interaction, operation: str):
 
         await entry.refresh_from_db()
         if not entry:
-            await message.response.send_message("operation not found", ephemeral=True)
+            await interaction.response.send_message("operation not found", ephemeral=True)
             return
 
         try:
@@ -10988,7 +10988,7 @@ async def undo(message: discord.Interaction, operation: str):
                 # reset
                 reset_id, user_id, guild_id = entry.id, entry.user_id, entry.guild_id
                 if not (from_profile := await Profile.get_or_none(guild_id=reset_id, user_id=user_id)):
-                    await message.response.send_message("invalid operation", ephemeral=True)
+                    await interaction.response.send_message("invalid operation", ephemeral=True)
                     return
 
                 if to_profile := await Profile.get_or_none(guild_id=guild_id, user_id=user_id):
@@ -11040,9 +11040,9 @@ async def undo(message: discord.Interaction, operation: str):
                     await p.delete()
 
             await entry.delete()
-            await message.response.edit_message(content="success", view=None)
+            await interaction.response.edit_message(content="success", view=None)
         except Exception as e:
-            await message.response.edit_message(content=f"error: {e}", view=None)
+            await interaction.response.edit_message(content=f"error: {e}", view=None)
 
     view = View(timeout=VIEW_TIMEOUT)
     button = discord.ui.Button(label="Confirm", style=discord.ButtonStyle.red)
