@@ -4798,14 +4798,14 @@ async def gen_inventory(
     for i in cattypes:
         icon = get_emoji(i.lower() + "cat")
         cat_num = person[f"cat_{i}"]
-        if cat_num < 0:
-            debt = True
-        if cat_num != 0:
+        if cat_num <= 0:
+            give_collector = False
+            if cat_num < 0:
+                debt = True
+        else:
             total += cat_num
             valuenum += CAT_VALUES[i] * cat_num
             cat_elements.append(f"{icon} **{i}** {cat_num:,}")
-        else:
-            give_collector = False
 
     if user.custom and hasattr(inv_user, "name"):
         icon = get_emoji(str(user.user_id) + "cat")
@@ -5923,7 +5923,6 @@ async def packs(message: discord.Interaction):
             build_string = get_emoji(data.pack_data[level]["name"].lower() + "pack")
 
         is_special = data.pack_data[level]["special"]
-        bump_boost = 7 / 3 if is_special else 1
         first_boost = 1
         if is_special:
             # find first non-special level
@@ -5931,7 +5930,7 @@ async def packs(message: discord.Interaction):
                 first_boost += 1
 
         # bump rarity
-        while random.uniform(1, 100) <= data.pack_data[level]["upgrade"] * bump_boost:
+        while random.uniform(1, 100) <= data.pack_data[level]["upgrade"]:
             if is_single:
                 reward_texts.append(f"{get_emoji(data.pack_data[level]['name'].lower() + 'pack')} {data.pack_data[level]['name']}\n" + build_string)
                 build_string = f"Upgraded from {get_emoji(data.pack_data[level]['name'].lower() + 'pack')} {data.pack_data[level]['name']}!\n" + build_string
