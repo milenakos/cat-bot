@@ -2008,7 +2008,7 @@ async def belated_window_task(
 # this is all the code which is ran on every message sent
 # a lot of it is for easter eggs or achievements
 async def on_message(message: discord.Message) -> None:
-    global emojis, last_loop_time
+    global last_loop_time
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
         return
@@ -2993,201 +2993,8 @@ async def on_message(message: discord.Message) -> None:
                     await channel.save()
                     temp_catches_storage.discard(pls_remove_me_later_k_thanks)
 
-    # only letting the owner of the bot access anything past this point
-    if message.author.id != OWNER_ID:
-        return
-
-    # those are "owner" commands which are not really interesting
-    if text.lower().startswith("cat!rain"):
-        # syntax: cat!rain 553093932012011520 20
-        things = text.split(" ")
-        user = await User.get_or_create(user_id=int(things[1]))
-        if not user.rain_minutes:
-            user.rain_minutes = 0
-        user.rain_minutes += int(things[2])
-        user.premium = True
-        await user.save()
-    if text.lower().startswith("cat!restartall"):
-        try:
-            await message.reply("restarting all clusters!")
-            await anyio.run_process(["git", "pull"])
-        except Exception:
-            pass
-        if vote_server:
-            await vote_server.cleanup()
-        await _get_pool().execute("SELECT pg_notify('restarts', $1)", text)
-    elif text.lower().startswith("cat!restart"):
-        try:
-            await message.reply("restarting this cluster!")
-            await anyio.run_process(["git", "pull"])
-        except Exception:
-            pass
-        if vote_server:
-            await vote_server.cleanup()
-        await bot.cat_bot_reload_hook("db" in text)  # pyright: ignore
-    if text.lower() == "cat!sync" and len(list(bot.tree.walk_commands())) > 5:
-        try:
-            await message.reply("syncing commands!")
-            await bot.tree.sync()
-        except Exception:
-            pass
-    if text.lower() == "cat!emojis":
-        global emojis
-        emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
-        try:
-            async with await anyio.open_file("config/emojis_cache.json", "w", encoding="utf-8") as f:
-                await f.write(json.dumps(emojis))
-            await message.reply("emojis refreshed!")
-        except Exception:
-            pass
-    if text.lower().startswith("cat!print"):
-        # just a simple one-line with no async (e.g. 2+3)
-        try:
-            await message.reply(eval(text.removeprefix("cat!print ")))
-        except Exception:
-            try:
-                await message.reply(traceback.format_exc())
-            except Exception:
-                pass
-    if text.lower().startswith("cat!eval"):
-        # complex eval, multi-line + async support
-        silly_billy = text.removeprefix("cat!eval ")
-
-        spaced = ""
-        for i in silly_billy.split("\n"):
-            spaced += "  " + i + "\n"
-
-        code = f"""async def go(message, bot):
- try:
-{spaced}
- except Exception:
-  await message.reply(traceback.format_exc())
-bot.loop.create_task(go(message, bot))
-        """
-
-        exec(code)  # noqa: S102
-    if text.lower().startswith("cat!sql"):
-        try:
-            result = await _get_pool().fetch(text.removeprefix("cat!sql "))
-        except Exception as e:
-            await message.reply(f"ERROR: {e}")
-            return
-        result = "\n".join(str(i).replace("<Record ", "").replace(">", "") for i in result)
-        if len(result) < 2000:
-            await message.reply(result)
-        else:
-            await message.reply(file=discord.File(io.StringIO(result), filename="result.txt"))  # pyright: ignore[reportArgumentType]
-    if text.lower().startswith("cat!transfer"):
-        args = text.removeprefix("cat!transfer ").split()
-        if len(args) != 2:
-            await message.reply("usage: cat!transfer <from_guild_id> <to_guild_id>")
-            return
-        from_id = int(args[0])
-        to_id = int(args[1])
-
-        async for i in Profile.filter("guild_id = $1", to_id):
-            await i.delete()
-        async for i in Prism.filter("guild_id = $1", to_id):
-            await i.delete()
-
-        changed_profiles = []
-        changed_prisms = []
-
-        async for profile in Profile.filter("guild_id = $1", from_id):
-            profile.guild_id = to_id
-            changed_profiles.append(profile)
-
-        async for prism in Prism.filter("guild_id = $1", from_id):
-            prism.guild_id = to_id
-            changed_prisms.append(prism)
-
-        if changed_profiles:
-            await Profile.bulk_update(changed_profiles, "guild_id")
-        if changed_prisms:
-            await Prism.bulk_update(changed_prisms, "guild_id")
-
-        if (p := await Profile.get_or_none(guild_id=to_id, user_id=0)):
-            await p.delete()
-
-        await message.reply(f"transferred {len(changed_profiles)} profiles and {len(changed_prisms)} prisms")
-    if text.lower().startswith("cat!undoreset"):
-        args = text.removeprefix("cat!undoreset ").split()
-        if len(args) != 3:
-            await message.reply("usage: cat!undoreset <guild_id> <user_id> <reset_id>")
-            return
-        guild_id = int(args[0])
-        user_id = int(args[1])
-        reset_id = int(args[2])
-
-        if not (from_profile := await Profile.get_or_none(guild_id=reset_id, user_id=user_id)):
-            await message.reply(f"no profile found for {user_id} in {reset_id}")
-            return
-
-        if (to_profile := await Profile.get_or_none(guild_id=guild_id, user_id=user_id)):
-            await to_profile.delete()
-
-        from_profile.guild_id = guild_id
-
-        prism_count = 0
-        async for p in Prism.filter("guild_id = $1 AND user_id = $2", reset_id, user_id):
-            await p.delete()
-            prism_count += 1
-
-        for c in cattypes:
-            # refund prisms as cats
-            from_profile[f"cat_{c}"] += prism_count
-
-        await from_profile.save()
-        await message.reply(f"successfully undone reset for {user_id} in {guild_id}")
-    if text.lower().startswith("cat!merge"):
-        args = text.removeprefix("cat!merge ").split()
-        if len(args) != 3:
-            await message.reply("usage: cat!merge <guild_id> <from_user_id> <to_user_id>")
-            return
-        guild_id = int(args[0])
-        from_user_id = int(args[1])
-        to_user_id = int(args[2])
-
-        from_profile = await Profile.get_or_create(guild_id=guild_id, user_id=from_user_id)
-        to_profile = await Profile.get_or_create(guild_id=guild_id, user_id=to_user_id)
-
-        # prisms
-        prism_count = 0
-        async for p in Prism.filter("guild_id = $1 AND user_id = $2", guild_id, from_user_id):
-            p.user_id = to_user_id
-            await p.save()
-            prism_count += 1
-
-        # cats
-        cat_count = 0
-        for i in cattypes:
-            to_profile[f"cat_{i}"] += from_profile[f"cat_{i}"]
-            cat_count += from_profile[f"cat_{i}"]
-            from_profile[f"cat_{i}"] = 0
-
-        # achs
-        ach_count = 0
-        for ach in ach_list:
-            if not from_profile[ach] or to_profile[ach]:
-                continue
-            to_profile[ach] = True
-            from_profile[ach] = False
-            ach_count += 1
-
-        await to_profile.save()
-        await from_profile.save()
-
-        await message.reply(
-            f"successfully merged {from_user_id} into {to_user_id} in {guild_id} ({prism_count:,} prisms, {cat_count:,} cats, {ach_count:,} achs)"
-        )
-    if text.lower().startswith("cat!news"):
-        async for i in Channel.all():
-            try:
-                channeley = bot.get_partial_messageable(int(i.channel_id))
-                await channeley.send(text.removeprefix("cat!news "))
-            except Exception:
-                pass
-
+    # owner commands are real prefix commands now (see the "owner commands" section near the end of the file, after the admin commands)
+    await bot.process_commands(message)
 
 # the message when cat gets added to a new server
 async def on_guild_join(guild: discord.Guild) -> None:
@@ -11100,6 +10907,261 @@ async def nuke(message: discord.Interaction):
     await message.response.send_message(warning_text, view=view)
 
 
+def is_bot_owner():
+    async def predicate(ctx: commands.Context) -> bool:
+        return ctx.author.id == OWNER_ID
+
+    return commands.check(predicate)
+
+
+# those are "owner" commands which are not really interesting
+# each is named owner_* internally to avoid shadowing existing names (e.g. rain, news, emojis)
+# but is exposed to Discord under its short name via @bot.command(name=...)
+
+
+@bot.command(name="rain")
+@is_bot_owner()
+async def owner_rain(ctx: commands.Context, user_id: int, duration: int) -> None:
+    # syntax: cat!rain 553093932012011520 20
+    if duration <= 0:
+        await ctx.reply("duration must be positive")
+        return
+    async with transaction() as conn:
+        user = await User.get_or_create(conn, user_id=user_id)
+        if not user.rain_minutes:
+            user.rain_minutes = 0
+        user.rain_minutes += duration
+        user.premium = True
+        await user.save()
+    await ctx.reply(f"granted {duration} rain minutes to {user_id} (now {user.rain_minutes:,})")
+
+
+@bot.command(name="restartall")
+@is_bot_owner()
+async def owner_restartall(ctx: commands.Context) -> None:
+    try:
+        await ctx.reply("restarting all clusters!")
+        await anyio.run_process(["git", "pull"])
+    except Exception:
+        pass
+    if vote_server:
+        await vote_server.cleanup()
+    await _get_pool().execute("SELECT pg_notify('restarts', $1)", ctx.message.content)
+
+
+@bot.command(name="restart")
+@is_bot_owner()
+async def owner_restart(ctx: commands.Context) -> None:
+    try:
+        await ctx.reply("restarting this cluster!")
+        await anyio.run_process(["git", "pull"])
+    except Exception:
+        pass
+    if vote_server:
+        await vote_server.cleanup()
+    await bot.cat_bot_reload_hook("db" in ctx.message.content)  # pyright: ignore
+
+
+@bot.command(name="sync")
+@is_bot_owner()
+async def owner_sync(ctx: commands.Context) -> None:
+    if len(list(bot.tree.walk_commands())) <= 5:
+        return
+    try:
+        await ctx.reply("syncing commands!")
+        await bot.tree.sync()
+    except Exception:
+        pass
+
+
+@bot.command(name="emojis")
+@is_bot_owner()
+async def owner_emojis(ctx: commands.Context) -> None:
+    global emojis
+    emojis = {emoji.name: str(emoji) for emoji in await bot.fetch_application_emojis()}
+    try:
+        async with await anyio.open_file("config/emojis_cache.json", "w", encoding="utf-8") as f:
+            await f.write(json.dumps(emojis))
+        await ctx.reply("emojis refreshed!")
+    except Exception as e:
+        await ctx.reply(f"emojis refreshed in memory, but cache write failed: {e}")
+
+
+@bot.command(name="print")
+@is_bot_owner()
+async def owner_print(ctx: commands.Context, *, expr: str) -> None:
+    # just a simple one-line with no async (e.g. 2+3)
+    try:
+        await ctx.reply(eval(expr))  # noqa: S307
+    except Exception:
+        try:
+            await ctx.reply(traceback.format_exc())
+        except Exception:
+            pass
+
+
+@bot.command(name="eval")
+@is_bot_owner()
+async def owner_eval(ctx: commands.Context, *, code: str) -> None:
+    # complex eval, multi-line + async support
+    message = ctx.message  # noqa: F841 (referenced by the exec'd template below)
+
+    spaced = ""
+    for i in code.split("\n"):
+        spaced += "  " + i + "\n"
+
+    wrapped = f"""async def go(message, bot):
+ try:
+{spaced}
+ except Exception:
+  await message.reply(traceback.format_exc())
+bot.loop.create_task(go(message, bot))
+    """
+
+    try:
+        exec(wrapped)  # noqa: S102
+    except Exception:
+        await ctx.reply(f"```py\n{traceback.format_exc()[-1900:]}\n```")
+
+
+@bot.command(name="sql")
+@is_bot_owner()
+async def owner_sql(ctx: commands.Context, *, query: str) -> None:
+    try:
+        result = await _get_pool().fetch(query)
+    except Exception as e:
+        await ctx.reply(f"ERROR: {e}")
+        return
+    result = "\n".join(str(i).replace("<Record ", "").replace(">", "") for i in result)
+    if not result:
+        await ctx.reply("no rows returned")
+    elif len(result) < 1900:
+        await ctx.reply(result)
+    else:
+        await ctx.reply(file=discord.File(io.StringIO(result), filename="result.txt"))  # pyright: ignore[reportArgumentType]
+
+
+@bot.command(name="transfer")
+@is_bot_owner()
+async def owner_transfer(ctx: commands.Context, *, args: str = "") -> None:
+    parts = args.split()
+    if len(parts) != 2:
+        await ctx.reply("usage: cat!transfer <from_guild_id> <to_guild_id>")
+        return
+    from_id, to_id = int(parts[0]), int(parts[1])
+
+    async for i in Profile.filter("guild_id = $1", to_id):
+        await i.delete()
+    async for i in Prism.filter("guild_id = $1", to_id):
+        await i.delete()
+
+    changed_profiles = []
+    changed_prisms = []
+
+    async for profile in Profile.filter("guild_id = $1", from_id):
+        profile.guild_id = to_id
+        changed_profiles.append(profile)
+
+    async for prism in Prism.filter("guild_id = $1", from_id):
+        prism.guild_id = to_id
+        changed_prisms.append(prism)
+
+    if changed_profiles:
+        await Profile.bulk_update(changed_profiles, "guild_id")
+    if changed_prisms:
+        await Prism.bulk_update(changed_prisms, "guild_id")
+
+    if (p := await Profile.get_or_none(guild_id=to_id, user_id=0)):
+        await p.delete()
+
+    await ctx.reply(f"transferred {len(changed_profiles)} profiles and {len(changed_prisms)} prisms")
+
+
+@bot.command(name="undoreset")
+@is_bot_owner()
+async def owner_undoreset(ctx: commands.Context, *, args: str = "") -> None:
+    parts = args.split()
+    if len(parts) != 3:
+        await ctx.reply("usage: cat!undoreset <guild_id> <user_id> <reset_id>")
+        return
+    guild_id, user_id, reset_id = int(parts[0]), int(parts[1]), int(parts[2])
+
+    if not (from_profile := await Profile.get_or_none(guild_id=reset_id, user_id=user_id)):
+        await ctx.reply(f"no profile found for {user_id} in {reset_id}")
+        return
+
+    if (to_profile := await Profile.get_or_none(guild_id=guild_id, user_id=user_id)):
+        await to_profile.delete()
+
+    from_profile.guild_id = guild_id
+
+    prism_count = 0
+    async for p in Prism.filter("guild_id = $1 AND user_id = $2", reset_id, user_id):
+        await p.delete()
+        prism_count += 1
+
+    for c in cattypes:
+        # refund prisms as cats
+        from_profile[f"cat_{c}"] += prism_count
+
+    await from_profile.save()
+    await ctx.reply(f"successfully undone reset for {user_id} in {guild_id}")
+
+
+@bot.command(name="merge")
+@is_bot_owner()
+async def owner_merge(ctx: commands.Context, *, args: str = "") -> None:
+    parts = args.split()
+    if len(parts) != 3:
+        await ctx.reply("usage: cat!merge <guild_id> <from_user_id> <to_user_id>")
+        return
+    guild_id, from_user_id, to_user_id = int(parts[0]), int(parts[1]), int(parts[2])
+
+    from_profile = await Profile.get_or_create(guild_id=guild_id, user_id=from_user_id)
+    to_profile = await Profile.get_or_create(guild_id=guild_id, user_id=to_user_id)
+
+    # prisms
+    prism_count = 0
+    async for p in Prism.filter("guild_id = $1 AND user_id = $2", guild_id, from_user_id):
+        p.user_id = to_user_id
+        await p.save()
+        prism_count += 1
+
+    # cats
+    cat_count = 0
+    for i in cattypes:
+        to_profile[f"cat_{i}"] += from_profile[f"cat_{i}"]
+        cat_count += from_profile[f"cat_{i}"]
+        from_profile[f"cat_{i}"] = 0
+
+    # achs
+    ach_count = 0
+    for ach in ach_list:
+        if not from_profile[ach] or to_profile[ach]:
+            continue
+        to_profile[ach] = True
+        from_profile[ach] = False
+        ach_count += 1
+
+    await to_profile.save()
+    await from_profile.save()
+
+    await ctx.reply(
+        f"successfully merged {from_user_id} into {to_user_id} in {guild_id} ({prism_count:,} prisms, {cat_count:,} cats, {ach_count:,} achs)"
+    )
+
+
+@bot.command(name="news")
+@is_bot_owner()
+async def owner_news(ctx: commands.Context, *, announcement: str) -> None:
+    async for i in Channel.all():
+        try:
+            channeley = bot.get_partial_messageable(int(i.channel_id))
+            await channeley.send(announcement)
+        except Exception:
+            pass
+
+
 async def recieve_vote(request: web.Request) -> web.Response:
     signature = request.headers.get("x-topgg-signature", "")
     try:
@@ -11240,6 +11302,14 @@ async def on_error(*args, **kwargs):
     raise  # noqa: PLE0704
 
 
+async def on_command_error(ctx: commands.Context, error: commands.CommandError) -> None:
+    # CommandNotFound/CheckFailure/UserInputError are expected noise (typos, non-owner cat!x attempts,
+    # missing args on owner commands) - anything else is a real bug, let on_error/sentry see it
+    if isinstance(error, (commands.CommandNotFound, commands.CheckFailure, commands.UserInputError)):
+        return
+    raise error
+
+
 async def on_interaction(ctx: discord.Interaction) -> None:
     try:
         if ctx.command:
@@ -11264,12 +11334,17 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
         command.guild_only = True
         bot2.tree.add_command(command)
 
+    for command in bot.commands:
+        # copy the owner prefix commands too
+        bot2.add_command(command)
+
     context_menu_command = discord.app_commands.ContextMenu(name="catch", callback=catch)
     context_menu_command.guild_only = True
     bot2.tree.add_command(context_menu_command)
 
     # copy all the events
     bot2.on_message = on_message
+    bot2.on_command_error = on_command_error  # type: ignore
     bot2.on_error = on_error  # type: ignore
     bot2.on_ready = on_ready  # type: ignore
     bot2.on_guild_join = on_guild_join  # type: ignore

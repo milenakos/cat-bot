@@ -87,7 +87,8 @@ else:
 
 
 bot = commands.AutoShardedBot(
-    command_prefix="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    command_prefix="cat!",
+    case_insensitive=True,
     help_command=None,
     chunk_guilds_at_startup=False,
     allowed_contexts=discord.app_commands.AppCommandContext(guild=True, dm_channel=False, private_channel=False),
