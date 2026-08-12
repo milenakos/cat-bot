@@ -1120,7 +1120,7 @@ def alnum(string: str) -> str:
 
 
 def clean_answer_input(raw: str) -> str:
-    return " ".join(re.sub(f"[^0-9A-Za-z \-~]+", "", raw.replace(",", " ")).split())
+    return " ".join(re.sub(r"[^0-9A-Za-z \-~]+", "", raw.replace(",", " ")).split())
 
 
 def clean_number_input(raw: str) -> str:
