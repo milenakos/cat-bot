@@ -86,16 +86,8 @@ else:
     shard_count = None
 
 
-def get_prefix(bot: commands.AutoShardedBot, message: discord.Message) -> str:
-    # case_insensitive only affects the command name, not the prefix itself, so match
-    # whatever casing was actually typed (mirrors the old text.lower().startswith("cat!") check)
-    if message.content[:4].lower() == "cat!":
-        return message.content[:4]
-    return "cat!"
-
-
 bot = commands.AutoShardedBot(
-    command_prefix=get_prefix,
+    command_prefix="cat!",
     case_insensitive=True,
     help_command=None,
     chunk_guilds_at_startup=False,
