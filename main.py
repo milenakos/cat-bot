@@ -11382,6 +11382,11 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
     bot2.on_connect = on_connect  # type: ignore
     bot2.on_interaction = on_interaction  # type: ignore
 
+    # finally replace the fake bot with the real one
+    bot = bot2
+
+    config.SOFT_RESTART_TIME = time.time()
+
     vote_server = None
     if config.WEBHOOK_VERIFY and (not config.CLUSTERING or config.CLUSTERING_ZERO):
         app = web.Application()
@@ -11396,11 +11401,6 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
         await vote_server.setup()
         site = web.TCPSite(vote_server, "0.0.0.0", 8069)
         await site.start()
-
-    # finally replace the fake bot with the real one
-    bot = bot2
-
-    config.SOFT_RESTART_TIME = time.time()
 
     app_commands = await bot.tree.fetch_commands()
     COMMAND_IDS = {i.name: i.id for i in app_commands}
