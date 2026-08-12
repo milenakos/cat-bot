@@ -1138,13 +1138,13 @@ def snow_to_rel(snowflake: int) -> str:
 
 
 # function to autocomplete operation choice for /undo, which also allows more than 25 options
-async def undo_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[int]]:
+async def undo_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     assert interaction.guild is not None
     time_snowflake = discord.utils.time_snowflake(discord.utils.utcnow() - datetime.timedelta(days=7))
     return [
         discord.app_commands.Choice(
             name=(f"reset - {entry.username}" if entry.username else "nuke") + f" ({snow_to_rel(entry.id)})",
-            value=int(entry.id),
+            value=entry.id,
         )
         async for entry in Restore.filter("guild_id = $1 AND id > $2 ORDER BY id DESC", interaction.guild.id, time_snowflake)
     ][:25]
@@ -10964,10 +10964,13 @@ async def nuke(message: discord.Interaction):
 @discord.app_commands.default_permissions(administrator=True)
 @discord.app_commands.autocomplete(operation=undo_autocomplete)
 @discord.app_commands.describe(operation="pick the lowest/oldest operation if there are multiple")
-async def undo(message: discord.Interaction, operation: int):
+async def undo(message: discord.Interaction, operation: str):
     assert message.guild is not None
-    entry = await Restore.get_or_none(id=operation)
-    if entry is None or entry.guild_id != message.guild.id:
+    try:
+        entry = await Restore.get_or_none(id=operation)
+        if entry is None or entry.guild_id != message.guild.id:
+            raise ValueError
+    except Exception:
         await message.response.send_message("invalid operation", ephemeral=True)
         return
 
