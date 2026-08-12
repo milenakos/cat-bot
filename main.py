@@ -419,7 +419,7 @@ async def market_snapshot(ticker: str):
 
 
 async def get_stock_price(ticker: str) -> int:
-    if (market := await _get_pool().fetchrow("SELECT * FROM market WHERE ticker = $1", ticker)):
+    if market := await _get_pool().fetchrow("SELECT * FROM market WHERE ticker = $1", ticker):
         return market_spot_price(market)
     try:
         return (await PriceHistory.collect("ticker = $1 ORDER BY time DESC LIMIT 1", ticker))[0].price
@@ -528,7 +528,7 @@ def count_achievements(profile) -> tuple[int, int, int]:
     minus_achs = 0
     minus_achs_count = 0
     for k in ach_names:
-        if (is_ach_hidden := ach_list[k]["category"] == "Hidden"):
+        if is_ach_hidden := ach_list[k]["category"] == "Hidden":
             minus_achs_count += 1
         if profile[k]:
             if is_ach_hidden:
@@ -769,7 +769,7 @@ async def multi_progress(message: discord.Message | discord.Interaction, user: P
     await refresh_quests(user)
     await user.refresh_from_db()
     for quest in quests:
-        if (return_user := await progress(message, user, quest, is_belated, False)):
+        if return_user := await progress(message, user, quest, is_belated, False):
             user = return_user
 
 
@@ -1445,7 +1445,7 @@ async def background_loop() -> None:
             try:
                 async with transaction() as conn:
                     market = await locked_market(ticker, conn)
-                    if (sell_quantity := max_queued_quantity(market, quantity, False, 0)):
+                    if sell_quantity := max_queued_quantity(market, quantity, False, 0):
                         await execute_market_trade(conn, profile.id, ticker, sell_quantity, False, QUEUED_SPREAD)
             except ValueError:
                 logger.warning("Could not auto-sell %s shares of %s for inactive profile %s", quantity, ticker, profile.id)
@@ -1929,7 +1929,7 @@ async def belated_window_task(
     is_rain: bool = False,
 ) -> None:
     belated_pre = config.belated_catchers.get(msg.channel.id, {})
-    if (full_event := belated_pre.get("full_event")):
+    if full_event := belated_pre.get("full_event"):
         try:
             await asyncio.wait_for(full_event.wait(), timeout=window)
         except asyncio.TimeoutError:
@@ -1944,7 +1944,7 @@ async def belated_window_task(
 
     if not (belated := config.belated_catchers.get(msg.channel.id, {})):
         return
-    if (catchers := belated["late_catchers"].copy()):
+    if catchers := belated["late_catchers"].copy():
         catchers.pop(0)
 
     log_stats("late_catchers", {"count": str(len(catchers))})
@@ -2995,6 +2995,7 @@ async def on_message(message: discord.Message) -> None:
 
     # owner commands are real prefix commands now (see the "owner commands" section near the end of the file, after the admin commands)
     await bot.process_commands(message)
+
 
 # the message when cat gets added to a new server
 async def on_guild_join(guild: discord.Guild) -> None:
@@ -4822,7 +4823,7 @@ async def randomizer(message: discord.Interaction):
     async def gen_random_inventory(interaction: discord.Interaction, first: bool = False) -> None:
         view = LayoutView(timeout=VIEW_TIMEOUT)
 
-        if (result := await _get_pool().fetchrow("SELECT user_id, guild_id FROM profile TABLESAMPLE BERNOULLI (1) LIMIT 1;")):
+        if result := await _get_pool().fetchrow("SELECT user_id, guild_id FROM profile TABLESAMPLE BERNOULLI (1) LIMIT 1;"):
             embedVar, _ = await gen_inventory(
                 result["guild_id"],
                 discord.Object(result["user_id"], type=discord.User),
@@ -5362,9 +5363,8 @@ if config.DONOR_CHANNEL_ID:
         if provided_emoji and discord_emoji.to_discord(provided_emoji.strip(), get_all=False, put_colons=False):
             user.emoji = provided_emoji.strip()
 
-        if color:
-            if (match := re.search(r"^#(?:[0-9a-fA-F]{3}){1,2}$", color)):
-                user.color = match.group(0)
+        if color and (match := re.search(r"^#(?:[0-9a-fA-F]{3}){1,2}$", color)):
+            user.color = match.group(0)
         if image and image.content_type in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
             # reupload image
             channeley = bot.get_partial_messageable(config.DONOR_CHANNEL_ID)
@@ -6181,7 +6181,7 @@ async def settle_queued_orders() -> None:
             if order is None:
                 continue
             market = await locked_market(order["ticker"], conn)
-            if (quantity := max_queued_quantity(market, order["quantity"], order["type_buy"], order["price"])):
+            if quantity := max_queued_quantity(market, order["quantity"], order["type_buy"], order["price"]):
                 try:
                     await execute_market_trade(
                         conn, order["user_id"], order["ticker"], quantity, order["type_buy"], QUEUED_SPREAD, order["price"] if order["type_buy"] else 1
@@ -6665,7 +6665,7 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
             await interaction.response.send_message("This server has reached the prism limit.", ephemeral=True)
             return
 
-        if (youngest_prism := await Prism.collect("guild_id = $1 ORDER BY time DESC LIMIT 1", message.guild.id)):
+        if youngest_prism := await Prism.collect("guild_id = $1 ORDER BY time DESC LIMIT 1", message.guild.id):
             selected_time = max(round(time.time()), youngest_prism[0].time + 1)
         else:
             selected_time = round(time.time())
@@ -7609,9 +7609,7 @@ def parse_trade_amount(raw: str) -> int | Literal["all"] | None:
         return None
 
 
-async def resolve_trade_delta(
-    current: int, available: int, requested: int | Literal["all"], item_label: str, interaction: discord.Interaction
-) -> int | None:
+async def resolve_trade_delta(current: int, available: int, requested: int | Literal["all"], item_label: str, interaction: discord.Interaction) -> int | None:
     """Resolves 'all' against what's available and validates bounds. Returns the delta to apply, or None if invalid (a response has already been sent)."""
     if requested == "all":
         requested = available - current
@@ -10641,7 +10639,7 @@ async def givecat(message: discord.Interaction, person_id: discord.User, cat_typ
         for rolled_type, weight in zip(cattypes, weights):
             if remaining_amount <= 0 or remaining_weight <= 0:
                 break
-            if (count := random.binomialvariate(remaining_amount, weight / remaining_weight)):
+            if count := random.binomialvariate(remaining_amount, weight / remaining_weight):
                 user[f"cat_{rolled_type}"] += count
             remaining_amount -= count
             remaining_weight -= weight
@@ -10989,7 +10987,7 @@ async def owner_emojis(ctx: commands.Context) -> None:
 async def owner_print(ctx: commands.Context, *, expr: str) -> None:
     # just a simple one-line with no async (e.g. 2+3)
     try:
-        await ctx.reply(eval(expr))  # noqa: S307
+        await ctx.reply(eval(expr))
     except Exception:
         try:
             await ctx.reply(traceback.format_exc())
@@ -11068,7 +11066,7 @@ async def owner_transfer(ctx: commands.Context, *, args: str = "") -> None:
     if changed_prisms:
         await Prism.bulk_update(changed_prisms, "guild_id")
 
-    if (p := await Profile.get_or_none(guild_id=to_id, user_id=0)):
+    if p := await Profile.get_or_none(guild_id=to_id, user_id=0):
         await p.delete()
 
     await ctx.reply(f"transferred {len(changed_profiles)} profiles and {len(changed_prisms)} prisms")
@@ -11087,7 +11085,7 @@ async def owner_undoreset(ctx: commands.Context, *, args: str = "") -> None:
         await ctx.reply(f"no profile found for {user_id} in {reset_id}")
         return
 
-    if (to_profile := await Profile.get_or_none(guild_id=guild_id, user_id=user_id)):
+    if to_profile := await Profile.get_or_none(guild_id=guild_id, user_id=user_id):
         await to_profile.delete()
 
     from_profile.guild_id = guild_id
@@ -11143,9 +11141,7 @@ async def owner_merge(ctx: commands.Context, *, args: str = "") -> None:
     await to_profile.save()
     await from_profile.save()
 
-    await ctx.reply(
-        f"successfully merged {from_user_id} into {to_user_id} in {guild_id} ({prism_count:,} prisms, {cat_count:,} cats, {ach_count:,} achs)"
-    )
+    await ctx.reply(f"successfully merged {from_user_id} into {to_user_id} in {guild_id} ({prism_count:,} prisms, {cat_count:,} cats, {ach_count:,} achs)")
 
 
 @bot.command(name="news")
