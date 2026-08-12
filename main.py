@@ -53,7 +53,7 @@ import config
 import graph
 import msg2img
 from catpg import RawSQL, _get_pool, transaction
-from database import Channel, Order, PortfolioHistory, PriceHistory, Prism, Profile, Reminder, Reward, Server, User
+from database import Channel, Order, PortfolioHistory, PriceHistory, Prism, Profile, Reminder, Restore, Reward, Server, User
 
 try:
     import exportbackup  # type: ignore
@@ -1122,6 +1122,31 @@ async def ach_autocomplete(interaction: discord.Interaction, current: str) -> li
         discord.app_commands.Choice(name=val["title"], value=key)
         for (key, val) in ach_list.items()
         if (alnum(current) in alnum(key) or alnum(current) in alnum(val["title"]))
+    ][:25]
+
+
+# function to convert a snowflake to "X days ago"
+def snow_to_rel(snowflake: int) -> str:
+    delta = discord.utils.utcnow() - discord.utils.snowflake_time(snowflake)
+    seconds = max(0, int(delta.total_seconds()))
+
+    for unit, unit_seconds in (("d", 86_400), ("h", 3_600), ("m", 60)):
+        if seconds >= unit_seconds:
+            return f"{seconds // unit_seconds}{unit} ago"
+
+    return f"{seconds}s ago"
+
+
+# function to autocomplete operation choice for /undo, which also allows more than 25 options
+async def undo_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[int]]:
+    assert interaction.guild is not None
+    time_snowflake = discord.utils.time_snowflake(discord.utils.utcnow() - datetime.timedelta(days=7))
+    return [
+        discord.app_commands.Choice(
+            name=(f"reset - {entry.username}" if entry.username else "nuke") + f" ({snow_to_rel(entry.id)})",
+            value=int(entry.id),
+        )
+        async for entry in Restore.filter("guild_id = $1 AND id > $2 ORDER BY id DESC", interaction.guild.id, time_snowflake)
     ][:25]
 
 
@@ -10854,8 +10879,10 @@ async def reset(message: discord.Interaction, person_id: discord.User):
             async for p in Prism.filter("guild_id = $1 AND user_id = $2", message.guild.id, person_id.id):
                 p.guild_id = the_id
                 await p.save()
+            await Restore.create(guild_id=message.guild.id, user_id=person_id.id, username=person_id.name, id=the_id)
             await interaction.response.edit_message(
-                content=f"Done! rip {person_id.mention}. f's in chat.\njoin our discord to rollback: <https://discord.gg/staring>", view=None
+                content=f"Done! rip {person_id.mention}. f's in chat.\nyou can revert this in the next 7 days via `/undo`. contact us for older reverts: <https://discord.gg/staring>",
+                view=None,
             )
         except Exception:
             await interaction.response.edit_message(
@@ -10917,13 +10944,11 @@ async def nuke(message: discord.Interaction):
                 await Prism.bulk_update(changed_prisms, "guild_id")
             await Profile.create(guild_id=interaction.message.id, user_id=0)
 
-            try:
-                await interaction.response.edit_message(
-                    content="Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.",
-                    view=None,
-                )
-            except Exception:
-                await interaction.response.send_message("Done. If you want to roll this back, please contact us in our discord: <https://discord.gg/staring>.")
+            await Restore.create(guild_id=message.guild.id, id=interaction.message.id)
+            await interaction.response.edit_message(
+                content="done!\nyou can revert this in the next 7 days via `/undo`. contact us for older reverts: <https://discord.gg/staring>",
+                view=None,
+            )
         else:
             view = await gen(counter)
             try:
@@ -10933,6 +10958,97 @@ async def nuke(message: discord.Interaction):
 
     view = await gen(counter)
     await message.response.send_message(warning_text, view=view)
+
+
+@bot.tree.command(description="(HIGH ADMIN) Undo/revert/restore nukes and resets")
+@discord.app_commands.default_permissions(administrator=True)
+@discord.app_commands.autocomplete(operation=undo_autocomplete)
+@discord.app_commands.describe(operation="pick the lowest/oldest operation if there are multiple")
+async def undo(message: discord.Interaction, operation: int):
+    assert message.guild is not None
+    entry = await Restore.get_or_none(id=operation)
+    if entry is None or entry.guild_id != message.guild.id:
+        await message.response.send_message("invalid operation", ephemeral=True)
+        return
+
+    async def confirm(interaction: discord.Interaction) -> None:
+        if interaction.user.id != message.user.id:
+            return await do_funny(interaction)
+
+        await entry.refresh_from_db()
+        if not entry:
+            await message.response.send_message("operation not found", ephemeral=True)
+            return
+
+        try:
+            if entry.user_id:
+                # reset
+                reset_id, user_id, guild_id = entry.id, entry.user_id, entry.guild_id
+                if not (from_profile := await Profile.get_or_none(guild_id=reset_id, user_id=user_id)):
+                    await message.response.send_message("invalid operation", ephemeral=True)
+                    return
+
+                if to_profile := await Profile.get_or_none(guild_id=guild_id, user_id=user_id):
+                    await to_profile.delete()
+
+                from_profile.guild_id = guild_id
+
+                prism_count = 0
+                async for p in Prism.filter("guild_id = $1 AND user_id = $2", reset_id, user_id):
+                    # check if prism exists in destination
+                    if await Prism.get_or_none(guild_id=guild_id, name=p.name):
+                        await p.delete()
+                        prism_count += 1
+                    else:
+                        p.guild_id = guild_id
+                        await p.save()
+
+                for c in cattypes:
+                    # refund prisms as cats
+                    from_profile[f"cat_{c}"] += prism_count
+
+                await from_profile.save()
+            else:
+                # nuke
+                from_id, to_id = entry.id, entry.guild_id
+
+                async for i in Profile.filter("guild_id = $1", to_id):
+                    await i.delete()
+                async for i in Prism.filter("guild_id = $1", to_id):
+                    await i.delete()
+
+                changed_profiles = []
+                changed_prisms = []
+
+                async for profile in Profile.filter("guild_id = $1", from_id):
+                    profile.guild_id = to_id
+                    changed_profiles.append(profile)
+
+                async for prism in Prism.filter("guild_id = $1", from_id):
+                    prism.guild_id = to_id
+                    changed_prisms.append(prism)
+
+                if changed_profiles:
+                    await Profile.bulk_update(changed_profiles, "guild_id")
+                if changed_prisms:
+                    await Prism.bulk_update(changed_prisms, "guild_id")
+
+                if p := await Profile.get_or_none(guild_id=to_id, user_id=0):
+                    await p.delete()
+
+            await entry.delete()
+            await message.response.edit_message(content="success", view=None)
+        except Exception as e:
+            await message.response.edit_message(content=f"error: {e}", view=None)
+
+    view = View(timeout=VIEW_TIMEOUT)
+    button = discord.ui.Button(label="Confirm", style=discord.ButtonStyle.red)
+    button.callback = confirm
+    view.add_item(button)
+    await message.response.send_message(
+        "⚠️ Running this operation will restore to the state at the time of the reset. All progress made since will be lost with no way to revert. Still continue?",
+        view=view,
+    )
 
 
 def is_bot_owner():

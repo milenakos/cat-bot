@@ -95,3 +95,7 @@ class PortfolioHistory(catpg.Model):
 
 class Reward(catpg.Model):
     _primary_key = "ticker"
+
+
+class Restore(catpg.Model):
+    pass

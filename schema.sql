@@ -426,6 +426,15 @@ CREATE TABLE public.server (
 
 ALTER TABLE public.server OWNER TO cat_bot;
 
+CREATE TABLE public.restore (
+    id bigint NOT NULL,
+    guild_id bigint NOT NULL,
+    user_id bigint DEFAULT 0,
+    username text DEFAULT ''
+);
+
+ALTER TABLE public.restore OWNER TO cat_bot;
+
 CREATE TABLE public.order (
     id integer NOT NULL,
     user_id bigint NOT NULL,
@@ -552,6 +561,9 @@ ALTER TABLE ONLY public."user"
 
 ALTER TABLE ONLY public.server
     ADD CONSTRAINT server_pkey PRIMARY KEY (server_id);
+
+ALTER TABLE ONLY public.restore
+    ADD CONSTRAINT restore_pkey PRIMARY KEY (restore_id);
 
 ALTER TABLE ONLY public.order
     ADD CONSTRAINT order_pkey PRIMARY KEY (id);
