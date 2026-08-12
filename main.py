@@ -3003,8 +3003,10 @@ async def on_message(message: discord.Message) -> None:
                     await channel.save()
                     temp_catches_storage.discard(pls_remove_me_later_k_thanks)
 
-    # owner commands are real prefix commands now (see the "owner commands" section near the end of the file, after the admin commands)
-    await bot.process_commands(message)
+    # owner commands are real prefix commands now
+    # (see the "owner commands" section near the end of the file, after the admin commands)
+    if message.author.id == OWNER_ID:
+        await bot.process_commands(message)
 
 
 # the message when cat gets added to a new server
