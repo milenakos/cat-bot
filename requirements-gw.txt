@@ -13,4 +13,3 @@ unidecode
 anyio
 numpy
 matplotlib
-inflect
