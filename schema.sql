@@ -563,7 +563,7 @@ ALTER TABLE ONLY public.server
     ADD CONSTRAINT server_pkey PRIMARY KEY (server_id);
 
 ALTER TABLE ONLY public.restore
-    ADD CONSTRAINT restore_pkey PRIMARY KEY (restore_id);
+    ADD CONSTRAINT restore_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY public.order
     ADD CONSTRAINT order_pkey PRIMARY KEY (id);
