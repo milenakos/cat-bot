@@ -9448,7 +9448,6 @@ async def level_down(user: Profile, message: discord.Interaction, ephemeral: boo
 
     user.catnip_total_cats = 0
 
-    user.bounty_active = False
     user.first_quote_seen = False
 
     removed_perk = None
