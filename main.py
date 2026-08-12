@@ -11030,12 +11030,16 @@ def is_bot_owner():
 @is_bot_owner()
 async def owner_rain(ctx: commands.Context, user_id: int, duration: int) -> None:
     # syntax: cat!rain 553093932012011520 20
+    if duration <= 0:
+        await ctx.reply("duration must be positive")
+        return
     user = await User.get_or_create(user_id=user_id)
     if not user.rain_minutes:
         user.rain_minutes = 0
     user.rain_minutes += duration
     user.premium = True
     await user.save()
+    await ctx.reply(f"granted {duration} rain minutes to {user_id} (now {user.rain_minutes:,})")
 
 
 @bot.command(name="restartall")
@@ -11085,8 +11089,8 @@ async def owner_emojis(ctx: commands.Context) -> None:
         async with await anyio.open_file("config/emojis_cache.json", "w", encoding="utf-8") as f:
             await f.write(json.dumps(emojis))
         await ctx.reply("emojis refreshed!")
-    except Exception:
-        pass
+    except Exception as e:
+        await ctx.reply(f"emojis refreshed in memory, but cache write failed: {e}")
 
 
 @bot.command(name="print")
@@ -11120,7 +11124,10 @@ async def owner_eval(ctx: commands.Context, *, code: str) -> None:
 bot.loop.create_task(go(message, bot))
     """
 
-    exec(wrapped)  # noqa: S102
+    try:
+        exec(wrapped)  # noqa: S102
+    except Exception:
+        await ctx.reply(f"```py\n{traceback.format_exc()[-1900:]}\n```")
 
 
 @bot.command(name="sql")
@@ -11132,7 +11139,9 @@ async def owner_sql(ctx: commands.Context, *, query: str) -> None:
         await ctx.reply(f"ERROR: {e}")
         return
     result = "\n".join(str(i).replace("<Record ", "").replace(">", "") for i in result)
-    if len(result) < 4000:
+    if not result:
+        await ctx.reply("no rows returned")
+    elif len(result) < 1900:
         await ctx.reply(result)
     else:
         await ctx.reply(file=discord.File(io.StringIO(result), filename="result.txt"))  # pyright: ignore[reportArgumentType]
@@ -11402,6 +11411,14 @@ async def on_error(*args, **kwargs):
     raise  # noqa: PLE0704
 
 
+async def on_command_error(ctx: commands.Context, error: commands.CommandError) -> None:
+    # CommandNotFound/CheckFailure/UserInputError are expected noise (typos, non-owner cat!x attempts,
+    # missing args on owner commands) - anything else is a real bug, let on_error/sentry see it
+    if isinstance(error, (commands.CommandNotFound, commands.CheckFailure, commands.UserInputError)):
+        return
+    raise error
+
+
 async def on_interaction(ctx: discord.Interaction) -> None:
     try:
         if ctx.command:
@@ -11436,6 +11453,7 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
 
     # copy all the events
     bot2.on_message = on_message
+    bot2.on_command_error = on_command_error  # type: ignore
     bot2.on_error = on_error  # type: ignore
     bot2.on_ready = on_ready  # type: ignore
     bot2.on_guild_join = on_guild_join  # type: ignore
