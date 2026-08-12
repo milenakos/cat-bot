@@ -10967,7 +10967,7 @@ async def nuke(message: discord.Interaction):
 async def undo(message: discord.Interaction, operation: str):
     assert message.guild is not None
     try:
-        entry = await Restore.get_or_none(id=operation)
+        entry = await Restore.get_or_none(id=int(operation))
         if entry is None or entry.guild_id != message.guild.id:
             raise ValueError
     except Exception:
