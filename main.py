@@ -41,7 +41,6 @@ import discord.gateway
 import discord.http
 import discord_emoji
 import emoji
-import inflect
 import psutil
 import unidecode  # type: ignore
 from aiohttp import web
@@ -67,11 +66,12 @@ except subprocess.CalledProcessError:
     COMMIT = "unknown"
 
 logger = logging.getLogger()
-inflect_engine = inflect.engine()
 
 
 def plural(word: str, count: int) -> str:
-    return inflect_engine.plural_noun(word, count)
+    if count == 1:
+        return word
+    return word + "s"
 
 
 # trigger warning, base64 encoded for your convinience
