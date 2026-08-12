@@ -1086,19 +1086,11 @@ def alnum(string: str) -> str:
     return "".join(item for item in string.lower() if item.isalnum())
 
 
-def clean_answer_input(raw: str, allow_colon: bool = False) -> str:
-    """Strips everything but letters, digits, spaces, '-', '~' (and optionally ':') from a text
-    input's value, and collapses whitespace, so stray punctuation/emoji/formatting a user pasted
-    in doesn't cause an otherwise-correct minigame answer to be rejected."""
-    allowed = r"0-9A-Za-z \-~:" if allow_colon else r"0-9A-Za-z \-~"
-    return " ".join(re.sub(f"[^{allowed}]+", "", raw.replace(",", " ")).split())
+def clean_answer_input(raw: str) -> str:
+    return " ".join(re.sub(f"[^0-9A-Za-z \-~]+", "", raw.replace(",", " ")).split())
 
 
 def clean_number_input(raw: str) -> str:
-    """Strips everything but digits (and a leading minus sign) from a text input's value, so a
-    pasted-in comma, space, or currency symbol (e.g. "1,000" or "$5") doesn't break int() parsing
-    of an otherwise-valid amount, while a genuinely negative input still parses as negative so the
-    existing "must be positive" checks keep rejecting it instead of silently flipping its sign."""
     raw = raw.strip()
     sign = "-" if raw.startswith("-") else ""
     return sign + re.sub(r"[^0-9]", "", raw)
@@ -1894,7 +1886,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
 
         assert answer_raw is not None
 
-        answer_clean = clean_answer_input(answer_raw, allow_colon=True)  # user answer
+        answer_clean = clean_answer_input(answer_raw)  # user answer
         answer = clean_answer_input(str(answer))  # correct answer
 
         match cattype:
