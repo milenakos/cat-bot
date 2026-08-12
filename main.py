@@ -1144,7 +1144,7 @@ async def undo_autocomplete(interaction: discord.Interaction, current: str) -> l
     return [
         discord.app_commands.Choice(
             name=(f"reset - {entry.username}" if entry.username else "nuke") + f" ({snow_to_rel(entry.id)})",
-            value=entry.id,
+            value=str(entry.id),
         )
         async for entry in Restore.filter("guild_id = $1 AND id > $2 ORDER BY id DESC", interaction.guild.id, time_snowflake)
     ][:25]
