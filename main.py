@@ -310,6 +310,10 @@ server_count = 0
 
 
 def get_emoji(name: str) -> str:
+    if config.EMOJI and name in allowedemojis:
+        themed_name = data.emoji_theme_prefixes[config.EMOJI] + name
+        if themed_name in emojis:
+            return emojis[themed_name]
     if name in emojis:
         return emojis[name]
     elif name in emoji.EMOJI_DATA:

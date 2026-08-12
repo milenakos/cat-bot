@@ -17,7 +17,9 @@ Please note that self-hosting is hacky and isn't supported; instructions below a
 
 2. `pip install -r requirements.txt` (use venv if desired)
 
-3. Download [the emojis](https://github.com/staring-cat/emojis/releases/latest/download/emojis.zip) and upload them to "App Emojis" in Discord Dev Portal.
+3. You can add all the emojis you want with `python emojis.py` (needs your `TOKEN` configured first, see step 6). Alternatively, download [the emojis](https://github.com/staring-cat/emojis/releases/latest/download/emojis.zip) and upload them to "App Emojis" in Discord Dev Portal by hand.
+
+   `emojis.py` can also download optional themed spawn emoji sets (birthday, halloween, old) - enable the ones you want in the `SPAWN_EMOJI_THEMES` dict at the top of the file, then set `config.EMOJI` to match.
 
 5. Setup your Postgres: (example instructions)
  - `createdb -U postgres -O cat_bot cat_bot`
