@@ -6340,9 +6340,7 @@ async def stocks(message: discord.Interaction):
             profile.pack_stone += packs
             await profile.save()
             await PortfolioHistory.create(user_id=profile.id, time=int(time.time()), type="w", price=packs * 100)
-            await interaction.response.send_message(
-                f"📤 You withdrew {packs} stone {plural('pack', packs)}! 🪙 -{packs * 100} coins.", ephemeral=True
-            )
+            await interaction.response.send_message(f"📤 You withdrew {packs} stone {plural('pack', packs)}! 🪙 -{packs * 100} coins.", ephemeral=True)
 
     class OrderModal(Modal):
         def __init__(
@@ -11102,7 +11100,9 @@ async def owner_transfer(ctx: commands.Context, *, args: str = "") -> None:
     if p := await Profile.get_or_none(guild_id=to_id, user_id=0):
         await p.delete()
 
-    await ctx.reply(f"transferred {len(changed_profiles)} {plural('profile', len(changed_profiles))} and {len(changed_prisms)} {plural('prism', len(changed_prisms))}")
+    await ctx.reply(
+        f"transferred {len(changed_profiles)} {plural('profile', len(changed_profiles))} and {len(changed_prisms)} {plural('prism', len(changed_prisms))}"
+    )
 
 
 @bot.command(name="undoreset")
