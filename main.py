@@ -11354,6 +11354,11 @@ async def start_tutorial(ctx: discord.Interaction) -> None:
 async def setup(bot2: commands.AutoShardedBot) -> None:
     global bot, COMMAND_IDS, vote_server
 
+    # remove old commands
+    bot2.tree.clear_commands(guild=None)
+    for command in bot2.walk_commands():
+        bot2.remove_command(command.name)
+
     for command in bot.tree.walk_commands():
         # copy all the commands
         command.guild_only = True
