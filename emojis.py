@@ -19,15 +19,14 @@
 
 import asyncio
 import os
-import shutil
 import subprocess
+import tempfile
 
 import discord
 
 import config
 
 EMOJI_REPO = "https://github.com/staring-cat/emojis"
-LOCAL_CLONE_DIR = "cat-bot-emojis-tmp"
 
 # wipe every emoji already on the application before uploading (useful for switching themes cleanly)
 REPLACE_EXISTING_EMOJIS = False
@@ -44,13 +43,15 @@ SPAWN_EMOJI_THEMES = {
 }
 
 
-async def upload_emoji_folder(client: discord.Client, folder: str) -> None:
+async def upload_emoji_folder(client: discord.Client, folder: str) -> int:
     # walks subfolders too, since base/ is split into categories (packs/, badges/, etc.)
+    found = 0
     for root, _dirs, filenames in os.walk(folder):
         for filename in filenames:
             name, ext = os.path.splitext(filename)
             if ext not in (".png", ".gif"):
                 continue
+            found += 1
             emoji_name = name
             image_path = os.path.join(root, filename)
             if os.path.islink(image_path):
@@ -61,11 +62,14 @@ async def upload_emoji_folder(client: discord.Client, folder: str) -> None:
                     await client.create_application_emoji(name=emoji_name, image=image.read())
             except discord.HTTPException as e:
                 print(f"couldn't upload {emoji_name}: {e}")
+    return found
 
 
 async def main() -> None:
-    try:
-        subprocess.run(["git", "clone", "--depth", "1", EMOJI_REPO, LOCAL_CLONE_DIR], check=True)
+    # a freshly-generated temp dir can't collide with anything pre-existing (unlike a fixed
+    # directory name), and cleans itself up even if git clone fails partway through
+    with tempfile.TemporaryDirectory(prefix="cat-bot-emojis-") as clone_dir:
+        subprocess.run(["git", "clone", "--depth", "1", EMOJI_REPO, clone_dir], check=True)
 
         intents = discord.Intents.default()
         client = discord.Client(intents=intents)
@@ -80,18 +84,20 @@ async def main() -> None:
                 print("cleared all existing application emojis")
 
             if UPLOAD_BASE_EMOJIS:
-                await upload_emoji_folder(client, os.path.join(LOCAL_CLONE_DIR, "base"))
-                print("uploaded base (non-spawning) emojis")
+                found = await upload_emoji_folder(client, os.path.join(clone_dir, "base"))
+                if found == 0:
+                    raise RuntimeError("no base emojis found - does the cloned branch have a 'base/' folder?")
+                print(f"uploaded {found} base (non-spawning) emojis")
 
             for theme, enabled in SPAWN_EMOJI_THEMES.items():
                 if not enabled:
                     continue
-                await upload_emoji_folder(client, os.path.join(LOCAL_CLONE_DIR, "spawning", theme))
-                print(f"uploaded '{theme}' spawn emoji theme")
+                found = await upload_emoji_folder(client, os.path.join(clone_dir, "spawning", theme))
+                if found == 0:
+                    raise RuntimeError(f"no emojis found for the '{theme}' theme - does the cloned branch have 'spawning/{theme}/'?")
+                print(f"uploaded {found} '{theme}' spawn emoji theme")
         finally:
             await client.close()
-    finally:
-        shutil.rmtree(LOCAL_CLONE_DIR, ignore_errors=True)
 
 
 if __name__ == "__main__":
