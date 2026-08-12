@@ -67,6 +67,13 @@ except subprocess.CalledProcessError:
 
 logger = logging.getLogger()
 
+
+def plural(word: str, count: int) -> str:
+    if count == 1:
+        return word
+    return word + "s"
+
+
 # trigger warning, base64 encoded for your convinience
 NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
 
@@ -1098,7 +1105,7 @@ async def gift_autocomplete(interaction: discord.Interaction, current: str) -> l
         if current.lower() in choice.lower() and user[f"cat_{choice}"] > 0:
             choices.append(discord.app_commands.Choice(name=f"{choice} (x{user[f'cat_{choice}']})", value=choice))
     if current.lower() in "rain" and actual_user.rain_minutes > 0:
-        choices.append(discord.app_commands.Choice(name=f"Rain ({actual_user.rain_minutes} minutes)", value="rain"))
+        choices.append(discord.app_commands.Choice(name=f"Rain ({actual_user.rain_minutes} {plural('minute', actual_user.rain_minutes)})", value="rain"))
     if current.lower() in "scratchcards" and user.scratchcards > 0:
         choices.append(discord.app_commands.Choice(name=f"Scratchcards (x{user.scratchcards})", value="scratchcards"))
     for choice in data.pack_data:
@@ -2217,7 +2224,7 @@ async def on_message(message: discord.Message) -> None:
         if server.do_responses and await check_channel_setupped(server, message.channel):
             try:
                 personname = message.author.name.replace("_", "\\_")
-                await message.reply(f"ok then\n{personname} lost 1 fine cat!!!1!\nYou now have {user.cat_Fine:,} cats of dat type!")
+                await message.reply(f"ok then\n{personname} lost 1 fine cat!!!1!\nYou now have {user.cat_Fine:,} {plural('cat', user.cat_Fine)} of dat type!")
             except Exception:
                 pass
             log_stats("response", {"type": "please do not the cat"})
@@ -2769,7 +2776,7 @@ async def on_message(message: discord.Message) -> None:
                     coughstring = data.custom_cough_strings[le_emoji]
                 else:
                     # default
-                    coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
+                    coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} {cats} of dat type!!!\nthis fella was cought in {time}!!!!"
 
                 view = None
                 button = None
@@ -2850,6 +2857,7 @@ async def on_message(message: discord.Message) -> None:
                             .replace("{emoji}", str(icon))
                             .replace("{type}", le_emoji)
                             .replace("{count}", f"{new_count:,}")
+                            .replace("{cats}", plural("cat", new_count))
                             .replace("{time}", caught_time[:-1])
                             + suffix_string
                         )
@@ -4060,7 +4068,7 @@ async def changemessage(message: discord.Interaction):
                 default = (
                     channel.cought
                     if channel.cought
-                    else "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} cats of dat type!!!\nthis fella was cought in {time}!!!!"
+                    else "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} {cats} of dat type!!!\nthis fella was cought in {time}!!!!"
                 )
 
             self.input = TextInput(
@@ -4108,6 +4116,7 @@ async def changemessage(message: discord.Interaction):
                     .replace("{type}", "Fine")
                     .replace("{username}", "Cat Bot")
                     .replace("{count}", "1")
+                    .replace("{cats}", plural("cat", 1))
                     .replace("{time}", "69 years 420 days")
                 )
             else:
@@ -4154,7 +4163,9 @@ for appear:
 for cought:
 `{emoji}`, `{type}`, `{username}`, `{count}`, `{time}`
 
-missing any of these will result in a failure.
+optionally, you can also use `{cats}` for cought, which will say "cat" or "cats" depending on the count.
+
+missing any of the required ones will result in a failure.
 how to do mentions: `@everyone`, `@here`, `<@userid>`, `<@&roleid>`
 to get ids, run `/getid` with the thing you want to mention.
 if it doesnt work make sure the bot has mention permissions.
@@ -4263,7 +4274,7 @@ async def last(message: discord.Interaction):
         displayedtime = "forever ago"
 
     if channel and channel.cat_rains:
-        nextpossible += f"\ncat rain! {channel.cat_rains} cats remaining..."
+        nextpossible += f"\ncat rain! {channel.cat_rains} {plural('cat', channel.cat_rains)} remaining..."
 
     await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.{nextpossible}")
 
@@ -5168,7 +5179,7 @@ async def rain(message: discord.Interaction):
     server_rains = ""
     server_minutes = profile.rain_minutes
     if server_minutes > 0:
-        server_rains = f" (+**{server_minutes}** bonus minutes)"
+        server_rains = f" (+**{server_minutes}** bonus {plural('minute', server_minutes)})"
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
 
@@ -5183,7 +5194,7 @@ As a bonus, you will get access to {get_command_mention("editprofile")} and {get
 - Late catching time is reduced to 1 second.
 - Bonus cats are +1 instead of minigame.""",
         "===",
-        f"You currently have **{user.rain_minutes:,}** minutes of rains!{server_rains}",
+        f"You currently have **{user.rain_minutes:,}** {plural('minute', user.rain_minutes)} of rains!{server_rains}",
         ActionRow(button, shopbutton),
     )
 
@@ -5573,7 +5584,7 @@ async def packs(message: discord.Interaction):
             user[f"cat_{cat_type}"] += cat_amount
         await user.save()
 
-        final_header = f"Opened {opened_so_far:,} packs!"
+        final_header = f"Opened {opened_so_far:,} {plural('pack', opened_so_far)}!"
         pack_list = "**" + ", ".join(results_header) + "**"
         final_result = "\n".join(results_detail)
 
@@ -5700,7 +5711,9 @@ async def packs(message: discord.Interaction):
         elif not is_single:
             build_string += f" {cat_emoji} {cat_amount:,}"
         if is_single:
-            reward_texts.append(reward_texts[-1] + f"\nYou got {get_emoji(chosen_type.lower() + 'cat')} {cat_amount:,} {chosen_type} cats!")
+            reward_texts.append(
+                reward_texts[-1] + f"\nYou got {get_emoji(chosen_type.lower() + 'cat')} {cat_amount:,} {chosen_type} {plural('cat', cat_amount)}!"
+            )
             return chosen_type, cat_amount, upgrades, reward_texts
         return chosen_type, cat_amount, upgrades, build_string
 
@@ -6327,7 +6340,9 @@ async def stocks(message: discord.Interaction):
             profile.pack_stone += packs
             await profile.save()
             await PortfolioHistory.create(user_id=profile.id, time=int(time.time()), type="w", price=packs * 100)
-            await interaction.response.send_message(f"📤 You withdrew {packs} stone packs! 🪙 -{packs * 100} coins.", ephemeral=True)
+            await interaction.response.send_message(
+                f"📤 You withdrew {packs} stone {plural('pack', packs)}! 🪙 -{packs * 100} coins.", ephemeral=True
+            )
 
     class OrderModal(Modal):
         def __init__(
@@ -6728,7 +6743,7 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
 
         unknown_suffix = ""
         if unknowns:
-            unknown_suffix = f" + {unknowns} unknown cat types (see /catalogue)"
+            unknown_suffix = f" + {unknowns} unknown cat {plural('type', unknowns)} (see /catalogue)"
 
         if len(missing_cats) == 0:
             view = View(timeout=VIEW_TIMEOUT)
@@ -7503,20 +7518,20 @@ async def gift(
 
         if gift_type.lower() == "rain":
             key = "rain_minutes"
-            thing = "Rain Minutes"
+            thing = "Rain Minute"
         elif gift_type.lower() in [cattype.lower() for cattype in cattypes]:
             gift_type = cattype_lc_dict[gift_type.lower()]
             key = f"cat_{gift_type}"
-            thing = f"{gift_type} cats"
+            thing = f"{gift_type} cat"
         elif gift_type.lower() in [i["name"].lower() for i in data.pack_data]:
             key = f"pack_{gift_type.lower()}"
-            thing = f"{gift_type.capitalize()} packs"
+            thing = f"{gift_type.capitalize()} pack"
             if not user.bp_history.strip().replace("0,0,0;", ""):
                 await message.response.send_message("your profile needs to be older than 1 cattlepass season to gift packs.", ephemeral=True)
                 return
         elif gift_type.lower() == "scratchcards":
             key = "scratchcards"
-            thing = "Scratchcards"
+            thing = "Scratchcard"
         else:
             await message.response.send_message("bro what", ephemeral=True)
             return
@@ -7539,7 +7554,7 @@ async def gift(
             await message.response.send_message("no", ephemeral=True)
             return
 
-    content = f"Successfully transfered {amount:,} {thing} from {message.user.mention} to {person.mention}!"
+    content = f"Successfully transfered {amount:,} {plural(thing, amount)} from {message.user.mention} to {person.mention}!"
 
     if person == bot.user:
         content += " wow thank you"
@@ -7565,7 +7580,7 @@ async def gift(
             await user.save()
 
             await interaction.response.edit_message(view=None)
-            await interaction.followup.send(f"You paid the tax of {tax_amount:,} {gift_type} cats!")
+            await interaction.followup.send(f"You paid the tax of {tax_amount:,} {gift_type} {plural('cat', tax_amount)}!")
             await achemb(message, "good_citizen", "followup")
             if user[f"cat_{gift_type}"] < 0:
                 bot.loop.create_task(debt_cutscene(interaction, user))
@@ -7576,7 +7591,7 @@ async def gift(
                 return
 
             await interaction.response.edit_message(view=None)
-            await interaction.followup.send(f"You evaded the tax of {tax_amount:,} {gift_type} cats.")
+            await interaction.followup.send(f"You evaded the tax of {tax_amount:,} {gift_type} {plural('cat', tax_amount)}.")
             await achemb(message, "secret", "followup")
 
         button = Button(label="Pay 20% tax", style=ButtonStyle.green)
@@ -8385,7 +8400,7 @@ async def casino(message: discord.Interaction):
             await achemb(message, "gambling_two", "followup")
 
         variants = [
-            f"{get_emoji('egirlcat')} 1 eGirl cats",
+            f"{get_emoji('egirlcat')} 1 eGirl cat",
             f"{get_emoji('egirlcat')} 3 eGirl cats",
             f"{get_emoji('ultimatecat')} 2 Ultimate cats",
             f"{get_emoji('corruptcat')} 7 Corrupt cats",
@@ -8410,7 +8425,7 @@ async def casino(message: discord.Interaction):
 
         embed = discord.Embed(
             title="🎲 The Catsino",
-            description=f"You won:\n**{get_emoji('finecat')} {amount} Fine cats**",
+            description=f"You won:\n**{get_emoji('finecat')} {amount} Fine {plural('cat', amount)}**",
             color=Colors.maroon,
         )
 
@@ -8673,7 +8688,7 @@ async def roulette(message: discord.Interaction):
                 embed = discord.Embed(
                     color=Colors.maroon,
                     title="woo its spinnin",
-                    description=f"your bet is {bet_amount:,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**",
+                    description=f"your bet is {bet_amount:,} {plural('cat dollar', int(self.betamount.value))} on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**",
                 )
                 await interaction.edit_original_response(embed=embed, view=None)
                 await asyncio.sleep(wait_time)
@@ -8687,7 +8702,7 @@ async def roulette(message: discord.Interaction):
             embed = discord.Embed(
                 color=Colors.maroon,
                 title="winner!!!" if win else "womp womp",
-                description=f"your bet was {bet_amount:,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance:,}** cat dollars{broke_suffix}",
+                description=f"your bet was {bet_amount:,} {plural('cat dollar', int(self.betamount.value))} on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance:,}** {plural('cat dollar', user.roulette_balance)}{broke_suffix}",
             )
             view = View(timeout=VIEW_TIMEOUT)
             b = Button(label="spin", style=ButtonStyle.blurple)
@@ -8717,7 +8732,7 @@ async def roulette(message: discord.Interaction):
     embed = discord.Embed(
         color=Colors.maroon,
         title="hecking roulette table",
-        description=f"your balance is **{user.roulette_balance:,}** cat dollars{broke_suffix}",
+        description=f"your balance is **{user.roulette_balance:,}** {plural('cat dollar', user.roulette_balance)}{broke_suffix}",
     )
 
     view = View(timeout=VIEW_TIMEOUT)
@@ -9110,11 +9125,11 @@ BOUNTY_SLOTS = ("one", "two", "three")
 
 def _bounty_title(bid: int, total: int, btype: str) -> str:
     if bid == 0:
-        return f"Catch {total} cats"
+        return f"Catch {total} {plural('cat', total)}"
     elif bid == 1:
-        return f"Catch {total} {btype} cats"
+        return f"Catch {total} {btype} {plural('cat', total)}"
     else:
-        return f"Catch {total} {btype} or rarer cats"
+        return f"Catch {total} {btype} or rarer {plural('cat', total)}"
 
 
 def _bounty_matches(bid: int, btype: str, cattype: str) -> bool:
@@ -9296,7 +9311,9 @@ async def get_bounties(level: int) -> list[dict]:
             if amount > num_max:
                 continue
 
-            bounties.append({"id": 2, "progress": 0, "cat_type": rarity, "amount": amount, "desc": f"Catch {amount} cats of {rarity} rarity and above"})
+            bounties.append(
+                {"id": 2, "progress": 0, "cat_type": rarity, "amount": amount, "desc": f"Catch {amount} {plural('cat', amount)} of {rarity} rarity and above"}
+            )
         elif bounty_type == "any":
             if any(b["id"] == 0 for b in bounties):
                 continue
@@ -9306,7 +9323,7 @@ async def get_bounties(level: int) -> list[dict]:
             if amount > num_max:
                 continue
 
-            bounties.append({"id": 0, "progress": 0, "cat_type": "", "amount": amount, "desc": f"Catch {amount} cats of any kind"})
+            bounties.append({"id": 0, "progress": 0, "cat_type": "", "amount": amount, "desc": f"Catch {amount} {plural('cat', amount)} of any kind"})
         else:
             # pick a specific cat type not already used
             if not (available_types := [cat for cat in cattypes if cat not in used_types]):
@@ -9342,7 +9359,7 @@ async def get_bounties(level: int) -> list[dict]:
                     "progress": 0,
                     "cat_type": cat_type,
                     "amount": amount,
-                    "desc": f"Catch {amount} {get_emoji(cat_type.lower() + 'cat')} cat{'s' if amount > 1 else ''}",
+                    "desc": f"Catch {amount} {get_emoji(cat_type.lower() + 'cat')} {plural('cat', amount)}",
                 }
             )
 
@@ -9663,7 +9680,7 @@ async def catnip(message: discord.Interaction):
             if user[f"cat_{user.catnip_price}"] < user.catnip_amount:
                 need_more = user.catnip_amount - user[f"cat_{user.catnip_price}"]
                 await interaction.response.send_message(
-                    f"You don't have enough cats to pay up!\nYou need {need_more} more {user.catnip_price} cats.", ephemeral=True
+                    f"You don't have enough cats to pay up!\nYou need {need_more} more {user.catnip_price} {plural('cat', need_more)}.", ephemeral=True
                 )
                 return
             user[f"cat_{user.catnip_price}"] -= user.catnip_amount
@@ -10662,7 +10679,7 @@ async def givecat(message: discord.Interaction, person_id: discord.User, cat_typ
     else:
         user[f"cat_{cat_type}"] += amount
     await user.save()
-    text = f"gave {person_id.mention} {amount:,} {cat_type} cats"
+    text = f"gave {person_id.mention} {amount:,} {cat_type} {plural('cat', amount)}"
     if person_id == bot.user:
         text += ". you really didnt have to"
     await message.response.send_message(text, allowed_mentions=discord.AllowedMentions(users=True))
@@ -11085,7 +11102,7 @@ async def owner_transfer(ctx: commands.Context, *, args: str = "") -> None:
     if p := await Profile.get_or_none(guild_id=to_id, user_id=0):
         await p.delete()
 
-    await ctx.reply(f"transferred {len(changed_profiles)} profiles and {len(changed_prisms)} prisms")
+    await ctx.reply(f"transferred {len(changed_profiles)} {plural('profile', len(changed_profiles))} and {len(changed_prisms)} {plural('prism', len(changed_prisms))}")
 
 
 @bot.command(name="undoreset")
