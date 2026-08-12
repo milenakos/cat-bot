@@ -1086,6 +1086,24 @@ def alnum(string: str) -> str:
     return "".join(item for item in string.lower() if item.isalnum())
 
 
+def clean_answer_input(raw: str, allow_colon: bool = False) -> str:
+    """Strips everything but letters, digits, spaces, '-', '~' (and optionally ':') from a text
+    input's value, and collapses whitespace, so stray punctuation/emoji/formatting a user pasted
+    in doesn't cause an otherwise-correct minigame answer to be rejected."""
+    allowed = r"0-9A-Za-z \-~:" if allow_colon else r"0-9A-Za-z \-~"
+    return " ".join(re.sub(f"[^{allowed}]+", "", raw.replace(",", " ")).split())
+
+
+def clean_number_input(raw: str) -> str:
+    """Strips everything but digits (and a leading minus sign) from a text input's value, so a
+    pasted-in comma, space, or currency symbol (e.g. "1,000" or "$5") doesn't break int() parsing
+    of an otherwise-valid amount, while a genuinely negative input still parses as negative so the
+    existing "must be positive" checks keep rejecting it instead of silently flipping its sign."""
+    raw = raw.strip()
+    sign = "-" if raw.startswith("-") else ""
+    return sign + re.sub(r"[^0-9]", "", raw)
+
+
 async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool = False) -> str:
     channel = await Channel.get_or_none(channel_id=ch_id)
     if not channel:
@@ -1876,8 +1894,8 @@ async def play_minigame(interaction: discord.Interaction) -> None:
 
         assert answer_raw is not None
 
-        answer_clean = " ".join(re.sub(r"[^0-9A-Za-z \-~:]+", "", answer_raw.replace(",", " ")).split())  # user answer
-        answer = " ".join(re.sub(r"[^0-9A-Za-z \-~]+", "", str(answer).replace(",", " ")).split())  # correct answer
+        answer_clean = clean_answer_input(answer_raw, allow_colon=True)  # user answer
+        answer = clean_answer_input(str(answer))  # correct answer
 
         match cattype:
             case "Trash" if answer in answer_clean.upper():
@@ -5354,7 +5372,7 @@ async def rain(message: discord.Interaction):
 
         async def on_submit(self, interaction: discord.Interaction) -> None:
             try:
-                duration = int(self.input.value)
+                duration = int(clean_number_input(self.input.value))
             except Exception:
                 await interaction.response.send_message("number pls", ephemeral=True)
                 return
@@ -6591,7 +6609,7 @@ async def stocks(message: discord.Interaction):
 
         async def on_submit(self, interaction: discord.Interaction):
             try:
-                packs = int(self.input.value)
+                packs = int(clean_number_input(self.input.value))
                 if packs <= 0:
                     raise ValueError
             except Exception:
@@ -6697,7 +6715,7 @@ async def stocks(message: discord.Interaction):
 
         async def on_submit(self, interaction: discord.Interaction):
             try:
-                quantity = int(self.quantity.value)
+                quantity = int(clean_number_input(self.quantity.value))
                 if quantity <= 0:
                     raise ValueError
             except ValueError:
@@ -7653,7 +7671,7 @@ async def fish(message: discord.Interaction):
             try:
                 item = modal.find_item(69)
                 assert isinstance(item, discord.ui.TextInput)
-                wanted = int(item.value)
+                wanted = int(clean_number_input(item.value))
                 if wanted <= 0:
                     raise ValueError
             except ValueError:
@@ -7903,7 +7921,7 @@ def parse_trade_amount(raw: str) -> int | Literal["all"] | None:
     if raw.lower() in ["max", "all"]:
         return "all"
     try:
-        return int(raw)
+        return int(clean_number_input(raw))
     except ValueError:
         return None
 
@@ -8916,7 +8934,7 @@ async def roulette(message: discord.Interaction):
                 return
 
             try:
-                bet_amount = int(self.betamount.value)
+                bet_amount = int(clean_number_input(self.betamount.value))
                 if bet_amount <= 0:
                     await interaction.response.send_message("bet amount must be greater than 0", ephemeral=True)
                     return
@@ -8959,7 +8977,7 @@ async def roulette(message: discord.Interaction):
                 embed = discord.Embed(
                     color=Colors.maroon,
                     title="woo its spinnin",
-                    description=f"your bet is {int(self.betamount.value):,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**",
+                    description=f"your bet is {bet_amount:,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**",
                 )
                 await interaction.edit_original_response(embed=embed, view=None)
                 await asyncio.sleep(wait_time)
@@ -8973,7 +8991,7 @@ async def roulette(message: discord.Interaction):
             embed = discord.Embed(
                 color=Colors.maroon,
                 title="winner!!!" if win else "womp womp",
-                description=f"your bet was {int(self.betamount.value):,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance:,}** cat dollars{broke_suffix}",
+                description=f"your bet was {bet_amount:,} cat dollars on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance:,}** cat dollars{broke_suffix}",
             )
             view = View(timeout=VIEW_TIMEOUT)
             b = Button(label="spin", style=ButtonStyle.blurple)
