@@ -495,6 +495,16 @@
     "8bit": "{username} c0ught {emoji} {type} cat!!!!1!\nY0u n0w h0ve {count} {cats} 0f dat type!!!\nth1s fe11a was c0ught 1n {time}!!!!",
     "Reverse": "!!!!{time} in cought was fella this\n!!!type dat of {cats} {count} have now You\n!1!!!!cat {type} {emoji} cought {username}"
   },
+  "sparkle_messages": [
+    {"odds": 1e-10, "emoji": "staring_cat", "percent": "__***0.00000001%***__", "punct": "!!!!!"},
+    {"odds": 1e-9, "emoji": "💀", "percent": "***0.0000001%***", "punct": "!!!!!"},
+    {"odds": 1e-8, "emoji": "insane", "percent": "***0.000001%***", "punct": "!!!"},
+    {"odds": 1e-7, "emoji": "rainbow_sparkles", "percent": "**0.00001%**", "punct": "!!!"},
+    {"odds": 1e-6, "emoji": "💫", "percent": "**0.0001%**", "punct": "!"},
+    {"odds": 1e-5, "emoji": "🌟", "percent": "*0.001%*", "punct": "!"},
+    {"odds": 1e-4, "emoji": "✨", "percent": "*0.01%*", "punct": "."},
+    {"odds": 1e-3, "emoji": "⭐", "percent": "0.1%", "punct": "."}
+  ],
   "roulette_colors": [
     "green",
     "red",
@@ -778,7 +788,7 @@
     "Throw your phone out the window or it will explode!",
     "okay chat an exercise, calmly welcome the new member",
     "devlog is now a separate channel yay",
-    "host update: previous host has been seized by authorities",
+    "host update, previous host has been seized by authorities",
     "You are the best Minecraft Discord server I've ever been on.",
     "Cat Bot was permanently banned by RiskLM for silly.",
     "Vote Automatically for Your Favourite Projects!",
