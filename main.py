@@ -1333,18 +1333,17 @@ async def background_loop() -> None:
         pass
 
     if config.CLUSTERING:
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get("http://localhost:7878/metrics") as response:
-                    metrics_data = await response.text()
-                    server_count = 0
-                    for line in metrics_data.split("\n"):
-                        if line.startswith("gateway_cache_guilds{shard="):
-                            if "NaN" in line:
-                                continue
-                            server_count += int(line.split(" ")[1])
-            except Exception:
-                pass
+        try:
+            async with aiohttp.ClientSession() as session, session.get("http://localhost:7878/metrics") as response:
+                metrics_data = await response.text()
+                server_count = 0
+                for line in metrics_data.split("\n"):
+                    if line.startswith("gateway_cache_guilds{shard="):
+                        if "NaN" in line:
+                            continue
+                        server_count += int(line.split(" ")[1])
+        except Exception:
+            pass
     else:
         server_count = len(bot.guilds)
 
@@ -1354,8 +1353,8 @@ async def background_loop() -> None:
         return
 
     if config.TOP_GG_MODERN_TOKEN:
-        async with aiohttp.ClientSession() as session:
-            try:
+        try:
+            async with aiohttp.ClientSession() as session:
                 if not config.MIN_SERVER_SEND or server_count > config.MIN_SERVER_SEND:
                     # send server count to top.gg
                     r = await session.post(
@@ -1399,8 +1398,8 @@ async def background_loop() -> None:
                     await f.write(last_vote_cursor)
                 logger.info(f"Fetched {len(the_votes)} votes, cursor {last_vote_cursor}")
 
-            except Exception:
-                logger.warning("Posting to top.gg failed.")
+        except Exception:
+            logger.warning("Posting to top.gg failed.")
 
     assert bot.user is not None
 
@@ -1868,17 +1867,19 @@ async def play_minigame(interaction: discord.Interaction) -> None:
 
         match cattype:
             case "Trash" if answer in answer_clean.upper():
-                async with aiohttp.ClientSession() as session:
-                    try:
-                        async with session.get(
+                try:
+                    async with (
+                        aiohttp.ClientSession() as session,
+                        session.get(
                             f"https://api.wordnik.com/v4/word.json/{answer_clean.lower()}/definitions?api_key={config.WORDNIK_API_KEY}&useCanonical=true&includeTags=false&includeRelated=false&limit=1",
                             headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
-                        ) as response:
-                            response_text = await response.text()
-                            correct = "from" in response_text
-                    except Exception:
-                        # assume word is valid
-                        correct = True
+                        ) as response,
+                    ):
+                        response_text = await response.text()
+                        correct = "from" in response_text
+                except Exception:
+                    # assume word is valid
+                    correct = True
             case "Trash":
                 correct = False
             case "Divine":
@@ -2079,6 +2080,28 @@ async def on_message(message: discord.Message) -> None:
         return
 
     react_count = 0
+
+    # :staring_cat: reaction on some system messages
+    if reactions_ratelimit.get(message.guild.id, 0) < 30 and message.type in [
+        discord.MessageType.channel_follow_add,
+        discord.MessageType.recipient_remove,
+        discord.MessageType.guild_discovery_disqualified,
+        discord.MessageType.guild_discovery_grace_period_initial_warning,
+        discord.MessageType.guild_discovery_grace_period_final_warning,
+        discord.MessageType.role_subscription_purchase,
+        discord.MessageType.stage_end,
+        discord.MessageType.guild_incident_report_false_alarm,
+        discord.MessageType.purchase_notification,
+    ]:
+        if not server:
+            server = await Server.get_or_create(server_id=message.guild.id)
+        if server.do_reactions and await check_channel_setupped(server, message.channel):
+            await message.add_reaction(get_emoji("staring_cat"))
+        react_count += 1
+        reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
+        log_stats("reaction", {"reaction": "staring_cat"})
+    elif message.type not in [discord.MessageType.default, discord.MessageType.reply]:
+        return
 
     # :staring_cat: reaction on "bullshit"
     if " " not in text and len(text) > 7 and text.isalnum():
@@ -4060,23 +4083,23 @@ async def tiktok(message: discord.Interaction, text: str):
         await achemb(message, "bwomp", "followup")
         return
 
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.post(
+    try:
+        async with (
+            aiohttp.ClientSession() as session,
+            session.post(
                 "https://tiktok-tts.weilnet.workers.dev/api/generation",
                 json={"text": text, "voice": "en_us_001"},
                 headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
-            ) as response:
-                stuff = await response.json()
-                with io.BytesIO() as f:
-                    ba = "data:audio/mpeg;base64," + stuff["data"]
-                    f.write(base64.b64decode(ba))
-                    f.seek(0)
-                    await message.response.send_message(file=discord.File(fp=f, filename="output.mp3"))
-        except discord.NotFound:
-            pass
-        except Exception:
-            await message.response.send_message("i dont speak guacamole (remove non-english characters, make sure the message is below 300 characters)")
+            ) as response,
+        ):
+            stuff = await response.json()
+            with io.BytesIO() as f:
+                ba = "data:audio/mpeg;base64," + stuff["data"]
+                f.write(base64.b64decode(ba))
+                f.seek(0)
+                await message.response.send_message(file=discord.File(fp=f, filename="output.mp3"))
+    except Exception:
+        await message.response.send_message("i dont speak guacamole (remove non-english characters, make sure the message is below 300 characters)")
 
 
 @bot.tree.command(description="(ADMIN) Prevent someone from catching cats for a certain time period")
@@ -6975,27 +6998,26 @@ async def ping(message: discord.Interaction):
         latency = "infinite"
     if latency == 0:
         # probably using gateway proxy, try fetching latency from metrics
-        async with aiohttp.ClientSession() as session:
-            shard_latency = 0
-            try:
-                async with session.get("http://localhost:7878/metrics") as response:
-                    data = await response.text()
-                    total_latencies = 0
-                    total_shards = 0
-                    for line in data.split("\n"):
-                        if line.startswith("gateway_shard_latency{shard="):
-                            if "NaN" in line:
-                                continue
-                            if f'shard="{message.guild.shard_id}"' in line:
-                                shard_latency = int(float(line.split(" ")[1]) * 1000)
-                            try:
-                                total_latencies += float(line.split(" ")[1])
-                                total_shards += 1
-                            except Exception:
-                                pass
-                    latency = round((total_latencies / total_shards) * 1000)
-            except Exception:
-                pass
+        shard_latency = 0
+        try:
+            async with aiohttp.ClientSession() as session, session.get("http://localhost:7878/metrics") as response:
+                data = await response.text()
+                total_latencies = 0
+                total_shards = 0
+                for line in data.split("\n"):
+                    if line.startswith("gateway_shard_latency{shard="):
+                        if "NaN" in line:
+                            continue
+                        if f'shard="{message.guild.shard_id}"' in line:
+                            shard_latency = int(float(line.split(" ")[1]) * 1000)
+                        try:
+                            total_latencies += float(line.split(" ")[1])
+                            total_shards += 1
+                        except Exception:
+                            pass
+                latency = round((total_latencies / total_shards) * 1000)
+        except Exception:
+            pass
         postfix = ""
         if shard_latency:
             postfix = f"\nthe neuron for this server has a delay of {shard_latency} ms {get_emoji('staring_cat')}{get_emoji('staring_cat')}"
@@ -8433,33 +8455,39 @@ async def bakery(message: discord.Interaction):
                 await interaction.response.send_message("You've already delivered this order.", ephemeral=True)
                 return
 
-            async with aiohttp.ClientSession() as session:
-                try:
-                    async with session.post(
+            success = False
+            try:
+                async with (
+                    aiohttp.ClientSession() as session,
+                    session.post(
                         "https://auth.bake.gg:2053/reward/catbot",
                         headers={"Authorization": os.environ.get("BAKE_GG_TOKEN", "")},  # i dont believe anyone would ever need to change this
                         json={"user": str(interaction.user.id)},
-                    ) as response:
-                        if response.status != 200:
-                            logger.warning("Bake.gg reward failed: status=%s body=%s", response.status, await response.text())
-                            raise ValueError
+                    ) as response,
+                ):
+                    if response.status != 200:
+                        logger.warning("Bake.gg reward failed: status=%s body=%s", response.status, await response.text())
+                        raise ValueError
 
-                        profile.cookies -= 120
-                        profile.coffees -= 140
-                        profile.cat_Nice -= 2
-                        profile.pack_silver += 1
-                        await profile.save()
+                    profile.cookies -= 120
+                    profile.coffees -= 140
+                    profile.cat_Nice -= 2
+                    profile.pack_silver += 1
+                    await profile.save()
 
-                        user.last_bakegg_send = get_current_week()
-                        await user.save()
+                    user.last_bakegg_send = get_current_week()
+                    await user.save()
 
-                        log_stats("bakery_delivered")
+                    log_stats("bakery_delivered")
 
-                        await interaction.response.edit_message(view=await gen_bakery())
-                        await achemb(message, "baker", "followup")
-                except Exception:
-                    await interaction.response.send_message("Failed! Try again later.", ephemeral=True)
-                    raise
+                    await interaction.response.edit_message(view=await gen_bakery())
+                    success = True
+            except Exception:
+                await interaction.response.send_message("Failed! Try again later.", ephemeral=True)
+                raise
+
+            if success:
+                await achemb(message, "baker", "followup")
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
         order_complete = profile.cookies >= 120 and profile.coffees >= 140 and profile.cat_Nice >= 2
@@ -9179,15 +9207,15 @@ async def remind(
 
 @bot.tree.command(name="random", description="Get a random cat")
 async def random_cat(message: discord.Interaction):
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(
-                "https://api.thecatapi.com/v1/images/search", headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}
-            ) as response:
-                data = await response.json()
-                await message.response.send_message(data[0]["url"])
-        except Exception:
-            await message.response.send_message("no cats :(")
+    try:
+        async with (
+            aiohttp.ClientSession() as session,
+            session.get("https://api.thecatapi.com/v1/images/search", headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}) as response,
+        ):
+            data = await response.json()
+            await message.response.send_message(data[0]["url"])
+    except Exception:
+        await message.response.send_message("no cats :(")
 
     await achemb(message, "randomizer", "followup")
 
@@ -9197,31 +9225,33 @@ if config.WORDNIK_API_KEY:
     @bot.tree.command(description="define a word")
     async def define(message: discord.Interaction, word: str):
         word = word.lower()
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(
+        try:
+            async with (
+                aiohttp.ClientSession() as session,
+                session.get(
                     f"https://api.wordnik.com/v4/word.json/{word}/definitions?api_key={config.WORDNIK_API_KEY}&useCanonical=true&includeTags=false&includeRelated=false&limit=69",
                     headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
-                ) as response:
-                    data = await response.json()
+                ) as response,
+            ):
+                data = await response.json()
 
-                    # lazily filter some things
-                    text = (await response.text()).lower()
+                # lazily filter some things
+                text = (await response.text()).lower()
 
-                    # sometimes the api returns results without definitions, so we search for the first one which has a definition
-                    for i in data:
-                        if "text" in i:
-                            clean_data = re.sub(re.compile("<.*?>"), "", i["text"])
-                            await message.response.send_message(
-                                f"__{word}__\n{clean_data}\n-# [{i['attributionText']}](<{i['attributionUrl']}>) Powered by [Wordnik](<{i['wordnikUrl']}>)",
-                                ephemeral=any(test in text for test in ["vulgar", "slur", "offensive", "profane", "insult", "abusive", "derogatory"]),
-                            )
-                            await achemb(message, "define", "followup")
-                            return
+                # sometimes the api returns results without definitions, so we search for the first one which has a definition
+                for i in data:
+                    if "text" in i:
+                        clean_data = re.sub(re.compile("<.*?>"), "", i["text"])
+                        await message.response.send_message(
+                            f"__{word}__\n{clean_data}\n-# [{i['attributionText']}](<{i['attributionUrl']}>) Powered by [Wordnik](<{i['wordnikUrl']}>)",
+                            ephemeral=any(test in text for test in ["vulgar", "slur", "offensive", "profane", "insult", "abusive", "derogatory"]),
+                        )
+                        await achemb(message, "define", "followup")
+                        return
 
-                    raise LookupError
-            except Exception:
-                await message.response.send_message("no definition found", ephemeral=True)
+                raise LookupError
+        except Exception:
+            await message.response.send_message("no definition found", ephemeral=True)
 
 
 @bot.tree.command(name="fact", description="get a random cat fact")
@@ -10199,16 +10229,17 @@ You can stop. That's okay. Seriously."""
         elif user.catnip_level < 11:
 
             async def reroll_warning(interaction: discord.Interaction):
-                async def continue_pay_catnip(interaction: discord.Interaction):
-                    await pay_catnip(interaction)
+                async def abandon_ship(interaction: discord.Interaction):
+                    await interaction.response.edit_message(view=await gen_main())
 
-                view2 = View(timeout=VIEW_TIMEOUT)
-                button = Button(label="Yes")
-                button.callback = continue_pay_catnip
-                view2.add_item(button)
-                await interaction.response.send_message(
-                    "Warning: You will lose your reroll if you level up now. Use it first.\nStill continue?", view=view2, ephemeral=True
-                )
+                view2 = LayoutView(timeout=VIEW_TIMEOUT)
+                button = Button(label="Continue", style=ButtonStyle.red)
+                button.callback = pay_catnip
+                cancel_button = Button(label="Hold on...")
+                cancel_button.callback = abandon_ship
+                view2.add_item(TextDisplay("Warning: You will lose your reroll if you level up now. Use it first.\nStill continue?"))
+                view2.add_item(ActionRow(button, cancel_button))
+                await interaction.response.edit_message(view=view2)
 
             button = Button(label="Pay Up!", style=ButtonStyle.blurple)
             if user.bounty_progress_bonus == user.bounty_total_bonus and user.catnip_level >= 7 and not user.reroll:
