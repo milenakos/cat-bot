@@ -10923,9 +10923,6 @@ def is_bot_owner():
 @is_bot_owner()
 async def owner_rain(ctx: commands.Context, user_id: int, duration: int) -> None:
     # syntax: cat!rain 553093932012011520 20
-    if duration <= 0:
-        await ctx.reply("duration must be positive")
-        return
     async with transaction() as conn:
         user = await User.get_or_create(conn, user_id=user_id)
         if not user.rain_minutes:
