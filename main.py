@@ -11033,12 +11033,13 @@ async def owner_rain(ctx: commands.Context, user_id: int, duration: int) -> None
     if duration <= 0:
         await ctx.reply("duration must be positive")
         return
-    user = await User.get_or_create(user_id=user_id)
-    if not user.rain_minutes:
-        user.rain_minutes = 0
-    user.rain_minutes += duration
-    user.premium = True
-    await user.save()
+    async with transaction() as conn:
+        user = await User.get_or_create(conn, user_id=user_id)
+        if not user.rain_minutes:
+            user.rain_minutes = 0
+        user.rain_minutes += duration
+        user.premium = True
+        await user.save()
     await ctx.reply(f"granted {duration} rain minutes to {user_id} (now {user.rain_minutes:,})")
 
 
