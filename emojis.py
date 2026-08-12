@@ -52,39 +52,45 @@ async def upload_emoji_folder(client: discord.Client, folder: str) -> None:
             if ext not in (".png", ".gif"):
                 continue
             emoji_name = name
+            image_path = os.path.join(root, filename)
+            if os.path.islink(image_path):
+                print(f"skipping symbolic link: {image_path}")
+                continue
             try:
-                with open(os.path.join(root, filename), "rb") as image:
+                with open(image_path, "rb") as image:
                     await client.create_application_emoji(name=emoji_name, image=image.read())
             except discord.HTTPException as e:
                 print(f"couldn't upload {emoji_name}: {e}")
 
 
 async def main() -> None:
-    subprocess.run(["git", "clone", "--depth", "1", EMOJI_REPO, LOCAL_CLONE_DIR], check=True)
-
-    intents = discord.Intents.default()
-    client = discord.Client(intents=intents)
-
     try:
-        # login() only authenticates the HTTP session - no need to open a gateway connection for this
-        await client.login(config.TOKEN)
+        subprocess.run(["git", "clone", "--depth", "1", EMOJI_REPO, LOCAL_CLONE_DIR], check=True)
 
-        if REPLACE_EXISTING_EMOJIS:
-            for existing_emoji in await client.fetch_application_emojis():
-                await existing_emoji.delete()
-            print("cleared all existing application emojis")
+        intents = discord.Intents.default()
+        client = discord.Client(intents=intents)
 
-        if UPLOAD_BASE_EMOJIS:
-            await upload_emoji_folder(client, os.path.join(LOCAL_CLONE_DIR, "base"))
-            print("uploaded base (non-spawning) emojis")
+        try:
+            # login() only authenticates the HTTP session - no need to open a gateway connection for this
+            await client.login(config.TOKEN)
 
-        for theme, enabled in SPAWN_EMOJI_THEMES.items():
-            if not enabled:
-                continue
-            await upload_emoji_folder(client, os.path.join(LOCAL_CLONE_DIR, "spawning", theme))
-            print(f"uploaded '{theme}' spawn emoji theme")
+            if REPLACE_EXISTING_EMOJIS:
+                for existing_emoji in await client.fetch_application_emojis():
+                    await existing_emoji.delete()
+                print("cleared all existing application emojis")
+
+            if UPLOAD_BASE_EMOJIS:
+                await upload_emoji_folder(client, os.path.join(LOCAL_CLONE_DIR, "base"))
+                print("uploaded base (non-spawning) emojis")
+
+            for theme, enabled in SPAWN_EMOJI_THEMES.items():
+                if not enabled:
+                    continue
+                await upload_emoji_folder(client, os.path.join(LOCAL_CLONE_DIR, "spawning", theme))
+                print(f"uploaded '{theme}' spawn emoji theme")
+        finally:
+            await client.close()
     finally:
-        await client.close()
         shutil.rmtree(LOCAL_CLONE_DIR, ignore_errors=True)
 
 
