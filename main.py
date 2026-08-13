@@ -11132,7 +11132,7 @@ async def owner_print(ctx: commands.Context, *, expr: str) -> None:
         await ctx.reply(eval(expr))
     except Exception:
         try:
-            await ctx.reply(traceback.format_exc())
+            await ctx.reply(str(traceback.format_exc())[-1900:])
         except Exception:
             pass
 
@@ -11151,14 +11151,14 @@ async def owner_eval(ctx: commands.Context, *, code: str) -> None:
  try:
 {spaced}
  except Exception:
-  await message.reply(traceback.format_exc())
+  await message.reply(str(traceback.format_exc())[-1900:])
 bot.loop.create_task(go(message, bot))
     """
 
     try:
         exec(wrapped)  # noqa: S102
     except Exception:
-        await ctx.reply(f"```py\n{traceback.format_exc()[-1900:]}\n```")
+        await ctx.reply(str(traceback.format_exc())[-1900:])
 
 
 @bot.command(name="sql")
