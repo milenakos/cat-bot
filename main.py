@@ -245,7 +245,7 @@ GuildMessageable = discord.TextChannel | discord.Thread | discord.VoiceChannel |
 
 
 # rain shill message for footers
-rain_shill = "😻 Cat Day + 250k sale! -20% /rain"
+rain_shill = "☔ Get tons of cats /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -2763,7 +2763,7 @@ async def on_message(message: discord.Message) -> None:
 
                 if random.randint(0, 5) == 0:
                     # shill rains
-                    suffix_string += f"\n😻 Cat Day + 250k sale! -20% {get_command_mention('rain')}"
+                    suffix_string += f"\n☔ get tons of cats and have fun: {get_command_mention('rain')}"
                 if random.randint(1, 20) == 1:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(data.hints)
@@ -2776,15 +2776,6 @@ async def on_message(message: discord.Message) -> None:
                         suffix_string += f"\n{get_emoji(sparkle['emoji'])} This message appears on {sparkle['percent']} of catches{sparkle['punct']}"
                         sparkle_fired = True
                         break
-
-                # event
-                idx = cattypes.index(channel.cattype)
-                if idx not in user.weekly_cattypes:
-                    current = user.weekly_cattypes.copy()
-                    current.append(idx)
-                    user.weekly_cattypes = current
-                    emoji = get_emoji(channel.cattype.lower() + "cat")
-                    suffix_string += f"\n{emoji} New type! Total: {len(user.weekly_cattypes)} packs <t:1786651200:R> {get_command_mention('news')}"
 
                 if channel.cought:
                     # custom spawn message
@@ -3781,24 +3772,11 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
                 view.add_item(back_row)
                 await interaction.response.edit_message(view=view)
             case 22:
-                profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild_id)
-                catemojilist = ""
-                for cat_index in profile.weekly_cattypes:
-                    catemojilist += get_emoji(cattypes[cat_index].lower() + "cat")
-                if not catemojilist:
-                    catemojilist = "*None*"
-
-                catches = await _get_pool().fetchval("SELECT sum_catches FROM profile_sums_mv;") - 215298618
-                reward_data = data.pack_data[catches // 1_000_000 + 4]
-                curr_reward = get_emoji(reward_data["name"].lower() + "pack") + " " + reward_data["name"]
-                catches_remaining = 1_000_000 - catches % 1_000_000
                 embed = Container(
                     "## 😻 250k/Cat Day Event",
                     f"-# quarter million lets go! and happy international cat day! and {get_command_mention('stocks')} are back!",
                     "A new catching event, ending <t:1786651200:R>! For every *unique cat type* you catch, you will get a pack! The pack type will be determined by *how many catches everyone globally does*. See below for current event state!",
-                    f"*Your cat types:* {len(profile.weekly_cattypes)} ({catemojilist})",
-                    f"*Current pack:* {curr_reward} (next in {catches_remaining:,} catches)",
-                    f"**Your reward:** {len(profile.weekly_cattypes)}x {curr_reward}",
+                    f"*Final reward:* {get_emoji('silverpack')} Silver Pack",
                     "===",
                     "## 🔥 Cat Day Sale!",
                     "Also ending <t:1786651200:R>, there is a -20% sale over on [catbot.shop](https://catbot.shop)! Yippee!",
@@ -5190,7 +5168,7 @@ async def rain(message: discord.Interaction):
     )
     button.callback = rain_modal
 
-    shopbutton = Button(emoji="🛒", label="Store (-20%!)", url="https://catbot.shop")
+    shopbutton = Button(emoji="🛒", label="Store", url="https://catbot.shop")
 
     view = View(timeout=VIEW_TIMEOUT)
 
