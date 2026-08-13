@@ -8711,7 +8711,7 @@ async def roulette(message: discord.Interaction):
                 embed = discord.Embed(
                     color=Colors.maroon,
                     title="woo its spinnin",
-                    description=f"your bet is {bet_amount:,} {plural('cat dollar', int(self.betamount.value))} on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**",
+                    description=f"your bet is {bet_amount:,} {plural('cat dollar', bet_amount)} on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**",
                 )
                 await interaction.edit_original_response(embed=embed, view=None)
                 await asyncio.sleep(wait_time)
@@ -8725,7 +8725,7 @@ async def roulette(message: discord.Interaction):
             embed = discord.Embed(
                 color=Colors.maroon,
                 title="winner!!!" if win else "womp womp",
-                description=f"your bet was {bet_amount:,} {plural('cat dollar', int(self.betamount.value))} on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance:,}** {plural('cat dollar', user.roulette_balance)}{broke_suffix}",
+                description=f"your bet was {bet_amount:,} {plural('cat dollar', bet_amount)} on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance:,}** {plural('cat dollar', user.roulette_balance)}{broke_suffix}",
             )
             view = View(timeout=VIEW_TIMEOUT)
             b = Button(label="spin", style=ButtonStyle.blurple)
