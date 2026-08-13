@@ -1155,16 +1155,6 @@ def alnum(string: str) -> str:
     return "".join(item for item in string.lower() if item.isalnum())
 
 
-def clean_answer_input(raw: str) -> str:
-    return " ".join(re.sub(r"[^0-9A-Za-z \-~]+", "", raw.replace(",", " ")).split())
-
-
-def clean_number_input(raw: str) -> str:
-    raw = raw.strip()
-    sign = "-" if raw.startswith("-") else ""
-    return sign + re.sub(r"[^0-9]", "", raw)
-
-
 async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool = False) -> str:
     if not (channel := await Channel.get_or_none(channel_id=ch_id)):
         return "channel not setup"
@@ -1908,6 +1898,9 @@ async def play_minigame(interaction: discord.Interaction) -> None:
 
         assert answer_raw is not None
 
+        def clean_answer_input(raw: str) -> str:
+            return " ".join(re.sub(r"[^0-9A-Za-z \-]+", "", raw.replace(",", " ")).split())
+
         answer_clean = clean_answer_input(answer_raw)  # user answer
         answer = clean_answer_input(str(answer))  # correct answer
 
@@ -1933,9 +1926,9 @@ async def play_minigame(interaction: discord.Interaction) -> None:
             case "eGirl":
                 # need atleast 10 signals
                 signals = 0
-                answer_clean = answer_clean.lower()
+                answer_clean = answer_raw.lower()
                 for word in ["meow", "purr", "nya", "miau", "mrrp", "www", "ppp", "uuu", "333", ":3", "~"]:
-                    signals += answer_clean.count(word)
+                    signals += answer_raw.count(word)
                 correct = signals >= 10
                 answer = "10+ meow signals"
                 answer_clean = f"{signals} meow signals"
@@ -5113,7 +5106,7 @@ async def rain(message: discord.Interaction):
 
         async def on_submit(self, interaction: discord.Interaction) -> None:
             try:
-                duration = int(clean_number_input(self.input.value))
+                duration = int(self.input.value)
             except Exception:
                 await interaction.response.send_message("number pls", ephemeral=True)
                 return
@@ -6347,7 +6340,7 @@ async def stocks(message: discord.Interaction):
 
         async def on_submit(self, interaction: discord.Interaction):
             try:
-                packs = int(clean_number_input(self.input.value))
+                packs = int(self.input.value)
                 if packs <= 0:
                     raise ValueError
             except Exception:
@@ -6453,7 +6446,7 @@ async def stocks(message: discord.Interaction):
 
         async def on_submit(self, interaction: discord.Interaction):
             try:
-                quantity = int(clean_number_input(self.quantity.value))
+                quantity = int(self.quantity.value)
                 if quantity <= 0:
                     raise ValueError
             except ValueError:
@@ -7408,7 +7401,7 @@ async def fish(message: discord.Interaction):
             try:
                 item = modal.find_item(69)
                 assert isinstance(item, discord.ui.TextInput)
-                wanted = int(clean_number_input(item.value))
+                wanted = int(item.value)
                 if wanted <= 0:
                     raise ValueError
             except ValueError:
@@ -7658,7 +7651,7 @@ def parse_trade_amount(raw: str) -> int | Literal["all"] | None:
     if raw.lower() in ["max", "all"]:
         return "all"
     try:
-        return int(clean_number_input(raw))
+        return int(raw)
     except ValueError:
         return None
 
@@ -8668,7 +8661,7 @@ async def roulette(message: discord.Interaction):
                 return
 
             try:
-                bet_amount = int(clean_number_input(self.betamount.value))
+                bet_amount = int(self.betamount.value)
                 if bet_amount <= 0:
                     await interaction.response.send_message("bet amount must be greater than 0", ephemeral=True)
                     return
