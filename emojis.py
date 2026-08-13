@@ -19,9 +19,9 @@
 
 import asyncio
 import os
-import subprocess
 import tempfile
 
+import anyio
 import discord
 
 import config
@@ -58,8 +58,8 @@ async def upload_emoji_folder(client: discord.Client, folder: str) -> int:
                 print(f"skipping symbolic link: {image_path}")
                 continue
             try:
-                with open(image_path, "rb") as image:
-                    await client.create_application_emoji(name=emoji_name, image=image.read())
+                async with await anyio.open_file(image_path, "rb") as image:
+                    await client.create_application_emoji(name=emoji_name, image=await image.read())
             except discord.HTTPException as e:
                 print(f"couldn't upload {emoji_name}: {e}")
     return found
@@ -69,7 +69,7 @@ async def main() -> None:
     # a freshly-generated temp dir can't collide with anything pre-existing (unlike a fixed
     # directory name), and cleans itself up even if git clone fails partway through
     with tempfile.TemporaryDirectory(prefix="cat-bot-emojis-") as clone_dir:
-        subprocess.run(["git", "clone", "--depth", "1", EMOJI_REPO, clone_dir], check=True)
+        await asyncio.create_subprocess_exec("git", "clone", "--depth", "1", EMOJI_REPO, clone_dir)
 
         intents = discord.Intents.default()
         client = discord.Client(intents=intents)
