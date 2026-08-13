@@ -1695,14 +1695,11 @@ async def play_minigame(interaction: discord.Interaction) -> None:
     modal = Modal(title="Bonus Cat Minigame")
     match cattype:
         case "Fine":
-            index = random.randint(0, 25)
-            random_letter = chr(ord("A") + index)
-            next_letter = chr(ord("A") + (index + 1) % 26)
             random_text = random.choice(data.sentences)
-            answer = random_text.lower().count(random_letter.lower())
-            modal.add_item(
-                TextDisplay(f"## Find the letter before {next_letter} in the alphabet, then count the amount of it in this sentence\n\n{random_text}")
-            )
+            text_letters = list({i for i in random_text.upper() if i.isalpha()})
+            picked = random.sample(text_letters, 3)
+            answer = sum(random_text.lower().count(letter.lower()) for letter in picked)
+            modal.add_item(TextDisplay(f"## Count how many letters in this sentence are any of these: {', '.join(picked)}\n\n{random_text}"))
             modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
         case "Nice":
             random_numbers = [random.randint(-100, 100) for _ in range(5)]
