@@ -10314,6 +10314,37 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         await achemb(message, "not_like_that", "followup")
 
 
+async def refresh_auras(message: discord.Interaction, specific_cat: str) -> None:
+    assert message.guild is not None
+    idx = cattypes.index(specific_cat) + 1  # psql array index starts at 1
+    guild_count = await Profile.sum(f"cat_{specific_cat}", "guild_id = $1", message.guild.id)
+    column = f'"cat_{specific_cat}"'
+    # remove old auras
+    await _get_pool().execute(
+        "UPDATE profile SET cat_auras[$1] = ' ' WHERE cat_auras[$1] IN ('y', 'c', 'p', 'a') AND guild_id = $2",
+        idx,
+        message.guild.id,
+    )
+
+    # new auras
+    aura_vals = {"y": 0.02 * guild_count, "c": 0.04 * guild_count, "p": 0.07 * guild_count}
+    for aura, val in aura_vals.items():
+        await _get_pool().execute(
+            f"UPDATE profile SET cat_auras[$1] = $2 WHERE guild_id = $3 AND cat_auras[$1] != 'r' AND {column} > $4",
+            idx,
+            aura,
+            message.guild.id,
+            val,
+        )
+
+    # top 1 aura
+    await _get_pool().execute(
+        f"UPDATE profile SET cat_auras[$1] = 'a' WHERE guild_id = $2 AND {column} = (SELECT MAX({column}) FROM profile WHERE guild_id = $2) AND cat_auras[$1] != 'r'",
+        idx,
+        message.guild.id,
+    )
+
+
 @bot.tree.command(description="View the leaderboards (lbs)")
 @discord.app_commands.rename(leaderboard_type="type")
 @discord.app_commands.describe(
@@ -10351,33 +10382,7 @@ async def leaderboards(
 
         # refresh auras
         if type == "Cats" and specific_cat != "All":
-            idx = cattypes.index(specific_cat) + 1  # psql array index starts at 1
-            guild_count = await Profile.sum(f"cat_{specific_cat}", "guild_id = $1", message.guild.id)
-            column = f'"cat_{specific_cat}"'
-            # remove old auras
-            await _get_pool().execute(
-                "UPDATE profile SET cat_auras[$1] = ' ' WHERE cat_auras[$1] IN ('y', 'c', 'p', 'a') AND guild_id = $2",
-                idx,
-                message.guild.id,
-            )
-
-            # new auras
-            aura_vals = {"y": 0.02 * guild_count, "c": 0.04 * guild_count, "p": 0.07 * guild_count}
-            for aura, val in aura_vals.items():
-                await _get_pool().execute(
-                    f"UPDATE profile SET cat_auras[$1] = $2 WHERE guild_id = $3 AND cat_auras[$1] != 'r' AND {column} > $4",
-                    idx,
-                    aura,
-                    message.guild.id,
-                    val,
-                )
-
-            # top 1 aura
-            await _get_pool().execute(
-                f"UPDATE profile SET cat_auras[$1] = 'a' WHERE guild_id = $2 AND {column} = (SELECT MAX({column}) FROM profile WHERE guild_id = $2) AND cat_auras[$1] != 'r'",
-                idx,
-                message.guild.id,
-            )
+            await refresh_auras(interaction, specific_cat)
 
         string = ""
         bp_season = None
@@ -10699,6 +10704,9 @@ async def leaderboards(
             global_user.tutorial_state = 6
             await global_user.save()
             await interaction.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
+
+        for cat in cattypes:
+            bot.loop.create_task(refresh_auras(interaction, cat))
 
     await lb_handler(message, leaderboard_type, False, cat_type)
 
