@@ -5894,7 +5894,7 @@ async def battlepass(message: discord.Interaction):
             if weekly_quest["progress"] > user.weekly_progress:
                 title = weekly_quest["title"]
                 if user.weekly_quest == "bonus":
-                    title = "Complete 4 [bonus minigames](https://catbot.wiki/cat-types#bonus-cats)"
+                    title = "Complete 3 [bonus minigames](https://catbot.wiki/cat-types#bonus-cats)"
                 description += f"{get_emoji(weekly_quest['emoji'])} {title} ({user.weekly_progress}/{weekly_quest['progress']})\n"
                 if user.weekly_quest != "different":
                     colored = int(user.weekly_progress / weekly_quest["progress"] * 10)
@@ -10004,7 +10004,8 @@ You can stop. That's okay. Seriously."""
                 else:
                     desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total - bounty_progress) + " more")
 
-                desc = desc.replace("type", f"{get_aura_emoji(bounty_type, user.cat_auras)} {bounty_type}")
+                icon = get_aura_emoji(bounty_type, user.cat_auras) if bounty_type != "cat" else ""
+                desc = desc.replace("type", f"{icon} {bounty_type}")
 
             if not user.hibernation:
                 if user.bounties == 1:
