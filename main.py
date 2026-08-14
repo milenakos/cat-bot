@@ -10705,8 +10705,8 @@ async def leaderboards(
             await global_user.save()
             await interaction.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
-        for cat in cattypes:
-            await refresh_auras(interaction, cat)
+        # for cat in cattypes:
+        #     await refresh_auras(interaction, cat)
 
     await lb_handler(message, leaderboard_type, False, cat_type)
 
