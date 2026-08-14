@@ -4970,11 +4970,11 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
         funny_cat_emojis = {k: get_short_emoji(k.lower() + "cat") for k in rain_cats}
         funny_pack_emojis = {k: get_short_emoji(k.lower() + "pack") for k in rain_packs}
         funny_aura_emojis = (
-            {k: get_short_emoji(k.lower() + "cat_y") for k in rain_cats}
-            | {k: get_short_emoji(k.lower() + "cat_c") for k in rain_cats}
-            | {k: get_short_emoji(k.lower() + "cat_p") for k in rain_cats}
-            | {k: get_short_emoji(k.lower() + "cat_r") for k in rain_cats}
-            | {k: get_short_emoji(k.lower() + "cat_a") for k in rain_cats}
+            {k + "y": get_short_emoji(k.lower() + "cat_y") for k in rain_cats}
+            | {k + "c": get_short_emoji(k.lower() + "cat_c") for k in rain_cats}
+            | {k + "p": get_short_emoji(k.lower() + "cat_p") for k in rain_cats}
+            | {k + "r": get_short_emoji(k.lower() + "cat_r") for k in rain_cats}
+            | {k + "a": get_short_emoji(k.lower() + "cat_a") for k in rain_cats}
         )
 
         funny_emojis = funny_cat_emojis | funny_pack_emojis | funny_aura_emojis
@@ -4998,7 +4998,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 uid = "".join(ch for ch in str(user_id) if ch.isdigit())
                 profile = await Profile.get_or_create(user_id=int(uid), guild_id=message.guild.id)
-                aura_suffixes = {cattypes[k]: f"_{v}" if v != " " else "" for k, v in enumerate(profile.cat_auras)}
+                aura_suffixes = {cattypes[k]: v.strip() for k, v in enumerate(profile.cat_auras)}
                 show_cats = ""
                 shortened_types = False
                 dictdict = data.type_dict | pack_yeah
