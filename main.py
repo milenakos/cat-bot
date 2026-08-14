@@ -10318,33 +10318,55 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         await achemb(message, "not_like_that", "followup")
 
 
-async def refresh_auras(message: discord.Interaction | discord.Message, specific_cat: str) -> None:
+async def refresh_auras(message: discord.Interaction | discord.Message, specific_cat: str | None = None) -> None:
     assert message.guild is not None
-    idx = cattypes.index(specific_cat) + 1  # psql array index starts at 1
-    guild_count = await Profile.sum(f"cat_{specific_cat}", "guild_id = $1", message.guild.id)
-    column = f'"cat_{specific_cat}"'
-    # remove old auras
-    await _get_pool().execute(
-        "UPDATE profile SET cat_auras[$1] = ' ' WHERE cat_auras[$1] IN ('y', 'c', 'p', 'a') AND guild_id = $2",
-        idx,
-        message.guild.id,
-    )
 
-    # new auras
-    aura_vals = {"y": 0.02 * guild_count, "c": 0.04 * guild_count, "p": 0.07 * guild_count}
-    for aura, val in aura_vals.items():
-        await _get_pool().execute(
-            f"UPDATE profile SET cat_auras[$1] = $2 WHERE guild_id = $3 AND cat_auras[$1] != 'r' AND {column} > $4",
-            idx,
-            aura,
-            message.guild.id,
-            val,
+    def aura_case(idx: int, cat: str, total: str, maximum: str) -> str:
+        column = f'p."cat_{cat}"'
+        aura = f"p.cat_auras[{idx}]"
+        return (
+            f"CASE WHEN {aura} = 'r' THEN 'r' "
+            f"WHEN {column} = {maximum} THEN 'a' "
+            f"WHEN {column} > {total} * 0.07 THEN 'p' "
+            f"WHEN {column} > {total} * 0.04 THEN 'c' "
+            f"WHEN {column} > {total} * 0.02 THEN 'y' "
+            f"WHEN {aura} IN ('y', 'c', 'p', 'a') THEN ' ' "
+            f"ELSE {aura} END"
         )
 
-    # top 1 aura
+    if specific_cat is not None:
+        idx = cattypes.index(specific_cat) + 1  # PostgreSQL array indexes start at 1.
+        column = f'"cat_{specific_cat}"'
+        await _get_pool().execute(
+            f"""
+            WITH stats AS (
+                SELECT SUM({column}) AS total, MAX({column}) AS maximum
+                FROM profile
+                WHERE guild_id = $1
+            )
+            UPDATE profile AS p
+            SET cat_auras[{idx}] = {aura_case(idx, specific_cat, "stats.total", "stats.maximum")}
+            FROM stats
+            WHERE p.guild_id = $1
+            """,
+            message.guild.id,
+        )
+        return
+
+    stats = ", ".join(f'SUM("cat_{cat}") AS total_{idx}, MAX("cat_{cat}") AS maximum_{idx}' for idx, cat in enumerate(cattypes, start=1))
+    auras = ", ".join(aura_case(idx, cat, f"stats.total_{idx}", f"stats.maximum_{idx}") for idx, cat in enumerate(cattypes, start=1))
     await _get_pool().execute(
-        f"UPDATE profile SET cat_auras[$1] = 'a' WHERE guild_id = $2 AND {column} = (SELECT MAX({column}) FROM profile WHERE guild_id = $2) AND cat_auras[$1] != 'r'",
-        idx,
+        f"""
+        WITH stats AS (
+            SELECT {stats}
+            FROM profile
+            WHERE guild_id = $1
+        )
+        UPDATE profile AS p
+        SET cat_auras = ARRAY[{auras}]
+        FROM stats
+        WHERE p.guild_id = $1
+        """,
         message.guild.id,
     )
 
@@ -10385,8 +10407,8 @@ async def leaderboards(
         show_amount = 15
 
         # refresh auras
-        if type == "Cats" and specific_cat != "All":
-            await refresh_auras(interaction, specific_cat)
+        if type == "Cats":
+            await refresh_auras(interaction, None if specific_cat == "All" else specific_cat)
 
         string = ""
         bp_season = None
