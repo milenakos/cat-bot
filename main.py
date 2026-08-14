@@ -10004,7 +10004,7 @@ You can stop. That's okay. Seriously."""
                 else:
                     desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total - bounty_progress) + " more")
 
-                icon = get_aura_emoji(bounty_type, user.cat_auras) if bounty_type != "cat" else ""
+                icon = get_aura_emoji(bounty_type, user.cat_auras) if bounty_type else ""
                 desc = desc.replace("type", f"{icon} {bounty_type}")
 
             if not user.hibernation:
