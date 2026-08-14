@@ -333,13 +333,13 @@ def get_short_emoji(emoji: str) -> str:
     return re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(emoji), count=1)
 
 
-def get_aura_emoji(emoji: str, auras: list[str]) -> str:
+def get_aura_emoji(emoji: str, auras: list[str], short: bool = False) -> str:
     emoji_pre = emoji.lower() + "cat"
     cattype_index = cattypes.index(emoji)
     suffix = auras[cattype_index]
     if suffix and suffix in ["r", "p", "c", "y", "a"]:
-        return get_emoji(emoji_pre + f"_{suffix}")
-    return get_emoji(emoji_pre)
+        return get_short_emoji(emoji_pre + f"_{suffix}") if short else get_emoji(emoji_pre + f"_{suffix}")
+    return get_short_emoji(emoji_pre) if short else get_emoji(emoji_pre)
 
 
 def get_command_mention(name: str) -> str:
@@ -8134,7 +8134,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             total = 0
             for cattype, amount in tradeuser.gives_cats.items():
                 total += amount
-                offer_string += f"{get_short_emoji(cattype.lower() + 'cat')} {cattype} {amount:,}\n"
+                offer_string += f"{get_aura_emoji(cattype.lower() + 'cat', tradeuser.profile.cat_auras, short=True)} {cattype} {amount:,}\n"
 
             for packtype, amount in tradeuser.gives_packs.items():
                 offer_string += f"{get_short_emoji(packtype.lower() + 'pack')} {packtype} {amount:,}\n"
