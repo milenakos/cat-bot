@@ -3033,8 +3033,8 @@ async def on_message(message: discord.Message) -> None:
 
                     await channel.save()
 
-                    if random.randint(1, 10) == 7:
-                        await refresh_auras(message, channel.cattype)
+                    if random.randint(1, 20) == 7:
+                        bot.loop.create_task(refresh_auras(message, channel.cattype))
 
                     await asyncio.sleep(decided_time)
                     temp_catches_storage.discard(pls_remove_me_later_k_thanks)
