@@ -337,7 +337,7 @@ def get_aura_emoji(emoji: str, auras: list[str]) -> str:
     emoji_pre = emoji.lower() + "cat"
     cattype_index = cattypes.index(emoji)
     suffix = auras[cattype_index]
-    if suffix and suffix in ["r", "p", "c", "y"]:
+    if suffix and suffix in ["r", "p", "c", "y", "a"]:
         return get_emoji(emoji_pre + f"_{suffix}")
     return get_emoji(emoji_pre)
 
