@@ -1704,11 +1704,10 @@ async def play_minigame(interaction: discord.Interaction) -> None:
     modal = Modal(title="Bonus Cat Minigame")
     match cattype:
         case "Fine":
-            random_text = random.choice(data.sentences)
-            text_letters = list({i for i in random_text.upper() if i.isalpha()})
-            picked = random.sample(text_letters, 3)
-            answer = sum(random_text.lower().count(letter.lower()) for letter in picked)
-            modal.add_item(TextDisplay(f"## Count how many letters in this sentence are any of these: {', '.join(picked)}\n\n{random_text}"))
+            random_text = random.choice(data.sentences) + "\n" + random.choice(data.sentences)
+            picked = random.choice(list({i for i in random_text.upper() if i.isalpha()}))
+            answer = random_text.upper().count(picked)
+            modal.add_item(TextDisplay(f"## Count the amount of {picked}'s in this text\n\n{random_text}"))
             modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
         case "Nice":
             random_numbers = [random.randint(-100, 100) for _ in range(5)]
