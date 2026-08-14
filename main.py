@@ -4971,10 +4971,10 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
         funny_pack_emojis = {k: get_short_emoji(k.lower() + "pack") for k in rain_packs}
         funny_aura_emojis = (
             {k: get_short_emoji(k.lower() + "cat_y") for k in rain_cats}
-            | {k: get_short_emoji(k.lower() + "cat_c") for k in rain_packs}
-            | {k: get_short_emoji(k.lower() + "cat_p") for k in rain_packs}
+            | {k: get_short_emoji(k.lower() + "cat_c") for k in rain_cats}
+            | {k: get_short_emoji(k.lower() + "cat_p") for k in rain_cats}
             | {k: get_short_emoji(k.lower() + "cat_r") for k in rain_cats}
-            | {k: get_short_emoji(k.lower() + "cat_a") for k in rain_packs}
+            | {k: get_short_emoji(k.lower() + "cat_a") for k in rain_cats}
         )
 
         funny_emojis = funny_cat_emojis | funny_pack_emojis | funny_aura_emojis
@@ -5010,7 +5010,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
                         continue
                     if cat_type_two in pack_names:
                         pack_amount += 1
-                    show_cats += funny_emojis[cat_type_two] + (aura_suffixes.get(cat_type_two, ""))
+                    show_cats += funny_emojis[cat_type_two + aura_suffixes.get(cat_type_two, "")]
                 if show_cats != "":
                     if shortened_types:
                         show_cats = ": ..." + show_cats
