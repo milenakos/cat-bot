@@ -10372,6 +10372,13 @@ async def leaderboards(
                     val,
                 )
 
+            # top 1 aura
+            await _get_pool().execute(
+                f"UPDATE profile SET cat_auras[$1] = 'a' WHERE guild_id = $2 AND {column} = (SELECT MAX({column}) FROM profile WHERE guild_id = $2)",
+                idx,
+                message.guild.id,
+            )
+
         string = ""
         bp_season = None
         unit = None
