@@ -3033,6 +3033,9 @@ async def on_message(message: discord.Message) -> None:
 
                     await channel.save()
 
+                    if random.randint(1, 10) == 7:
+                        await refresh_auras(message, channel.cattype)
+
                     await asyncio.sleep(decided_time)
                     temp_catches_storage.discard(pls_remove_me_later_k_thanks)
                     await spawn_cat(message.channel.id)
@@ -10315,7 +10318,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         await achemb(message, "not_like_that", "followup")
 
 
-async def refresh_auras(message: discord.Interaction, specific_cat: str) -> None:
+async def refresh_auras(message: discord.Interaction | discord.Message, specific_cat: str) -> None:
     assert message.guild is not None
     idx = cattypes.index(specific_cat) + 1  # psql array index starts at 1
     guild_count = await Profile.sum(f"cat_{specific_cat}", "guild_id = $1", message.guild.id)
@@ -10705,9 +10708,6 @@ async def leaderboards(
             global_user.tutorial_state = 6
             await global_user.save()
             await interaction.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
-
-        # for cat in cattypes:
-        #     await refresh_auras(interaction, cat)
 
     await lb_handler(message, leaderboard_type, False, cat_type)
 
