@@ -10356,7 +10356,7 @@ async def leaderboards(
             column = f'"cat_{specific_cat}"'
             # remove old auras
             await _get_pool().execute(
-                "UPDATE profile SET cat_auras[$1] = ' ' WHERE cat_auras[$1] IN ('y', 'c', 'p') AND guild_id = $2",
+                "UPDATE profile SET cat_auras[$1] = ' ' WHERE cat_auras[$1] IN ('y', 'c', 'p', 'a') AND guild_id = $2",
                 idx,
                 message.guild.id,
             )
@@ -10374,7 +10374,7 @@ async def leaderboards(
 
             # top 1 aura
             await _get_pool().execute(
-                f"UPDATE profile SET cat_auras[$1] = 'a' WHERE guild_id = $2 AND {column} = (SELECT MAX({column}) FROM profile WHERE guild_id = $2)",
+                f"UPDATE profile SET cat_auras[$1] = 'a' WHERE guild_id = $2 AND {column} = (SELECT MAX({column}) FROM profile WHERE guild_id = $2) AND cat_auras[$1] != 'r'",
                 idx,
                 message.guild.id,
             )
