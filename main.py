@@ -317,7 +317,15 @@ server_count = 0
 
 
 def get_emoji(name: str) -> str:
-    if config.EMOJI and name in allowedemojis:
+    # aura-suffixed names (e.g. "finecat_r") aren't in allowedemojis themselves, so check
+    # the base name they're built from to let themed prefixes apply to aura variants too
+    themeable_name = name
+    for suffix in ("_r", "_p", "_c", "_y", "_a"):
+        if name.endswith(suffix) and name[: -len(suffix)] in allowedemojis:
+            themeable_name = name[: -len(suffix)]
+            break
+
+    if config.EMOJI and themeable_name in allowedemojis:
         themed_name = data.emoji_theme_prefixes[config.EMOJI] + name
         if themed_name in emojis:
             return emojis[themed_name]
