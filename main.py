@@ -4997,7 +4997,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
 
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 uid = "".join(ch for ch in str(user_id) if ch.isdigit())
-                profile = await Profile.get_or_create(user_id=uid, guild_id=message.guild.id)
+                profile = await Profile.get_or_create(user_id=int(uid), guild_id=message.guild.id)
                 aura_suffixes = {cattypes[k]: f"_{v}" if v != " " else "" for k, v in enumerate(profile.cat_auras)}
                 show_cats = ""
                 shortened_types = False
