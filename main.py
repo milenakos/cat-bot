@@ -5702,7 +5702,7 @@ async def packs(message: discord.Interaction):
         # select cat type
         goal_value = final_level["value"]
         chosen_type = random.choice(cattypes)
-        cat_emoji = get_emoji(chosen_type.lower() + "cat")
+        cat_emoji = get_aura_emoji(chosen_type, user.cat_auras)
         pre_cat_amount: float = goal_value / CAT_VALUES[chosen_type]
         if pre_cat_amount % 1 > random.random():
             cat_amount = math.ceil(pre_cat_amount)
@@ -5711,8 +5711,7 @@ async def packs(message: discord.Interaction):
         if pre_cat_amount < 1:
             if is_single:
                 reward_texts.append(
-                    reward_texts[-1]
-                    + f"\n{round(pre_cat_amount * 100, 2)}% chance for a {get_aura_emoji(chosen_type.lower() + 'cat', user.cat_auras)} {chosen_type} cat"
+                    reward_texts[-1] + f"\n{round(pre_cat_amount * 100, 2)}% chance for a {get_aura_emoji(chosen_type, user.cat_auras)} {chosen_type} cat"
                 )
                 reward_texts.append(reward_texts[-1] + ".")
                 reward_texts.append(reward_texts[-1] + ".")
@@ -5730,15 +5729,14 @@ async def packs(message: discord.Interaction):
                 if is_single:
                     reward_texts.append(reward_texts[-1] + "\n❌ Fail!")
                 else:
-                    build_string += f"❌ -> {get_aura_emoji('finecat', user.cat_auras)} 1"
+                    build_string += f"❌ -> {get_aura_emoji('Fine', user.cat_auras)} 1"
                 chosen_type = "Fine"
                 cat_amount = 1
         elif not is_single:
             build_string += f" {cat_emoji} {cat_amount:,}"
         if is_single:
             reward_texts.append(
-                reward_texts[-1]
-                + f"\nYou got {get_aura_emoji(chosen_type.lower() + 'cat', user.cat_auras)} {cat_amount:,} {chosen_type} {plural('cat', cat_amount)}!"
+                reward_texts[-1] + f"\nYou got {get_aura_emoji(chosen_type, user.cat_auras)} {cat_amount:,} {chosen_type} {plural('cat', cat_amount)}!"
             )
             return chosen_type, cat_amount, upgrades, reward_texts
         return chosen_type, cat_amount, upgrades, build_string
@@ -8136,7 +8134,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             total = 0
             for cattype, amount in tradeuser.gives_cats.items():
                 total += amount
-                offer_string += f"{get_aura_emoji(cattype.lower() + 'cat', tradeuser.profile.cat_auras, short=True)} {cattype} {amount:,}\n"
+                offer_string += f"{get_aura_emoji(cattype, tradeuser.profile.cat_auras, short=True)} {cattype} {amount:,}\n"
 
             for packtype, amount in tradeuser.gives_packs.items():
                 offer_string += f"{get_short_emoji(packtype.lower() + 'pack')} {packtype} {amount:,}\n"
@@ -10006,7 +10004,7 @@ You can stop. That's okay. Seriously."""
                 else:
                     desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total - bounty_progress) + " more")
 
-                desc = desc.replace("type", f"{get_aura_emoji(bounty_type.lower() + 'cat', user.cat_auras)} {bounty_type}")
+                desc = desc.replace("type", f"{get_aura_emoji(bounty_type, user.cat_auras)} {bounty_type}")
 
             if not user.hibernation:
                 if user.bounties == 1:
@@ -10020,9 +10018,9 @@ You can stop. That's okay. Seriously."""
                     format_bounty("bonus")
                 desc += "\n"
                 if not all_complete:
-                    desc += f"\n**Pay Up!** {amount} {get_aura_emoji(cat_type.lower() + 'cat', user.cat_auras)} {cat_type} after completing your bounties"
+                    desc += f"\n**Pay Up!** {amount} {get_aura_emoji(cat_type, user.cat_auras)} {cat_type} after completing your bounties"
                 else:
-                    desc += f"\n**Pay Up!** {amount} {get_aura_emoji(cat_type.lower() + 'cat', user.cat_auras)} {cat_type} to proceed"
+                    desc += f"\n**Pay Up!** {amount} {get_aura_emoji(cat_type, user.cat_auras)} {cat_type} to proceed"
             else:
                 desc += "\nPress **Begin Bounties** to view your bounties and cost!"
                 if user.catnip_active > time.time():
