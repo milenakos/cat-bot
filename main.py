@@ -2004,36 +2004,35 @@ async def belated_window_task(
         except Exception:
             return await msg.channel.send(text, **kwargs)
 
+    assert msg.guild is not None
+    profiles = [await Profile.get_or_create(user_id=catcher[0], guild_id=msg.guild.id) for catcher in catchers]
+
+    def late_overview() -> str:
+        build_string = f"{get_emoji('pointlaugh')} Late {belated['cattype']} catchers:\n"
+        for profile, catcher in zip(profiles, catchers):
+            build_string += f"{get_aura_emoji(belated['cattype'], profile.cat_auras)} {catcher[1]}\n"
+        build_string += f"-# up to 3 late catchers within {window}s get +1 cat without boosts"
+        return build_string
+
     # rain bonus: process rewards and combine with late-catchers message
     if has_bonus and belated["is_rain"]:
         log_stats("bonus_cat", {"rain": "true", "cattype": belated["cattype"]})
-        for uid in belated["late_catchers"]:
-            assert msg.guild is not None
-            u = await Profile.get_or_create(user_id=uid[0], guild_id=msg.guild.id)
+        for u in profiles:
             u[f"cat_{belated['cattype']}"] += 1
             await u.save()
             if msg.channel.id in config.cat_cought_rain:
                 if belated["cattype"] not in config.cat_cought_rain[msg.channel.id]:
                     config.cat_cought_rain[msg.channel.id][belated["cattype"]] = []
-                config.cat_cought_rain[msg.channel.id][belated["cattype"]].append(f"<@{uid[0]}>")
+                config.cat_cought_rain[msg.channel.id][belated["cattype"]].append(f"<@{u.user_id}>")
         parts = []
         if catchers:
-            parts.append(
-                f"{get_emoji('pointlaugh')} Late {icon} {belated['cattype']} catchers:\n"
-                + "\n".join([c[1] for c in catchers])
-                + f"\n-# up to 3 late catchers within {window}s get +1 cat without boosts"
-            )
+            parts.append(late_overview())
         parts.append(f"🎁 Bonus {icon} {belated['cattype']} cat! Everyone who caught it gets +1 extra cat!")
         await reply_or_send(catch_confirm, "\n".join(parts))
         return
 
     if catchers:
-        catch_confirm = await reply_or_send(
-            catch_confirm,
-            f"{get_emoji('pointlaugh')} Late {icon} {belated['cattype']} catchers:\n"
-            + "\n".join([c[1] for c in catchers])
-            + f"\n-# up to 3 late catchers within {window}s get +1 cat without boosts",
-        )
+        catch_confirm = await reply_or_send(catch_confirm, late_overview())
 
     # non-rain bonus: minigame button
     if has_bonus:
