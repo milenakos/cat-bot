@@ -10706,7 +10706,7 @@ async def leaderboards(
             await interaction.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
         for cat in cattypes:
-            bot.loop.create_task(refresh_auras(interaction, cat))
+            await refresh_auras(interaction, cat)
 
     await lb_handler(message, leaderboard_type, False, cat_type)
 
