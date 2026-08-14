@@ -331,7 +331,8 @@ CREATE TABLE public.profile (
     fish_clover_level smallint DEFAULT 0,
     fish_clover_durability integer DEFAULT 0,
     compact_inventory boolean DEFAULT true,
-    master_baiter boolean DEFAULT false
+    master_baiter boolean DEFAULT false,
+    cat_auras char(1)[22] DEFAULT array_fill(' '::char(1), ARRAY[22])
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;

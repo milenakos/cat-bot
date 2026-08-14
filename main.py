@@ -333,6 +333,15 @@ def get_short_emoji(emoji: str) -> str:
     return re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(emoji), count=1)
 
 
+def get_aura_emoji(emoji: str, auras: list[str]) -> str:
+    emoji_pre = emoji.lower() + "cat"
+    cattype_index = cattypes.index(emoji)
+    suffix = auras[cattype_index]
+    if suffix and suffix in ["r", "p", "c", "y"]:
+        return get_emoji(emoji_pre + f"_{suffix}")
+    return get_emoji(emoji_pre)
+
+
 def get_command_mention(name: str) -> str:
     return f"</{name}:{COMMAND_IDS[name]}>" if name in COMMAND_IDS else f"/{name}"
 
@@ -1943,7 +1952,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
             profile.bonus_catches += 1
             profile[f"cat_{cattype}"] += 3
             await profile.save()
-            icon = get_emoji(cattype.lower() + "cat")
+            icon = get_aura_emoji(cattype, profile.cat_auras)
             await interaction.response.send_message(f"✅ {interaction.user.mention} got +3 {icon} {cattype} bonus cats.")
             await progress(interaction, profile, "bonus")
             log_stats("minigame_success", {"cattype": cattype})
@@ -2677,6 +2686,12 @@ async def on_message(message: discord.Message) -> None:
                     else:
                         suffix_string += f"\n{blesser_text} blessed your catch and it got saved!"
 
+                # aura farming
+                if random.random() < CAT_VALUES[channel.cattype] / 100000:
+                    type_idx = cattypes.index(channel.cattype)
+                    user.cat_auras[type_idx] = "r"
+                    suffix_string += f"\n{get_emoji(f'{channel.cattype.lower()}cat_r')} Rainbow aura for {channel.cattype} cat unlocked!!!"
+
                 # calculate prism boost
                 global_boost = 0.06 * math.log(2 * total_count + 1)
                 user_boost = global_boost + 0.05 * math.log(2 * user_count + 1)
@@ -2736,17 +2751,19 @@ async def on_message(message: discord.Message) -> None:
                                 config.rain_starter[channel.channel_id] = message.author.id
                                 bot.loop.create_task(rain_recovery_loop(channel))
 
+                    boost_icon = get_aura_emoji(le_old_emoji, user.cat_auras)
+                    prism_icon = get_emoji("prism")
                     if double_boost:
-                        suffix_string += f"\n{get_emoji('prism')}{get_emoji('prism')} {boost_applied_prism} boosted this catch twice from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
+                        suffix_string += f"\n{prism_icon}{prism_icon} {boost_applied_prism} boosted this catch twice from a {boost_icon} {le_old_emoji} cat!"
                     elif overflow:
-                        suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} tried to boost this catch, but failed!"
+                        suffix_string += f"\n{prism_icon} {boost_applied_prism} tried to boost this catch, but failed!"
                     else:
-                        suffix_string += f"\n{get_emoji('prism')} {boost_applied_prism} boosted this catch from a {get_emoji(le_old_emoji.lower() + 'cat')} {le_old_emoji} cat!"
+                        suffix_string += f"\n{prism_icon} {boost_applied_prism} boosted this catch from a {boost_icon} {le_old_emoji} cat!"
 
                     if rainboost:
                         suffix_string += f" A {rainboost // 60}m rain will start!"
 
-                icon = get_emoji(le_emoji.lower() + "cat")
+                icon = get_aura_emoji(le_emoji, user.cat_auras)
 
                 if channel.channel_id in config.cat_cought_rain:
                     if le_emoji not in config.cat_cought_rain[channel.channel_id]:
@@ -4525,7 +4542,7 @@ async def gen_inventory(
     # for every cat
     cat_elements = []
     for i in cattypes:
-        icon = get_emoji(i.lower() + "cat")
+        icon = get_aura_emoji(i, person.cat_auras)
         cat_num = person[f"cat_{i}"]
         if cat_num <= 0:
             give_collector = False
@@ -10321,6 +10338,29 @@ async def leaderboards(
         # leaderboard top amount
         show_amount = 15
 
+        # refresh auras
+        if type == "Cats" and specific_cat != "All":
+            idx = cattypes.index(specific_cat) + 1  # psql array index starts at 1
+            guild_count = await Profile.sum(f"cat_{specific_cat}", "guild_id = $1", message.guild.id)
+            column = f'"cat_{specific_cat}"'
+            # remove old auras
+            await _get_pool().execute(
+                "UPDATE profile SET cat_auras[$1] = ' ' WHERE cat_auras[$1] IN ('y', 'c', 'p') AND guild_id = $2",
+                idx,
+                message.guild.id,
+            )
+
+            # new auras
+            aura_vals = {"y": 0.02 * guild_count, "c": 0.04 * guild_count, "p": 0.07 * guild_count}
+            for aura, val in aura_vals.items():
+                await _get_pool().execute(
+                    f"UPDATE profile SET cat_auras[$1] = $2 WHERE guild_id = $3 AND cat_auras[$1] != 'r' AND {column} > $4",
+                    idx,
+                    aura,
+                    message.guild.id,
+                    val,
+                )
+
         string = ""
         bp_season = None
         unit = None
@@ -10330,7 +10370,9 @@ async def leaderboards(
 
                 if specific_cat != "All":
                     result = await Profile.collect_limit(
-                        ["user_id", f"cat_{specific_cat}"], f'guild_id = $1 AND "cat_{specific_cat}" > 0 ORDER BY "cat_{specific_cat}" DESC', message.guild.id
+                        ["user_id", f"cat_{specific_cat}", "cat_auras"],
+                        f'guild_id = $1 AND "cat_{specific_cat}" > 0 ORDER BY "cat_{specific_cat}" DESC',
+                        message.guild.id,
                     )
                     final_value = f"cat_{specific_cat}"
                 else:
@@ -10482,8 +10524,6 @@ async def leaderboards(
             messager_placement = 0
 
         emoji = ""
-        if type == "Cats" and specific_cat != "All":
-            emoji = get_emoji(specific_cat.lower() + "cat")
 
         # the little place counter
         current = 1
@@ -10527,6 +10567,8 @@ async def leaderboards(
                         unit = "sec"
                 elif type in ["Cookies", "Cats", "Pig", "Prisms", "Fish"] and num <= 0 or type == "Roulette Dollars" and num == 100:
                     break
+                if type == "Cats" and specific_cat != "All":
+                    emoji = get_aura_emoji(specific_cat, i["cat_auras"])
                 assert unit is not None
                 string += f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
 
@@ -10534,6 +10576,8 @@ async def leaderboards(
                 leader = True
             current += 1
 
+        if type == "Cats" and specific_cat != "All":
+            emoji = get_emoji(f"{specific_cat.lower()}cat")
         # add the messager and interactor
         if messager_placement > show_amount or interactor_placement > show_amount:
             string += "...\n"

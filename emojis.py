@@ -92,9 +92,9 @@ async def main() -> None:
             for theme, enabled in SPAWN_EMOJI_THEMES.items():
                 if not enabled:
                     continue
-                found = await upload_emoji_folder(client, os.path.join(clone_dir, "spawning", theme))
+                found = await upload_emoji_folder(client, os.path.join(clone_dir, "cattypes", theme))
                 if found == 0:
-                    raise RuntimeError(f"no emojis found for the '{theme}' theme - does the cloned branch have 'spawning/{theme}/'?")
+                    raise RuntimeError(f"no emojis found for the '{theme}' theme - does the cloned branch have 'cattypes/{theme}/'?")
                 print(f"uploaded {found} '{theme}' spawn emoji theme")
         finally:
             await client.close()
