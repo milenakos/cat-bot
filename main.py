@@ -2687,7 +2687,7 @@ async def on_message(message: discord.Message) -> None:
                         suffix_string += f"\n{blesser_text} blessed your catch and it got saved!"
 
                 # aura farming
-                if random.random() < CAT_VALUES[channel.cattype] / 20000:
+                if random.random() < CAT_VALUES[channel.cattype] / 100000:
                     type_idx = cattypes.index(channel.cattype)
                     new_auras = user.cat_auras.copy()
                     new_auras[type_idx] = "r"
