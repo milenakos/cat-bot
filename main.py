@@ -10625,7 +10625,13 @@ async def leaderboards(
         interactor_perc = None
         messager_perc = None
         for index, position in enumerate(result):
-            placement = position.get("placement", index + 1)
+            # asyncpg.Record supports dict-style .get(), but Model (from Profile/Prism.collect_limit,
+            # still used by the Aura case) has its own .get() classmethod for DB lookups that shadows
+            # it - so this has to go through __getitem__/KeyError instead of relying on .get() existing
+            try:
+                placement = position["placement"]
+            except KeyError:
+                placement = index + 1
             if position["user_id"] == interaction.user.id:
                 interactor_placement = placement
                 interactor = position[final_value]
