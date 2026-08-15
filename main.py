@@ -4481,7 +4481,10 @@ async def stats_command(message: discord.Interaction, person_id: discord.User | 
 
 
 async def gen_inventory(
-    guild_id: int, inv_user: discord.abc.User | discord.Object, me_msg: discord.Interaction | None = None
+    guild_id: int,
+    inv_user: discord.abc.User | discord.Object,
+    me_msg: discord.Interaction | None = None,
+    run_debt_cutscene: bool = True,
 ) -> tuple[discord.ui.Container, list[str]]:
     person = await Profile.get_or_create(guild_id=guild_id, user_id=inv_user.id)
     user = await User.get_or_create(user_id=inv_user.id)
@@ -4685,7 +4688,7 @@ async def gen_inventory(
         if unlocked >= 15:
             give_achs.append("achiever")
 
-        if debt:
+        if debt and run_debt_cutscene:
             bot.loop.create_task(debt_cutscene(me_msg, person))
 
     return embedVar, give_achs
@@ -4836,7 +4839,9 @@ __Highlighted Stat__
             await do_funny(interaction)
             return
 
-        embed_view, give_achs = await gen_inventory(message.guild.id, person_id, message if person_id == message.user else None)
+        embed_view, give_achs = await gen_inventory(
+            message.guild.id, person_id, message if person_id == message.user else None, run_debt_cutscene=first
+        )
         embed_view.add_item(TextDisplay(f"-# {rain_shill}"))
         view = LayoutView(timeout=VIEW_TIMEOUT)
         view.add_item(embed_view)
