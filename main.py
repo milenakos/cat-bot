@@ -2144,6 +2144,7 @@ async def on_message(message: discord.Message) -> None:
         react_count += 1
         reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
         log_stats("reaction", {"reaction": "staring_cat"})
+        return
     elif message.type not in [discord.MessageType.default, discord.MessageType.reply]:
         return
 
