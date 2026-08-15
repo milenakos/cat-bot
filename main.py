@@ -1988,8 +1988,8 @@ async def belated_window_task(
 
     if not (belated := config.belated_catchers.get(msg.channel.id, {})):
         return
-    if catchers := belated["late_catchers"].copy():
-        catchers.pop(0)
+    eligible_catchers = belated["late_catchers"].copy()
+    catchers = eligible_catchers[1:]
 
     log_stats("late_catchers", {"count": str(len(catchers))})
 
@@ -2005,6 +2005,7 @@ async def belated_window_task(
 
     assert msg.guild is not None
     profiles = [await Profile.get_or_create(user_id=catcher[0], guild_id=msg.guild.id) for catcher in catchers]
+    eligible_profiles = [await Profile.get_or_create(user_id=catcher[0], guild_id=msg.guild.id) for catcher in eligible_catchers]
 
     def late_overview() -> str:
         build_string = f"{get_emoji('pointlaugh')} Late {belated['cattype']} catchers:\n"
@@ -2016,7 +2017,7 @@ async def belated_window_task(
     # rain bonus: process rewards and combine with late-catchers message
     if has_bonus and belated["is_rain"]:
         log_stats("bonus_cat", {"rain": "true", "cattype": belated["cattype"]})
-        for u in profiles:
+        for u in eligible_profiles:
             u[f"cat_{belated['cattype']}"] += 1
             await u.save()
             if msg.channel.id in config.cat_cought_rain:
