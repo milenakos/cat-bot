@@ -10593,7 +10593,7 @@ async def leaderboards(
                     _count_expr = RawSQL(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{_a}') AS aura_count")
                     result = await Profile.collect_limit(
                         ["user_id", _count_expr],
-                        f"guild_id = $1 AND (SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{_a}') > 0 ORDER BY aura_count DESC",
+                        f"guild_id = $1 AND (SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{_a}') > 0 ORDER BY aura_count DESC, user_id ASC",
                         message.guild.id,
                     )
                     final_value = "aura_count"
@@ -10612,7 +10612,7 @@ async def leaderboards(
                     )
                     result = await Profile.collect_limit(
                         ["user_id", *_count_exprs, _total_expr],
-                        "guild_id = $1 AND EXISTS (SELECT 1 FROM unnest(cat_auras) v WHERE v != ' ') ORDER BY count_r DESC, count_a DESC, count_p DESC, count_c DESC, count_y DESC",
+                        "guild_id = $1 AND EXISTS (SELECT 1 FROM unnest(cat_auras) v WHERE v != ' ') ORDER BY count_r DESC, count_a DESC, count_p DESC, count_c DESC, count_y DESC, user_id ASC",
                         message.guild.id,
                     )
                     final_value = "aura_total"
@@ -10725,7 +10725,7 @@ async def leaderboards(
                     else:
                         num = round(num, 3)
                         unit = "sec"
-                elif type in ["Cookies", "Cats", "Pig", "Prisms", "Fish", "Aura"] and num <= 0 or type == "Roulette Dollars" and num == 100:
+                elif (type in ["Cookies", "Cats", "Pig", "Prisms", "Fish", "Aura"] and num <= 0) or (type == "Roulette Dollars" and num == 100):
                     break
                 if type == "Cats" and specific_cat != "All":
                     emoji = get_aura_emoji(specific_cat, i["cat_auras"])
