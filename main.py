@@ -10403,10 +10403,6 @@ async def leaderboards(
         # leaderboard top amount
         show_amount = 15
 
-        # refresh auras
-        if type == "Cats":
-            await refresh_auras(interaction, None if specific_cat == "All" else specific_cat)
-
         string = ""
         bp_season = None
         unit = None
@@ -10727,6 +10723,10 @@ async def leaderboards(
             global_user.tutorial_state = 6
             await global_user.save()
             await interaction.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
+
+        # refresh auras
+        if type == "Cats":
+            await refresh_auras(interaction, None if specific_cat == "All" else specific_cat)
 
     await lb_handler(message, leaderboard_type, False, cat_type)
 
