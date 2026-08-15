@@ -4537,8 +4537,8 @@ async def gen_inventory(
         highlighted_stat = ["style_points", "😎", "Style points: 1000"]
     assert highlighted_stat is not None
 
-    debt = False
-    give_collector = True
+    debt = any(person[f"cat_{i}"] < 0 for i in cattypes)
+    give_collector = all(person[f"cat_{i}"] > 0 for i in cattypes)
     total = 0
     valuenum = 0
 
@@ -4547,14 +4547,11 @@ async def gen_inventory(
     for i in cattypes:
         icon = get_aura_emoji(i, person.cat_auras)
         cat_num = person[f"cat_{i}"]
-        if cat_num <= 0:
-            give_collector = False
-            if cat_num < 0:
-                debt = True
-        else:
-            total += cat_num
-            valuenum += CAT_VALUES[i] * cat_num
-            cat_elements.append(f"{icon} **{i}** {cat_num:,}")
+        if cat_num == 0:
+            continue
+        total += cat_num
+        valuenum += CAT_VALUES[i] * cat_num
+        cat_elements.append(f"{icon} **{i}** {cat_num:,}")
 
     if user.custom and hasattr(inv_user, "name"):
         icon = get_emoji(str(user.user_id) + "cat")
