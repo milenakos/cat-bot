@@ -584,6 +584,14 @@ ALTER TABLE ONLY public.market
 
 CREATE INDEX idx_guild_id ON public.profile USING btree (guild_id);
 
+CREATE INDEX profile_fast_leaderboard ON public.profile (guild_id, "time" ASC, user_id ASC) WHERE "time" < 99999999999999;
+CREATE INDEX profile_slow_leaderboard ON public.profile (guild_id, timeslow DESC, user_id ASC) WHERE timeslow > 0;
+CREATE INDEX profile_cattlepass_leaderboard ON public.profile (guild_id, season, battlepass DESC, progress DESC, user_id ASC) WHERE battlepass > 0 OR progress > 0;
+CREATE INDEX profile_cookies_leaderboard ON public.profile (guild_id, cookies DESC, user_id ASC) WHERE cookies > 0;
+CREATE INDEX profile_pig_leaderboard ON public.profile (guild_id, best_pig_score DESC, user_id ASC) WHERE best_pig_score > 0;
+CREATE INDEX profile_roulette_leaderboard ON public.profile (guild_id, roulette_balance DESC, user_id ASC) WHERE roulette_balance <> 100;
+CREATE INDEX profile_fish_leaderboard ON public.profile (guild_id, fish_caught DESC, user_id ASC) WHERE fish_caught <> 0;
+
 CREATE UNIQUE INDEX profile_user_id_guild_id ON public.profile USING btree (user_id, guild_id);
 
 CREATE INDEX prism_guild_id ON public.prism USING btree (guild_id);
