@@ -10371,12 +10371,11 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
 
 # color-code order and metadata for the /leaderboards Aura tab (rainbow is most valuable)
 AURA_ORDER = ["r", "a", "p", "c", "y"]
-AURA_DISPLAY_NAMES = {"r": "Rainbow", "a": "Gold", "p": "Purple", "c": "Cyan", "y": "Yellow"}
-_AURA_COLOR_NAMES = {"r": "rainbow", "a": "red", "p": "pink", "c": "cyan", "y": "yellow"}
+AURA_DISPLAY_NAMES = {"r": "Rainbow", "a": "Red", "p": "Pink", "c": "Cyan", "y": "Yellow"}
 
 
 def aura_emoji(code: str) -> str:
-    return get_emoji(_AURA_COLOR_NAMES[code])
+    return get_emoji(AURA_DISPLAY_NAMES[code].lower())
 
 
 @bot.tree.command(description="View the leaderboards (lbs)")
