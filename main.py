@@ -10737,10 +10737,10 @@ async def leaderboards(
             "Roulette Dollars": "💰",
             "Prisms": get_emoji("prism"),
         }
-        options = [discord.SelectOption(label=k, emoji=v) for k, v in emojied_options.items()]
+        options = [discord.SelectOption(label=k, emoji=v, default=k == type) for k, v in emojied_options.items()]
         lb_select = Select(
             "lb_type",
-            placeholder=type,
+            placeholder="Select a leaderboard type",
             options=options,
             on_select=lambda interaction, type: lb_handler(interaction, type, True),
         )
