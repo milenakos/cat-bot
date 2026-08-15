@@ -4831,13 +4831,18 @@ __Highlighted Stat__
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-    def build_inventory_view(embed_view) -> LayoutView:
+    async def render_inventory(interaction: discord.Interaction, first: bool = False) -> None:
+        if interaction.user.id != message.user.id:
+            await do_funny(interaction)
+            return
+
+        embed_view, give_achs = await gen_inventory(message.guild.id, person_id, message if person_id == message.user else None)
         embed_view.add_item(TextDisplay(f"-# {rain_shill}"))
         view = LayoutView(timeout=VIEW_TIMEOUT)
         view.add_item(embed_view)
 
         refresh_btn = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
-        refresh_btn.callback = refresh_inventory
+        refresh_btn.callback = render_inventory
         buttons = [refresh_btn]
 
         if person_id == message.user:
@@ -4850,22 +4855,16 @@ __Highlighted Stat__
             buttons.append(btn)
 
         view.add_item(ActionRow(*buttons))
-        return view
 
-    async def refresh_inventory(interaction: discord.Interaction) -> None:
-        if interaction.user.id != message.user.id:
-            await do_funny(interaction)
-            return
-        new_embed, new_give_achs = await gen_inventory(message.guild.id, person_id, message if person_id == message.user else None)
-        await interaction.response.edit_message(view=build_inventory_view(new_embed))
-        for ach in new_give_achs:
+        if first:
+            await interaction.response.send_message(view=view)
+        else:
+            await interaction.response.edit_message(view=view)
+
+        for ach in give_achs:
             await achemb(interaction, ach, "followup")
 
-    embedVar, give_achs = await gen_inventory(message.guild.id, person_id, message if person_id == message.user else None)
-    await message.response.send_message(view=build_inventory_view(embedVar))
-
-    for ach in give_achs:
-        await achemb(message, ach, "followup")
+    await render_inventory(message, True)
 
     if user.tutorial_state == 4:
         user.tutorial_state = 5
