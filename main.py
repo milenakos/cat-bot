@@ -10369,6 +10369,16 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
     )
 
 
+# color-code order and metadata for the /leaderboards Aura tab (rainbow is most valuable)
+AURA_ORDER = ["r", "a", "p", "c", "y"]
+AURA_DISPLAY_NAMES = {"r": "Rainbow", "a": "Gold", "p": "Purple", "c": "Cyan", "y": "Yellow"}
+_AURA_COLOR_NAMES = {"r": "rainbow", "a": "red", "p": "pink", "c": "cyan", "y": "yellow"}
+
+
+def aura_emoji(code: str) -> str:
+    return get_emoji(_AURA_COLOR_NAMES[code])
+
+
 @bot.tree.command(description="View the leaderboards (lbs)")
 @discord.app_commands.rename(leaderboard_type="type")
 @discord.app_commands.describe(
@@ -10579,15 +10589,7 @@ async def leaderboards(
                 final_value = "fish_caught"
             case "Aura":
                 unit = "auras"
-                _aura_order = ["r", "a", "p", "c", "y"]  # rainbow is most valuable
-                aura_emoji_chars = {
-                    "r": get_emoji("rainbow"),
-                    "a": get_emoji("red"),
-                    "p": get_emoji("pink"),
-                    "c": get_emoji("cyan"),
-                    "y": get_emoji("yellow"),
-                }
-                if specific_cat in _aura_order:
+                if specific_cat in AURA_ORDER:
                     _a = specific_cat
                     _count_expr = RawSQL(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{_a}') AS aura_count")
                     result = await Profile.collect_limit(
@@ -10599,13 +10601,13 @@ async def leaderboards(
                 else:
                     _count_exprs = [
                         RawSQL(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}') AS count_{a}")
-                        for a in _aura_order
+                        for a in AURA_ORDER
                     ]
                     _total_expr = RawSQL(
                         "("
                         + " + ".join(
                             f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}')"
-                            for a in _aura_order
+                            for a in AURA_ORDER
                         )
                         + ") AS aura_total"
                     )
@@ -10730,12 +10732,12 @@ async def leaderboards(
                     emoji = get_aura_emoji(specific_cat, i["cat_auras"])
                 assert unit is not None
                 if type == "Aura":
-                    if specific_cat in ["r", "a", "p", "c", "y"]:
-                        string += f"{current}. {aura_emoji_chars[specific_cat]} **{num:,}** {unit}: <@{i['user_id']}>\n"
+                    if specific_cat in AURA_ORDER:
+                        string += f"{current}. {aura_emoji(specific_cat)} **{num:,}** {unit}: <@{i['user_id']}>\n"
                     else:
                         parts = [
-                            f"**{i[f'count_{a}']}**{aura_emoji_chars[a]}"
-                            for a in ["r", "a", "p", "c", "y"]
+                            f"**{i[f'count_{a}']}**{aura_emoji(a)}"
+                            for a in AURA_ORDER
                             if i[f"count_{a}"] > 0
                         ]
                         aura_summary = " ".join(parts) if parts else "—"
@@ -10749,8 +10751,8 @@ async def leaderboards(
 
         if type == "Cats" and specific_cat != "All":
             emoji = get_emoji(f"{specific_cat.lower()}cat")
-        elif type == "Aura" and specific_cat in ["r", "a", "p", "c", "y"]:
-            emoji = aura_emoji_chars[specific_cat]
+        elif type == "Aura" and specific_cat in AURA_ORDER:
+            emoji = aura_emoji(specific_cat)
         # add the messager and interactor
         if messager_placement > show_amount or interactor_placement > show_amount:
             string += "...\n"
@@ -10786,9 +10788,8 @@ async def leaderboards(
         title = type + " Leaderboard"
         if type == "Cats":
             title = f"{specific_cat} {title}"
-        elif type == "Aura" and specific_cat in ["r", "a", "p", "c", "y"]:
-            _aura_display_names = {"r": "Rainbow", "a": "Gold", "p": "Purple", "c": "Cyan", "y": "Yellow"}
-            title = f"{_aura_display_names[specific_cat]} {title}"
+        elif type == "Aura" and specific_cat in AURA_ORDER:
+            title = f"{AURA_DISPLAY_NAMES[specific_cat]} {title}"
         title = "🏅 " + title
 
         embedVar = discord.Embed(title=title, description=string.rstrip(), color=Colors.brown).set_footer(text=rain_shill)
@@ -10816,19 +10817,11 @@ async def leaderboards(
                 disabled=locked,
             )
         elif type == "Aura":
-            _aura_display_names = {"r": "Rainbow", "a": "Gold", "p": "Purple", "c": "Cyan", "y": "Yellow"}
-            _aura_other_emojis = {
-                "r": get_emoji("rainbow"),
-                "a": get_emoji("red"),
-                "p": get_emoji("pink"),
-                "c": get_emoji("cyan"),
-                "y": get_emoji("yellow"),
-            }
             dd_opts = [discord.SelectOption(label="All", emoji="✨", value="All", default=specific_cat == "All")]
-            for a in ["r", "a", "p", "c", "y"]:
+            for a in AURA_ORDER:
                 dd_opts.append(discord.SelectOption(
-                    label=_aura_display_names[a],
-                    emoji=_aura_other_emojis[a],
+                    label=AURA_DISPLAY_NAMES[a],
+                    emoji=aura_emoji(a),
                     value=a,
                     default=specific_cat == a,
                 ))
