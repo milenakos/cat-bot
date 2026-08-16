@@ -10332,21 +10332,18 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
             f"ELSE {aura} END"
         )
 
-    cats_to_refresh = [specific_cat] if specific_cat is not None else cattypes
-    guild_counts = {cat: int(await Profile.sum(f"cat_{cat}", "guild_id = $1", message.guild.id) or 0) for cat in cats_to_refresh}
-
     if specific_cat is not None:
         idx = cattypes.index(specific_cat) + 1  # PostgreSQL array indexes start at 1.
         column = f'"cat_{specific_cat}"'
         await _get_pool().execute(
             f"""
             WITH stats AS (
-                SELECT MAX({column}) AS maximum
+                SELECT SUM({column}) AS total, MAX({column}) AS maximum
                 FROM profile
                 WHERE guild_id = $1
             )
             UPDATE profile AS p
-            SET cat_auras[{idx}] = {aura_case(idx, specific_cat, str(guild_counts[specific_cat]), "stats.maximum")}
+            SET cat_auras[{idx}] = {aura_case(idx, specific_cat, "stats.total", "stats.maximum")}
             FROM stats
             WHERE p.guild_id = $1
             """,
@@ -10354,12 +10351,12 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
         )
         return
 
-    maximums = ", ".join(f'MAX("cat_{cat}") AS maximum_{idx}' for idx, cat in enumerate(cattypes, start=1))
-    auras = ", ".join(aura_case(idx, cat, str(guild_counts[cat]), f"stats.maximum_{idx}") for idx, cat in enumerate(cattypes, start=1))
+    stats = ", ".join(f'SUM("cat_{cat}") AS total_{idx}, MAX("cat_{cat}") AS maximum_{idx}' for idx, cat in enumerate(cattypes, start=1))
+    auras = ", ".join(aura_case(idx, cat, f"stats.total_{idx}", f"stats.maximum_{idx}") for idx, cat in enumerate(cattypes, start=1))
     await _get_pool().execute(
         f"""
         WITH stats AS (
-            SELECT {maximums}
+            SELECT {stats}
             FROM profile
             WHERE guild_id = $1
         )
