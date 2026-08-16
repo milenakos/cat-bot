@@ -4835,13 +4835,12 @@ __Highlighted Stat__
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     async def render_inventory(interaction: discord.Interaction, first: bool = False) -> None:
+        assert message.guild is not None
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
 
-        embed_view, give_achs = await gen_inventory(
-            message.guild.id, person_id, message if person_id == message.user else None, run_debt_cutscene=first
-        )
+        embed_view, give_achs = await gen_inventory(message.guild.id, person_id, message if person_id == message.user else None, run_debt_cutscene=first)
         embed_view.add_item(TextDisplay(f"-# {rain_shill}"))
         view = LayoutView(timeout=VIEW_TIMEOUT)
         view.add_item(embed_view)
@@ -10620,17 +10619,9 @@ async def leaderboards(
                     )
                     final_value = "aura_count"
                 else:
-                    _count_exprs = [
-                        RawSQL(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}') AS count_{a}")
-                        for a in AURA_ORDER
-                    ]
+                    _count_exprs = [RawSQL(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}') AS count_{a}") for a in AURA_ORDER]
                     _total_expr = RawSQL(
-                        "("
-                        + " + ".join(
-                            f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}')"
-                            for a in AURA_ORDER
-                        )
-                        + ") AS aura_total"
+                        "(" + " + ".join(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}')" for a in AURA_ORDER) + ") AS aura_total"
                     )
                     result = await Profile.collect_limit(
                         ["user_id", *_count_exprs, _total_expr],
@@ -10756,11 +10747,7 @@ async def leaderboards(
                     if specific_cat in AURA_ORDER:
                         string += f"{current}. {aura_emoji(specific_cat)} **{num:,}** {unit}: <@{i['user_id']}>\n"
                     else:
-                        parts = [
-                            f"**{i[f'count_{a}']}**{aura_emoji(a)}"
-                            for a in AURA_ORDER
-                            if i[f"count_{a}"] > 0
-                        ]
+                        parts = [f"**{i[f'count_{a}']}**{aura_emoji(a)}" for a in AURA_ORDER if i[f"count_{a}"] > 0]
                         aura_summary = " ".join(parts) if parts else "—"
                         string += f"{current}. {aura_summary}: <@{i['user_id']}>\n"
                 else:
@@ -10840,12 +10827,14 @@ async def leaderboards(
         elif type == "Aura":
             dd_opts = [discord.SelectOption(label="All", emoji="✨", value="All", default=specific_cat == "All")]
             for a in AURA_ORDER:
-                dd_opts.append(discord.SelectOption(
-                    label=AURA_DISPLAY_NAMES[a],
-                    emoji=aura_emoji(a),
-                    value=a,
-                    default=specific_cat == a,
-                ))
+                dd_opts.append(
+                    discord.SelectOption(
+                        label=AURA_DISPLAY_NAMES[a],
+                        emoji=aura_emoji(a),
+                        value=a,
+                        default=specific_cat == a,
+                    )
+                )
             dropdown = Select(
                 "aura_type_dd",
                 placeholder="Select an aura type",
