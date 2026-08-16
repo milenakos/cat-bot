@@ -10391,6 +10391,15 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
     )
 
 
+# color-code order and metadata for the /leaderboards Aura tab (rainbow is most valuable)
+AURA_ORDER = ["r", "a", "p", "c", "y"]
+AURA_DISPLAY_NAMES = {"r": "Rainbow", "a": "Red", "p": "Pink", "c": "Cyan", "y": "Yellow"}
+
+
+def aura_emoji(code: str) -> str:
+    return get_emoji(AURA_DISPLAY_NAMES[code].lower())
+
+
 @bot.tree.command(description="View the leaderboards (lbs)")
 @discord.app_commands.rename(leaderboard_type="type")
 @discord.app_commands.describe(
@@ -10401,7 +10410,7 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Literal["Cats", "Value", "Fast", "Slow", "Cattlepass", "Cookies", "Fish", "Pig", "Roulette Dollars", "Prisms"] | None = None,
+    leaderboard_type: Literal["Cats", "Value", "Fast", "Slow", "Cattlepass", "Cookies", "Fish", "Pig", "Roulette Dollars", "Prisms", "Aura"] | None = None,
     cat_type: str | None = None,
     locked: bool | None = None,
 ):
@@ -10455,6 +10464,12 @@ async def leaderboards(
                     result.append(row)
                     visible_user_ids.add(row["user_id"])
             return result
+
+        # refresh auras
+        if type == "Cats":
+            await refresh_auras(interaction, None if specific_cat == "All" else specific_cat)
+        elif type == "Aura":
+            await refresh_auras(interaction)
 
         string = ""
         bp_season = None
@@ -10593,6 +10608,36 @@ async def leaderboards(
                     message.guild.id,
                 )
                 final_value = "fish_caught"
+            case "Aura":
+                unit = "auras"
+                if specific_cat in AURA_ORDER:
+                    _a = specific_cat
+                    _count_expr = RawSQL(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{_a}') AS aura_count")
+                    result = await Profile.collect_limit(
+                        ["user_id", _count_expr],
+                        f"guild_id = $1 AND (SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{_a}') > 0 ORDER BY aura_count DESC, user_id ASC",
+                        message.guild.id,
+                    )
+                    final_value = "aura_count"
+                else:
+                    _count_exprs = [
+                        RawSQL(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}') AS count_{a}")
+                        for a in AURA_ORDER
+                    ]
+                    _total_expr = RawSQL(
+                        "("
+                        + " + ".join(
+                            f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}')"
+                            for a in AURA_ORDER
+                        )
+                        + ") AS aura_total"
+                    )
+                    result = await Profile.collect_limit(
+                        ["user_id", *_count_exprs, _total_expr],
+                        "guild_id = $1 AND EXISTS (SELECT 1 FROM unnest(cat_auras) v WHERE v != ' ') ORDER BY count_r DESC, count_a DESC, count_p DESC, count_c DESC, count_y DESC, user_id ASC",
+                        message.guild.id,
+                    )
+                    final_value = "aura_total"
             case _:
                 # qhar
                 raise ValueError("Invalid leaderboard type")
@@ -10603,7 +10648,13 @@ async def leaderboards(
         interactor_perc = None
         messager_perc = None
         for index, position in enumerate(result):
-            placement = position.get("placement", index + 1)
+            # asyncpg.Record supports dict-style .get(), but Model (from Profile/Prism.collect_limit,
+            # still used by the Aura case) has its own .get() classmethod for DB lookups that shadows
+            # it - so this has to go through __getitem__/KeyError instead of relying on .get() existing
+            try:
+                placement = position["placement"]
+            except KeyError:
+                placement = index + 1
             if position["user_id"] == interaction.user.id:
                 interactor_placement = placement
                 interactor = position[final_value]
@@ -10696,12 +10747,24 @@ async def leaderboards(
                     else:
                         num = round(num, 3)
                         unit = "sec"
-                elif type in ["Cookies", "Cats", "Pig", "Prisms", "Fish"] and num <= 0 or type == "Roulette Dollars" and num == 100:
+                elif (type in ["Cookies", "Cats", "Pig", "Prisms", "Fish", "Aura"] and num <= 0) or (type == "Roulette Dollars" and num == 100):
                     break
                 if type == "Cats" and specific_cat != "All":
                     emoji = get_aura_emoji(specific_cat, i["cat_auras"])
                 assert unit is not None
-                string += f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
+                if type == "Aura":
+                    if specific_cat in AURA_ORDER:
+                        string += f"{current}. {aura_emoji(specific_cat)} **{num:,}** {unit}: <@{i['user_id']}>\n"
+                    else:
+                        parts = [
+                            f"**{i[f'count_{a}']}**{aura_emoji(a)}"
+                            for a in AURA_ORDER
+                            if i[f"count_{a}"] > 0
+                        ]
+                        aura_summary = " ".join(parts) if parts else "—"
+                        string += f"{current}. {aura_summary}: <@{i['user_id']}>\n"
+                else:
+                    string += f"{current}. {emoji} **{num:,}** {unit}: <@{i['user_id']}>\n"
 
             if message.user.id == i["user_id"] and current <= 5:
                 leader = True
@@ -10709,7 +10772,8 @@ async def leaderboards(
 
         if type == "Cats" and specific_cat != "All":
             emoji = get_emoji(f"{specific_cat.lower()}cat")
-
+        elif type == "Aura" and specific_cat in AURA_ORDER:
+            emoji = aura_emoji(specific_cat)
         # add the messager and interactor
         if messager_placement > show_amount or interactor_placement > show_amount:
             string += "...\n"
@@ -10745,6 +10809,8 @@ async def leaderboards(
         title = type + " Leaderboard"
         if type == "Cats":
             title = f"{specific_cat} {title}"
+        elif type == "Aura" and specific_cat in AURA_ORDER:
+            title = f"{AURA_DISPLAY_NAMES[specific_cat]} {title}"
         title = "🏅 " + title
 
         embedVar = discord.Embed(title=title, description=string.rstrip(), color=Colors.brown).set_footer(text=rain_shill)
@@ -10771,6 +10837,22 @@ async def leaderboards(
                 on_select=lambda interaction, option: lb_handler(interaction, type, True, option),
                 disabled=locked,
             )
+        elif type == "Aura":
+            dd_opts = [discord.SelectOption(label="All", emoji="✨", value="All", default=specific_cat == "All")]
+            for a in AURA_ORDER:
+                dd_opts.append(discord.SelectOption(
+                    label=AURA_DISPLAY_NAMES[a],
+                    emoji=aura_emoji(a),
+                    value=a,
+                    default=specific_cat == a,
+                ))
+            dropdown = Select(
+                "aura_type_dd",
+                placeholder="Select an aura type",
+                options=dd_opts,
+                on_select=lambda interaction, option: lb_handler(interaction, type, True, option),
+                disabled=locked,
+            )
 
         emojied_options = {
             "Cats": "🐈",
@@ -10783,6 +10865,7 @@ async def leaderboards(
             "Pig": "🎲",
             "Roulette Dollars": "💰",
             "Prisms": get_emoji("prism"),
+            "Aura": "✨",
         }
         options = [discord.SelectOption(label=k, emoji=v, default=k == type) for k, v in emojied_options.items()]
         lb_select = Select(
@@ -10794,7 +10877,7 @@ async def leaderboards(
 
         if not locked:
             myview.add_item(lb_select)
-            if type == "Cats":
+            if type in ("Cats", "Aura"):
                 assert dropdown is not None
                 myview.add_item(dropdown)
 
