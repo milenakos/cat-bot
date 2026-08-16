@@ -4481,7 +4481,10 @@ async def stats_command(message: discord.Interaction, person_id: discord.User | 
 
 
 async def gen_inventory(
-    guild_id: int, inv_user: discord.abc.User | discord.Object, me_msg: discord.Interaction | None = None
+    guild_id: int,
+    inv_user: discord.abc.User | discord.Object,
+    me_msg: discord.Interaction | None = None,
+    run_debt_cutscene: bool = True,
 ) -> tuple[discord.ui.Container, list[str]]:
     person = await Profile.get_or_create(guild_id=guild_id, user_id=inv_user.id)
     user = await User.get_or_create(user_id=inv_user.id)
@@ -4685,7 +4688,7 @@ async def gen_inventory(
         if unlocked >= 15:
             give_achs.append("achiever")
 
-        if debt:
+        if debt and run_debt_cutscene:
             bot.loop.create_task(debt_cutscene(me_msg, person))
 
     return embedVar, give_achs
@@ -4831,25 +4834,42 @@ __Highlighted Stat__
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-    view = LayoutView(timeout=VIEW_TIMEOUT)
+    async def render_inventory(interaction: discord.Interaction, first: bool = False) -> None:
+        if interaction.user.id != message.user.id:
+            await do_funny(interaction)
+            return
 
-    embedVar, give_achs = await gen_inventory(message.guild.id, person_id, message if person_id == message.user else None)
-    embedVar.add_item(TextDisplay(f"-# {rain_shill}"))
-    view.add_item(embedVar)
+        embed_view, give_achs = await gen_inventory(
+            message.guild.id, person_id, message if person_id == message.user else None, run_debt_cutscene=first
+        )
+        embed_view.add_item(TextDisplay(f"-# {rain_shill}"))
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        view.add_item(embed_view)
 
-    if person_id == message.user:
-        btn = Button(emoji="📝", label="Edit", style=ButtonStyle.blurple)
-        btn.callback = edit_profile
-        view.add_item(ActionRow(btn))
-    elif config.REPORT_CHANNEL_ID and (view_user.image.startswith("https://cdn.discordapp.com/attachments/") or view_user.custom):
-        btn = Button(emoji="⚠️", label="Report")
-        btn.callback = report_profile
-        view.add_item(ActionRow(btn))
+        refresh_btn = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
+        refresh_btn.callback = render_inventory
+        buttons = [refresh_btn]
 
-    await message.response.send_message(view=view)
+        if person_id == message.user:
+            btn = Button(emoji="📝", label="Edit", style=ButtonStyle.blurple)
+            btn.callback = edit_profile
+            buttons.append(btn)
+        elif config.REPORT_CHANNEL_ID and (view_user.image.startswith("https://cdn.discordapp.com/attachments/") or view_user.custom):
+            btn = Button(emoji="⚠️", label="Report")
+            btn.callback = report_profile
+            buttons.append(btn)
 
-    for ach in give_achs:
-        await achemb(message, ach, "followup")
+        view.add_item(ActionRow(*buttons))
+
+        if first:
+            await interaction.response.send_message(view=view)
+        else:
+            await interaction.response.edit_message(view=view)
+
+        for ach in give_achs:
+            await achemb(interaction, ach, "followup")
+
+    await render_inventory(message, True)
 
     if user.tutorial_state == 4:
         user.tutorial_state = 5
