@@ -2077,6 +2077,10 @@ async def on_message(message: discord.Message) -> None:
                 except Exception:
                     await message.reply("failed. check if your guild id is correct")
                     return
+            elif "discord.gg" in text or "invite" in text:
+                view = View(timeout=1)
+                view.add_item(Button(label="Invite", url=discord.utils.oauth_url(bot.user.id, scopes=None)))
+                await message.reply("Click the button below to invite Cat Bot to your server!", view=view)
             elif text == "lol_i_have_dmed_the_cat_bot_and_got_an_ach":
                 await message.reply('which part of "send in server" was unclear?')
             elif user.dms < 15:
