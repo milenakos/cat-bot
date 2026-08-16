@@ -10391,8 +10391,8 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
 
 
 # color-code order and metadata for the /leaderboards Aura tab (rainbow is most valuable)
-AURA_ORDER = ["r", "a", "p", "c", "y"]
 AURA_DISPLAY_NAMES = {"r": "Rainbow", "a": "Red", "p": "Pink", "c": "Cyan", "y": "Yellow"}
+AURA_ORDER = AURA_DISPLAY_NAMES.keys()
 
 
 def aura_emoji(code: str) -> str:
@@ -10463,12 +10463,6 @@ async def leaderboards(
                     result.append(row)
                     visible_user_ids.add(row["user_id"])
             return result
-
-        # refresh auras
-        if type == "Cats":
-            await refresh_auras(interaction, None if specific_cat == "All" else specific_cat)
-        elif type == "Aura":
-            await refresh_auras(interaction)
 
         string = ""
         bp_season = None
@@ -10747,7 +10741,7 @@ async def leaderboards(
                     if specific_cat in AURA_ORDER:
                         string += f"{current}. {aura_emoji(specific_cat)} **{num:,}** {unit}: <@{i['user_id']}>\n"
                     else:
-                        parts = [f"**{i[f'count_{a}']}**{aura_emoji(a)}" for a in AURA_ORDER if i[f"count_{a}"] > 0]
+                        parts = [f"**{i[f'count_{a}']}** {aura_emoji(a)}" for a in AURA_ORDER if i[f"count_{a}"] > 0]
                         aura_summary = " ".join(parts) if parts else "—"
                         string += f"{current}. {aura_summary}: <@{i['user_id']}>\n"
                 else:
@@ -10761,6 +10755,7 @@ async def leaderboards(
             emoji = get_emoji(f"{specific_cat.lower()}cat")
         elif type == "Aura" and specific_cat in AURA_ORDER:
             emoji = aura_emoji(specific_cat)
+
         # add the messager and interactor
         if messager_placement > show_amount or interactor_placement > show_amount:
             string += "...\n"
@@ -10854,7 +10849,7 @@ async def leaderboards(
             "Pig": "🎲",
             "Roulette Dollars": "💰",
             "Prisms": get_emoji("prism"),
-            "Aura": "✨",
+            "Aura": get_emoji("rainbow"),
         }
         options = [discord.SelectOption(label=k, emoji=v, default=k == type) for k, v in emojied_options.items()]
         lb_select = Select(
@@ -10889,6 +10884,8 @@ async def leaderboards(
         # refresh auras
         if type == "Cats":
             await refresh_auras(interaction, None if specific_cat == "All" else specific_cat)
+        elif type == "Aura":
+            await refresh_auras(interaction)
 
     await lb_handler(message, leaderboard_type, False, cat_type)
 
