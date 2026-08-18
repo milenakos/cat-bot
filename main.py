@@ -5088,18 +5088,16 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
 
 
 @bot.tree.command(description="redeem plush badge")
-@discord.app_commands.describe(proof="screenshot of purchase confirmation email (dont include any personal info)")
-async def plushbadge(message: discord.Interaction, proof: discord.Attachment):
-    if proof and proof.content_type in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
-        file = await proof.to_file()
-        ch = bot.get_partial_messageable(1503550891670634758)
-        await ch.send(str(message.user.id), file=file)
-        await message.response.send_message(
-            "✅ ok. you will get the badge after the purchase is confirmed. (usually under 5 mins, up to 12 hours)", ephemeral=True
-        )
-    else:
-        await message.response.send_message("❌ invalid image. please upload a png, jpeg, gif, or webp image.", ephemeral=True)
-        return
+async def plushbadge(message: discord.Interaction):
+    await message.response.send_message(
+        f"""if you:
+1. have previously *purchased* **[the cat bot plush](<https://makeship.com/products/cat-bot-plush>)**,
+2. *dont* already have {get_emoji("plush_badge")} in your /inventory, and
+3. have a *proof* of purchase;
+
+please **open a ticket** in our support server to get the badge: discord.gg/staring""",
+        ephemeral=True,
+    )
 
 
 @bot.tree.command(description="its raining cats")
