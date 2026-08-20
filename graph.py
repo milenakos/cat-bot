@@ -85,7 +85,7 @@ def interpolate_means(timeline):
     return xs, means
 
 
-def plot_aggregated(timeline, title="Price (5-min buckets, past 3 days)"):
+def plot_aggregated(timeline):
     xs_ts, means = interpolate_means(timeline)
     means = np.round(means)
     xs = [datetime.fromtimestamp(int(ts), tz=timezone.utc) for ts in xs_ts]
@@ -99,7 +99,6 @@ def plot_aggregated(timeline, title="Price (5-min buckets, past 3 days)"):
     ax.set_facecolor("none")
 
     ax.plot(x_values, means, color="#6e593c", linestyle="-", linewidth=1)
-    ax.title.set_color("#808080")
     ax.xaxis.label.set_color("#808080")
     ax.yaxis.label.set_color("#808080")
     ax.tick_params(colors="#808080", which="both")
@@ -127,7 +126,7 @@ def plot_aggregated(timeline, title="Price (5-min buckets, past 3 days)"):
         lbl.set_horizontalalignment("center")
 
     buffer = io.BytesIO()
-    fig.savefig(buffer, dpi=67, format="png")
+    fig.savefig(buffer, dpi=100, format="png", bbox_inches="tight", pad_inches=0.02)
     plt.close(fig)
     buffer.seek(0)
 
