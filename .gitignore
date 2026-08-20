@@ -7,6 +7,11 @@ data/
 app.py
 .vscode
 emojis_cache.json
+PRSM.png
+CTNP.png
+PASS.png
+ACHS.png
+RAIN.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

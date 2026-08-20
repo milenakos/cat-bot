@@ -24,6 +24,7 @@ import json
 import logging
 import math
 import os
+import pathlib
 import platform
 import random
 import re
@@ -399,6 +400,24 @@ async def get_stock_price(ticker: str) -> int:
     if latest_price is not None:
         stock_prices[ticker] = latest_price
     return stock_prices[ticker]
+
+
+async def cache_stock_graph(ticker: str):
+    stock_data = []
+    async for sample in PriceHistory.filter("ticker = $1 AND time > $2", ticker, int(time.time() - 3600 * 49)):
+        stock_data.append((sample.time, sample.price))
+
+    buffer = await bot.loop.run_in_executor(None, graph.make_graph, stock_data, 10, 3)
+    cache_path = pathlib.Path(f"{ticker}.png")
+    cache_path.write_bytes(buffer.getvalue())
+
+
+async def refresh_stock_graphs() -> None:
+    for stock in data.stock_data:
+        try:
+            await cache_stock_graph(stock["ticker"])
+        except Exception:
+            logger.warning("Could not cache stock graph for %s", stock["ticker"], exc_info=True)
 
 
 async def execute_stock_trade(conn, profile_id: int, ticker: str, quantity: int, buy: bool) -> tuple[int, int]:
@@ -1283,8 +1302,9 @@ async def background_loop() -> None:
     # refresh materialized view
     await _get_pool().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY profile_sums_mv;")
 
-    # fetch stock prices from CoinGecko
+    # refresh stock prices and graphs
     await refresh_stock_prices()
+    await refresh_stock_graphs()
 
     # revive dead catch loops
     counter = 0
@@ -6090,12 +6110,11 @@ async def stocks(message: discord.Interaction):
 
         assert stock is not None
 
-        stock_data = []
-        async for i in PriceHistory.filter("ticker = $1 AND time > $2", stock_ticker, int(time.time() - 3600 * 49)):
-            stock_data.append((i.time, i.price))
-
-        buffer, _ = await asyncio.gather(bot.loop.run_in_executor(None, graph.make_graph, stock_data, 10, 3), profile.refresh_from_db())
-        file = discord.File(fp=buffer, filename="output.png")
+        cache_path = pathlib.Path(f"{stock_ticker}.png")
+        if not cache_path.is_file():
+            await cache_stock_graph(stock_ticker)
+        await profile.refresh_from_db()
+        file = discord.File(cache_path, filename=f"{stock_ticker}.png")
 
         buy_button = Button(label="Buy", style=ButtonStyle.green, custom_id=stock_ticker + "_buy")
         buy_button.callback = buy_stock
