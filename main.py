@@ -2332,7 +2332,6 @@ async def on_message(message: discord.Message) -> None:
                     else:
                         perks = user.perks
                     perks_info = catnip_list["perks"]
-                    user.pack_attempts -= 1
 
                     if len(perks) > 0:
                         log_stats("catnip", {"perks": str(len(perks))})
@@ -2351,7 +2350,7 @@ async def on_message(message: discord.Message) -> None:
                                 triple_chance += perks_info[1]["values"][rarity]
                                 none_chance += perks_info[1]["values"][rarity] / 2
                                 single_chance -= perks_info[1]["values"][rarity] * (1.5)
-                            case _ if "pack" in id and user.pack_attempts > 0:
+                            case _ if "pack" in id:
                                 for num, pack in enumerate(data.pack_data):
                                     if pack["name"].lower() in id:
                                         packs.append((num, perks_info[type - 1]["values"][rarity]))
@@ -9478,7 +9477,6 @@ You can stop. That's okay. Seriously."""
         user.hibernation = False
         user.catnip_total_cats = 0
         user.catnip_active = int(time.time()) + 3600 * duration + duration_bonus
-        user.pack_attempts = (3600 * duration + duration_bonus) // 60
         await user.save()
         log_stats("bounties_start", {"level": str(user.catnip_level)})
 
