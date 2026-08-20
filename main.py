@@ -6095,7 +6095,7 @@ async def stocks(message: discord.Interaction):
         async for i in PriceHistory.filter("ticker = $1 AND time > $2", stock_ticker, int(time.time() - 3600 * 49)):
             stock_data.append((i.time, i.price))
 
-        buffer = await bot.loop.run_in_executor(None, graph.make_graph, stock_data, 10, 3)
+        buffer, _ = await asyncio.gather(bot.loop.run_in_executor(None, graph.make_graph, stock_data, 10, 3), profile.refresh_from_db())
         file = discord.File(fp=buffer, filename="output.png")
 
         buy_button = Button(label="Buy", style=ButtonStyle.green, custom_id=stock_ticker + "_buy")
