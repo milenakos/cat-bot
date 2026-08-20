@@ -143,6 +143,7 @@ CREATE TABLE public.profile (
     bounty_novice boolean DEFAULT false,
     bounty_hunter boolean DEFAULT false,
     randomizer boolean DEFAULT false,
+    randomizer2 boolean DEFAULT false,
     pineapple boolean DEFAULT false,
     daily boolean DEFAULT false,
     dm boolean DEFAULT false,
@@ -304,7 +305,6 @@ CREATE TABLE public.profile (
     pack_attempts integer DEFAULT 0,
     buy_stock boolean DEFAULT false,
     sell_stock boolean DEFAULT false,
-    rugpulled boolean DEFAULT false,
     seen_deposit boolean DEFAULT false,
     last_ran_stocks bigint DEFAULT 0,
     ultimates_gifted smallint DEFAULT 0,
@@ -436,56 +436,6 @@ CREATE TABLE public.restore (
 
 ALTER TABLE public.restore OWNER TO cat_bot;
 
-CREATE TABLE public.order (
-    id integer NOT NULL,
-    user_id bigint NOT NULL,
-    time bigint NOT NULL,
-    ticker character varying(10) NOT NULL,
-    type_buy boolean NOT NULL,
-    quantity integer NOT NULL,
-    price integer NOT NULL
-);
-
-ALTER TABLE public.order OWNER TO cat_bot;
-
-CREATE TABLE public.market (
-    ticker character varying(10) NOT NULL,
-    share_reserve integer NOT NULL,
-    coin_reserve bigint NOT NULL DEFAULT 0,
-    virtual_shares integer NOT NULL,
-    virtual_coins bigint NOT NULL,
-    last_updated bigint NOT NULL DEFAULT 0
-);
-
-ALTER TABLE public.market OWNER TO cat_bot;
-
-CREATE SEQUENCE public.order_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER TABLE public.order_id_seq OWNER TO cat_bot;
-
-ALTER SEQUENCE public.order_id_seq OWNED BY public.order.id;
-
-
-CREATE TABLE public.reward (
-    ticker character varying(10) NOT NULL,
-    active boolean DEFAULT false,
-    start_time bigint DEFAULT 0,
-    end_time bigint DEFAULT 0,
-    chance smallint DEFAULT 0,
-    chance_hidden boolean DEFAULT false,
-    amount smallint DEFAULT 0,
-    paid boolean DEFAULT false
-);
-
-ALTER TABLE public.reward OWNER TO cat_bot;
-
-
 CREATE TABLE public.portfoliohistory (
     id integer NOT NULL,
     user_id bigint NOT NULL,
@@ -538,8 +488,6 @@ ALTER TABLE ONLY public.profile ALTER COLUMN id SET DEFAULT nextval('public.prof
 
 ALTER TABLE ONLY public.reminder ALTER COLUMN id SET DEFAULT nextval('public.reminder_id_seq'::regclass);
 
-ALTER TABLE ONLY public.order ALTER COLUMN id SET DEFAULT nextval('public.order_id_seq'::regclass);
-
 ALTER TABLE ONLY public.pricehistory ALTER COLUMN id SET DEFAULT nextval('public.pricehistory_id_seq'::regclass);
 
 ALTER TABLE ONLY public.portfoliohistory ALTER COLUMN id SET DEFAULT nextval('public.portfoliohistory_id_seq'::regclass);
@@ -566,8 +514,6 @@ ALTER TABLE ONLY public.server
 ALTER TABLE ONLY public.restore
     ADD CONSTRAINT restore_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY public.order
-    ADD CONSTRAINT order_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY public.pricehistory
     ADD CONSTRAINT pricehistory_pkey PRIMARY KEY (id);
@@ -575,11 +521,7 @@ ALTER TABLE ONLY public.pricehistory
 ALTER TABLE ONLY public.portfoliohistory
     ADD CONSTRAINT portfoliohistory_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY public.reward
-    ADD CONSTRAINT reward_pkey PRIMARY KEY (ticker);
 
-ALTER TABLE ONLY public.market
-    ADD CONSTRAINT market_pkey PRIMARY KEY (ticker);
 
 
 CREATE INDEX idx_guild_id ON public.profile USING btree (guild_id);
@@ -608,23 +550,28 @@ CREATE INDEX idx_vote_streak ON public."user" (vote_streak) WHERE vote_streak >=
 
 CREATE INDEX idx_yet_to_spawn ON public.channel (yet_to_spawn);
 
-CREATE MATERIALIZED VIEW profile_sums_mv AS SELECT
+CREATE MATERIALIZED VIEW public.profile_sums_mv AS SELECT
     1 as id,
     COALESCE(SUM(slot_spins), 0) AS sum_spins,
     COALESCE(SUM(slot_big_wins), 0) AS sum_big_wins,
     COALESCE(SUM(slot_wins), 0) AS sum_wins,
     COALESCE(SUM(gambles), 0) AS sum_gambles,
-    COALESCE(SUM(total_catches), 0) AS sum_catches
+    COALESCE(SUM(total_catches), 0) AS sum_catches,
+    COALESCE(SUM(stock_prsm), 0) AS sum_stock_prsm,
+    COALESCE(SUM(stock_ctnp), 0) AS sum_stock_ctnp,
+    COALESCE(SUM(stock_pass), 0) AS sum_stock_pass,
+    COALESCE(SUM(stock_achs), 0) AS sum_stock_achs,
+    COALESCE(SUM(stock_rain), 0) AS sum_stock_rain
 FROM public.profile;
 
-CREATE UNIQUE INDEX profile_sums_mv_id_idx ON profile_sums_mv (id);
+CREATE UNIQUE INDEX profile_sums_mv_id_idx ON public.profile_sums_mv (id);
 
-CREATE MATERIALIZED VIEW user_sums_mv AS SELECT
+CREATE MATERIALIZED VIEW public.user_sums_mv AS SELECT
     1 as id,
     COALESCE(SUM(rain_minutes_bought) FILTER (WHERE blessings_enabled = true), 0) AS sum_blessing_minutes
 FROM public."user";
 
-CREATE UNIQUE INDEX user_sums_mv_id_idx ON user_sums_mv (id);
+CREATE UNIQUE INDEX user_sums_mv_id_idx ON public.user_sums_mv (id);
 
 
 REVOKE USAGE ON SCHEMA public FROM PUBLIC;

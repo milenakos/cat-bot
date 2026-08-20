@@ -1104,10 +1104,10 @@
     ]
   },
   "stock_data": [
-    {"name": "Prisms", "ticker": "PRSM", "emoji": "prism", "amount": 5000, "init_price": 40},
-    {"name": "Catnip", "ticker": "CTNP", "emoji": "catnip", "amount": 5000, "init_price": 40},
-    {"name": "Cattlepass", "ticker": "PASS", "emoji": "⬆️", "amount": 5000, "init_price": 40},
-    {"name": "Achievements", "ticker": "ACHS", "emoji": "ach", "amount": 5000, "init_price": 40},
-    {"name": "Rain", "ticker": "RAIN", "emoji": "☔", "amount": 5000, "init_price": 40}
+    {"name": "Prisms", "ticker": "PRSM", "emoji": "prism", "symbol": "KAG", "multiplier": 1},
+    {"name": "Catnip", "ticker": "CTNP", "emoji": "catnip", "symbol": "BTC", "multiplier": 0.001},
+    {"name": "Cattlepass", "ticker": "PASS", "emoji": "⬆️", "symbol": "SOL", "multiplier": 1},
+    {"name": "Achievements", "ticker": "ACHS", "emoji": "ach", "symbol": "XMR", "multiplier": 0.1},
+    {"name": "Rain", "ticker": "RAIN", "emoji": "☔", "symbol": "HYPE", "multiplier": 1}
   ]
 }

@@ -8,7 +8,7 @@ Please note that self-hosting is hacky and isn't supported; instructions below a
 
 ## Prerequisites
 
-- Python 3.10+ (newer is better ofc)
+- Python 3.10+
 - PostgreSQL
 
 ## Instructions
@@ -21,14 +21,14 @@ Please note that self-hosting is hacky and isn't supported; instructions below a
 
    `emojis.py` can also download optional themed spawn emoji sets (birthday, halloween, old) - enable the ones you want in the `SPAWN_EMOJI_THEMES` dict at the top of the file, then set `config.EMOJI` to match.
 
-5. Setup your Postgres: (example instructions)
- - `createdb -U postgres -O cat_bot cat_bot`
+4. Setup your Postgres: (example instructions)
+ - `CREATE ROLE cat_bot WITH LOGIN PASSWORD 'password'; CREATE DATABASE cat_bot OWNER cat_bot;`
  - `psql -U cat_bot`
  - Copy-paste everything from `schema.sql`.
 
-6. Configure the bot inside `config.py` file. Most things are optional. You can hardcode the values if you don't want to use environment variables.
+5. Configure the bot inside `config.py` file. Most things are optional. You can hardcode the values if you don't want to use environment variables.
 
-7. Run the bot with `python bot.py`.
+6. Run the bot with `python bot.py`.
 
 # License
 

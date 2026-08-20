@@ -28,8 +28,11 @@ TOP_GG_MODERN_TOKEN = os.environ.get("top_gg_modern_token")
 # wordnik api key for /define command
 WORDNIK_API_KEY = os.environ.get("wordnik_api_key")
 
+# CoinGecko Demo API key for stock prices, works without it but is rate limited
+COINGECKO_KEY = os.environ.get("coingecko_key", "")
+
 # only post stats if server count is above this, to prevent wrong stats
-MIN_SERVER_SEND = 200_000
+MIN_SERVER_SEND = 250_000
 
 # channel id for db backups, private extremely recommended
 BACKUP_ID = 1060545763194707998
