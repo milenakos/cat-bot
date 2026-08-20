@@ -6138,7 +6138,7 @@ async def stocks(message: discord.Interaction):
 
         container = Container(
             "## 📈 Stock Market",
-            "Buy stocks and watch the number go up!",
+            f"Buy stocks and watch the number go up!\nYour balance: 🪙 {profile.coins:,}",
             "===",
         )
 
