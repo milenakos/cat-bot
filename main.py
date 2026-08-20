@@ -6521,17 +6521,7 @@ async def stocks(message: discord.Interaction):
             )
 
     async def buy_stock(interaction: discord.Interaction):
-        assert interaction.guild is not None
-        ticker = interaction.custom_id
-        assert ticker is not None
-        ticker = ticker.split("_")[0]
-        current_profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild.id)
-        market = await market_snapshot(ticker)
-        instant_price = market_quote(market, 1, True, INSTANT_SPREAD)[0] if market["share_reserve"] else None
-        queued_price = market_quote(market, 1, True, QUEUED_SPREAD)[0] if market["share_reserve"] else None
-        await interaction.response.send_modal(
-            OrderModal(ticker, "buy", current_profile.coins, max_buy_quantity(market, current_profile.coins), instant_price, queued_price)
-        )
+        await interaction.response.send_message("Disabled.", ephemeral=True)
 
     async def sell_stock(interaction: discord.Interaction):
         assert interaction.guild is not None
@@ -6570,7 +6560,7 @@ async def stocks(message: discord.Interaction):
 
         market = await market_snapshot(stock_ticker)
 
-        buy_button = Button(label="Buy", style=ButtonStyle.green, custom_id=stock_ticker + "_buy")
+        buy_button = Button(label="Buy", style=ButtonStyle.green, custom_id=stock_ticker + "_buy", disabled=True)
         buy_button.callback = buy_stock
         sell_button = Button(label="Sell", style=ButtonStyle.red, custom_id=stock_ticker + "_sell")
         sell_button.callback = sell_stock
