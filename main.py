@@ -10055,7 +10055,7 @@ async def leaderboards(
                         )
                         catmoji = get_emoji(rarest.lower() + "cat")
                         joined = f"{holder_count} people" if holder_count > 10 else ", ".join(f"<@{row['user_id']}>" for row in holder_rows)
-                        string = f"Rarest cat: {catmoji} ({joined}'s)\n\n"
+                        string = f"Rarest cat: {catmoji} ({joined}'s)\n"
             case "Value":
                 unit = "value"
                 sums = []
