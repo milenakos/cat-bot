@@ -5384,115 +5384,145 @@ async def scratch(message: discord.Interaction):
 async def packs(message: discord.Interaction):
     assert message.guild is not None
 
-    async def process_pack_opening(limit: int | None = None) -> discord.Embed | None:
+    open_at_once = 1
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    global_user = await User.get_or_create(user_id=message.user.id)
+
+    async def process_pack_opening(pack_types: set[str] | None = None, max_packs: int | None = None) -> Container | None:
         await user.refresh_from_db()
 
-        pack_names = [pack["name"] for pack in data.pack_data]
-        total_pack_count = sum(user[f"pack_{pack_id.lower()}"] for pack_id in pack_names)
-
-        if total_pack_count < 1:
+        total_packs = sum(user[f"pack_{pack['name'].lower()}"] for pack in data.pack_data if pack_types is None or pack["name"] in pack_types)
+        if max_packs is not None:
+            total_packs = min(total_packs, max_packs)
+        if total_packs < 1:
             return None
 
-        real_to_open = total_pack_count
-        if limit:
-            real_to_open = min(limit, total_pack_count)
-
-        display_cats = real_to_open >= 50
-        results_header = []
-        results_detail = []
-        results_percat = {cat: 0 for cat in cattypes}
+        display_cats = total_packs >= 50
+        pack_results: list[str] = []
+        reward_results: list[str] = []
+        cats_received = {cat: 0 for cat in cattypes}
         total_upgrades = 0
-        opened_so_far = 0
+        opened_packs = 0
 
-        for level, pack in enumerate(pack_names):
-            if opened_so_far >= real_to_open:
+        for level, pack_data in enumerate(data.pack_data):
+            if opened_packs >= total_packs:
                 break
-            log_stats("pack_open", {"pack": pack})
-            pack_id = f"pack_{pack.lower()}"
-            this_packs_count = user[pack_id]
-            if this_packs_count < 1:
+
+            pack_name = pack_data["name"]
+            if pack_types is not None and pack_name not in pack_types:
                 continue
 
-            opening_this = min(this_packs_count, real_to_open - opened_so_far)
+            pack_id = f"pack_{pack_name.lower()}"
+            pack_count = user[pack_id]
+            if pack_count < 1:
+                continue
 
-            results_header.append(f"{opening_this:,}x {get_emoji(pack.lower() + 'pack')}")
-            for _ in range(opening_this):
-                chosen_type, cat_amount, upgrades, rewards = get_pack_rewards(level, is_single=False)
+            log_stats("pack_open", {"pack": pack_name})
+            amount_to_open = min(pack_count, total_packs - opened_packs)
+            pack_results.append(f"{amount_to_open:,}x {get_emoji(pack_name.lower() + 'pack')}")
+
+            for _ in range(amount_to_open):
+                chosen_type, cat_amount, upgrades, reward = get_pack_rewards(level, is_single=False)
                 total_upgrades += upgrades
                 if not display_cats:
-                    results_detail.append(rewards)
-                results_percat[chosen_type] += cat_amount
+                    assert isinstance(reward, str)
+                    reward_results.append(reward)
+                cats_received[chosen_type] += cat_amount
 
-            user[pack_id] -= opening_this
-            opened_so_far += opening_this
+            user[pack_id] -= amount_to_open
+            opened_packs += amount_to_open
 
-        user.packs_opened += opened_so_far
+        user.packs_opened += opened_packs
         user.pack_upgrades += total_upgrades
-        for cat_type, cat_amount in results_percat.items():
+        for cat_type, cat_amount in cats_received.items():
             user[f"cat_{cat_type}"] += cat_amount
         await user.save()
 
-        final_header = f"Opened {opened_so_far:,} {plural('pack', opened_so_far)}!"
-        pack_list = "**" + ", ".join(results_header) + "**"
-        final_result = "\n".join(results_detail)
+        pack_list = "**" + ", ".join(pack_results) + "**"
+        reward_list = "\n".join(reward_results)
+        if display_cats or len(reward_list) > 4000 - len(pack_list):
+            reward_list = "\n".join(f"{get_emoji(cat.lower() + 'cat')} x{cats_received[cat]:,}" for cat in cattypes if cats_received[cat] > 0)
 
-        if display_cats or len(final_result) > 4000 - len(pack_list):
-            cat_summary = []
-            for cat in cattypes:
-                if results_percat[cat] > 0:
-                    cat_summary.append(f"{get_emoji(cat.lower() + 'cat')} x{results_percat[cat]:,}")
-            final_result = "\n".join(cat_summary)
+        if reward_list:
+            reward_list = "\n\n" + reward_list
 
-        if len(final_result) > 0:
-            final_result = "\n\n" + final_result
+        return Container(f"## Opened {opened_packs:,} {plural('pack', opened_packs)}!", f"{pack_list}{reward_list}")
 
-        return discord.Embed(title=final_header, description=f"{pack_list}{final_result}", color=Colors.brown)
-
-    async def confirm_open_all(interaction: discord.Interaction) -> None:
+    async def ask_bulk(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
             await do_funny(interaction)
             return
 
         async def do_it(interaction: discord.Interaction) -> None:
-            await interaction.response.defer()
-            await interaction.delete_original_response()
-            await open_all_packs(interaction)
+            await user.refresh_from_db()
+            item = modal.find_item(67)
+            assert isinstance(item, discord.ui.Select)
+            pack_types = set(item.values)
+            await open_all_packs(interaction, pack_types)
 
-        confirm_view = View(timeout=VIEW_TIMEOUT)
-        yes_btn = Button(label="Yes, Open All", style=ButtonStyle.green)
-        yes_btn.callback = do_it
-        confirm_view.add_item(yes_btn)
-
-        await interaction.response.send_message("Are you sure you want to open ALL your packs?", view=confirm_view, ephemeral=True)
-
-    def gen_view(user: Profile) -> tuple[View, bool]:
-        view = View(timeout=VIEW_TIMEOUT)
-        empty = True
-        has_special = False
-        total_amount = 0
+        await user.refresh_from_db()
+        modal = Modal(title="Bulk Open Packs")
+        options = []
         for pack in data.pack_data:
-            if user[f"pack_{pack['name'].lower()}"] < 1:
+            pack_name = pack["name"]
+            pack_count = user[f"pack_{pack_name.lower()}"]
+            if pack_count < 1:
                 continue
-            empty = False
-            amount = user[f"pack_{pack['name'].lower()}"]
-            total_amount += amount
+
+            option = discord.SelectOption(
+                emoji=get_emoji(pack_name.lower() + "pack"),
+                label=f"{pack_name} ({pack_count:,})",
+                default=not pack["special"],
+                value=pack_name,
+            )
+            options.append(option)
+        if not options:
+            await interaction.response.send_message("u have no packs", ephemeral=True)
+            return
+        modal.add_item(
+            discord.ui.Label(
+                text="Choose pack types to open",
+                description="This will open *all* packs of the selected types.",
+                component=discord.ui.Select(options=options, id=67, min_values=1, max_values=len(options)),
+            )
+        )
+        modal.on_submit = do_it
+
+        await interaction.response.send_modal(modal)
+
+    def gen_buttons(user: Profile) -> tuple[list[ActionRow], bool]:
+        buttons = []
+        has_special = False
+        total_packs = 0
+        for pack in data.pack_data:
+            pack_name = pack["name"]
+            pack_count = user[f"pack_{pack_name.lower()}"]
+            if pack_count < 1:
+                continue
+
+            total_packs += pack_count
             button = Button(
-                emoji=get_emoji(pack["name"].lower() + "pack"),
-                label=f"{pack['name']} ({amount:,})",
-                style=ButtonStyle.blurple if not pack["special"] else ButtonStyle.green,
-                custom_id=pack["name"],
+                emoji=get_emoji(pack_name.lower() + "pack"),
+                label=f"{pack_name} ({pack_count:,})",
+                style=ButtonStyle.green if pack["special"] else ButtonStyle.blurple,
+                custom_id=pack_name,
             )
             button.callback = open_pack
-            view.add_item(button)
-            if pack["special"]:
-                has_special = True
-        if empty:
-            view.add_item(Button(label="No packs left!", disabled=True))
-        if total_amount > 5:
-            button = Button(label=f"Open all! ({total_amount:,})", style=ButtonStyle.gray)
-            button.callback = confirm_open_all
-            view.add_item(button)
-        return view, has_special
+            buttons.append(button)
+            has_special |= pack["special"]
+        if total_packs == 0:
+            buttons.append(Button(label="No packs left!", disabled=True))
+        if total_packs > 5:
+            button = Button(label="Bulk Open", style=ButtonStyle.gray)
+            button.callback = ask_bulk
+            buttons.append(button)
+
+        rows = []
+        # 4 buttons is most optimal between desktop (all 4) and mobile (2x2)
+        for i in range(0, len(buttons), 4):
+            rows.append(ActionRow(*buttons[i : i + 4]))
+
+        return rows, has_special
 
     def get_pack_rewards(level: int, is_single: bool = True) -> tuple[str, int, int, str | list[str]]:
         # returns cat_type, cat_amount, upgrades, verbal_output
@@ -5524,14 +5554,10 @@ async def packs(message: discord.Interaction):
             reward_texts.append(f"{get_emoji(final_level['name'].lower() + 'pack')} {final_level['name']}\n" + build_string)
 
         # select cat type
-        goal_value = final_level["value"]
         chosen_type = random.choice(cattypes)
         cat_emoji = get_aura_emoji(chosen_type, user.cat_auras)
-        pre_cat_amount: float = goal_value / CAT_VALUES[chosen_type]
-        if pre_cat_amount % 1 > random.random():
-            cat_amount = math.ceil(pre_cat_amount)
-        else:
-            cat_amount = math.floor(pre_cat_amount)
+        pre_cat_amount: float = final_level["value"] / CAT_VALUES[chosen_type]
+        cat_amount = math.ceil(pre_cat_amount) if pre_cat_amount % 1 > random.random() else math.floor(pre_cat_amount)
         if pre_cat_amount < 1:
             if is_single:
                 reward_texts.append(
@@ -5571,6 +5597,10 @@ async def packs(message: discord.Interaction):
             return
 
         pack = interaction.custom_id
+        if open_at_once > 1:
+            await open_all_packs(interaction, {pack}, open_at_once)
+            return
+
         await user.refresh_from_db()
         if user[f"pack_{pack.lower()}"] < 1:
             return
@@ -5585,47 +5615,111 @@ async def packs(message: discord.Interaction):
 
         log_stats("pack_open", {"pack": pack})
 
-        embed = discord.Embed(title=reward_texts[0], color=Colors.brown)
-        await interaction.response.edit_message(embed=embed, view=None)
+        view = LayoutView(timeout=1)
+        view.add_item(Container(f"## {reward_texts[0]}"))
+        await interaction.response.edit_message(view=view)
+        last_container = None
         for reward_text in reward_texts[1:]:
             await asyncio.sleep(1)
             things = reward_text.split("\n", 1)
-            embed = discord.Embed(title=things[0], description=things[1], color=Colors.brown)
-            await interaction.edit_original_response(embed=embed)
+            view = LayoutView(timeout=1)
+            last_container = Container(f"## {things[0]}", things[1])
+            view.add_item(last_container)
+            await interaction.edit_original_response(view=view)
         await asyncio.sleep(1)
-        view, _ = gen_view(user)
+
+        assert last_container is not None
+        buttons, _ = gen_buttons(user)
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        last_container.add_item(Separator())
+        for i in buttons:
+            last_container.add_item(i)
+        view.add_item(last_container)
+
+        back_button = Button(label="Back", style=ButtonStyle.primary, emoji="⬅️")
+        back_button.callback = go_back
+        view.add_item(back_button)
+
         await interaction.edit_original_response(view=view)
 
+        await advance_tutorial(interaction)
+
+    async def advance_tutorial(interaction: discord.Interaction) -> None:
         await global_user.refresh_from_db()
         if global_user.tutorial_state == 8:
             global_user.tutorial_state = 9
             await global_user.save()
             await interaction.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
-    async def open_all_packs(interaction: discord.Interaction) -> None:
-        if not (embed := await process_pack_opening(10000)):
+    async def open_all_packs(interaction: discord.Interaction, pack_types: set[str] | None = None, max_packs: int | None = None) -> None:
+        if not (embed := await process_pack_opening(pack_types, max_packs)):
+            await interaction.response.edit_message(view=await gen_main())
             return
 
-        await message.edit_original_response(embed=embed, view=None)
+        view = LayoutView(timeout=1)
+        view.add_item(embed)
+        await interaction.response.edit_message(view=view)
+
         await asyncio.sleep(1)
-        view, _ = gen_view(user)
+        buttons, _ = gen_buttons(user)
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        embed.add_item(Separator())
+        for i in buttons:
+            embed.add_item(i)
+        view.add_item(embed)
+
+        back_button = Button(label="Back", style=ButtonStyle.primary, emoji="⬅️")
+        back_button.callback = go_back
+        view.add_item(back_button)
+
         await message.edit_original_response(view=view)
 
-        await global_user.refresh_from_db()
-        if global_user.tutorial_state == 8:
-            global_user.tutorial_state = 9
-            await global_user.save()
-            await interaction.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
+        await advance_tutorial(interaction)
 
-    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    global_user = await User.get_or_create(user_id=message.user.id)
-    view, has_special = gen_view(user)
-    description = "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n[Chance Info](<https://catbot.minkos.lol/packs>)"
-    if has_special:
-        description += "\n\n**Special Packs** are packs highlighted in green. Their upgrade chance is 70% instead of 30% and they start below Wooden."
-    description += "\n\nClick the buttons below to start opening packs!"
-    embed = discord.Embed(title=f"{get_emoji('goldpack')} Packs", description=description, color=Colors.brown)
-    await message.response.send_message(embed=embed, view=view)
+    async def go_back(interaction: discord.Interaction) -> None:
+        if interaction.user != message.user:
+            return await do_funny(interaction)
+        await user.refresh_from_db()
+        await interaction.response.edit_message(view=await gen_main())
+
+    async def switch_amount(interaction: discord.Interaction) -> None:
+        nonlocal open_at_once
+        if interaction.user != message.user:
+            return await do_funny(interaction)
+        if open_at_once == 1:
+            open_at_once = 10
+        else:
+            open_at_once = 1
+        await interaction.response.edit_message(view=await gen_main())
+
+    async def gen_main() -> LayoutView:
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        buttons, has_special = gen_buttons(user)
+        embed = Container(
+            f"## {get_emoji('goldpack')} Packs",
+            "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n[Chance Info](<https://catbot.minkos.lol/packs>)",
+        )
+
+        if has_special:
+            embed.add_item(
+                TextDisplay(
+                    "**Special Packs** are packs highlighted in green. Their upgrade chance is 70% instead of 30% and they start below Wooden.",
+                )
+            )
+
+        amount_button = Button(label=str(open_at_once))
+        amount_button.callback = switch_amount
+        embed.add_item(Section("Packs to open at a time:", amount_button))
+
+        embed.add_item(Separator())
+
+        for i in buttons:
+            embed.add_item(i)
+
+        view.add_item(embed)
+        return view
+
+    await message.response.send_message(view=await gen_main())
 
 
 def make_refresh_and_reminder_buttons(user, gen_main_cb, toggle_reminders_cb) -> tuple[Button, Button]:
