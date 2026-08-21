@@ -10377,7 +10377,7 @@ async def leaderboards(
                 elif (type in ["Cookies", "Cats", "Pig", "Prisms", "Fish", "Aura"] and num <= 0) or (type == "Roulette Dollars" and num == 100):
                     break
                 if type == "Cats" and specific_cat != "All":
-                    emoji = get_aura_emoji(specific_cat, i["cat_auras"])
+                    emoji = get_aura_emoji(specific_cat, i["cat_auras"], short=True)
                 assert unit is not None
                 if type == "Aura":
                     if specific_cat in AURA_ORDER:
