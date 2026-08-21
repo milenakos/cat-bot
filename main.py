@@ -1890,7 +1890,7 @@ async def on_message(message: discord.Message) -> None:
             elif text == "lol_i_have_dmed_the_cat_bot_and_got_an_ach":
                 await message.reply('which part of "send in server" was unclear?')
             elif user.dms < 15:
-                await message.reply('good job! please send "lol_i_have_dmed_the_cat_bot_and_got_an_ach" in server to get your ach!')
+                await message.reply("good job! please send `lol_i_have_dmed_the_cat_bot_and_got_an_ach` in server to get your ach!")
                 user.dms += 1
                 await user.save()
             else:
