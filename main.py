@@ -5463,7 +5463,7 @@ async def packs(message: discord.Interaction):
         await user.refresh_from_db()
         modal = Modal(title="Bulk Open Packs")
         options = []
-        for pack in data.pack_data:
+        for pack in sorted(data.pack_data, key=lambda pack: pack["special"]):
             pack_name = pack["name"]
             pack_count = user[f"pack_{pack_name.lower()}"]
             if pack_count < 1:
@@ -5638,7 +5638,7 @@ async def packs(message: discord.Interaction):
 
         back_button = Button(label="Back", style=ButtonStyle.primary, emoji="⬅️")
         back_button.callback = go_back
-        view.add_item(back_button)
+        view.add_item(ActionRow(back_button))
 
         await interaction.edit_original_response(view=view)
 
@@ -5670,7 +5670,7 @@ async def packs(message: discord.Interaction):
 
         back_button = Button(label="Back", style=ButtonStyle.primary, emoji="⬅️")
         back_button.callback = go_back
-        view.add_item(back_button)
+        view.add_item(ActionRow(back_button))
 
         await message.edit_original_response(view=view)
 
