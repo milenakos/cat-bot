@@ -5512,7 +5512,7 @@ async def packs(message: discord.Interaction):
             has_special |= pack["special"]
         if total_packs == 0:
             buttons.append(Button(label="No packs left!", disabled=True))
-        if total_packs > 5:
+        if total_packs >= 10:
             button = Button(label="Bulk Open", style=ButtonStyle.gray)
             button.callback = ask_bulk
             buttons.append(button)
@@ -5706,9 +5706,12 @@ async def packs(message: discord.Interaction):
                 )
             )
 
-        amount_button = Button(label=str(open_at_once))
-        amount_button.callback = switch_amount
-        embed.add_item(Section("Packs to open at a time:", amount_button))
+        last = buttons[-1].children[-1]
+        assert isinstance(last, Button)
+        if last.label == "Bulk Open":
+            amount_button = Button(label=str(open_at_once))
+            amount_button.callback = switch_amount
+            embed.add_item(Section("Packs to open at a time:", amount_button))
 
         embed.add_item(Separator())
 
