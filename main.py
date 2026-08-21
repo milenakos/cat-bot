@@ -10430,6 +10430,9 @@ async def leaderboards(
                 string += messager_line
                 string += interactor_line
 
+        if not string:
+            string = "No entries yet. At least, that's my theory. A CAT BOT THE~~~"
+
         myview = LayoutView(timeout=VIEW_TIMEOUT)
 
         dropdown = None
