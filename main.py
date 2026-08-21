@@ -10401,10 +10401,10 @@ async def leaderboards(
         if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
             embedVar.add_item(TextDisplay(f"{message.user} has unread news! /news"))
 
-        embedVar.add_item(lb_select)
+        embedVar.add_item(ActionRow(lb_select))
         if type in ("Cats", "Aura"):
             assert dropdown is not None
-            embedVar.add_item(dropdown)
+            embedVar.add_item(ActionRow(dropdown))
 
         embedVar.add_item(TextDisplay(string.rstrip()))
         embedVar.add_item(TextDisplay(f"-# {rain_shill}"))
