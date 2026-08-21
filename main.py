@@ -10337,22 +10337,7 @@ async def leaderboards(
                 string += messager_line
                 string += interactor_line
 
-        title = type + " Leaderboard"
-        if type == "Cats":
-            title = f"{specific_cat} {title}"
-        elif type == "Aura" and specific_cat in AURA_ORDER:
-            title = f"{AURA_DISPLAY_NAMES[specific_cat]} {title}"
-        title = "🏅 " + title
-
-        embedVar = discord.Embed(title=title, description=string.rstrip(), color=Colors.brown).set_footer(text=rain_shill)
-
-        global_user = await User.get_or_create(user_id=message.user.id)
-
-        if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
-            embedVar.set_author(name=f"{message.user} has unread news! /news")
-
-        # handle funny buttons
-        myview = View(timeout=VIEW_TIMEOUT)
+        myview = LayoutView(timeout=VIEW_TIMEOUT)
 
         dropdown = None
         if type == "Cats":
@@ -10406,21 +10391,33 @@ async def leaderboards(
             placeholder="Select a leaderboard type",
             options=options,
             on_select=lambda interaction, type: lb_handler(interaction, type, True),
+            disabled=locked,
         )
 
-        if not locked:
-            myview.add_item(lb_select)
-            if type in ("Cats", "Aura"):
-                assert dropdown is not None
-                myview.add_item(dropdown)
+        embedVar = Container()
+
+        global_user = await User.get_or_create(user_id=message.user.id)
+
+        if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
+            embedVar.add_item(TextDisplay(f"{message.user} has unread news! /news"))
+
+        embedVar.add_item(lb_select)
+        if type in ("Cats", "Aura"):
+            assert dropdown is not None
+            embedVar.add_item(dropdown)
+
+        embedVar.add_item(TextDisplay(string.rstrip()))
+        embedVar.add_item(TextDisplay(f"-# {rain_shill}"))
+
+        myview.add_item(embedVar)
 
         # just send if first time, otherwise edit existing
         try:
             if not do_edit:
                 raise ValueError
-            await interaction.response.edit_message(embed=embedVar, view=myview)
+            await interaction.response.edit_message(view=myview)
         except Exception:
-            await interaction.response.send_message(embed=embedVar, view=myview)
+            await interaction.response.send_message(view=myview)
 
         if leader:
             await achemb(message, "leader", "followup")
