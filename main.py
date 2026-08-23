@@ -1298,10 +1298,13 @@ async def update_snake(snake_data: Snake) -> None:
 
 async def snake_dms(voter_ids: set[int], msg: str) -> None:
     for uid in list(voter_ids):
-        user = await User.get_or_create(user_id=uid)
-        user_dm = await fetch_dm_channel(user)
-        await user_dm.send(msg)
-        await asyncio.sleep(0.5)
+        try:
+            user = await User.get_or_create(user_id=uid)
+            user_dm = await fetch_dm_channel(user)
+            await user_dm.send(msg)
+            await asyncio.sleep(0.5)
+        except Exception:
+            pass
 
 
 # a loop for various maintenance which is ran every minute
