@@ -5636,7 +5636,7 @@ async def packs(message: discord.Interaction):
         build_string = ""
         upgrades = 0
         if not is_single:
-            build_string = get_emoji(data.pack_data[level]["name"].lower() + "pack")
+            build_string = get_short_emoji(data.pack_data[level]["name"].lower() + "pack")
 
         is_special = data.pack_data[level]["special"]
         first_boost = 1
@@ -5648,26 +5648,29 @@ async def packs(message: discord.Interaction):
         # bump rarity
         while random.uniform(1, 100) <= data.pack_data[level]["upgrade"]:
             if is_single:
-                reward_texts.append(f"{get_emoji(data.pack_data[level]['name'].lower() + 'pack')} {data.pack_data[level]['name']}\n" + build_string)
-                build_string = f"Upgraded from {get_emoji(data.pack_data[level]['name'].lower() + 'pack')} {data.pack_data[level]['name']}!\n" + build_string
+                reward_texts.append(f"{get_short_emoji(data.pack_data[level]['name'].lower() + 'pack')} {data.pack_data[level]['name']}\n" + build_string)
+                build_string = (
+                    f"Upgraded from {get_short_emoji(data.pack_data[level]['name'].lower() + 'pack')} {data.pack_data[level]['name']}!\n" + build_string
+                )
             else:
-                build_string += f" -> {get_emoji(data.pack_data[level + first_boost]['name'].lower() + 'pack')}"
+                build_string += f" -> {get_short_emoji(data.pack_data[level + first_boost]['name'].lower() + 'pack')}"
             level += first_boost
             first_boost = 1
             upgrades += 1
         final_level = data.pack_data[level]
         if is_single:
-            reward_texts.append(f"{get_emoji(final_level['name'].lower() + 'pack')} {final_level['name']}\n" + build_string)
+            reward_texts.append(f"{get_short_emoji(final_level['name'].lower() + 'pack')} {final_level['name']}\n" + build_string)
 
         # select cat type
         chosen_type = random.choice(cattypes)
-        cat_emoji = get_aura_emoji(chosen_type, user.cat_auras)
+        cat_emoji = get_aura_emoji(chosen_type, user.cat_auras, short=True)
         pre_cat_amount: float = final_level["value"] / CAT_VALUES[chosen_type]
         cat_amount = math.ceil(pre_cat_amount) if pre_cat_amount % 1 > random.random() else math.floor(pre_cat_amount)
         if pre_cat_amount < 1:
             if is_single:
                 reward_texts.append(
-                    reward_texts[-1] + f"\n{round(pre_cat_amount * 100, 2)}% chance for a {get_aura_emoji(chosen_type, user.cat_auras)} {chosen_type} cat"
+                    reward_texts[-1]
+                    + f"\n{round(pre_cat_amount * 100, 2)}% chance for a {get_aura_emoji(chosen_type, user.cat_auras, short=True)} {chosen_type} cat"
                 )
                 reward_texts.append(reward_texts[-1] + ".")
                 reward_texts.append(reward_texts[-1] + ".")
@@ -5685,14 +5688,15 @@ async def packs(message: discord.Interaction):
                 if is_single:
                     reward_texts.append(reward_texts[-1] + "\n❌ Fail!")
                 else:
-                    build_string += f"❌ -> {get_aura_emoji('Fine', user.cat_auras)} 1"
+                    build_string += f"❌ -> {get_aura_emoji('Fine', user.cat_auras, short=True)} 1"
                 chosen_type = "Fine"
                 cat_amount = 1
         elif not is_single:
             build_string += f" {cat_emoji} {cat_amount:,}"
         if is_single:
             reward_texts.append(
-                reward_texts[-1] + f"\nYou got {get_aura_emoji(chosen_type, user.cat_auras)} {cat_amount:,} {chosen_type} {plural('cat', cat_amount)}!"
+                reward_texts[-1]
+                + f"\nYou got {get_aura_emoji(chosen_type, user.cat_auras, short=True)} {cat_amount:,} {chosen_type} {plural('cat', cat_amount)}!"
             )
             return chosen_type, cat_amount, upgrades, reward_texts
         return chosen_type, cat_amount, upgrades, build_string
