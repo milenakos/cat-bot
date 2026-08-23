@@ -2603,10 +2603,11 @@ async def on_message(message: discord.Message) -> None:
                 # aura farming
                 if random.random() < CAT_VALUES[channel.cattype] / 100000:
                     type_idx = cattypes.index(channel.cattype)
-                    new_auras = user.cat_auras.copy()
-                    new_auras[type_idx] = "r"
-                    user.cat_auras = new_auras
-                    suffix_string += f"\n{get_emoji(f'{channel.cattype.lower()}cat_r')} Rainbow aura for {channel.cattype} cat unlocked!!!"
+                    if user.cat_auras[type_idx] != "r":
+                        new_auras = user.cat_auras.copy()
+                        new_auras[type_idx] = "r"
+                        user.cat_auras = new_auras
+                        suffix_string += f"\n{get_emoji(f'{channel.cattype.lower()}cat_r')} Rainbow aura for {channel.cattype} cat unlocked!!!"
 
                 # calculate prism boost
                 global_boost = 0.06 * math.log(2 * total_count + 1)
