@@ -1224,13 +1224,17 @@ async def update_snake(snake_data: Snake) -> None:
     random.shuffle(vote_reset_list)
 
     valid_coords = {y * 10 + x for y in range(8) for x in range(8)}
+    move_mappings = {-10: "⬆️", 10: "⬇️", -1: "⬅️", 1: "➡️"}
 
     snake_data.next_update = round(time.time() - (time.time() % 3600) + 3600)
+
+    voter_ids = {int(i["user_id"]) for i in await _get_pool().fetch("SELECT user_id FROM profile WHERE voted_snake = true;")}
     await _get_pool().execute("UPDATE profile SET voted_snake = false WHERE voted_snake = true;")
 
     if not snake_data.active:
         # reset game
         snake_data.pieces = [random.randint(0, 7) * 10 + random.randint(0, 7)]
+        snake_data.apple = random.randint(0, 7) * 10 + random.randint(0, 7)
         while snake_data.apple == snake_data.pieces[0]:
             snake_data.apple = random.randint(0, 7) * 10 + random.randint(0, 7)
         snake_data.votes_left, snake_data.votes_up, snake_data.votes_down, snake_data.votes_right = vote_reset_list
@@ -1248,7 +1252,9 @@ async def update_snake(snake_data: Snake) -> None:
         # no tie
         winner = first[0]
 
-    coords = snake_data.pieces[-1]
+    move_emoji = move_mappings[winner[0] * 10 + winner[1]]
+    pieces = snake_data.pieces.copy()
+    coords = pieces[-1]
     y, x = coords // 10 + winner[0], coords % 10 + winner[1]
     new_coords = y * 10 + x
     if not (0 <= y < 8 and 0 <= x < 8):
@@ -1256,33 +1262,46 @@ async def update_snake(snake_data: Snake) -> None:
         snake_data.active = False
         snake_data.dead = True
         await snake_data.save()
+        await snake_dms(voter_ids, f"{move_emoji}💀 The snake has hit the wall!")
         return
 
     apple_y, apple_x = snake_data.apple // 10, snake_data.apple % 10
     if apple_y == y and apple_x == x:
         # apple eat
-        snake_data.pieces.append(new_coords)
-        apple_options = list(valid_coords - set(snake_data.pieces))
+        pieces.append(new_coords)
+        apple_options = list(valid_coords - set(pieces))
         if not apple_options:
             # win!
             snake_data.active = False
             await snake_data.save()
+            await snake_dms(voter_ids, f"{move_emoji}🎉 You won!")
             return
         snake_data.apple = random.choice(apple_options)
+        move_emoji += "🍎"
     else:
         # normal move
-        snake_data.pieces.append(new_coords)
-        snake_data.pieces.pop(0)
-        if new_coords in snake_data.pieces[:-1]:
+        pieces.append(new_coords)
+        pieces.pop(0)
+        if new_coords in pieces[:-1]:
             # tail hit
             snake_data.active = False
             snake_data.dead = True
             await snake_data.save()
+            await snake_dms(voter_ids, f"{move_emoji}💀 The snake has hit it's tail!")
             return
 
-    snake_data.pieces = snake_data.pieces.copy()  # to update db properly
+    snake_data.pieces = pieces
     snake_data.votes_left, snake_data.votes_up, snake_data.votes_down, snake_data.votes_right = vote_reset_list
     await snake_data.save()
+    await snake_dms(voter_ids, f"{move_emoji} The snake has moved!")
+
+
+async def snake_dms(voter_ids: set[int], msg: str) -> None:
+    for uid in list(voter_ids):
+        user = await User.get_or_create(user_id=uid)
+        user_dm = await fetch_dm_channel(user)
+        await user_dm.send(msg)
+        await asyncio.sleep(0.5)
 
 
 # a loop for various maintenance which is ran every minute
@@ -6722,7 +6741,7 @@ async def snake(message: discord.Interaction):
         prev_move = ""
         if len(snake_data.pieces) > 1:
             mappings = {-10: "⬆️", 10: "⬇️", -1: "⬅️", 1: "➡️"}
-            offset = snake_data.pieces[-2] - snake_data.pieces[-1]
+            offset = snake_data.pieces[-1] - snake_data.pieces[-2]
             prev_move = f"Previous move: {mappings[offset]}\n"
         embed.add_item(
             TextDisplay(
