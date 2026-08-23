@@ -1238,7 +1238,7 @@ async def update_snake(snake_data: Snake) -> None:
 
     vote_results = {(-1, 0): snake_data.votes_up, (1, 0): snake_data.votes_down, (0, -1): snake_data.votes_left, (0, 1): snake_data.votes_right}
     first, second, _, fourth = list(dict(sorted(vote_results.items(), key=lambda item: item[1], reverse=True)).items())
-    if second[1] <= 0 or first[1] <= second[1] * 1.05:
+    if first[1] <= 0 or first[1] <= second[1] * 1.05:
         # tie
         winner = fourth[0]
     else:
@@ -6731,7 +6731,7 @@ In case top 2 are within 5% of each other, the disabled move will be used instea
 
         vote_results = [snake_data.votes_up, snake_data.votes_down, snake_data.votes_left, snake_data.votes_right]
         first, second, _, fourth = sorted(vote_results, reverse=True)
-        if second <= 0 or first <= second * 1.05:
+        if first <= 0 or first <= second * 1.05:
             # tie
             winner = fourth
         else:
