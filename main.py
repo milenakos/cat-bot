@@ -54,7 +54,7 @@ import config
 import graph
 import msg2img
 from catpg import RawSQL, _get_pool, transaction
-from database import Channel, PortfolioHistory, PriceHistory, Prism, Profile, Reminder, Restore, Server, User
+from database import Channel, PortfolioHistory, PriceHistory, Prism, Profile, Reminder, Restore, Server, Snake, User
 
 try:
     import exportbackup  # type: ignore
@@ -304,6 +304,9 @@ OWNER_ID = 553093932012011520
 
 # for funny stats, you can probably edit background_loop to restart every X of them
 loop_count = 0
+
+# :truefear:
+murdered = False
 
 # loops in dpy can randomly break, i check if is been over X minutes since last loop to restart it
 last_loop_time = 0
@@ -1207,6 +1210,78 @@ async def send_quest_reminders(quest_type: str, start_time: int) -> None:
     log_stats("reminders", {"type": quest_type}, reminder_count)
 
 
+async def update_snake(snake_data: Snake) -> None:
+    await asyncio.sleep(snake_data.next_update - time.time())
+    if murdered:
+        return
+
+    await snake_data.refresh_from_db()
+
+    vote_reset_list = [0, 0, 0, -100]
+    random.shuffle(vote_reset_list)
+
+    valid_coords = {y * 10 + x for y in range(8) for x in range(8)}
+
+    snake_data.next_update = round(time.time() - (time.time() % 3600) + 3600)
+    await _get_pool().execute("UPDATE profile SET voted_snake = false WHERE voted_snake = true;")
+
+    if not snake_data.active:
+        # reset game
+        snake_data.pieces = [random.randint(0, 7) * 10 + random.randint(0, 7)]
+        while snake_data.apple == snake_data.pieces[0]:
+            snake_data.apple = random.randint(0, 7) * 10 + random.randint(0, 7)
+        snake_data.votes_left, snake_data.votes_up, snake_data.votes_down, snake_data.votes_right = vote_reset_list
+        snake_data.active = True
+        snake_data.dead = False
+        await snake_data.save()
+        return
+
+    vote_results = {(-1, 0): snake_data.votes_up, (1, 0): snake_data.votes_down, (0, -1): snake_data.votes_left, (0, 1): snake_data.votes_right}
+    first, second, _, fourth = list(dict(sorted(vote_results.items(), key=lambda item: item[1], reverse=True)).items())
+    if second[1] <= 0 or first[1] <= second[1] * 1.05:
+        # tie
+        winner = fourth[0]
+    else:
+        # no tie
+        winner = first[0]
+
+    coords = snake_data.pieces[-1]
+    y, x = coords // 10 + winner[0], coords % 10 + winner[1]
+    new_coords = y * 10 + x
+    if not (0 <= y < 8 and 0 <= x < 8):
+        # wall hit
+        snake_data.active = False
+        snake_data.dead = True
+        await snake_data.save()
+        return
+
+    apple_y, apple_x = snake_data.apple // 10, snake_data.apple % 10
+    if apple_y == y and apple_x == x:
+        # apple eat
+        snake_data.pieces.append(new_coords)
+        apple_options = list(valid_coords - set(snake_data.pieces))
+        if not apple_options:
+            # win!
+            snake_data.active = False
+            await snake_data.save()
+            return
+        snake_data.apple = random.choice(apple_options)
+    else:
+        # normal move
+        snake_data.pieces.append(new_coords)
+        snake_data.pieces.pop(0)
+        if new_coords in snake_data.pieces[:-1]:
+            # tail hit
+            snake_data.active = False
+            snake_data.dead = True
+            await snake_data.save()
+            return
+
+    snake_data.pieces = snake_data.pieces.copy()  # to update db properly
+    snake_data.votes_left, snake_data.votes_up, snake_data.votes_down, snake_data.votes_right = vote_reset_list
+    await snake_data.save()
+
+
 # a loop for various maintenance which is ran every minute
 async def background_loop() -> None:
     global pointlaugh_ratelimit, reactions_ratelimit, loop_count, last_vote_cursor, server_count, emojis
@@ -1298,6 +1373,11 @@ async def background_loop() -> None:
             logger.warning("Posting to top.gg failed.")
 
     assert bot.user is not None
+
+    # refresh snake
+    snake_data = await Snake.get_or_create(id=1)
+    if snake_data.next_update - time.time() < 58:
+        bot.loop.create_task(update_snake(snake_data))
 
     # refresh materialized view
     await _get_pool().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY profile_sums_mv;")
@@ -6555,6 +6635,141 @@ async def bruh(message: discord.Interaction):
     await message.delete_original_response()
 
 
+@bot.tree.command(description="do cats even eat apples")
+async def snake(message: discord.Interaction):
+    snake_data = await Snake.get_or_create(id=1)
+
+    async def vote_direction(interaction: discord.Interaction) -> None:
+        assert interaction.guild is not None
+        direction = interaction.custom_id
+
+        await snake_data.refresh_from_db()
+        if not snake_data.active or snake_data[f"votes_{direction}"] < 0:
+            await interaction.response.edit_message(view=await gen_main())
+            await interaction.followup.send("you voted on an outdated overview. please vote again.", ephemeral=True)
+            return
+
+        profile = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
+        if profile.voted_snake:
+            await interaction.response.send_message("you already voted", ephemeral=True)
+            return
+
+        profile.voted_snake = True
+        await profile.save()
+        snake_data[f"votes_{direction}"] += 1
+        await snake_data.save()
+
+        await interaction.response.edit_message(view=await gen_main())
+
+        await achemb(interaction, "snaker", "followup")
+
+    async def gen_main():
+        await snake_data.refresh_from_db()
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        embed = Container(f"## {get_emoji('staring_cat')} snake", f"next update <t:{snake_data.next_update}:R>")
+
+        board = [["⬛"] * 8 for _ in range(8)]
+
+        apple_y, apple_x = (snake_data.apple // 10, snake_data.apple % 10)
+        board[apple_y][apple_x] = "🍎"
+
+        head_emoji = "staring_cat"
+        if snake_data.dead:
+            head_emoji = "💀"
+        elif not snake_data.active:
+            head_emoji = "insane"
+
+        def pos(piece: int) -> tuple[int, int]:
+            return (piece // 10, piece % 10)
+
+        tail_emojis = {-10: "snake_p", 10: "snake_d", 1: "snake_r", -1: "snake_l"}
+        corner_emojis = {-11: "snake_ul", 9: "snake_dl", -9: "snake_ur", 11: "snake_dr"}
+
+        for i, piece in enumerate(snake_data.pieces):
+            y, x = pos(piece)
+            if i == len(snake_data.pieces) - 1:
+                # head
+                emoji_name = head_emoji
+            elif i == 0:
+                # tail
+                ny, nx = pos(snake_data.pieces[i + 1])
+                dy, dx = ny - y, nx - x
+                emoji_name = tail_emojis[(dy * 10) + dx]
+            else:
+                # body
+                dirs = 0
+                for other in (snake_data.pieces[i - 1], snake_data.pieces[i + 1]):
+                    oy, ox = pos(other)
+                    if oy != y:
+                        dirs += -10 if oy < y else 10
+                    if ox != x:
+                        dirs += -1 if ox < x else 1
+
+                if dirs in corner_emojis:
+                    # corner
+                    emoji_name = corner_emojis[dirs]
+                else:
+                    # straight
+                    emoji_name = "snake_v" if abs(dirs) == 10 else "snake_h"
+
+            board[y][x] = get_emoji(emoji_name)
+
+        embed.add_item(TextDisplay("\n".join("".join(row) for row in board)))
+
+        prev_move = ""
+        if len(snake_data.pieces) > 1:
+            mappings = {-10: "⬆️", 10: "⬇️", -1: "⬅️", 1: "➡️"}
+            offset = snake_data.pieces[-2] - snake_data.pieces[-1]
+            prev_move = f"Previous move: {mappings[offset]}\n"
+        embed.add_item(
+            TextDisplay(
+                f"""{prev_move}Snake moves every hour following the most voted option.
+Each move, a random option will be disabled.
+In case top 2 are within 5% of each other, the disabled move will be used instead."""
+            )
+        )
+
+        vote_results = [snake_data.votes_up, snake_data.votes_down, snake_data.votes_left, snake_data.votes_right]
+        first, second, _, fourth = sorted(vote_results, reverse=True)
+        if second <= 0 or first <= second * 1.05:
+            # tie
+            winner = fourth
+        else:
+            # no tie
+            winner = first
+
+        arrows = {"up": "⬆️", "down": "⬇️", "left": "⬅️", "right": "➡️"}
+        if snake_data.active:
+            row = ActionRow()
+            for direction in ["up", "down", "left", "right"]:
+                dir_votes = snake_data[f"votes_{direction}"]
+                btn = Button(
+                    emoji=arrows[direction],
+                    label=f"({dir_votes:,})" if dir_votes >= 0 else "(disabled)",
+                    disabled=dir_votes < 0,
+                    style=ButtonStyle.green if dir_votes == winner else ButtonStyle.gray,
+                    custom_id=direction,
+                )
+                btn.callback = vote_direction
+                row.add_item(btn)
+            embed.add_item(row)
+        elif snake_data.dead:
+            embed.add_item(TextDisplay("u dead"))
+        else:
+            embed.add_item(TextDisplay("GG HOLY SHIT"))
+        view.add_item(embed)
+
+        button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
+        button.callback = refresh
+        view.add_item(ActionRow(button))
+        return view
+
+    async def refresh(interaction: discord.Interaction) -> None:
+        await interaction.response.edit_message(view=await gen_main())
+
+    await message.response.send_message(view=await gen_main())
+
+
 @bot.tree.command(description="play a relaxing game of tic tac toe (ttt)")
 @discord.app_commands.describe(person="who do you want to play with? (choose Cat Bot for ai)")
 async def tictactoe(message: discord.Interaction, person: discord.Member):
@@ -11392,6 +11607,8 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
 
 
 async def teardown(bot: commands.AutoShardedBot) -> None:
+    global murdered
+    murdered = True
     if vote_server:
         await vote_server.cleanup()
 

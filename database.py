@@ -87,3 +87,7 @@ class PortfolioHistory(catpg.Model):
 
 class Restore(catpg.Model):
     pass
+
+
+class Snake(catpg.Model):
+    pass

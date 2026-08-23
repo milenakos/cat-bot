@@ -331,7 +331,9 @@ CREATE TABLE public.profile (
     fish_clover_durability integer DEFAULT 0,
     compact_inventory boolean DEFAULT true,
     master_baiter boolean DEFAULT false,
-    cat_auras char(1)[22] DEFAULT array_fill(' '::char(1), ARRAY[22])
+    cat_auras char(1)[22] DEFAULT array_fill(' '::char(1), ARRAY[22]),
+    voted_snake boolean DEFAULT false,
+    snaker boolean DEFAULT false
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;
@@ -480,6 +482,22 @@ CREATE SEQUENCE public.pricehistory_id_seq
 ALTER TABLE public.pricehistory_id_seq OWNER TO cat_bot;
 
 ALTER SEQUENCE public.pricehistory_id_seq OWNED BY public.pricehistory.id;
+
+CREATE TABLE public.snake (
+    id smallint DEFAULT 1 UNIQUE,
+    active boolean DEFAULT false,
+    dead boolean DEFAULT false,
+    next_update bigint DEFAULT 0,
+    pieces smallint[] DEFAULT '{}'::smallint[],
+    apple smallint DEFAULT 0,
+    votes_left integer DEFAULT 0,
+    votes_right integer DEFAULT 0,
+    votes_up integer DEFAULT 0,
+    votes_down integer DEFAULT 0
+);
+
+ALTER TABLE public.snake OWNER TO cat_bot;
+
 
 ALTER TABLE ONLY public.prism ALTER COLUMN id SET DEFAULT nextval('public.prism_id_seq'::regclass);
 
