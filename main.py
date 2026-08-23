@@ -5597,7 +5597,7 @@ async def packs(message: discord.Interaction):
 
         await interaction.response.send_modal(modal)
 
-    def gen_buttons(user: Profile) -> tuple[list[ActionRow], bool]:
+    def gen_buttons(user: Profile) -> tuple[list[ActionRow], bool, int]:
         buttons = []
         has_special = False
         total_packs = 0
@@ -5628,7 +5628,7 @@ async def packs(message: discord.Interaction):
         for i in range(0, len(buttons), 5):
             rows.append(ActionRow(*buttons[i : i + 5]))
 
-        return rows, has_special
+        return rows, has_special, total_packs
 
     def get_pack_rewards(level: int, is_single: bool = True) -> tuple[str, int, int, str | list[str]]:
         # returns cat_type, cat_amount, upgrades, verbal_output
@@ -5735,7 +5735,7 @@ async def packs(message: discord.Interaction):
         await asyncio.sleep(1)
 
         assert last_container is not None
-        buttons, _ = gen_buttons(user)
+        buttons, _, _ = gen_buttons(user)
         view = LayoutView(timeout=VIEW_TIMEOUT)
         last_container.add_item(Separator())
         for i in buttons:
@@ -5767,7 +5767,7 @@ async def packs(message: discord.Interaction):
         await interaction.response.edit_message(view=view)
 
         await asyncio.sleep(1)
-        buttons, _ = gen_buttons(user)
+        buttons, _, _ = gen_buttons(user)
         view = LayoutView(timeout=VIEW_TIMEOUT)
         embed.add_item(Separator())
         for i in buttons:
@@ -5800,10 +5800,10 @@ async def packs(message: discord.Interaction):
 
     async def gen_main() -> LayoutView:
         view = LayoutView(timeout=VIEW_TIMEOUT)
-        buttons, has_special = gen_buttons(user)
+        buttons, has_special, total_packs = gen_buttons(user)
         embed = Container(
             f"## {get_emoji('goldpack')} Packs",
-            "Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n[Chance Info](<https://catbot.minkos.lol/packs>)",
+            f"Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n[Chance Info](<https://catbot.minkos.lol/packs>)\nYou have **{total_packs:,}** total packs.",
         )
 
         if has_special:
