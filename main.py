@@ -1217,6 +1217,9 @@ async def update_snake(snake_data: Snake) -> None:
 
     await snake_data.refresh_from_db()
 
+    if snake_data.next_update > 0 and abs(snake_data.next_update - time.time()) > 60:
+        return
+
     vote_reset_list = [0, 0, 0, -100]
     random.shuffle(vote_reset_list)
 
