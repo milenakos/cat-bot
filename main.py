@@ -6716,7 +6716,7 @@ async def snake(message: discord.Interaction):
         def pos(piece: int) -> tuple[int, int]:
             return (piece // 10, piece % 10)
 
-        tail_emojis = {-10: "snake_p", 10: "snake_d", 1: "snake_r", -1: "snake_l"}
+        tail_emojis = {-10: "snake_u", 10: "snake_d", 1: "snake_r", -1: "snake_l"}
         corner_emojis = {-11: "snake_ul", 9: "snake_dl", -9: "snake_ur", 11: "snake_dr"}
 
         for i, piece in enumerate(snake_data.pieces):
