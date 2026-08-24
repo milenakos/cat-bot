@@ -4213,8 +4213,12 @@ async def last(message: discord.Interaction):
 async def catalogue(message: discord.Interaction):
     assert message.guild is not None
     embed = discord.Embed(title=f"{get_emoji('staring_cat')} The Catalogue", color=Colors.brown)
+    sums = await _get_pool().fetchrow(
+        "SELECT " + ", ".join(f'SUM("cat_{t}") AS "{t}"' for t in cattypes) + ' FROM "profile" WHERE guild_id = $1;',
+        message.guild.id,
+    )
     for cat_type in cattypes:
-        in_server = await Profile.sum(f"cat_{cat_type}", f'guild_id = $1 AND "cat_{cat_type}" > 0', message.guild.id)
+        in_server = sums[cat_type] or 0
         title = f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}"
         if in_server == 0 or not in_server:
             in_server = 0
