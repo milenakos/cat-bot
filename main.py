@@ -4344,7 +4344,7 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
     stats.append(["roulette_spins", "💰", f"Roulette spins: {profile.roulette_spins:,}, wins: {profile.roulette_wins:,}"])
     stats.append(["portfolio_value", "🪙", f"Portfolio value: {int(portfolio_value):,}"])
     stats.append(["cookies", "🍪", f"Cookies clicked: {profile.cookies:,}"])
-    stats.append(["coffees", "☕", f"Coofees brewed: {profile.coffees:,}"])
+    stats.append(["coffees", "☕", f"Coffees brewed: {profile.coffees:,}"])
     stats.append(["catfishing", "🎣", f"Fish caught: {profile.fish_caught:,}, rarest: {rarest_fish}"])
     stats.append(["pig_high_score", "🎲", f"Pig high score: {profile.best_pig_score:,}"])
     stats.append(["cats_gifted", "🎁", f"Cats gifted: {profile.cats_gifted:,}{star}"])
