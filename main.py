@@ -6732,19 +6732,21 @@ async def snake(message: discord.Interaction):
             else:
                 # body
                 dirs = 0
+                change = 0
                 for other in (snake_data.pieces[i - 1], snake_data.pieces[i + 1]):
                     oy, ox = pos(other)
                     if oy != y:
-                        dirs += -10 if oy < y else 10
+                        change = -10 if oy < y else 10
                     if ox != x:
-                        dirs += -1 if ox < x else 1
+                        change = -1 if ox < x else 1
+                    dirs += change
 
                 if dirs in corner_emojis:
                     # corner
                     emoji_name = corner_emojis[dirs]
                 else:
                     # straight
-                    emoji_name = "snake_v" if abs(dirs) == 10 else "snake_h"
+                    emoji_name = "snake_v" if abs(change) == 10 else "snake_h"
 
             board[y][x] = get_emoji(emoji_name)
 
