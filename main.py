@@ -4362,42 +4362,48 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
 async def stats_command(message: discord.Interaction, person_id: discord.User | discord.Member | None = None):
     if not person_id:
         person_id = message.user
-    assert message.guild is not None
-    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
-    star = "*" if not profile.new_user else ""
 
-    stats = await gen_stats(profile, star)
-    embedVar = discord.Embed(
-        title=f"{person_id.name}'s Stats",
-        color=Colors.brown,
-    )
+    async def gen_page(person: discord.User | discord.Member, page: str) -> LayoutView:
+        assert message.guild is not None
+        profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=person.id)
+        star = "*" if not profile.new_user else ""
 
-    current_category = None
-    current_lines = []
+        stats = await gen_stats(profile, star)
 
-    for stat in stats:
-        if len(stat) == 2:
-            # remove prev cat
-            if current_category:
-                embedVar.add_field(name=current_category, value="\n".join(current_lines), inline=True)
+        async def change(interaction: discord.Interaction) -> None:
+            view = await gen_page(user_select.values[0], page_select.values[0])
+            await interaction.response.edit_message(view=view)
 
-            # start new cat
-            current_category = f"{stat[0]} {stat[1]}"
-            current_lines = []
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        user_select = discord.ui.UserSelect(placeholder="Filter by user...", min_values=1, max_values=1, default_values=[person])
+        user_select.callback = change
+        page_options = [discord.SelectOption(label=i[1], emoji=i[0], default=page == i[1]) for i in stats if len(i) == 2]
+        page_select = discord.ui.Select(placeholder="Choose Page", min_values=1, max_values=1, options=page_options)
+        page_select.callback = change
 
-        elif len(stat) == 3:
-            current_lines.append(stat[2])
+        track = False
+        lines = []
 
-    # add last cat
-    if current_category:
-        embedVar.add_field(name=current_category, value="\n".join(current_lines), inline=True)
+        for stat in stats:
+            if len(stat) == 2:
+                track = stat[1] == page
+            elif len(stat) == 3 and track:
+                lines.append(stat[1] + " " + stat[2])
 
-    if star:
-        embedVar.set_footer(text="* this stat is only tracked since February 2025")
-    if person_id == bot.user:
-        embedVar.set_footer(text="dont believe the lies i every stat maxxed")
+        embedVar = Container(
+            ActionRow(user_select),
+            ActionRow(page_select),
+            "\n".join(lines),
+        )
 
-    await message.response.send_message(embed=embedVar)
+        if person == bot.user:
+            embedVar.add_item(TextDisplay("-# dont believe the lies i every stat maxxed"))
+        elif star:
+            embedVar.add_item(TextDisplay("-# * this stat is only tracked since February 2025"))
+
+        return view
+
+    await message.response.send_message(view=await gen_page(person_id, "Catching"))
 
 
 async def gen_inventory(
