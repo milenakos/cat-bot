@@ -4370,16 +4370,20 @@ async def stats_command(message: discord.Interaction, person_id: discord.User | 
 
         stats = await gen_stats(profile, star)
 
-        async def change(interaction: discord.Interaction) -> None:
-            view = await gen_page(user_select.values[0], page_select.values[0])
+        async def change_page(interaction: discord.Interaction) -> None:
+            view = await gen_page(person, page_select.values[0])
+            await interaction.response.edit_message(view=view)
+
+        async def change_user(interaction: discord.Interaction) -> None:
+            view = await gen_page(user_select.values[0], page)
             await interaction.response.edit_message(view=view)
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
         user_select = discord.ui.UserSelect(placeholder="Filter by user...", min_values=1, max_values=1, default_values=[person])
-        user_select.callback = change
+        user_select.callback = change_page
         page_options = [discord.SelectOption(label=i[1], emoji=i[0], default=page == i[1]) for i in stats if len(i) == 2]
         page_select = discord.ui.Select(placeholder="Choose Page", min_values=1, max_values=1, options=page_options)
-        page_select.callback = change
+        page_select.callback = change_user
 
         track = False
         lines = []
