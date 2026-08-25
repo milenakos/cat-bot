@@ -4401,6 +4401,7 @@ async def stats_command(message: discord.Interaction, person_id: discord.User | 
         elif star:
             embedVar.add_item(TextDisplay("-# * this stat is only tracked since February 2025"))
 
+        view.add_item(embedVar)
         return view
 
     await message.response.send_message(view=await gen_page(person_id, "Catching"))
@@ -8453,7 +8454,7 @@ async def slots(message: discord.Interaction):
             pass
 
         variants = ["🍒", "🍋", "🍇", "🔔", "⭐", ":seven:"]
-        reel_durations = [random.randint(9, 12), random.randint(15, 22), random.randint(25, 28)]
+        reel_durations = [random.randint(3, 6), random.randint(7, 10), random.randint(11, 14)]
         random.shuffle(reel_durations)
 
         # the k number is much cycles it will go before stopping + 1
@@ -8488,7 +8489,7 @@ async def slots(message: discord.Interaction):
                 await interaction.edit_original_response(embed=embed, view=None)
             except Exception:
                 pass
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.3)
 
         await profile.refresh_from_db()
         big_win = False
@@ -8623,7 +8624,7 @@ async def roulette(message: discord.Interaction):
             user.roulette_balance = round(user.roulette_balance)
             await user.save()
 
-            for wait_time in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.5]:
+            for wait_time in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
                 choice = random.randint(0, 36)
                 color = colors[choice]
                 embed = discord.Embed(
@@ -8685,6 +8686,17 @@ async def roulette(message: discord.Interaction):
 
     if user.roulette_balance < 0:
         await achemb(message, "failed_gambler", "followup")
+
+
+@bot.tree.command(description="catjack is awful")
+async def blackcat(message: discord.Interaction):
+    view = LayoutView(timeout=VIEW_TIMEOUT)
+    view.add_item(
+        Container(
+            "## 🃏 blackcat",
+            "__how to play:__ click a button to add a random number to the score. you want to get as much as possible, but if you go over 21 you lose. cat bot will then do the same, and whoever gets more wins!",
+        )
+    )
 
 
 @bot.tree.command(description="absolute CHAOS")
