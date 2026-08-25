@@ -4403,7 +4403,7 @@ async def stats_command(message: discord.Interaction, person_id: discord.User | 
         if person == bot.user:
             embedVar.add_item(TextDisplay("-# dont believe the lies i every stat maxxed"))
         elif star:
-            embedVar.add_item(TextDisplay("-# * this stat is only tracked since February 2025"))
+            embedVar.add_item(TextDisplay("-# \\*this stat is only tracked since February 2025"))
 
         view.add_item(embedVar)
         return view
