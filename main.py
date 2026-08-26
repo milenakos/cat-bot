@@ -1300,6 +1300,8 @@ async def snake_dms(voter_ids: set[int], msg: str) -> None:
     for uid in list(voter_ids):
         try:
             user = await User.get_or_create(user_id=uid)
+            if not user.snake_dms:
+                continue
             user_dm = await fetch_dm_channel(user)
             await user_dm.send(msg)
             await asyncio.sleep(0.5)
@@ -6682,6 +6684,17 @@ async def bruh(message: discord.Interaction):
 async def snake(message: discord.Interaction):
     snake_data = await Snake.get_or_create(id=1)
 
+    async def toggle_dms(interaction: discord.Interaction) -> None:
+        assert interaction.guild is not None
+        user = await User.get_or_create(user_id=interaction.user.id)
+        if user.snake_dms:
+            user.snake_dms = False
+            await interaction.response.send_message("You will no longer get DMs whenever the snake moves.", ephemeral=True)
+        else:
+            user.snake_dms = True
+            await interaction.response.send_message("You will now get a DM whenever the snake moves. (only if you voted in the last hour)", ephemeral=True)
+        await user.save()
+
     async def vote_direction(interaction: discord.Interaction) -> None:
         assert interaction.guild is not None
         direction = interaction.custom_id
@@ -6802,7 +6815,9 @@ Currently winning: {winner}"""
 
         button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
         button.callback = refresh
-        view.add_item(ActionRow(button))
+        button2 = Button(emoji="🔔", label="Toggle Move DMs", style=ButtonStyle.blurple)
+        button2.callback = toggle_dms
+        view.add_item(ActionRow(button, button2))
         return view
 
     async def refresh(interaction: discord.Interaction) -> None:
