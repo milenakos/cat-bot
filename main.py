@@ -503,6 +503,10 @@ async def achemb(
 
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=author)
 
+    if ach_id == "failed_gambler":
+        assert isinstance(message, discord.Interaction)
+        await message.followup.send("you lost all your money! get *+100 more cat dollars* whenever you complete the vote quest.")
+
     if profile[ach_id]:
         return
 
