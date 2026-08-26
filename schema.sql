@@ -103,7 +103,6 @@ CREATE TABLE public.profile (
     first_quote_seen boolean DEFAULT false,
     funny integer DEFAULT 0,
     facts integer DEFAULT 0,
-    gambles smallint DEFAULT 0,
     "cat_Fine" integer DEFAULT 0,
     "cat_Nice" integer DEFAULT 0,
     "cat_Good" integer DEFAULT 0,
@@ -178,7 +177,6 @@ CREATE TABLE public.profile (
     sacrifice boolean DEFAULT false,
     not_like_that boolean DEFAULT false,
     gambling_one boolean DEFAULT false,
-    broke boolean DEFAULT false,
     secret boolean DEFAULT false,
     good_citizen boolean DEFAULT false,
     perfectly_balanced boolean DEFAULT false,
@@ -280,7 +278,7 @@ CREATE TABLE public.profile (
     pig100 boolean DEFAULT false,
     sphere_easter_egg smallint DEFAULT 0,
     sphere_ach boolean DEFAULT false,
-    roulette_balance bigint DEFAULT 100,
+    roulette_balance bigint DEFAULT 1000,
     roulette_wins integer DEFAULT 0,
     roulette_spins integer DEFAULT 0,
     roulette_winner boolean DEFAULT false,
@@ -333,7 +331,10 @@ CREATE TABLE public.profile (
     master_baiter boolean DEFAULT false,
     cat_auras char(1)[22] DEFAULT array_fill(' '::char(1), ARRAY[22]),
     voted_snake boolean DEFAULT false,
-    snaker boolean DEFAULT false
+    snaker boolean DEFAULT false,
+    blackjacks integer DEFAULT 0,
+    blackjack_wins integer DEFAULT 0,
+    twenty_one boolean DEFAULT false
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;
@@ -570,10 +571,6 @@ CREATE INDEX idx_yet_to_spawn ON public.channel (yet_to_spawn);
 
 CREATE MATERIALIZED VIEW public.profile_sums_mv AS SELECT
     1 as id,
-    COALESCE(SUM(slot_spins), 0) AS sum_spins,
-    COALESCE(SUM(slot_big_wins), 0) AS sum_big_wins,
-    COALESCE(SUM(slot_wins), 0) AS sum_wins,
-    COALESCE(SUM(gambles), 0) AS sum_gambles,
     COALESCE(SUM(total_catches), 0) AS sum_catches,
     COALESCE(SUM(stock_prsm), 0) AS sum_stock_prsm,
     COALESCE(SUM(stock_ctnp), 0) AS sum_stock_ctnp,

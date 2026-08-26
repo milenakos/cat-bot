@@ -751,6 +751,8 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         if streak_data["reward"]:
             user[f"pack_{streak_data['reward']}"] += 1
 
+        user.roulette_balance += 100
+
         current_xp = user.progress + user.vote_reward
     elif user.misc_quest == quest:
         if user.misc_cooldown != 0:
@@ -4341,7 +4343,7 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
         )
     else:
         stats.append(["ttc_win_rate", "⭕", "Tic Tac Toe wins: 0 (winrate: 0%)"])
-    stats.append(["casino_spins", "🎰", f"Casino spins: {profile.gambles:,}"])
+    stats.append(["blackcat", "🃏", f"Blackcat games: {profile.blackjacks:,}, wins: {profile.blackjack_wins:,}"])
     stats.append(["slot_spins", "🎰", f"Slot spins: {profile.slot_spins:,}, wins: {profile.slot_wins:,}, big wins: {profile.slot_big_wins:,}"])
     stats.append(["roulette_spins", "💰", f"Roulette spins: {profile.roulette_spins:,}, wins: {profile.roulette_wins:,}"])
     stats.append(["portfolio_value", "🪙", f"Portfolio value: {int(portfolio_value):,}"])
@@ -8305,108 +8307,50 @@ async def bakery(message: discord.Interaction):
     await message.response.send_message(view=await gen_bakery())
 
 
-@bot.tree.command(description="Gamble your life savings away in our totally-not-rigged catsino!")
-async def casino(message: discord.Interaction):
-    assert message.guild is not None
-    if (message.guild.id, message.user.id) in casino_lock:
-        await message.response.send_message(
-            "you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe",
-            ephemeral=True,
+def casino_row(user: Profile, current: str) -> ActionRow:
+    casino_view_data = [
+        {"emoji": "🎰", "callback": slots.callback},
+        {"emoji": "🎡", "callback": roulette.callback},
+        {"emoji": "🃏", "callback": blackcat.callback},
+        {"label": f"{user.roulette_balance:,}", "emoji": "💰", "callback": casino_overview},
+    ]
+    row = ActionRow()
+    for entry in casino_view_data:
+        button = Button(
+            label=entry.get("label", None),
+            emoji=entry["emoji"],
+            style=ButtonStyle.green if current == entry["emoji"] else ButtonStyle.gray,
         )
-        await achemb(message, "paradoxical_gambler", "followup")
-        return
+        button.callback = entry["callback"]
+        row.add_item(button)
+    return row
 
+
+def casino_impostor(interaction: discord.Interaction) -> bool:
+    return bool(interaction.message) and bool(interaction.message.interaction_metadata) and interaction.message.interaction_metadata.user != interaction.user
+
+
+async def casino_overview(message: discord.Interaction):
+    if casino_impostor(message):
+        return await do_funny(message)
+    assert message.guild is not None
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    # funny global gamble counter cus funny
-    total_sum = await _get_pool().fetchval("SELECT sum_gambles FROM profile_sums_mv;")
-    embed = discord.Embed(
-        title="🎲 The Catsino",
-        description=f"One spin costs 5 {get_emoji('finecat')} Fine cats\nSo far you gambled {profile.gambles} times.\nAll Cat Bot users gambled {total_sum:,} times.",
-        color=Colors.maroon,
-    )
-
-    async def spin(interaction: discord.Interaction) -> None:
-        nonlocal message
-        assert message.guild is not None
-        if interaction.user.id != message.user.id:
-            await do_funny(interaction)
-            return
-        if (message.guild.id, message.user.id) in casino_lock:
-            await interaction.response.send_message(
-                "you get kicked out of the catsino because you are already there, and two of you playing at once would cause a glitch in the universe",
-                ephemeral=True,
-            )
-            return
-
-        await profile.refresh_from_db()
-        if profile.cat_Fine < 5:
-            await interaction.response.send_message("you are too broke now", ephemeral=True)
-            await achemb(interaction, "broke", "followup")
-            return
-
-        await interaction.response.defer()
-        amount = random.randint(1, 5)
-        casino_lock.add((message.guild.id, message.user.id))
-        profile.cat_Fine += amount - 5
-        profile.gambles += 1
-        await profile.save()
-
-        if profile.gambles >= 10:
-            await achemb(message, "gambling_one", "followup")
-        if profile.gambles >= 50:
-            await achemb(message, "gambling_two", "followup")
-
-        variants = [
-            f"{get_emoji('egirlcat')} 1 eGirl cat",
-            f"{get_emoji('egirlcat')} 3 eGirl cats",
-            f"{get_emoji('ultimatecat')} 2 Ultimate cats",
-            f"{get_emoji('corruptcat')} 7 Corrupt cats",
-            f"{get_emoji('divinecat')} 4 Divine cats",
-            f"{get_emoji('epiccat')} 10 Epic cats",
-            f"{get_emoji('professorcat')} 5 Professor cats",
-            f"{get_emoji('realcat')} 2 Real cats",
-            f"{get_emoji('legendarycat')} 5 Legendary cats",
-            f"{get_emoji('mythiccat')} 2 Mythic cats",
-            f"{get_emoji('8bitcat')} 7 8bit cats",
-        ]
-
-        random.shuffle(variants)
-
-        for i in variants:
-            embed = discord.Embed(title="🎲 The Catsino", description=f"**{i}**", color=Colors.maroon)
-            try:
-                await interaction.edit_original_response(embed=embed, view=None)
-            except Exception:
-                pass
-            await asyncio.sleep(1)
-
-        embed = discord.Embed(
-            title="🎲 The Catsino",
-            description=f"You won:\n**{get_emoji('finecat')} {amount} Fine {plural('cat', amount)}**",
+    view = LayoutView(timeout=VIEW_TIMEOUT)
+    view.add_item(casino_row(profile, "💰"))
+    view.add_item(
+        Container(
+            f"your balance is **{profile.roulette_balance:,}** {plural('cat dollar', profile.roulette_balance)}",
+            "you earn **100 cat dollars** whenever you complete the vote quest.",
             color=Colors.maroon,
         )
-
-        button = Button(label="Spin", style=ButtonStyle.blurple)
-        button.callback = spin
-
-        myview = View(timeout=VIEW_TIMEOUT)
-        myview.add_item(button)
-
-        casino_lock.discard((message.guild.id, message.user.id))
-
-        await interaction.edit_original_response(embed=embed, view=myview)
-
-    button = Button(label="Spin", style=ButtonStyle.blurple)
-    button.callback = spin
-
-    myview = View(timeout=VIEW_TIMEOUT)
-    myview.add_item(button)
-
-    await message.response.send_message(embed=embed, view=myview)
+    )
+    await message.response.edit_message(view=view)
 
 
 @bot.tree.command(description="oh no")
 async def slots(message: discord.Interaction):
+    if casino_impostor(message):
+        return await do_funny(message)
     assert message.guild is not None
     if (message.guild.id, message.user.id) in slots_lock:
         await message.response.send_message(
@@ -8419,13 +8363,34 @@ async def slots(message: discord.Interaction):
     debt_debounce = False
 
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    totals = await _get_pool().fetchrow("SELECT sum_spins, sum_wins, sum_big_wins FROM profile_sums_mv;")
-    total_spins, total_wins, total_big_wins = totals["sum_spins"], totals["sum_wins"], totals["sum_big_wins"]
-    embed = discord.Embed(
-        title=":slot_machine: The Slot Machine",
-        description=f"__Your stats__\n{profile.slot_spins:,} spins\n{profile.slot_wins:,} wins\n{profile.slot_big_wins:,} big wins\n\n__Global stats__\n{total_spins:,} spins\n{total_wins:,} wins\n{total_big_wins:,} big wins",
-        color=Colors.maroon,
-    )
+
+    # this is the silly popup when you click the button
+    class SlotsModal(Modal):
+        def __init__(self) -> None:
+            super().__init__(
+                title="place a bet idfk",
+                timeout=VIEW_TIMEOUT,
+            )
+
+            self.betamount = TextInput(min_length=1, style=discord.TextStyle.short, required=True, placeholder=f"profile: {profile.roulette_balance}")
+            self.add_item(discord.ui.Label(text="bet amount (in cat dollars)", component=self.betamount))
+
+        async def on_submit(self, interaction: discord.Interaction) -> None:
+            await profile.refresh_from_db()
+
+            try:
+                bet_amount = int(self.betamount.value)
+                if bet_amount <= 0:
+                    await interaction.response.send_message("bet amount must be greater than 0", ephemeral=True)
+                    return
+                if bet_amount > profile.roulette_balance:
+                    await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {profile.roulette_balance}", ephemeral=True)
+                    return
+            except ValueError:
+                await interaction.response.send_message("invalid bet amount", ephemeral=True)
+                return
+
+            await play(interaction, bet_amount)
 
     async def remove_debt(interaction: discord.Interaction) -> None:
         nonlocal message, debt_debounce
@@ -8443,7 +8408,7 @@ async def slots(message: discord.Interaction):
         await interaction.response.send_message("You have removed your debts! Life is wonderful!", ephemeral=True)
         await achemb(interaction, "debt", "followup")
 
-    async def spin(interaction: discord.Interaction) -> None:
+    async def play(interaction: discord.Interaction, bet_amount: int) -> None:
         nonlocal message, debt_debounce
         assert message.guild is not None
         if interaction.user.id != message.user.id:
@@ -8456,11 +8421,13 @@ async def slots(message: discord.Interaction):
             )
             return
         await profile.refresh_from_db()
-
         await interaction.response.defer()
-        slots_lock.add((message.guild.id, message.user.id))
+
+        profile.roulette_balance -= bet_amount
         profile.slot_spins += 1
         await profile.save()
+
+        slots_lock.add((message.guild.id, message.user.id))
 
         try:
             await achemb(interaction, "slots", "followup")
@@ -8469,8 +8436,7 @@ async def slots(message: discord.Interaction):
             pass
 
         variants = ["🍒", "🍋", "🍇", "🔔", "⭐", ":seven:"]
-        reel_durations = [random.randint(3, 6), random.randint(7, 10), random.randint(11, 14)]
-        random.shuffle(reel_durations)
+        reel_durations = [6, 10, 13]
 
         # the k number is much cycles it will go before stopping + 1
         col1 = random.choices(variants, k=reel_durations[0])
@@ -8495,39 +8461,69 @@ async def slots(message: discord.Interaction):
                     desc += f"➡️ {col1[current1 + offset]} {col2[current2 + offset]} {col3[current3 + offset]} ⬅️\n"
                 else:
                     desc += f"{blank_emoji} {col1[current1 + offset]} {col2[current2 + offset]} {col3[current3 + offset]} {blank_emoji}\n"
-            embed = discord.Embed(
-                title=":slot_machine: The Slot Machine",
-                description=desc,
-                color=Colors.maroon,
+            view = LayoutView(timeout=1)
+            view.add_item(
+                Container(
+                    "## woo its spinnin",
+                    f"your bet is {bet_amount:,} {plural('cat dollar', bet_amount)}",
+                    desc,
+                    color=Colors.maroon,
+                )
             )
             try:
-                await interaction.edit_original_response(embed=embed, view=None)
+                await interaction.edit_original_response(view=view)
             except Exception:
                 pass
             await asyncio.sleep(0.3)
 
         await profile.refresh_from_db()
+        desc = f"your bet was {bet_amount:,} {plural('cat dollar', bet_amount)}\n" + desc
         big_win = False
-        if col1[current1] == col2[current2] == col3[current3]:
+        title = "womp womp"
+        finals = [col1[current1], col2[current2], col3[current3]]
+        if finals[0] == finals[1] == finals[2]:
             profile.slot_wins += 1
-            if col1[current1] == ":seven:":
-                desc = "**BIG WIN!**\n\n" + desc
+            title = "winner!!!"
+            if finals[0] == ":seven:":
+                desc = "**BIG WIN!** *x60*\n\n" + desc
                 profile.slot_big_wins += 1
                 big_win = True
-                await profile.save()
-                await achemb(interaction, "big_win_slots", "followup")
+                profile.roulette_balance += bet_amount * 60
             else:
-                desc = "**You win!**\n\n" + desc
-                await profile.save()
+                desc = "**you win!** *x12*\n\n" + desc
+                profile.roulette_balance += bet_amount * 12
+            await profile.save()
             await achemb(interaction, "win_slots", "followup")
+        elif finals.count(finals[0]) == 2 or finals.count(finals[1]) == 2:
+            desc = "**pair!** *x1*\n\n" + desc
+            title = "refunded..."
+            profile.roulette_balance += bet_amount
+            await profile.save()
         else:
-            desc = "**You lose!**\n\n" + desc
+            desc = "**you lose!**\n\n" + desc
+            await profile.save()
 
-        button = Button(label="Spin", style=ButtonStyle.blurple)
-        button.callback = spin
+        row = ActionRow()
 
-        myview = View(timeout=VIEW_TIMEOUT)
-        myview.add_item(button)
+        async def again_callback(interaction: discord.Interaction) -> None:
+            if interaction.user.id != message.user.id:
+                await do_funny(interaction)
+                return
+            await profile.refresh_from_db()
+            if bet_amount > profile.roulette_balance:
+                await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {profile.roulette_balance}", ephemeral=True)
+                return
+            await play(interaction, bet_amount)
+
+        b = Button(label="again", style=ButtonStyle.blurple)
+        b.callback = again_callback
+        row.add_item(b)
+        b2 = Button(label="change bet...", style=ButtonStyle.gray)
+        b2.callback = modal_select
+        row.add_item(b2)
+
+        myview = LayoutView(timeout=VIEW_TIMEOUT)
+        myview.add_item(casino_row(profile, "🎰"))
 
         if big_win:
             # check if user has debt in any cat type
@@ -8539,65 +8535,85 @@ async def slots(message: discord.Interaction):
             if has_debt:
                 debt_debounce = False
                 desc += "\n\n**You can remove your debt!**"
-                button = Button(label="Remove Debt", style=ButtonStyle.blurple)
+                button = Button(label="Remove Debt", style=ButtonStyle.green)
                 button.callback = remove_debt
-                myview.add_item(button)
+                row.add_item(button)
 
         slots_lock.discard((message.guild.id, message.user.id))
 
-        embed = discord.Embed(title=":slot_machine: The Slot Machine", description=desc, color=Colors.maroon)
+        result_title = f"## {title}"
+        embed = Container(result_title, desc, row, color=Colors.maroon)
+        myview.add_item(embed)
+        await interaction.edit_original_response(view=myview)
 
-        try:
-            await interaction.edit_original_response(embed=embed, view=myview)
-        except Exception:
-            await interaction.followup.send(embed=embed, view=myview)
+        if profile.roulette_balance == 0:
+            await achemb(message, "failed_gambler", "followup")
+        if profile.blackjacks + profile.slot_spins + profile.roulette_spins >= 10:
+            await achemb(message, "gambling_one", "followup")
+        if profile.blackjacks + profile.slot_spins + profile.roulette_spins >= 50:
+            await achemb(message, "gambling_two", "followup")
 
-    button = Button(label="Spin", style=ButtonStyle.blurple)
-    button.callback = spin
+    async def modal_select(interaction: discord.Interaction) -> None:
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
 
-    myview = View(timeout=VIEW_TIMEOUT)
-    myview.add_item(button)
+        await interaction.response.send_modal(SlotsModal())
 
-    await message.response.send_message(embed=embed, view=myview)
+    view = LayoutView(timeout=VIEW_TIMEOUT)
+    view.add_item(casino_row(profile, "🎰"))
+    b = Button(label="spin", style=ButtonStyle.blurple)
+    b.callback = modal_select
+    embed = Container(
+        "## :slot_machine: the slot machine",
+        "each of 3 slots will have 1 of 6 random symbols\n- pair: x1 (refund)\n- win (all 3 the same): x12\n- big win (all 7s): x60",
+        ActionRow(b),
+        color=Colors.maroon,
+    )
+    view.add_item(embed)
+
+    if message.type == discord.InteractionType.application_command:
+        await message.response.send_message(view=view)
+    else:
+        await message.response.edit_message(view=view)
+
+    if profile.roulette_balance == 0:
+        await achemb(message, "failed_gambler", "followup")
 
 
 @bot.tree.command(description="what")
 async def roulette(message: discord.Interaction):
+    if casino_impostor(message):
+        return await do_funny(message)
     assert message.guild is not None
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
     # this is the silly popup when you click the button
-    class RouletteModel(Modal):
+    class RouletteModal(Modal):
         def __init__(self) -> None:
             super().__init__(
                 title="place a bet idfk",
                 timeout=VIEW_TIMEOUT,
             )
 
-            self.bettype = TextInput(
-                min_length=1,
-                max_length=5,
-                label="choose a bet",
-                style=discord.TextStyle.short,
-                required=True,
-                placeholder="red / black / green / 0 / 1 / 2 / 3 / ... / 36",
-            )
-            self.add_item(self.bettype)
+            options = [
+                discord.SelectOption(label="Red", emoji="🔴", description="Chance: 18/37, Payout: x2"),
+                discord.SelectOption(label="Black", emoji="⚫", description="Chance: 18/37, Payout: x2"),
+                discord.SelectOption(label="Odd", emoji="1️⃣", description="Chance: 18/37, Payout: x2"),
+                discord.SelectOption(label="Even", emoji="2️⃣", description="Chance: 18/37, Payout: x2"),
+                discord.SelectOption(label="Green", emoji="🟢", description="Chance: 1/37, Payout: x36"),
+            ]
+            self.bettype = discord.ui.Select(min_values=1, max_values=1, required=True, options=options)
+            self.add_item(discord.ui.Label(text="choose a bet", component=self.bettype))
 
-            self.betamount = TextInput(
-                min_length=1,
-                label="bet amount (in cat dollars)",
-                style=discord.TextStyle.short,
-                required=True,
-                placeholder="69",
-            )
-            self.add_item(self.betamount)
+            self.betamount = TextInput(min_length=1, style=discord.TextStyle.short, required=True, placeholder=f"max: {user.roulette_balance}")
+            self.add_item(discord.ui.Label(text="bet amount (in cat dollars)", component=self.betamount))
 
         async def on_submit(self, interaction: discord.Interaction) -> None:
             await user.refresh_from_db()
 
-            valids = ["red", "black", "green"] + [str(i) for i in range(37)]
-            if self.bettype.value.lower() not in valids:
+            valids = ["red", "black", "green", "even", "odd"]
+            if self.bettype.values[0].lower() not in valids:
                 await interaction.response.send_message("invalid bet", ephemeral=True)
                 return
 
@@ -8606,112 +8622,308 @@ async def roulette(message: discord.Interaction):
                 if bet_amount <= 0:
                     await interaction.response.send_message("bet amount must be greater than 0", ephemeral=True)
                     return
-                if bet_amount > max(user.roulette_balance, 100):
-                    await interaction.response.send_message(f"your max bet is {max(user.roulette_balance, 100)}", ephemeral=True)
+                if bet_amount > user.roulette_balance:
+                    await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {user.roulette_balance}", ephemeral=True)
                     return
             except ValueError:
                 await interaction.response.send_message("invalid bet amount", ephemeral=True)
                 return
 
             await interaction.response.defer()
+            await play(interaction, self.bettype.values[0].lower(), bet_amount)
 
-            colors = data.roulette_colors
+    async def play(interaction: discord.Interaction, bet_type: str, bet_amount: int) -> None:
+        colors = data.roulette_colors
 
-            emoji_map = {
-                "red": "🔴",
-                "black": "⚫",
-                "green": "🟢",
-            }
+        emoji_map = {
+            "red": "🔴",
+            "black": "⚫",
+            "green": "🟢",
+        }
 
-            final_choice = random.randint(0, 36)
-            user.roulette_balance -= bet_amount
-            user.roulette_spins += 1
-            win = False
-            funny_win = False
-            if str(final_choice) == self.bettype.value or colors[final_choice] == self.bettype.value.lower():
-                if self.bettype.value in [str(i) for i in range(37)] or self.bettype.value.lower() == "green":
-                    user.roulette_balance += bet_amount * 36
-                    funny_win = True
-                else:
-                    user.roulette_balance += bet_amount * 2
-                user.roulette_wins += 1
-                win = True
-            user.roulette_balance = round(user.roulette_balance)
-            await user.save()
+        final_choice = random.randint(0, 36)
+        user.roulette_balance -= bet_amount
+        user.roulette_spins += 1
+        win = False
+        funny_win = False
+        odd_even_win = False
+        if final_choice != 0:
+            odd_even_win = (bet_type == "even" and final_choice % 2 == 0) or (bet_type == "odd" and final_choice % 2 == 1)
+        if odd_even_win or colors[final_choice] == bet_type:
+            if bet_type == "green":
+                user.roulette_balance += bet_amount * 36
+                funny_win = True
+            else:
+                user.roulette_balance += bet_amount * 2
+            user.roulette_wins += 1
+            win = True
+        user.roulette_balance = round(user.roulette_balance)
+        await user.save()
 
-            for wait_time in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
-                choice = random.randint(0, 36)
-                color = colors[choice]
-                embed = discord.Embed(
+        for wait_time in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
+            choice = random.randint(0, 36)
+            color = colors[choice]
+            view = LayoutView(timeout=1)
+            view.add_item(
+                Container(
+                    "## woo its spinnin",
+                    f"your bet is {bet_amount:,} {plural('cat dollar', bet_amount)} on {bet_type.capitalize()}",
+                    f"{emoji_map[color]} **{choice}**",
                     color=Colors.maroon,
-                    title="woo its spinnin",
-                    description=f"your bet is {bet_amount:,} {plural('cat dollar', bet_amount)} on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{choice}**",
                 )
-                await interaction.edit_original_response(embed=embed, view=None)
-                await asyncio.sleep(wait_time)
-
-            color = colors[final_choice]
-
-            broke_suffix = ""
-            if user.roulette_balance <= 0:
-                broke_suffix = "\ndebt is allowed - you can still gamble up to **100** cat dollars"
-
-            embed = discord.Embed(
-                color=Colors.maroon,
-                title="winner!!!" if win else "womp womp",
-                description=f"your bet was {bet_amount:,} {plural('cat dollar', bet_amount)} on {self.bettype.value.capitalize()}\n\n{emoji_map[color]} **{final_choice}**\n\nyour new balance is **{user.roulette_balance:,}** {plural('cat dollar', user.roulette_balance)}{broke_suffix}",
             )
-            view = View(timeout=VIEW_TIMEOUT)
-            b = Button(label="spin", style=ButtonStyle.blurple)
-            b.callback = modal_select
-            view.add_item(b)
-            await interaction.edit_original_response(embed=embed, view=view)
+            await interaction.edit_original_response(view=view)
+            await asyncio.sleep(wait_time)
 
-            if win:
-                await progress(message, user, "roulette")
-                await achemb(interaction, "roulette_winner", "followup")
-            if funny_win:
-                await achemb(interaction, "roulette_prodigy", "followup")
-            if user.roulette_balance < 0:
-                await achemb(interaction, "failed_gambler", "followup")
+        color = colors[final_choice]
+
+        async def again_callback(interaction: discord.Interaction) -> None:
+            if interaction.user != message.user:
+                await do_funny(interaction)
+                return
+            await user.refresh_from_db()
+            if bet_amount > user.roulette_balance:
+                await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {user.roulette_balance}", ephemeral=True)
+                return
+            await interaction.response.defer()
+            await play(interaction, bet_type, bet_amount)
+
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        view.add_item(casino_row(user, "🎡"))
+        b = Button(label="again", style=ButtonStyle.blurple)
+        b.callback = again_callback
+        b2 = Button(label="change bet...", style=ButtonStyle.gray)
+        b2.callback = modal_select
+        embed = Container(
+            "## winner!!!" if win else "## womp womp",
+            f"your bet was {bet_amount:,} {plural('cat dollar', bet_amount)} on {bet_type.capitalize()}",
+            f"{emoji_map[color]} **{final_choice}**",
+            ActionRow(b, b2),
+            color=Colors.maroon,
+        )
+        view.add_item(embed)
+        await interaction.edit_original_response(view=view)
+
+        if win:
+            await progress(message, user, "roulette")
+            await achemb(interaction, "roulette_winner", "followup")
+        if funny_win:
+            await achemb(interaction, "roulette_prodigy", "followup")
+        if user.roulette_balance == 0:
+            await achemb(message, "failed_gambler", "followup")
+        if user.blackjacks + user.slot_spins + user.roulette_spins >= 10:
+            await achemb(message, "gambling_one", "followup")
+        if user.blackjacks + user.slot_spins + user.roulette_spins >= 50:
+            await achemb(message, "gambling_two", "followup")
 
     async def modal_select(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
             await do_funny(interaction)
             return
 
-        await interaction.response.send_modal(RouletteModel())
+        await interaction.response.send_modal(RouletteModal())
 
-    broke_suffix = ""
-    if user.roulette_balance <= 0:
-        broke_suffix = "\n\ndebt is allowed - you can still gamble up to **100** cat dollars"
-
-    embed = discord.Embed(
-        color=Colors.maroon,
-        title="hecking roulette table",
-        description=f"your balance is **{user.roulette_balance:,}** {plural('cat dollar', user.roulette_balance)}{broke_suffix}",
-    )
-
-    view = View(timeout=VIEW_TIMEOUT)
+    view = LayoutView(timeout=VIEW_TIMEOUT)
+    view.add_item(casino_row(user, "🎡"))
     b = Button(label="spin", style=ButtonStyle.blurple)
     b.callback = modal_select
-    view.add_item(b)
+    embed = Container(
+        "## 🎡 roulette table",
+        "pick a color or odd/even to bet on!",
+        ActionRow(b),
+        color=Colors.maroon,
+    )
+    view.add_item(embed)
 
-    await message.response.send_message(embed=embed, view=view)
+    if message.type == discord.InteractionType.application_command:
+        await message.response.send_message(view=view)
+    else:
+        await message.response.edit_message(view=view)
 
-    if user.roulette_balance < 0:
+    if user.roulette_balance == 0:
         await achemb(message, "failed_gambler", "followup")
 
 
 @bot.tree.command(description="catjack is awful")
 async def blackcat(message: discord.Interaction):
+    if casino_impostor(message):
+        return await do_funny(message)
+    assert message.guild is not None
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+
+    class BlackcatModal(Modal):
+        def __init__(self) -> None:
+            super().__init__(
+                title="place a bet idfk",
+                timeout=VIEW_TIMEOUT,
+            )
+
+            self.betamount = TextInput(min_length=1, style=discord.TextStyle.short, required=True, placeholder=f"max: {user.roulette_balance}")
+            self.add_item(discord.ui.Label(text="bet amount (in cat dollars)", component=self.betamount))
+
+        async def on_submit(self, interaction: discord.Interaction) -> None:
+            await user.refresh_from_db()
+
+            try:
+                bet_amount = int(self.betamount.value)
+                if bet_amount <= 0:
+                    await interaction.response.send_message("bet amount must be greater than 0", ephemeral=True)
+                    return
+                if bet_amount > user.roulette_balance:
+                    await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {user.roulette_balance}", ephemeral=True)
+                    return
+            except ValueError:
+                await interaction.response.send_message("invalid bet amount", ephemeral=True)
+                return
+
+            await play(interaction, bet_amount)
+
+    async def play(interaction: discord.Interaction, bet_amount: int) -> None:
+        user.roulette_balance -= bet_amount
+        await user.save()
+
+        score = 0
+
+        async def hit_callback(interaction: discord.Interaction) -> None:
+            nonlocal score
+            if interaction.user != message.user:
+                await do_funny(interaction)
+                return
+            score += random.randint(1, 10)
+
+            if score > 21:
+                await finish(interaction, busted=True)
+            else:
+                await show_game(interaction)
+
+        async def stand_callback(interaction: discord.Interaction) -> None:
+            if interaction.user != message.user:
+                await do_funny(interaction)
+                return
+            await finish(interaction, busted=False)
+
+        async def show_game(interaction: discord.Interaction) -> None:
+            view = LayoutView(timeout=VIEW_TIMEOUT)
+            b = Button(label="increase (1-10)", style=ButtonStyle.green)
+            b.callback = hit_callback
+            b2 = Button(label="finish", style=ButtonStyle.blurple)
+            b2.callback = stand_callback
+            embed = Container(
+                f"## {score}",
+                f"your bet is {bet_amount:,} {plural('cat dollar', bet_amount)}",
+                "*get as much as possible without going over 21*",
+                ActionRow(b, b2),
+                color=Colors.maroon,
+            )
+            view.add_item(embed)
+            await interaction.response.edit_message(view=view)
+
+        async def finish(interaction: discord.Interaction, busted: bool = False) -> None:
+            nonlocal score
+            assert bot.user is not None
+
+            dealer_score = 0
+
+            if busted:
+                await interaction.response.defer()
+            else:
+                view = LayoutView(timeout=VIEW_TIMEOUT)
+                embed = Container(
+                    "## cat bot is playing...",
+                    f"your bet is {bet_amount:,} {plural('cat dollar', bet_amount)}",
+                    f"you: **{score}**",
+                    f"{bot.user.name}: **0**",
+                    color=Colors.maroon,
+                )
+                view.add_item(embed)
+                await interaction.response.edit_message(view=view)
+
+                while dealer_score < 17 or (dealer_score <= 18 and dealer_score < score):
+                    await asyncio.sleep(0.5)
+                    dealer_score += random.randint(1, 10)
+                    view.remove_item(embed)
+                    embed = Container(
+                        "## cat bot is playing...",
+                        f"your bet is {bet_amount:,} {plural('cat dollar', bet_amount)}",
+                        f"you: **{score}**",
+                        f"{bot.user.name}: **{dealer_score}**",
+                        color=Colors.maroon,
+                    )
+                    view.add_item(embed)
+                    await interaction.edit_original_response(view=view)
+                await asyncio.sleep(1)
+
+            win = not busted and (dealer_score > 21 or score > dealer_score)
+            user.blackjacks += 1
+            if win:
+                user.roulette_balance += bet_amount * 2
+                user.blackjack_wins += 1
+                await user.save()
+
+            async def again_callback(interaction: discord.Interaction) -> None:
+                if interaction.user != message.user:
+                    await do_funny(interaction)
+                    return
+                await user.refresh_from_db()
+                if bet_amount > user.roulette_balance:
+                    await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {user.roulette_balance}", ephemeral=True)
+                    return
+                await play(interaction, bet_amount)
+
+            view = LayoutView(timeout=VIEW_TIMEOUT)
+            view.add_item(casino_row(user, "🃏"))
+            b = Button(label="again", style=ButtonStyle.blurple)
+            b.callback = again_callback
+            b2 = Button(label="change bet...", style=ButtonStyle.gray)
+            b2.callback = modal_select
+            embed = Container(
+                "## winner!!!" if win else "## womp womp" + ("\nyou busted lol" if busted else ""),
+                f"your bet was {bet_amount:,} {plural('cat dollar', bet_amount)}",
+                f"you: **{score}**" + (f", {bot.user.name}: **{dealer_score}**" if not busted else ""),
+                ActionRow(b, b2),
+                color=Colors.maroon,
+            )
+            view.add_item(embed)
+            await interaction.edit_original_response(view=view)
+
+            if score == 21:
+                await achemb(message, "twenty_one", "followup")
+            if user.roulette_balance == 0:
+                await achemb(message, "failed_gambler", "followup")
+            if user.blackjacks + user.slot_spins + user.roulette_spins >= 10:
+                await achemb(message, "gambling_one", "followup")
+            if user.blackjacks + user.slot_spins + user.roulette_spins >= 50:
+                await achemb(message, "gambling_two", "followup")
+
+        await show_game(interaction)
+
+    async def modal_select(interaction: discord.Interaction) -> None:
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+
+        await interaction.response.send_modal(BlackcatModal())
+
     view = LayoutView(timeout=VIEW_TIMEOUT)
+    view.add_item(casino_row(user, "🃏"))
+    b = Button(label="play", style=ButtonStyle.blurple)
+    b.callback = modal_select
     view.add_item(
         Container(
             "## 🃏 blackcat",
-            "__how to play:__ click a button to add a random number to the score. you want to get as much as possible, but if you go over 21 you lose. cat bot will then do the same, and whoever gets more wins!",
+            "add random numbers to get as much as possible without going over 21. i will then do the same, and you win if you get more!",
+            ActionRow(b),
+            color=Colors.maroon,
         )
     )
+
+    if message.type == discord.InteractionType.application_command:
+        await message.response.send_message(view=view)
+    else:
+        await message.response.edit_message(view=view)
+
+    if user.roulette_balance == 0:
+        await achemb(message, "failed_gambler", "followup")
 
 
 @bot.tree.command(description="absolute CHAOS")
@@ -10337,7 +10549,7 @@ def aura_emoji(code: str) -> str:
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Literal["Cats", "Value", "Fast", "Slow", "Cattlepass", "Cookies", "Fish", "Pig", "Roulette Dollars", "Prisms", "Aura"] | None = None,
+    leaderboard_type: Literal["Cats", "Value", "Fast", "Slow", "Cattlepass", "Cookies", "Fish", "Pig", "Cat Dollars", "Prisms", "Aura"] | None = None,
     cat_type: str | None = None,
     locked: bool | None = None,
 ):
@@ -10502,7 +10714,7 @@ async def leaderboards(
                     message.guild.id,
                 )
                 final_value = "best_pig_score"
-            case "Roulette Dollars":
+            case "Cat Dollars":
                 unit = "cat dollars"
                 result = await fetch_ranked(
                     "SELECT user_id, roulette_balance FROM profile WHERE guild_id = $1 AND roulette_balance != 100",
@@ -10603,7 +10815,7 @@ async def leaderboards(
 
         # dont show placements if they arent defined
         if interactor and type != "Fast":
-            if interactor <= 0 and type != "Roulette Dollars":
+            if interactor <= 0 and type != "Cat Dollars":
                 interactor_placement = 0
             if type != "Slow":
                 interactor = round(interactor)
@@ -10611,7 +10823,7 @@ async def leaderboards(
             interactor_placement = 0
 
         if messager and type != "Fast":
-            if messager <= 0 and type != "Roulette Dollars":
+            if messager <= 0 and type != "Cat Dollars":
                 messager_placement = 0
             if type != "Slow":
                 messager = round(messager)
@@ -10660,7 +10872,7 @@ async def leaderboards(
                     else:
                         num = round(num, 3)
                         unit = "sec"
-                elif (type in ["Cookies", "Cats", "Pig", "Prisms", "Fish", "Aura"] and num <= 0) or (type == "Roulette Dollars" and num == 100):
+                elif (type in ["Cookies", "Cats", "Pig", "Prisms", "Fish", "Aura"] and num <= 0) or (type == "Cat Dollars" and num == 100):
                     break
                 if type == "Cats" and specific_cat != "All":
                     emoji = get_aura_emoji(specific_cat, i["cat_auras"], short=True)
@@ -10763,7 +10975,7 @@ async def leaderboards(
             "Cookies": "🍪",
             "Fish": "🐟",
             "Pig": "🎲",
-            "Roulette Dollars": "💰",
+            "Cat Dollars": "💰",
             "Prisms": get_emoji("prism"),
             "Aura": get_emoji("rainbow"),
         }
@@ -11711,6 +11923,9 @@ class Select(discord.ui.Select):
 
 class Container(discord.ui.Container):
     def __init__(self, *pre_children, **kwargs):
+        if "color" in kwargs:
+            kwargs["accent_color"] = kwargs["color"]
+            del kwargs["color"]
         if "accent_color" not in kwargs:
             kwargs["accent_color"] = Colors.brown
 
@@ -11731,7 +11946,7 @@ class Container(discord.ui.Container):
                     new_children.append(Separator())
                 else:
                     new_children.append(TextDisplay(child))
-            elif isinstance(child, Button):
+            elif isinstance(child, (Button, discord.ui.Select)):
                 new_children.append(ActionRow(child))
             else:
                 new_children.append(child)

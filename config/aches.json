@@ -54,7 +54,7 @@
   "egril": {"title": "Electronic Grill", "description": "love some eGrills", "is_hidden": false, "category": "Random"},
   "bwomp": {"title": "Bwomp", "description": "bwomp is a funny sound they use on tiktok", "is_hidden": false, "category": "Random"},
   "pig50": {"title": "Pig Expert", "description": "finish with 50+ score in /pig", "is_hidden": false, "category": "Random"},
-  "failed_gambler": {"title": "Failed Gambler", "description": "get to negatives in /roulette", "is_hidden": false, "category": "Random"},
+  "failed_gambler": {"title": "Failed Gambler", "description": "lose all your money at the casino", "is_hidden": false, "category": "Random"},
   "baker": {"title": "Pro Baker", "description": "deliver a /bakery order", "is_hidden": false, "category": "Random"},
 
   "silly": {"title": "Silly", "description": "triple-react!", "is_hidden": false, "category": "Silly"},
@@ -73,7 +73,7 @@
   "sacrifice": {"title": "Sacrifice", "description": "gift to cat bot", "is_hidden": false, "category": "Silly"},
   "not_like_that": {"title": "Not like that...", "description": "catch the cat the wrong way", "is_hidden": false, "category": "Silly"},
   "gambling_one": {"title": "LETS GO GAMBLING", "description": "gamble 10 times", "is_hidden": false, "category": "Silly"},
-  "broke": {"title": "Broke", "description": "go broke playing casino", "is_hidden": true, "category": "Silly"},
+  "twenty_one": {"title": "9+10", "description": "get exactly 21 in /blackcat", "is_hidden": false, "category": "Silly"},
   "secret": {"title": "Tax Fraud", "description": "evade paying your cat taxes", "is_hidden": true, "category": "Silly"},
   "good_citizen": {"title": "Good Citizen", "description": "pay your taxes", "is_hidden": false, "category": "Silly"},
   "perfectly_balanced": {"title": "Perfectly Balanced", "description": "as all things should be", "is_hidden": false, "category": "Silly"},
