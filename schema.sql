@@ -278,7 +278,7 @@ CREATE TABLE public.profile (
     pig100 boolean DEFAULT false,
     sphere_easter_egg smallint DEFAULT 0,
     sphere_ach boolean DEFAULT false,
-    roulette_balance bigint DEFAULT 1000,
+    casino_balance bigint DEFAULT 1000,
     roulette_wins integer DEFAULT 0,
     roulette_spins integer DEFAULT 0,
     roulette_winner boolean DEFAULT false,
@@ -550,7 +550,7 @@ CREATE INDEX profile_slow_leaderboard ON public.profile (guild_id, timeslow DESC
 CREATE INDEX profile_cattlepass_leaderboard ON public.profile (guild_id, season, battlepass DESC, progress DESC, user_id ASC) WHERE battlepass > 0 OR progress > 0;
 CREATE INDEX profile_cookies_leaderboard ON public.profile (guild_id, cookies DESC, user_id ASC) WHERE cookies > 0;
 CREATE INDEX profile_pig_leaderboard ON public.profile (guild_id, best_pig_score DESC, user_id ASC) WHERE best_pig_score > 0;
-CREATE INDEX profile_roulette_leaderboard ON public.profile (guild_id, roulette_balance DESC, user_id ASC) WHERE roulette_balance <> 100;
+CREATE INDEX profile_casino_leaderboard ON public.profile (guild_id, casino_balance DESC, user_id ASC) WHERE casino_balance <> 1000;
 CREATE INDEX profile_fish_leaderboard ON public.profile (guild_id, fish_caught DESC, user_id ASC) WHERE fish_caught <> 0;
 
 CREATE UNIQUE INDEX profile_user_id_guild_id ON public.profile USING btree (user_id, guild_id);

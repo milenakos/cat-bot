@@ -751,7 +751,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         if streak_data["reward"]:
             user[f"pack_{streak_data['reward']}"] += 1
 
-        user.roulette_balance += 100
+        user.casino_balance += 100
 
         current_xp = user.progress + user.vote_reward
     elif user.misc_quest == quest:
@@ -8312,7 +8312,7 @@ def casino_row(user: Profile, current: str) -> ActionRow:
         {"emoji": "🎰", "callback": slots.callback},
         {"emoji": "🎡", "callback": roulette.callback},
         {"emoji": "🃏", "callback": blackcat.callback},
-        {"label": f"{user.roulette_balance:,}", "emoji": "💰", "callback": casino_overview},
+        {"label": f"{user.casino_balance:,}", "emoji": "💰", "callback": casino_overview},
     ]
     row = ActionRow()
     for entry in casino_view_data:
@@ -8339,7 +8339,7 @@ async def casino_overview(message: discord.Interaction):
     view.add_item(casino_row(profile, "💰"))
     view.add_item(
         Container(
-            f"your balance is **{profile.roulette_balance:,}** {plural('cat dollar', profile.roulette_balance)}",
+            f"your balance is **{profile.casino_balance:,}** {plural('cat dollar', profile.casino_balance)}",
             "you earn **100 cat dollars** whenever you complete the vote quest.",
             color=Colors.maroon,
         )
@@ -8372,7 +8372,7 @@ async def slots(message: discord.Interaction):
                 timeout=VIEW_TIMEOUT,
             )
 
-            self.betamount = TextInput(min_length=1, style=discord.TextStyle.short, required=True, placeholder=f"profile: {profile.roulette_balance}")
+            self.betamount = TextInput(min_length=1, style=discord.TextStyle.short, required=True, placeholder=f"profile: {profile.casino_balance}")
             self.add_item(discord.ui.Label(text="bet amount (in cat dollars)", component=self.betamount))
 
         async def on_submit(self, interaction: discord.Interaction) -> None:
@@ -8383,8 +8383,8 @@ async def slots(message: discord.Interaction):
                 if bet_amount <= 0:
                     await interaction.response.send_message("bet amount must be greater than 0", ephemeral=True)
                     return
-                if bet_amount > profile.roulette_balance:
-                    await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {profile.roulette_balance}", ephemeral=True)
+                if bet_amount > profile.casino_balance:
+                    await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {profile.casino_balance}", ephemeral=True)
                     return
             except ValueError:
                 await interaction.response.send_message("invalid bet amount", ephemeral=True)
@@ -8423,7 +8423,7 @@ async def slots(message: discord.Interaction):
         await profile.refresh_from_db()
         await interaction.response.defer()
 
-        profile.roulette_balance -= bet_amount
+        profile.casino_balance -= bet_amount
         profile.slot_spins += 1
         await profile.save()
 
@@ -8488,16 +8488,16 @@ async def slots(message: discord.Interaction):
                 desc = "**BIG WIN!** *x60*\n\n" + desc
                 profile.slot_big_wins += 1
                 big_win = True
-                profile.roulette_balance += bet_amount * 60
+                profile.casino_balance += bet_amount * 60
             else:
                 desc = "**you win!** *x12*\n\n" + desc
-                profile.roulette_balance += bet_amount * 12
+                profile.casino_balance += bet_amount * 12
             await profile.save()
             await achemb(interaction, "win_slots", "followup")
         elif finals.count(finals[0]) == 2 or finals.count(finals[1]) == 2:
             desc = "**pair!** *x1*\n\n" + desc
             title = "refunded..."
-            profile.roulette_balance += bet_amount
+            profile.casino_balance += bet_amount
             await profile.save()
         else:
             desc = "**you lose!**\n\n" + desc
@@ -8510,8 +8510,8 @@ async def slots(message: discord.Interaction):
                 await do_funny(interaction)
                 return
             await profile.refresh_from_db()
-            if bet_amount > profile.roulette_balance:
-                await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {profile.roulette_balance}", ephemeral=True)
+            if bet_amount > profile.casino_balance:
+                await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {profile.casino_balance}", ephemeral=True)
                 return
             await play(interaction, bet_amount)
 
@@ -8546,7 +8546,7 @@ async def slots(message: discord.Interaction):
         myview.add_item(embed)
         await interaction.edit_original_response(view=myview)
 
-        if profile.roulette_balance == 0:
+        if profile.casino_balance == 0:
             await achemb(message, "failed_gambler", "followup")
         if profile.blackjacks + profile.slot_spins + profile.roulette_spins >= 10:
             await achemb(message, "gambling_one", "followup")
@@ -8577,7 +8577,7 @@ async def slots(message: discord.Interaction):
     else:
         await message.response.edit_message(view=view)
 
-    if profile.roulette_balance == 0:
+    if profile.casino_balance == 0:
         await achemb(message, "failed_gambler", "followup")
 
 
@@ -8606,7 +8606,7 @@ async def roulette(message: discord.Interaction):
             self.bettype = discord.ui.Select(min_values=1, max_values=1, required=True, options=options)
             self.add_item(discord.ui.Label(text="choose a bet", component=self.bettype))
 
-            self.betamount = TextInput(min_length=1, style=discord.TextStyle.short, required=True, placeholder=f"max: {user.roulette_balance}")
+            self.betamount = TextInput(min_length=1, style=discord.TextStyle.short, required=True, placeholder=f"max: {user.casino_balance}")
             self.add_item(discord.ui.Label(text="bet amount (in cat dollars)", component=self.betamount))
 
         async def on_submit(self, interaction: discord.Interaction) -> None:
@@ -8622,8 +8622,8 @@ async def roulette(message: discord.Interaction):
                 if bet_amount <= 0:
                     await interaction.response.send_message("bet amount must be greater than 0", ephemeral=True)
                     return
-                if bet_amount > user.roulette_balance:
-                    await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {user.roulette_balance}", ephemeral=True)
+                if bet_amount > user.casino_balance:
+                    await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {user.casino_balance}", ephemeral=True)
                     return
             except ValueError:
                 await interaction.response.send_message("invalid bet amount", ephemeral=True)
@@ -8642,7 +8642,7 @@ async def roulette(message: discord.Interaction):
         }
 
         final_choice = random.randint(0, 36)
-        user.roulette_balance -= bet_amount
+        user.casino_balance -= bet_amount
         user.roulette_spins += 1
         win = False
         funny_win = False
@@ -8651,13 +8651,13 @@ async def roulette(message: discord.Interaction):
             odd_even_win = (bet_type == "even" and final_choice % 2 == 0) or (bet_type == "odd" and final_choice % 2 == 1)
         if odd_even_win or colors[final_choice] == bet_type:
             if bet_type == "green":
-                user.roulette_balance += bet_amount * 36
+                user.casino_balance += bet_amount * 36
                 funny_win = True
             else:
-                user.roulette_balance += bet_amount * 2
+                user.casino_balance += bet_amount * 2
             user.roulette_wins += 1
             win = True
-        user.roulette_balance = round(user.roulette_balance)
+        user.casino_balance = round(user.casino_balance)
         await user.save()
 
         for wait_time in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
@@ -8682,8 +8682,8 @@ async def roulette(message: discord.Interaction):
                 await do_funny(interaction)
                 return
             await user.refresh_from_db()
-            if bet_amount > user.roulette_balance:
-                await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {user.roulette_balance}", ephemeral=True)
+            if bet_amount > user.casino_balance:
+                await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {user.casino_balance}", ephemeral=True)
                 return
             await interaction.response.defer()
             await play(interaction, bet_type, bet_amount)
@@ -8709,7 +8709,7 @@ async def roulette(message: discord.Interaction):
             await achemb(interaction, "roulette_winner", "followup")
         if funny_win:
             await achemb(interaction, "roulette_prodigy", "followup")
-        if user.roulette_balance == 0:
+        if user.casino_balance == 0:
             await achemb(message, "failed_gambler", "followup")
         if user.blackjacks + user.slot_spins + user.roulette_spins >= 10:
             await achemb(message, "gambling_one", "followup")
@@ -8740,7 +8740,7 @@ async def roulette(message: discord.Interaction):
     else:
         await message.response.edit_message(view=view)
 
-    if user.roulette_balance == 0:
+    if user.casino_balance == 0:
         await achemb(message, "failed_gambler", "followup")
 
 
@@ -8758,7 +8758,7 @@ async def blackcat(message: discord.Interaction):
                 timeout=VIEW_TIMEOUT,
             )
 
-            self.betamount = TextInput(min_length=1, style=discord.TextStyle.short, required=True, placeholder=f"max: {user.roulette_balance}")
+            self.betamount = TextInput(min_length=1, style=discord.TextStyle.short, required=True, placeholder=f"max: {user.casino_balance}")
             self.add_item(discord.ui.Label(text="bet amount (in cat dollars)", component=self.betamount))
 
         async def on_submit(self, interaction: discord.Interaction) -> None:
@@ -8769,8 +8769,8 @@ async def blackcat(message: discord.Interaction):
                 if bet_amount <= 0:
                     await interaction.response.send_message("bet amount must be greater than 0", ephemeral=True)
                     return
-                if bet_amount > user.roulette_balance:
-                    await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {user.roulette_balance}", ephemeral=True)
+                if bet_amount > user.casino_balance:
+                    await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {user.casino_balance}", ephemeral=True)
                     return
             except ValueError:
                 await interaction.response.send_message("invalid bet amount", ephemeral=True)
@@ -8779,7 +8779,7 @@ async def blackcat(message: discord.Interaction):
             await play(interaction, bet_amount)
 
     async def play(interaction: discord.Interaction, bet_amount: int) -> None:
-        user.roulette_balance -= bet_amount
+        user.casino_balance -= bet_amount
         await user.save()
 
         score = 0
@@ -8856,7 +8856,7 @@ async def blackcat(message: discord.Interaction):
             win = not busted and (dealer_score > 21 or score > dealer_score)
             user.blackjacks += 1
             if win:
-                user.roulette_balance += bet_amount * 2
+                user.casino_balance += bet_amount * 2
                 user.blackjack_wins += 1
                 await user.save()
 
@@ -8865,8 +8865,8 @@ async def blackcat(message: discord.Interaction):
                     await do_funny(interaction)
                     return
                 await user.refresh_from_db()
-                if bet_amount > user.roulette_balance:
-                    await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {user.roulette_balance}", ephemeral=True)
+                if bet_amount > user.casino_balance:
+                    await interaction.response.send_message(f"you dont have enough cat dollars! current balance: {user.casino_balance}", ephemeral=True)
                     return
                 await play(interaction, bet_amount)
 
@@ -8888,7 +8888,7 @@ async def blackcat(message: discord.Interaction):
 
             if score == 21:
                 await achemb(message, "twenty_one", "followup")
-            if user.roulette_balance == 0:
+            if user.casino_balance == 0:
                 await achemb(message, "failed_gambler", "followup")
             if user.blackjacks + user.slot_spins + user.roulette_spins >= 10:
                 await achemb(message, "gambling_one", "followup")
@@ -8922,7 +8922,7 @@ async def blackcat(message: discord.Interaction):
     else:
         await message.response.edit_message(view=view)
 
-    if user.roulette_balance == 0:
+    if user.casino_balance == 0:
         await achemb(message, "failed_gambler", "followup")
 
 
@@ -10717,12 +10717,12 @@ async def leaderboards(
             case "Cat Dollars":
                 unit = "cat dollars"
                 result = await fetch_ranked(
-                    "SELECT user_id, roulette_balance FROM profile WHERE guild_id = $1 AND roulette_balance != 100",
-                    "roulette_balance DESC, user_id ASC",
-                    "(entry.roulette_balance > target.roulette_balance) OR (entry.roulette_balance = target.roulette_balance AND entry.user_id < target.user_id)",
+                    "SELECT user_id, casino_balance FROM profile WHERE guild_id = $1 AND casino_balance != 100",
+                    "casino_balance DESC, user_id ASC",
+                    "(entry.casino_balance > target.casino_balance) OR (entry.casino_balance = target.casino_balance AND entry.user_id < target.user_id)",
                     message.guild.id,
                 )
-                final_value = "roulette_balance"
+                final_value = "casino_balance"
             case "Prisms":
                 unit = "prisms"
                 result = await fetch_ranked(
