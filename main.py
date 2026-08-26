@@ -6761,27 +6761,23 @@ async def snake(message: discord.Interaction):
 
         embed.add_item(TextDisplay("\n".join("".join(row) for row in board)))
 
-        prev_move = ""
-        if len(snake_data.pieces) > 1:
-            mappings = {-10: "⬆️", 10: "⬇️", -1: "⬅️", 1: "➡️"}
-            offset = snake_data.pieces[-1] - snake_data.pieces[-2]
-            prev_move = f"Previous move: {mappings[offset]}\n"
-        embed.add_item(
-            TextDisplay(
-                f"""{prev_move}Snake moves every hour following the most voted option.
-Each move, a random option will be disabled.
-In case top 2 are within 5% of each other, the disabled move will be used instead."""
-            )
-        )
-
-        vote_results = [snake_data.votes_up, snake_data.votes_down, snake_data.votes_left, snake_data.votes_right]
-        first, second, _, fourth = sorted(vote_results, reverse=True)
-        if first <= 0 or first <= second * 1.05:
+        vote_results = {"⬆️": snake_data.votes_up, "⬇️": snake_data.votes_down, "⬅️": snake_data.votes_left, "➡️": snake_data.votes_right}
+        first, second, _, fourth = sorted(vote_results.items(), key=lambda item: item[1], reverse=True)
+        if first[1] <= 0 or first[1] <= second[1] * 1.05:
             # tie
-            winner = fourth
+            winner = fourth[0]
         else:
             # no tie
-            winner = first
+            winner = first[0]
+
+        embed.add_item(
+            TextDisplay(
+                f"""Snake moves every hour following the most voted option.
+Each move, a random option will be disabled.
+In case top 2 are within 5% of each other, the disabled move will be used instead.
+Currently winning: {winner}"""
+            )
+        )
 
         arrows = {"up": "⬆️", "down": "⬇️", "left": "⬅️", "right": "➡️"}
         if snake_data.active:
@@ -6792,7 +6788,7 @@ In case top 2 are within 5% of each other, the disabled move will be used instea
                     emoji=arrows[direction],
                     label=f"({dir_votes:,})" if dir_votes >= 0 else "(disabled)",
                     disabled=dir_votes < 0,
-                    style=ButtonStyle.green if dir_votes == winner else ButtonStyle.gray,
+                    style=ButtonStyle.gray,
                     custom_id=direction,
                 )
                 btn.callback = vote_direction
