@@ -505,7 +505,7 @@ async def achemb(
 
     if ach_id == "failed_gambler":
         assert isinstance(message, discord.Interaction)
-        await message.followup.send("you lost all your money! get *+100 more cat dollars* whenever you complete the vote quest.")
+        await message.followup.send("you lost all your money! get *+100 more cat dollars* whenever you complete the vote quest.", ephemeral=True)
 
     if profile[ach_id]:
         return
