@@ -4589,7 +4589,7 @@ async def gen_inventory(
     else:
         badges = f"### {badges}"
 
-    if user.image.startswith("https://cdn.discordapp.com/attachments/") and isinstance(inv_user, discord.abc.User):
+    if "/attachments/" in user.image and isinstance(inv_user, discord.abc.User):
         embedVar = Container(
             has_news,
             Section(username, badges, things, Thumbnail(user.image)),
@@ -4745,7 +4745,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
 Global, change with `/editprofile`.
 **Color**: {user.color.lower() if user.color.upper() not in ["", "#6E593C"] else "Default"}
 **Emoji**: {user.emoji if user.emoji else "None"}
-**Image**: {"Yes" if user.image.startswith("https://cdn.discordapp.com/attachments/") else "No"}
+**Image**: {"Yes" if "/attachments" in user.image else "No"}
 
 __Highlighted Stat__
 {highlighted_stat[1]} {highlighted_stat[2]}
@@ -4756,7 +4756,7 @@ __Compact Inventory__
             embed = discord.Embed(
                 title=f"{(user.emoji + ' ') if user.emoji else ''}Edit Profile", description=description, color=discord.Colour.from_str(user.color)
             )
-            if user.image.startswith("https://cdn.discordapp.com/attachments/"):
+            if "/attachments/" in user.image:
                 embed.set_thumbnail(url=user.image)
 
         else:
@@ -4792,7 +4792,7 @@ __Highlighted Stat__
             btn = Button(emoji="📝", label="Edit", style=ButtonStyle.blurple)
             btn.callback = edit_profile
             buttons.append(btn)
-        elif config.REPORT_CHANNEL_ID and (view_user.image.startswith("https://cdn.discordapp.com/attachments/") or view_user.custom):
+        elif config.REPORT_CHANNEL_ID and ("/attachments/" in view_user.image or view_user.custom):
             btn = Button(emoji="⚠️", label="Report")
             btn.callback = report_profile
             buttons.append(btn)
