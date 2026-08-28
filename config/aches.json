@@ -100,7 +100,7 @@
   "cookiesclicked": {"title": "Cookies Clicked", "description": "collect 5,000 cookies", "is_hidden": true, "category": "Hard"},
   "pig100": {"title": "Pig Champion", "description": "finish with 100+ score in /pig", "is_hidden": false, "category": "Hard"},
   "sphere_ach": {"title": "Sphere Roller", "description": "your sphere lands you an ach", "is_hidden": false, "category": "Hard"},
-  "roulette_prodigy": {"title": "Roulette Prodigy", "description": "win with green or number at /roulette", "is_hidden": true, "category": "Hard"},
+  "roulette_prodigy": {"title": "Roulette Prodigy", "description": "win with green at /roulette", "is_hidden": true, "category": "Hard"},
   "certified_yapper": {"title": "Certified Yapper", "description": "have 4 or more extra lines at the end of your catch", "is_hidden": true, "category": "Hard"},
   "bounty_lord": {"title": "Bounty Lord", "description": "complete 100 bounties", "is_hidden": true, "category": "Hard"},
   "pro_fisher": {"title": "Pro Fisher", "description": "catch a Legendary or rarer fish", "is_hidden": true, "category": "Hard"},
