@@ -8862,7 +8862,7 @@ async def blackcat(message: discord.Interaction):
             if win:
                 user.casino_balance += bet_amount * 2
                 user.blackjack_wins += 1
-                await user.save()
+            await user.save()
 
             async def again_callback(interaction: discord.Interaction) -> None:
                 if interaction.user != message.user:
