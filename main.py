@@ -6239,10 +6239,10 @@ async def stocks(message: discord.Interaction):
             self.input = TextInput(
                 min_length=1,
                 max_length=5,
-                label=f"Stone packs to withdraw (max {max_packs})",
+                label="Stone packs to withdraw",
                 style=discord.TextStyle.short,
                 required=True,
-                placeholder="2",
+                placeholder=f"Max: {max_packs}",
             )
             self.add_item(self.input)
 
