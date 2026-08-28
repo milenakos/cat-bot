@@ -8556,6 +8556,8 @@ async def slots(message: discord.Interaction):
             await achemb(message, "gambling_one", "followup")
         if profile.blackjacks + profile.slot_spins + profile.roulette_spins >= 50:
             await achemb(message, "gambling_two", "followup")
+        if big_win:
+            await achemb(message, "big_win_slots", "followup")
 
     async def modal_select(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
@@ -8583,6 +8585,8 @@ async def slots(message: discord.Interaction):
 
     if profile.casino_balance == 0:
         await achemb(message, "failed_gambler", "followup")
+    if profile.slot_big_wins > 0:
+        await achemb(message, "big_win_slots", "followup")
 
 
 @bot.tree.command(description="what")
