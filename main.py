@@ -8894,6 +8894,8 @@ async def blackcat(message: discord.Interaction):
             view.add_item(embed)
             await interaction.edit_original_response(view=view)
 
+            if win:
+                await progress(message, user, "blackcat")
             if score == 21:
                 await achemb(message, "twenty_one", "followup")
             if user.casino_balance == 0:
