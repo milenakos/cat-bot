@@ -3253,25 +3253,6 @@ async def wiki(message: discord.Interaction):
     await message.response.send_message(embed=discord.Embed(title="Cat Bot Wiki", color=Colors.brown, description="\n".join(data.wiki_lines)))
 
 
-@bot.tree.command(description="Consult the ancient cat oracle for a purrsonalized fortune")
-async def fortune(interaction: discord.Interaction):
-    rng = random.Random(interaction.user.id + discord.utils.utcnow().date().toordinal())
-
-    embed = discord.Embed(
-        title=f"🔮 {rng.choice(data.cat_fortune_titles)}",
-        description=(
-            f"😺 {rng.choice(data.cat_fortunes)}\n\n"
-            f"**Lucky cat type:** {rng.choice(cattypes)}\n"
-            f"**Lucky number:** {rng.randint(1, 9)}\n"
-            f"**Lucky activity:** {rng.choice(data.cat_activities)}"
-        ),
-        color=Colors.brown,
-    )
-
-    embed.set_footer(text="Fortunes reset daily • Your fate is sealed (until tomorrow)")
-    await interaction.response.send_message(embed=embed)
-
-
 @bot.tree.command(description="Read The Cat Bot Times™️")
 async def news(message: discord.Interaction):
     user = await User.get_or_create(user_id=message.user.id)
