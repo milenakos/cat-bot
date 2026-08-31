@@ -1217,14 +1217,13 @@ async def send_quest_reminders(quest_type: str, start_time: int) -> None:
 
 
 async def update_snake(snake_data: Snake) -> None:
-    await asyncio.sleep(snake_data.next_update - time.time())
+    sleep_time = snake_data.next_update - time.time()
+    if sleep_time > 0:
+        await asyncio.sleep(sleep_time)
     if murdered:
         return
 
     await snake_data.refresh_from_db()
-
-    if snake_data.next_update > 0:
-        return
 
     vote_reset_list = [0, 0, 0, -100]
     random.shuffle(vote_reset_list)
