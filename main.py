@@ -5945,7 +5945,7 @@ async def battlepass(message: discord.Interaction):
             if weekly_quest["progress"] > user.weekly_progress:
                 title = weekly_quest["title"]
                 if user.weekly_quest == "bonus":
-                    title = "Complete 3 [bonus minigames](https://catbot.wiki/cat-types#bonus-cats)"
+                    title = "Complete a [bonus minigame](https://catbot.wiki/cat-types#bonus-cats)"
                 description += f"{get_emoji(weekly_quest['emoji'])} {title} ({user.weekly_progress}/{weekly_quest['progress']})\n"
                 if user.weekly_quest != "different":
                     colored = int(user.weekly_progress / weekly_quest["progress"] * 10)
