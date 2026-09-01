@@ -6540,7 +6540,7 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
 
         unknown_suffix = ""
         if unknowns:
-            unknown_suffix = f" + {unknowns} unknown cat {plural('type', unknowns)} (see /catalogue)"
+            unknown_suffix = f"{unknowns} unknown cat {plural('type', unknowns)} (see /catalogue)"
 
         if len(missing_cats) == 0 and unknowns == 0:
             view = View(timeout=VIEW_TIMEOUT)
@@ -6550,7 +6550,10 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
         else:
             view = View(timeout=VIEW_TIMEOUT)
             confirm_button = Button(label="Not enough cats!", style=ButtonStyle.red, disabled=True)
-            description = "The crafting recipe is __ONE of EVERY cat type__.\nYou are missing " + "".join(missing_cats) + unknown_suffix
+            emojis_string = "".join(missing_cats)
+            if emojis_string and unknown_suffix:
+                unknown_suffix = " + " + unknown_suffix
+            description = "The crafting recipe is __ONE of EVERY cat type__.\nYou are missing " + emojis_string + unknown_suffix
 
         view.add_item(confirm_button)
         await interaction.response.send_message(description, view=view, ephemeral=True)
