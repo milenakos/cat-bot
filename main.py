@@ -3099,7 +3099,7 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
         case 3 | 4:
             user.tutorial_state = 4
             container = Container(
-                "Well done! To see the cat you just caught, run `/inventory`!",
+                f"Well done! To see the cat you just caught, run {get_command_mention('inventory')}!",
                 "===",
                 f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
             )
@@ -3107,7 +3107,7 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
         case 5:
             container = Container(
                 "This is your inventory. It's the place you can see your cat collection and some basic stats. You can also see anyone else's inventory by using `/inventory @username`.",
-                "Lets run `/leaderboards` to see the best cat catchers in your server!",
+                f"Lets run {get_command_mention('leaderboards')} to see the best cat catchers in your server!",
                 discord.ui.MediaGallery(
                     discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316535108243608/tutorial2.png")
                 ),
@@ -3118,7 +3118,7 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
         case 6:
             container = Container(
                 "Nice! Interacting with others is a big part of Cat Bot - don't be afraid to `/trade` with them or ask for advice!",
-                "Speaking about important things, let's check out `/achievements`!",
+                f"Speaking about important things, let's check out {get_command_mention('achievements')}!",
                 "===",
                 f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
             )
@@ -3126,7 +3126,7 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
         case 7:
             container = Container(
                 f"Cat Bot has *a bunch* of {get_emoji('ach')} achievements, from very simple ones to {get_emoji('demonic_ach')} __ones which take months to complete__. If you ever feel unsure what to do, try completing some! You will also be able to discover a bunch of Cat Bot this way.",
-                "Okay, the last important thing - run `/battlepass`.",
+                f"Okay, the last important thing - run {get_command_mention('battlepass')}.",
                 "===",
                 f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
             )
@@ -3134,7 +3134,7 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
         case 8:
             container = Container(
                 "⬆️ Cat Bot's Battlepass *(or Cattlepass)* is the main non-catching way of getting cats.",
-                f"There are 3 quests which give you XP, and every couple hundred XP you will get some {get_emoji('goldpack')} __Packs__, which you can open via `/packs` to get some cats! Quests refresh 12 hours after completing them.",
+                f"There are 3 quests which give you XP, and every couple hundred XP you will get some {get_emoji('goldpack')} __Packs__, which you can open via {get_command_mention('packs')} to get some cats! Quests refresh 12 hours after completing them.",
                 "**Try completing some quests and opening a pack!**",
                 "===",
                 f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
@@ -3147,8 +3147,8 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
                 user.rain_minutes += 2
             container = Container(
                 "Nice! One last thing - catching gets __a lot more fun__ if you use the various *power-ups* inside Cat Bot!",
-                f"These include {get_emoji('prism')} `/Prism`s, {get_emoji('catnip')} `/Catnip`, 💫 `/Bless`ings, and ☔ `/Rain`.",
-                "Speaking of the last one, for completing the tutorial you get **+2 free ☔ Rain Minutes**! You can use them via `/rain`.",
+                f"These include {get_emoji('prism')} {get_command_mention('prism')}s, {get_emoji('catnip')} {get_command_mention('catnip')}, 💫 {get_command_mention('bless')}ings, and ☔ {get_command_mention('rain')}.",
+                f"Speaking of the last one, for completing the tutorial you get **+2 free ☔ Rain Minutes**! You can use them via {get_command_mention('rain')}.",
                 "===",
                 '-# ✅ Tutorial Complete! Go catch cats, do some achievements like saying "i read help", or discover the power-ups! Have fun!',
             )
