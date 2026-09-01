@@ -6542,7 +6542,7 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
         if unknowns:
             unknown_suffix = f" + {unknowns} unknown cat {plural('type', unknowns)} (see /catalogue)"
 
-        if len(missing_cats) == 0:
+        if len(missing_cats) == 0 and unknowns == 0:
             view = View(timeout=VIEW_TIMEOUT)
             confirm_button = Button(label="Craft!", style=ButtonStyle.blurple, emoji=icon)
             confirm_button.callback = confirm_craft
