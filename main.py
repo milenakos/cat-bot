@@ -4569,7 +4569,7 @@ async def gen_inventory(
     else:
         badges = f"### {badges}"
 
-    if "/attachments/" in user.image and isinstance(inv_user, discord.abc.User):
+    if "discordapp" in user.image and isinstance(inv_user, discord.abc.User):
         embedVar = Container(
             has_news,
             Section(username, badges, things, Thumbnail(user.image)),
@@ -4736,7 +4736,7 @@ __Compact Inventory__
             embed = discord.Embed(
                 title=f"{(user.emoji + ' ') if user.emoji else ''}Edit Profile", description=description, color=discord.Colour.from_str(user.color)
             )
-            if "/attachments/" in user.image:
+            if "discordapp" in user.image:
                 embed.set_thumbnail(url=user.image)
 
         else:
@@ -4772,7 +4772,7 @@ __Highlighted Stat__
             btn = Button(emoji="📝", label="Edit", style=ButtonStyle.blurple)
             btn.callback = edit_profile
             buttons.append(btn)
-        elif config.REPORT_CHANNEL_ID and ("/attachments/" in view_user.image or view_user.custom):
+        elif config.REPORT_CHANNEL_ID and ("discordapp" in view_user.image or view_user.custom):
             btn = Button(emoji="⚠️", label="Report")
             btn.callback = report_profile
             buttons.append(btn)
