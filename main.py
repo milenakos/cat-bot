@@ -37,6 +37,7 @@ from typing import Literal, TypedDict
 
 import aiohttp
 import anyio
+import asyncpg
 import discord
 import discord.gateway
 import discord.http
@@ -6481,6 +6482,11 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
             if not await Prism.get_or_none(guild_id=message.guild.id, name=selected_name):
                 break
 
+        if youngest_prism := await Prism.collect("guild_id = $1 ORDER BY time DESC LIMIT 1", message.guild.id):
+            selected_time = max(round(time.time()), youngest_prism[0].time + 1)
+        else:
+            selected_time = round(time.time())
+
         if (
             not selected_name
             or await Prism.get_or_none(guild_id=message.guild.id, name=selected_name)
@@ -6488,11 +6494,6 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
         ):
             await interaction.response.send_message("This server has reached the prism limit.", ephemeral=True)
             return
-
-        if youngest_prism := await Prism.collect("guild_id = $1 ORDER BY time DESC LIMIT 1", message.guild.id):
-            selected_time = max(round(time.time()), youngest_prism[0].time + 1)
-        else:
-            selected_time = round(time.time())
 
         # actually take away cats
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
@@ -6503,14 +6504,18 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
             user["cat_" + i] -= 1
 
         # create the prism
-        await Prism.create(
-            guild_id=interaction.guild.id,
-            user_id=interaction.user.id,
-            creator=interaction.user.id,
-            time=selected_time,
-            name=selected_name,
-        )
-        await user.save()
+        try:
+            await Prism.create(
+                guild_id=interaction.guild.id,
+                user_id=interaction.user.id,
+                creator=interaction.user.id,
+                time=selected_time,
+                name=selected_name,
+            )
+            await user.save()
+        except asyncpg.UniqueViolationError:
+            await interaction.response.send_message("Duplicate detected, try again.", ephemeral=True)
+            return
 
         log_stats("prism_craft", {"name": selected_name})
 
