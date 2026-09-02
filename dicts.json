@@ -43,6 +43,7 @@
     "Cannot send an empty message",
     "Missing Permissions",
     "Missing Access",
+    "Reaction blocked",
     "ClientConnectorError",
     "ClientConnectorDNSError",
     "NameResolutionError",
