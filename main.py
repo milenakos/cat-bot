@@ -5507,7 +5507,6 @@ async def packs(message: discord.Interaction):
         if total_packs < 1:
             return None
 
-        display_cats = total_packs >= 50
         pack_results: list[str] = []
         reward_results: list[str] = []
         cats_received = {cat: 0 for cat in cattypes}
@@ -5529,14 +5528,13 @@ async def packs(message: discord.Interaction):
 
             log_stats("pack_open", {"pack": pack_name})
             amount_to_open = min(pack_count, total_packs - opened_packs)
-            pack_results.append(f"{amount_to_open:,}x {get_emoji(pack_name.lower() + 'pack')}")
+            pack_results.append(f"{amount_to_open:,}x {get_short_emoji(pack_name.lower() + 'pack')}")
 
             for _ in range(amount_to_open):
                 chosen_type, cat_amount, upgrades, reward = get_pack_rewards(level, is_single=False)
+                assert isinstance(reward, str)
                 total_upgrades += upgrades
-                if not display_cats:
-                    assert isinstance(reward, str)
-                    reward_results.append(reward)
+                reward_results.append(reward)
                 cats_received[chosen_type] += cat_amount
 
             user[pack_id] -= amount_to_open
@@ -5550,13 +5548,11 @@ async def packs(message: discord.Interaction):
 
         pack_list = "**" + ", ".join(pack_results) + "**"
         reward_list = "\n".join(reward_results)
-        if display_cats or len(reward_list) > 4000 - len(pack_list):
+        title = f"## Opened {opened_packs:,} {plural('pack', opened_packs)}!"
+        if len(reward_list) > 3995 - len(title) - len(pack_list):
             reward_list = "\n".join(f"{get_emoji(cat.lower() + 'cat')} x{cats_received[cat]:,}" for cat in cattypes if cats_received[cat] > 0)
 
-        if reward_list:
-            reward_list = "\n\n" + reward_list
-
-        return Container(f"## Opened {opened_packs:,} {plural('pack', opened_packs)}!", f"{pack_list}{reward_list}")
+        return Container(title, f"{pack_list}\n\n{reward_list}")
 
     async def ask_bulk(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
