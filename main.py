@@ -121,6 +121,7 @@ class DataWrapper:
     badge_list: list[str]
     prism_names_start: list[str]
     prism_names_end: list[str]
+    lb_types: dict[str, str]
     vote_button_texts: list[str]
     hints: list[str]
     funny: list[str]
@@ -10567,9 +10568,6 @@ async def leaderboards(
         if not specific_cat:
             specific_cat = "All"
 
-        messager = None
-        interactor = None
-
         # leaderboard top amount
         show_amount = 15
 
@@ -10606,228 +10604,184 @@ async def leaderboards(
         string = ""
         bp_season = None
         unit = None
-        match type:
-            case "Cats":
-                unit = "cats"
+        final_value = None
+        guild_id = message.guild.id
 
-                if specific_cat != "All":
-                    result = await fetch_ranked(
-                        f'SELECT user_id, "cat_{specific_cat}", cat_auras FROM profile WHERE guild_id = $1 AND "cat_{specific_cat}" > 0',
-                        f'"cat_{specific_cat}" DESC, user_id ASC',
-                        f'(entry."cat_{specific_cat}" > target."cat_{specific_cat}") OR (entry."cat_{specific_cat}" = target."cat_{specific_cat}" AND entry.user_id < target.user_id)',
-                        message.guild.id,
-                    )
-                    final_value = f"cat_{specific_cat}"
-                else:
-                    # dynamically generate sum expression, cast each value to bigint first to handle large totals
-                    cat_columns = [f'CAST("cat_{c}" AS BIGINT)' for c in cattypes]
-                    sum_expression = RawSQL("(" + " + ".join(cat_columns) + ") AS final_value")
-                    result = await fetch_ranked(
-                        f"SELECT user_id, {sum_expression} FROM profile WHERE guild_id = $1",
-                        "final_value DESC, user_id ASC",
-                        "(entry.final_value > target.final_value) OR (entry.final_value = target.final_value AND entry.user_id < target.user_id)",
-                        message.guild.id,
-                    )
-                    final_value = "final_value"
+        if type == "Aura":
+            unit = "auras"
+            if specific_cat in AURA_ORDER:
+                _count_expr = RawSQL(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{specific_cat}') AS aura_count")
+                result = await Profile.collect_limit(
+                    ["user_id", _count_expr],
+                    f"guild_id = $1 AND (SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{specific_cat}') > 0 ORDER BY aura_count DESC, user_id ASC",
+                    guild_id,
+                )
+                final_value = "aura_count"
+            else:
+                _count_exprs = [RawSQL(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}') AS count_{a}") for a in AURA_ORDER]
+                _total_expr = RawSQL("(" + " + ".join(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}')" for a in AURA_ORDER) + ") AS aura_total")
+                result = await Profile.collect_limit(
+                    ["user_id", *_count_exprs, _total_expr],
+                    "guild_id = $1 AND EXISTS (SELECT 1 FROM unnest(cat_auras) v WHERE v != ' ') ORDER BY count_r DESC, count_a DESC, count_p DESC, count_c DESC, count_y DESC, user_id ASC",
+                    guild_id,
+                )
+                final_value = "aura_total"
+        else:
+            query = order = ahead = None
+            args: list = [guild_id]
+            match type:
+                case "Cats":
+                    unit = "cats"
+                    if specific_cat != "All":
+                        col = f'"cat_{specific_cat}"'
+                        query = f"SELECT user_id, {col}, cat_auras FROM profile WHERE guild_id = $1 AND {col} > 0"
+                        order = f"{col} DESC, user_id ASC"
+                        ahead = f"(entry.{col} > target.{col}) OR (entry.{col} = target.{col} AND entry.user_id < target.user_id)"
+                        final_value = f"cat_{specific_cat}"
+                    else:
+                        # dynamically generate sum expression, cast each value to bigint first to handle large totals
+                        cat_columns = [f'CAST("cat_{c}" AS BIGINT)' for c in cattypes]
+                        sum_expression = RawSQL("(" + " + ".join(cat_columns) + ") AS final_value")
+                        query = f"SELECT user_id, {sum_expression} FROM profile WHERE guild_id = $1"
+                        order = "final_value DESC, user_id ASC"
+                        ahead = "(entry.final_value > target.final_value) OR (entry.final_value = target.final_value AND entry.user_id < target.user_id)"
+                        final_value = "final_value"
 
-                    # find rarest
-                    rarest_counts = await _get_pool().fetchrow(
-                        "SELECT " + ", ".join(f'COUNT(*) FILTER (WHERE "cat_{cat}" > 0) AS "{cat}"' for cat in cattypes) + " FROM profile WHERE guild_id = $1",
-                        message.guild.id,
-                    )
-                    rarest = next((cat for cat in reversed(cattypes) if rarest_counts[cat]), None)
-
-                    if rarest and specific_cat != rarest:
-                        holder_count = rarest_counts[rarest]
-                        holder_rows = await _get_pool().fetch(
-                            f'SELECT user_id FROM profile WHERE guild_id = $1 AND "cat_{rarest}" > 0 LIMIT 10',
-                            message.guild.id,
+                        # find rarest
+                        rarest_counts = await _get_pool().fetchrow(
+                            "SELECT "
+                            + ", ".join(f'COUNT(*) FILTER (WHERE "cat_{cat}" > 0) AS "{cat}"' for cat in cattypes)
+                            + " FROM profile WHERE guild_id = $1",
+                            guild_id,
                         )
-                        catmoji = get_emoji(rarest.lower() + "cat")
-                        joined = f"{holder_count} people" if holder_count > 10 else ", ".join(f"<@{row['user_id']}>" for row in holder_rows)
-                        string = f"Rarest cat: {catmoji} ({joined}'s)\n"
-            case "Value":
-                unit = "value"
-                sums = []
-                for i in cattypes:
-                    if not i:
-                        continue
-                    weight = CAT_VALUES[i]
-                    sums.append(f'({weight}) * "cat_{i}"')
-                total_sum_expr = RawSQL("(" + " + ".join(sums) + ") AS final_value")
-                result = await fetch_ranked(
-                    f"SELECT user_id, {total_sum_expr} FROM profile WHERE guild_id = $1",
-                    "final_value DESC, user_id ASC",
-                    "(entry.final_value > target.final_value) OR (entry.final_value = target.final_value AND entry.user_id < target.user_id)",
-                    message.guild.id,
-                )
-                final_value = "final_value"
-            case "Fast":
-                unit = "sec"
-                result = await fetch_ranked(
-                    "SELECT user_id, time FROM profile WHERE guild_id = $1 AND time < 99999999999999",
-                    "time ASC, user_id ASC",
-                    "(entry.time < target.time) OR (entry.time = target.time AND entry.user_id < target.user_id)",
-                    message.guild.id,
-                )
-                final_value = "time"
-            case "Slow":
-                unit = "h"
-                result = await fetch_ranked(
-                    "SELECT user_id, timeslow FROM profile WHERE guild_id = $1 AND timeslow > 0",
-                    "timeslow DESC, user_id ASC",
-                    "(entry.timeslow > target.timeslow) OR (entry.timeslow = target.timeslow AND entry.user_id < target.user_id)",
-                    message.guild.id,
-                )
-                final_value = "timeslow"
-            case "Cattlepass":
-                start_date = datetime.datetime(2024, 12, 1, tzinfo=datetime.timezone.utc)
-                current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
-                full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
-                bp_season = config.battle["seasons"][str(full_months_passed)]
-                if current_date.day < start_date.day:
-                    full_months_passed -= 1
-                result = await fetch_ranked(
-                    "SELECT user_id, battlepass, progress FROM profile WHERE guild_id = $1 AND season = $2 AND (battlepass > 0 OR progress > 0)",
-                    "battlepass DESC, progress DESC, user_id ASC",
-                    "(entry.battlepass > target.battlepass) OR (entry.battlepass = target.battlepass AND entry.progress > target.progress) OR (entry.battlepass = target.battlepass AND entry.progress = target.progress AND entry.user_id < target.user_id)",
-                    message.guild.id,
-                    full_months_passed,
-                )
-                final_value = "battlepass"
-            case "Cookies":
-                unit = "cookies"
-                result = await fetch_ranked(
-                    "SELECT user_id, cookies FROM profile WHERE guild_id = $1 AND cookies > 0",
-                    "cookies DESC, user_id ASC",
-                    "(entry.cookies > target.cookies) OR (entry.cookies = target.cookies AND entry.user_id < target.user_id)",
-                    message.guild.id,
-                )
-                final_value = "cookies"
-            case "Pig":
-                unit = "score"
-                result = await fetch_ranked(
-                    "SELECT user_id, best_pig_score FROM profile WHERE guild_id = $1 AND best_pig_score > 0",
-                    "best_pig_score DESC, user_id ASC",
-                    "(entry.best_pig_score > target.best_pig_score) OR (entry.best_pig_score = target.best_pig_score AND entry.user_id < target.user_id)",
-                    message.guild.id,
-                )
-                final_value = "best_pig_score"
-            case "Cat Dollars":
-                unit = "cat dollars"
-                result = await fetch_ranked(
-                    "SELECT user_id, casino_balance FROM profile WHERE guild_id = $1 AND casino_balance != 100",
-                    "casino_balance DESC, user_id ASC",
-                    "(entry.casino_balance > target.casino_balance) OR (entry.casino_balance = target.casino_balance AND entry.user_id < target.user_id)",
-                    message.guild.id,
-                )
-                final_value = "casino_balance"
-            case "Prisms":
-                unit = "prisms"
-                result = await fetch_ranked(
-                    "SELECT user_id, COUNT(*) AS prism_count FROM prism WHERE guild_id = $1 GROUP BY user_id",
-                    "prism_count DESC, user_id ASC",
-                    "(entry.prism_count > target.prism_count) OR (entry.prism_count = target.prism_count AND entry.user_id < target.user_id)",
-                    message.guild.id,
-                )
-                final_value = "prism_count"
-            case "Fish":
-                unit = "fishes"
-                result = await fetch_ranked(
-                    "SELECT user_id, fish_caught FROM profile WHERE guild_id = $1 AND fish_caught != 0",
-                    "fish_caught DESC, user_id ASC",
-                    "(entry.fish_caught > target.fish_caught) OR (entry.fish_caught = target.fish_caught AND entry.user_id < target.user_id)",
-                    message.guild.id,
-                )
-                final_value = "fish_caught"
-            case "Aura":
-                unit = "auras"
-                if specific_cat in AURA_ORDER:
-                    _a = specific_cat
-                    _count_expr = RawSQL(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{_a}') AS aura_count")
-                    result = await Profile.collect_limit(
-                        ["user_id", _count_expr],
-                        f"guild_id = $1 AND (SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{_a}') > 0 ORDER BY aura_count DESC, user_id ASC",
-                        message.guild.id,
+                        rarest = next((cat for cat in reversed(cattypes) if rarest_counts[cat]), None)
+
+                        if rarest and specific_cat != rarest:
+                            holder_count = rarest_counts[rarest]
+                            holder_rows = await _get_pool().fetch(
+                                f'SELECT user_id FROM profile WHERE guild_id = $1 AND "cat_{rarest}" > 0 LIMIT 10',
+                                guild_id,
+                            )
+                            catmoji = get_emoji(rarest.lower() + "cat")
+                            joined = f"{holder_count} people" if holder_count > 10 else ", ".join(f"<@{row['user_id']}>" for row in holder_rows)
+                            string = f"Rarest cat: {catmoji} ({joined}'s)\n"
+                case "Value":
+                    unit = "value"
+                    total_sum_expr = RawSQL("(" + " + ".join(f'({CAT_VALUES[i]}) * "cat_{i}"' for i in cattypes if i) + ") AS final_value")
+                    query = f"SELECT user_id, {total_sum_expr} FROM profile WHERE guild_id = $1"
+                    order = "final_value DESC, user_id ASC"
+                    ahead = "(entry.final_value > target.final_value) OR (entry.final_value = target.final_value AND entry.user_id < target.user_id)"
+                    final_value = "final_value"
+                case "Fast":
+                    unit = "sec"
+                    query = "SELECT user_id, time FROM profile WHERE guild_id = $1 AND time < 99999999999999"
+                    order = "time ASC, user_id ASC"
+                    ahead = "(entry.time < target.time) OR (entry.time = target.time AND entry.user_id < target.user_id)"
+                    final_value = "time"
+                case "Slow":
+                    unit = "h"
+                    query = "SELECT user_id, timeslow FROM profile WHERE guild_id = $1 AND timeslow > 0"
+                    order = "timeslow DESC, user_id ASC"
+                    ahead = "(entry.timeslow > target.timeslow) OR (entry.timeslow = target.timeslow AND entry.user_id < target.user_id)"
+                    final_value = "timeslow"
+                case "Cattlepass":
+                    start_date = datetime.datetime(2024, 12, 1, tzinfo=datetime.timezone.utc)
+                    current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
+                    full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
+                    bp_season = config.battle["seasons"][str(full_months_passed)]
+                    if current_date.day < start_date.day:
+                        full_months_passed -= 1
+                    query = "SELECT user_id, battlepass, progress FROM profile WHERE guild_id = $1 AND season = $2 AND (battlepass > 0 OR progress > 0)"
+                    order = "battlepass DESC, progress DESC, user_id ASC"
+                    ahead = "(entry.battlepass > target.battlepass) OR (entry.battlepass = target.battlepass AND entry.progress > target.progress) OR (entry.battlepass = target.battlepass AND entry.progress = target.progress AND entry.user_id < target.user_id)"
+                    args.append(full_months_passed)
+                    final_value = "battlepass"
+                case "Cookies":
+                    unit = "cookies"
+                    query = "SELECT user_id, cookies FROM profile WHERE guild_id = $1 AND cookies > 0"
+                    order = "cookies DESC, user_id ASC"
+                    ahead = "(entry.cookies > target.cookies) OR (entry.cookies = target.cookies AND entry.user_id < target.user_id)"
+                    final_value = "cookies"
+                case "Pig":
+                    unit = "score"
+                    query = "SELECT user_id, best_pig_score FROM profile WHERE guild_id = $1 AND best_pig_score > 0"
+                    order = "best_pig_score DESC, user_id ASC"
+                    ahead = (
+                        "(entry.best_pig_score > target.best_pig_score) OR (entry.best_pig_score = target.best_pig_score AND entry.user_id < target.user_id)"
                     )
-                    final_value = "aura_count"
-                else:
-                    _count_exprs = [RawSQL(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}') AS count_{a}") for a in AURA_ORDER]
-                    _total_expr = RawSQL(
-                        "(" + " + ".join(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}')" for a in AURA_ORDER) + ") AS aura_total"
+                    final_value = "best_pig_score"
+                case "Cat Dollars":
+                    unit = "cat dollars"
+                    query = "SELECT user_id, casino_balance FROM profile WHERE guild_id = $1 AND casino_balance != 100"
+                    order = "casino_balance DESC, user_id ASC"
+                    ahead = (
+                        "(entry.casino_balance > target.casino_balance) OR (entry.casino_balance = target.casino_balance AND entry.user_id < target.user_id)"
                     )
-                    result = await Profile.collect_limit(
-                        ["user_id", *_count_exprs, _total_expr],
-                        "guild_id = $1 AND EXISTS (SELECT 1 FROM unnest(cat_auras) v WHERE v != ' ') ORDER BY count_r DESC, count_a DESC, count_p DESC, count_c DESC, count_y DESC, user_id ASC",
-                        message.guild.id,
-                    )
-                    final_value = "aura_total"
-            case _:
-                # qhar
-                raise ValueError("Invalid leaderboard type")
+                    final_value = "casino_balance"
+                case "Prisms":
+                    unit = "prisms"
+                    query = "SELECT user_id, COUNT(*) AS prism_count FROM prism WHERE guild_id = $1 GROUP BY user_id"
+                    order = "prism_count DESC, user_id ASC"
+                    ahead = "(entry.prism_count > target.prism_count) OR (entry.prism_count = target.prism_count AND entry.user_id < target.user_id)"
+                    final_value = "prism_count"
+                case "Fish":
+                    unit = "fishes"
+                    query = "SELECT user_id, fish_caught FROM profile WHERE guild_id = $1 AND fish_caught != 0"
+                    order = "fish_caught DESC, user_id ASC"
+                    ahead = "(entry.fish_caught > target.fish_caught) OR (entry.fish_caught = target.fish_caught AND entry.user_id < target.user_id)"
+                    final_value = "fish_caught"
+                case _:
+                    # qhar
+                    raise ValueError("Invalid leaderboard type")
+            result = await fetch_ranked(query, order, ahead, *args)
+
+        def lv_xp_req(level) -> int:
+            assert bp_season is not None
+            return 2000 if level >= len(bp_season) else bp_season[int(level) - 1]["xp"]
+
+        def find_placement(user_id: int):
+            for index, position in enumerate(result):
+                try:
+                    placement = position["placement"]
+                except KeyError:
+                    placement = index + 1
+                if position["user_id"] == user_id:
+                    value = position[final_value]
+                    perc = math.floor((100 / lv_xp_req(value)) * position["progress"]) if type == "Cattlepass" else None
+                    return placement, value, perc
+            return 0, None, None
+
+        def tidy(placement: int, value):
+            if not value:
+                return placement, value
+            if type == "Slow":
+                value = round(value / 3600, 2)
+            elif type == "Fast":
+                value = round(value, 3)
+            # dont show placements if they arent defined
+            if type != "Fast":
+                if value <= 0 and type != "Cat Dollars":
+                    placement = 0
+                if type != "Slow":
+                    value = round(value)
+            elif value >= 99999999999999:
+                placement = 0
+            return placement, value
 
         # find the placement of the person who ran the command and optionally the person who pressed the button
-        interactor_placement = 0
-        messager_placement = 0
-        interactor_perc = None
-        messager_perc = None
-        for index, position in enumerate(result):
-            # asyncpg.Record supports dict-style .get(), but Model (from Profile/Prism.collect_limit,
-            # still used by the Aura case) has its own .get() classmethod for DB lookups that shadows
-            # it - so this has to go through __getitem__/KeyError instead of relying on .get() existing
-            try:
-                placement = position["placement"]
-            except KeyError:
-                placement = index + 1
-            if position["user_id"] == interaction.user.id:
-                interactor_placement = placement
-                interactor = position[final_value]
-                if type == "Cattlepass":
-                    assert bp_season is not None
-                    if position[final_value] >= len(bp_season):
-                        lv_xp_req = 2000
-                    else:
-                        lv_xp_req = bp_season[int(position[final_value]) - 1]["xp"]
-                    interactor_perc = math.floor((100 / lv_xp_req) * position["progress"])
-            if interaction.user != message.user and position["user_id"] == message.user.id:
-                messager_placement = placement
-                messager = position[final_value]
-                if type == "Cattlepass":
-                    assert bp_season is not None
-                    if position[final_value] >= len(bp_season):
-                        lv_xp_req = 2000
-                    else:
-                        lv_xp_req = bp_season[int(position[final_value]) - 1]["xp"]
-                    messager_perc = math.floor((100 / lv_xp_req) * position["progress"])
+        interactor_placement, interactor, interactor_perc = find_placement(interaction.user.id)
+        if interaction.user.id == message.user.id:
+            messager_placement, messager, messager_perc = 0, None, None
+        else:
+            messager_placement, messager, messager_perc = find_placement(message.user.id)
+        interactor_placement, interactor = tidy(interactor_placement, interactor)
+        messager_placement, messager = tidy(messager_placement, messager)
 
-        if type == "Slow":
-            if interactor:
-                interactor = round(interactor / 3600, 2)
-            if messager:
-                messager = round(messager / 3600, 2)
-
-        if type == "Fast":
-            if interactor:
-                interactor = round(interactor, 3)
-            if messager:
-                messager = round(messager, 3)
-
-        # dont show placements if they arent defined
-        if interactor and type != "Fast":
-            if interactor <= 0 and type != "Cat Dollars":
-                interactor_placement = 0
-            if type != "Slow":
-                interactor = round(interactor)
-        elif interactor and type == "Fast" and interactor >= 99999999999999:
-            interactor_placement = 0
-
-        if messager and type != "Fast":
-            if messager <= 0 and type != "Cat Dollars":
-                messager_placement = 0
-            if type != "Slow":
-                messager = round(messager)
-        elif messager and type == "Fast" and messager >= 99999999999999:
-            messager_placement = 0
+        def format_duration(num: float):
+            for threshold, name in ((31536000, "yrs"), (86400, "days"), (3600, "hrs"), (60, "mins")):
+                if num >= threshold:
+                    return round(num / threshold, 2), name
+            return (round(num, 2), "sec") if num >= 1 else (round(num, 3), "sec")
 
         emoji = ""
 
@@ -10838,39 +10792,17 @@ async def leaderboards(
             num = i[final_value]
 
             if type == "Cattlepass":
-                assert bp_season is not None
-                if i[final_value] >= len(bp_season):
-                    lv_xp_req = 2000
-                else:
-                    lv_xp_req = bp_season[int(i[final_value]) - 1]["xp"]
-                prog_perc = math.floor((100 / lv_xp_req) * i["progress"])
+                prog_perc = math.floor((100 / lv_xp_req(num)) * i["progress"])
                 string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i['user_id']}>\n"
             else:
                 if type == "Value":
                     if num <= 0:
                         break
                     num = round(num)
-                elif type == "Fast" or type == "Slow":
+                elif type in ("Fast", "Slow"):
                     if num >= 99999999999999 or num <= 0:
                         break
-                    if num >= 31536000:
-                        num = round(num / 31536000, 2)
-                        unit = "yrs"
-                    elif num >= 86400:
-                        num = round(num / 86400, 2)
-                        unit = "days"
-                    elif num >= 3600:
-                        num = round(num / 3600, 2)
-                        unit = "hrs"
-                    elif num >= 60:
-                        num = round(num / 60, 2)
-                        unit = "mins"
-                    elif num >= 1:
-                        num = round(num, 2)
-                        unit = "sec"
-                    else:
-                        num = round(num, 3)
-                        unit = "sec"
+                    num, unit = format_duration(num)
                 elif (type in ["Cookies", "Cats", "Pig", "Prisms", "Fish", "Aura"] and num <= 0) or (type == "Cat Dollars" and num == 100):
                     break
                 if type == "Cats" and specific_cat != "All":
@@ -10899,33 +10831,21 @@ async def leaderboards(
         if messager_placement > show_amount or interactor_placement > show_amount:
             string += "...\n"
 
-            # setting up names
-            include_interactor = interactor_placement > show_amount and str(interaction.user.id) not in string
-            include_messager = messager_placement > show_amount and str(message.user.id) not in string
-            interactor_line = ""
-            messager_line = ""
-            if include_interactor:
+            def rank_line(placement: int, value, perc, mention: str) -> str:
                 if type == "Cattlepass":
-                    assert interactor_perc is not None
-                    interactor_line = f"{interactor_placement}\\. Level **{interactor}** *({interactor_perc}%)*: {interaction.user.mention}\n"
-                else:
-                    interactor_line = f"{interactor_placement}\\. {emoji} **{interactor:,}** {unit}: {interaction.user.mention}\n"
-            if include_messager:
-                if type == "Cattlepass":
-                    assert messager_perc is not None
-                    messager_line = f"{messager_placement}\\. Level **{messager}** *({messager_perc}%)*: {message.user.mention}\n"
-                else:
-                    messager_line = f"{messager_placement}\\. {emoji} **{messager:,}** {unit}: {message.user.mention}\n"
+                    assert perc is not None
+                    return f"{placement}\\. Level **{value}** *({perc}%)*: {mention}\n"
+                return f"{placement}\\. {emoji} **{value:,}** {unit}: {mention}\n"
 
-            # sort them correctly!
-            if messager_placement > interactor_placement:
-                # interactor should go first
-                string += interactor_line
-                string += messager_line
-            else:
-                # messager should go first
-                string += messager_line
-                string += interactor_line
+            lines = []
+            if interactor_placement > show_amount and str(interaction.user.id) not in string:
+                lines.append((interactor_placement, rank_line(interactor_placement, interactor, interactor_perc, interaction.user.mention)))
+            if messager_placement > show_amount and str(message.user.id) not in string:
+                lines.append((messager_placement, rank_line(messager_placement, messager, messager_perc, message.user.mention)))
+
+            # sort them correctly! (higher placement number = worse rank = shown first)
+            for _, line in sorted(lines, key=lambda entry: entry[0], reverse=True):
+                string += line
 
         if not string:
             string = "No entries yet. At least, that's my theory. A CAT BOT THE~~~"
@@ -10965,20 +10885,7 @@ async def leaderboards(
                 disabled=locked,
             )
 
-        emojied_options = {
-            "Cats": "🐈",
-            "Value": "🧮",
-            "Fast": "⏱️",
-            "Slow": "💤",
-            "Cattlepass": "⬆️",
-            "Cookies": "🍪",
-            "Fish": "🐟",
-            "Pig": "🎲",
-            "Cat Dollars": "💰",
-            "Prisms": get_emoji("prism"),
-            "Aura": get_emoji("rainbow"),
-        }
-        options = [discord.SelectOption(label=k, emoji=v, default=k == type) for k, v in emojied_options.items()]
+        options = [discord.SelectOption(label=k, emoji=get_emoji(v), default=k == type) for k, v in data.lb_types.items()]
         lb_select = Select(
             "lb_type",
             placeholder="Select a leaderboard type",

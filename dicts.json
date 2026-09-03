@@ -206,6 +206,19 @@
     " Nineteen",
     " Twenty"
   ],
+  "lb_types": {
+    "Cats": "🐈",
+    "Value": "🧮",
+    "Fast": "⏱️",
+    "Slow": "💤",
+    "Cattlepass": "⬆️",
+    "Cookies": "🍪",
+    "Fish": "🐟",
+    "Pig": "🎲",
+    "Cat Dollars": "💰",
+    "Prisms": "prism",
+    "Aura": "rainbow"
+  },
   "vote_button_texts": [
     "You havent voted today!",
     "I know you havent voted ;)",
