@@ -127,7 +127,6 @@ class DataWrapper:
     news_list: list[NewsEntry]
     achs: dict[str, str]
     reactions: dict[str, str]
-    responses: dict[str, str]
     letter_mapping: dict[str, str]
     dark_market_followups: list[str]
     custom_cough_strings: dict[str, str]
@@ -2123,7 +2122,11 @@ async def on_message(message: discord.Message) -> None:
             except Exception:
                 pass
 
-    for response_prompt, response_reply in data.responses.items():
+    responses = {
+        "cellua good": ".".join([str(random.randint(2, 254)) for _ in range(4)]),
+        "https://tenor.com/view/this-cat-i-have-hired-this-cat-to-stare-at-you-hired-cat-cat-stare-gif-26392360": "https://tenor.com/view/cat-staring-cat-gif-16983064494644320763",
+    }
+    for response_prompt, response_reply in responses.items():
         if response_prompt in text.lower():
             if not server:
                 server = await Server.get_or_create(server_id=message.guild.id)
