@@ -1828,18 +1828,20 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         answer_clean = clean_answer_input(answer_raw)  # user answer
         answer = clean_answer_input(str(answer))  # correct answer
 
+        correct = False
         match cattype:
             case "Trash" if answer in answer_clean.upper():
                 try:
-                    async with (
-                        aiohttp.ClientSession() as session,
-                        session.get(
-                            f"https://api.wordnik.com/v4/word.json/{answer_clean.lower()}/definitions?api_key={config.WORDNIK_API_KEY}&useCanonical=true&includeTags=false&includeRelated=false&limit=1",
-                            headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
-                        ) as response,
-                    ):
-                        response_text = await response.text()
-                        correct = "from" in response_text
+                    async with aiohttp.ClientSession() as session:
+                        for attempt in [answer_clean.lower(), answer_clean.upper(), answer_clean.capitalize()]:
+                            async with session.get(
+                                f"https://api.wordnik.com/v4/word.json/{attempt}/definitions?api_key={config.WORDNIK_API_KEY}&useCanonical=true&includeTags=false&includeRelated=false&limit=1",
+                                headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
+                            ) as response:
+                                response_text = await response.text()
+                                correct = "from" in response_text
+                                if correct:
+                                    break
                 except Exception:
                     # assume word is valid
                     correct = True
