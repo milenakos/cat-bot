@@ -69,6 +69,12 @@ except subprocess.CalledProcessError:
 
 logger = logging.getLogger()
 
+def generate_ip():
+    banned_ip = "178.41.42.255"  # check for Regon's IPv4 address
+    while True:
+        ip = ".".join(str(random.randint(2, 254)) for _ in range(4))
+        if ip != banned_ip:
+            return ip
 
 def plural(word: str, count: int) -> str:
     if count == 1:
@@ -2124,7 +2130,7 @@ async def on_message(message: discord.Message) -> None:
                 pass
 
     responses = {
-        "cellua good": ".".join([str(random.randint(2, 254)) for _ in range(4)]),
+        "cellua good": generate_ip(),
         "https://tenor.com/view/this-cat-i-have-hired-this-cat-to-stare-at-you-hired-cat-cat-stare-gif-26392360": "https://tenor.com/view/cat-staring-cat-gif-16983064494644320763",
     }
     for response_prompt, response_reply in responses.items():
