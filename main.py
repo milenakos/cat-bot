@@ -69,12 +69,14 @@ except subprocess.CalledProcessError:
 
 logger = logging.getLogger()
 
+
 def generate_ip():
     banned_ip = "178.41.42.255"  # check for Regon's IPv4 address
     while True:
         ip = ".".join(str(random.randint(2, 254)) for _ in range(4))
         if ip != banned_ip:
             return ip
+
 
 def plural(word: str, count: int) -> str:
     if count == 1:
@@ -8842,7 +8844,7 @@ async def blackcat(message: discord.Interaction):
                 view.add_item(embed)
                 await interaction.response.edit_message(view=view)
 
-                while dealer_score < 17 or (dealer_score <= 18 and dealer_score < score):
+                while dealer_score < 17:
                     await asyncio.sleep(0.5)
                     dealer_score += random.randint(1, 10)
                     view.remove_item(embed)
@@ -8858,10 +8860,19 @@ async def blackcat(message: discord.Interaction):
                 await asyncio.sleep(1)
 
             win = not busted and (dealer_score > 21 or score > dealer_score)
+            tie = not busted and score == dealer_score
             user.blackjacks += 1
             if win:
-                user.casino_balance += bet_amount * 2
+                user.casino_balance += bet_amount * 2 if score != 21 else int(bet_amount * 2.5)
                 user.blackjack_wins += 1
+                title = "winner!!!" if score != 21 else "big winner!!!!"
+            elif tie:
+                user.casino_balance += bet_amount
+                title = "refunded..."
+            elif busted:
+                title = "busted lmao"
+            else:
+                title = "womp womp"
             await user.save()
 
             async def again_callback(interaction: discord.Interaction) -> None:
@@ -8881,7 +8892,7 @@ async def blackcat(message: discord.Interaction):
             b2 = Button(label="change bet...", style=ButtonStyle.gray)
             b2.callback = modal_select
             embed = Container(
-                "## winner!!!" if win else "## womp womp" + ("\nyou busted lol" if busted else ""),
+                f"## {title}",
                 f"your bet was {bet_amount:,} {plural('cat dollar', bet_amount)}",
                 f"you: **{score}**" + (f", {bot.user.name}: **{dealer_score}**" if not busted else ""),
                 ActionRow(b, b2),
