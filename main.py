@@ -8948,7 +8948,7 @@ async def blackcat(message: discord.Interaction):
     view.add_item(
         Container(
             "## 🃏 blackcat",
-            "add random numbers to get as much as possible without going over 21. i will then do the same, and you win if you get more!",
+            "add random numbers to get as much as possible without going over 21. i will then do the same, and you win if you get more!\n- tie: x1 (refund)\n- win: x2\n- big win (win with 21): x2.5",
             ActionRow(b),
             color=Colors.maroon,
         )
