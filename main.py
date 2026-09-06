@@ -5156,8 +5156,8 @@ async def rain(message: discord.Interaction, minutes: int | None):
             return
 
         async def confirm_rain(interaction: discord.Interaction) -> None:
-            await do_rain(interaction, minutes)
             await message.delete_original_response()
+            await do_rain(interaction, minutes)
 
         view = View(timeout=VIEW_TIMEOUT)
         button.callback = confirm_rain
