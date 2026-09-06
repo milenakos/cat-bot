@@ -5034,7 +5034,8 @@ please **open a ticket** in our support server to get the badge: discord.gg/star
 
 
 @bot.tree.command(description="its raining cats")
-async def rain(message: discord.Interaction):
+@discord.app_commands.describe(minutes="If specified, starts a rain, skipping the embed")
+async def rain(message: discord.Interaction, minutes: int | None):
     assert message.guild is not None
     user = await User.get_or_create(user_id=message.user.id)
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
@@ -5146,11 +5147,27 @@ async def rain(message: discord.Interaction):
         style=ButtonStyle.blurple,
         disabled=not server.do_rain,
     )
+
+    if minutes is not None:
+        try:
+            minutes = int(minutes)
+        except Exception:
+            await message.response.send_message("number pls", ephemeral=True)
+            return
+
+        async def confirm_rain(interaction: discord.Interaction) -> None:
+            await do_rain(interaction, minutes)
+            await message.delete_original_response()
+
+        view = View(timeout=VIEW_TIMEOUT)
+        button.callback = confirm_rain
+        view.add_item(button)
+        await message.response.send_message(f"Are you sure you want to start a {minutes}m Cat Rain?", view=view, ephemeral=True)
+        return
+
     button.callback = rain_modal
 
     shopbutton = Button(emoji="🛒", label="Store", url="https://catbot.shop")
-
-    view = View(timeout=VIEW_TIMEOUT)
 
     server_rains = ""
     server_minutes = profile.rain_minutes
