@@ -2808,11 +2808,14 @@ async def on_message(message: discord.Message) -> None:
                 is_rain_catch = cat_rain_end or channel.cat_rains > 0
 
                 async def send_confirm() -> discord.Message | None:
+                    nonlocal suffix_string
                     try:
                         assert le_emoji is not None
                         kwargs = {}
                         if view:
                             kwargs["view"] = view
+
+                        suffix_string = suffix_string.rstrip().replace("\n", "\n-# ")
 
                         catch_text = (
                             coughstring.replace("{username}", message.author.name.replace("_", "\\_"))
