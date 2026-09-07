@@ -10261,7 +10261,7 @@ You can stop. That's okay. Seriously."""
         if not desc:
             embed = Container(f"# Mafia - {rank} (Lv{level})")
         else:
-            embed = Container(Section(f"# Mafia - {rank} (Lv{level})", desc[0], Thumbnail(filename)), *desc[1:])
+            embed = Container(Section(f"# Mafia - {rank} (Lv{level})", desc[0], desc[1], Thumbnail(filename)), *desc[2:])
         action_row = ActionRow()
 
         if not user.perk_selected:
