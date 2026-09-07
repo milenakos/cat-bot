@@ -4202,7 +4202,7 @@ async def lastcatch(message: discord.Interaction):
         res.append(f"your last catch was in <#{profile.last_catch_channel}>")
     if profile.last_catch:
         res.append(f"your last catch was <t:{profile.last_catch}:R>")
-    if server.anti_double_catch and profile.last_catch + 300 < time.time():
+    if server.anti_double_catch and profile.last_catch + 300 > time.time():
         res.append(f"you will be able to catch in other chnanels <t:{profile.last_catch + 300}:R>")
 
     if not res:
