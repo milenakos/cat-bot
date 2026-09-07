@@ -10236,6 +10236,7 @@ You can stop. That's okay. Seriously."""
                     desc.append(f"Perks expire <t:{user.catnip_active}:R>")
                 all_complete = False
 
+            desc.append("===")
             colored = _bounty_progress_segments(user)
             desc.append(
                 f"\n\n**Level {level}** - {change}\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {min(10, level + 1)}"
