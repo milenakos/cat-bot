@@ -10170,68 +10170,9 @@ You can stop. That's okay. Seriously."""
         bonus_complete = False
         name = ""
 
-        desc = "\n"
-        if user.hibernation:
-            desc += "\nThe timer for leveling up will **not start** until you begin your bounties.\n"
+        desc = []
 
         if user.catnip_level > 0 and user.catnip_level < 11:
-
-            def format_bounty(bounty_numstr: str) -> None:
-                nonlocal desc, all_complete, bonus_complete, bounties_complete
-                bounty_id = user[f"bounty_id_{bounty_numstr}"]
-                bounty_type = user[f"bounty_type_{bounty_numstr}"]
-                bounty_total = user[f"bounty_total_{bounty_numstr}"]
-                bounty_progress = user[f"bounty_progress_{bounty_numstr}"]
-
-                desc += "\n- "
-                if bounty_progress == bounty_total:
-                    desc += "✅ "
-                    if bounty_numstr == "bonus":
-                        bonus_complete = True
-                    else:
-                        bounties_complete += 1
-                elif bounty_numstr != "bonus":
-                    all_complete = False
-
-                if bounty_progress == 0:
-                    desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total))
-                else:
-                    desc += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total - bounty_progress) + " more")
-
-                icon = get_aura_emoji(bounty_type, user.cat_auras) if bounty_type else ""
-                desc = desc.replace("type", f"{icon} {bounty_type}")
-
-            if not user.hibernation:
-                if user.bounties == 1:
-                    desc += "\n**__Bounty:__**"
-                else:
-                    desc += "\n**__Bounties:__**"
-                for slot in BOUNTY_SLOTS[: user.bounties]:
-                    format_bounty(slot)
-                if bonus:
-                    desc += "\n**__Bonus Bounty:__**"
-                    format_bounty("bonus")
-                desc += "\n"
-                if not all_complete:
-                    desc += f"\n**Pay Up!** {amount} {get_aura_emoji(cat_type, user.cat_auras)} {cat_type} after completing your bounties"
-                else:
-                    desc += f"\n**Pay Up!** {amount} {get_aura_emoji(cat_type, user.cat_auras)} {cat_type} to proceed"
-            else:
-                desc += "\nPress **Begin Bounties** to view your bounties and cost!"
-                if user.catnip_active > time.time():
-                    desc += f"\nPerks expire <t:{user.catnip_active}:R>"
-                all_complete = False
-
-            colored = _bounty_progress_segments(user)
-            desc += f"\n\n**Level {level}** - {change}"
-            desc += f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {min(10, level + 1)}"
-        if level != 0 and not user.hibernation:
-            if user.catnip_active - int(time.time()) < 1800:
-                desc += f"\n\n**Hurry!** Levels down <t:{user.catnip_active}:R> ({duration}h total)"
-            elif user.catnip_active > time.time():
-                desc += f"\n\nLevels down <t:{user.catnip_active}:R> ({duration}h total)"
-
-        if user.catnip_level:
             if not user.first_quote_seen:
                 quote = quote_list["first"]
                 user.first_quote_seen = True
@@ -10241,13 +10182,74 @@ You can stop. That's okay. Seriously."""
             else:
                 quote = random.choice(quote_list["normal"])
             name = catnip_list["quotes"][level - 1]["name"]
-            desc = f"**{name}**: *{quote}*" + desc
+            desc.append(f"**{name}**: *{quote}*")
+
+            bounties = ""
+
+            def format_bounty(bounty_numstr: str) -> None:
+                nonlocal bounties, all_complete, bonus_complete, bounties_complete
+                bounty_id = user[f"bounty_id_{bounty_numstr}"]
+                bounty_type = user[f"bounty_type_{bounty_numstr}"]
+                bounty_total = user[f"bounty_total_{bounty_numstr}"]
+                bounty_progress = user[f"bounty_progress_{bounty_numstr}"]
+
+                bounties += "\n- "
+                if bounty_progress == bounty_total:
+                    bounties += "✅ "
+                    if bounty_numstr == "bonus":
+                        bonus_complete = True
+                    else:
+                        bounties_complete += 1
+                elif bounty_numstr != "bonus":
+                    all_complete = False
+
+                if bounty_progress == 0:
+                    bounties += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total))
+                else:
+                    bounties += f"{bounty_data[bounty_id]['desc']}".replace("X", str(bounty_total - bounty_progress) + " more")
+
+                icon = get_aura_emoji(bounty_type, user.cat_auras) if bounty_type else ""
+                bounties = bounties.replace("type", f"{icon} {bounty_type}")
+
+            if not user.hibernation:
+                if user.bounties == 1:
+                    bounties += "**__Bounty:__**"
+                else:
+                    bounties += "**__Bounties:__**"
+
+                for slot in BOUNTY_SLOTS[: user.bounties]:
+                    format_bounty(slot)
+                if bonus:
+                    bounties += "\n**__Bonus Bounty:__**"
+                    format_bounty("bonus")
+
+                desc.append(bounties.strip())
+
+                if not all_complete:
+                    desc.append(f"**Pay Up!** {amount} {get_aura_emoji(cat_type, user.cat_auras)} {cat_type} after completing your bounties")
+                else:
+                    desc.append(f"**Pay Up!** {amount} {get_aura_emoji(cat_type, user.cat_auras)} {cat_type} to proceed")
+            else:
+                desc.append("Press **Begin Bounties** to view your bounties and cost!")
+                desc.append("The timer for leveling up will **not start** until you begin your bounties.")
+                if user.catnip_active > time.time():
+                    desc.append(f"Perks expire <t:{user.catnip_active}:R>")
+                all_complete = False
+
+            colored = _bounty_progress_segments(user)
+            desc.append(
+                f"\n\n**Level {level}** - {change}\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {min(10, level + 1)}"
+            )
+
+            if not user.hibernation:
+                if user.catnip_active - int(time.time()) < 1800:
+                    desc.append(f"**Hurry!** Levels down <t:{user.catnip_active}:R> ({duration}h total)")
+                elif user.catnip_active > time.time():
+                    desc.append(f"Levels down <t:{user.catnip_active}:R> ({duration}h total)")
 
         myview = LayoutView(timeout=VIEW_TIMEOUT)
 
-        if name == "Lucian Jr":
-            name = "LucianJr"  # i hate file name conventions
-        filename = f"assets/images/mafia/{name}.png"
+        filename = f"assets/images/mafia/{name.replace(' ', '')}.png"
 
         if name == "Whiskers" and user.catnip_level == 10:
             filename = "assets/images/mafia/WhiskersII.png"
@@ -10256,10 +10258,10 @@ You can stop. That's okay. Seriously."""
 
         filename = "https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/refs/heads/main/" + filename
 
-        if not desc or desc == "\n":
+        if not desc:
             embed = Container(f"# Mafia - {rank} (Lv{level})")
         else:
-            embed = Container(Section(f"# Mafia - {rank} (Lv{level})", desc, Thumbnail(filename)))
+            embed = Container(Section(f"# Mafia - {rank} (Lv{level})", desc[0], Thumbnail(filename), *desc[1:]))
         action_row = ActionRow()
 
         if not user.perk_selected:
