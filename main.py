@@ -10611,7 +10611,9 @@ def aura_emoji(code: str) -> str:
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Literal["Cats", "Value", "Fast", "Slow", "Cattlepass", "Cookies", "Coffees", "Fish", "Pig", "Cat Dollars", "Prisms", "Aura"]
+    leaderboard_type: Literal[
+        "Cats", "Value", "Fast", "Slow", "Cattlepass", "Cookies", "Coffees", "Fish", "Pig", "Cat Dollars", "Prisms", "Aura", "Rain Started"
+    ]
     | None = None,
     cat_type: str | None = None,
     locked: bool | None = None,
@@ -10799,6 +10801,12 @@ async def leaderboards(
                     order = "fish_caught DESC, user_id ASC"
                     ahead = "(entry.fish_caught > target.fish_caught) OR (entry.fish_caught = target.fish_caught AND entry.user_id < target.user_id)"
                     final_value = "fish_caught"
+                case "Rain Started":
+                    unit = "min started"
+                    query = "SELECT user_id, rain_minutes_started FROM profile WHERE guild_id = $1 AND rain_minutes_started != 0"
+                    order = "rain_minutes_started DESC, user_id ASC"
+                    ahead = "(entry.rain_minutes_started > target.rain_minutes_started) OR (entry.rain_minutes_started = target.rain_minutes_started AND entry.user_id < target.user_id)"
+                    final_value = "rain_minutes_started"
                 case _:
                     # qhar
                     raise ValueError("Invalid leaderboard type")
@@ -10872,7 +10880,9 @@ async def leaderboards(
                     if num >= 99999999999999 or num <= 0:
                         break
                     num, unit = format_duration(num)
-                elif (type in ["Cookies", "Coffees", "Cats", "Pig", "Prisms", "Fish", "Aura"] and num <= 0) or (type == "Cat Dollars" and num == 100):
+                elif (type in ["Cookies", "Coffees", "Cats", "Pig", "Prisms", "Fish", "Aura", "Rain Started"] and num <= 0) or (
+                    type == "Cat Dollars" and num == 1000
+                ):
                     break
                 if type == "Cats" and specific_cat != "All":
                     emoji = get_aura_emoji(specific_cat, i["cat_auras"], short=True)
