@@ -4189,6 +4189,26 @@ async def daily(message: discord.Interaction):
     await achemb(message, "daily", "followup")
 
 
+@bot.tree.command(description="View when and where your last catch was")
+async def lastcatch(message: discord.Interaction):
+    assert message.guild is not None
+    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    server = await Server.get_or_create(server_id=message.guild.id)
+
+    res = []
+    if profile.last_catch_channel:
+        res.append(f"your last catch was in <#{profile.last_catch_channel}>")
+    if profile.last_catch:
+        res.append(f"your last catch was <t:{profile.last_catch}:R>")
+    if server.anti_double_catch and profile.last_catch + 300 < time.time():
+        res.append(f"you will be able to catch in other chnanels <t:{profile.last_catch + 300}:R>")
+
+    if not res:
+        res = ["you haven't caught anything in a while..."]
+
+    await message.response.send_message("\n".join(res), ephemeral=True)
+
+
 @bot.tree.command(description="View when the last cat was caught in this channel, and when the next one might spawn")
 async def last(message: discord.Interaction):
     assert isinstance(message.channel, GuildMessageable)
