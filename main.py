@@ -1970,10 +1970,12 @@ async def belated_window_task(
         button = Button(style=discord.ButtonStyle.green, label="Go!")
         button.callback = play_minigame
         view.add_item(button)
+        pings = " ".join([f"<@{catcher[0]}>" for catcher in eligible_catchers])
         h = await reply_or_send(
             catch_confirm,
-            f"🎁 **BONUS {icon} {belated['cattype'].upper()} CAT!**\nAnyone who cought this cat can play a minigame and potentially **get +3 more!**",
+            f"🎁 **BONUS {icon} {belated['cattype'].upper()} CAT!**\nAnyone who cought this cat can play a minigame and potentially **get +3 more!**\n-# {pings}",
             view=view,
+            allowed_mentions=discord.AllowedMentions(users=True),
         )
         await h.delete(delay=10)
 
