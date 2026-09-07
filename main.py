@@ -10589,7 +10589,8 @@ def aura_emoji(code: str) -> str:
 @discord.app_commands.autocomplete(cat_type=lb_type_autocomplete)
 async def leaderboards(
     message: discord.Interaction,
-    leaderboard_type: Literal["Cats", "Value", "Fast", "Slow", "Cattlepass", "Cookies", "Fish", "Pig", "Cat Dollars", "Prisms", "Aura"] | None = None,
+    leaderboard_type: Literal["Cats", "Value", "Fast", "Slow", "Cattlepass", "Cookies", "Coffees", "Fish", "Pig", "Cat Dollars", "Prisms", "Aura"]
+    | None = None,
     cat_type: str | None = None,
     locked: bool | None = None,
 ):
@@ -10742,6 +10743,12 @@ async def leaderboards(
                     order = "cookies DESC, user_id ASC"
                     ahead = "(entry.cookies > target.cookies) OR (entry.cookies = target.cookies AND entry.user_id < target.user_id)"
                     final_value = "cookies"
+                case "Coffees":
+                    unit = "coffees"
+                    query = "SELECT user_id, coffees FROM profile WHERE guild_id = $1 AND coffees > 0"
+                    order = "coffees DESC, user_id ASC"
+                    ahead = "(entry.coffees > target.coffees) OR (entry.coffees = target.coffees AND entry.user_id < target.user_id)"
+                    final_value = "coffees"
                 case "Pig":
                     unit = "score"
                     query = "SELECT user_id, best_pig_score FROM profile WHERE guild_id = $1 AND best_pig_score > 0"
@@ -10843,7 +10850,7 @@ async def leaderboards(
                     if num >= 99999999999999 or num <= 0:
                         break
                     num, unit = format_duration(num)
-                elif (type in ["Cookies", "Cats", "Pig", "Prisms", "Fish", "Aura"] and num <= 0) or (type == "Cat Dollars" and num == 100):
+                elif (type in ["Cookies", "Coffees", "Cats", "Pig", "Prisms", "Fish", "Aura"] and num <= 0) or (type == "Cat Dollars" and num == 100):
                     break
                 if type == "Cats" and specific_cat != "All":
                     emoji = get_aura_emoji(specific_cat, i["cat_auras"], short=True)
