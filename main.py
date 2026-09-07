@@ -8947,6 +8947,8 @@ async def blackcat(message: discord.Interaction):
                 await progress(message, user, "blackcat")
             if score == 21:
                 await achemb(message, "twenty_one", "followup")
+            if win and score == 0:
+                await achemb(message, "all_or_nothing", "followup")
             if user.casino_balance == 0:
                 await achemb(message, "failed_gambler", "followup")
             if user.blackjacks + user.slot_spins + user.roulette_spins >= 10:

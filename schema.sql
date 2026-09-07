@@ -334,7 +334,8 @@ CREATE TABLE public.profile (
     snaker boolean DEFAULT false,
     blackjacks integer DEFAULT 0,
     blackjack_wins integer DEFAULT 0,
-    twenty_one boolean DEFAULT false
+    twenty_one boolean DEFAULT false,
+    all_or_nothing boolean DEFAULT false
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;

@@ -56,6 +56,7 @@
   "pig50": {"title": "Pig Expert", "description": "finish with 50+ score in /pig", "is_hidden": false, "category": "Random"},
   "failed_gambler": {"title": "Failed Gambler", "description": "lose all your money at the casino", "is_hidden": false, "category": "Random"},
   "baker": {"title": "Pro Baker", "description": "deliver a /bakery order", "is_hidden": false, "category": "Random"},
+  "all_or_nothing": {"title": "All or Nothing", "description": "luigi wins by doing absolutely nothing", "is_hidden": false, "category": "Random"},
 
   "silly": {"title": "Silly", "description": "triple-react!", "is_hidden": false, "category": "Silly"},
   "nice": {"title": "Nice!", "description": "gift 69 nice cats", "is_hidden": false, "category": "Silly"},
