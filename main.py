@@ -73,7 +73,7 @@ logger = logging.getLogger()
 def generate_ip():
     banned_ip = "178.41.42.255"  # check for Regon's IPv4 address
     while True:
-        ip = ".".join(str(random.randint(2, 254)) for _ in range(4))
+        ip = ".".join(str(random.randint(1, 255)) for _ in range(4))
         if ip != banned_ip:
             return ip
 
