@@ -4386,10 +4386,16 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
 
 @bot.tree.command(name="stats", description="View some advanced stats")
 @discord.app_commands.rename(person_id="user")
-@discord.app_commands.describe(person_id="Person to view the stats of!")
-async def stats_command(message: discord.Interaction, person_id: discord.User | discord.Member | None = None):
+@discord.app_commands.describe(person_id="Person to view the stats of!", page="No description defnied.")  # sic
+async def stats_command(
+    message: discord.Interaction,
+    person_id: discord.User | discord.Member | None = None,
+    page: Literal["Catching", "Prisms & Catnip", "Cattlepass & Voting", "Rains & Blessings", "Misc"] | None = None,
+):
     if not person_id:
         person_id = message.user
+    if not page:
+        page = "Catching"
 
     async def gen_page(person: discord.User | discord.Member, page: str) -> LayoutView:
         assert message.guild is not None
@@ -4436,7 +4442,7 @@ async def stats_command(message: discord.Interaction, person_id: discord.User | 
         view.add_item(embedVar)
         return view
 
-    await message.response.send_message(view=await gen_page(person_id, "Catching"))
+    await message.response.send_message(view=await gen_page(person_id, page))
 
 
 async def gen_inventory(
