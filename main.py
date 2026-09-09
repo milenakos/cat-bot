@@ -1152,7 +1152,7 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     await channel.save()
     temp_spawns_storage.discard(ch_id)
     log_stats("spawn", {"forced": str(force_spawn)})
-    return f"ok, now i will send cats in <#{ch_id}>"
+    return f"ok, now i will send cats in <#{ch_id}>\nrun {get_command_mention('forget')} to undo this"
 
 
 async def postpone_reminder(interaction: discord.Interaction) -> None:
