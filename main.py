@@ -406,7 +406,7 @@ async def refresh_stock_prices() -> None:
                 current_price = max(1, round(float(token_price) * stock["multiplier"]))
                 stock_prices[stock["ticker"]] = current_price
                 rows[stock["ticker"]].price = current_price
-        await ProfileHistory.bulk_update(list(rows.values()), "price")
+        await PriceHistory.bulk_update(list(rows.values()), "price")
     except Exception:
         logger.warning("Could not refresh CoinGecko stock prices", exc_info=True)
 
