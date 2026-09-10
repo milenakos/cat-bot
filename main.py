@@ -8555,24 +8555,24 @@ async def slots(message: discord.Interaction):
         finals = [col1[current1], col2[current2], col3[current3]]
         if finals[0] == finals[1] == finals[2]:
             profile.slot_wins += 1
-            title = "winner!!!"
             if finals[0] == ":seven:":
-                desc = "**BIG WIN!** *x60*\n\n" + desc
+                title = "BIG WINNER!!!"
+                desc = "*x60*\n" + desc
                 profile.slot_big_wins += 1
                 big_win = True
                 profile.casino_balance += bet_amount * 60
             else:
-                desc = "**you win!** *x12*\n\n" + desc
+                title = "winner!!!"
+                desc = "*x12*\n" + desc
                 profile.casino_balance += bet_amount * 12
             await profile.save()
             await achemb(interaction, "win_slots", "followup")
         elif finals.count(finals[0]) == 2 or finals.count(finals[1]) == 2:
-            desc = "**pair!** *x1*\n\n" + desc
+            desc = "*x1*\n" + desc
             title = "refunded..."
             profile.casino_balance += bet_amount
             await profile.save()
         else:
-            desc = "**you lose!**\n\n" + desc
             await profile.save()
 
         row = ActionRow()
