@@ -11086,11 +11086,12 @@ async def setup_channel(message: discord.Interaction):
         channel_permissions = channel.permissions_for(message.guild.me)
         needed_perms = {
             "View Channel": channel_permissions.view_channel,
-            "Send Messages": channel_permissions.send_messages,
             "Attach Files": channel_permissions.attach_files,
         }
         if isinstance(message.channel, discord.Thread):
             needed_perms["Send Messages in Threads"] = channel_permissions.send_messages_in_threads
+        else:
+            needed_perms["Send Messages"] = channel_permissions.send_messages
 
         for name, value in needed_perms.copy().items():
             if value:
