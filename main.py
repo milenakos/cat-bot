@@ -5102,9 +5102,9 @@ async def rain(message: discord.Interaction, minutes: int | None):
             except Exception:
                 await interaction.response.send_message("number pls", ephemeral=True)
                 return
-            await do_rain(interaction, duration)
+            await do_rain(interaction, duration, False)
 
-    async def do_rain(interaction: discord.Interaction, rain_length: int) -> None:
+    async def do_rain(interaction: discord.Interaction, rain_length: int, anon: bool) -> None:
         # i LOOOOVE checks
         assert interaction.guild is not None
         assert isinstance(interaction.channel, GuildMessageable)
@@ -5159,14 +5159,15 @@ async def rain(message: discord.Interaction, minutes: int | None):
         await user.save()
         await profile.save()
         try:
-            await interaction.response.send_message(f"{rain_length:,}m cat rain was started by {interaction.user.mention}!")
+            starter = interaction.user.mention if not anon else "Anonymous"
+            await interaction.response.send_message(f"{rain_length:,}m cat rain was started by {starter}!")
             ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
             await ch.send(f"{interaction.user.id} started {rain_length}m rain in {interaction.channel.id} ({user.rain_minutes} left)")
         except Exception:
             pass
 
         config.cat_cought_rain[channel.channel_id] = {}
-        config.rain_starter[channel.channel_id] = interaction.user.id
+        config.rain_starter[channel.channel_id] = interaction.user.id if not anon else 0
         await spawn_cat(interaction.channel.id)
         await rain_recovery_loop(channel)
 
@@ -5188,13 +5189,21 @@ async def rain(message: discord.Interaction, minutes: int | None):
             await message.response.send_message("number pls", ephemeral=True)
             return
 
+        button2 = Button(label="Rain Anonymously", disabled=not server.do_rain)
+
         async def confirm_rain(interaction: discord.Interaction) -> None:
             await message.delete_original_response()
-            await do_rain(interaction, minutes)
+            await do_rain(interaction, minutes, False)
+
+        async def confirm_anon(interaction: discord.Interaction) -> None:
+            await message.delete_original_response()
+            await do_rain(interaction, minutes, True)
 
         view = View(timeout=VIEW_TIMEOUT)
         button.callback = confirm_rain
+        button2.callback = confirm_anon
         view.add_item(button)
+        view.add_item(button2)
         await message.response.send_message(f"Are you sure you want to start a {minutes}m Cat Rain?", view=view, ephemeral=True)
         return
 
