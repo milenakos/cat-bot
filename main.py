@@ -5881,7 +5881,7 @@ async def packs(message: discord.Interaction):
     async def gen_main() -> LayoutView:
         view = LayoutView(timeout=VIEW_TIMEOUT)
         buttons, has_special, total_packs = gen_buttons(user)
-        pack_emojis = "".join(get_emoji(i["name"].lower() + "pack") for i in data.pack_data)
+        pack_emojis = "".join(get_emoji(i["name"].lower() + "pack") for i in data.pack_data if not i["special"])
         embed = Container(
             Section(
                 f"## {get_emoji('goldpack')} Packs",
