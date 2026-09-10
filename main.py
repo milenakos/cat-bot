@@ -291,7 +291,6 @@ temp_spawns_storage = TTLStore(60)
 
 # stock prices
 stock_prices: dict[str, int] = {stock["ticker"]: 1 for stock in data.stock_data}
-last_stock_refresh: int = 0
 
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
@@ -383,35 +382,38 @@ def ceil_div(numerator: int, denominator: int) -> int:
 
 
 async def refresh_stock_prices() -> None:
-    global last_stock_refresh
-    if (config.CLUSTERING and not config.CLUSTERING_ZERO) or time.time() - last_stock_refresh < 5:
+    last_stock_refresh = await _get_pool().fetchval("SELECT time FROM pricehistory ORDER BY id DESC LIMIT 1;")
+    if last_stock_refresh is not None and time.time() - last_stock_refresh < 5:
         return
-    last_stock_refresh = time.time()
+    now = int(time.time())
+    rows = {}
+    for stock in data.stock_data:
+        rows[stock["ticker"]] = await PriceHistory.create(ticker=stock["ticker"], price=stock_prices[stock["ticker"]], time=now)
     symbols = ",".join(stock["symbol"] for stock in data.stock_data)
     url = "https://api.coingecko.com/api/v3/simple/price"
     params = {"vs_currencies": "USD", "symbols": symbols}
     try:
-        async with aiohttp.ClientSession() as session, session.get(url, params=params) as response:
+        async with (
+            aiohttp.ClientSession() as session,
+            session.get(url, params=params, headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}) as response,
+        ):
             response.raise_for_status()
             prices = await response.json()
-        refreshed_prices = {}
         for stock in data.stock_data:
             token = prices.get(stock["symbol"].lower(), {})
             token_price = token.get("usd")
             if token_price is not None:
-                refreshed_prices[stock["ticker"]] = max(1, round(float(token_price) * stock["multiplier"]))
-        if not refreshed_prices:
-            raise ValueError("CoinGecko returned no configured token prices")
-        stock_prices.update(refreshed_prices)
-        now = int(time.time())
-        for ticker, price in refreshed_prices.items():
-            await PriceHistory.create(ticker=ticker, price=price, time=now)
+                current_price = max(1, round(float(token_price) * stock["multiplier"]))
+                stock_prices[stock["ticker"]] = current_price
+                rows[stock["ticker"]].price = current_price
+        await ProfileHistory.bulk_update(list(rows.values()), "price")
     except Exception:
         logger.warning("Could not refresh CoinGecko stock prices", exc_info=True)
 
 
 async def get_stock_price(ticker: str) -> int:
-    latest_price = await _get_pool().fetchval("SELECT price FROM pricehistory WHERE ticker = $1 ORDER BY time DESC, id DESC LIMIT 1", ticker)
+    await refresh_stock_prices()
+    latest_price = await _get_pool().fetchval("SELECT price FROM pricehistory WHERE ticker = $1 ORDER BY id DESC LIMIT 1;", ticker)
     if latest_price is not None:
         stock_prices[ticker] = latest_price
     return stock_prices[ticker]
@@ -438,7 +440,6 @@ async def refresh_stock_graphs() -> None:
 async def execute_stock_trade(conn, profile_id: int, ticker: str, quantity: int, buy: bool) -> tuple[int, int]:
     if quantity <= 0:
         raise ValueError("Quantity must be positive")
-    await refresh_stock_prices()
     price = await get_stock_price(ticker)
     total = price * quantity
     stock_column = f'"stock_{ticker.lower()}"'
@@ -6348,7 +6349,6 @@ async def stocks(message: discord.Interaction):
         ticker = interaction.custom_id
         assert ticker is not None
         ticker = ticker.split("_")[0]
-        await refresh_stock_prices()
         current_profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild.id)
         if current_profile.coins < await get_stock_price(ticker):
             view = View(timeout=VIEW_TIMEOUT)
@@ -6364,7 +6364,6 @@ async def stocks(message: discord.Interaction):
         ticker = interaction.custom_id
         assert ticker is not None
         ticker = ticker.split("_")[0]
-        await refresh_stock_prices()
         current_profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild.id)
         if current_profile[f"stock_{ticker.lower()}"] <= 0:
             await interaction.response.send_message("You don't own any shares of this stock", ephemeral=True)
@@ -6386,7 +6385,7 @@ async def stocks(message: discord.Interaction):
         cache_path = pathlib.Path(f"{stock_ticker}.png")
         if not cache_path.is_file():
             await cache_stock_graph(stock_ticker)
-        await asyncio.gather(profile.refresh_from_db(), refresh_stock_prices())
+        await profile.refresh_from_db()
         file = discord.File(cache_path, filename=f"{stock_ticker}.png")
 
         buy_button = Button(label="Buy", style=ButtonStyle.green, custom_id=stock_ticker + "_buy")
