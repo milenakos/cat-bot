@@ -384,15 +384,12 @@ def ceil_div(numerator: int, denominator: int) -> int:
 
 async def refresh_stock_prices() -> None:
     global last_stock_refresh
-    refresh_time = 1 if config.COINGECKO_KEY else 10
-    if (config.CLUSTERING and not config.CLUSTERING_ZERO) or time.time() - last_stock_refresh < refresh_time:
+    if (config.CLUSTERING and not config.CLUSTERING_ZERO) or time.time() - last_stock_refresh < 5:
         return
     last_stock_refresh = time.time()
     symbols = ",".join(stock["symbol"] for stock in data.stock_data)
     url = "https://api.coingecko.com/api/v3/simple/price"
     params = {"vs_currencies": "USD", "symbols": symbols}
-    if config.COINGECKO_KEY:
-        params["x_cg_demo_api_key"] = config.COINGECKO_KEY
     try:
         async with aiohttp.ClientSession() as session, session.get(url, params=params) as response:
             response.raise_for_status()
@@ -441,6 +438,7 @@ async def refresh_stock_graphs() -> None:
 async def execute_stock_trade(conn, profile_id: int, ticker: str, quantity: int, buy: bool) -> tuple[int, int]:
     if quantity <= 0:
         raise ValueError("Quantity must be positive")
+    await refresh_stock_prices()
     price = await get_stock_price(ticker)
     total = price * quantity
     stock_column = f'"stock_{ticker.lower()}"'
