@@ -5701,8 +5701,8 @@ async def packs(message: discord.Interaction):
             buttons.append(button)
 
         rows = []
-        for i in range(0, len(buttons), 5):
-            rows.append(ActionRow(*buttons[i : i + 5]))
+        for i in range(0, len(buttons), 4):
+            rows.append(ActionRow(*buttons[i : i + 4]))
 
         return rows, has_special, total_packs
 
