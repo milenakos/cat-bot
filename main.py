@@ -1429,7 +1429,8 @@ async def background_loop() -> None:
     # refresh materialized view
     await _get_pool().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY profile_sums_mv;")
 
-    # refresh stock graphs
+    # refresh stock prices and graphs
+    await refresh_stock_prices()
     await refresh_stock_graphs()
 
     # revive dead catch loops
