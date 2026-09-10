@@ -291,6 +291,7 @@ temp_spawns_storage = TTLStore(60)
 
 # stock prices
 stock_prices: dict[str, int] = {stock["ticker"]: 1 for stock in data.stock_data}
+last_stock_refresh: int = 0
 
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
@@ -382,6 +383,11 @@ def ceil_div(numerator: int, denominator: int) -> int:
 
 
 async def refresh_stock_prices() -> None:
+    global last_stock_refresh
+    refresh_time = 1 if config.COINGECKO_KEY else 10
+    if (config.CLUSTERING and not config.CLUSTERING_ZERO) or time.time() - last_stock_refresh < refresh_time:
+        return
+    last_stock_refresh = time.time()
     symbols = ",".join(stock["symbol"] for stock in data.stock_data)
     url = "https://api.coingecko.com/api/v3/simple/price"
     params = {"vs_currencies": "USD", "symbols": symbols}
@@ -1423,8 +1429,7 @@ async def background_loop() -> None:
     # refresh materialized view
     await _get_pool().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY profile_sums_mv;")
 
-    # refresh stock prices and graphs
-    await refresh_stock_prices()
+    # refresh stock graphs
     await refresh_stock_graphs()
 
     # revive dead catch loops
@@ -1812,7 +1817,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
                     component=discord.ui.TextInput(placeholder="meow mrrrp miau nyaa~ :3", min_length=69, max_length=2000, style=discord.TextStyle.long, id=67),
                 )
             )
-    modal.add_item(TextDisplay(f"-# You have 30 seconds.\n-# If you don't see the question, update your Discord app."))
+    modal.add_item(TextDisplay("-# You have 30 seconds.\n-# If you don't see the question, update your Discord app."))
 
     async def check_minigame(interaction: discord.Interaction) -> None:
         nonlocal answer
@@ -6344,6 +6349,7 @@ async def stocks(message: discord.Interaction):
         ticker = interaction.custom_id
         assert ticker is not None
         ticker = ticker.split("_")[0]
+        await refresh_stock_prices()
         current_profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild.id)
         if current_profile.coins < await get_stock_price(ticker):
             view = View(timeout=VIEW_TIMEOUT)
@@ -6359,6 +6365,7 @@ async def stocks(message: discord.Interaction):
         ticker = interaction.custom_id
         assert ticker is not None
         ticker = ticker.split("_")[0]
+        await refresh_stock_prices()
         current_profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild.id)
         if current_profile[f"stock_{ticker.lower()}"] <= 0:
             await interaction.response.send_message("You don't own any shares of this stock", ephemeral=True)
@@ -6380,7 +6387,7 @@ async def stocks(message: discord.Interaction):
         cache_path = pathlib.Path(f"{stock_ticker}.png")
         if not cache_path.is_file():
             await cache_stock_graph(stock_ticker)
-        await profile.refresh_from_db()
+        await asyncio.gather(profile.refresh_from_db(), refresh_stock_prices())
         file = discord.File(cache_path, filename=f"{stock_ticker}.png")
 
         buy_button = Button(label="Buy", style=ButtonStyle.green, custom_id=stock_ticker + "_buy")
