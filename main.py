@@ -7339,6 +7339,7 @@ async def fish(message: discord.Interaction):
         await asyncio.sleep(5)
 
         if not fish_caught:
+            fish_caught = True
             await profile.refresh_from_db()
             used_clover = False
             if used_bait:
