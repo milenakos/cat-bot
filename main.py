@@ -5881,9 +5881,13 @@ async def packs(message: discord.Interaction):
     async def gen_main() -> LayoutView:
         view = LayoutView(timeout=VIEW_TIMEOUT)
         buttons, has_special, total_packs = gen_buttons(user)
+        pack_emojis = "".join(get_emoji(i["name"].lower() + "pack") for i in data.pack_data)
         embed = Container(
-            f"## {get_emoji('goldpack')} Packs",
-            f"Each pack starts at one of eight tiers of increasing value - Wooden, Stone, Bronze, Silver, Gold, Platinum, Diamond, or Celestial - and can repeatedly move up tiers with a 30% chance per upgrade. This means that even a pack starting at Wooden, through successive upgrades, can reach the Celestial tier.\n[Chance Info](<https://catbot.minkos.lol/packs>)\nYou have **{total_packs:,}** total packs.",
+            Section(
+                f"## {get_emoji('goldpack')} Packs",
+                Button(label="Chance Info", url="https://catbot.minkos.lol/packs"),
+            ),
+            f"There are 8 types of packs: {pack_emojis}. When opening a pack, there is a **30% chance** it upgrades to the next tier, then another 30% for another upgrade... That means even a {get_emoji('woodenpack')} can upgrade all the way to {get_emoji('celestialpack')} if you get lucky enough.",
         )
 
         if has_special:
@@ -5902,6 +5906,9 @@ async def packs(message: discord.Interaction):
 
         for i in buttons:
             embed.add_item(i)
+
+        if total_packs >= 10:
+            embed.add_item(TextDisplay(f"-# {total_packs:,} total"))
 
         view.add_item(embed)
         return view
