@@ -4830,6 +4830,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
             )
 
         highlights = get_highlights(person, stats)
+        highlighted_ach = person.highlighted_ach.strip() if person.highlighted_ach else None
 
         view = View(timeout=VIEW_TIMEOUT)
         button = Button(style=discord.ButtonStyle.blurple, label="Toggle Compact Inventory")
@@ -4839,6 +4840,9 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
 
         suffix = f"""__Highlighted Stats__
 {"\n".join(highlights)}
+
+__Highlighted Ach__
+{"None" if not highlighted_ach or highlighted_ach not in ach_list else ach_list[highlighted_ach]["title"]}
 
 __Compact Inventory__
 {"✅ True" if person.compact_inventory else "❌ False"}"""
