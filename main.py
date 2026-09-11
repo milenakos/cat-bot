@@ -4510,14 +4510,13 @@ async def gen_inventory(
     # around here we count aches
     unlocked, minus_achs, minus_achs_count = count_achievements(person)
     total_achs = len(ach_list) - minus_achs_count
+    minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
     highlighted_ach = person.highlighted_ach.strip() if person.highlighted_ach else None
     if highlighted_ach and highlighted_ach in ach_list and person[highlighted_ach]:
         # highlighted ach
-        minus_achs = "" if minus_achs == 0 else f"+{minus_achs}"
         things.append(f"{get_emoji('ach')} **{ach_list[highlighted_ach]['title']}** ({unlocked}/{total_achs}{minus_achs})")
     else:
         # no highlighted ach
-        minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
         things.append(f"{get_emoji('ach')} Achievements: {unlocked}/{total_achs}{minus_achs}")
 
     debt = any(person[f"cat_{i}"] < 0 for i in cattypes)
