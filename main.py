@@ -5252,7 +5252,7 @@ async def rain(message: discord.Interaction, minutes: int | None):
         emoji="☔",
         label="Rain!" + (" (disabled by server)" if not server.do_rain else ""),
         style=ButtonStyle.blurple,
-        disabled=not server.do_rain,
+        disabled=True,
     )
 
     if minutes is not None:
