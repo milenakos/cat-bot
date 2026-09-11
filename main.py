@@ -5002,7 +5002,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
                         show_cats = ": ..." + show_cats
                     else:
                         show_cats = ": " + show_cats
-                if str(config.rain_starter[channel.channel_id]) == str(user_id):
+                if str(config.rain_starter[channel.channel_id]).strip() == str(user_id).strip():
                     part_one += "☔ "
                 disambig = f"({len(cat_types)})"
                 if pack_amount:
