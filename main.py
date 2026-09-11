@@ -2152,14 +2152,7 @@ async def on_message(message: discord.Message) -> None:
             or (server.anti_double_catch and user.last_catch_channel != message.channel.id and user.last_catch + 300 > time.time())
         ):
             # laugh at this user
-            # (except if rain is active, we dont have perms or channel isnt setupped, or we laughed way too much already)
-            if channel and channel.cat_rains == 0 and pointlaugh_ratelimit.get(message.channel.id, 0) < 10:
-                try:
-                    if server.do_reactions and await check_channel_setupped(server, message.channel):
-                        await message.add_reaction(get_emoji("pointlaugh"))
-                    pointlaugh_ratelimit[message.channel.id] = pointlaugh_ratelimit.get(message.channel.id, 0) + 1
-                except Exception:
-                    pass
+            do_laugh = channel and channel.cat_rains == 0 and pointlaugh_ratelimit.get(message.channel.id, 0) < 10 and server.do_reactions
 
             # belated catching
             if message.channel.id in config.belated_catchers:
@@ -2183,6 +2176,7 @@ async def on_message(message: discord.Message) -> None:
                         and belated.get("timestamp", 0) + catch_window > current_time
                         and not (server.anti_double_catch and user.last_catch_channel != message.channel.id and user.last_catch + 300 > time.time())
                     ):
+                        do_laugh = False
                         user[f"cat_{channel.cattype}"] += 1
                         user.total_catches += 1
                         user.last_catch = time.time()
@@ -2229,6 +2223,13 @@ async def on_message(message: discord.Message) -> None:
                             await message.channel.send(f"{message.author.mention} {text}", allowed_mentions=discord.AllowedMentions(users=True))
                         vote_time_user.tutorial_state = 3
                         await vote_time_user.save()
+
+            try:
+                if do_laugh and await check_channel_setupped(server, message.channel):
+                    await message.add_reaction(get_emoji("pointlaugh"))
+                    pointlaugh_ratelimit[message.channel.id] = pointlaugh_ratelimit.get(message.channel.id, 0) + 1
+            except Exception:
+                pass
         else:
             pls_remove_me_later_k_thanks = channel.cat
             temp_catches_storage.add(channel.cat)
