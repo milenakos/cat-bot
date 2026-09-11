@@ -4271,6 +4271,10 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
     stats = []
     user = await User.get_or_create(user_id=profile.user_id)
 
+    profile_value = profile.scratchcards * 1085
+    for i in cattypes:
+        profile_value += CAT_VALUES[i] * profile[f"cat_{i}"]
+
     # catching
     stats.append([get_emoji("staring_cat"), "Catching"])
     stats.append(["catches", "🐈", f"Catches: {profile.total_catches:,}{star}"])
@@ -4288,8 +4292,15 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
 
     # catching boosts
     stats.append([get_emoji("prism"), "Prisms & Catnip"])
-    prisms_crafted = await Prism.count("guild_id = $1 AND user_id = $2", profile.guild_id, profile.user_id)
+    prisms_crafted = await Prism.count("guild_id = $1 AND creator = $2", profile.guild_id, profile.user_id)
+    prisms_owned = await Prism.collect_limit(["name"], "guild_id = $1 AND user_id = $2", profile.guild_id, profile.user_id)
+    total_count = await Prism.count("guild_id = $1", profile.guild_id)
+    user_count = len(prisms_owned)
+    profile_value += user_count * PRISM_VALUE
+    global_boost = 0.06 * math.log(2 * total_count + 1)
+    prism_boost = round((global_boost + 0.05 * math.log(2 * user_count + 1)) * 100, 3)
     boosts_done = await Prism.sum("catches_boosted", "guild_id = $1 AND user_id = $2", profile.guild_id, profile.user_id)
+    stats.append(["prism_owned", get_emoji("prism"), f"Prisms owned: {user_count:,} ({prism_boost}%)"])
     stats.append(["prism_crafted", get_emoji("prism"), f"Prisms crafted: {prisms_crafted:,}"])
     stats.append(["boosts_done", get_emoji("prism"), f"Boosts by owned prisms: {boosts_done:,}{star}"])
     stats.append(["boosted_catches", get_emoji("prism"), f"Prism-boosted catches: {profile.boosted_catches:,}{star}"])
@@ -4300,8 +4311,6 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
 
     # battlepass
     stats.append(["⬆️", "Cattlepass & Voting"])
-    stats.append(["total_votes", get_emoji("topgg"), f"Total votes: {user.total_votes:,}{star}"])
-    stats.append(["current_vote_streak", "🔥", f"Current vote streak: {user.vote_streak} (max {max(user.vote_streak, user.max_vote_streak):,}){star}"])
     seasons_complete = 0
     levels_complete = 0
     max_level = 0
@@ -4341,7 +4350,16 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
             total_xp += level["xp"]
     current_packs = 0
     for pack in data.pack_data:
-        current_packs += profile[f"pack_{pack['name'].lower()}"]
+        amount = profile[f"pack_{pack['name'].lower()}"]
+        current_packs += amount
+        profile_value += amount * pack["totalvalue"]
+    try:
+        needed_xp = config.battle["seasons"][str(profile.season)][profile.battlepass]["xp"]
+    except (KeyError, IndexError):
+        needed_xp = 2000
+    stats.append(["bp_current", "⬆️", f"Cattlepass Level {profile.battlepass} ({profile.progress}/{needed_xp} XP)"])
+    stats.append(["total_votes", get_emoji("topgg"), f"Total votes: {user.total_votes:,}{star}"])
+    stats.append(["current_vote_streak", "🔥", f"Current vote streak: {user.vote_streak} (max {max(user.vote_streak, user.max_vote_streak):,}){star}"])
     stats.append(["quests_completed", "✅", f"Quests completed: {profile.quests_completed:,}{star}"])
     stats.append(["seasons_completed", "🏅", f"Cattlepass seasons completed: {seasons_complete:,}"])
     stats.append(["levels_completed", "✅", f"Cattlepass levels completed: {levels_complete:,}"])
@@ -4360,12 +4378,13 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
     stats.append(["cats_blessed", "🌠", f"Cats blessed: {user.cats_blessed:,}"])
 
     # misc
+    stats.append(["❓", "Misc"])
+    portfolio_value, _ = await compute_portfolio(profile)
     if profile.rarest_fish.strip():
         rarest_fish = f"{get_emoji(profile.rarest_fish.lower() + 'fish')} {profile.rarest_fish}"
     else:
         rarest_fish = "N/A"
-    stats.append(["❓", "Misc"])
-    portfolio_value, _ = await compute_portfolio(profile)
+    stats.append(["profile_value", "🧮", f"Profile Value: {profile_value:,}"])
     if profile.ttt_played != 0:
         stats.append(
             ["ttc_win_rate", "⭕", f"Tic Tac Toe wins: {profile.ttt_won:,} (winrate: {(profile.ttt_won + profile.ttt_draws) / profile.ttt_played * 100:.2f}%)"]
@@ -4450,6 +4469,24 @@ async def stats_command(
     await message.response.send_message(view=await gen_page(person_id, page))
 
 
+def get_highlights(person: Profile, stats: list[list[str]]) -> list[str]:
+    assert bot.user is not None
+
+    def find_stat(key: str) -> list[str] | None:
+        return next((stat for stat in stats if stat[0] == key), None)
+
+    things = []
+    defaults = ["time_records", "bp_current", "profile_value"]
+    for num, stat in enumerate([person.highlighted_stat, person.highlighted_stat_two, person.highlighted_stat_three]):
+        if person.user_id == bot.user.id and num == 0:
+            things.append("😎 Style points: 1000")
+            continue
+        highlighted_stat = find_stat(stat) or find_stat(defaults[num])
+        assert highlighted_stat is not None
+        things.append(f"{highlighted_stat[1]} {highlighted_stat[2]}")
+    return things
+
+
 async def gen_inventory(
     guild_id: int,
     inv_user: discord.abc.User | discord.Object,
@@ -4459,31 +4496,6 @@ async def gen_inventory(
     person = await Profile.get_or_create(guild_id=guild_id, user_id=inv_user.id)
     user = await User.get_or_create(user_id=inv_user.id)
 
-    # around here we count aches
-    unlocked, minus_achs, minus_achs_count = count_achievements(person)
-    total_achs = len(ach_list) - minus_achs_count
-    minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
-
-    def prism_short_name(name):
-        if " " not in name:
-            return name
-        parts = name.split(" ")
-        second_part = data.prism_names_end.index(" " + parts[-1]) + 1
-        return f"{parts[0]} {second_part}"
-
-    # count prism stuff
-    prisms = await Prism.collect_limit(["name"], "guild_id = $1 AND user_id = $2", guild_id, inv_user.id)
-    total_count = await Prism.count("guild_id = $1", guild_id)
-    user_count = len(prisms)
-    global_boost = 0.06 * math.log(2 * total_count + 1)
-    prism_boost = round((global_boost + 0.05 * math.log(2 * user_count + 1)) * 100, 3)
-    if len(prisms) == 0:
-        prism_list = "No Prisms"
-    elif len(prisms) == 1:
-        prism_list = f"1 Prism: {prisms[0].name}"
-    else:
-        prism_list = f"{len(prisms)} Prisms: {prism_short_name(prisms[0].name)}, {prism_short_name(prisms[1].name)}" + ("..." if len(prisms) > 2 else "")
-
     emoji_prefix = str(user.emoji) + " " if user.emoji else ""
 
     if user.color:
@@ -4492,30 +4504,25 @@ async def gen_inventory(
         color = "#6E593C"
 
     await refresh_quests(person)
-    try:
-        needed_xp = config.battle["seasons"][str(person.season)][person.battlepass]["xp"]
-    except Exception:
-        needed_xp = 2000
 
-    stats = await gen_stats(person, "")
-    highlighted_stat = None
-    for stat in stats:
-        if stat[0] == person.highlighted_stat:
-            highlighted_stat = stat
-            break
-    if not highlighted_stat:
-        for stat in stats:
-            if stat[0] == "time_records":
-                highlighted_stat = stat
-                break
-    if inv_user == bot.user:
-        highlighted_stat = ["style_points", "😎", "Style points: 1000"]
-    assert highlighted_stat is not None
+    things = get_highlights(person, await gen_stats(person, ""))
+
+    # around here we count aches
+    unlocked, minus_achs, minus_achs_count = count_achievements(person)
+    total_achs = len(ach_list) - minus_achs_count
+    highlighted_ach = person.highlighted_ach.strip()
+    if highlighted_ach and highlighted_ach in ach_list and highlighted_ach in person and person[highlighted_ach]:
+        # highlighted ach
+        minus_achs = "" if minus_achs == 0 else f"+{minus_achs}"
+        things.append(f"{get_emoji('ach')} **{ach_list[highlighted_ach]['title']}** ({unlocked}/{total_achs}{minus_achs})")
+    else:
+        # no highlighted ach
+        minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
+        things.append(f"{get_emoji('ach')} Achievements: {unlocked}/{total_achs}{minus_achs}")
 
     debt = any(person[f"cat_{i}"] < 0 for i in cattypes)
     give_collector = all(person[f"cat_{i}"] > 0 for i in cattypes)
     total = 0
-    valuenum = 0
 
     # for every cat
     cat_elements = []
@@ -4525,7 +4532,6 @@ async def gen_inventory(
         if cat_num == 0:
             continue
         total += cat_num
-        valuenum += CAT_VALUES[i] * cat_num
         cat_elements.append(f"{icon} **{i}** {cat_num:,}")
 
     if user.custom and hasattr(inv_user, "name"):
@@ -4537,11 +4543,13 @@ async def gen_inventory(
     elif len(cat_elements) <= 10 or not person.compact_inventory:
         cat_desc = "\n".join(cat_elements)
     else:
+        # second column render
         cat_desc = ""
         mid = (len(cat_elements) + 1) // 2
         odds, evens = cat_elements[:mid], cat_elements[mid:]
 
         def closest_sum(increase):
+            # yes this works by using whitespace chracters
             shift_values = {"　": 32, " ": 18, " ": 16, " ": 10, " ": 8, " ": 7, " ": 6, " ": 5, " ": 2}
             nums = list(shift_values.values())
             num_to_key = {v: k for k, v in shift_values.items()}
@@ -4593,21 +4601,34 @@ async def gen_inventory(
                 break
             cat_desc += "\n" + elem + closest_sum(goal - lens[elem]) + even
 
+    # compose final line
+    count_segments = []
+    if total != 0:
+        # cats
+        count_segments.append(f"{get_emoji('nice_cat')} {total:,}")
+    if (pack_count := sum([person[f"pack_{pack['name'].lower()}"] for pack in data.pack_data])) != 0:
+        # packs
+        count_segments.append(f"{get_emoji('goldpack')} {pack_count:,}")
+    if (prism_count := await Prism.count("guild_id = $1 AND user_id = $2", guild_id, inv_user.id)) != 0:
+        # prisms
+        count_segments.append(f"{get_emoji('prism')} {prism_count:,}")
+    if user.rain_minutes != 0:
+        # rain
+        count_segments.append(f"☔ {user.rain_minutes:,}")
+    if person.scratchcards != 0:
+        # scratchcards
+        count_segments.append(f"🍀 {person.scratchcards:,}")
+    if not count_segments:
+        count_segments.append("*This profile is empty.*")
+
+    things.append(", ".join(count_segments))
+    things = "\n".join(things)
+
+    has_news = None
     if me_msg and (len(data.news_list) > len(user.news_state.strip()) or user.news_state.strip()[last_active_article] == "0"):
         has_news = "You have unread news! /news"
-    else:
-        has_news = None
 
-    things = f"""{highlighted_stat[1]} {highlighted_stat[2]}
-{get_emoji("ach")} Achievements: {unlocked}/{total_achs}{minus_achs}
-⬆️ Cattlepass Level {person.battlepass} ({person.progress}/{needed_xp} XP)
-{get_emoji("staring_cat")} Cats: {total:,}, Value: {round(valuenum):,}
-{get_emoji("prism")} {prism_list} ({prism_boost}%)"""
-
-    if isinstance(inv_user, discord.abc.User):
-        uname = inv_user.name
-    else:
-        uname = "Cat Bot User"
+    uname = inv_user.name if isinstance(inv_user, discord.abc.User) else "Cat Bot User"
     username = f"## {emoji_prefix}{uname.replace('_', r'\_')}"
 
     badges = ""
@@ -4615,10 +4636,7 @@ async def gen_inventory(
         if user[badge]:
             badges += f"{get_emoji(badge)} "
 
-    if not badges:
-        badges = None
-    else:
-        badges = f"### {badges}"
+    badges = f"### {badges}" if badges else None
 
     if "discordapp" in user.image and isinstance(inv_user, discord.abc.User):
         embedVar = Container(
@@ -4702,16 +4720,30 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
             await do_funny(interaction)
             return
 
-        def stat_select(category) -> discord.ui.Select:
-            options = [discord.SelectOption(emoji="⬅️", label="Back", value="back")]
-            track = False
-            for stat in stats:
-                if len(stat) == 2:
-                    track = bool(stat[1] == category)
-                if len(stat) == 3 and track:
-                    options.append(discord.SelectOption(value=stat[0], emoji=stat[1], label=stat[2]))
+        column = ""
 
-            select = discord.ui.Select(placeholder="Edit highlighted stat... (2/2)", options=options)
+        def stat_select(category) -> discord.ui.Select:
+            if "ach" in column:
+                options = [
+                    discord.SelectOption(
+                        value=key,
+                        emoji=get_emoji("ach"),
+                        label=ach["title"],
+                    )
+                    for key, ach in ach_list.items()
+                    if ach["category"] == category
+                ]
+            else:
+                options = []
+                track = False
+                for stat in stats:
+                    if len(stat) == 2:
+                        track = bool(stat[1] == category)
+                    if len(stat) == 3 and track:
+                        options.append(discord.SelectOption(value=stat[0], emoji=stat[1], label=stat[2]))
+
+            options.insert(0, discord.SelectOption(emoji="⬅️", label="Back", value="back"))
+            select = discord.ui.Select(placeholder="Edit highlighted stat... (3/3)", options=options)
 
             async def select_callback(interaction: discord.Interaction) -> None:
                 if select.values[0] == "back":
@@ -4720,7 +4752,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
                     await interaction.response.edit_message(view=view)
                 else:
                     # update the stat
-                    person.highlighted_stat = select.values[0]
+                    person[column] = select.values[0]
                     await person.save()
                     await interaction.response.edit_message(content="Highlighted stat updated!", embed=None, view=None)
 
@@ -4728,17 +4760,63 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
             return select
 
         def category_select() -> discord.ui.Select:
-            options = []
-            for stat in stats:
-                if len(stat) != 2:
-                    continue
-                options.append(discord.SelectOption(emoji=stat[0], label=stat[1], value=stat[1]))
+            if "ach" in column:
+                options = [
+                    discord.SelectOption(label="None", emoji="❌", description="No featured achievement."),
+                    discord.SelectOption(label="Cat Hunt", emoji=get_emoji("staring_cat")),
+                    discord.SelectOption(label="Commands", emoji="🤖"),
+                    discord.SelectOption(label="Random", emoji="🙃"),
+                    discord.SelectOption(label="Silly", emoji=get_emoji("sillycat")),
+                    discord.SelectOption(label="Hard", emoji=get_emoji("demonic_ach")),
+                    discord.SelectOption(label="Hidden", emoji="❓", description="Hidden achievements only show up after you complete them."),
+                ]
+            else:
+                options = [discord.SelectOption(emoji=stat[0], label=stat[1]) for stat in stats if len(stat) == 2]
 
-            select = discord.ui.Select(placeholder="Edit highlighted stat... (1/2)", options=options)
+            options.insert(0, discord.SelectOption(emoji="⬅️", label="Back", value="back"))
+            select = discord.ui.Select(placeholder="Edit highlighted stat... (2/3)", options=options)
 
             async def select_callback(interaction: discord.Interaction) -> None:
                 view = View(timeout=VIEW_TIMEOUT)
+                if select.values[0] == "back":
+                    view.add_item(line_select())
+                    await interaction.response.edit_message(view=view)
+                    return
+                if select.values[0] == "None":
+                    person.highlighted_ach = ""
+                    await person.save()
+                    await interaction.response.edit_message(content="Highlighted stat updated!", embed=None, view=None)
+                    return
                 view.add_item(stat_select(select.values[0]))
+                await interaction.response.edit_message(view=view)
+
+            select.callback = select_callback
+            return select
+
+        def line_select() -> discord.ui.Select:
+            options = []
+            mappings = ["highlighted_stat", "highlighted_stat_two", "highlighted_stat_three"]
+            for num, (col, stat) in enumerate(zip(mappings, highlights)):
+                emoji = stat.split(" ")[0]
+                rest = stat.removeprefix(emoji + " ")
+                options.append(discord.SelectOption(emoji=emoji, label=rest, description=f"Line {num + 1}", value=col))
+
+            options.append(
+                discord.SelectOption(
+                    emoji=get_emoji("ach"),
+                    label="Achievement",
+                    description="Choose an unlocked achievement to highlight",
+                    value="highlighted_ach",
+                )
+            )
+
+            select = discord.ui.Select(placeholder="Edit highlighted stat... (1/3)", options=options)
+
+            async def select_callback(interaction: discord.Interaction) -> None:
+                nonlocal column
+                column = select.values[0]
+                view = View(timeout=VIEW_TIMEOUT)
+                view.add_item(category_select())
                 await interaction.response.edit_message(view=view)
 
             select.callback = select_callback
@@ -4751,23 +4829,19 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
                 content=f"Compact inventory is now {'enabled' if person.compact_inventory else 'disabled'}.", embed=None, view=None
             )
 
-        highlighted_stat = None
-        for stat in stats:
-            if stat[0] == person.highlighted_stat:
-                highlighted_stat = stat
-                break
-        if not highlighted_stat:
-            for stat in stats:
-                if stat[0] == "time_records":
-                    highlighted_stat = stat
-                    break
-        assert highlighted_stat is not None
+        highlights = get_highlights(person, stats)
 
         view = View(timeout=VIEW_TIMEOUT)
         button = Button(style=discord.ButtonStyle.blurple, label="Toggle Compact Inventory")
         button.callback = toggle_compact_inventory
         view.add_item(button)
-        view.add_item(category_select())
+        view.add_item(line_select())
+
+        suffix = f"""__Highlighted Stats__
+{"\n".join(highlights)}
+
+__Compact Inventory__
+{"✅ True" if person.compact_inventory else "❌ False"}"""
 
         if user.premium:
             if not user.color:
@@ -4778,11 +4852,7 @@ Global, change with `/editprofile`.
 **Emoji**: {user.emoji if user.emoji else "None"}
 **Image**: {"Yes" if "/attachments" in user.image else "No"}
 
-__Highlighted Stat__
-{highlighted_stat[1]} {highlighted_stat[2]}
-
-__Compact Inventory__
-{"✅ True" if person.compact_inventory else "❌ False"}"""
+{suffix}"""
 
             embed = discord.Embed(
                 title=f"{(user.emoji + ' ') if user.emoji else ''}Edit Profile", description=description, color=discord.Colour.from_str(user.color)
@@ -4797,8 +4867,7 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
 👑 **Emoji**
 👑 **Image**
 
-__Highlighted Stat__
-{highlighted_stat[1]} {highlighted_stat[2]}"""
+{suffix}"""
 
             embed = discord.Embed(title="Edit Profile", description=description, color=Colors.brown)
 
