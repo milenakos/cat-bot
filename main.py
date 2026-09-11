@@ -10226,17 +10226,6 @@ You can stop. That's okay. Seriously."""
         desc = []
 
         if user.catnip_level > 0 and user.catnip_level < 11:
-            if not user.first_quote_seen:
-                quote = quote_list["first"]
-                user.first_quote_seen = True
-                await user.save()
-            elif all_complete:
-                quote = random.choice(quote_list["levelup"])
-            else:
-                quote = random.choice(quote_list["normal"])
-            name = catnip_list["quotes"][level - 1]["name"]
-            desc.append(f"**{name}**: *{quote}*")
-
             bounties = ""
 
             def format_bounty(bounty_numstr: str) -> None:
@@ -10288,6 +10277,17 @@ You can stop. That's okay. Seriously."""
                 if user.catnip_active > time.time():
                     desc.append(f"Perks expire <t:{user.catnip_active}:R>")
                 all_complete = False
+
+            if not user.first_quote_seen:
+                quote = quote_list["first"]
+                user.first_quote_seen = True
+                await user.save()
+            elif all_complete:
+                quote = random.choice(quote_list["levelup"])
+            else:
+                quote = random.choice(quote_list["normal"])
+            name = catnip_list["quotes"][level - 1]["name"]
+            desc.insert(0, f"**{name}**: *{quote}*")
 
             desc.append("===")
             colored = _bounty_progress_segments(user)
