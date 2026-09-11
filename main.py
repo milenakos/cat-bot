@@ -5813,10 +5813,8 @@ async def packs(message: discord.Interaction):
         nonlocal open_at_once
         if interaction.user != message.user:
             return await do_funny(interaction)
-        if open_at_once == 1:
-            open_at_once = 10
-        else:
-            open_at_once = 1
+        open_amounts = [1, 5, 10, 25, 50, 100]
+        open_at_once = open_amounts[(open_amounts.index(open_at_once) + 1) % len(open_amounts)]
         await interaction.response.edit_message(view=await gen_main())
 
     async def gen_main() -> LayoutView:
