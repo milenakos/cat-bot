@@ -297,16 +297,6 @@ CREATE TABLE public.profile (
     pack_valentine integer DEFAULT 0,
     valentine_user bigint DEFAULT 0,
     valentine_progress smallint DEFAULT 0,
-    coins integer DEFAULT 0,
-    stock_prsm integer DEFAULT 0,
-    stock_ctnp integer DEFAULT 0,
-    stock_pass integer DEFAULT 0,
-    stock_achs integer DEFAULT 0,
-    stock_rain integer DEFAULT 0,
-    buy_stock boolean DEFAULT false,
-    sell_stock boolean DEFAULT false,
-    seen_deposit boolean DEFAULT false,
-    last_ran_stocks bigint DEFAULT 0,
     ultimates_gifted smallint DEFAULT 0,
     last_catch bigint DEFAULT 0,
     last_catch_channel bigint DEFAULT 0,
@@ -443,52 +433,6 @@ CREATE TABLE public.restore (
 
 ALTER TABLE public.restore OWNER TO cat_bot;
 
-CREATE TABLE public.portfoliohistory (
-    id integer NOT NULL,
-    user_id bigint NOT NULL,
-    time bigint NOT NULL,
-    type character varying(1) NOT NULL,
-    ticker character varying(10) DEFAULT NULL,
-    quantity integer DEFAULT NULL,
-    price integer DEFAULT NULL
-);
-
-ALTER TABLE public.portfoliohistory OWNER TO cat_bot;
-
-CREATE SEQUENCE public.portfoliohistory_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER TABLE public.portfoliohistory_id_seq OWNER TO cat_bot;
-
-ALTER SEQUENCE public.portfoliohistory_id_seq OWNED BY public.portfoliohistory.id;
-
-
-CREATE TABLE public.pricehistory (
-    id integer NOT NULL,
-    time bigint NOT NULL,
-    ticker character varying(10) NOT NULL,
-    price integer NOT NULL
-);
-
-ALTER TABLE public.pricehistory OWNER TO cat_bot;
-
-CREATE SEQUENCE public.pricehistory_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER TABLE public.pricehistory_id_seq OWNER TO cat_bot;
-
-ALTER SEQUENCE public.pricehistory_id_seq OWNED BY public.pricehistory.id;
-
 CREATE TABLE public.snake (
     id smallint DEFAULT 1 UNIQUE,
     active boolean DEFAULT false,
@@ -511,10 +455,6 @@ ALTER TABLE ONLY public.profile ALTER COLUMN id SET DEFAULT nextval('public.prof
 
 ALTER TABLE ONLY public.reminder ALTER COLUMN id SET DEFAULT nextval('public.reminder_id_seq'::regclass);
 
-ALTER TABLE ONLY public.pricehistory ALTER COLUMN id SET DEFAULT nextval('public.pricehistory_id_seq'::regclass);
-
-ALTER TABLE ONLY public.portfoliohistory ALTER COLUMN id SET DEFAULT nextval('public.portfoliohistory_id_seq'::regclass);
-
 
 ALTER TABLE ONLY public.channel
     ADD CONSTRAINT channel_pkey PRIMARY KEY (channel_id);
@@ -536,13 +476,6 @@ ALTER TABLE ONLY public.server
 
 ALTER TABLE ONLY public.restore
     ADD CONSTRAINT restore_pkey PRIMARY KEY (id);
-
-
-ALTER TABLE ONLY public.pricehistory
-    ADD CONSTRAINT pricehistory_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.portfoliohistory
-    ADD CONSTRAINT portfoliohistory_pkey PRIMARY KEY (id);
 
 
 
@@ -575,12 +508,7 @@ CREATE INDEX idx_yet_to_spawn ON public.channel (yet_to_spawn);
 
 CREATE MATERIALIZED VIEW public.profile_sums_mv AS SELECT
     1 as id,
-    COALESCE(SUM(total_catches), 0) AS sum_catches,
-    COALESCE(SUM(stock_prsm), 0) AS sum_stock_prsm,
-    COALESCE(SUM(stock_ctnp), 0) AS sum_stock_ctnp,
-    COALESCE(SUM(stock_pass), 0) AS sum_stock_pass,
-    COALESCE(SUM(stock_achs), 0) AS sum_stock_achs,
-    COALESCE(SUM(stock_rain), 0) AS sum_stock_rain
+    COALESCE(SUM(total_catches), 0) AS sum_catches
 FROM public.profile;
 
 CREATE UNIQUE INDEX profile_sums_mv_id_idx ON public.profile_sums_mv (id);

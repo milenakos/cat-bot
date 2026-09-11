@@ -77,14 +77,6 @@ class Server(catpg.Model):
     _primary_key = "server_id"
 
 
-class PriceHistory(catpg.Model):
-    pass
-
-
-class PortfolioHistory(catpg.Model):
-    pass
-
-
 class Restore(catpg.Model):
     pass
 

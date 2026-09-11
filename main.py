@@ -24,7 +24,6 @@ import json
 import logging
 import math
 import os
-import pathlib
 import platform
 import random
 import re
@@ -52,10 +51,9 @@ from discord.ui import ActionRow, Button, LayoutView, Modal, Separator, TextDisp
 from PIL import Image
 
 import config
-import graph
 import msg2img
 from catpg import RawSQL, _get_pool, transaction
-from database import Channel, PortfolioHistory, PriceHistory, Prism, Profile, Reminder, Restore, Server, Snake, User
+from database import Channel, Prism, Profile, Reminder, Restore, Server, Snake, User
 
 try:
     import exportbackup  # type: ignore
@@ -114,14 +112,6 @@ class FishingEntry(TypedDict):
     value: float
 
 
-class StockEntry(TypedDict):
-    name: str
-    ticker: str
-    emoji: str
-    symbol: str
-    multiplier: float
-
-
 class DataWrapper:
     type_dict: dict[str, int]
     filtered_errors: list[str]
@@ -156,7 +146,6 @@ class DataWrapper:
     win_combinations: list[list[int]]
     nuke_confirmation_lines: list[str]
     fishing_upgrades: dict[str, list[FishingEntry]]
-    stock_data: list[StockEntry]
 
     def __init__(self, data):
         self.data = data
@@ -289,9 +278,6 @@ temp_catches_storage = TTLStore(60)
 # to prevent double spawns
 temp_spawns_storage = TTLStore(60)
 
-# stock prices
-stock_prices: dict[str, int] = {stock["ticker"]: 1 for stock in data.stock_data}
-
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
 
@@ -368,109 +354,6 @@ async def fetch_dm_channel(user: User) -> discord.abc.Messageable:
         user.dm_channel_id = person.dm_channel.id
         await user.save()
         return person.dm_channel
-
-
-def stock_info(ticker: str) -> StockEntry:
-    for stock in data.stock_data:
-        if stock["ticker"] == ticker:
-            return stock
-    raise ValueError(f"Unknown stock ticker: {ticker}")
-
-
-def ceil_div(numerator: int, denominator: int) -> int:
-    return (numerator + denominator - 1) // denominator
-
-
-async def refresh_stock_prices() -> None:
-    last_stock_refresh = await _get_pool().fetchval("SELECT time FROM pricehistory ORDER BY id DESC LIMIT 1;")
-    if last_stock_refresh is not None and time.time() - last_stock_refresh < 5:
-        return
-    now = int(time.time())
-    rows = {}
-    for stock in data.stock_data:
-        rows[stock["ticker"]] = await PriceHistory.create(ticker=stock["ticker"], price=stock_prices[stock["ticker"]], time=now)
-    symbols = ",".join(stock["symbol"] for stock in data.stock_data)
-    url = "https://api.coingecko.com/api/v3/simple/price"
-    params = {"vs_currencies": "USD", "symbols": symbols}
-    try:
-        async with (
-            aiohttp.ClientSession() as session,
-            session.get(url, params=params, headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}) as response,
-        ):
-            response.raise_for_status()
-            prices = await response.json()
-        for stock in data.stock_data:
-            token = prices.get(stock["symbol"].lower(), {})
-            token_price = token.get("usd")
-            if token_price is not None:
-                current_price = max(1, round(float(token_price) * stock["multiplier"]))
-                stock_prices[stock["ticker"]] = current_price
-                rows[stock["ticker"]].price = current_price
-        await PriceHistory.bulk_update(list(rows.values()), "price")
-    except Exception:
-        logger.warning("Could not refresh CoinGecko stock prices", exc_info=True)
-
-
-async def get_stock_price(ticker: str) -> int:
-    await refresh_stock_prices()
-    latest_price = await _get_pool().fetchval("SELECT price FROM pricehistory WHERE ticker = $1 ORDER BY id DESC LIMIT 1;", ticker)
-    if latest_price is not None:
-        stock_prices[ticker] = latest_price
-    return stock_prices[ticker]
-
-
-async def cache_stock_graph(ticker: str):
-    stock_data = []
-    async for sample in PriceHistory.filter("ticker = $1 AND time > $2", ticker, int(time.time() - 3600 * 49)):
-        stock_data.append((sample.time, sample.price))
-
-    buffer = await bot.loop.run_in_executor(None, graph.make_graph, stock_data, 10, 3)
-    cache_path = pathlib.Path(f"{ticker}.png")
-    cache_path.write_bytes(buffer.getvalue())
-
-
-async def refresh_stock_graphs() -> None:
-    for stock in data.stock_data:
-        try:
-            await cache_stock_graph(stock["ticker"])
-        except Exception:
-            logger.warning("Could not cache stock graph for %s", stock["ticker"], exc_info=True)
-
-
-async def execute_stock_trade(conn, profile_id: int, ticker: str, quantity: int, buy: bool) -> tuple[int, int]:
-    if quantity <= 0:
-        raise ValueError("Quantity must be positive")
-    price = await get_stock_price(ticker)
-    total = price * quantity
-    stock_column = f'"stock_{ticker.lower()}"'
-    profile = await conn.fetchrow("SELECT * FROM profile WHERE id = $1 FOR UPDATE", profile_id)
-    if profile is None:
-        raise ValueError("Profile no longer exists")
-    if buy:
-        if total > profile["coins"]:
-            raise ValueError("Not enough coins")
-        await conn.execute(f"UPDATE profile SET coins = coins - $1, {stock_column} = {stock_column} + $2 WHERE id = $3", total, quantity, profile_id)
-    else:
-        if quantity > profile[f"stock_{ticker.lower()}"]:
-            raise ValueError("Not enough shares")
-        await conn.execute(f"UPDATE profile SET coins = coins + $1, {stock_column} = {stock_column} - $2 WHERE id = $3", total, quantity, profile_id)
-    await PortfolioHistory.create(
-        connection=conn, user_id=profile_id, ticker=ticker, type="b" if buy else "s", quantity=quantity, price=price, time=int(time.time())
-    )
-    return total, price
-
-
-async def compute_portfolio(profile) -> tuple[float, list[str]]:
-    portfolio_value = 0.0
-    share_strs = []
-    for stock in data.stock_data:
-        stock_price = await get_stock_price(stock["ticker"])
-        amount_owned = profile[f"stock_{stock['ticker'].lower()}"]
-        item_value = stock_price * amount_owned
-        portfolio_value += item_value
-        if amount_owned > 0:
-            share_strs.append(f"{get_emoji(stock['emoji'])} {amount_owned:,}x (🪙 *{item_value:,}*)")
-    return portfolio_value, share_strs
 
 
 async def check_channel_setupped(guild: Server, channel: GuildMessageable) -> bool:
@@ -1427,10 +1310,6 @@ async def background_loop() -> None:
 
     # refresh materialized view
     await _get_pool().execute("REFRESH MATERIALIZED VIEW CONCURRENTLY profile_sums_mv;")
-
-    # refresh stock prices and graphs
-    await refresh_stock_prices()
-    await refresh_stock_graphs()
 
     # revive dead catch loops
     counter = 0
@@ -3594,16 +3473,7 @@ You will be able to collect them until <t:1771437600> using 2 methods:
             case 15:
                 embed = Container(
                     "## 📈 Welcome to the Stock Market",
-                    """ever wanted to invest your cats into stocks? no? well now you can!
-- /stocks and /portfolio
-- deposit packs to get coins
-- trade shares of stocks with other cat bot users globally
-- earn random rewards from time to time
-- withdraw coins back to packs
-
-i understand this might be overwhelming which is why i added a ton of help buttons throughout the thing! those have much better explanations than this brief overview
-
-ummm good luck and let the line go up!""",
+                    """this was removed.""",
                     "-# <t:1772308800>",
                 )
                 view.add_item(embed)
@@ -3721,7 +3591,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
             case 22:
                 embed = Container(
                     "## 😻 250k/Cat Day Event",
-                    f"-# quarter million lets go! and happy international cat day! and {get_command_mention('stocks')} are back!",
+                    "-# quarter million lets go! and happy international cat day!",
                     "A new catching event, ending <t:1786651200:R>! For every *unique cat type* you catch, you will get a pack! The pack type will be determined by *how many catches everyone globally does*. See below for current event state!",
                     f"*Final reward:* {get_emoji('silverpack')} Silver Pack",
                     "===",
@@ -4379,7 +4249,6 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
 
     # misc
     stats.append(["❓", "Misc"])
-    portfolio_value, _ = await compute_portfolio(profile)
     if profile.rarest_fish.strip():
         rarest_fish = f"{get_emoji(profile.rarest_fish.lower() + 'fish')} {profile.rarest_fish}"
     else:
@@ -4394,7 +4263,6 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
     stats.append(["blackcat", "🃏", f"Blackcat games: {profile.blackjacks:,}, wins: {profile.blackjack_wins:,}"])
     stats.append(["slot_spins", "🎰", f"Slot spins: {profile.slot_spins:,}, wins: {profile.slot_wins:,}, big wins: {profile.slot_big_wins:,}"])
     stats.append(["roulette_spins", "💰", f"Roulette spins: {profile.roulette_spins:,}, wins: {profile.roulette_wins:,}"])
-    stats.append(["portfolio_value", "🪙", f"Portfolio value: {int(portfolio_value):,}"])
     stats.append(["cookies", "🍪", f"Cookies clicked: {profile.cookies:,}"])
     stats.append(["coffees", "☕", f"Coffees brewed: {profile.coffees:,}"])
     stats.append(["catfishing", "🎣", f"Fish caught: {profile.fish_caught:,}, rarest: {rarest_fish}"])
@@ -6207,378 +6075,6 @@ async def vote(message: discord.Interaction):
     button = Button(label="Vote!", url="https://top.gg/bot/966695034340663367/vote", emoji=get_emoji("topgg"))
     view.add_item(button)
     await message.response.send_message(view=view)
-
-
-async def view_portfolio(interaction: discord.Interaction, person: discord.Member | discord.User, refresh: bool = False, hidden: bool | None = None):
-    assert interaction.guild is not None
-    if hidden is None:
-        hidden = False
-    profile = await Profile.get_or_create(user_id=person.id, guild_id=interaction.guild.id)
-    user = await User.get_or_create(user_id=person.id)
-
-    view = LayoutView(timeout=VIEW_TIMEOUT)
-
-    stock_value, share_strs = await compute_portfolio(profile)
-    portfolio_value = profile.coins + stock_value
-    share_strs = [f"🪙 {profile.coins:,}"] + share_strs
-
-    shares_display = "\n".join(share_strs)
-
-    portfolio_history = []
-    async for history in PortfolioHistory.filter("user_id = $1 ORDER BY time DESC LIMIT 13", profile.id):
-        match history.type:
-            case "d":
-                portfolio_history.append(f"📥 Deposited 🪙 {history.price:,} coins <t:{history.time}:R>")
-            case "w":
-                portfolio_history.append(f"📤 Withdrew 🪙 {history.price:,} coins <t:{history.time}:R>")
-            case "s":
-                portfolio_history.append(f"🔴 Sold {history.quantity:,}x {history.ticker} at 🪙 {history.price:,}/share <t:{history.time}:R>")
-            case "b":
-                portfolio_history.append(f"🟢 Bought {history.quantity:,}x {history.ticker} at 🪙 {history.price:,}/share <t:{history.time}:R>")
-
-    deposits = await PortfolioHistory.sum("price", "user_id = $1 AND type = $2", profile.id, "d")
-    deposits -= await PortfolioHistory.sum("price", "user_id = $1 AND type = $2", profile.id, "w")
-
-    try:
-        value_diff = (portfolio_value / deposits - 1) * 100
-    except ZeroDivisionError:
-        value_diff = 0
-    growth_emoji = "📈" if value_diff >= 0 else "📉"
-    emoji_prefix = (user.emoji + " ") if user.emoji else ""
-
-    first_lines = (f"## {emoji_prefix}{person}", f"### 🪙 {int(portfolio_value):,}", f"{growth_emoji} {value_diff:+.2f}% *(Lifetime)*")
-
-    async def refresh_portfolio(interaction):
-        await view_portfolio(interaction, person, refresh=True, hidden=False)
-
-    refresh_button = Button(label="Refresh", style=ButtonStyle.gray, emoji="🔄")
-    refresh_button.callback = refresh_portfolio
-
-    container = Container(
-        Section(*first_lines, Thumbnail(user.image)) if user.image else first_lines,
-        "===",
-        shares_display or "No portfolio",
-        "===",
-        "### Portfolio History",
-        "\n".join(portfolio_history) or "No portfolio history",
-        "===",
-        ActionRow(refresh_button),
-        accent_color=Colors.brown if not user.color else discord.Colour.from_str(user.color),
-    )
-
-    view.add_item(container)
-    if not refresh:
-        await interaction.response.send_message(view=view, ephemeral=hidden)
-    else:
-        await interaction.response.edit_message(view=view)
-
-
-@bot.tree.command(description="View your stock portfolio")
-@discord.app_commands.rename(person_id="user")
-@discord.app_commands.describe(person_id="Person to view the inventory of!", hidden="Whether the response will only be seen by you.")
-async def portfolio(message: discord.Interaction, person_id: discord.User | discord.Member | None, hidden: bool | None):
-    if not person_id:
-        person_id = message.user
-    if not hidden:
-        hidden = False
-    await view_portfolio(message, person_id, refresh=False, hidden=hidden)
-
-
-@bot.tree.command(description="the stonk market")
-async def stocks(message: discord.Interaction):
-    assert message.guild is not None
-    profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
-    profile.last_ran_stocks = int(time.time())
-    await profile.save()
-
-    if not profile.bp_history.strip().replace("0,0,0;", ""):
-        await message.response.send_message("your profile needs to be older than 1 cattlepass season to use this feature.", ephemeral=True)
-        return
-
-    async def deposit_pack(interaction):
-        await profile.refresh_from_db()
-        pack_name = interaction.custom_id
-        assert pack_name is not None
-        if pack_name not in ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]:
-            return
-        if profile[f"pack_{pack_name.lower()}"] < 1:
-            await interaction.response.send_message("u dont have any packs of such type", ephemeral=True)
-            return
-        profile[f"pack_{pack_name.lower()}"] -= 1
-        og = profile.coins
-        for pack in data.pack_data:
-            if pack["name"].lower() == pack_name.lower():
-                profile.coins += pack["totalvalue"]
-                break
-        await profile.save()
-        embedVar = discord.Embed(title="📥 Deposit Packs", description=f"You currently have 🪙 **{profile.coins:,}** coins.", color=Colors.brown)
-        await interaction.response.edit_message(embed=embedVar, view=deposit_msg(profile))
-        await PortfolioHistory.create(user_id=profile.id, time=int(time.time()), type="d", price=profile.coins - og)
-
-    async def deposit(interaction):
-        await profile.refresh_from_db()
-        profile.seen_deposit = True
-        embedVar = discord.Embed(title="📥 Deposit Packs", description=f"You currently have 🪙 **{profile.coins:,}** coins.", color=Colors.brown)
-        await interaction.response.send_message(embed=embedVar, view=deposit_msg(profile), ephemeral=True)
-        await profile.save()
-
-    def deposit_msg(profile):
-        view = View(timeout=VIEW_TIMEOUT)
-        empty = True
-        for pack in data.pack_data:
-            if pack["name"] not in ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]:
-                continue
-            if profile[f"pack_{pack['name'].lower()}"] < 1:
-                continue
-            empty = False
-            amount = profile[f"pack_{pack['name'].lower()}"]
-            button = Button(
-                emoji=get_emoji(pack["name"].lower() + "pack"),
-                label=f"{pack['name']} ({amount:,})",
-                style=ButtonStyle.blurple,
-                custom_id=pack["name"],
-            )
-            button.callback = deposit_pack
-            view.add_item(button)
-        if empty:
-            view.add_item(Button(label="No packs left!", disabled=True))
-        return view
-
-    async def withdraw(interaction):
-        await profile.refresh_from_db()
-        embedVar = discord.Embed(
-            title="📤 Withdraw Coins",
-            description=f"You currently have 🪙 **{profile.coins:,}** coins.\n\nYou will get {get_emoji('stonepack')} **1 Stone Pack** for every 🪙 **100** coins you withdraw.",
-            color=Colors.brown,
-        )
-        view = View(timeout=VIEW_TIMEOUT)
-        button = Button(label="Continue")
-        button.callback = send_withdrawal_modal
-        view.add_item(button)
-        await interaction.response.send_message(embed=embedVar, view=view, ephemeral=True)
-
-    async def send_withdrawal_modal(interaction):
-        await profile.refresh_from_db()
-        max_packs = max(profile.coins // 100, 0)
-        await interaction.response.send_modal(WithdrawalModal(max_packs))
-
-    class WithdrawalModal(Modal):
-        def __init__(self, max_packs):
-            super().__init__(
-                title="Withdraw...",
-                timeout=VIEW_TIMEOUT,
-            )
-
-            self.input = TextInput(
-                min_length=1,
-                max_length=5,
-                label="Stone packs to withdraw",
-                style=discord.TextStyle.short,
-                required=True,
-                placeholder=f"Max: {max_packs}",
-            )
-            self.add_item(self.input)
-
-        async def on_submit(self, interaction: discord.Interaction):
-            try:
-                packs = int(self.input.value)
-                if packs <= 0:
-                    raise ValueError
-            except Exception:
-                await interaction.response.send_message("number pls", ephemeral=True)
-                return
-
-            await profile.refresh_from_db()
-            max_packs = profile.coins // 100
-            max_packs = max(max_packs, 0)
-            if packs > max_packs:
-                await interaction.response.send_message("u dont have enough coins", ephemeral=True)
-                return
-
-            profile.coins -= packs * 100
-            profile.pack_stone += packs
-            await profile.save()
-            await PortfolioHistory.create(user_id=profile.id, time=int(time.time()), type="w", price=packs * 100)
-            await interaction.response.send_message(f"📤 You withdrew {packs} stone {plural('pack', packs)}! 🪙 -{packs * 100} coins.", ephemeral=True)
-
-    class TradeModal(Modal):
-        def __init__(self, ticker: str, trade_type: Literal["buy", "sell"], balance: int, max_quantity: int):
-            super().__init__(title=f"{trade_type.capitalize()}ing {ticker}")
-            self.ticker = ticker
-            self.trade_type = trade_type
-            self.quantity = TextInput(
-                label="Quantity",
-                placeholder=f"Shares to sell (max {max_quantity:,})"
-                if trade_type == "sell"
-                else f"Shares to buy (balance: {balance:,}; max: {max_quantity:,})",
-                min_length=1,
-                max_length=6,
-                required=True,
-                style=discord.TextStyle.short,
-            )
-            self.add_item(self.quantity)
-
-        async def on_submit(self, interaction: discord.Interaction):
-            try:
-                quantity = int(self.quantity.value)
-                if quantity <= 0:
-                    raise ValueError
-                async with transaction() as conn:
-                    total, price = await execute_stock_trade(conn, profile.id, self.ticker, quantity, self.trade_type == "buy")
-                await interaction.response.send_message(
-                    f"✅ {'Bought' if self.trade_type == 'buy' else 'Sold'} **{quantity:,}x {self.ticker}** for 🪙 **{total:,}** (🪙 {price:,}/share).",
-                    ephemeral=True,
-                )
-                await achemb(interaction, "buy_stock" if self.trade_type == "buy" else "sell_stock", "followup")
-            except (ValueError, TypeError):
-                await interaction.response.send_message("quantity must be a positive integer, and you must have enough assets", ephemeral=True)
-
-    async def buy_stock(interaction: discord.Interaction):
-        assert interaction.guild is not None
-        ticker = interaction.custom_id
-        assert ticker is not None
-        ticker = ticker.split("_")[0]
-        current_profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild.id)
-        if current_profile.coins < await get_stock_price(ticker):
-            view = View(timeout=VIEW_TIMEOUT)
-            btn = Button(label="Deposit", style=ButtonStyle.green)
-            btn.callback = deposit
-            view.add_item(btn)
-            await interaction.response.send_message("You don't have enough coins to buy this stock. Deposit some packs to continue!", view=view, ephemeral=True)
-            return
-        await interaction.response.send_modal(TradeModal(ticker, "buy", current_profile.coins, current_profile.coins // await get_stock_price(ticker)))
-
-    async def sell_stock(interaction: discord.Interaction):
-        assert interaction.guild is not None
-        ticker = interaction.custom_id
-        assert ticker is not None
-        ticker = ticker.split("_")[0]
-        current_profile = await Profile.get_or_create(user_id=interaction.user.id, guild_id=interaction.guild.id)
-        if current_profile[f"stock_{ticker.lower()}"] <= 0:
-            await interaction.response.send_message("You don't own any shares of this stock", ephemeral=True)
-            return
-        await interaction.response.send_modal(TradeModal(ticker, "sell", current_profile.coins, current_profile[f"stock_{ticker.lower()}"]))
-
-    async def view_stock(interaction):
-        view = LayoutView(timeout=VIEW_TIMEOUT)
-
-        stock_ticker = interaction.custom_id
-        stock = None
-        for i in data.stock_data:
-            if i["ticker"] == stock_ticker:
-                stock = i
-                break
-
-        assert stock is not None
-
-        cache_path = pathlib.Path(f"{stock_ticker}.png")
-        if not cache_path.is_file():
-            await cache_stock_graph(stock_ticker)
-        await profile.refresh_from_db()
-        file = discord.File(cache_path, filename=f"{stock_ticker}.png")
-
-        buy_button = Button(label="Buy", style=ButtonStyle.green, custom_id=stock_ticker + "_buy")
-        buy_button.callback = buy_stock
-        sell_button = Button(label="Sell", style=ButtonStyle.red, custom_id=stock_ticker + "_sell")
-        sell_button.callback = sell_stock
-
-        back_button = Button(style=ButtonStyle.gray, emoji="⬅️")
-        back_button.callback = go_back
-        refresh_button = Button(label="Refresh", style=ButtonStyle.gray, emoji="🔄", custom_id=stock_ticker)
-        refresh_button.callback = view_stock
-
-        icon = get_emoji(stock["emoji"])
-
-        container = Container(
-            f"## {icon} {stock['name']} ({stock['ticker']})",
-            f"Mirroring ${stock['symbol']}",
-            "===",
-            f"### Current price: 🪙 **{await get_stock_price(stock_ticker):,}**/share",
-            discord.ui.MediaGallery(discord.MediaGalleryItem(file)),
-            ActionRow(buy_button, sell_button),
-            f"You have {icon} {profile[f'stock_{stock_ticker.lower()}']:,} and 🪙 {profile.coins:,}",
-            "===",
-            ActionRow(back_button, refresh_button),
-        )
-
-        view.add_item(container)
-
-        await interaction.response.edit_message(view=view, attachments=[file])
-
-    async def main_page():
-        await profile.refresh_from_db()
-
-        view = LayoutView(timeout=VIEW_TIMEOUT)
-
-        _, share_strs = await compute_portfolio(profile)
-        share_strs = [f"🪙 {profile.coins:,}"] + share_strs
-
-        deposits = await PortfolioHistory.sum("price", "user_id = $1 AND type = $2", profile.id, "d")
-        deposits -= await PortfolioHistory.sum("price", "user_id = $1 AND type = $2", profile.id, "w")
-
-        container = Container(
-            "## 📈 Stock Market",
-            f"Buy stocks and watch the number go up!\nYour balance: 🪙 {profile.coins:,}",
-            "===",
-        )
-
-        global_stock_totals = await _get_pool().fetchrow(
-            "SELECT sum_stock_prsm, sum_stock_ctnp, sum_stock_pass, sum_stock_achs, sum_stock_rain FROM profile_sums_mv;"
-        )
-        assert global_stock_totals is not None
-
-        for item in data.stock_data:
-            button = Button(label="View", style=ButtonStyle.blurple, custom_id=item["ticker"])
-
-            button.callback = view_stock
-
-            price = await get_stock_price(item["ticker"])
-            global_shares = global_stock_totals[f"sum_stock_{item['ticker'].lower()}"]
-
-            owned = profile[f"stock_{item['ticker'].lower()}"]
-
-            container.add_item(
-                Section(
-                    f"### {get_emoji(item['emoji'])} {item['ticker']} - 🪙 {price:,}",
-                    f"Shares: {global_shares:,} globally, {owned:,} yours",
-                    button,
-                )
-            )
-
-        row = ActionRow()
-
-        button = Button(label="Deposit", style=ButtonStyle.green)
-        button.callback = deposit
-        row.add_item(button)
-
-        button = Button(label="Withdraw", style=ButtonStyle.red)
-        button.callback = withdraw
-        row.add_item(button)
-
-        button = Button(label="Your Portfolio", style=ButtonStyle.blurple)
-        button.callback = view_user_portfolio
-        row.add_item(button)
-
-        container.add_item(Separator())
-        container.add_item(row)
-        view.add_item(container)
-        return view
-
-    async def view_user_portfolio(interaction):
-        await view_portfolio(interaction, interaction.user, refresh=False, hidden=True)
-
-    async def go_back(interaction):
-        await interaction.response.edit_message(view=await main_page(), attachments=[])
-
-    await message.response.send_message(view=await main_page(), ephemeral=True)
-
-    if not profile.seen_deposit:
-        text = f"""Welcome!
-
-**Cat Bot Stock Market** has five stocks mirroring real-world token prices. To buy and sell stocks you use :coin: **coins**, which you can get by depositing {get_emoji("goldpack")} __Packs__. You can withdraw :coin: **coins** back into __Packs__.
-
-Click `Deposit` to start."""
-        await message.followup.send(text, ephemeral=True)
 
 
 @bot.tree.command(description="cat prisms are a special power up")
