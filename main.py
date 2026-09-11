@@ -4582,7 +4582,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
             f"⚠️ Are you sure you want to report {person_id} for having an inappropriate inventory image / custom cat?", view=view, ephemeral=True
         )
 
-    async def edit_profile(interaction: discord.Interaction) -> None:
+    async def edit_profile(interaction: discord.Interaction, edit: bool | None = None) -> None:
         if interaction.user.id != person_id.id:
             await do_funny(interaction)
             return
@@ -4621,7 +4621,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
                     # update the stat
                     person[column] = select.values[0]
                     await person.save()
-                    await interaction.response.edit_message(content="Highlighted stat updated!", embed=None, view=None)
+                    await edit_profile(interaction, True)
 
             select.callback = select_callback
             return select
@@ -4652,7 +4652,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
                 if select.values[0] == "None":
                     person.highlighted_ach = ""
                     await person.save()
-                    await interaction.response.edit_message(content="Highlighted stat updated!", embed=None, view=None)
+                    await edit_profile(interaction, True)
                     return
                 view.add_item(stat_select(select.values[0]))
                 await interaction.response.edit_message(view=view)
@@ -4742,7 +4742,10 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
 
             embed = discord.Embed(title="Edit Profile", description=description, color=Colors.brown)
 
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+        if not edit:
+            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+        else:
+            await interaction.response.edit_message(embed=embed, view=view)
 
     async def render_inventory(interaction: discord.Interaction, first: bool = False) -> None:
         assert message.guild is not None
