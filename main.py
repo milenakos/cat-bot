@@ -4384,7 +4384,7 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
         rarest_fish = f"{get_emoji(profile.rarest_fish.lower() + 'fish')} {profile.rarest_fish}"
     else:
         rarest_fish = "N/A"
-    stats.append(["profile_value", "🧮", f"Profile Value: {profile_value:,}"])
+    stats.append(["profile_value", "🧮", f"Profile Value: {round(profile_value):,}"])
     if profile.ttt_played != 0:
         stats.append(
             ["ttc_win_rate", "⭕", f"Tic Tac Toe wins: {profile.ttt_won:,} (winrate: {(profile.ttt_won + profile.ttt_draws) / profile.ttt_played * 100:.2f}%)"]
@@ -4511,7 +4511,7 @@ async def gen_inventory(
     unlocked, minus_achs, minus_achs_count = count_achievements(person)
     total_achs = len(ach_list) - minus_achs_count
     highlighted_ach = person.highlighted_ach.strip() if person.highlighted_ach else None
-    if highlighted_ach and highlighted_ach in ach_list and highlighted_ach in person and person[highlighted_ach]:
+    if highlighted_ach and highlighted_ach in ach_list and person[highlighted_ach]:
         # highlighted ach
         minus_achs = "" if minus_achs == 0 else f"+{minus_achs}"
         things.append(f"{get_emoji('ach')} **{ach_list[highlighted_ach]['title']}** ({unlocked}/{total_achs}{minus_achs})")
@@ -4605,7 +4605,7 @@ async def gen_inventory(
     count_segments = []
     if total != 0:
         # cats
-        count_segments.append(f"{get_emoji('nice_cat')} {total:,}")
+        count_segments.append(f"{get_emoji('nicecat')} {total:,}")
     if (pack_count := sum([person[f"pack_{pack['name'].lower()}"] for pack in data.pack_data])) != 0:
         # packs
         count_segments.append(f"{get_emoji('goldpack')} {pack_count:,}")
