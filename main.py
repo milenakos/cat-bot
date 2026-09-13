@@ -9421,7 +9421,7 @@ As you return to your hideout, you hear a howl in the distance."""
     button1 = Button(label="RUN!", style=ButtonStyle.blurple)
     button1.callback = button1_callback
     myview1.add_item(button1)
-    await interaction.response.send_message(content=text1, view=myview1, ephemeral=True)
+    await interaction.followup.send(content=text1, view=myview1, ephemeral=True)
 
 
 async def mafia_cutscene2(interaction: discord.Interaction, user: Profile) -> None:
@@ -9475,7 +9475,7 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
     button1 = Button(label="'uhhhh'", style=ButtonStyle.blurple)
     button1.callback = button1_callback
     myview1.add_item(button1)
-    await interaction.response.send_message(content=text1, view=myview1, ephemeral=True)
+    await interaction.followup.send(content=text1, view=myview1, ephemeral=True)
 
 
 def describe_perk(perk: str, perks: list, global_user: User) -> tuple[int, dict, str]:
@@ -9570,6 +9570,11 @@ async def catnip(message: discord.Interaction):
 
         log_stats("level_down", {"to": str(user.catnip_level)})
 
+        if user.catnip_level > 1:
+            await perk_screen(interaction)
+        else:
+            await interaction.response.edit_message(view=await gen_main())
+
         if user.catnip_level == 8 and user.cutscene == 0:
             await mafia_cutscene(interaction, user)
         elif user.catnip_level == 10 and not trigger_cutscene:
@@ -9577,13 +9582,9 @@ async def catnip(message: discord.Interaction):
 You are meant to go up and down levels.
 You get absolutely no benefit from completing level 10.
 You can stop. That's okay. Seriously."""
-            await interaction.response.send_message(content=text, ephemeral=True)
+            await interaction.followup.send(content=text, ephemeral=True)
         elif trigger_cutscene and user.cutscene <= 1:
             await mafia_cutscene2(interaction, user)
-        elif user.catnip_level > 1:
-            await perk_screen(interaction)
-        else:
-            await interaction.response.edit_message(view=await gen_main())
 
     async def reroll(interaction: discord.Interaction) -> None:
         assert interaction.guild is not None
