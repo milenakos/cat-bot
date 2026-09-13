@@ -10034,6 +10034,9 @@ async def achievements(message: discord.Interaction):
                 continue
             unlocked = user[ach_id]
             ach_data = ach_list[ach_id]
+            if ach_id == "thanksforplaying" and unlocked:
+                ach_data["title"] = "Catnip Addict"
+                ach_data["description"] = "Uncover the mafia's truth"
             breadcrumbs = get_emoji("line") * (len(depths[ach_id]) - 1)
             emoji_name = "ach"
             if ach_data["difficulty"] == 6:
