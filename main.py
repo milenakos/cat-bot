@@ -2566,7 +2566,7 @@ async def on_message(message: discord.Message) -> None:
                     except IndexError:
                         overflow = True
                         le_emoji = cattypes[-1]
-                        if not channel.forcespawned:
+                        if not channel.forcespawned and server.do_rain:
                             if idx_shift == len(cattypes) + 1:
                                 rainboost = 1200
                             else:
@@ -2577,14 +2577,13 @@ async def on_message(message: discord.Message) -> None:
                                 await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
                                 await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
                                 await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
-                            elif server.do_rain:
-                                force_rain_summary = config.cat_cought_rain.get(channel.channel_id, {}).copy()
-                                decided_time = random.uniform(1, 2)
-                                channel.rain_should_end = int(time.time() + decided_time)
-                                channel.yet_to_spawn = 0
-                                config.cat_cought_rain[channel.channel_id] = {}
-                                config.rain_starter[channel.channel_id] = message.author.id
-                                bot.loop.create_task(rain_recovery_loop(channel))
+                            force_rain_summary = config.cat_cought_rain.get(channel.channel_id, {}).copy()
+                            decided_time = random.uniform(1, 2)
+                            channel.rain_should_end = int(time.time() + decided_time)
+                            channel.yet_to_spawn = 0
+                            config.cat_cought_rain[channel.channel_id] = {}
+                            config.rain_starter[channel.channel_id] = message.author.id
+                            bot.loop.create_task(rain_recovery_loop(channel))
 
                     boost_icon = get_aura_emoji(le_old_emoji, user.cat_auras)
                     prism_icon = get_emoji("prism")
