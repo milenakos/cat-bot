@@ -10047,7 +10047,12 @@ async def achievements(message: discord.Interaction):
             chain = depths[ach_id]
             for i in range(1, len(chain)):
                 if i == len(chain) - 1:
-                    breadcrumbs += get_emoji("line_end" if last_rendered.get(chain[i]) == ach_id else "line_split")
+                    name = "line_end" if last_rendered.get(chain[i]) == ach_id else "line_split"
+                    if not user[chain[i]]:
+                        name += "_dead"
+                    elif not unlocked:
+                        name += "_inactive"
+                    breadcrumbs += get_emoji(name)
                 else:
                     breadcrumbs += get_emoji("line" if last_rendered.get(chain[i]) != chain[i + 1] else "empty")
             emoji_name = "ach"
