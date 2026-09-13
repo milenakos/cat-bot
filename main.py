@@ -10035,12 +10035,12 @@ async def achievements(message: discord.Interaction):
             unlocked = user[ach_id]
             ach_data = ach_list[ach_id]
             breadcrumbs = get_emoji("line") * (len(depths[ach_id]) - 1)
+            emoji_name = "ach"
+            if ach_data["difficulty"] == 6:
+                emoji_name = "demonic_" + emoji_name
             if not unlocked:
-                icon = get_emoji("no_ach")
-            elif ach_data["difficulty"] == 6:
-                icon = get_emoji("demonic_ach")
-            else:
-                icon = get_emoji("ach")
+                emoji_name = "no_" + emoji_name
+            icon = get_emoji(emoji_name)
             suffix = ach_data["description"] if unlocked else diffs[ach_data["difficulty"]]
             lines.append(f"-# {breadcrumbs}{icon} **{ach_data['title']}** *{suffix}*")
 
@@ -10088,7 +10088,8 @@ async def achievements(message: discord.Interaction):
                 continue
             difficulty = ach_data["difficulty"]
             parent_title = parent if is_category else ach_list[parent]["title"]
-            diff_map[difficulty].append(f"{get_emoji('no_ach')} **{ach_data['title']}** from {parent_title} *{diffs[difficulty]}*")
+            icon = get_emoji("no_ach") if difficulty != 6 else get_emoji("no_demonic_ach")
+            diff_map[difficulty].append(f"{icon} **{ach_data['title']}** from {parent_title} *{diffs[difficulty]}*")
         for v in diff_map.values():
             random.shuffle(v)
         picks = [value for values in diff_map.values() for value in values][:5]
