@@ -10027,6 +10027,12 @@ async def achievements(message: discord.Interaction):
             for elem in adds:
                 do_render.add(elem)
 
+        # pass 3
+        last_rendered = {}
+        for ach_id in ach_ids:
+            if ach_id in do_render:
+                last_rendered[ach_list[ach_id]["parent"]] = ach_id
+
         # final render pass
         lines = []
         for ach_id in ach_ids:
@@ -10037,7 +10043,13 @@ async def achievements(message: discord.Interaction):
             if ach_id == "thanksforplaying" and unlocked:
                 ach_data["title"] = "Catnip Addict"
                 ach_data["description"] = "Uncover the mafia's truth"
-            breadcrumbs = get_emoji("line") * (len(depths[ach_id]) - 1)
+            breadcrumbs = ""
+            chain = depths[ach_id]
+            for i in range(1, len(chain)):
+                if i == len(chain) - 1:
+                    breadcrumbs += get_emoji("line_end" if last_rendered.get(chain[i]) == ach_id else "line_split")
+                else:
+                    breadcrumbs += get_emoji("line" if last_rendered.get(chain[i]) != chain[i + 1] else "empty")
             emoji_name = "ach"
             if ach_data["difficulty"] == 6:
                 emoji_name = "demonic_" + emoji_name
