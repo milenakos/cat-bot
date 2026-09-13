@@ -328,7 +328,28 @@ CREATE TABLE public.profile (
     blackjacks integer DEFAULT 0,
     blackjack_wins integer DEFAULT 0,
     twenty_one boolean DEFAULT false,
-    all_or_nothing boolean DEFAULT false
+    all_or_nothing boolean DEFAULT false,
+    imagine_deleting boolean DEFAULT false,
+    crasher boolean DEFAULT false,
+    beggar boolean DEFAULT false,
+    fuwu boolean DEFAULT false,
+    cancer boolean DEFAULT false,
+    cellua boolean DEFAULT false,
+    infinite boolean DEFAULT false,
+    cataine_addict boolean DEFAULT false,
+    rugpulled boolean DEFAULT false,
+    broke boolean DEFAULT false,
+    buy_stock boolean DEFAULT false,
+    sell_stock boolean DEFAULT false,
+    minigamer boolean DEFAULT false,
+    blackjacker boolean DEFAULT false,
+    all_done boolean DEFAULT false,
+    weekly_demon boolean DEFAULT false,
+    packer boolean DEFAULT false,
+    super_packer boolean DEFAULT false,
+    lucky_packy boolean DEFAULT false,
+    failed boolean DEFAULT false,
+    tiktoker boolean DEFAULT false
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;

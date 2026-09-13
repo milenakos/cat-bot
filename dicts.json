@@ -1085,5 +1085,15 @@
       {"cost": 25600, "value": 5.05},
       {"cost": 51200, "value": 6}
     ]
+  },
+  "ach_categories": {
+    "Catching": "nicecat",
+    "Economy": "🛍️",
+    "Social": "👥",
+    "Gambling": "🎰",
+    "Minigames": "🍪",
+    "Commands": "🤖",
+    "Silly": "sillycat",
+    "Museum": "🖼️"
   }
 }

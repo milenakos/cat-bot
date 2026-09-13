@@ -146,6 +146,7 @@ class DataWrapper:
     win_combinations: list[list[int]]
     nuke_confirmation_lines: list[str]
     fishing_upgrades: dict[str, list[FishingEntry]]
+    ach_categories: dict[str, str]
 
     def __init__(self, data):
         self.data = data
@@ -363,20 +364,22 @@ async def check_channel_setupped(guild: Server, channel: GuildMessageable) -> bo
     return db_channel is not None
 
 
-def count_achievements(profile) -> tuple[int, int, int]:
-    """Returns (unlocked non-hidden count, unlocked hidden count, total hidden count)."""
-    unlocked = 0
-    minus_achs = 0
-    minus_achs_count = 0
-    for k in ach_names:
-        if is_ach_hidden := ach_list[k]["category"] == "Hidden":
-            minus_achs_count += 1
-        if profile[k]:
-            if is_ach_hidden:
-                minus_achs += 1
-            else:
-                unlocked += 1
-    return unlocked, minus_achs, minus_achs_count
+def count_achievements(profile) -> tuple[int, int]:
+    total = sum([1 if ach_list[k]["parent"] != "Museum" else 0 for k in ach_names])
+    unlocked = sum([int(profile[k]) if ach_list[k]["parent"] != "Museum" else 0 for k in ach_names])
+    return unlocked, total
+
+
+def get_category_achs(category: str) -> list[str]:
+    # a parent is either a category name or another ach, so walk up the chain to the root
+    achs = []
+    for ach_id in ach_names:
+        parent = ach_list[ach_id]["parent"]
+        while parent in ach_list:
+            parent = ach_list[parent]["parent"]
+        if parent == category:
+            achs.append(ach_id)
+    return achs
 
 
 # this is some common code which is run whether someone gets an achievement
@@ -411,50 +414,55 @@ async def achemb(
     await profile.save()
     log_stats("achievement", {"ach_id": ach_id})
     ach_data = ach_list[ach_id]
+    title = ach_data["title"]
     desc = ach_data["description"]
     if ach_id == "dataminer":
         desc = "Your head hurts -- you seem to have forgotten what you just did to get this."
 
-    username = author_string.name
+    username = author_string.mention
     if author_string == bot.user:
-        username = "Cat Bot (what)"
+        username += " (what)"
 
-    if ach_id != "thanksforplaying":
-        embed = (
-            discord.Embed(title=ach_data["title"], description=desc, color=Colors.green)
-            .set_author(
-                name="Achievement get!",
-                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/ach.png",
-            )
-            .set_footer(text=f"Unlocked by {username}")
-        )
-        embed2 = None
+    unlocks = [i["title"] for i in ach_list.values() if i["parent"] == ach_id]
+    if not unlocks:
+        unlocks_str = None
+    elif len(unlocks) > 3:
+        unlocks_str = f"-# Discovered {len(unlocks)} achievements"
     else:
-        embed = (
-            discord.Embed(
-                title="Catnip Addict",
-                description="Uncover the mafia's truth\nThanks for playing! ✨",
-                color=Colors.demonic,
-            )
-            .set_author(
-                name="Demonic achievement unlocked! 🌟",
-                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/demonic_ach.png",
-            )
-            .set_footer(text=f"Congrats to {username}!!")
+        unlocks_str = "\n".join(f"-# Discovered: {i}" for i in unlocks)
+
+    view = LayoutView(timeout=10)
+    if ach_data["difficulty"] != 6:
+        embed = Container(
+            f"{get_emoji('ach')} Achievement get!",
+            f"## {title}",
+            desc,
+            unlocks_str,
+            "===",
+            f"-# Unlocked by {username}",
+            accent_color=Colors.green,
+        )
+        view2 = None
+    else:
+        if ach_id == "thanksforplaying":
+            title = "Catnip Addict"
+            desc = "Uncover the mafia's truth"
+
+        embed = Container(
+            f"{get_emoji('demonic_ach')} Demonic achievement unlocked! 🌟",
+            f"## {title}",
+            desc + " ✨",
+            unlocks_str,
+            "===",
+            f"-# Congrats to {username}!!",
+            accent_color=Colors.demonic,
         )
 
-        embed2 = (
-            discord.Embed(
-                title="Catnip Addict",
-                description="Uncover the mafia's truth\nThanks for playing! ✨",
-                color=Colors.yellow,
-            )
-            .set_author(
-                name="Demonic achievement unlocked! 🌟",
-                icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/demonic_ach.png",
-            )
-            .set_footer(text=f"Congrats to {username}!!")
-        )
+        view2 = LayoutView(timeout=10)
+        embed2 = embed.copy()
+        embed2.accent_color = Colors.yellow
+        view2.add_item(embed2)
+    view.add_item(embed)
 
     result = None
     server = await Server.get_or_create(server_id=message.guild.id)
@@ -463,33 +471,34 @@ async def achemb(
     try:
         if send_type == "ephemeral":
             assert isinstance(message, discord.Interaction)
-            await message.followup.send(embed=embed, ephemeral=True)
+            result = await message.followup.send(view=view, ephemeral=True, wait=True)
         if send_type == "reply" and do:
             assert isinstance(message, discord.Message)
-            result = await message.reply(embed=embed)
+            result = await message.reply(view=view)
         if send_type == "send" and do:
-            result = await message.channel.send(embed=embed)
+            result = await message.channel.send(view=view)
         if send_type == "followup":
             assert isinstance(message, discord.Interaction)
-            await message.followup.send(embed=embed, ephemeral=not do)
+            result = await message.followup.send(view=view, ephemeral=not do, wait=True)
         if send_type == "response":
             assert isinstance(message, discord.Interaction)
-            await message.response.send_message(embed=embed, ephemeral=not do)
+            result = (await message.response.send_message(view=view, ephemeral=not do)).resource
+            assert isinstance(result, discord.InteractionMessage)
         await progress(message, profile, "achievement")
         await finale(message, profile)
     except (discord.NotFound, discord.Forbidden):
         pass
 
     if result:
-        if embed2:
+        if view2:
             await asyncio.sleep(2)
-            await result.edit(embed=embed2)
+            await result.edit(view=view2)
             await asyncio.sleep(2)
-            await result.edit(embed=embed)
+            await result.edit(view=view)
             await asyncio.sleep(2)
-            await result.edit(embed=embed2)
+            await result.edit(view=view2)
             await asyncio.sleep(2)
-            await result.edit(embed=embed)
+            await result.edit(view=view)
 
         if server.auto_delete_achievements:
             await result.delete(delay=10)
@@ -512,7 +521,7 @@ async def generate_quest(user: Profile, quest_type: str) -> None:
                 if prism_boost < 0.15:
                     continue
             case "achievement":
-                unlocked, _, _ = count_achievements(user)
+                unlocked, _ = count_achievements(user)
                 if unlocked > 30:
                     continue
         break
@@ -674,6 +683,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
             user.weekly_progress = quest_data["progress"]
             current_xp = user.progress + 2000
             user.scratchcards += 1
+            await achemb(message, "weekly_demon", "send")
     else:
         return user
 
@@ -852,9 +862,7 @@ async def debt_cutscene(message: discord.Interaction, user: Profile) -> None:
     if user.debt_seen:
         return
 
-    user.debt_seen = True
-    await user.save()
-
+    await achemb(message, "debt_seen", "ephemeral")
     for debt_msg in data.debt_msgs:
         await asyncio.sleep(4)
         await message.followup.send(debt_msg, ephemeral=True)
@@ -866,8 +874,8 @@ async def finale(message: discord.Interaction | discord.Message, user: Profile) 
         return
 
     # check ach req
-    unlocked, _, hidden_count = count_achievements(user)
-    if unlocked < len(ach_names) - hidden_count:
+    unlocked, total = count_achievements(user)
+    if unlocked != total:
         return
 
     if isinstance(message, discord.Message):
@@ -957,7 +965,7 @@ async def ach_autocomplete(interaction: discord.Interaction, current: str) -> li
     return [
         discord.app_commands.Choice(name=val["title"], value=key)
         for (key, val) in ach_list.items()
-        if (alnum(current) in alnum(key) or alnum(current) in alnum(val["title"]))
+        if (alnum(current) in alnum(key) or alnum(current) in alnum(val["title"])) and val["parent"] != "Museum"
     ][:25]
 
 
@@ -1768,6 +1776,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
             await interaction.response.send_message(f"✅ {interaction.user.mention} got +3 {icon} {cattype} bonus cats.")
             await progress(interaction, profile, "bonus")
             log_stats("minigame_success", {"cattype": cattype})
+            await achemb(interaction, "minigamer", "followup")
             if cattype == "Rare":
                 await achemb(interaction, "math_jumpscare", "followup")
         else:
@@ -3747,6 +3756,8 @@ async def tiktok(message: discord.Interaction, text: str):
     except Exception:
         await message.response.send_message("i dont speak guacamole (remove non-english characters, make sure the message is below 300 characters)")
 
+    await achemb(message, "tiktoker", "followup")
+
 
 @bot.tree.command(description="(ADMIN) Prevent someone from catching cats for a certain time period")
 @discord.app_commands.default_permissions(manage_guild=True)
@@ -4377,16 +4388,14 @@ async def gen_inventory(
     things = get_highlights(person, await gen_stats(person, ""))
 
     # around here we count aches
-    unlocked, minus_achs, minus_achs_count = count_achievements(person)
-    total_achs = len(ach_list) - minus_achs_count
-    minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
+    unlocked, total = count_achievements(person)
     highlighted_ach = person.highlighted_ach.strip() if person.highlighted_ach else None
     if highlighted_ach and highlighted_ach in ach_list and person[highlighted_ach]:
         # highlighted ach
-        things.append(f"{get_emoji('ach')} **{ach_list[highlighted_ach]['title']}** ({unlocked}/{total_achs}{minus_achs})")
+        things.append(f"{get_emoji('ach')} **{ach_list[highlighted_ach]['title']}** ({unlocked}/{total})")
     else:
         # no highlighted ach
-        things.append(f"{get_emoji('ach')} Achievements: {unlocked}/{total_achs}{minus_achs}")
+        things.append(f"{get_emoji('ach')} Achievements: {unlocked}/{total}")
 
     debt = any(person[f"cat_{i}"] < 0 for i in cattypes)
     give_collector = all(person[f"cat_{i}"] > 0 for i in cattypes)
@@ -4541,9 +4550,6 @@ async def gen_inventory(
         if total >= 10000:
             give_achs.append("fourth")
 
-        if unlocked >= 15:
-            give_achs.append("achiever")
-
         if debt and run_debt_cutscene:
             bot.loop.create_task(debt_cutscene(me_msg, person))
 
@@ -4592,6 +4598,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
 
         def stat_select(category) -> discord.ui.Select:
             if "ach" in column:
+                ach_ids = get_category_achs(category)
                 options = [
                     discord.SelectOption(
                         value=key,
@@ -4599,7 +4606,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
                         label=ach["title"],
                     )
                     for key, ach in ach_list.items()
-                    if ach["category"] == category
+                    if key in ach_ids
                 ]
             else:
                 options = []
@@ -4629,15 +4636,8 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
 
         def category_select() -> discord.ui.Select:
             if "ach" in column:
-                options = [
-                    discord.SelectOption(label="None", emoji="❌", description="No featured achievement."),
-                    discord.SelectOption(label="Cat Hunt", emoji=get_emoji("staring_cat")),
-                    discord.SelectOption(label="Commands", emoji="🤖"),
-                    discord.SelectOption(label="Random", emoji="🙃"),
-                    discord.SelectOption(label="Silly", emoji=get_emoji("sillycat")),
-                    discord.SelectOption(label="Hard", emoji=get_emoji("demonic_ach")),
-                    discord.SelectOption(label="Hidden", emoji="❓", description="Hidden achievements only show up after you complete them."),
-                ]
+                options = [discord.SelectOption(emoji=get_emoji(v), label=k) for k, v in data.ach_categories.items()]
+                options.insert(0, discord.SelectOption(label="None", emoji="❌", description="No featured achievement."))
             else:
                 options = [discord.SelectOption(emoji=stat[0], label=stat[1]) for stat in stats if len(stat) == 2]
 
@@ -5520,20 +5520,22 @@ async def packs(message: discord.Interaction):
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     global_user = await User.get_or_create(user_id=message.user.id)
 
-    async def process_pack_opening(pack_types: set[str] | None = None, max_packs: int | None = None) -> Container | None:
+    async def process_pack_opening(pack_types: set[str] | None = None, max_packs: int | None = None) -> tuple[Container | None, int, bool]:
         await user.refresh_from_db()
 
         total_packs = sum(user[f"pack_{pack['name'].lower()}"] for pack in data.pack_data if pack_types is None or pack["name"] in pack_types)
         if max_packs is not None:
             total_packs = min(total_packs, max_packs)
         if total_packs < 1:
-            return None
+            return None, 0, False
 
         pack_results: list[str] = []
         reward_results: list[str] = []
         cats_received = {cat: 0 for cat in cattypes}
         total_upgrades = 0
         opened_packs = 0
+        highest_upgrades = 0
+        has_fails = False
 
         for level, pack_data in enumerate(data.pack_data):
             if opened_packs >= total_packs:
@@ -5556,8 +5558,11 @@ async def packs(message: discord.Interaction):
                 chosen_type, cat_amount, upgrades, reward = get_pack_rewards(level, is_single=False)
                 assert isinstance(reward, str)
                 total_upgrades += upgrades
+                highest_upgrades = max(highest_upgrades, upgrades)
                 reward_results.append(reward)
                 cats_received[chosen_type] += cat_amount
+                if chosen_type == "Fine" and cat_amount == 1:
+                    has_fails = True
 
             user[pack_id] -= amount_to_open
             opened_packs += amount_to_open
@@ -5574,7 +5579,7 @@ async def packs(message: discord.Interaction):
         if len(reward_list) > 3995 - len(title) - len(pack_list):
             reward_list = "\n".join(f"{get_emoji(cat.lower() + 'cat')} x{cats_received[cat]:,}" for cat in cattypes if cats_received[cat] > 0)
 
-        return Container(title, f"{pack_list}\n\n{reward_list}")
+        return Container(title, f"{pack_list}\n\n{reward_list}"), highest_upgrades, has_fails
 
     async def ask_bulk(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
@@ -5773,6 +5778,13 @@ async def packs(message: discord.Interaction):
 
         await interaction.edit_original_response(view=view)
 
+        await achemb(interaction, "packer", "followup")
+        if chosen_type == "Fine" and cat_amount == 1:
+            await achemb(interaction, "failed", "followup")
+        if user.packs_opened >= 25:
+            await achemb(interaction, "super_packer", "followup")
+        if upgrades >= 5:
+            await achemb(interaction, "lucky_packy", "followup")
         await advance_tutorial(interaction)
 
     async def advance_tutorial(interaction: discord.Interaction) -> None:
@@ -5783,7 +5795,8 @@ async def packs(message: discord.Interaction):
             await interaction.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
     async def open_all_packs(interaction: discord.Interaction, pack_types: set[str] | None = None, max_packs: int | None = None) -> None:
-        if not (embed := await process_pack_opening(pack_types, max_packs)):
+        embed, highest_upgrades, has_fails = await process_pack_opening(pack_types, max_packs)
+        if not embed:
             await interaction.response.edit_message(view=await gen_main())
             return
 
@@ -5805,6 +5818,13 @@ async def packs(message: discord.Interaction):
 
         await message.edit_original_response(view=view)
 
+        await achemb(interaction, "packer", "followup")
+        if has_fails:
+            await achemb(interaction, "failed", "followup")
+        if highest_upgrades >= 5:
+            await achemb(interaction, "lucky_packy", "followup")
+        if user.packs_opened >= 25:
+            await achemb(interaction, "super_packer", "followup")
         await advance_tutorial(interaction)
 
     async def go_back(interaction: discord.Interaction) -> None:
@@ -5939,6 +5959,8 @@ async def battlepass(message: discord.Interaction):
 
         timestamp = int(next_month.timestamp())
 
+        has_bad = False
+
         description = f"Season ends <t:{timestamp}:R>\n\n"
 
         # weekly
@@ -5969,6 +5991,8 @@ async def battlepass(message: discord.Interaction):
         if user.vote_cooldown != 0:
             description += f"✅ ~~Vote on Top.gg~~\n- Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>{streak_string}\n"
         else:
+            has_bad = True
+
             # inform double vote xp during weekends
             is_weekend = (now - datetime.timedelta(hours=4)).weekday() >= 4
 
@@ -5993,6 +6017,7 @@ async def battlepass(message: discord.Interaction):
         if user.catch_cooldown != 0:
             description += f"✅ ~~{catch_quest['title']}~~\n- Refreshes <t:{int(min(timestamp, user.catch_cooldown + 12 * 3600))}:R>\n"
         else:
+            has_bad = True
             progress_string = ""
             if catch_quest["progress"] != 1:
                 if user.catch_quest == "finenice":
@@ -6010,6 +6035,7 @@ async def battlepass(message: discord.Interaction):
         if user.misc_cooldown != 0:
             description += f"✅ ~~{misc_quest['title']}~~\n- Refreshes <t:{int(min(timestamp, user.misc_cooldown + 12 * 3600))}:R>\n\n"
         else:
+            has_bad = True
             progress_string = ""
             if misc_quest["progress"] != 1:
                 progress_string = f" ({user.misc_progress}/{misc_quest['progress']})"
@@ -6062,6 +6088,9 @@ async def battlepass(message: discord.Interaction):
             await interaction.response.send_message(embed=embedVar, view=view)
         else:
             await interaction.response.edit_message(embed=embedVar, view=view)
+
+        if not has_bad:
+            await achemb(interaction, "all_done", "followup")
 
     await gen_main(message, True)
 
@@ -7990,7 +8019,7 @@ async def casino_overview(message: discord.Interaction):
     await message.response.edit_message(view=view)
 
 
-@bot.tree.command(description="oh no")
+@bot.tree.command(description="oh no [casino]")
 async def slots(message: discord.Interaction):
     if casino_impostor(message):
         return await do_funny(message)
@@ -8072,11 +8101,7 @@ async def slots(message: discord.Interaction):
 
         slots_lock.add((message.guild.id, message.user.id))
 
-        try:
-            await achemb(interaction, "slots", "followup")
-            await progress(message, profile, "slots2")
-        except Exception:
-            pass
+        await progress(message, profile, "slots2")
 
         variants = ["🍒", "🍋", "🍇", "🔔", "⭐", ":seven:"]
         reel_durations = [6, 10, 13]
@@ -8189,10 +8214,9 @@ async def slots(message: discord.Interaction):
         myview.add_item(embed)
         await interaction.edit_original_response(view=myview)
 
+        await achemb(message, "gambling_one", "followup")
         if profile.casino_balance == 0:
             await achemb(message, "failed_gambler", "followup")
-        if profile.blackjacks + profile.slot_spins + profile.roulette_spins >= 10:
-            await achemb(message, "gambling_one", "followup")
         if profile.blackjacks + profile.slot_spins + profile.roulette_spins >= 50:
             await achemb(message, "gambling_two", "followup")
         if big_win:
@@ -8228,7 +8252,7 @@ async def slots(message: discord.Interaction):
         await achemb(message, "big_win_slots", "followup")
 
 
-@bot.tree.command(description="what")
+@bot.tree.command(description="what [casino]")
 async def roulette(message: discord.Interaction):
     if casino_impostor(message):
         return await do_funny(message)
@@ -8351,6 +8375,7 @@ async def roulette(message: discord.Interaction):
         view.add_item(embed)
         await interaction.edit_original_response(view=view)
 
+        await achemb(message, "gambling_one", "followup")
         if win:
             await progress(message, user, "roulette")
             await achemb(interaction, "roulette_winner", "followup")
@@ -8358,8 +8383,6 @@ async def roulette(message: discord.Interaction):
             await achemb(interaction, "roulette_prodigy", "followup")
         if user.casino_balance == 0:
             await achemb(message, "failed_gambler", "followup")
-        if user.blackjacks + user.slot_spins + user.roulette_spins >= 10:
-            await achemb(message, "gambling_one", "followup")
         if user.blackjacks + user.slot_spins + user.roulette_spins >= 50:
             await achemb(message, "gambling_two", "followup")
 
@@ -8391,7 +8414,7 @@ async def roulette(message: discord.Interaction):
         await achemb(message, "failed_gambler", "followup")
 
 
-@bot.tree.command(description="catjack is awful")
+@bot.tree.command(description="catjack is awful [casino]")
 async def blackcat(message: discord.Interaction):
     if casino_impostor(message):
         return await do_funny(message)
@@ -8542,7 +8565,9 @@ async def blackcat(message: discord.Interaction):
             view.add_item(embed)
             await interaction.edit_original_response(view=view)
 
+            await achemb(message, "gambling_one", "followup")
             if win:
+                await achemb(message, "blackjacker", "followup")
                 await progress(message, user, "blackcat")
             if score == 21:
                 await achemb(message, "twenty_one", "followup")
@@ -8550,8 +8575,6 @@ async def blackcat(message: discord.Interaction):
                 await achemb(message, "all_or_nothing", "followup")
             if user.casino_balance == 0:
                 await achemb(message, "failed_gambler", "followup")
-            if user.blackjacks + user.slot_spins + user.roulette_spins >= 10:
-                await achemb(message, "gambling_one", "followup")
             if user.blackjacks + user.slot_spins + user.roulette_spins >= 50:
                 await achemb(message, "gambling_two", "followup")
 
@@ -9955,134 +9978,154 @@ You can stop. That's okay. Seriously."""
 
 @bot.tree.command(description="View your achievements (achs)")
 async def achievements(message: discord.Interaction):
-    # this is very close to /inv's ach counter
     assert message.guild is not None
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     global_user = await User.get_or_create(user_id=message.user.id)
 
-    if user.funny >= 50:
-        await achemb(message, "its_not_working", "followup")
-
-    unlocked, minus_achs, minus_achs_count = count_achievements(user)
-    total_achs = len(ach_list) - minus_achs_count
-    minus_achs = "" if minus_achs == 0 else f" + {minus_achs}"
-
-    hidden_counter = 0
+    diffs = ["", "(Trivial)", "(Easy)", "(Normal)", "(Hard)", "(Insane)", "(Extreme)"]
 
     # this is a single page of the achievement list
-    async def gen_new(category: str) -> discord.Embed:
-        nonlocal message, unlocked, total_achs, hidden_counter
+    async def gen_page(interaction: discord.Interaction):
+        category = interaction.custom_id
+        assert category is not None
 
-        unlocked, minus_achs, minus_achs_count = count_achievements(user)
-        total_achs = len(ach_list) - minus_achs_count
+        await user.refresh_from_db()
+        await global_user.refresh_from_db()
+        unlocked, total_achs = count_achievements(user)
 
-        if minus_achs != 0:
-            minus_achs = f" + {minus_achs}"
-        else:
-            minus_achs = ""
+        ach_ids = get_category_achs(category)
+        unlocked_achs = sum([bool(user[k]) for k in ach_ids])
 
-        hidden_suffix = ""
-
-        if category == "Hidden":
-            hidden_suffix = '\n\nThis is a "Hidden" category. Achievements here only show up after you complete them.'
-            hidden_counter += 1
-        else:
-            hidden_counter = 0
-
-        newembed = discord.Embed(
-            title=category,
-            description=f"Achievements unlocked (total): {unlocked}/{total_achs}{minus_achs}{hidden_suffix}",
-            color=Colors.brown,
-        ).set_footer(text=rain_shill)
-
-        global_user = await User.get_or_create(user_id=message.user.id)
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        embed = Container()
         if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
-            newembed.set_author(name="You have unread news! /news")
+            embed.add_item(TextDisplay("-# You have unread news! /news"))
 
-        for k, v in ach_list.items():
-            if v["category"] == category:
-                if k == "thanksforplaying":
-                    if user[k]:
-                        newembed.add_field(
-                            name=str(get_emoji("demonic_ach")) + " Catnip Addict",
-                            value="uncover the mafia's truth",
-                            inline=True,
-                        )
-                    else:
-                        newembed.add_field(
-                            name=str(get_emoji("no_demonic_ach")) + " Thanks For Playing",
-                            value="complete the story",
-                            inline=True,
-                        )
-                    continue
+        embed.add_item(TextDisplay(f"## {get_emoji('ach')}{get_emoji(data.ach_categories[category])} {category}"))
+        embed.add_item(TextDisplay(f"Total: {unlocked}/{total_achs}\nCategory: {unlocked_achs}/{len(ach_ids)}"))
+        if category == "Museum":
+            embed.add_item(TextDisplay("Achievements in this category are no longer obtainable, and don't count towards anything."))
 
-                icon = str(get_emoji("no_ach")) + " "
-                if user[k]:
-                    newembed.add_field(
-                        name=str(get_emoji("ach")) + " " + v["title"],
-                        value=v["description"],
-                        inline=True,
-                    )
-                elif category != "Hidden":
-                    newembed.add_field(
-                        name=icon + v["title"],
-                        value="???" if v["is_hidden"] else v["description"],
-                        inline=True,
-                    )
+        # pass 1
+        depths = {category: []}
+        children = {category: []}
+        for ach_id in ach_ids:
+            parent = ach_list[ach_id]["parent"]
+            depths[ach_id] = depths[parent].copy() + [parent]
+            children[ach_id] = []
+            children[parent].append(ach_id)
 
-        return newembed
+        # pass 2
+        do_render = set()
+        for ach_id in ach_ids:
+            if ach_list[ach_id]["parent"] == category and category != "Museum":
+                do_render.add(ach_id)
+            if not user[ach_id]:
+                continue
+            adds = depths[ach_id] + children[ach_id]
+            do_render.add(ach_id)
+            for elem in adds:
+                do_render.add(elem)
 
-    # creates buttons at the bottom of the full view
-    def insane_view_generator(category: str) -> View:
-        myview = View(timeout=VIEW_TIMEOUT)
+        # final render pass
+        lines = []
+        for ach_id in ach_ids:
+            if ach_id not in do_render:
+                continue
+            unlocked = user[ach_id]
+            ach_data = ach_list[ach_id]
+            breadcrumbs = get_emoji("line") * (len(depths[ach_id]) - 1)
+            if not unlocked:
+                icon = get_emoji("no_ach")
+            elif ach_data["difficulty"] == 6:
+                icon = get_emoji("demonic_ach")
+            else:
+                icon = get_emoji("ach")
+            suffix = ach_data["description"] if unlocked else diffs[ach_data["difficulty"]]
+            lines.append(f"-# {breadcrumbs}{icon} **{ach_data['title']}** *{suffix}*")
 
-        options = [
-            discord.SelectOption(label="Cat Hunt", emoji=get_emoji("staring_cat")),
-            discord.SelectOption(label="Commands", emoji="🤖"),
-            discord.SelectOption(label="Random", emoji="🙃"),
-            discord.SelectOption(label="Silly", emoji=get_emoji("sillycat")),
-            discord.SelectOption(label="Hard", emoji=get_emoji("demonic_ach")),
-            discord.SelectOption(label="Hidden", emoji="❓", description="Hidden achievements only show up after you complete them."),
-        ]
-        select = discord.ui.Select(placeholder=category, options=options)
+        if len(lines) != len(ach_ids) and category != "Museum":
+            lines.append(f"-# *+{len(ach_ids) - len(lines)} undiscovered*")
 
-        async def callback_hell(interaction: discord.Interaction) -> None:
-            thing = select.values[0]
-            try:
-                await interaction.response.edit_message(embed=await gen_new(thing), view=insane_view_generator(thing))
-            except Exception:
-                pass
+        embed.add_item(Separator())
+        embed.add_item(TextDisplay("\n".join(lines)))
+        embed.add_item(Separator())
+        embed.add_item(TextDisplay(f"-# {rain_shill}"))
 
-            if hidden_counter == 3:
-                await interaction.followup.send("catnip is now located in /catnip.", ephemeral=True)
-            if hidden_counter == 5:
-                await interaction.followup.send("catnip is now located in /catnip.", ephemeral=True)
-            if hidden_counter == 10:
-                await interaction.followup.send("catnip is now located in /catnip.", ephemeral=True)
-            if hidden_counter == 15:
-                await interaction.followup.send("I meant it. catnip is now located in /catnip.", ephemeral=True)
-            if hidden_counter == 20:
-                await interaction.followup.send("I really meant it. catnip is now located in /catnip.\nOh wait, did you want that achievement?", ephemeral=True)
-                await achemb(message, "darkest_market", "followup")
-            if hidden_counter == 50:
-                await interaction.followup.send("I really, really meant it. catnip is now located in /catnip.", ephemeral=True)
-            if hidden_counter == 100:
-                await interaction.followup.send("Just go away.", ephemeral=True)
-            if hidden_counter == 1000:
-                await interaction.followup.send("911 theres a person who knocked on my door 1000 times get them out please", ephemeral=True)
+        button = Button(label="Back", emoji="⬅️", style=ButtonStyle.blurple)
+        button.callback = gen_main
+        button2 = Button(label="Refresh", emoji="🔄", style=ButtonStyle.blurple, custom_id=category)
+        button2.callback = gen_page
 
-        select.callback = callback_hell
-        myview.add_item(select)
-        return myview
+        view.add_item(embed)
+        view.add_item(ActionRow(button, button2))
+        await interaction.response.edit_message(view=view)
 
-    await message.response.send_message(
-        embed=await gen_new("Cat Hunt"),
-        ephemeral=True,
-        view=insane_view_generator("Cat Hunt"),
-    )
+    async def gen_main(interaction: discord.Interaction, first: bool | None = None) -> None:
+        await user.refresh_from_db()
+        await global_user.refresh_from_db()
+        unlocked, total_achs = count_achievements(user)
 
-    if unlocked >= 15:
-        await achemb(message, "achiever", "followup")
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        embed = Container()
+        if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
+            embed.add_item(TextDisplay("-# You have unread news! /news"))
+
+        embed.add_item(TextDisplay(f"## {get_emoji('ach')} Achievements ({unlocked}/{total_achs})"))
+        embed.add_item(
+            TextDisplay(
+                "**Achievements** are goals within Cat Bot which let you discover various features and track your progress. If you are ever unsure on what to do, try completing some!"
+            )
+        )
+
+        # recommended achs
+        diff_map = {i: [] for i in range(1, 7)}
+        for ach_id in ach_names:
+            ach_data = ach_list[ach_id]
+            parent = ach_data["parent"]
+            is_category = parent in data.ach_categories
+            if user[ach_id] or (not is_category and not user[parent]) or parent == "Museum":
+                continue
+            difficulty = ach_data["difficulty"]
+            parent_title = parent if is_category else ach_list[parent]["title"]
+            diff_map[difficulty].append(f"{get_emoji('no_ach')} **{ach_data['title']}** from {parent_title} *{diffs[difficulty]}*")
+        for v in diff_map.values():
+            random.shuffle(v)
+        picks = [value for values in diff_map.values() for value in values][:5]
+        if picks:
+            embed.add_item(TextDisplay(f"Here are some ideas:\n{'\n'.join(picks)}"))
+            embed.add_item(Separator())
+
+        # category buttons
+        buttons = []
+        for title, category_emoji in data.ach_categories.items():
+            ach_ids = get_category_achs(title)
+            unlocked_achs = sum([bool(user[k]) for k in ach_ids])
+            if unlocked_achs == 0 and title == "Museum":
+                continue
+            button = Button(
+                label=title + (f" ({unlocked_achs}/{len(ach_ids)})" if title != "Museum" else ""),
+                emoji=get_emoji(category_emoji),
+                style=ButtonStyle.blurple,
+                custom_id=title,
+            )
+            button.callback = gen_page
+            buttons.append(button)
+
+        for i in range(0, len(buttons), 2):
+            embed.add_item(ActionRow(*buttons[i : i + 2]))
+
+        embed.add_item(TextDisplay(f"-# {rain_shill}"))
+        button = Button(label="Refresh", emoji="🔄", style=ButtonStyle.blurple)
+        button.callback = gen_main
+        view.add_item(embed)
+        view.add_item(ActionRow(button))
+        if first:
+            await interaction.response.send_message(view=view, ephemeral=True)
+        else:
+            await interaction.response.edit_message(view=view)
+
+    await gen_main(message, True)
 
     if global_user.tutorial_state == 6:
         global_user.tutorial_state = 7
@@ -10771,39 +10814,29 @@ async def giveachievement(message: discord.Interaction, person_id: discord.User,
     assert message.guild is not None
     person = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
 
-    if valid and ach_id == "thanksforplaying":
+    if valid and ach_list[ach_id]["parent"] == "Museum":
         await message.response.send_message("HAHAHHAHAH\nno", ephemeral=True)
         return
 
-    if valid:
-        # if it is, do the thing
-        reverse = person[ach_id]
-        person[ach_id] = not reverse
-        await person.save()
-        color, title, icon = (
-            Colors.green,
-            "Achievement forced!",
-            "https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/ach.png",
-        )
-        if reverse:
-            color, title, icon = (
-                Colors.red,
-                "Achievement removed!",
-                "https://wsrv.nl/?url=raw.githubusercontent.com/staring-cat/emojis/main/no_ach.png",
-            )
-        ach_data = ach_list[ach_id]
-        embed = (
-            discord.Embed(
-                title=ach_data["title"],
-                description=ach_data["description"],
-                color=color,
-            )
-            .set_author(name=title, icon_url=icon)
-            .set_footer(text=f"for {person_id.name}" if person_id != bot.user else "for the coolest bot ever")
-        )
-        await message.response.send_message(person_id.mention, embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
-    else:
+    if not valid:
         await message.response.send_message("i cant find that achievement! try harder next time.", ephemeral=True)
+        return
+
+    # if it is, do the thing
+    reverse = person[ach_id]
+    person[ach_id] = not reverse
+    await person.save()
+    ach_data = ach_list[ach_id]
+    embed = Container(
+        f"{get_emoji('ach')} Achievement forced!" if not reverse else f"{get_emoji('no_ach')} Achievement removed!",
+        f"## {ach_data['title']}",
+        ach_data["description"],
+        f"-# for {person_id.mention}" if person_id != bot.user else "-# for the coolest bot ever",
+        accent_color=Colors.green if not reverse else Colors.red,
+    )
+    view = LayoutView(timeout=1)
+    view.add_item(embed)
+    await message.response.send_message(view=view, allowed_mentions=discord.AllowedMentions(users=True))
 
 
 @bot.tree.command(description="(ADMIN) Reset people")
