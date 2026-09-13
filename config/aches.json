@@ -58,7 +58,7 @@
     "gambling_two": {"title": "GOD DANGIT", "description": "gamble 50 times", "difficulty": 3, "parent": "gambling_one"},
     "win_slots": {"title": "Pro Gambler", "description": "win at the /slots machine", "difficulty": 2, "parent": "gambling_one"},
       "big_win_slots": {"title": "Hyper Lucky", "description": "get 777 at the /slots machine", "difficulty": 5, "parent": "win_slots"},
-      "debt": {"title": "Debt Recovery", "description": "gamble away your debts", "difficulty": 6, "parent": "gambling_one"},
+      "debt": {"title": "Debt Recovery", "description": "gamble away your debts", "difficulty": 6, "parent": "win_slots"},
     "roulette_winner": {"title": "Roulette Winner", "description": "win at the /roulette table", "difficulty": 2, "parent": "gambling_one"},
       "roulette_prodigy": {"title": "Roulette Prodigy", "description": "win with green at /roulette", "difficulty": 4, "parent": "roulette_winner"},
     "blackjacker": {"title": "Blackjacker", "description": "win at /blackcat", "difficulty": 2, "parent": "gambling_one"},
