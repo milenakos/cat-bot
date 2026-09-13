@@ -58,6 +58,7 @@
     "gambling_two": {"title": "GOD DANGIT", "description": "gamble 50 times", "difficulty": 3, "parent": "gambling_one"},
     "win_slots": {"title": "Pro Gambler", "description": "win at the /slots machine", "difficulty": 2, "parent": "gambling_one"},
       "big_win_slots": {"title": "Hyper Lucky", "description": "get 777 at the /slots machine", "difficulty": 5, "parent": "win_slots"},
+      "debt": {"title": "Debt Recovery", "description": "gamble away your debts", "difficulty": 6, "parent": "gambling_one"},
     "roulette_winner": {"title": "Roulette Winner", "description": "win at the /roulette table", "difficulty": 2, "parent": "gambling_one"},
       "roulette_prodigy": {"title": "Roulette Prodigy", "description": "win with green at /roulette", "difficulty": 4, "parent": "roulette_winner"},
     "blackjacker": {"title": "Blackjacker", "description": "win at /blackcat", "difficulty": 2, "parent": "gambling_one"},
@@ -65,7 +66,6 @@
       "all_or_nothing": {"title": "All or Nothing", "description": "luigi wins by doing absolutely nothing", "difficulty": 3, "parent": "blackjacker"},
     "failed_gambler": {"title": "Failed Gambler", "description": "lose all your money at the casino", "difficulty": 4, "parent": "gambling_one"},
     "paradoxical_gambler": {"title": "Paradoxical Gambler", "description": "gamble so hard you create a paradox", "difficulty": 4, "parent": "gambling_one"},
-    "debt": {"title": "Debt Recovery", "description": "gamble away your debts", "difficulty": 6, "parent": "gambling_one"},
 
   "cookieclicker": {"title": "Cookie Clicker", "description": "click a cookie", "difficulty": 1, "parent": "Minigames"},
     "cookiesclicked": {"title": "Cookies Clicked", "description": "collect 5,000 cookies", "difficulty": 5, "parent": "cookieclicker"},
