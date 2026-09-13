@@ -2462,16 +2462,17 @@ async def on_message(message: discord.Message) -> None:
                         bonus_chance_increase = min(2, bonus_chance_increase * 0.01 + 1)
                         bonus_chance *= bonus_chance_increase
 
-                    if random.random() * 100 < rain_chance and channel.cat_rains == 0 and server.do_rain:
+                    if random.random() * 100 < rain_chance and server.do_rain:
+                        channel.cat_rains += 10
                         force_rain_summary = config.cat_cought_rain.get(channel.channel_id, {}).copy()
-                        channel.cat_rains = 10
                         decided_time = random.uniform(1, 2)
                         channel.rain_should_end = int(time.time() + decided_time)
                         channel.yet_to_spawn = 0
-                        config.cat_cought_rain[channel.channel_id] = {}
-                        config.rain_starter[channel.channel_id] = message.author.id
-                        bot.loop.create_task(rain_recovery_loop(channel))
                         suffix_string += "\n☔ Catnip started a short rain! 10 cats will spawn."
+                        if channel.cat_rains == 10:
+                            config.cat_cought_rain[channel.channel_id] = {}
+                            config.rain_starter[channel.channel_id] = message.author.id
+                            bot.loop.create_task(rain_recovery_loop(channel))
 
                     chance = random.random() * 100
                     if chance <= triple_chance:
@@ -2573,17 +2574,18 @@ async def on_message(message: discord.Message) -> None:
                                 rainboost = 600
                             log_stats("boost_to_rain", {"length": str(rainboost)})
                             channel.cat_rains += int(rainboost / 60) * 22
-                            if channel.cat_rains > int(rainboost / 60) * 22:
-                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
-                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
-                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
                             force_rain_summary = config.cat_cought_rain.get(channel.channel_id, {}).copy()
                             decided_time = random.uniform(1, 2)
                             channel.rain_should_end = int(time.time() + decided_time)
                             channel.yet_to_spawn = 0
-                            config.cat_cought_rain[channel.channel_id] = {}
-                            config.rain_starter[channel.channel_id] = message.author.id
-                            bot.loop.create_task(rain_recovery_loop(channel))
+                            if channel.cat_rains > int(rainboost / 60) * 22:
+                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
+                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
+                                await message.channel.send(f"# ‼️‼️ RAIN EXTENDED BY {int(rainboost / 60)} MINUTES ‼️‼️")
+                            else:
+                                config.cat_cought_rain[channel.channel_id] = {}
+                                config.rain_starter[channel.channel_id] = message.author.id
+                                bot.loop.create_task(rain_recovery_loop(channel))
 
                     boost_icon = get_aura_emoji(le_old_emoji, user.cat_auras)
                     prism_icon = get_emoji("prism")
