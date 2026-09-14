@@ -483,13 +483,13 @@ async def achemb(
         if send_type == "response":
             assert isinstance(message, discord.Interaction)
             result = (await message.response.send_message(view=view, ephemeral=not do)).resource
-            assert isinstance(result, discord.InteractionMessage)
         await progress(message, profile, "achievement")
         await finale(message, profile)
     except (discord.NotFound, discord.Forbidden):
         pass
 
     if result:
+        assert not isinstance(result, discord.InteractionCallbackActivityInstance)
         if view2:
             await asyncio.sleep(2)
             await result.edit(view=view2)
@@ -9984,7 +9984,7 @@ async def achievements(message: discord.Interaction):
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     global_user = await User.get_or_create(user_id=message.user.id)
 
-    diffs = ["", "(Trivial)", "(Easy)", "(Normal)", "(Hard)", "(Insane)", "(Extreme)"]
+    diffs = ["", "(Trivial)", "(Easy)", "(Normal)", "(Hard)", "(Insane)", "(Demonic)"]
 
     # this is a single page of the achievement list
     async def gen_page(interaction: discord.Interaction):
