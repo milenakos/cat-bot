@@ -11462,7 +11462,7 @@ async def profile_embed(request: web.Request) -> web.Response:
         return web.Response(text="Invalid user ID", status=400)
 
     embed, _ = await gen_inventory(profile.guild_id, u, None, False)
-    embed.add_item(TextDisplay(f"-# In {server.name} as of <t:{int(time.time())}>"))
+    embed.add_item(TextDisplay(f"-# in {server.name} as of <t:{int(time.time())}:s>"))
     view = LayoutView(timeout=1)
     view.add_item(embed)
     return web.json_response({"component": view.to_components()[0]})
