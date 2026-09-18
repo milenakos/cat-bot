@@ -3716,6 +3716,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
             button.callback = next_page
             last_row.add_item(button)
 
+        view.add_item(Separator())
         view.add_item(last_row)
 
         return view
