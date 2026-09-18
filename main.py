@@ -4819,6 +4819,15 @@ async def randomizer(message: discord.Interaction):
     await achemb(message, "randomizer2", "followup")
 
 
+@bot.tree.command(description="Get a link which embeds to your Cat Bot profile in any server!")
+async def shareprofile(message: discord.Interaction):
+    assert message.guild is not None
+    profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
+    profile.sharing_enabled = True
+    await profile.save()
+    await message.response.send_message(f"https://catbot.link/{profile.id}", ephemeral=True)
+
+
 async def rain_recovery_loop(channel: Channel) -> None:
     log_stats("rain_start", {"cats": str(channel.cat_rains)})
     while True:
@@ -11441,6 +11450,42 @@ async def bake_gg_reward(request: web.Request) -> web.Response:
     return web.Response(text="Success", status=200)
 
 
+async def profile_embed(request: web.Request) -> web.Response:
+    try:
+        profile_id = request.match_info["profile_id"]
+        profile = await Profile.get_or_none(id=profile_id)
+        if not profile or not profile.sharing_enabled:
+            raise ValueError
+    except Exception:
+        return web.Response(text="Invalid user ID", status=400)
+
+    u = discord.Object(profile.user_id, type=discord.User)
+    embed, _ = await gen_inventory(profile.guild_id, u, None, False)
+    embed.add_item(TextDisplay(f"-# As of <t:{int(time.time())}>"))
+    view = LayoutView(timeout=1)
+    view.add_item(embed)
+    return web.json_response({"component": view.to_components()[0]})
+
+
+async def profile_wrapper(request: web.Request) -> web.Response:
+    user_agent = request.headers.get("User-Agent", "")
+    if "Discordbot" not in user_agent:
+        raise web.HTTPMovedPermanently("/")
+
+    profile_id = request.match_info["profile_id"]
+    html = f"""
+    <html>
+      <head><link
+        rel="discord:component-embed"
+        type="application/json"
+        href="https://catbot.link/profile/{profile_id}.json"
+      ></head>
+    </html>
+    """
+
+    return web.Response(text=html, content_type="text/html")
+
+
 # cat bot uses glitchtip (sentry alternative) for errors, here u can instead implement some other logic like dming the owner
 async def on_error(*args, **kwargs):
     raise  # noqa: PLE0704
@@ -11514,6 +11559,8 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
                 web.post("/", recieve_vote),
                 web.get("/supporter", check_supporter),
                 web.post("/bakegg", bake_gg_reward),
+                web.get("/{profile_id}", profile_wrapper),
+                web.get("/profile/{profile_id}.json", profile_embed),
             ]
         )
         vote_server = web.AppRunner(app)
