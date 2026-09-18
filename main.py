@@ -11456,12 +11456,13 @@ async def profile_embed(request: web.Request) -> web.Response:
         profile = await Profile.get_or_none(id=profile_id)
         if not profile or not profile.sharing_enabled:
             raise ValueError
+        u = await bot.fetch_user(profile.user_id)
+        server = await Server.get_or_create(server_id=profile.guild_id)
     except Exception:
         return web.Response(text="Invalid user ID", status=400)
 
-    u = await bot.fetch_user(profile.user_id)
     embed, _ = await gen_inventory(profile.guild_id, u, None, False)
-    embed.add_item(TextDisplay(f"-# As of <t:{int(time.time())}>"))
+    embed.add_item(TextDisplay(f"-# In {server.name} as of <t:{int(time.time())}>"))
     view = LayoutView(timeout=1)
     view.add_item(embed)
     return web.json_response({"component": view.to_components()[0]})
