@@ -11459,7 +11459,7 @@ async def profile_embed(request: web.Request) -> web.Response:
     except Exception:
         return web.Response(text="Invalid user ID", status=400)
 
-    u = discord.Object(profile.user_id, type=discord.User)
+    u = await bot.fetch_user(profile.user_id)
     embed, _ = await gen_inventory(profile.guild_id, u, None, False)
     embed.add_item(TextDisplay(f"-# As of <t:{int(time.time())}>"))
     view = LayoutView(timeout=1)
