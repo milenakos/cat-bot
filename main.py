@@ -11452,7 +11452,7 @@ async def bake_gg_reward(request: web.Request) -> web.Response:
 
 async def profile_embed(request: web.Request) -> web.Response:
     try:
-        profile_id = request.match_info["profile_id"]
+        profile_id = int(request.match_info["profile_id"])
         profile = await Profile.get_or_none(id=profile_id)
         if not profile or not profile.sharing_enabled:
             raise ValueError
