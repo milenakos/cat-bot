@@ -61,7 +61,9 @@
     "unable to perform operation on",
     "Event loop is closed",
     "503 Service Unavailable",
-    "Not enough data to satisfy"
+    "Not enough data to satisfy",
+    "already been acknowledged",
+    "DeadlockDetectedError"
   ],
   "pack_data": [
     {
