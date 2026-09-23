@@ -5966,7 +5966,7 @@ async def battlepass(message: discord.Interaction):
             embed.add_item(TextDisplay("You have unread news! /news"))
 
         embed.add_item(TextDisplay(f"## Cattlepass Season {user.season}"))
-        embed.add_item(TextDisplay(f"-# Season ends <t:{timestamp}:R>"))
+        embed.add_item(TextDisplay(f"Season ends <t:{timestamp}:R>"))
         embed.add_item(Separator())
 
         # weekly
@@ -5987,7 +5987,7 @@ async def battlepass(message: discord.Interaction):
                     for cat_index in user.weekly_cattypes:
                         description += get_emoji(cattypes[cat_index].lower() + "cat")
                     description += "⬛" * (weekly_quest["progress"] - user.weekly_progress)
-                description += "\n- Reward: 2000 XP + 1 Scratchcard"
+                description += "\nReward: 2000 XP + 1 Scratchcard"
             else:
                 description += f"✅ ~~{weekly_quest['title']}~~"
             embed.add_item(TextDisplay(description))
@@ -5996,9 +5996,9 @@ async def battlepass(message: discord.Interaction):
         description = ""
         streak_string = ""
         if global_user.vote_streak >= 5:
-            streak_string = f" (🔥 {global_user.vote_streak}x streak)"
+            streak_string = f" (🔥 {global_user.vote_streak}x)"
         if user.vote_cooldown != 0:
-            description += f"✅ ~~Vote on Top.gg~~\n- Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>{streak_string}\n"
+            description += f"✅ Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>{streak_string}\n"
         else:
             has_bad = True
 
@@ -6008,23 +6008,23 @@ async def battlepass(message: discord.Interaction):
             if is_weekend:
                 description += "-# *Double Vote XP During Weekends*\n"
 
-            description += f"{get_emoji('topgg')} [Vote on Top.gg](https://top.gg/bot/966695034340663367/vote)\n"
+            description += f"{get_emoji('topgg')} [Vote on Top.gg](https://top.gg/bot/966695034340663367/vote)"
 
             if is_weekend:
-                description += f"- Reward: ~~{user.vote_reward}~~ **{user.vote_reward * 2}** XP"
+                description += f" - ~~{user.vote_reward}~~ **{user.vote_reward * 2}** XP"
             else:
-                description += f"- Reward: {user.vote_reward} XP"
+                description += f" - {user.vote_reward} XP"
 
             next_streak_data = get_streak_reward(global_user.vote_streak + 1)
             if next_streak_data["reward"] and global_user.vote_time_topgg + 24 * 3600 > time.time():
-                description += f" + {next_streak_data['emoji']} 1 {next_streak_data['reward'].capitalize()} pack"
+                description += f" + {next_streak_data['emoji']}"
 
             description += f"{streak_string}\n"
 
         # catch
         catch_quest = config.battle["quests"]["catch"][user.catch_quest]
         if user.catch_cooldown != 0:
-            description += f"✅ ~~{catch_quest['title']}~~\n- Refreshes <t:{int(min(timestamp, user.catch_cooldown + 12 * 3600))}:R>\n"
+            description += f"✅ Refreshes <t:{int(min(timestamp, user.catch_cooldown + 12 * 3600))}:R>\n"
         else:
             has_bad = True
             progress_string = ""
@@ -6037,18 +6037,18 @@ async def battlepass(message: discord.Interaction):
                     progress_string = f" ({real_progress})"
                 else:
                     progress_string = f" ({user.catch_progress}/{catch_quest['progress']})"
-            description += f"{get_emoji(catch_quest['emoji'])} {catch_quest['title']}{progress_string}\n- Reward: {user.catch_reward} XP\n"
+            description += f"{get_emoji(catch_quest['emoji'])} {catch_quest['title']}{progress_string} - {user.catch_reward} XP\n"
 
         # misc
         misc_quest = config.battle["quests"]["misc"][user.misc_quest]
         if user.misc_cooldown != 0:
-            description += f"✅ ~~{misc_quest['title']}~~\n- Refreshes <t:{int(min(timestamp, user.misc_cooldown + 12 * 3600))}:R>"
+            description += f"✅ Refreshes <t:{int(min(timestamp, user.misc_cooldown + 12 * 3600))}:R>\n"
         else:
             has_bad = True
             progress_string = ""
             if misc_quest["progress"] != 1:
                 progress_string = f" ({user.misc_progress}/{misc_quest['progress']})"
-            description += f"{get_emoji(misc_quest['emoji'])} {misc_quest['title']}{progress_string}\n- Reward: {user.misc_reward} XP"
+            description += f"{get_emoji(misc_quest['emoji'])} {misc_quest['title']}{progress_string} - {user.misc_reward} XP"
 
         embed.add_item(TextDisplay(description))
         embed.add_item(Separator())
