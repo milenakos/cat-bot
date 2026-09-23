@@ -9250,7 +9250,7 @@ async def get_bounties(level: int) -> list[dict]:
     return bounties
 
 
-async def get_perks(level: int, user: Profile) -> list[dict]:
+async def get_perks(level: int, user: Profile, do_rain: bool = True) -> list[dict]:
     level_data = catnip_list["levels"][level]
     rarities = [r for r in level_data["weights"]]
     weights = {rarity: level_data["weights"][rarity] for rarity in rarities}
@@ -9285,9 +9285,12 @@ async def get_perks(level: int, user: Profile) -> list[dict]:
                 i += 1
                 total_weight += perk["weight"]
 
-                if perk["id"] in used_ids or (perk["exclusive"] == 1 and perk["id"] in thelist):  # me when im in thelist
+                if perk["id"] in used_ids or (perk["exclusive"] == 1 and perk["id"] in thelist):
                     continue
-
+                
+                if perk["id"] == "rain_boost" and not do_rain:
+                    continue
+                
                 if all("pack" in p["id"] for p in current_perks) and "pack" in perk["id"]:
                     continue
 
@@ -9721,9 +9724,9 @@ You can stop. That's okay. Seriously."""
         if user.perk1 and user.perk2 and user.perk3:
             perks = [user.perk1, user.perk2, user.perk3]
         elif level:
-            perks = [p["uuid"] for p in await get_perks(level, user)]
+            perks = [p["uuid"] for p in await get_perks(level, user, server.do_rain)]
         else:
-            perks = [p["uuid"] for p in await get_perks(user.catnip_level, user)]
+            perks = [p["uuid"] for p in await get_perks(user.catnip_level, user, server.do_rain)]
 
         for i, perk in enumerate(perks):
             perk_data = perks_data[int(perk.split("_")[1]) - 1]
