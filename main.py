@@ -2725,7 +2725,7 @@ async def on_message(message: discord.Message) -> None:
                             view.add_item(TextDisplay(catch_text))
                             if button:
                                 view.add_item(ActionRow(button))
-                            result = await cat_spawn.edit(view=view)
+                            result = await cat_spawn.edit(view=view, allowed_mentions=discord.AllowedMentions.none())
                             return result
 
                         if button:
