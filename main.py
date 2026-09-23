@@ -730,18 +730,18 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
             if not cat_emojis:
                 packs_ping = get_command_mention("packs")
                 if active_level_data["reward"] == "Rain":
-                    description = f"You got ☔ {active_level_data['amount']} rain minutes!"
+                    description = f"You got ☔ {active_level_data['amount']} Rain Minutes!"
                 elif active_level_data["reward"] in cattypes:
                     description = (
                         f"You got {get_emoji(active_level_data['reward'].lower() + 'cat')} {active_level_data['amount']} {active_level_data['reward']}!"
                     )
                 elif pack_chosen:
                     description = (
-                        f"You got a {get_emoji('mysterypack')} -> {get_emoji(pack_chosen.lower() + 'pack')} {pack_chosen} pack! Do {packs_ping} to open it!"
+                        f"You got a {get_emoji('mysterypack')} -> {get_emoji(pack_chosen.lower() + 'pack')} {pack_chosen} pack!\nDo {packs_ping} to open it!"
                     )
                 else:
                     description = (
-                        f"You got a {get_emoji(active_level_data['reward'].lower() + 'pack')} {active_level_data['reward']} pack! Do {packs_ping} to open it!"
+                        f"You got a {get_emoji(active_level_data['reward'].lower() + 'pack')} {active_level_data['reward']} pack!\nDo {packs_ping} to open it!"
                     )
                 title = f"Level {user.battlepass} Complete!"
             else:
