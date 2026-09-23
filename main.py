@@ -1008,7 +1008,7 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     if not localcat:
         localcat = random.choices(cattypes, weights=list(data.type_dict.values()))[0]
     icon = get_emoji(localcat.lower() + "cat")
-    file = f"https://raw.githubusercontent.com/milenakos/cat-bot/main/assets/images/spawn/{localcat.lower()}_cat.png"
+    file = f"https://raw.githubusercontent.com/milenakos/cat-bot/main/assets/images/spawn/{localcat.lower()}_cat.webp"
     channeley = bot.get_partial_messageable(ch_id)
 
     appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
@@ -7808,7 +7808,7 @@ async def cat(message: discord.Interaction, cat_type: str | None = None):
         await message.response.send_message("you dont have that cat", ephemeral=True)
         return
 
-    image = f"assets/images/spawn/{cat_type.lower()}_cat.png" if cat_type else "assets/images/cat.png"
+    image = f"assets/images/spawn/{cat_type.lower()}_cat.webp" if cat_type else "assets/images/cat.png"
     file = discord.File(image, filename=image)
     await message.response.send_message(file=file)
 
