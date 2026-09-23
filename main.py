@@ -6098,9 +6098,9 @@ async def battlepass(message: discord.Interaction):
             reminder_button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
         reminder_button.callback = toggle_reminders
 
-        embed.add_item(ActionRow(refresh_button, reminder_button))
         embed.add_item(TextDisplay(f"-# {rain_shill}"))
         view.add_item(embed)
+        view.add_item(ActionRow(refresh_button, reminder_button))
 
         if first:
             await interaction.response.send_message(view=view)
