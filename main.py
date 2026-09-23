@@ -5967,7 +5967,7 @@ async def battlepass(message: discord.Interaction):
 
         embed.add_item(TextDisplay(f"## Cattlepass Season {user.season}"))
         embed.add_item(TextDisplay(f"Season ends <t:{timestamp}:R>"))
-        embed.add_item(Separator(spacing=discord.SeparatorSpacing.large))
+        embed.add_item(Separator())
 
         # weekly
         if user.weekly_quest:
@@ -6054,7 +6054,7 @@ async def battlepass(message: discord.Interaction):
             description = f"{get_emoji(misc_quest['emoji'])} {misc_quest['title']}{progress_string} - {user.misc_reward} XP"
         embed.add_item(TextDisplay(description))
 
-        embed.add_item(Separator(spacing=discord.SeparatorSpacing.large))
+        embed.add_item(Separator())
 
         if user.battlepass >= len(config.battle["seasons"][str(user.season)]):
             description = f"**Extra Rewards** [{user.progress}/2000 XP]\n"
