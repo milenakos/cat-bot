@@ -245,7 +245,7 @@ GuildMessageable = discord.TextChannel | discord.Thread | discord.VoiceChannel |
 
 
 # rain shill message for footers
-rain_shill = "☔ Get tons of cats /rain"
+rain_shill = "-# ☔ Get tons of cats /rain"
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
@@ -4761,7 +4761,7 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
             return
 
         embed_view, give_achs = await gen_inventory(message.guild.id, person_id, message if person_id == message.user else None, run_debt_cutscene=first)
-        embed_view.add_item(TextDisplay(f"-# {rain_shill}"))
+        embed_view.add_item(TextDisplay(rain_shill))
         view = LayoutView(timeout=VIEW_TIMEOUT)
         view.add_item(embed_view)
 
@@ -6101,7 +6101,7 @@ async def battlepass(message: discord.Interaction):
             reminder_button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
         reminder_button.callback = toggle_reminders
 
-        embed.add_item(TextDisplay(f"-# {rain_shill}"))
+        embed.add_item(TextDisplay(rain_shill))
         view.add_item(embed)
         view.add_item(ActionRow(refresh_button, reminder_button))
 
@@ -10092,7 +10092,7 @@ async def achievements(message: discord.Interaction):
         embed.add_item(Separator())
         embed.add_item(TextDisplay("\n".join(lines)))
         embed.add_item(Separator())
-        embed.add_item(TextDisplay(f"-# {rain_shill}"))
+        embed.add_item(TextDisplay(rain_shill))
 
         button = Button(label="Back", emoji="⬅️", style=ButtonStyle.blurple)
         button.callback = gen_main
@@ -10158,7 +10158,7 @@ async def achievements(message: discord.Interaction):
         for i in range(0, len(buttons), 2):
             embed.add_item(ActionRow(*buttons[i : i + 2]))
 
-        embed.add_item(TextDisplay(f"-# {rain_shill}"))
+        embed.add_item(TextDisplay(rain_shill))
         button = Button(label="Refresh", emoji="🔄", style=ButtonStyle.blurple)
         button.callback = gen_main
         view.add_item(embed)
@@ -10673,7 +10673,7 @@ async def leaderboards(
             embedVar.add_item(ActionRow(dropdown))
 
         embedVar.add_item(TextDisplay(string.rstrip()))
-        embedVar.add_item(TextDisplay(f"-# {rain_shill}"))
+        embedVar.add_item(TextDisplay(rain_shill))
 
         myview.add_item(embedVar)
 
@@ -11528,7 +11528,7 @@ async def start_tutorial(ctx: discord.Interaction) -> None:
 
 
 async def setup(bot2: commands.AutoShardedBot) -> None:
-    global bot, COMMAND_IDS, vote_server
+    global bot, COMMAND_IDS, vote_server, rain_shill
 
     # remove old commands
     bot2.tree.clear_commands(guild=None)
@@ -11582,6 +11582,7 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
 
     app_commands = await bot.tree.fetch_commands()
     COMMAND_IDS = {i.name: i.id for i in app_commands}
+    rain_shill = rain_shill.replace("/rain", get_command_mention("rain"))
 
     if bot.is_ready() and not on_ready_debounce:
         await on_ready()
