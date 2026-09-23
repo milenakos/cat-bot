@@ -728,6 +728,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
             await user.save()
 
             if not cat_emojis:
+                packs_ping = get_command_mention("packs")
                 if active_level_data["reward"] == "Rain":
                     description = f"You got ☔ {active_level_data['amount']} rain minutes!"
                 elif active_level_data["reward"] in cattypes:
@@ -735,16 +736,18 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
                         f"You got {get_emoji(active_level_data['reward'].lower() + 'cat')} {active_level_data['amount']} {active_level_data['reward']}!"
                     )
                 elif pack_chosen:
-                    description = f"You got a {get_emoji('mysterypack')} -> {get_emoji(pack_chosen.lower() + 'pack')} {pack_chosen} pack! Do /packs to open it!"
+                    description = (
+                        f"You got a {get_emoji('mysterypack')} -> {get_emoji(pack_chosen.lower() + 'pack')} {pack_chosen} pack! Do {packs_ping} to open it!"
+                    )
                 else:
                     description = (
-                        f"You got a {get_emoji(active_level_data['reward'].lower() + 'pack')} {active_level_data['reward']} pack! Do /packs to open it!"
+                        f"You got a {get_emoji(active_level_data['reward'].lower() + 'pack')} {active_level_data['reward']} pack! Do {packs_ping} to open it!"
                     )
                 title = f"Level {user.battlepass} Complete!"
             else:
                 description = f"You got {cat_emojis}!"
                 title = "Bonus Complete!"
-            embed_level_up = discord.Embed(title=title, description=description, color=Colors.yellow)
+            embed_level_up = Container(f"## {title}", description, accent_color=Colors.yellow)
             level_complete_embeds.append(embed_level_up)
 
             if user.battlepass >= len(config.battle["seasons"][str(user.season)]):
@@ -779,23 +782,25 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         )
 
     if is_belated:
-        embed_progress.set_footer(text="For catching late")
+        embed_progress.add_item(TextDisplay("-# For catching late"))
     elif bot.user and user.user_id == bot.user.id:
-        embed_progress.set_footer(text="im so good at this")
+        embed_progress.add_item(TextDisplay("-# im so good at this"))
 
     assert message.guild is not None
     assert isinstance(message.channel, GuildMessageable)
     server = await Server.get_or_create(server_id=message.guild.id)
     if await check_channel_setupped(server, message.channel):
-        if level_complete_embeds:
-            await message.channel.send(f"<@{user.user_id}>", embeds=level_complete_embeds + [embed_progress])
-        else:
-            await message.channel.send(f"<@{user.user_id}>", embed=embed_progress)
+        view = LayoutView(timeout=1)
+        view.add_item(TextDisplay(f"<@{user.user_id}>"))
+        for embed in level_complete_embeds:
+            view.add_item(embed)
+        view.add_item(embed_progress)
+        await message.channel.send(view=view)
 
     return user
 
 
-async def progress_embed(user: Profile, level_data: dict, current_xp: int, old_xp: int, quest_data: dict, diff: int, level_text: str) -> discord.Embed:
+async def progress_embed(user: Profile, level_data: dict, current_xp: int, old_xp: int, quest_data: dict, diff: int, level_text: str) -> discord.ui.Container:
     percentage_before = int(old_xp / level_data["xp"] * 10)
     percentage_after = int(current_xp / level_data["xp"] * 10)
     percenteage_left = 10 - percentage_after
@@ -821,15 +826,16 @@ async def progress_embed(user: Profile, level_data: dict, current_xp: int, old_x
     if streak_data["reward"] and "top.gg" in quest_data["title"]:
         streak_reward = f"\n🔥 **Streak Bonus!** +1 {streak_data['emoji']} {streak_data['reward'].capitalize()} pack"
     elif quest_data in config.battle["quests"]["weekly"].values():
-        streak_reward = "\n🍀 **Weekly Quest!** +1 /scratch card!"
+        streak_reward = f"\n🍀 **Weekly Quest!** +1 {get_command_mention('scratch')} card!"
     else:
         streak_reward = ""
 
-    return discord.Embed(
-        title=f"✅ {title}",
-        description=f"{progress_line} {reward_text}\n{current_xp}/{level_data['xp']} XP (+{diff}){streak_reward}",
-        color=Colors.green,
-    ).set_author(name="/battlepass " + level_text)
+    return Container(
+        f"-# {get_command_mention('battlepass')} {level_text}",
+        f"## ✅ {title}",
+        f"{progress_line} {reward_text}\n{current_xp}/{level_data['xp']} XP (+{diff}){streak_reward}",
+        accent_color=Colors.green,
+    )
 
 
 def get_streak_reward(streak: int) -> dict:
@@ -5888,19 +5894,6 @@ async def packs(message: discord.Interaction):
     await message.response.send_message(view=await gen_main())
 
 
-def make_refresh_and_reminder_buttons(user, gen_main_cb, toggle_reminders_cb) -> tuple[Button, Button]:
-    refresh_button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
-    refresh_button.callback = gen_main_cb
-
-    if user.reminders_enabled:
-        reminder_button = Button(emoji="🔕", style=ButtonStyle.blurple)
-    else:
-        reminder_button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
-    reminder_button.callback = toggle_reminders_cb
-
-    return refresh_button, reminder_button
-
-
 @bot.tree.command(description="why would anyone think a cattlepass would be a good idea (bp)")
 async def battlepass(message: discord.Interaction):
     assert message.guild is not None
@@ -5930,11 +5923,7 @@ async def battlepass(message: discord.Interaction):
         user.reminders_enabled = not user.reminders_enabled
         await user.save()
 
-        view = View(timeout=VIEW_TIMEOUT)
-        for button in make_refresh_and_reminder_buttons(user, gen_main, toggle_reminders):
-            view.add_item(button)
-
-        await interaction.response.edit_message(view=view)
+        await gen_main(interaction)
         await interaction.followup.send(
             f"Reminders are now {'enabled' if user.reminders_enabled else 'disabled'}.",
             ephemeral=True,
@@ -5970,13 +5959,22 @@ async def battlepass(message: discord.Interaction):
 
         has_bad = False
 
-        description = f"Season ends <t:{timestamp}:R>\n\n"
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        embed = Container()
+
+        if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
+            embed.add_item(TextDisplay("You have unread news! /news"))
+
+        embed.add_item(TextDisplay(f"## Cattlepass Season {user.season}"))
+        embed.add_item(TextDisplay(f"-# Season ends <t:{timestamp}:R>"))
+        embed.add_item(Separator())
 
         # weekly
         if user.weekly_quest:
             weekly_quest = config.battle["quests"]["weekly"][user.weekly_quest]
-            month_start = datetime.datetime(now.year, now.month, 1, tzinfo=datetime.timezone.utc) - datetime.timedelta(hours=4)
-            description += f"__Weekly Quest__ (refreshes <t:{weekly_quest['end_time'] + int(month_start.timestamp())}:R>)\n"
+            month_start = int((datetime.datetime(now.year, now.month, 1, tzinfo=datetime.timezone.utc) - datetime.timedelta(hours=4)).timestamp())
+            refresh_time = month_start + 604800 * (int((time.time() - month_start) // 604800) + 1)
+            description = f"__Weekly Quest__ (refreshes <t:{refresh_time}:R>)\n"
             if weekly_quest["progress"] > user.weekly_progress:
                 title = weekly_quest["title"]
                 if user.weekly_quest == "bonus":
@@ -5989,11 +5987,13 @@ async def battlepass(message: discord.Interaction):
                     for cat_index in user.weekly_cattypes:
                         description += get_emoji(cattypes[cat_index].lower() + "cat")
                     description += "⬛" * (weekly_quest["progress"] - user.weekly_progress)
-                description += "\n- Reward: 2000 XP + 1 Scratchcard\n\n"
+                description += "\n- Reward: 2000 XP + 1 Scratchcard"
             else:
-                description += f"✅ ~~{weekly_quest['title']}~~\n\n"
+                description += f"✅ ~~{weekly_quest['title']}~~"
+            embed.add_item(TextDisplay(description))
 
         # vote
+        description = ""
         streak_string = ""
         if global_user.vote_streak >= 5:
             streak_string = f" (🔥 {global_user.vote_streak}x streak)"
@@ -6042,32 +6042,38 @@ async def battlepass(message: discord.Interaction):
         # misc
         misc_quest = config.battle["quests"]["misc"][user.misc_quest]
         if user.misc_cooldown != 0:
-            description += f"✅ ~~{misc_quest['title']}~~\n- Refreshes <t:{int(min(timestamp, user.misc_cooldown + 12 * 3600))}:R>\n\n"
+            description += f"✅ ~~{misc_quest['title']}~~\n- Refreshes <t:{int(min(timestamp, user.misc_cooldown + 12 * 3600))}:R>"
         else:
             has_bad = True
             progress_string = ""
             if misc_quest["progress"] != 1:
                 progress_string = f" ({user.misc_progress}/{misc_quest['progress']})"
-            description += f"{get_emoji(misc_quest['emoji'])} {misc_quest['title']}{progress_string}\n- Reward: {user.misc_reward} XP\n\n"
+            description += f"{get_emoji(misc_quest['emoji'])} {misc_quest['title']}{progress_string}\n- Reward: {user.misc_reward} XP"
+
+        embed.add_item(TextDisplay(description))
+        embed.add_item(Separator())
 
         if user.battlepass >= len(config.battle["seasons"][str(user.season)]):
-            description += f"**Extra Rewards** [{user.progress}/2000 XP]\n"
+            description = f"**Extra Rewards** [{user.progress}/2000 XP]\n"
             colored = min(10, int(user.progress / 2000 * 10))
-            description += get_emoji("staring_square") * colored + "⬛" * (10 - colored) + " " + get_emoji("mysterypack") + "\n\n"
+            description += get_emoji("staring_square") * colored + "⬛" * (10 - colored) + " " + get_emoji("mysterypack")
         else:
             level_data = config.battle["seasons"][str(user.season)][user.battlepass]
-            description += f"**Level {user.battlepass + 1}/30** [{user.progress}/{level_data['xp']} XP]\n"
+            description = f"**Level {user.battlepass + 1}/30** [{user.progress}/{level_data['xp']} XP]\n"
             colored = int(user.progress / level_data["xp"] * 10)
             description += get_emoji("staring_square") * colored + "⬛" * (10 - colored)
 
             if level_data["reward"] == "Rain":
-                description += f" {get_emoji(str(level_data['amount']) + 'rain')}\n\n"
+                description += f" {get_emoji(str(level_data['amount']) + 'rain')}"
             elif level_data["reward"] in cattypes:
-                description += f" {level_data['amount']}x {get_emoji(level_data['reward'].lower() + 'cat')}\n\n"
+                description += f" {level_data['amount']}x {get_emoji(level_data['reward'].lower() + 'cat')}"
             else:
-                description += f" {get_emoji(level_data['reward'].lower() + 'pack')}\n\n"
+                description += f" {get_emoji(level_data['reward'].lower() + 'pack')}"
+
+        embed.add_item(TextDisplay(description))
 
         # season overview
+        description = ""
         levels = config.battle["seasons"][str(user.season)]
         for num, level_data in enumerate(levels):
             claimed_suffix = "_claimed" if num < user.battlepass else ""
@@ -6081,22 +6087,25 @@ async def battlepass(message: discord.Interaction):
                 description += "\n"
         description += f"*Then:* {get_emoji('mysterypack')} Mystery per 2000 XP"
 
-        embedVar = discord.Embed(
-            title=f"Cattlepass Season {user.season}",
-            description=description,
-            color=Colors.brown,
-        ).set_footer(text=rain_shill)
-        view = View(timeout=VIEW_TIMEOUT)
-        for button in make_refresh_and_reminder_buttons(user, gen_main, toggle_reminders):
-            view.add_item(button)
+        embed.add_item(TextDisplay(description))
 
-        if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
-            embedVar.set_author(name="You have unread news! /news")
+        refresh_button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
+        refresh_button.callback = gen_main
+
+        if user.reminders_enabled:
+            reminder_button = Button(emoji="🔕", style=ButtonStyle.blurple)
+        else:
+            reminder_button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
+        reminder_button.callback = toggle_reminders
+
+        embed.add_item(ActionRow(refresh_button, reminder_button))
+        embed.add_item(TextDisplay(f"-# {rain_shill}"))
+        view.add_item(embed)
 
         if first:
-            await interaction.response.send_message(embed=embedVar, view=view)
+            await interaction.response.send_message(view=view)
         else:
-            await interaction.response.edit_message(embed=embedVar, view=view)
+            await interaction.response.edit_message(view=view)
 
         if not has_bad:
             await achemb(interaction, "all_done", "followup")
