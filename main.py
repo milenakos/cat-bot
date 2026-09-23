@@ -2087,7 +2087,7 @@ async def on_message(message: discord.Message) -> None:
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
-            thing = discord.File("assets/images/socialcredit.jpg", filename="socialcredit.jpg")
+            thing = discord.File("assets/images/socialcredit.png")
             try:
                 await message.reply(file=thing)
             except Exception:
@@ -2099,7 +2099,7 @@ async def on_message(message: discord.Message) -> None:
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
-            file = discord.File("assets/images/car.png", filename="car.png")
+            file = discord.File("assets/images/car.png")
             embed = discord.Embed(title="car!", color=Colors.brown).set_image(url="attachment://car.png")
             try:
                 await message.reply(file=file, embed=embed)
@@ -2112,7 +2112,7 @@ async def on_message(message: discord.Message) -> None:
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
-            file = discord.File("assets/images/cart.png", filename="cart.png")
+            file = discord.File("assets/images/cart.png")
             embed = discord.Embed(title="cart!", color=Colors.brown).set_image(url="attachment://cart.png")
             try:
                 await message.reply(file=file, embed=embed)
@@ -3733,7 +3733,7 @@ async def tiktok(message: discord.Interaction, text: str):
             return
 
     if text == "bwomp":
-        file = discord.File("assets/bwomp.mp3", filename="bwomp.mp3")
+        file = discord.File("assets/bwomp.mp3")
         await message.response.send_message(file=file)
         await achemb(message, "bwomp", "followup")
         return
@@ -7809,19 +7809,19 @@ async def cat(message: discord.Interaction, cat_type: str | None = None):
         return
 
     image = f"assets/images/spawn/{cat_type.lower()}_cat.webp" if cat_type else "assets/images/cat.png"
-    file = discord.File(image, filename=image)
+    file = discord.File(image)
     await message.response.send_message(file=file)
 
 
 @bot.tree.command(description="Get Cursed Cat")
 async def cursed(message: discord.Interaction):
-    file = discord.File("assets/images/cursed.jpg", filename="cursed.jpg")
+    file = discord.File("assets/images/cursed.png")
     await message.response.send_message(file=file)
 
 
 @bot.tree.command(description="Get Your balance")
 async def bal(message: discord.Interaction):
-    file = discord.File("assets/images/money.png", filename="money.png")
+    file = discord.File("assets/images/money.png")
     embed = discord.Embed(title="cat coins", color=Colors.brown).set_image(url="attachment://money.png")
     await message.response.send_message(file=file, embed=embed)
 
@@ -10787,7 +10787,7 @@ async def fake(message: discord.Interaction):
     if message.user.id in fakecooldown:
         await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
         return
-    file = discord.File("assets/images/australian cat.png", filename="australian cat.png")
+    file = discord.File("assets/images/australian cat.png")
     icon = get_emoji("egirlcat")
     fakecooldown.add(message.user.id)
     try:
