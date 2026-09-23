@@ -5974,7 +5974,7 @@ async def battlepass(message: discord.Interaction):
             weekly_quest = config.battle["quests"]["weekly"][user.weekly_quest]
             month_start = int((datetime.datetime(now.year, now.month, 1, tzinfo=datetime.timezone.utc) - datetime.timedelta(hours=4)).timestamp())
             refresh_time = month_start + 604800 * (int((time.time() - month_start) // 604800) + 1)
-            description = f"__Weekly Quest__ (refreshes <t:{refresh_time}:R>)\n"
+            description = f"__Weekly Quest__ *(refreshes <t:{refresh_time}:R>)*\n"
             if weekly_quest["progress"] > user.weekly_progress:
                 title = weekly_quest["title"]
                 if user.weekly_quest == "bonus":
@@ -5999,7 +5999,7 @@ async def battlepass(message: discord.Interaction):
         if global_user.vote_streak >= 5:
             streak_string = f" (🔥 {global_user.vote_streak}x)"
         if user.vote_cooldown != 0:
-            description += f"✅ Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>{streak_string}"
+            description += f"✅ *Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>{streak_string}*"
         else:
             has_bad = True
 
@@ -6026,7 +6026,7 @@ async def battlepass(message: discord.Interaction):
         # catch
         catch_quest = config.battle["quests"]["catch"][user.catch_quest]
         if user.catch_cooldown != 0:
-            description = f"✅ Refreshes <t:{int(min(timestamp, user.catch_cooldown + 12 * 3600))}:R>"
+            description = f"✅ *Refreshes <t:{int(min(timestamp, user.catch_cooldown + 12 * 3600))}:R>*"
         else:
             has_bad = True
             progress_string = ""
@@ -6045,7 +6045,7 @@ async def battlepass(message: discord.Interaction):
         # misc
         misc_quest = config.battle["quests"]["misc"][user.misc_quest]
         if user.misc_cooldown != 0:
-            description = f"✅ Refreshes <t:{int(min(timestamp, user.misc_cooldown + 12 * 3600))}:R>"
+            description = f"✅ *Refreshes <t:{int(min(timestamp, user.misc_cooldown + 12 * 3600))}:R>*"
         else:
             has_bad = True
             progress_string = ""
