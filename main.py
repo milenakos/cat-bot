@@ -1008,9 +1008,7 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     if not localcat:
         localcat = random.choices(cattypes, weights=list(data.type_dict.values()))[0]
     icon = get_emoji(localcat.lower() + "cat")
-    file = discord.File(
-        f"assets/images/spawn/{localcat.lower()}_cat.png",
-    )
+    file = f"https://raw.githubusercontent.com/milenakos/cat-bot/main/assets/images/spawn/{localcat.lower()}_cat.png"
     channeley = bot.get_partial_messageable(ch_id)
 
     appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
@@ -1021,11 +1019,10 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     temp_spawns_storage.add(ch_id)
 
     try:
-        message_is_sus = await channeley.send(
-            appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat),
-            file=file,
-            allowed_mentions=discord.AllowedMentions.all(),
-        )
+        view = LayoutView(timeout=1)
+        view.add_item(TextDisplay(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat)))
+        view.add_item(discord.ui.MediaGallery(discord.MediaGalleryItem(file)))
+        message_is_sus = await channeley.send(view=view, allowed_mentions=discord.AllowedMentions.all())
     except discord.Forbidden as e:
         await channel.delete()
         temp_spawns_storage.discard(ch_id)
@@ -2637,7 +2634,6 @@ async def on_message(message: discord.Message) -> None:
                     # default
                     coughstring = "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} {cats} of dat type!!!\nthis fella was cought in {time}!!!!"
 
-                view = None
                 button = None
 
                 async def dark_market_cutscene(interaction: discord.Interaction) -> None:
@@ -2685,10 +2681,6 @@ async def on_message(message: discord.Message) -> None:
                         url="https://discord.gg/staring",
                     )
 
-                if button:
-                    view = View(timeout=VIEW_TIMEOUT)
-                    view.add_item(button)
-
                 if vote_time_user.tutorial_state < 10 and vote_time_user.tutorial_state not in [0, 2]:
                     suffix_string += f"\n👋 Check out the {get_command_mention('tutorial')} (includes a free gift!)"
 
@@ -2708,9 +2700,6 @@ async def on_message(message: discord.Message) -> None:
                     nonlocal suffix_string
                     try:
                         assert le_emoji is not None
-                        kwargs = {}
-                        if view:
-                            kwargs["view"] = view
 
                         suffix_string = suffix_string.rstrip().replace("\n", "\n-# ")
 
@@ -2726,10 +2715,19 @@ async def on_message(message: discord.Message) -> None:
 
                         if is_rain_catch:
                             cat_spawn = send_target.get_partial_message(cat_temp)
-                            result = await cat_spawn.edit(content=catch_text, attachments=[], **kwargs)
+                            view = LayoutView(timeout=1)
+                            view.add_item(TextDisplay(catch_text))
+                            if button:
+                                view.add_item(ActionRow(button))
+                            result = await cat_spawn.edit(view=view)
                             return result
 
-                        result = await send_target.send(catch_text, **kwargs)
+                        if button:
+                            view = View(timeout=VIEW_TIMEOUT)
+                            view.add_item(button)
+                            result = await send_target.send(catch_text, view=view)
+                        else:
+                            result = await send_target.send(catch_text)
 
                         if server.auto_delete_catches:
                             # button do stuff = button stay... for now-
