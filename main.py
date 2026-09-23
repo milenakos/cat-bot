@@ -904,7 +904,7 @@ async def finale(message: discord.Interaction | discord.Message, user: Profile) 
         )
         .set_author(
             name="All achievements complete!",
-            icon_url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png",
+            icon_url="https://raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png",
         )
         .set_footer(text=f"Congrats to {author_string}")
     )
@@ -3105,7 +3105,7 @@ async def credits(message: discord.Interaction):
         return
 
     embedVar = discord.Embed(title="Cat Bot", color=Colors.brown, description=gen_credits).set_thumbnail(
-        url="https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png"
+        url="https://raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png"
     )
 
     await message.response.send_message(embed=embedVar)
@@ -9915,7 +9915,7 @@ You can stop. That's okay. Seriously."""
         if name == "Jeremy" and random.randint(1, 100) == 69:
             filename = "assets/images/mafia/sus.png"
 
-        filename = "https://wsrv.nl/?url=raw.githubusercontent.com/milenakos/cat-bot/refs/heads/main/" + filename
+        filename = "https://raw.githubusercontent.com/milenakos/cat-bot/refs/heads/main/" + filename
 
         if not desc:
             embed = Container(f"# Mafia - {rank} (Lv{level})")
