@@ -5999,7 +5999,7 @@ async def battlepass(message: discord.Interaction):
         if global_user.vote_streak >= 5:
             streak_string = f" (🔥 {global_user.vote_streak}x)"
         if user.vote_cooldown != 0:
-            description += f"✅ *Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>{streak_string}*"
+            description += f"✅ *Refreshes <t:{int(user.vote_cooldown + 12 * 3600)}:R>*{streak_string}"
         else:
             has_bad = True
 
