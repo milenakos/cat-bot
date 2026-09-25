@@ -2721,7 +2721,7 @@ async def on_message(message: discord.Message) -> None:
 
                         if is_rain_catch:
                             cat_spawn = send_target.get_partial_message(cat_temp)
-                            view = LayoutView(timeout=1)
+                            view = LayoutView(timeout=VIEW_TIMEOUT)
                             view.add_item(TextDisplay(catch_text))
                             if button:
                                 view.add_item(ActionRow(button))
