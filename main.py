@@ -1014,7 +1014,7 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     if not localcat:
         localcat = random.choices(cattypes, weights=list(data.type_dict.values()))[0]
     icon = get_emoji(localcat.lower() + "cat")
-    file = f"https://raw.githubusercontent.com/milenakos/cat-bot/main/assets/images/spawn/{localcat.lower()}_cat.webp"
+    file = discord.File(f"assets/images/spawn/{localcat.lower()}_cat.webp")
     channeley = bot.get_partial_messageable(ch_id)
 
     appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
@@ -1025,10 +1025,11 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     temp_spawns_storage.add(ch_id)
 
     try:
-        view = LayoutView(timeout=1)
-        view.add_item(TextDisplay(appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat)))
-        view.add_item(discord.ui.MediaGallery(discord.MediaGalleryItem(file)))
-        message_is_sus = await channeley.send(view=view, allowed_mentions=discord.AllowedMentions.all())
+        message_is_sus = await channeley.send(
+            appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat),
+            file=file,
+            allowed_mentions=discord.AllowedMentions.all(),
+        )
     except discord.Forbidden as e:
         await channel.delete()
         temp_spawns_storage.discard(ch_id)
@@ -2719,17 +2720,8 @@ async def on_message(message: discord.Message) -> None:
                             + suffix_string
                         )
 
-                        if is_rain_catch:
-                            cat_spawn = send_target.get_partial_message(cat_temp)
-                            view = LayoutView(timeout=VIEW_TIMEOUT)
-                            view.add_item(TextDisplay(catch_text))
-                            if button:
-                                view.add_item(ActionRow(button))
-                            result = await cat_spawn.edit(view=view, allowed_mentions=discord.AllowedMentions.none())
-                            return result
-
                         if button:
-                            view = View(timeout=VIEW_TIMEOUT)
+                            view = View(timeout=1 if button.url else VIEW_TIMEOUT)
                             view.add_item(button)
                             result = await send_target.send(catch_text, view=view)
                         else:
@@ -2737,7 +2729,7 @@ async def on_message(message: discord.Message) -> None:
 
                         if server.auto_delete_catches:
                             # button do stuff = button stay... for now-
-                            delay = 30 if (button and button.callback) else 10
+                            delay = 30 if (button and not button.url) else 10
                             await result.delete(delay=delay)
 
                         return result
