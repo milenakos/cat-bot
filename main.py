@@ -2720,12 +2720,18 @@ async def on_message(message: discord.Message) -> None:
                             + suffix_string
                         )
 
+                        kwargs = {}
                         if button:
                             view = View(timeout=1 if button.url else VIEW_TIMEOUT)
                             view.add_item(button)
-                            result = await send_target.send(catch_text, view=view)
-                        else:
-                            result = await send_target.send(catch_text)
+                            kwargs["view"] = view
+
+                        if is_rain_catch:
+                            cat_spawn = send_target.get_partial_message(cat_temp)
+                            result = await cat_spawn.edit(content=catch_text, attachments=[], **kwargs)
+                            return result
+
+                        result = await send_target.send(catch_text, **kwargs)
 
                         if server.auto_delete_catches:
                             # button do stuff = button stay... for now-
