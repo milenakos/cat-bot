@@ -4495,7 +4495,7 @@ async def gen_inventory(
         count_segments.append(f"{get_emoji('prism')} {prism_count:,}")
     if user.rain_minutes != 0:
         # rain
-        count_segments.append(f"☔ {user.rain_minutes + person.rain_minutes:,}")
+        count_segments.append(f"☔ {user.rain_minutes:,}+{person.rain_minutes:,}")
     if person.scratchcards != 0:
         # scratchcards
         count_segments.append(f"🍀 {person.scratchcards:,}")
