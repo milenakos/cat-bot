@@ -10228,8 +10228,10 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
     def aura_case(idx: int, cat: str, total: str, maximum: str) -> str:
         column = f'p."cat_{cat}"'
         aura = f"p.cat_auras[{idx}]"
+        cleared = f"CASE WHEN {aura} IN ('y', 'c', 'p', 'a') THEN ' ' ELSE {aura} END"
         return (
-            f"CASE WHEN {aura} = 'r' THEN 'r' "
+            f"CASE WHEN COALESCE({maximum}, 0) = 0 THEN {cleared} "
+            f"WHEN {aura} = 'r' THEN 'r' "
             f"WHEN {column} = {maximum} THEN 'a' "
             f"WHEN {column} > {total} * 0.07 THEN 'p' "
             f"WHEN {column} > {total} * 0.04 THEN 'c' "
