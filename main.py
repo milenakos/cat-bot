@@ -7766,8 +7766,10 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             for packtype, amount in tradeuser.gives_packs.items():
                 offer_string += f"{get_short_emoji(packtype.lower() + 'pack')} {packtype} {amount:,}\n"
 
+            prisms = ""
             for prism in tradeuser.gives_prisms:
-                offer_string += f"{get_short_emoji('prism')} {prism}\n"
+                prisms += f"{get_short_emoji('prism')} {prism}\n"
+            offer_string += prisms
 
             if tradeuser.gives_scratchcards:
                 offer_string += f"🍀 {tradeuser.gives_scratchcards:,} scratchcards\n"
@@ -7783,6 +7785,9 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             personname = tradeuser.user.name.replace("_", "\\_")
             if len(offer_string) > 1024:
                 offer_string = re.sub(r"<:[^:]+:[^>]+> ", "", offer_string)
+                prisms = re.sub(r"<:[^:]+:[^>]+> ", "", prisms)
+            if len(offer_string) > 1024:
+                offer_string.replace(prisms, f"*{len(tradeuser.gives_prisms)} prisms*")
             coolembed.add_field(name=f"{icon} {personname}", inline=True, value=offer_string)
 
         return coolembed, view
