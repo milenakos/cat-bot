@@ -4493,9 +4493,10 @@ async def gen_inventory(
     if (prism_count := await Prism.count("guild_id = $1 AND user_id = $2", guild_id, inv_user.id)) != 0:
         # prisms
         count_segments.append(f"{get_emoji('prism')} {prism_count:,}")
-    if user.rain_minutes != 0:
+    if user.rain_minutes != 0 or person.rain_minutes != 0:
         # rain
-        count_segments.append(f"☔ {user.rain_minutes:,}+{person.rain_minutes:,}")
+        bonus_amount = "" if person.rain_minutes == 0 else f"+{person.rain_minutes:,}"
+        count_segments.append(f"☔ {user.rain_minutes:,}{bonus_amount}")
     if person.scratchcards != 0:
         # scratchcards
         count_segments.append(f"🍀 {person.scratchcards:,}")
