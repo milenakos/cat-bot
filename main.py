@@ -8867,8 +8867,9 @@ async def pig(message: discord.Interaction):
         view.add_item(button)
         await interaction.response.edit_message(content=f"*Congrats!*\nYou finished with {last_score} score!", view=view)
 
-        if last_score >= 50:
+        if last_score >= 40:
             await progress(message, profile, "pig")
+        if last_score >= 50:
             await achemb(interaction, "pig50", "followup")
         if last_score >= 100:
             await achemb(interaction, "pig100", "followup")
