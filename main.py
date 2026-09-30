@@ -556,7 +556,7 @@ async def refresh_quests(user: Profile) -> None:
         user.misc_cooldown = 1
         user.misc_reward = 0
 
-        user.weekly_quest = next(iter(config.battle["quests"]["weekly"].keys()))
+        user.weekly_quest = ""
         user.weekly_progress = 0
         user.weekly_cattypes = []
 
@@ -569,22 +569,27 @@ async def refresh_quests(user: Profile) -> None:
     if 12 * 3600 < user.misc_cooldown + 12 * 3600 < time.time():
         await generate_quest(user, "misc")
 
-    curr_weekly = config.battle["quests"]["weekly"][user.weekly_quest]
+    # randomize weeklies seeded by guild_id
+    weeklies = random.Random(user.guild_id).sample(list(config.battle["quests"]["weekly"].keys()), 4)
+    weeklies.append("")
     month_start = datetime.datetime(current_date.year, current_date.month, 1, tzinfo=datetime.timezone.utc) - datetime.timedelta(hours=4)
-    time_in_month = time.time() - int(month_start.timestamp())
-    if curr_weekly["start_time"] < time_in_month < curr_weekly["end_time"]:
-        return
-    user.weekly_progress = 0
-    for k, v in config.battle["quests"]["weekly"].items():
-        if v["start_time"] < time_in_month < v["end_time"]:
-            user.weekly_quest = k
-            await user.save()
-            return
+    week_number = int((time.time() - int(month_start.timestamp())) // 604800)
+    correct_weekly = weeklies[week_number]
+    if correct_weekly != user.weekly_quest:
+        server = await Server.get_or_create(server_id=user.guild_id)
+        if server.legacy_catching and correct_weekly == "bonus":
+            # i do NOT gaf of ensuring there wont be a duplicate "catch" weekly
+            correct_weekly = "catch"
+        user.weekly_progress = 0
+        user.weekly_cattypes = []
+        user.weekly_quest = correct_weekly
+        await user.save()
 
 
 async def build_catch_quests(user: Profile, cattype: str, time_seconds: float, got_prism_boost: bool) -> list[str]:
     quests = ["3cats", "catch"]
     if cattype == "Fine":
+        quests.append("fine")
         quests.append("2fine")
     if cattype == "Good":
         quests.append("good")
@@ -592,7 +597,7 @@ async def build_catch_quests(user: Profile, cattype: str, time_seconds: float, g
         quests.append("under10")
     if time_seconds >= 0:
         quests.append("even" if int(time_seconds) % 2 == 0 else "odd")
-    if cattype and cattype not in ["Fine", "Nice", "Good"]:
+    if cattype not in ["Fine", "Nice", "Good"]:
         quests.append("rare+")
     if got_prism_boost:
         quests.append("prism")
@@ -606,8 +611,16 @@ async def build_catch_quests(user: Profile, cattype: str, time_seconds: float, g
         elif cattype == "Nice" and user.catch_progress in [0, 1]:
             quests.append("finenice")
             quests.append("finenice")
+    if cattypes.index(cattype) > 4:
+        quests.append("wild+")
     if cattypes.index(cattype) > 8:
         quests.append("brave+")
+    if cattypes.index(cattype) > 11:
+        quests.append("superior+")
+    if cattype == "Rare":
+        quests.append("rare")
+    if cattype == "Sus":
+        quests.append("sus")
     if user.weekly_quest == "different":
         idx = cattypes.index(cattype)
         current = user.weekly_cattypes.copy()
@@ -5985,7 +5998,7 @@ async def battlepass(message: discord.Interaction):
             if weekly_quest["progress"] > user.weekly_progress:
                 title = weekly_quest["title"]
                 if user.weekly_quest == "bonus":
-                    title = "Complete a [bonus minigame](https://catbot.wiki/cat-types#bonus-cats)"
+                    title = "Complete 2 [bonus minigames](https://catbot.wiki/cat-types#bonus-cats)"
                 description += f"{get_emoji(weekly_quest['emoji'])} {title} ({user.weekly_progress}/{weekly_quest['progress']})\n"
                 if user.weekly_quest != "different":
                     colored = int(user.weekly_progress / weekly_quest["progress"] * 10)

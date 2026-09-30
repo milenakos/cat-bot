@@ -765,11 +765,15 @@
       "blackcat": {"emoji": "🃏", "title": "Win 2 /blackcat games", "xp_min": 250, "xp_max": 350, "progress": 2}
     },
     "weekly": {
-      "catch": {"emoji": "nicecat", "title": "Catch 70 cats", "progress": 70, "start_time": 0, "end_time": 604800},
-      "brave+": {"emoji": "bravecat", "title": "Catch 9 cats rarer than Brave", "progress": 9, "start_time": 604800, "end_time": 1209600},
-      "bonus": {"emoji": "🎁", "title": "Complete a bonus minigame", "progress": 1, "start_time": 1209600, "end_time": 1814400},
-      "different": {"emoji": "wildcat", "title": "Catch 14 different cat types", "progress": 14, "start_time": 1814400, "end_time": 2419200},
-      "": {"emoji": "", "title": "", "progress": 0, "start_time": 2419200, "end_time": 3000000}
+      "catch": {"emoji": "nicecat", "title": "Catch 70 cats", "progress": 70},
+      "brave+": {"emoji": "bravecat", "title": "Catch 9 cats rarer than Brave", "progress": 9},
+      "superior+": {"emoji": "superiorcat", "title": "Catch 3 cats rarer than Superior", "progress": 3},
+      "wild+": {"emoji": "wildcat", "title": "Catch 23 cats rarer than Wild", "progress": 23},
+      "fine": {"emoji": "finecat", "title": "Catch 18 Fine cats", "progress": 18},
+      "rare": {"emoji": "rarecat", "title": "Catch 6 Rare cats", "progress": 6},
+      "sus": {"emoji": "suscat", "title": "Catch 3 Sus cats", "progress": 3},
+      "different": {"emoji": "staring_cat", "title": "Catch 14 different cat types", "progress": 14},
+      "bonus": {"emoji": "🎁", "title": "Complete 2 bonus minigames", "progress": 2}
     }
   }
 }
