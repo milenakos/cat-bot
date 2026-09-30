@@ -350,7 +350,8 @@ CREATE TABLE public.profile (
     lucky_packy boolean DEFAULT false,
     failed boolean DEFAULT false,
     tiktoker boolean DEFAULT false,
-    sharing_enabled boolean DEFAULT false
+    sharing_enabled boolean DEFAULT false,
+    pack_pumpkin integer DEFAULT 0
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;

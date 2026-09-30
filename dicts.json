@@ -95,6 +95,13 @@
       "special": true
     },
     {
+      "name": "Pumpkin",
+      "value": -1,
+      "upgrade": -1,
+      "totalvalue": 460,
+      "special": true
+    },
+    {
       "name": "Wooden",
       "value": 65,
       "upgrade": 30,

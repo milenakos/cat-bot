@@ -5613,6 +5613,8 @@ async def packs(message: discord.Interaction):
         for pack in sorted(data.pack_data, key=lambda pack: pack["special"]):
             pack_name = pack["name"]
             pack_count = user[f"pack_{pack_name.lower()}"]
+            if pack_name == "Pumpkin":
+                continue
             if pack_count < 1:
                 continue
 
@@ -5652,6 +5654,7 @@ async def packs(message: discord.Interaction):
                 emoji=get_emoji(pack_name.lower() + "pack"),
                 label=f"{pack_name} ({pack_count:,})",
                 style=ButtonStyle.green if pack["special"] else ButtonStyle.blurple,
+                disabled=pack_name == "Pumpkin",
                 custom_id=pack_name,
             )
             button.callback = open_pack
@@ -5747,6 +5750,11 @@ async def packs(message: discord.Interaction):
             return
 
         pack = interaction.custom_id
+
+        if pack == "Pumpkin":
+            # TODO
+            return
+
         if open_at_once > 1:
             await open_all_packs(interaction, {pack}, open_at_once)
             return
