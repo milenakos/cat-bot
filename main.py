@@ -11456,7 +11456,12 @@ async def check_supporter(request: web.Request) -> web.Response:
     request_json = await request.json()
 
     user = await User.get_or_create(user_id=int(request_json["user"]))
-    return web.Response(text="1" if user.premium else "0", status=200)
+    parts = []
+    if user.premium:
+        parts.append("supporter")
+    if user.plush_badge:
+        parts.append("plush")
+    return web.Response(text=str(parts), status=200)
 
 
 async def bake_gg_reward(request: web.Request) -> web.Response:
