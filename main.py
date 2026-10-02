@@ -2229,10 +2229,13 @@ async def on_message(message: discord.Message) -> None:
                         await user.save()
                     if user.catnip_active >= time.time() or user.hibernation:
                         await bounty(message, user, channel.cattype)
-                    total_count, user_count = await asyncio.gather(
-                        Prism.count("guild_id = $1", message.guild.id),
-                        Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id),
+                    prism_counts = await _get_pool().fetchrow(
+                        'SELECT count(*) AS total, count(*) FILTER (WHERE user_id = $2) AS mine FROM "prism" WHERE guild_id = $1;',
+                        message.guild.id,
+                        message.author.id,
                     )
+                    total_count = prism_counts["total"]
+                    user_count = prism_counts["mine"]
                     prism_boost = 0.06 * math.log(2 * total_count + 1) + 0.05 * math.log(2 * user_count + 1)
                     time_proxy = belated.get("time", 10) + current_time - belated.get("timestamp", 0)
                     quests = await build_catch_quests(user, channel.cattype, time_proxy, prism_boost > random.random())
@@ -2340,9 +2343,14 @@ async def on_message(message: discord.Message) -> None:
                 send_target = message.channel
                 precatch_reads = asyncio.gather(
                     _get_pool().fetchval("SELECT sum_blessing_minutes FROM user_sums_mv;"),
-                    Prism.count("guild_id = $1", message.guild.id),
-                    Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.author.id),
+                    _get_pool().fetchrow(
+                        'SELECT count(*) AS total, count(*) FILTER (WHERE user_id = $2) AS mine FROM "prism" WHERE guild_id = $1;',
+                        message.guild.id,
+                        message.author.id,
+                    ),
                     User.get_or_create(user_id=message.author.id),
+                    Prism.collect("guild_id = $1 AND user_id = $2 ORDER BY random() LIMIT 1", message.guild.id, message.author.id),
+                    Prism.collect("guild_id = $1 ORDER BY random() LIMIT 1", message.guild.id),
                 )
                 try:
                     # some math to make time look cool
@@ -2525,7 +2533,9 @@ async def on_message(message: discord.Message) -> None:
                         silly_amount *= 0
                         suffix_string += "\n🚫 catnip failed! your cat was uncought. tragic."
 
-                blessing_minutes, total_count, user_count, vote_time_user = await precatch_reads
+                blessing_minutes, prism_counts, vote_time_user, user_prisms, total_prisms = await precatch_reads
+                total_count = prism_counts["total"]
+                user_count = prism_counts["mine"]
 
                 # blessings
                 bless_chance = blessing_minutes * 0.0001 * 0.01
@@ -2573,11 +2583,9 @@ async def on_message(message: discord.Message) -> None:
                     # determine whodunnit
                     if random.uniform(0, user_boost) > global_boost:
                         # boost from our own prism
-                        user_prisms = await Prism.collect("guild_id = $1 AND user_id = $2 ORDER BY random() LIMIT 1", message.guild.id, message.author.id)
-                        prism_which_boosted = user_prisms[0]
+                        prism_which_boosted = user_prisms[0] if user_prisms else total_prisms[0]
                     else:
                         # boost from any prism
-                        total_prisms = await Prism.collect("guild_id = $1 ORDER BY random() LIMIT 1", message.guild.id)
                         prism_which_boosted = total_prisms[0]
 
                     if prism_which_boosted.user_id == message.author.id:
