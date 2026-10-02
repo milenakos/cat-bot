@@ -1810,8 +1810,9 @@ async def belated_window_task(
     chance: float,
     catch_confirm: discord.Message | None,
     is_rain: bool = False,
+    entry: dict | None = None,
 ) -> None:
-    belated_pre = config.belated_catchers.get(msg.channel.id, {})
+    belated_pre = entry if entry is not None else config.belated_catchers.get(msg.channel.id, {})
     if full_event := belated_pre.get("full_event"):
         try:
             await asyncio.wait_for(full_event.wait(), timeout=window)
@@ -1825,8 +1826,13 @@ async def belated_window_task(
         except Exception:
             pass
 
-    if not (belated := config.belated_catchers.get(msg.channel.id, {})):
+    belated = config.belated_catchers.get(msg.channel.id)
+    if entry is not None:
+        if belated is not entry:
+            return
+    elif not belated:
         return
+    assert isinstance(belated, dict)
     eligible_catchers = belated["late_catchers"].copy()
     catchers = eligible_catchers[1:]
 
@@ -2270,6 +2276,17 @@ async def on_message(message: discord.Message) -> None:
                     decided_time = random.uniform(1, 2)
                     channel.rain_should_end = int(time.time() + decided_time)
 
+            belated_entry = {
+                "time": 0,
+                "users": [message.author.id],
+                "timestamp": message.created_at.timestamp(),
+                "cattype": channel.cattype,
+                "is_rain": cat_rain_end or channel.cat_rains > 0,
+                "late_catchers": [(message.author.id, None)],
+                "full_event": asyncio.Event(),
+            }
+            config.belated_catchers[message.channel.id] = belated_entry
+
             if channel.yet_to_spawn < time.time():
                 # if there isnt already a scheduled spawn
                 channel.yet_to_spawn = time.time() + decided_time + 10
@@ -2313,6 +2330,7 @@ async def on_message(message: discord.Message) -> None:
                                     break
                         assert le_emoji is not None
                 except Exception:
+                    config.belated_catchers.pop(message.channel.id, None)
                     try:
                         await message.channel.send(f"oopsie poopsie i cant access the original message but {message.author.mention} *did* catch a cat rn")
                     except Exception:
@@ -2360,6 +2378,7 @@ async def on_message(message: discord.Message) -> None:
                     do_time = False
                     caught_time = "undefined amounts of time "
                     time_caught = 0
+                belated_entry["time"] = time_caught
 
                 if channel.cat_rains > 0 or cat_rain_end:
                     do_time = False
@@ -2715,6 +2734,7 @@ async def on_message(message: discord.Message) -> None:
                         pass
 
                 is_rain_catch = cat_rain_end or channel.cat_rains > 0
+                belated_entry["is_rain"] = is_rain_catch
 
                 async def send_confirm() -> discord.Message | None:
                     nonlocal suffix_string
@@ -2757,20 +2777,6 @@ async def on_message(message: discord.Message) -> None:
                         # Silently fail if we can't send the confirmation message (e.g. permission issues)
                         pass
 
-                try:
-                    if time_caught >= 0:
-                        config.belated_catchers[message.channel.id] = {
-                            "time": time_caught,
-                            "users": [message.author.id],
-                            "timestamp": current_time,
-                            "cattype": channel.cattype,
-                            "is_rain": cat_rain_end or channel.cat_rains > 0,
-                            "late_catchers": [(message.author.id, None)],
-                            "full_event": asyncio.Event(),
-                        }
-                except Exception:
-                    pass
-
                 if server.legacy_catching:
                     await asyncio.gather(delete_cat(), send_confirm())
                 else:
@@ -2782,6 +2788,7 @@ async def on_message(message: discord.Message) -> None:
                             bonus_chance,
                             result,
                             is_rain=is_rain_catch,
+                            entry=belated_entry,
                         )
                     )
 
