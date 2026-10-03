@@ -7397,10 +7397,6 @@ async def trade(message: discord.Interaction, other_user: discord.User):
         active_user.accept = not active_user.accept
 
         embed, view = await gen_embed()
-        await interaction.response.edit_message(embed=embed, view=view)
-
-        if active_user == person1 and active_user.accept and person2.user == bot.user:
-            await achemb(message, "desperate", "followup")
 
         if person1.accept and person2.accept and not blackhole:
             # accepted!!
@@ -7456,7 +7452,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         fail = f"You don't own prism {prism}!"
 
             if fail:
-                await interaction.edit_original_response(content=fail, embed=None, view=None)
+                await interaction.response.edit_message(content=fail, embed=None, view=None)
                 return
 
             # exchange
@@ -7501,7 +7497,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                 save_prisms(),
             )
 
-            await interaction.edit_original_response(content="Trade finished!", view=None)
+            await interaction.response.edit_message(content="Trade finished!", embed=embed, view=None)
 
             await achemb(message, "extrovert", "followup")
             await achemb(message, "extrovert", "followup", other_user)
@@ -7532,6 +7528,12 @@ async def trade(message: discord.Interaction, other_user: discord.User):
 
             await progress(message, person1.profile, "trade")
             await progress(message, person2.profile, "trade")
+            return
+
+        await interaction.response.edit_message(embed=embed, view=view)
+
+        if active_user == person1 and active_user.accept and person2.user == bot.user:
+            await achemb(message, "desperate", "followup")
 
     async def gen_embed() -> tuple[discord.Embed, View | None]:
         if blackhole:
