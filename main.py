@@ -9536,15 +9536,23 @@ So fine. Continue to torment us. You've won. Are you happy now?"""
     await interaction.followup.send(content=text1, view=myview1, ephemeral=True)
 
 
+def get_vote_streak_bonus(vote_streak: int) -> float:
+    hundreds, remainder = divmod(vote_streak, 100)
+    duration_bonus = sum(6000 / level for level in range(1, hundreds + 1))
+    duration_bonus += 60 * remainder / (hundreds + 1)
+    return duration_bonus
+
+
 def describe_perk(perk: str, perks: list, global_user: User) -> tuple[int, dict, str]:
     perk_rarity = int(perk.split("_")[0])
     perk_data = perks[int(perk.split("_")[1]) - 1]
     effect = perk_data["values"][perk_rarity]
+    duration_bonus = get_vote_streak_bonus(global_user.vote_streak)
     desc = (
         perk_data.get("desc", "")
         .replace("percent", f"{effect:,}")
         .replace("triple_none", f"{effect / 2:g}")
-        .replace("timer_add_streak", f"{global_user.vote_streak:,}")
+        .replace("timer_add_streak", f"{duration_bonus / 60:g}")
     )
     return perk_rarity, perk_data, desc
 
@@ -9681,19 +9689,81 @@ You can stop. That's okay. Seriously."""
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         await user.refresh_from_db()
         perks = catnip_list["perks"]
-        rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
         rarity_colors = [get_emoji("common"), get_emoji("uncommon"), get_emoji("rare"), get_emoji("epic"), get_emoji("legendary")]
         user_perks = user.perks
-        full_desc = ""
 
+        perk_values = {}
+        perk_emojis = {}
         for perk in user_perks:
-            perk_rarity, perk_data, desc = describe_perk(perk, perks, global_user)
-            full_desc += f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')} ({rarities[perk_rarity]})\n{desc}\n\n"
+            perk_rarity, perk_data, _ = describe_perk(perk, perks, global_user)
+            perk_id = perk_data["id"]
+            perk_values[perk_id] = perk_values.get(perk_id, 0) + perk_data["values"][perk_rarity]
+            perk_emojis[perk_id] = perk_emojis.get(perk_id, []) + [rarity_colors[perk_rarity]]
 
-        if not user_perks:
-            full_desc = "You have no perks!"
         myview = LayoutView(timeout=VIEW_TIMEOUT)
-        perk_embed = Container("# Your Perks", full_desc)
+        perk_embed = Container("# Your Perks")
+
+        double_chance = perk_values.get("double", 0)
+        triple_chance = perk_values.get("triple_none", 0)
+        none_chance = triple_chance / 2
+        single_chance = 100 - triple_chance - none_chance - double_chance
+        if single_chance < 0:
+            single_chance = 0
+            double_chance = 100 - triple_chance - none_chance
+        if double_chance < 0:
+            double_chance = 0
+            if 100 - triple_chance < 25:
+                none_chance = 25
+                triple_chance = 75
+        perk_values["double"] = double_chance
+        perk_values["triple_none"] = triple_chance
+        perk_values["none"] = none_chance
+
+        # non-pack perks
+        for current_perk in [
+            "double",
+            "triple_none",
+            "triple_ach",
+            "double_first",
+            "double_boost",
+            "rain_boost",
+            "bonus_catcher",
+            "timer_add",
+            "timer_add_streak",
+        ]:
+            if current_perk not in perk_emojis:
+                continue
+            perk_data = next(i for i in perks if i["id"] == current_perk)
+            emojis = perk_emojis[current_perk]
+            value = perk_values[current_perk]
+            duration_bonus = get_vote_streak_bonus(global_user.vote_streak)
+            desc = (
+                perk_data["desc"]
+                .replace("percent", f"{value:g}")
+                .replace("triple_none", f"{perk_values['none']:g}")
+                .replace("timer_add_streak", f"{duration_bonus / 60:g}")
+            )
+            if current_perk == "double_first":
+                desc += f" ({max(0, value - user.catnip_total_cats)} remaining)"
+            perk_embed.add_item(TextDisplay(f"{emojis} __{perk_data['name']}__\n{desc}"))
+
+        # pack perks
+        has_pack_perks = any("_pack" in key for key in perk_emojis)
+        if has_pack_perks:
+            pack_string = "__Pack Catcher__\n"
+            for current_perk in ["wooden_pack", "stone_pack", "bronze_pack", "silver_pack", "gold_pack", "platinum_pack"]:
+                if current_perk not in perk_emojis:
+                    continue
+                perk_data = next(i for i in perks if i["id"] == current_perk)
+                emojis = perk_emojis[current_perk]
+                value = perk_values[current_perk]
+                pack_emoji = get_emoji(current_perk.replace("_", ""))
+                pack_string += f"{emojis} **{value:g}%** chance for {pack_emoji}\n"
+            perk_embed.add_item(TextDisplay(pack_string.strip()))
+
+        if len(user_perks) == 0:
+            perk_embed.add_item(TextDisplay("You have no perks!"))
+
         myview.add_item(perk_embed)
         await interaction.response.send_message(view=myview, ephemeral=True)
 
@@ -9768,12 +9838,13 @@ You can stop. That's okay. Seriously."""
             button = Button(label="Select", style=ButtonStyle.blurple, custom_id=perk)
             button.callback = select_perk
 
+            duration_bonus = get_vote_streak_bonus(global_user.vote_streak)
             perk_embed.add_item(
                 Section(
                     f"## {rarity_colors[int(perk.split('_')[0])]} {perk_data.get('name', '')} ({rarities[int(perk.split('_')[0])]})",
-                    f"{perk_data.get('desc', '')}".replace("percent", str(effect))
-                    .replace("triple_none", str(effect / 2))
-                    .replace("timer_add_streak", str(global_user.vote_streak)),
+                    f"{perk_data.get('desc', '')}".replace("percent", f"{effect:,}")
+                    .replace("triple_none", f"{effect / 2:g}")
+                    .replace("timer_add_streak", f"{duration_bonus / 60:g}"),
                     button,
                 )
             )
@@ -9812,18 +9883,11 @@ You can stop. That's okay. Seriously."""
 
     async def start_bounties(user_id: int) -> None:
         duration = catnip_list["levels"][user.catnip_level]["duration"]
+        has_streak_perk = any(catnip_list["perks"][int(perk.split("_")[1]) - 1]["id"] == "timer_add_streak" for perk in user.perks or [])
         duration_bonus = 0
-
-        for perk in user.perks or []:
-            perk_data = catnip_list["perks"][int(perk.split("_")[1]) - 1]
-            if perk_data["id"] != "timer_add_streak":
-                continue
-
+        if has_streak_perk:
             global_user = await User.get_or_create(user_id=user_id)
-            hundreds, remainder = divmod(global_user.vote_streak, 100)
-            duration_bonus = sum(6000 / level for level in range(1, hundreds + 1))
-            duration_bonus += 60 * remainder / (hundreds + 1)
-            break
+            duration_bonus = get_vote_streak_bonus(global_user.vote_streak)
 
         user.hibernation = False
         user.catnip_total_cats = 0
