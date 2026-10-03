@@ -5709,6 +5709,7 @@ async def packs(message: discord.Interaction):
             build_string = get_short_emoji(data.pack_data[level]["name"].lower() + "pack")
 
         is_special = data.pack_data[level]["special"]
+        bump_boost = 7 / 3 if is_special else 1
         first_boost = 1
         if is_special:
             # find first non-special level
@@ -5716,7 +5717,7 @@ async def packs(message: discord.Interaction):
                 first_boost += 1
 
         # bump rarity
-        while random.uniform(1, 100) <= data.pack_data[level]["upgrade"]:
+        while random.uniform(1, 100) <= data.pack_data[level]["upgrade"] * bump_boost:
             if is_single:
                 reward_texts.append(f"{get_short_emoji(data.pack_data[level]['name'].lower() + 'pack')} {data.pack_data[level]['name']}\n" + build_string)
                 build_string = (
