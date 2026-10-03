@@ -9734,7 +9734,7 @@ You can stop. That's okay. Seriously."""
             if current_perk not in perk_emojis:
                 continue
             perk_data = next(i for i in perks if i["id"] == current_perk)
-            emojis = perk_emojis[current_perk]
+            emojis = "".join(perk_emojis[current_perk])
             value = perk_values[current_perk]
             duration_bonus = get_vote_streak_bonus(global_user.vote_streak)
             desc = (
@@ -9755,7 +9755,7 @@ You can stop. That's okay. Seriously."""
                 if current_perk not in perk_emojis:
                     continue
                 perk_data = next(i for i in perks if i["id"] == current_perk)
-                emojis = perk_emojis[current_perk]
+                emojis = "".join(perk_emojis[current_perk])
                 value = perk_values[current_perk]
                 pack_emoji = get_emoji(current_perk.replace("_", ""))
                 pack_string += f"{emojis} **{value:g}%** chance for {pack_emoji}\n"
