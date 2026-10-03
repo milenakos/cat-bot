@@ -9768,8 +9768,8 @@ You can stop. That's okay. Seriously."""
             full_desc = ""
             for level_num, perk in enumerate(user_perks):
                 perk_rarity, perk_data, desc = describe_perk(perk, perks, global_user)
-                full_desc += f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')}\n{desc} (Level {level_num + 1})\n\n"
-            await interaction.response.send_message(embed=discord.Embed(description=full_desc, color=Colors.brown))
+                full_desc += f"{rarity_colors[perk_rarity]} __{perk_data.get('name', '')}__ (Level {level_num + 1})\n{desc}\n\n"
+            await interaction.response.send_message(embed=discord.Embed(description=full_desc, color=Colors.brown), ephemeral=True)
 
         breakdown_button = Button(label="Breakdown")
         breakdown_button.callback = send_breakdown
