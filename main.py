@@ -9764,6 +9764,17 @@ You can stop. That's okay. Seriously."""
         if len(user_perks) == 0:
             perk_embed.add_item(TextDisplay("You have no perks!"))
 
+        async def send_breakdown(interaction: discord.Interaction) -> None:
+            full_desc = ""
+            for level_num, perk in enumerate(user_perks):
+                perk_rarity, perk_data, desc = describe_perk(perk, perks, global_user)
+                full_desc += f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')}\n{desc} (Level {level_num + 1})\n\n"
+            await interaction.response.send_message(embed=discord.Embed(description=full_desc, color=Colors.brown))
+
+        breakdown_button = Button(label="Breakdown")
+        breakdown_button.callback = send_breakdown
+        perk_embed.add_item(ActionRow(breakdown_button))
+
         myview.add_item(perk_embed)
         await interaction.response.send_message(view=myview, ephemeral=True)
 
