@@ -69,91 +69,78 @@
     {
       "name": "Christmas",
       "value": 30,
-      "upgrade": 70,
       "totalvalue": 225,
       "special": true
     },
     {
       "name": "Valentine",
       "value": 30,
-      "upgrade": 70,
       "totalvalue": 225,
       "special": true
     },
     {
       "name": "Chef",
       "value": 30,
-      "upgrade": 70,
       "totalvalue": 225,
       "special": true
     },
     {
       "name": "Birthday",
       "value": 30,
-      "upgrade": 70,
       "totalvalue": 225,
       "special": true
     },
     {
       "name": "Pumpkin",
       "value": -1,
-      "upgrade": -1,
       "totalvalue": 460,
       "special": true
     },
     {
       "name": "Wooden",
       "value": 65,
-      "upgrade": 30,
       "totalvalue": 75,
       "special": false
     },
     {
       "name": "Stone",
       "value": 90,
-      "upgrade": 30,
       "totalvalue": 100,
       "special": false
     },
     {
       "name": "Bronze",
       "value": 100,
-      "upgrade": 30,
       "totalvalue": 130,
       "special": false
     },
     {
       "name": "Silver",
       "value": 115,
-      "upgrade": 30,
       "totalvalue": 200,
       "special": false
     },
     {
       "name": "Gold",
       "value": 230,
-      "upgrade": 30,
       "totalvalue": 400,
       "special": false
     },
     {
       "name": "Platinum",
       "value": 630,
-      "upgrade": 30,
       "totalvalue": 800,
       "special": false
     },
     {
       "name": "Diamond",
       "value": 860,
-      "upgrade": 30,
       "totalvalue": 1200,
       "special": false
     },
     {
       "name": "Celestial",
       "value": 2000,
-      "upgrade": 0,
       "totalvalue": 2000,
       "special": false
     }

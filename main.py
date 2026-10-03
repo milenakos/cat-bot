@@ -5708,27 +5708,33 @@ async def packs(message: discord.Interaction):
         if not is_single:
             build_string = get_short_emoji(data.pack_data[level]["name"].lower() + "pack")
 
-        is_special = data.pack_data[level]["special"]
-        bump_boost = 7 / 3 if is_special else 1
+        final_level = data.pack_data[level]
+        is_special = final_level["special"]
         first_boost = 1
         if is_special:
+            upgrade_chance = 70
             # find first non-special level
             while data.pack_data[level + first_boost]["special"]:
                 first_boost += 1
+        elif final_level["name"] == "Celestial":
+            upgrade_chance = 0
+        else:
+            upgrade_chance = 30
 
         # bump rarity
-        while random.uniform(1, 100) <= data.pack_data[level]["upgrade"] * bump_boost:
+        while random.uniform(1, 100) <= upgrade_chance:
             if is_single:
-                reward_texts.append(f"{get_short_emoji(data.pack_data[level]['name'].lower() + 'pack')} {data.pack_data[level]['name']}\n" + build_string)
-                build_string = (
-                    f"Upgraded from {get_short_emoji(data.pack_data[level]['name'].lower() + 'pack')} {data.pack_data[level]['name']}!\n" + build_string
-                )
+                name = data.pack_data[level]["name"]
+                reward_texts.append(f"{get_short_emoji(name.lower() + 'pack')} {name}\n" + build_string)
+                build_string = f"Upgraded from {get_short_emoji(name.lower() + 'pack')} {name}!\n" + build_string
             else:
                 build_string += f" -> {get_short_emoji(data.pack_data[level + first_boost]['name'].lower() + 'pack')}"
             level += first_boost
             first_boost = 1
             upgrades += 1
-        final_level = data.pack_data[level]
+            final_level = data.pack_data[level]
+            if final_level["name"] == "Celestial":
+                break
         if is_single:
             reward_texts.append(f"{get_short_emoji(final_level['name'].lower() + 'pack')} {final_level['name']}\n" + build_string)
 
@@ -5898,7 +5904,7 @@ async def packs(message: discord.Interaction):
         embed = Container(
             Section(
                 f"## {get_emoji('goldpack')} Packs",
-                Button(label="Chance Info", url="https://catbot.minkos.lol/packs"),
+                Button(label="Chances", url="https://catbot.minkos.lol/packs"),
             ),
             f"There are 8 types of packs: {pack_emojis}. When opening a pack, there is a **30% chance** it upgrades to the next tier, then another 30% for another upgrade... That means even a {get_emoji('woodenpack')} can upgrade all the way to {get_emoji('celestialpack')} if you get lucky enough.",
         )
