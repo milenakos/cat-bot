@@ -9761,9 +9761,6 @@ You can stop. That's okay. Seriously."""
                 pack_string += f"{emojis} **{value:g}%** chance for {pack_emoji}\n"
             perk_embed.add_item(TextDisplay(pack_string.strip()))
 
-        if len(user_perks) == 0:
-            perk_embed.add_item(TextDisplay("You have no perks!"))
-
         async def send_breakdown(interaction: discord.Interaction) -> None:
             full_desc = ""
             for level_num, perk in enumerate(user_perks):
@@ -9771,9 +9768,13 @@ You can stop. That's okay. Seriously."""
                 full_desc += f"{rarity_colors[perk_rarity]} __{perk_data.get('name', '')}__ (Level {level_num + 1})\n{desc}\n\n"
             await interaction.response.send_message(embed=discord.Embed(description=full_desc, color=Colors.brown), ephemeral=True)
 
-        breakdown_button = Button(label="Breakdown")
-        breakdown_button.callback = send_breakdown
-        perk_embed.add_item(ActionRow(breakdown_button))
+        if len(user_perks) == 0:
+            perk_embed.add_item(TextDisplay("You have no perks!"))
+        elif len(user_perks) > 2:
+            perk_embed.add_item(Separator())
+            breakdown_button = Button(label="Level Breakdown")
+            breakdown_button.callback = send_breakdown
+            perk_embed.add_item(ActionRow(breakdown_button))
 
         myview.add_item(perk_embed)
         await interaction.response.send_message(view=myview, ephemeral=True)
