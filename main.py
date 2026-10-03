@@ -10039,9 +10039,9 @@ You can stop. That's okay. Seriously."""
         filename = "https://raw.githubusercontent.com/milenakos/cat-bot/refs/heads/main/" + filename
 
         if not desc:
-            embed = Container(f"# Mafia - {rank} (Lv{level})")
+            embed = Container(f"# Mafia - {rank} (Level {level})")
         else:
-            embed = Container(Section(f"# Mafia - {rank} (Lv{level})", desc[0], desc[1], Thumbnail(filename)), *desc[2:])
+            embed = Container(Section(f"# Mafia - {rank} (Level {level})", desc[0], desc[1], Thumbnail(filename)), *desc[2:])
         action_row = ActionRow()
 
         if not user.perk_selected:
