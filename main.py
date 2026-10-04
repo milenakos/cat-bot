@@ -2511,7 +2511,7 @@ async def on_message(message: discord.Message) -> None:
                         decided_time = random.uniform(1, 2)
                         channel.rain_should_end = int(time.time() + decided_time)
                         channel.yet_to_spawn = 0
-                        suffix_string += "\n☔ Catnip started a short rain! 10 cats will spawn."
+                        suffix_string += f"\n☔{get_emoji('catnip')} Catnip started a short rain! 10 cats will spawn."
                         if channel.cat_rains == 10:
                             config.cat_cought_rain[channel.channel_id] = {}
                             config.rain_starter[channel.channel_id] = message.author.id
