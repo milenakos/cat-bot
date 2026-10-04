@@ -2498,8 +2498,8 @@ async def on_message(message: discord.Message) -> None:
                         double_chance = 100 - triple_chance - none_chance
                     if double_chance < 0:
                         double_chance = 0
-                        none_chance = 25
-                        triple_chance = 75
+                        none_chance = 33
+                        triple_chance = 67
                     none_chance = max(none_chance, 0)
                     if bonus_chance_increase > 0:
                         bonus_chance_increase = min(2, bonus_chance_increase * 0.01 + 1)
@@ -9720,8 +9720,8 @@ You can stop. That's okay. Seriously."""
             double_chance = 100 - triple_chance - none_chance
         if double_chance < 0:
             double_chance = 0
-            none_chance = 25
-            triple_chance = 75
+            none_chance = 33
+            triple_chance = 67
         perk_values["double"] = double_chance
         perk_values["triple_none"] = triple_chance
         perk_values["none"] = none_chance
