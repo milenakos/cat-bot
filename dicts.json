@@ -774,6 +774,7 @@
     "wx",
     "zg"
   ],
+  "bomb_party_prompts": ["TRO", "JET", "STR", "ADJ", "CRA", "ISE", "TIC", "INT", "MIN", "SCA", "INC", "VER", "RED", "TRA", "MEN", "KIL", "ZAP", "LUB", "STA", "REF", "LIT", "IST", "MIS", "ANG", "REV", "LAT", "DIS", "BLA", "SYR", "DIG", "CAT", "INE", "LIN", "RAF", "PER", "SAV", "ROA", "SCH", "LOV", "SOF", "CON", "HUN", "LAG", "COM", "ICA", "INS", "RIS", "GAG", "INO", "LOW", "RAT", "WOR", "BRE", "LOG", "ORI", "HAN", "ATT", "TIN", "DRA", "UNP", "PUR", "PAL", "MIL", "FOR", "GRA", "ATE", "PAT", "BER", "BET", "WEA", "IOD", "RES", "TRI", "BRO", "RAN", "PRO", "WHI", "FLA", "ELL", "ENT", "INK", "ABS", "CLA", "CAL", "OVE", "IMI", "ILL", "COK", "SHI", "SAT", "CRO", "DEP", "STI", "MAT", "SIN", "IDE", "SPL"],
   "sentences": [
     "The quick brown fox jumps over the lazy dog.",
     "Cat Bot is a Discord bot about catching cats.",

@@ -134,6 +134,7 @@ class DataWrapper:
     cat_translations: list[str]
     wiki_lines: list[str]
     illegal: list[str]
+    bomb_party_prompts: list[str]
     sentences: list[str]
     cat_fortunes: list[str]
     cat_fortune_titles: list[str]
@@ -1093,7 +1094,8 @@ async def send_quest_reminders(quest_type: str, start_time: int) -> None:
     while True:
         user = await Profile.collect(
             f"(reminders_enabled = true AND reminder_{quest_type} != 0) AND "
-            f"(({quest_type}_cooldown != 0 AND {quest_type}_cooldown + 43200 < {start_time}) OR (reminder_{quest_type} > 1 AND reminder_{quest_type} < {start_time})) LIMIT 1",
+            f"(({quest_type}_cooldown != 0 AND {quest_type}_cooldown + 43200 < {start_time}) OR "
+            f"(reminder_{quest_type} > 1 AND reminder_{quest_type} < {start_time})) LIMIT 1",
         )
         if not user or not user[0]:
             break
@@ -1631,8 +1633,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
             modal.add_item(TextDisplay(f"## What is the sum of the digits of this number\n\n{number}"))
             modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
         case "Trash":
-            inputs = ['TRO', 'JET', 'STR', 'ADJ', 'CRA', 'ISE', 'TIC', 'INT', 'MIN', 'SCA', 'INC', 'VER', 'RED', 'TRA', 'MEN', 'KIL', 'ZAP', 'LUB', 'STA', 'REF', 'LIT', 'IST', 'MIS', 'ANG', 'REV', 'LAT', 'DIS', 'BLA', 'SYR', 'DIG', 'CAT', 'INE', 'LIN', 'RAF', 'PER', 'SAV', 'ROA', 'SCH', 'LOV', 'SOF', 'CON', 'HUN', 'LAG', 'COM', 'ICA', 'INS', 'RIS', 'GAG', 'INO', 'LOW', 'RAT', 'WOR', 'BRE', 'LOG', 'ORI', 'HAN', 'ATT', 'TIN', 'DRA', 'UNP', 'PUR', 'PAL', 'MIL', 'FOR', 'GRA', 'ATE', 'PAT', 'BER', 'BET', 'WEA', 'IOD', 'RES', 'TRI', 'BRO', 'RAN', 'PRO', 'WHI', 'FLA', 'ELL', 'ENT', 'INK', 'ABS', 'CLA', 'CAL', 'OVE', 'IMI', 'ILL', 'COK', 'SHI', 'SAT', 'CRO', 'DEP', 'STI', 'MAT', 'SIN', 'IDE', 'SPL']  # fmt: skip
-            answer = random.choice(inputs)
+            answer = random.choice(data.bomb_party_prompts)
             modal.add_item(
                 discord.ui.Label(
                     text=f"Type a 6+ letter word containing {answer}", component=discord.ui.TextInput(placeholder="Answer", id=67, min_length=6, max_length=50)
@@ -1889,7 +1890,9 @@ async def belated_window_task(
         pings = " ".join([f"<@{catcher[0]}>" for catcher in eligible_catchers])
         h = await reply_or_send(
             catch_confirm,
-            f"🎁 **BONUS {icon} {belated['cattype'].upper()} CAT!**\nAnyone who cought this cat can play a minigame and potentially **get +3 more!**\n-# {pings}",
+            f"""🎁 **BONUS {icon} {belated["cattype"].upper()} CAT!**
+Anyone who cought this cat can play a minigame and potentially **get +3 more!**
+-# {pings}""",
             view=view,
             allowed_mentions=discord.AllowedMentions(users=True),
         )
@@ -1964,7 +1967,12 @@ async def on_message(message: discord.Message) -> None:
         try:
             person = await fetch_dm_channel(user)
             await person.send(
-                f"**You have recieved {rain_duration} minutes of Cat Rain!** ☔\n\nThanks for your support!\nYou can start a rain with `/rain`. By buying you also get access to `/editprofile` and `/customcat` commands as well as a role in [our Discord server](<https://discord.gg/staring>)!\n\nEnjoy your goods!"
+                f"""**You have recieved {rain_duration} minutes of Cat Rain!** ☔
+
+Thanks for your support!
+You can start a rain with `/rain`. By buying you also get access to `/editprofile` and `/customcat` commands as well as a role in [our Discord server](<https://discord.gg/staring>)!
+
+Enjoy your goods!"""
             )
         except Exception:
             pass
@@ -2458,9 +2466,13 @@ async def on_message(message: discord.Message) -> None:
                     for i in packs:
                         chance = random.random() * 100
                         if chance <= i[1]:
-                            packs_gained.append(data.pack_data[i[0]]["name"])
-                            user[f"pack_{data.pack_data[i[0]]['name'].lower()}"] += 1
-                            suffix_string += f"\n{get_emoji(data.pack_data[i[0]]['name'].lower() + 'pack')} You got a {data.pack_data[i[0]]['name']} pack! You now have {user[f'pack_{data.pack_data[i[0]]['name'].lower()}']:,} packs of this type!"
+                            pack_name = data.pack_data[i[0]]["name"]
+                            packs_gained.append(pack_name)
+                            user[f"pack_{pack_name.lower()}"] += 1
+                            suffix_string += (
+                                f"\n{get_emoji(pack_name.lower() + 'pack')} You got a {pack_name} pack! "
+                                f"You now have {user[f'pack_{pack_name.lower()}']:,} packs of this type!"
+                            )
 
                     chance = random.random() * 100
                     if chance <= double_boost_chance:
@@ -3031,7 +3043,11 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
             user.tutorial_state = 2
             container = Container(
                 f"## Welcome to {get_emoji('staring_cat')} Cat Bot!",
-                "🐈 The main goal of the bot is to __catch cats__. You can do that by waiting for one to appear - it will look like on the image below (there is usually one every couple of minutes), then simply saying `cat` in the chat. Be quick - after the first person catches the cat, only the first *3 people* within *5 seconds* also get it.",
+                (
+                    "🐈 The main goal of the bot is to __catch cats__. You can do that by waiting for one to appear - it will look like on the image below "
+                    "(there is usually one every couple of minutes), then simply saying `cat` in the chat. Be quick - after the first person catches the cat, "
+                    "only the first *3 people* within *5 seconds* also get it."
+                ),
                 "**Go try it!**",
                 discord.ui.MediaGallery(
                     discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316534462578838/tutorial1.png")
@@ -3050,7 +3066,10 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
             view.add_item(container)
         case 5:
             container = Container(
-                "This is your inventory. It's the place you can see your cat collection and some basic stats. You can also see anyone else's inventory by using `/inventory @username`.",
+                (
+                    "This is your inventory. It's the place you can see your cat collection and some basic stats. "
+                    "You can also see anyone else's inventory by using `/inventory @username`."
+                ),
                 f"Lets run {get_command_mention('leaderboards')} to see the best cat catchers in your server!",
                 discord.ui.MediaGallery(
                     discord.MediaGalleryItem("https://cdn.discordapp.com/attachments/967080927937323138/1509316535108243608/tutorial2.png")
@@ -3069,7 +3088,11 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
             view.add_item(container)
         case 7:
             container = Container(
-                f"Cat Bot has *a bunch* of {get_emoji('ach')} achievements, from very simple ones to {get_emoji('demonic_ach')} __ones which take months to complete__. If you ever feel unsure what to do, try completing some! You will also be able to discover a bunch of Cat Bot this way.",
+                (
+                    f"Cat Bot has *a bunch* of {get_emoji('ach')} achievements, from very simple ones to {get_emoji('demonic_ach')} "
+                    "__ones which take months to complete__. If you ever feel unsure what to do, try completing some! "
+                    "You will also be able to discover a bunch of Cat Bot this way."
+                ),
                 f"Okay, the last important thing - run {get_command_mention('battlepass')}.",
                 "===",
                 f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
@@ -3078,7 +3101,10 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
         case 8:
             container = Container(
                 "⬆️ Cat Bot's Battlepass *(or Cattlepass)* is the main non-catching way of getting cats.",
-                f"There are 3 quests which give you XP, and every couple hundred XP you will get some {get_emoji('goldpack')} __Packs__, which you can open via {get_command_mention('packs')} to get some cats! Quests refresh 12 hours after completing them.",
+                (
+                    f"There are 3 quests which give you XP, and every couple hundred XP you will get some {get_emoji('goldpack')} __Packs__, "
+                    f"which you can open via {get_command_mention('packs')} to get some cats! Quests refresh 12 hours after completing them."
+                ),
                 "**Try completing some quests and opening a pack!**",
                 "===",
                 f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
@@ -3091,8 +3117,14 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
                 user.rain_minutes += 2
             container = Container(
                 "Nice! One last thing - catching gets __a lot more fun__ if you use the various *power-ups* inside Cat Bot!",
-                f"These include {get_emoji('prism')} {get_command_mention('prism')}s, {get_emoji('catnip')} {get_command_mention('catnip')}, 💫 {get_command_mention('bless')}ings, and ☔ {get_command_mention('rain')}.",
-                f"Speaking of the last one, for completing the tutorial you get **+2 free ☔ Rain Minutes**! You can use them via {get_command_mention('rain')}.",
+                (
+                    f"These include {get_emoji('prism')} {get_command_mention('prism')}s, {get_emoji('catnip')} {get_command_mention('catnip')}, "
+                    f"💫 {get_command_mention('bless')}ings, and ☔ {get_command_mention('rain')}."
+                ),
+                (
+                    "Speaking of the last one, for completing the tutorial you get **+2 free ☔ Rain Minutes**! "
+                    f"You can use them via {get_command_mention('rain')}."
+                ),
                 "===",
                 '-# ✅ Tutorial Complete! Go catch cats, do some achievements like saying "i read help", or discover the power-ups! Have fun!',
             )
@@ -3233,7 +3265,12 @@ async def news(message: discord.Interaction):
             case 0:
                 embed = Container(
                     "## 📜 Cat Bot Survey (ended)",
-                    "Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao. This should only take a couple of minutes.\n\nGood high-quality responses will win FREE cat rain prizes.\n\nSurvey is closed!",
+                    """Hello and welcome to The Cat Bot Times:tm:! I kind of want to learn more about your time with Cat Bot because I barely know about it lmao
+
+This should only take a couple of minutes.
+Good high-quality responses will win FREE cat rain prizes.
+
+Survey is closed!""",
                     "-# <t:1731168230>",
                 )
                 view.add_item(embed)
@@ -3242,7 +3279,13 @@ async def news(message: discord.Interaction):
             case 1:
                 embed = Container(
                     "## ✨ New Cat Rains perks!",
-                    "Hey there! Buying Cat Rains now gives you access to `/editprofile` command! You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).\nEveryone who ever bought rains and all future buyers will get it.\nAnyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have received 10 minutes of Rains as compensation.\n\nThis is a really cool perk and I hope you like it!",
+                    """Hey there! Buying Cat Rains now gives you access to `/editprofile` command!
+You can add an image, change profile color, and add an emoji next to your name. Additionally, you will now get a special role in our [discord server](https://discord.gg/staring).
+
+Everyone who ever bought rains and all future buyers will get it.
+Anyone who bought these abilities separately in the past (known as 'Cat Bot Supporter') have received 10 minutes of Rains as compensation.
+
+This is a really cool perk and I hope you like it!""",
                     Button(label="Cat Bot Store", url="https://catbot.shop"),
                     "-# <t:1732377932>",
                 )
@@ -3252,7 +3295,16 @@ async def news(message: discord.Interaction):
             case 2:
                 embed = Container(
                     "## ☃️ Cat Bot Christmas",
-                    f"⚡ **Cat Bot Wrapped 2024**\nIn 2024 Cat Bot got...\n- 🖥️ *45777* new servers!\n- 👋 *286607* new profiles!\n- {get_emoji('staring_cat')} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though\n- {get_emoji('cat_throphy')} *1518096* achievements get!\nSee last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).\n\n❓ **New Year Update**\nSomething is coming...",
+                    f"""⚡ **Cat Bot Wrapped 2024**
+In 2024 Cat Bot got...
+- 🖥️ *45777* new servers!
+- 👋 *286607* new profiles!
+- {get_emoji("staring_cat")} okay so funny story due to the new 2.1 billion per cattype limit i added a few months ago 4 with 832 zeros cats were deleted... oopsie... there are currently *64105220101255* cats among the entire bot rn though
+- {get_emoji("cat_throphy")} *1518096* achievements get!
+See last year's Wrapped [here](<https://discord.com/channels/966586000417619998/1021844042654417017/1188573593408385074>).
+
+❓ **New Year Update**
+Something is coming...""",  # noqa: E501
                     "-# <t:1734458962>",
                 )
                 view.add_item(embed)
@@ -3288,7 +3340,7 @@ There are currently no plans to sell a paid cattlepass.""",
 instead of predetermined cat rewards you now unlock Packs! packs have different rarities and have a 30% chance to upgrade a rarity when opening, then 30% for one more upgrade and so on. this means even the most common packs have a small chance to upgrade to the rarest one!
 the rarities are - Wooden {get_emoji("woodenpack")}, Stone {get_emoji("stonepack")}, Bronze {get_emoji("bronzepack")}, Silver {get_emoji("silverpack")}, Gold {get_emoji("goldpack")}, Platinum {get_emoji("platinumpack")}, Diamond {get_emoji("diamondpack")} and Celestial {get_emoji("celestialpack")}!
 the extra reward is now a stone pack instead of 5 random cats too!
-*LETS GO GAMBLING*""",
+*LETS GO GAMBLING*""",  # noqa: E501
                     "-# <t:1740787200>",
                 )
                 view.add_item(embed)
@@ -3310,7 +3362,7 @@ Additionally, in our efforts to manage expenses more effectively, we have replac
 We are committed to resolving these challenges and aim to have everything back on track by **April 2nd**. Thank you for your understanding and continued dedication during this time. Together, we will navigate these changes and emerge stronger.
 
 Best regards,
-[Your Name]""",
+[Your Name]""",  # noqa: E501
                     "-# <t:1743454803>",
                 )
                 view.add_item(embed)
@@ -3353,7 +3405,7 @@ starting june 30th, for the next 5 days you will get points randomly on every ca
 4. sale (ENDED)
 starting june 30th, [catbot.shop](<https://catbot.shop>) will have a sale for the next 5 days! if everything above wasnt enough rain for your fancy you can buy some more with a discount!
 
-aaaaaaaaaaaaaaa""",
+aaaaaaaaaaaaaaa""",  # noqa: E501
                     ActionRow(
                         Button(label="Join our Server", url="https://discord.gg/staring"),
                         Button(label="Cat Bot Store", url="https://catbot.shop"),
@@ -3374,7 +3426,7 @@ it was mostly my fault, but i worked hard to fix everything and i think its most
 
 as a compensation i will give everyone who voted in the past 3 days 2 free gold packs! you can press the button below to claim them. (note you can only claim it in 1 server, choose wisely)
 
-thanks for using cat bot!""",
+thanks for using cat bot!""",  # noqa: E501
                     Button(label="Expired!", disabled=True),
                     "-# <t:1752689941>",
                 )
@@ -3438,7 +3490,7 @@ thanks for using cat bot!""",
 - the old system is completely gone, all process you had in it will be reset
 
 👉 okay now let me explain:
-at each level you will have some bounties you have to complete within a time frame. if you complete the bounties and pay the price, you will be able to choose one of 3 different perks of random rarities {get_emoji("common")}{get_emoji("uncommon")}{get_emoji("rare")}{get_emoji("epic")}{get_emoji("legendary")}. the perks will stack while catnip is active! failing to complete the bounties will bring you one level down and you will lose your last perk. higher levels are harder but give you better perks!""",
+at each level you will have some bounties you have to complete within a time frame. if you complete the bounties and pay the price, you will be able to choose one of 3 different perks of random rarities {get_emoji("common")}{get_emoji("uncommon")}{get_emoji("rare")}{get_emoji("epic")}{get_emoji("legendary")}. the perks will stack while catnip is active! failing to complete the bounties will bring you one level down and you will lose your last perk. higher levels are harder but give you better perks!""",  # noqa: E501
                     "-# <t:1761325200>",
                 )
                 view.add_item(embed)
@@ -3522,7 +3574,10 @@ You will be able to collect them until <t:1771437600> using 2 methods:
             case 16:
                 embed = Container(
                     "## PackOrRain Event (ended)",
-                    "everyone *who votes below* will earn a prize! the prize type will be **whatever option gets most votes**, and the prize amount will be **how many millions of catches** everyone does until the event ends!",
+                    (
+                        "everyone *who votes below* will earn a prize! the prize type will be **whatever option gets most votes**, "
+                        "and the prize amount will be **how many millions of catches** everyone does until the event ends!"
+                    ),
                     "-# the prize will be given to everyone who votes, even if their vote wasn't the winning option.",
                     "===",
                     "**Final Prize**: 2 ☔ Rain Minutes",
@@ -3555,10 +3610,11 @@ You will be able to collect them until <t:1771437600> using 2 methods:
                         Button(label="Vote!", url="https://discord.com/channels/966586000417619998/1021844042654417017"),
                     ),
                     f"### {get_emoji('birthdaypack')} Birthday Packs [ended]",
-                    f"For the next 5 days, you will get a {get_emoji('birthdaypack')} Birthday Pack for every {get_emoji('b_gremlincat')} Baby cat you catch!\nCollect 10 of them to get ☔ **2 free Rain Minutes**!",
+                    f"""For the next 5 days, you will get a {get_emoji("birthdaypack")} Birthday Pack for every {get_emoji("b_gremlincat")} Baby cat you catch!
+Collect 10 of them to get ☔ **2 free Rain Minutes**!""",
                     Section(
                         "### 🎨 Birthday Art Contest [ended]",
-                        "Join our [Discord server](https://discord.gg/staring) to participate in the Birthday Art Contest! 3 winners will get ☔ **100 Rain Minutes** each.",
+                        "Join our Discord server to participate in the Birthday Art Contest! 3 winners will get ☔ **100 Rain Minutes** each.",
                         Button(label="Join the server", url="https://discord.gg/staring"),
                     ),
                     Section(
@@ -3609,11 +3665,11 @@ You will be able to collect them until <t:1771437600> using 2 methods:
                         """now __the first 3 people to catch within 5 seconds__ of the original catcher will also get the cat, although **without any boosts**! "first-wins-all" was one of the most popular complaints on that one survey i did back in 2024.
 here is a helpful table of what works and what doesnt when you are late:
 - ✅ Progress of catnip bounties, cattlepass quests and /tutorial all trigger within 5s, even outside of 3 people limit
-- ❌ Achievements; activations of catnip perks, prisms, blessings, etc (up to 3 late people will only get +1 unboosted cat)""",
+- ❌ Achievements; activations of catnip perks, prisms, blessings, etc (up to 3 late people will only get +1 unboosted cat)""",  # noqa: E501
                         "2. 🎁 bonus cats",
                         """there is a small chance (around 6.5% on average, *chance is higher for rarer cats*) that a cat is a __bonus cat__. such a cat will have *a minigame* after its caught, in which you can get **+3 more of it** if you succeed. only people who caught the cat can play this minigame (this includes the initial catcher + late catchers, so max of 4 people).
 each of 22 cats has a unique minigame associated with it.
-there is also a new catnip perk which makes these bonus cats more likely (only activates from initial catcher)""",
+there is also a new catnip perk which makes these bonus cats more likely (only activates from initial catcher)""",  # noqa: E501
                         'both of the updates above can be rolled back via "Legacy Catching" toggle in /settings',
                         "3. ☔ rain",
                         """heres how these mechanics work during rain:
@@ -3621,7 +3677,7 @@ there is also a new catnip perk which makes these bonus cats more likely (only a
 - bonus cats give +1 cat to everyone eligible instead of a minigame
 - both are reflected in rain summaries
 these changes were made to not slow down rains. like, i pinky promise they arent slower
-unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats per minute. this results in all rains having atleast +1 more cat, and then approx. +1 more for every 5 minute of length.""",
+unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats per minute. this results in all rains having atleast +1 more cat, and then approx. +1 more for every 5 minute of length.""",  # noqa: E501
                         "===",
                         "-# <t:1782500400>",
                     )
@@ -3632,7 +3688,10 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
                 embed = Container(
                     "## 😻 250k/Cat Day Event",
                     "-# quarter million lets go! and happy international cat day!",
-                    "A new catching event, ending <t:1786651200:R>! For every *unique cat type* you catch, you will get a pack! The pack type will be determined by *how many catches everyone globally does*. See below for current event state!",
+                    (
+                        "A new catching event, ending <t:1786651200:R>! For every *unique cat type* you catch, you will get a pack! "
+                        "The pack type will be determined by *how many catches everyone globally does*. See below for current event state!"
+                    ),
                     f"*Final reward:* {get_emoji('silverpack')} Silver Pack",
                     "===",
                     "## 🔥 Cat Day Sale!",
@@ -3951,7 +4010,8 @@ async def changemessage(message: discord.Interaction):
                 for i in check:
                     if i not in input_value:
                         await interaction.response.send_message(
-                            f"nuh uh! you are missing `{i}`.\nyou must include the placeholders exactly like they are shown, the values will be replaced by cat bot when it uses them.",
+                            f"""nuh uh! you are missing `{i}`.
+you must include the placeholders exactly like they are shown, the values will be replaced by cat bot when it uses them.""",
                             ephemeral=True,
                         )
                         return
@@ -5358,9 +5418,14 @@ if config.DONOR_CHANNEL_ID:
             view = LayoutView(timeout=VIEW_TIMEOUT)
             container = Container(
                 "## :stars: Cat Blessings",
-                "When enabled, random Cat Bot users will have their cats blessed by you - and their catches will be doubled! Your bless chance increases by *0.0001%* per minute of rain bought.",
+                (
+                    "When enabled, random Cat Bot users will have their cats blessed by you - and their catches will be doubled! "
+                    "Your bless chance increases by *0.0001%* per minute of rain bought."
+                ),
                 "===",
-                f"Cats you blessed: **{user.cats_blessed:,}**\nYour bless chance is **{user_bless_chance:.4f}%**\nGlobal bless chance is **{global_bless_chance:.4f}%**",
+                f"""Cats you blessed: **{user.cats_blessed:,}**
+Your bless chance is **{user_bless_chance:.4f}%**
+Global bless chance is **{global_bless_chance:.4f}%**""",
                 "===",
                 Section(bbutton, f"Your blessings are currently **{'enabled' if user.blessings_enabled else 'disabled'}**."),
             )
@@ -5544,7 +5609,10 @@ async def scratch(message: discord.Interaction):
     view.add_item(
         Container(
             "## 🍀 Scratch Off",
-            f"You will be able to select **10 out of 25 spots**. Finding a __pair__ will give you it's respective prize. (example: finding 2x {get_emoji('diamondpack')} will give you a Diamond pack)",
+            (
+                "You will be able to select **10 out of 25 spots**. Finding a __pair__ will give you it's respective prize. "
+                f"(example: finding 2x {get_emoji('diamondpack')} will give you a Diamond pack)"
+            ),
             "Get scratch cards by completing *Weekly Quests*.",
             "===",
             ActionRow(button),
@@ -5906,7 +5974,11 @@ async def packs(message: discord.Interaction):
                 f"## {get_emoji('goldpack')} Packs",
                 Button(label="Chances", url="https://catbot.minkos.lol/packs"),
             ),
-            f"There are 8 types of packs: {pack_emojis}. When opening a pack, there is a **30% chance** it upgrades to the next tier, then another 30% for another upgrade... That means even a {get_emoji('woodenpack')} can upgrade all the way to {get_emoji('celestialpack')} if you get lucky enough.",
+            (
+                f"There are 8 types of packs: {pack_emojis}. When opening a pack, there is a **30% chance** it upgrades to the next tier, "
+                f"then another 30% for another upgrade... That means even a {get_emoji('woodenpack')} can upgrade all the way to "
+                f"{get_emoji('celestialpack')} if you get lucky enough."
+            ),
         )
 
         if has_special:
@@ -5953,7 +6025,8 @@ async def battlepass(message: discord.Interaction):
             try:
                 dm_channel = await fetch_dm_channel(global_user)
                 await dm_channel.send(
-                    f"You have enabled reminders in {interaction.guild.name}. You can disable them in the /battlepass command in that server or by saying `disable {interaction.guild.id}` here any time."
+                    f"You have enabled reminders in {interaction.guild.name}. "
+                    f"You can disable them in the /battlepass command in that server or by saying `disable {interaction.guild.id}` here any time."
                 )
             except Exception:
                 await interaction.response.send_message(
@@ -6355,9 +6428,13 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
 
         embed = Container(
             Section(f"## {icon}{target} Cat Prisms", craft_button),
-            "Prisms are a tradeable power-up which occasionally bumps cat rarity up by one. Each prism crafted gives the entire server an increased chance to get upgraded, plus additional chance for prism owner.",
+            (
+                "Prisms are a tradeable power-up which occasionally bumps cat rarity up by one. "
+                "Each prism crafted gives the entire server an increased chance to get upgraded, plus additional chance for prism owner."
+            ),
             "\n".join(prism_texts[page_number * 26 : (page_number + 1) * 26]),
-            f"-# Server Prisms: {total_count} | Boost Chance: {round(global_boost * 100, 3)}%\n-# {person_id.name}'s Prisms: {user_count} | Boost Chance: {user_boost}%",
+            f"""-# Server Prisms: {total_count} | Boost Chance: {round(global_boost * 100, 3)}%
+-# {person_id.name}'s Prisms: {user_count} | Boost Chance: {user_boost}%""",
             "===",
             ActionRow(*buttons),
             ActionRow(user_select),
@@ -6974,7 +7051,8 @@ async def fish(message: discord.Interaction):
                 usage_suffix = "\n-# Used: " + usage_suffix
             view.add_item(
                 TextDisplay(
-                    f"You caught a {get_emoji(fishtype.lower() + 'fish')} {fishtype} fish and got 🪙 {coins_gained:,} coins (now {profile.fish_coins:,})!{usage_suffix}"
+                    f"You caught a {get_emoji(fishtype.lower() + 'fish')} {fishtype} fish and got 🪙 {coins_gained:,} coins (now {profile.fish_coins:,})!"
+                    + usage_suffix
                 )
             )
             view.add_item(ActionRow(button, main_button))
@@ -7960,7 +8038,10 @@ async def bakery(message: discord.Interaction):
                     f"+1 {get_emoji('silverpack')} Silver pack, +1 {get_emoji('bakegg_egg')} Bake.gg Cat Egg",
                     f"Next order <t:{get_timestamp_of_next_week()}:R>",
                     "===",
-                    f"➡️ Opening any {get_emoji('bakegg_egg')} Cat Egg in Bake.gg will give you an **exclusive {get_emoji('chefpack')} Chef Pack** in Cat Bot, so head over to not miss out!",
+                    (
+                        f"➡️ Opening any {get_emoji('bakegg_egg')} Cat Egg in Bake.gg will give you an **exclusive {get_emoji('chefpack')} Chef Pack** "
+                        "in Cat Bot, so head over to not miss out!"
+                    ),
                     "-# 1 Chef Pack per user per week",
                     "===",
                     ActionRow(Button(label="Bake.gg", url="https://bake.gg/"), refresh_button),
@@ -8655,7 +8736,10 @@ async def blackcat(message: discord.Interaction):
     view.add_item(
         Container(
             "## 🃏 blackcat",
-            "add random numbers to get as much as possible without going over 21. i will then do the same, and you win if you get more!\n- tie: x1 (refund)\n- win: x2\n- big win (win with 21): x2.5",
+            """add random numbers to get as much as possible without going over 21. i will then do the same, and you win if you get more!
+- tie: x1 (refund)
+- win: x2
+- big win (win with 21): x2.5""",
             ActionRow(b),
             color=Colors.maroon,
         )
@@ -8915,7 +8999,11 @@ async def pig(message: discord.Interaction):
     button.callback = roll
     view.add_item(button)
     await message.response.send_message(
-        f"🎲 Pig is a simple dice game. You repeatedly roll a die. The number it lands on gets added to your score, then you can either roll the die again, or finish and save your current score. However, if you roll a 1, you lose and your score gets voided.\n\nYour current best score is **{profile.best_pig_score:,}**.",
+        f"""🎲 Pig is a simple dice game.
+You repeatedly roll a die. The number it lands on gets added to your score, then you can either roll the die again, or finish and save your current score.
+*However*, if you roll a 1, you lose and your score gets voided.
+
+Your current best score is **{profile.best_pig_score:,}**.""",
         view=view,
     )
 
@@ -9887,16 +9975,21 @@ You can stop. That's okay. Seriously."""
         await interaction.response.edit_message(view=myview)
 
     async def help_screen(interaction: discord.Interaction) -> None:
-        desc = "Catnip is a prestige system where you pay cats to join your mafia and get perks and bounties!"
-        desc += "\n\n❓ **How it works:**"
-        desc += '\n- Press the "Begin" button to join the mafia and get your first perk and bounties.'
-        desc += "\n- Complete your bounties and pay the fee again to level up and get more perks and better bounties!"
-        desc += "\n- If you fail to pay in time, you will level down and lose your most recent perk."
-        desc += "\n- The timer only starts after you press 'Begin Bounties'."
-        desc += "\n\n⭐ **Perks:**"
-        desc += "\nPerks give you various bonuses like a chance to double cats cought, a chance of getting packs, etc. You can view your current perks with the 'View Perks' button."
-        desc += "\n\n⬆️ **Bounties:**"
-        desc += "\nBounties are tasks you need to complete before you can level up. They involve catching a certain number of cats of specific types or rarities. You can view your current bounties in the catnip menu."
+        desc = """Catnip is a prestige system where you pay cats to join your mafia and get perks and bounties!"
+
+❓ **How it works:**
+- Press the "Begin" button to join the mafia and get your first perk and bounties.
+- Complete your bounties and pay the fee again to level up and get more perks and better bounties!
+- If you fail to pay in time, you will level down and lose your most recent perk.
+- The timer only starts after you press "Begin Bounties".
+
+⭐ **Perks:**
+Perks give you various bonuses like a chance to double cats cought, a chance of getting packs, etc.
+You can view your current perks with the "View Perks" button.
+
+⬆️ **Bounties:**
+Bounties are tasks you need to complete before you can level up. They involve catching a certain number of cats of specific types or rarities.
+You can view your current bounties in the catnip menu."""
         help_embed = discord.Embed(title="Catnip Help", color=Colors.brown, description=desc)
         await interaction.response.send_message(embed=help_embed, ephemeral=True)
 
@@ -9931,7 +10024,9 @@ You can stop. That's okay. Seriously."""
             button.callback = confirm_begin
             confirmation_view.add_item(button)
             await interaction.response.send_message(
-                f"Your catnip expires <t:{user.catnip_active}:R>.\nAre you sure you want to start your bounties now?\nThis will remove the remaining catnip time you have.",
+                f"""Your catnip expires <t:{user.catnip_active}:R>.
+Are you sure you want to start your bounties now?
+This will remove the remaining catnip time you have.""",
                 view=confirmation_view,
                 ephemeral=True,
             )
@@ -10235,7 +10330,8 @@ async def achievements(message: discord.Interaction):
         embed.add_item(TextDisplay(f"## {get_emoji('ach')} Achievements ({unlocked}/{total_achs})"))
         embed.add_item(
             TextDisplay(
-                "**Achievements** are goals within Cat Bot which let you discover various features and track your progress. If you are ever unsure on what to do, try completing some!"
+                "**Achievements** are goals within Cat Bot which let you discover various features and track your progress. "
+                "If you are ever unsure on what to do, try completing some!"
             )
         )
 
@@ -10300,7 +10396,8 @@ async def achievements(message: discord.Interaction):
 @bot.tree.command(name="catch", description="Catch someone in 4k")
 async def catch_tip(message: discord.Interaction):
     await message.response.send_message(
-        f'Nope, that\'s the wrong way to do this.\nRight Click/Long Hold a message you want to catch > Select `Apps` in the popup > "{get_emoji("staring_cat")} catch"',
+        f"""Nope, that's the wrong way to do this.
+Right Click/Long Hold a message you want to catch > Select `Apps` in the popup > \"{get_emoji("staring_cat")} catch\"""",
         ephemeral=True,
     )
 
@@ -10495,7 +10592,8 @@ async def leaderboards(
                 _total_expr = RawSQL("(" + " + ".join(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}')" for a in AURA_ORDER) + ") AS aura_total")
                 result = await Profile.collect_limit(
                     ["user_id", *_count_exprs, _total_expr],
-                    "guild_id = $1 AND EXISTS (SELECT 1 FROM unnest(cat_auras) v WHERE v != ' ') ORDER BY count_r DESC, count_a DESC, count_p DESC, count_c DESC, count_y DESC, user_id ASC",
+                    "guild_id = $1 AND EXISTS (SELECT 1 FROM unnest(cat_auras) v WHERE v != ' ') ORDER BY "
+                    "count_r DESC, count_a DESC, count_p DESC, count_c DESC, count_y DESC, user_id ASC",
                     guild_id,
                 )
                 final_value = "aura_total"
@@ -10566,7 +10664,10 @@ async def leaderboards(
                         full_months_passed -= 1
                     query = "SELECT user_id, battlepass, progress FROM profile WHERE guild_id = $1 AND season = $2 AND (battlepass > 0 OR progress > 0)"
                     order = "battlepass DESC, progress DESC, user_id ASC"
-                    ahead = "(entry.battlepass > target.battlepass) OR (entry.battlepass = target.battlepass AND entry.progress > target.progress) OR (entry.battlepass = target.battlepass AND entry.progress = target.progress AND entry.user_id < target.user_id)"
+                    ahead = (
+                        "(entry.battlepass > target.battlepass) OR (entry.battlepass = target.battlepass AND entry.progress > target.progress) OR "
+                        "(entry.battlepass = target.battlepass AND entry.progress = target.progress AND entry.user_id < target.user_id)"
+                    )
                     args.append(full_months_passed)
                     final_value = "battlepass"
                 case "Cookies":
@@ -10613,7 +10714,10 @@ async def leaderboards(
                     unit = "min started"
                     query = "SELECT user_id, rain_minutes_started FROM profile WHERE guild_id = $1 AND rain_minutes_started != 0"
                     order = "rain_minutes_started DESC, user_id ASC"
-                    ahead = "(entry.rain_minutes_started > target.rain_minutes_started) OR (entry.rain_minutes_started = target.rain_minutes_started AND entry.user_id < target.user_id)"
+                    ahead = (
+                        "(entry.rain_minutes_started > target.rain_minutes_started) OR "
+                        "(entry.rain_minutes_started = target.rain_minutes_started AND entry.user_id < target.user_id)"
+                    )
                     final_value = "rain_minutes_started"
                 case _:
                     # qhar
@@ -11045,7 +11149,10 @@ async def reset(message: discord.Interaction, person_id: discord.User):
 @bot.tree.command(description="(HIGH ADMIN) [VERY DANGEROUS] Reset/wipe all Cat Bot data of this server")
 @discord.app_commands.default_permissions(administrator=True)
 async def nuke(message: discord.Interaction):
-    warning_text = "⚠️ This will completely reset **all** Cat Bot progress of **everyone** in this server. Spawn channels and their settings *will not be affected*.\nPress the button 5 times to continue."
+    warning_text = """⚠️ This will completely reset **all** Cat Bot progress of **everyone** in this server.
+Spawn channels and their settings *will not be affected*.
+
+Press the button 5 times to continue."""
     counter = 5
 
     async def gen(counter: int) -> View:
@@ -11190,7 +11297,7 @@ async def undo(message: discord.Interaction, operation: str):
     button.callback = confirm
     view.add_item(button)
     await message.response.send_message(
-        "⚠️ Running this operation will restore to the state at the time of the reset. All progress made since will be lost with no way to revert. Still continue?",
+        "⚠️ Running this operation will restore to the state at the time of the reset. All progress made since will be lost forever. Still continue?",
         view=view,
     )
 
