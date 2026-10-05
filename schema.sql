@@ -25,8 +25,6 @@ CREATE TABLE public.channel (
     yet_to_spawn bigint DEFAULT 0,
     appear character varying(4000) DEFAULT ''::character varying,
     cought character varying(4000) DEFAULT ''::character varying,
-    webhook character varying(255) DEFAULT ''::character varying,
-    forcespawned boolean DEFAULT false,
     cattype character varying(20) DEFAULT ''::character varying,
     cat_rains bigint DEFAULT 0,
     rain_should_end bigint DEFAULT 0
@@ -432,13 +430,7 @@ ALTER TABLE public."user" OWNER TO cat_bot;
 CREATE TABLE public.server (
     server_id bigint NOT NULL,
     only_setupped_channels boolean DEFAULT false,
-    do_reactions boolean DEFAULT true,
-    do_responses boolean DEFAULT true,
     do_rain boolean DEFAULT true,
-    do_catnip boolean DEFAULT true,
-    auto_delete_achievements boolean DEFAULT false,
-    auto_delete_catches boolean DEFAULT false,
-    mute_achievements boolean DEFAULT false,
     anti_double_catch boolean DEFAULT false,
     legacy_catching boolean DEFAULT false,
     name text DEFAULT '',

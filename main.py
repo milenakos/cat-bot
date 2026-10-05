@@ -468,22 +468,22 @@ async def achemb(
     result = None
     server = await Server.get_or_create(server_id=message.guild.id)
     assert isinstance(message.channel, GuildMessageable)
-    do = not server.mute_achievements and await check_channel_setupped(server, message.channel)
+    mute = not await check_channel_setupped(server, message.channel)
     try:
         if send_type == "ephemeral":
             assert isinstance(message, discord.Interaction)
             result = await message.followup.send(view=view, ephemeral=True, wait=True)
-        if send_type == "reply" and do:
+        if send_type == "reply":
             assert isinstance(message, discord.Message)
             result = await message.reply(view=view)
-        if send_type == "send" and do:
+        if send_type == "send":
             result = await message.channel.send(view=view)
         if send_type == "followup":
             assert isinstance(message, discord.Interaction)
-            result = await message.followup.send(view=view, ephemeral=not do, wait=True)
+            result = await message.followup.send(view=view, ephemeral=mute, wait=True)
         if send_type == "response":
             assert isinstance(message, discord.Interaction)
-            result = (await message.response.send_message(view=view, ephemeral=not do)).resource
+            result = (await message.response.send_message(view=view, ephemeral=mute)).resource
         await progress(message, profile, "achievement")
         await finale(message, profile)
     except (discord.NotFound, discord.Forbidden):
@@ -491,20 +491,19 @@ async def achemb(
 
     if result:
         assert not isinstance(result, discord.InteractionCallbackActivityInstance)
-        if view2:
-            await asyncio.sleep(2)
-            await result.edit(view=view2)
-            await asyncio.sleep(2)
-            await result.edit(view=view)
-            await asyncio.sleep(2)
-            await result.edit(view=view2)
-            await asyncio.sleep(2)
-            await result.edit(view=view)
-
-        if server.auto_delete_achievements:
-            await result.delete(delay=10)
+        if mute and send_type in ["reply", "send"]:
+            await result.delete(delay=5)
         elif ach_id == "curious":
-            await result.delete(delay=30)
+            await result.delete(delay=15)
+        elif view2:
+            await asyncio.sleep(2)
+            await result.edit(view=view2)
+            await asyncio.sleep(2)
+            await result.edit(view=view)
+            await asyncio.sleep(2)
+            await result.edit(view=view2)
+            await asyncio.sleep(2)
+            await result.edit(view=view)
 
 
 async def generate_quest(user: Profile, quest_type: str) -> None:
@@ -930,7 +929,7 @@ async def finale(message: discord.Interaction | discord.Message, user: Profile) 
     )
 
 
-# function to autocomplete cat_type choices for /givecat, and /forcespawn, which also allows more than 25 options
+# function to autocomplete cat_type choices for /givecat, which also allows more than 25 options
 async def cat_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     return [discord.app_commands.Choice(name=choice, value=choice) for choice in [*cattypes, "Random"] if current.lower() in choice.lower()][:25]
 
@@ -1019,7 +1018,7 @@ def alnum(string: str) -> str:
     return "".join(item for item in string.lower() if item.isalnum())
 
 
-async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool = False) -> str:
+async def spawn_cat(ch_id: int, localcat: str | None = None) -> str:
     if not (channel := await Channel.get_or_none(channel_id=ch_id)):
         return "channel not setup"
     if channel.cat or channel.yet_to_spawn > time.time() + 10:
@@ -1061,11 +1060,10 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     config.belated_catchers.pop(ch_id, None)
     channel.cat = message_is_sus.id
     channel.yet_to_spawn = 0
-    channel.forcespawned = bool(force_spawn)
     channel.cattype = localcat
     await channel.save()
     temp_spawns_storage.discard(ch_id)
-    log_stats("spawn", {"forced": str(force_spawn)})
+    log_stats("spawn")
     return f"ok, now i will send cats in <#{ch_id}>\nrun {get_command_mention('forget')} to undo this"
 
 
@@ -1998,7 +1996,7 @@ Enjoy your goods!"""
     ]:
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
-        if server.do_reactions and await check_channel_setupped(server, message.channel):
+        if await check_channel_setupped(server, message.channel):
             await message.add_reaction(get_emoji("staring_cat"))
         react_count += 1
         reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
@@ -2023,7 +2021,7 @@ Enjoy your goods!"""
                 if reactions_ratelimit.get(message.guild.id, 0) < 30:
                     if not server:
                         server = await Server.get_or_create(server_id=message.guild.id)
-                    if server.do_reactions and await check_channel_setupped(server, message.channel):
+                    if await check_channel_setupped(server, message.channel):
                         await message.add_reaction(get_emoji("staring_cat"))
                     react_count += 1
                     reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
@@ -2049,7 +2047,7 @@ Enjoy your goods!"""
             try:
                 if not server:
                     server = await Server.get_or_create(server_id=message.guild.id)
-                if server.do_reactions and await check_channel_setupped(server, message.channel):
+                if await check_channel_setupped(server, message.channel):
                     await message.add_reaction(get_emoji(reaction_name))
                 react_count += 1
                 reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
@@ -2065,7 +2063,7 @@ Enjoy your goods!"""
         if response_prompt in text.lower():
             if not server:
                 server = await Server.get_or_create(server_id=message.guild.id)
-            if server.do_responses and await check_channel_setupped(server, message.channel):
+            if await check_channel_setupped(server, message.channel):
                 try:
                     await message.reply(response_reply)
                 except Exception:
@@ -2076,7 +2074,7 @@ Enjoy your goods!"""
         if message.author in message.mentions and message.type != discord.MessageType.poll_result and reactions_ratelimit.get(message.guild.id, 0) < 30:
             if not server:
                 server = await Server.get_or_create(server_id=message.guild.id)
-            if server.do_reactions and await check_channel_setupped(server, message.channel):
+            if await check_channel_setupped(server, message.channel):
                 await message.add_reaction(get_emoji("staring_cat"))
             react_count += 1
             reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
@@ -2093,7 +2091,7 @@ Enjoy your goods!"""
     if text.lower() in ["testing testing 1 2 3", "cat!ach"]:
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
-        if server.do_responses and await check_channel_setupped(server, message.channel):
+        if await check_channel_setupped(server, message.channel):
             try:
                 await message.reply("test success")
             except Exception:
@@ -2108,7 +2106,7 @@ Enjoy your goods!"""
         await user.save()
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
-        if server.do_responses and await check_channel_setupped(server, message.channel):
+        if await check_channel_setupped(server, message.channel):
             try:
                 personname = message.author.name.replace("_", "\\_")
                 await message.reply(f"ok then\n{personname} lost 1 fine cat!!!1!\nYou now have {user.cat_Fine:,} {plural('cat', user.cat_Fine)} of dat type!")
@@ -2120,7 +2118,7 @@ Enjoy your goods!"""
     if text.lower() == "please do the cat":
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
-        if server.do_responses and await check_channel_setupped(server, message.channel):
+        if await check_channel_setupped(server, message.channel):
             thing = discord.File("assets/images/socialcredit.png")
             try:
                 await message.reply(file=thing)
@@ -2132,7 +2130,7 @@ Enjoy your goods!"""
     if text.lower() == "car":
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
-        if server.do_responses and await check_channel_setupped(server, message.channel):
+        if await check_channel_setupped(server, message.channel):
             file = discord.File("assets/images/car.png")
             embed = discord.Embed(title="car!", color=Colors.brown).set_image(url="attachment://car.png")
             try:
@@ -2145,7 +2143,7 @@ Enjoy your goods!"""
     if text.lower() == "cart":
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
-        if server.do_responses and await check_channel_setupped(server, message.channel):
+        if await check_channel_setupped(server, message.channel):
             file = discord.File("assets/images/cart.png")
             embed = discord.Embed(title="cart!", color=Colors.brown).set_image(url="attachment://cart.png")
             try:
@@ -2192,7 +2190,7 @@ Enjoy your goods!"""
             or (server.anti_double_catch and user.last_catch_channel != message.channel.id and user.last_catch + 300 > time.time())
         ):
             # laugh at this user
-            do_laugh = channel and channel.cat_rains == 0 and pointlaugh_ratelimit.get(message.channel.id, 0) < 10 and server.do_reactions
+            do_laugh = channel and channel.cat_rains == 0 and pointlaugh_ratelimit.get(message.channel.id, 0) < 10
 
             # belated catching
             if message.channel.id in config.belated_catchers:
@@ -2622,7 +2620,7 @@ Enjoy your goods!"""
                     except IndexError:
                         overflow = True
                         le_emoji = cattypes[-1]
-                        if not channel.forcespawned and server.do_rain:
+                        if server.do_rain:
                             if idx_shift == len(cattypes) + 1:
                                 rainboost = 1200
                             else:
@@ -3944,12 +3942,25 @@ async def changetimings(
             )
             return
 
-        channel.spawn_times_min = minimum_time
-        channel.spawn_times_max = maximum_time
-        await channel.save()
+        async def confirm(interaction: discord.Interaction) -> None:
+            if interaction.user != message.user:
+                return await do_funny(interaction)
+            await channel.refresh_from_db()
+            channel.spawn_times_min = minimum_time
+            channel.spawn_times_max = maximum_time
+            await channel.save()
 
+            await interaction.response.edit_message(
+                content=f"Success! The spawn times are now {minimum_time} to {maximum_time} seconds. Note: the changes will only apply after the next spawn.",
+                view=None,
+            )
+
+        button = Button(label="Confirm")
+        button.callback = confirm
+        view = View(timeout=VIEW_TIMEOUT)
+        view.add_item(button)
         await message.response.send_message(
-            f"Success! The spawn times are now {minimum_time} to {maximum_time} seconds. Please note the changes will only apply after the next spawn."
+            "For optimal gameplay experience, it's recommended to not change the default spawn timings. Do you still wish to continue?", view=view
         )
     else:
         await message.response.send_message("Please input all times.", ephemeral=True)
@@ -4110,54 +4121,83 @@ async def settings(message: discord.Interaction):
     assert message.guild is not None
     server = await Server.get_or_create(server_id=message.guild.id)
 
-    async def toggle_parameter(interaction: discord.Interaction) -> None:
-        if not interaction.custom_id or interaction.user != message.user:
-            await do_funny(interaction)
-            return
-        parameter = interaction.custom_id
-        server[parameter] = not server[parameter]
-        await server.save()
-        await interaction.response.edit_message(view=await settings_view())
-
-    async def settings_view() -> LayoutView:
+    def settings_modal() -> Modal:
         assert message.guild is not None
-        await server.refresh_from_db()
 
-        def make_section(key, title, description):
-            if server[key]:
-                suffix = "(✅ On)"
-                button = Button(label="Disable", style=ButtonStyle.red, custom_id=key)
-            else:
-                suffix = "(❌ Off)"
-                button = Button(label="Enable", style=ButtonStyle.green, custom_id=key)
-            button.callback = toggle_parameter
-            return Section(f"### {title} {suffix}\n{description}", button)
+        async def update_settings(interaction: discord.Interaction) -> None:
+            basic_settings = modal.find_item(67)
+            advanced_settings = modal.find_item(69)
+            assert isinstance(basic_settings, discord.ui.CheckboxGroup)
+            assert isinstance(advanced_settings, discord.ui.CheckboxGroup)
 
-        view = LayoutView(timeout=VIEW_TIMEOUT)
-        view.add_item(
-            Container(
-                f"## Cat Bot Settings for {message.guild.name}",
-                make_section(
-                    "only_setupped_channels",
-                    "Only in Setupped Channels",
-                    "If enabled, mutes reactions, responses, achievements and cattlepass progress outside of setupped channels",
-                ),
-                make_section("do_reactions", "Reactions", "Controls all Cat Bot reactions"),
-                make_section("do_responses", "Responses", "Controls Cat Bot easter egg responses to specific messages sent"),
-                make_section("mute_achievements", "Mute Achievements", "If enabled, will hide all Cat Bot 'achievement get' messages"),
-                make_section("auto_delete_achievements", "Auto-Delete Achievements", "If enabled, will delete all 'achievement get' messages after 10 seconds"),
-                make_section("auto_delete_catches", "Auto-Delete Catches", "If enabled, will delete all 'user caught' messages after ~10 seconds"),
-                make_section("do_rain", "Cat Rains", "Controls whether Cat Rains can happen"),
-                make_section("do_catnip", "Catnip", "Controls whether catnip is accessible"),
-                make_section(
-                    "anti_double_catch", "Anti-Double Catch", "If enabled, users must wait 5 minutes after catching in one channel to catch in another"
-                ),
-                make_section("legacy_catching", "Legacy Catching", "If enabled, reverts to old catching (first catcher only, no bonus cats)"),
+            await server.refresh_from_db()
+
+            enabled = basic_settings.values + advanced_settings.values
+
+            for i in ["do_rain", "anti_double_catch", "legacy_catching", "only_setupped_channels"]:
+                server[i] = i in enabled
+            await server.save()
+
+            async def change_again(interaction: discord.Interaction) -> None:
+                await server.refresh_from_db()
+                await interaction.response.send_modal(settings_modal())
+
+            view = View(timeout=VIEW_TIMEOUT)
+            button = Button(label="Change Again")
+            button.callback = change_again
+            view.add_item(button)
+            await interaction.response.send_message("Settings saved!", view=view, ephemeral=True)
+
+        modal = Modal(title=f"Cat Bot Settings for {message.guild.name}")
+
+        options2 = [
+            discord.CheckboxGroupOption(
+                label="Only in Setupped Channels",
+                description="Disables reactions/responses/achs/etc outside of setupped channels",
+                value="only_setupped_channels",
+                default=server.only_setupped_channels,
+            ),
+        ]
+        modal.add_item(
+            discord.ui.Label(
+                text="Visibility Settings",
+                component=discord.ui.CheckboxGroup(options=options2, id=67, min_values=0, max_values=len(options2), required=False),
             )
         )
-        return view
 
-    await message.response.send_message(view=await settings_view())
+        options = [
+            discord.CheckboxGroupOption(
+                label="Enable Cat Rains",
+                description="Cat Rains are spammy but an important gameplay feature",
+                value="do_rain",
+                default=server.do_rain,
+            ),
+            discord.CheckboxGroupOption(
+                label="Anti-Double Catch",
+                description="If enabled, users must wait 5 minutes after catching in one channel to catch in another",
+                value="anti_double_catch",
+                default=server.anti_double_catch,
+            ),
+            discord.CheckboxGroupOption(
+                label="Legacy Catching",
+                description="If enabled, reverts to old catching (first catcher only, no bonus minigames)",
+                value="legacy_catching",
+                default=server.legacy_catching,
+            ),
+        ]
+        modal.add_item(
+            discord.ui.Label(
+                text="Advanced Settings",
+                description="It's recommended to not change these unless you know what you're doing.",
+                component=discord.ui.CheckboxGroup(options=options, id=69, min_values=0, max_values=len(options), required=False),
+            )
+        )
+
+        modal.on_submit = update_settings
+
+        return modal
+
+    await message.response.send_modal(settings_modal())
 
 
 @bot.tree.command(description="Get Daily cats")
@@ -9656,10 +9696,6 @@ async def catnip(message: discord.Interaction):
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     server = await Server.get_or_create(server_id=message.guild.id)
 
-    if not server.do_catnip:
-        await message.response.send_message("catnip is disabled in this server.", ephemeral=True)
-        return
-
     if not user.dark_market_active:
         await message.response.send_message("You don't have access to the catnip yet. Catch more cats to unlock it!", ephemeral=True)
         return
@@ -10924,40 +10960,6 @@ async def leaderboards(
     await lb_handler(message, leaderboard_type, False, cat_type)
 
 
-@bot.tree.command(description="(ADMIN) Give cats to people")
-@discord.app_commands.default_permissions(manage_guild=True)
-@discord.app_commands.rename(person_id="user")
-@discord.app_commands.describe(person_id="who", amount="how many (negatives to remove)", cat_type="what")
-@discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
-async def givecat(message: discord.Interaction, person_id: discord.User, cat_type: str, amount: int | None = None):
-    if amount is None:
-        amount = 1
-    if cat_type not in [*cattypes, "Random"] or (cat_type == "Random" and amount < 0):
-        await message.response.send_message("bro what", ephemeral=True)
-        return
-
-    assert message.guild is not None
-    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
-    if cat_type == "Random":
-        weights = list(data.type_dict.values())
-        remaining_amount = amount
-        remaining_weight = sum(weights)
-        for rolled_type, weight in zip(cattypes, weights):
-            if remaining_amount <= 0 or remaining_weight <= 0:
-                break
-            if count := random.binomialvariate(remaining_amount, weight / remaining_weight):
-                user[f"cat_{rolled_type}"] += count
-            remaining_amount -= count
-            remaining_weight -= weight
-    else:
-        user[f"cat_{cat_type}"] += amount
-    await user.save()
-    text = f"gave {person_id.mention} {amount:,} {cat_type} {plural('cat', amount)}"
-    if person_id == bot.user:
-        text += ". you really didnt have to"
-    await message.response.send_message(text, allowed_mentions=discord.AllowedMentions(users=True))
-
-
 @bot.tree.command(name="setup", description="(ADMIN) Setup cat in current channel")
 @discord.app_commands.default_permissions(manage_guild=True)
 async def setup_channel(message: discord.Interaction):
@@ -11034,74 +11036,48 @@ async def fake(message: discord.Interaction):
     await achemb(message, "trolled", "ephemeral")
 
 
-@bot.tree.command(description="(ADMIN) Force cats to appear/spawn")
+@bot.tree.command(description="(ADMIN) Swap people's Cat Bot data")
 @discord.app_commands.default_permissions(manage_guild=True)
-@discord.app_commands.rename(cat_type="type")
-@discord.app_commands.describe(cat_type="select a cat type ok")
-@discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
-async def forcespawn(message: discord.Interaction, cat_type: str | None = None):
-    assert isinstance(message.channel, GuildMessageable)
-    if cat_type == "Random":
-        cat_type = None
-    elif cat_type and cat_type not in cattypes:
-        await message.response.send_message("bro what", ephemeral=True)
-        return
+@discord.app_commands.describe(user1="First person in the swap", user2="Person to swap them with")
+async def swap(message: discord.Interaction, user1: discord.User, user2: discord.User):
+    async def confirmed(interaction: discord.Interaction) -> None:
+        assert message.guild is not None
+        if interaction.user.id != message.user.id:
+            return await do_funny(interaction)
 
-    ch = await Channel.get_or_none(channel_id=message.channel.id)
-    if ch is None:
-        await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
-        return
-    if ch.cat:
-        await message.response.send_message("there is already a cat", ephemeral=True)
-        return
-    ch.yet_to_spawn = 0
-    await ch.save()
-    await spawn_cat(message.channel.id, cat_type, True)
-    await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this")
+        try:
+            profile1 = await Profile.get_or_create(guild_id=message.guild.id, user_id=user1.id)
+            profile2 = await Profile.get_or_create(guild_id=message.guild.id, user_id=user2.id)
 
+            profile1.user_id = the_id  # temp swap
+            await profile1.save()
+            profile2.user_id = user1.id
+            await profile2.save()
+            profile1.user_id = user2.id
+            await profile1.save()
 
-@bot.tree.command(description="(ADMIN) Give achievements to people")
-@discord.app_commands.default_permissions(manage_guild=True)
-@discord.app_commands.rename(person_id="user", ach_id="name")
-@discord.app_commands.describe(person_id="who", ach_id="name or id of the achievement")
-@discord.app_commands.autocomplete(ach_id=ach_autocomplete)
-async def giveachievement(message: discord.Interaction, person_id: discord.User, ach_id: str):
-    # check if ach is real
-    try:
-        valid = ach_id in ach_names
-    except KeyError:
-        valid = False
+            # prism shit
+            async for p in Prism.filter("guild_id = $1 AND user_id = $2", message.guild.id, user1.id):
+                p.user_id = user2.id
+                await p.save()
+            async for p in Prism.filter("guild_id = $1 AND user_id = $2", message.guild.id, user2.id):
+                p.user_id = user1.id
+                await p.save()
 
-    if not valid and ach_id.lower() in ach_titles:
-        ach_id = ach_titles[ach_id.lower()]
-        valid = True
+            await interaction.response.edit_message(content=f"done! you can revert this by {get_command_mention('swap')}ping them back lmao", view=None)
+        except Exception:
+            await interaction.response.edit_message(
+                content="ummmm something went wrong. if data was lost, please contact us at <https://discord.gg/staring> for extra assistance.",
+                view=None,
+            )
 
-    assert message.guild is not None
-    person = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
-
-    if valid and ach_list[ach_id]["parent"] == "Museum":
-        await message.response.send_message("HAHAHHAHAH\nno", ephemeral=True)
-        return
-
-    if not valid:
-        await message.response.send_message("i cant find that achievement! try harder next time.", ephemeral=True)
-        return
-
-    # if it is, do the thing
-    reverse = person[ach_id]
-    person[ach_id] = not reverse
-    await person.save()
-    ach_data = ach_list[ach_id]
-    embed = Container(
-        f"{get_emoji('ach')} Achievement forced!" if not reverse else f"{get_emoji('no_ach')} Achievement removed!",
-        f"## {ach_data['title']}",
-        ach_data["description"],
-        f"-# for {person_id.mention}" if person_id != bot.user else "-# for the coolest bot ever",
-        accent_color=Colors.green if not reverse else Colors.red,
-    )
-    view = LayoutView(timeout=1)
-    view.add_item(embed)
-    await message.response.send_message(view=view, allowed_mentions=discord.AllowedMentions(users=True))
+    view = View(timeout=VIEW_TIMEOUT)
+    button = Button(style=ButtonStyle.red, label="Confirm")
+    button.callback = confirmed
+    view.add_item(button)
+    thing = f"Are you sure you want to swap the Cat Bot data of {user1.mention} and {user2.mention}? Please use this responsibly."
+    res = await message.response.send_message(thing, view=view, allowed_mentions=discord.AllowedMentions(users=True))
+    the_id = res.message_id
 
 
 @bot.tree.command(description="(ADMIN) Reset people")
@@ -11139,6 +11115,8 @@ async def reset(message: discord.Interaction, person_id: discord.User):
     thing = f"Are you sure you want to reset {person_id.mention}?"
     if person_id == bot.user:
         thing += " (this will make me sad)"
+    else:
+        thing += " Please use this responsibly."
     res = await message.response.send_message(thing, view=view, allowed_mentions=discord.AllowedMentions(users=True))
     the_id = res.message_id
 
