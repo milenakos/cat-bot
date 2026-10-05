@@ -11379,9 +11379,10 @@ async def owner_emojis(ctx: commands.Context) -> None:
 @bot.command(name="print")
 @is_bot_owner()
 async def owner_print(ctx: commands.Context, *, expr: str) -> None:
-    # just a simple one-line with no async (e.g. 2+3)
+    # just a simple one-line with no async (e.g. cat!print message.author)
+    message = ctx.message  # noqa: F841 (referenced by the eval below)
     try:
-        await ctx.reply(eval(expr))
+        await ctx.reply(eval(expr)[:1999])
     except Exception:
         try:
             await ctx.reply(str(traceback.format_exc())[-1900:])
