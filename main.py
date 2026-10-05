@@ -11057,10 +11057,12 @@ async def swap(message: discord.Interaction, user1: discord.User, user2: discord
             await profile1.save()
 
             # prism shit
-            async for p in Prism.filter("guild_id = $1 AND user_id = $2", message.guild.id, user1.id):
+            prisms1 = await Prism.collect("guild_id = $1 AND user_id = $2", message.guild.id, user1.id)
+            prisms2 = await Prism.collect("guild_id = $1 AND user_id = $2", message.guild.id, user2.id)
+            for p in prisms1:
                 p.user_id = user2.id
                 await p.save()
-            async for p in Prism.filter("guild_id = $1 AND user_id = $2", message.guild.id, user2.id):
+            for p in prisms2:
                 p.user_id = user1.id
                 await p.save()
 
@@ -11070,6 +11072,10 @@ async def swap(message: discord.Interaction, user1: discord.User, user2: discord
                 content="ummmm something went wrong. if data was lost, please contact us at <https://discord.gg/staring> for extra assistance.",
                 view=None,
             )
+
+    if user1.id == user2.id:
+        await message.response.send_message("pick two different people", ephemeral=True)
+        return
 
     view = View(timeout=VIEW_TIMEOUT)
     button = Button(style=ButtonStyle.red, label="Confirm")
