@@ -282,6 +282,9 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
     is_bot = member.bot
     is_pinged = message.mention_everyone
 
+    if not text and not message.attachments:
+        text = "*Component rendering unsupported.*"
+
     lines, pings = _break_text(text, body_fonts, MAX_TEXT_WIDTH)
     n_lines = len(lines)
 
