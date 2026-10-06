@@ -11068,8 +11068,8 @@ async def forcespawn(message: discord.Interaction, cat_type: str | None = None):
     await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this")
 
 
-@bot.tree.command(description="(ADMIN) Swap people's Cat Bot data")
-@discord.app_commands.default_permissions(manage_guild=True)
+@bot.tree.command(description="(HIGH ADMIN) Swap people's Cat Bot data")
+@discord.app_commands.default_permissions(administrator=True)
 @discord.app_commands.describe(user1="First person in the swap", user2="Person to swap them with")
 async def swap(message: discord.Interaction, user1: discord.User, user2: discord.User):
     async def confirmed(interaction: discord.Interaction) -> None:
@@ -11118,8 +11118,8 @@ async def swap(message: discord.Interaction, user1: discord.User, user2: discord
     the_id = res.message_id
 
 
-@bot.tree.command(description="(ADMIN) Reset people")
-@discord.app_commands.default_permissions(manage_guild=True)
+@bot.tree.command(description="(HIGH ADMIN) Reset people")
+@discord.app_commands.default_permissions(administrator=True)
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="who")
 async def reset(message: discord.Interaction, person_id: discord.User):
