@@ -248,6 +248,9 @@ GuildMessageable = discord.TextChannel | discord.Thread | discord.VoiceChannel |
 # rain shill message for footers
 rain_shill = "-# ☔ Get tons of cats /rain"
 
+# unread news notice
+news_notice = "-# You have unread news! /news"
+
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
 VIEW_TIMEOUT = 3600 * 24
@@ -4638,7 +4641,7 @@ async def gen_inventory(
 
     has_news = None
     if me_msg and (len(data.news_list) > len(user.news_state.strip()) or user.news_state.strip()[last_active_article] == "0"):
-        has_news = "You have unread news! /news"
+        has_news = news_notice
 
     uname = inv_user.name if isinstance(inv_user, discord.abc.User) else "Cat Bot User"
     username = f"## {emoji_prefix}{uname.replace('_', r'\_')}"
@@ -6120,7 +6123,7 @@ async def battlepass(message: discord.Interaction):
         embed = Container()
 
         if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
-            embed.add_item(TextDisplay("You have unread news! /news"))
+            embed.add_item(TextDisplay(news_notice))
 
         embed.add_item(TextDisplay(f"## Cattlepass Season {user.season}"))
         embed.add_item(TextDisplay(f"Season ends <t:{timestamp}:R>"))
@@ -10274,7 +10277,7 @@ async def achievements(message: discord.Interaction):
         view = LayoutView(timeout=VIEW_TIMEOUT)
         embed = Container()
         if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
-            embed.add_item(TextDisplay("-# You have unread news! /news"))
+            embed.add_item(TextDisplay(news_notice))
 
         embed.add_item(TextDisplay(f"## {get_emoji('ach')}{get_emoji(data.ach_categories[category])} {category}"))
         embed.add_item(TextDisplay(f"Total: {unlocked}/{total_achs}\nCategory: {unlocked_achs}/{len(ach_ids)}"))
@@ -10364,7 +10367,7 @@ async def achievements(message: discord.Interaction):
         view = LayoutView(timeout=VIEW_TIMEOUT)
         embed = Container()
         if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
-            embed.add_item(TextDisplay("-# You have unread news! /news"))
+            embed.add_item(TextDisplay(news_notice))
 
         embed.add_item(TextDisplay(f"## {get_emoji('ach')} Achievements ({unlocked}/{total_achs})"))
         embed.add_item(
@@ -10929,7 +10932,8 @@ async def leaderboards(
         global_user = await User.get_or_create(user_id=message.user.id)
 
         if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
-            embedVar.add_item(TextDisplay(f"-# {message.user} has unread news! /news"))
+            news_string = news_notice.replace("You have", f"{message.user} has")
+            embedVar.add_item(TextDisplay(news_string))
 
         embedVar.add_item(ActionRow(lb_select))
         if type in ("Cats", "Aura"):
@@ -11775,7 +11779,7 @@ async def start_tutorial(ctx: discord.Interaction) -> None:
 
 
 async def setup(bot2: commands.AutoShardedBot) -> None:
-    global bot, COMMAND_IDS, vote_server, rain_shill
+    global bot, COMMAND_IDS, vote_server, rain_shill, news_notice
 
     # remove old commands
     bot2.tree.clear_commands(guild=None)
@@ -11830,6 +11834,7 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
     app_commands = await bot.tree.fetch_commands()
     COMMAND_IDS = {i.name: i.id for i in app_commands}
     rain_shill = rain_shill.replace("/rain", get_command_mention("rain"))
+    news_notice = news_notice.replace("/news", get_command_mention("news"))
 
     if bot.is_ready() and not on_ready_debounce:
         await on_ready()
