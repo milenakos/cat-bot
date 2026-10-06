@@ -11117,7 +11117,7 @@ async def forcespawn(message: discord.Interaction, cat_type: str | None = None):
     ch.yet_to_spawn = 0
     await ch.save()
     await spawn_cat(message.channel.id, cat_type, True)
-    await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this")
+    await message.response.send_message("done!")
 
 
 @bot.tree.command(description="(HIGH ADMIN) Swap people's Cat Bot data")
