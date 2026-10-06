@@ -25,6 +25,7 @@ CREATE TABLE public.channel (
     yet_to_spawn bigint DEFAULT 0,
     appear character varying(4000) DEFAULT ''::character varying,
     cought character varying(4000) DEFAULT ''::character varying,
+    forcespawned boolean DEFAULT false,
     cattype character varying(20) DEFAULT ''::character varying,
     cat_rains bigint DEFAULT 0,
     rain_should_end bigint DEFAULT 0

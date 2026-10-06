@@ -1018,7 +1018,7 @@ def alnum(string: str) -> str:
     return "".join(item for item in string.lower() if item.isalnum())
 
 
-async def spawn_cat(ch_id: int, localcat: str | None = None) -> str:
+async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool = False) -> str:
     if not (channel := await Channel.get_or_none(channel_id=ch_id)):
         return "channel not setup"
     if channel.cat or channel.yet_to_spawn > time.time() + 10:
@@ -1060,6 +1060,7 @@ async def spawn_cat(ch_id: int, localcat: str | None = None) -> str:
     config.belated_catchers.pop(ch_id, None)
     channel.cat = message_is_sus.id
     channel.yet_to_spawn = 0
+    channel.forcespawned = bool(force_spawn)
     channel.cattype = localcat
     await channel.save()
     temp_spawns_storage.discard(ch_id)
@@ -2625,7 +2626,7 @@ Enjoy your goods!"""
                     except IndexError:
                         overflow = True
                         le_emoji = cattypes[-1]
-                        if server.do_rain:
+                        if not channel.forcespawned and server.do_rain:
                             if idx_shift == len(cattypes) + 1:
                                 rainboost = 1200
                             else:
@@ -10965,6 +10966,24 @@ async def leaderboards(
     await lb_handler(message, leaderboard_type, False, cat_type)
 
 
+@bot.tree.command(description="LMAO TROLLED SO HARD :JOY:")
+async def fake(message: discord.Interaction):
+    if message.user.id in fakecooldown:
+        await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
+        return
+    file = discord.File("assets/images/australian cat.png")
+    icon = get_emoji("egirlcat")
+    fakecooldown.add(message.user.id)
+    try:
+        await message.response.send_message(
+            str(icon) + ' eGirl cat hasn\'t appeared! Type "cat" to catch ratio!',
+            file=file,
+        )
+    except Exception:
+        await message.response.send_message("i dont have perms lmao here is the ach anyways", ephemeral=True)
+    await achemb(message, "trolled", "ephemeral")
+
+
 @bot.tree.command(name="setup", description="(ADMIN) Setup cat in current channel")
 @discord.app_commands.default_permissions(manage_guild=True)
 async def setup_channel(message: discord.Interaction):
@@ -11023,22 +11042,30 @@ async def forget(message: discord.Interaction):
         await message.response.send_message("your an idiot there is literally no cat setupped in this channel you stupid")
 
 
-@bot.tree.command(description="LMAO TROLLED SO HARD :JOY:")
-async def fake(message: discord.Interaction):
-    if message.user.id in fakecooldown:
-        await message.response.send_message("your phone is overheating bro chill", ephemeral=True)
+@bot.tree.command(description="(HIGH ADMIN) Force cats to appear/spawn")
+@discord.app_commands.default_permissions(administrator=True)
+@discord.app_commands.rename(cat_type="type")
+@discord.app_commands.describe(cat_type="select a cat type ok")
+@discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
+async def forcespawn(message: discord.Interaction, cat_type: str | None = None):
+    assert isinstance(message.channel, GuildMessageable)
+    if cat_type == "Random":
+        cat_type = None
+    elif cat_type and cat_type not in cattypes:
+        await message.response.send_message("bro what", ephemeral=True)
         return
-    file = discord.File("assets/images/australian cat.png")
-    icon = get_emoji("egirlcat")
-    fakecooldown.add(message.user.id)
-    try:
-        await message.response.send_message(
-            str(icon) + ' eGirl cat hasn\'t appeared! Type "cat" to catch ratio!',
-            file=file,
-        )
-    except Exception:
-        await message.response.send_message("i dont have perms lmao here is the ach anyways", ephemeral=True)
-    await achemb(message, "trolled", "ephemeral")
+
+    ch = await Channel.get_or_none(channel_id=message.channel.id)
+    if ch is None:
+        await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
+        return
+    if ch.cat:
+        await message.response.send_message("there is already a cat", ephemeral=True)
+        return
+    ch.yet_to_spawn = 0
+    await ch.save()
+    await spawn_cat(message.channel.id, cat_type, True)
+    await message.response.send_message("done!\n**Note:** you can use `/givecat` to give yourself cats, there is no need to spam this")
 
 
 @bot.tree.command(description="(ADMIN) Swap people's Cat Bot data")
