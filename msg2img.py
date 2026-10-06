@@ -281,15 +281,25 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
     color = _member_color(member)
     is_bot = member.bot
     is_pinged = message.mention_everyone
+    attachments = []
 
-    if not text and not message.attachments:
+    if not text and not attachments:
+        # extract basic components
+        for component in message.components:
+            if not text and isinstance(component, discord.TextDisplay):
+                text = component.content
+            elif not attachments and isinstance(component, discord.MediaGalleryComponent):
+                attachments = [i.media for i in component.items]
+
+    if not text and not attachments:
+        # still nothin
         text = "*Component rendering unsupported.*"
 
     lines, pings = _break_text(text, body_fonts, MAX_TEXT_WIDTH)
     n_lines = len(lines)
 
     attachment: Image.Image | None = None
-    for a in message.attachments:
+    for a in attachments:
         if not a.content_type or "image" not in a.content_type:
             continue
         raw = _fetch_image(a.url)
