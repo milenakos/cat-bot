@@ -397,6 +397,7 @@ CREATE TABLE public."user" (
     emoji character varying(255) DEFAULT ''::character varying,
     color character varying(255) DEFAULT ''::character varying,
     image character varying(255) DEFAULT ''::character varying,
+    custom_image character varying(255) DEFAULT ''::character varying,
     premium boolean DEFAULT false,
     claimed_free_rain boolean DEFAULT false,
     rain_minutes smallint DEFAULT 0,
@@ -423,7 +424,8 @@ CREATE TABLE public."user" (
     plush_badge boolean DEFAULT false,
     second_birthday_badge boolean DEFAULT false,
     tutorial_state smallint DEFAULT 0,
-    snake_dms boolean DEFAULT true
+    snake_dms boolean DEFAULT true,
+    last_inventory_view bigint DEFAULT 0
 );
 
 ALTER TABLE public."user" OWNER TO cat_bot;

@@ -34,7 +34,7 @@ MIN_SERVER_SEND = 250_000
 # channel id for db backups, private extremely recommended
 BACKUP_ID = 1060545763194707998
 
-# channel to store supporter images, can also be used for moderation purposes
+# channel to store supporter/custom cat images, can also be used for moderation purposes
 DONOR_CHANNEL_ID = 1249343008890028144
 
 # cat bot will also log all rain uses/movements here

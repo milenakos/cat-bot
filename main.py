@@ -4549,8 +4549,22 @@ async def gen_inventory(
         cat_elements.append(f"{icon} **{i}** {cat_num:,}")
 
     if user.custom and hasattr(inv_user, "name"):
-        icon = get_emoji(str(user.user_id) + "cat")
-        cat_elements.append(f"{icon} **{user.custom}** {user.custom_num:,}")
+        key = str(user.user_id) + "cat"
+        if key in emojis:
+            icon = get_emoji(key)
+        else:
+            # restore emoji
+            icon = None
+            try:
+                async with aiohttp.ClientSession() as session, session.get(user.custom_image) as response:
+                    icon = str(await bot.create_application_emoji(name=key, image=await response.read()))
+                    emojis[key] = icon
+                async with await anyio.open_file("config/emojis_cache.json", "w", encoding="utf-8") as f:
+                    await f.write(json.dumps(emojis))
+            except Exception:
+                pass
+        if icon:
+            cat_elements.append(f"{icon} **{user.custom}** {user.custom_num:,}")
 
     if len(cat_elements) == 0:
         cat_desc = f"u hav no cats {get_emoji('cat_cry')}"
@@ -4690,6 +4704,10 @@ async def gen_inventory(
 
         if debt and run_debt_cutscene:
             bot.loop.create_task(debt_cutscene(me_msg, person))
+
+    if hasattr(inv_user, "name"):
+        user.last_inventory_view = int(time.time())
+        bot.loop.create_task(user.save())
 
     return embedVar, give_achs
 
@@ -5380,16 +5398,46 @@ if config.DONOR_CHANNEL_ID:
                 if em_name in emojiss:
                     await emojiss[em_name].delete()
                 data = await image.read()
-                if image.content_type == "image/gif":
-                    new_em = await bot.create_application_emoji(name=em_name, image=data)
-                else:
+
+                if image.content_type != "image/gif":
+                    # resize
                     img = Image.open(io.BytesIO(data))
                     img.thumbnail((128, 128))
                     with io.BytesIO() as image_binary:
                         img.save(image_binary, format="PNG")
                         image_binary.seek(0)
-                        new_em = await bot.create_application_emoji(name=em_name, image=image_binary.getvalue())
+                        data = image_binary.getvalue()
+
+                # upload emoji
+                new_em = await bot.create_application_emoji(name=em_name, image=data)
                 emojiss[em_name] = new_em
+
+                # delete older emoji
+                if len(emojiss) > 1950:
+                    cut_count = len(emojiss) - 1950
+                    async for emo_user in User.limit(["user_id"], "custom_image != '' ORDER BY last_inventory_view ASC"):
+                        uid = emo_user.user_id
+                        if uid == user.user_id or f"{uid}cat" not in emojiss:
+                            continue
+                        await emojiss[f"{uid}cat"].delete()
+                        del emojiss[f"{uid}cat"]
+                        cut_count -= 1
+                        if cut_count <= 0:
+                            break
+
+                # reupload image
+                channeley = bot.get_partial_messageable(config.DONOR_CHANNEL_ID)
+                file = discord.File(data)
+                if "." in image.filename:
+                    ext = image.filename[image.filename.rfind(".") :]
+                    file.filename = "i" + ext
+                else:
+                    file.filename = "i"
+                msg = await channeley.send(file=file)
+                user.custom_image = msg.attachments[0].url
+                user.last_inventory_view = int(time.time())
+
+                # update emojis list
                 emojis = {k: str(v) for k, v in emojiss.items()}
                 try:
                     async with await anyio.open_file("config/emojis_cache.json", "w", encoding="utf-8") as f:
