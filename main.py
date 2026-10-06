@@ -2318,6 +2318,11 @@ Enjoy your goods!"""
                         var = await message.channel.fetch_message(cat_temp)
                         catchtime = var.created_at
                         catchcontents = var.content
+                        if not catchcontents:
+                            for component in var.components:
+                                if isinstance(component, discord.TextDisplay):
+                                    catchcontents = component.content
+                                    break
 
                         partial_type = None
                         for v in allowedemojis:
