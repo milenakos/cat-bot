@@ -4148,7 +4148,7 @@ async def settings(message: discord.Interaction):
             view.add_item(button)
             await interaction.response.send_message("Settings saved!", view=view, ephemeral=True)
 
-        modal = Modal(title=f"Cat Bot Settings for {message.guild.name}")
+        modal = Modal(title="Cat Bot Settings")
 
         options2 = [
             discord.CheckboxGroupOption(
