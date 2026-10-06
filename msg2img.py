@@ -281,7 +281,7 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
     color = _member_color(member)
     is_bot = member.bot
     is_pinged = message.mention_everyone
-    attachments = []
+    attachments = message.attachments
 
     if not text and not attachments:
         # extract basic components
