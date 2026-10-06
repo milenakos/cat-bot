@@ -11450,7 +11450,7 @@ async def owner_print(ctx: commands.Context, *, expr: str) -> None:
     # just a simple one-line with no async (e.g. cat!print message.author)
     message = ctx.message  # noqa: F841 (referenced by the eval below)
     try:
-        await ctx.reply(eval(expr)[:1999])
+        await ctx.reply(str(eval(expr))[:1999])
     except Exception:
         try:
             await ctx.reply(str(traceback.format_exc())[-1900:])
@@ -11535,89 +11535,6 @@ async def owner_transfer(ctx: commands.Context, *, args: str = "") -> None:
     await ctx.reply(
         f"transferred {len(changed_profiles)} {plural('profile', len(changed_profiles))} and {len(changed_prisms)} {plural('prism', len(changed_prisms))}"
     )
-
-
-@bot.command(name="undoreset")
-@is_bot_owner()
-async def owner_undoreset(ctx: commands.Context, *, args: str = "") -> None:
-    parts = args.split()
-    if len(parts) != 3:
-        await ctx.reply("usage: cat!undoreset <guild_id> <user_id> <reset_id>")
-        return
-    guild_id, user_id, reset_id = int(parts[0]), int(parts[1]), int(parts[2])
-
-    if not (from_profile := await Profile.get_or_none(guild_id=reset_id, user_id=user_id)):
-        await ctx.reply(f"no profile found for {user_id} in {reset_id}")
-        return
-
-    if to_profile := await Profile.get_or_none(guild_id=guild_id, user_id=user_id):
-        await to_profile.delete()
-
-    from_profile.guild_id = guild_id
-
-    prism_count = 0
-    async for p in Prism.filter("guild_id = $1 AND user_id = $2", reset_id, user_id):
-        await p.delete()
-        prism_count += 1
-
-    for c in cattypes:
-        # refund prisms as cats
-        from_profile[f"cat_{c}"] += prism_count
-
-    await from_profile.save()
-    await ctx.reply(f"successfully undone reset for {user_id} in {guild_id}")
-
-
-@bot.command(name="merge")
-@is_bot_owner()
-async def owner_merge(ctx: commands.Context, *, args: str = "") -> None:
-    parts = args.split()
-    if len(parts) != 3:
-        await ctx.reply("usage: cat!merge <guild_id> <from_user_id> <to_user_id>")
-        return
-    guild_id, from_user_id, to_user_id = int(parts[0]), int(parts[1]), int(parts[2])
-
-    from_profile = await Profile.get_or_create(guild_id=guild_id, user_id=from_user_id)
-    to_profile = await Profile.get_or_create(guild_id=guild_id, user_id=to_user_id)
-
-    # prisms
-    prism_count = 0
-    async for p in Prism.filter("guild_id = $1 AND user_id = $2", guild_id, from_user_id):
-        p.user_id = to_user_id
-        await p.save()
-        prism_count += 1
-
-    # cats
-    cat_count = 0
-    for i in cattypes:
-        to_profile[f"cat_{i}"] += from_profile[f"cat_{i}"]
-        cat_count += from_profile[f"cat_{i}"]
-        from_profile[f"cat_{i}"] = 0
-
-    # achs
-    ach_count = 0
-    for ach in ach_list:
-        if not from_profile[ach] or to_profile[ach]:
-            continue
-        to_profile[ach] = True
-        from_profile[ach] = False
-        ach_count += 1
-
-    await to_profile.save()
-    await from_profile.save()
-
-    await ctx.reply(f"successfully merged {from_user_id} into {to_user_id} in {guild_id} ({prism_count:,} prisms, {cat_count:,} cats, {ach_count:,} achs)")
-
-
-@bot.command(name="news")
-@is_bot_owner()
-async def owner_news(ctx: commands.Context, *, announcement: str) -> None:
-    async for i in Channel.all():
-        try:
-            channeley = bot.get_partial_messageable(int(i.channel_id))
-            await channeley.send(announcement)
-        except Exception:
-            pass
 
 
 async def recieve_vote(request: web.Request) -> web.Response:
