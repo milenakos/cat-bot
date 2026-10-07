@@ -10328,9 +10328,10 @@ async def achievements(message: discord.Interaction):
             embed.add_item(TextDisplay(news_notice))
 
         embed.add_item(TextDisplay(f"## {get_emoji('ach')}{get_emoji(data.ach_categories[category])} {category}"))
-        embed.add_item(TextDisplay(f"Total: {unlocked}/{total_achs}\nCategory: {unlocked_achs}/{len(ach_ids)}"))
         if category == "Museum":
             embed.add_item(TextDisplay("Achievements in this category are no longer obtainable, and don't count towards anything."))
+        else:
+            embed.add_item(TextDisplay(f"Total: {unlocked}/{total_achs}\nCategory: {unlocked_achs}/{len(ach_ids)}"))
 
         # pass 1
         depths = {category: []}
