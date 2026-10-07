@@ -2521,8 +2521,7 @@ Enjoy your goods!"""
                         triple_chance = 67
                     none_chance = max(none_chance, 0)
                     if bonus_chance_increase > 0:
-                        bonus_chance_increase = min(2, bonus_chance_increase * 0.01 + 1)
-                        bonus_chance *= bonus_chance_increase
+                        bonus_chance *= 1 + (bonus_chance_increase * 0.01)
 
                     if random.random() * 100 < rain_chance and server.do_rain:
                         channel.cat_rains += 10
