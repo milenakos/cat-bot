@@ -5361,7 +5361,7 @@ if config.DONOR_CHANNEL_ID:
         image="Static/animated GIF, PNG, JPEG, WEBP, AVIF below 256 KB. Static images will be auto-compressed.",
         amount="The amount of your custom cat you want.",
     )
-    async def customcat(message: discord.Interaction, name: str, image: discord.Attachment | None = None, amount: int | None = None):
+    async def customcat(message: discord.Interaction, name: str | None = None, image: discord.Attachment | None = None, amount: int | None = None):
         global emojis
         assert message.guild is not None
         user = await User.get_or_create(user_id=message.user.id)
@@ -5427,7 +5427,7 @@ if config.DONOR_CHANNEL_ID:
 
                 # reupload image
                 channeley = bot.get_partial_messageable(config.DONOR_CHANNEL_ID)
-                file = discord.File(data)
+                file = discord.File(io.BytesIO(data))
                 if "." in image.filename:
                     ext = image.filename[image.filename.rfind(".") :]
                     file.filename = "i" + ext
