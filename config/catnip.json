@@ -2,9 +2,9 @@
   "perks": [
     {"id": "double", "exclusive": false, "name": "Lucky Catcher","desc":"**percent%** chance of **doubling** cats on catch.", "weight": 22.5, "values": [5, 7.5, 12.5, 25, 37.5]},
     {"id": "triple_none", "exclusive": false, "name": "Gambling Catcher", "desc":"**percent%** chance of **tripling** cats on catch, but **triple_none**% chance of getting **no** cats on catch.", "weight": 10, "values": [3, 4.5, 7.5, 15, 22.5]},
-    {"id": "wooden_pack","exclusive": false, "name": "Pack Catcher - Wooden", "desc":"**percent%** chance of getting a **wooden pack** on catch.", "weight": 2.5, "values": [1.5, 2.25, 3.75, 7.5, 11.25]},
+    {"id": "wooden_pack","exclusive": false, "name": "Pack Catcher - Wooden", "desc":"**percent%** chance of getting a **wooden pack** on catch.", "weight": 2.5, "values": [1.4, 2.1, 3.5, 7, 10.5]},
     {"id": "stone_pack", "exclusive": false, "name": "Pack Catcher - Stone", "desc":"**percent%** chance of getting a **stone pack** on catch.", "weight": 2.5, "values": [1, 1.5, 2.5, 5, 7.5]},
-    {"id": "bronze_pack", "exclusive": false, "name": "Pack Catcher - Bronze", "desc":"**percent%** chance of getting a **bronze pack** on catch.", "weight": 2.5, "values": [0.75, 1.125, 1.875, 3.75, 5.625]},
+    {"id": "bronze_pack", "exclusive": false, "name": "Pack Catcher - Bronze", "desc":"**percent%** chance of getting a **bronze pack** on catch.", "weight": 2.5, "values": [0.77, 1.155, 1.925, 3.85, 5.775]},
     {"id": "silver_pack", "exclusive": false, "name": "Pack Catcher - Silver", "desc":"**percent%** chance of getting a **silver pack** on catch.", "weight": 2.5, "values": [0.5, 0.75, 1.25, 2.5, 3.75]},
     {"id": "gold_pack", "exclusive": false, "name": "Pack Catcher - Gold", "desc":"**percent%** chance of getting a **gold pack** on catch.", "weight": 2.5, "values": [0.25, 0.375, 0.625, 1.25, 1.875]},
     {"id": "platinum_pack", "exclusive": false, "name": "Pack Catcher - Platinum", "desc":"**percent%** chance of getting a **platinum pack** on catch.", "weight": 2.5, "values": [0.125, 0.1875, 0.3125, 0.625, 0.9375]},
