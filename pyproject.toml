@@ -1,0 +1,9 @@
+[tool.ruff]
+line-length = 160
+
+[tool.ruff.lint]
+extend-select = ["E501"]
+ignore = ["BLE001", "S110"]
+
+[tool.pyright]
+typeCheckingMode = "standard"
