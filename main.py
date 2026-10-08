@@ -361,6 +361,23 @@ async def fetch_dm_channel(user: User) -> discord.abc.Messageable:
         return person.dm_channel
 
 
+async def is_rain_active(channel_id: int) -> bool:
+    try:
+        channel = await Channel.get_or_none(channel_id=channel_id)
+        return bool(channel and channel.cat_rains > 0)
+    except Exception:
+        return False
+
+
+async def try_dm(user_id: int, *args, **kwargs) -> discord.Message | None:
+    try:
+        global_user = await User.get_or_create(user_id=user_id)
+        dm_channel = await fetch_dm_channel(global_user)
+        return await dm_channel.send(*args, **kwargs)
+    except Exception:
+        return None
+
+
 async def check_channel_setupped(guild: Server, channel: GuildMessageable) -> bool:
     if not guild.only_setupped_channels:
         return True
@@ -472,15 +489,26 @@ async def achemb(
     server = await Server.get_or_create(server_id=message.guild.id)
     assert isinstance(message.channel, GuildMessageable)
     mute = not await check_channel_setupped(server, message.channel)
+    # during cat rains, channel-visible achievement embeds get dmed instead to ratelimits
+    raining = send_type in ("reply", "send") and isinstance(message, discord.Message) and await is_rain_active(message.channel.id)
+    dm_sent = False
     try:
         if send_type == "ephemeral":
             assert isinstance(message, discord.Interaction)
             result = await message.followup.send(view=view, ephemeral=True, wait=True)
         if send_type == "reply":
             assert isinstance(message, discord.Message)
-            result = await message.reply(view=view)
+            if raining:
+                result = await try_dm(author, view=view)
+                dm_sent = result is not None
+            if result is None:
+                result = await message.reply(view=view)
         if send_type == "send":
-            result = await message.channel.send(view=view)
+            if raining:
+                result = await try_dm(author, view=view)
+                dm_sent = result is not None
+            if result is None:
+                result = await message.channel.send(view=view)
         if send_type == "followup":
             assert isinstance(message, discord.Interaction)
             result = await message.followup.send(view=view, ephemeral=mute, wait=True)
@@ -494,9 +522,9 @@ async def achemb(
 
     if result:
         assert not isinstance(result, discord.InteractionCallbackActivityInstance)
-        if mute and send_type in ["reply", "send"]:
+        if mute and send_type in ["reply", "send"] and not dm_sent:
             await result.delete(delay=5)
-        elif ach_id == "curious":
+        elif ach_id == "curious" and not dm_sent:
             await result.delete(delay=15)
         elif view2:
             await asyncio.sleep(2)
@@ -811,6 +839,8 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         for embed in level_complete_embeds:
             view.add_item(embed)
         view.add_item(embed_progress)
+        if await is_rain_active(message.channel.id) and await try_dm(user.user_id, view=view):
+            return user
         await message.channel.send(view=view)
 
     return user
@@ -9263,6 +9293,7 @@ async def bounty(message: discord.Message, user: Profile, cattype: str) -> None:
     if user.hibernation or user.catnip_active < time.time():
         return
 
+    raining = await is_rain_active(message.channel.id)
     newly_completed_titles = []
     completed_count = 0
 
@@ -9297,7 +9328,8 @@ async def bounty(message: discord.Message, user: Profile, cattype: str) -> None:
                 embed = discord.Embed(title=f"✅ {bonus_title}", color=Colors.green, description=description).set_author(
                     name="Mafia Level " + str(user.catnip_level)
                 )
-                await message.channel.send(f"<@{user.user_id}>", embed=embed)
+                if not (raining and await try_dm(user.user_id, content=f"<@{user.user_id}>", embed=embed)):
+                    await message.channel.send(f"<@{user.user_id}>", embed=embed)
                 user.reroll = False
                 user.reroll_level = 0
             await user.save()
@@ -9319,7 +9351,8 @@ async def bounty(message: discord.Message, user: Profile, cattype: str) -> None:
             await achemb(message, "bounty_hunter", "reply")
         if user.bounties_complete >= 100:
             await achemb(message, "bounty_lord", "reply")
-        await message.channel.send(f"<@{user.user_id}>", embed=embed)
+        if not (raining and await try_dm(user.user_id, content=f"<@{user.user_id}>", embed=embed)):
+            await message.channel.send(f"<@{user.user_id}>", embed=embed)
         await user.save()
 
 
