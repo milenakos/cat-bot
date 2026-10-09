@@ -4938,10 +4938,6 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
 
     async def render_inventory(interaction: discord.Interaction, first: bool = False) -> None:
         assert message.guild is not None
-        if interaction.user.id != message.user.id:
-            await do_funny(interaction)
-            return
-
         embed_view, give_achs = await gen_inventory(message.guild.id, person_id, message if person_id == message.user else None, run_debt_cutscene=first)
         embed_view.add_item(TextDisplay(rain_shill))
         view = LayoutView(timeout=VIEW_TIMEOUT)
@@ -4967,8 +4963,9 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
         else:
             await interaction.response.edit_message(view=view)
 
-        for ach in give_achs:
-            await achemb(interaction, ach, "followup")
+        if interaction.user.id == message.user.id:
+            for ach in give_achs:
+                await achemb(interaction, ach, "followup")
 
     await render_inventory(message, True)
 
