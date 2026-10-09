@@ -5857,9 +5857,10 @@ async def packs(message: discord.Interaction):
 
         await interaction.response.send_modal(modal)
 
-    def gen_buttons(user: Profile) -> tuple[list[ActionRow], bool, int]:
+    def gen_buttons(user: Profile) -> tuple[list[ActionRow], bool, int, bool]:
         buttons = []
         has_special = False
+        has_pumpkin = False
         total_packs = 0
         for pack in data.pack_data:
             pack_name = pack["name"]
@@ -5878,6 +5879,7 @@ async def packs(message: discord.Interaction):
             button.callback = open_pack
             buttons.append(button)
             has_special |= pack["special"]
+            has_pumpkin |= pack_name == "Pumpkin"
         if total_packs == 0:
             buttons.append(Button(label="No packs left!", disabled=True))
         if total_packs >= 5:
@@ -5889,7 +5891,7 @@ async def packs(message: discord.Interaction):
         for i in range(0, len(buttons), 4):
             rows.append(ActionRow(*buttons[i : i + 4]))
 
-        return rows, has_special, total_packs
+        return rows, has_special, total_packs, has_pumpkin
 
     def get_pack_rewards(level: int, is_single: bool = True) -> tuple[str, int, int, str | list[str]]:
         # returns cat_type, cat_amount, upgrades, verbal_output
@@ -6012,7 +6014,7 @@ async def packs(message: discord.Interaction):
         await asyncio.sleep(1)
 
         assert last_container is not None
-        buttons, _, _ = gen_buttons(user)
+        buttons, _, _, _ = gen_buttons(user)
         view = LayoutView(timeout=VIEW_TIMEOUT)
         last_container.add_item(Separator())
         for i in buttons:
@@ -6052,7 +6054,7 @@ async def packs(message: discord.Interaction):
         await interaction.response.edit_message(view=view)
 
         await asyncio.sleep(1)
-        buttons, _, _ = gen_buttons(user)
+        buttons, _, _, _ = gen_buttons(user)
         view = LayoutView(timeout=VIEW_TIMEOUT)
         embed.add_item(Separator())
         for i in buttons:
@@ -6090,7 +6092,7 @@ async def packs(message: discord.Interaction):
 
     async def gen_main() -> LayoutView:
         view = LayoutView(timeout=VIEW_TIMEOUT)
-        buttons, has_special, total_packs = gen_buttons(user)
+        buttons, has_special, total_packs, has_pumpkin = gen_buttons(user)
         pack_emojis = "".join(get_emoji(i["name"].lower() + "pack") for i in data.pack_data if not i["special"])
         embed = Container(
             Section(
@@ -6108,6 +6110,12 @@ async def packs(message: discord.Interaction):
             embed.add_item(
                 TextDisplay(
                     "**Special Packs** are packs highlighted in green. Their upgrade chance is 70% instead of 30% and they start below Wooden.",
+                )
+            )
+        if has_pumpkin:
+            embed.add_item(
+                TextDisplay(
+                    "**Pumpkin Packs** are not yet accessible. You will be able to open them once the Halloween event starts.",
                 )
             )
 
