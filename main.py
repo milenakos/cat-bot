@@ -611,6 +611,9 @@ async def refresh_quests(user: Profile) -> None:
         if server.legacy_catching and correct_weekly == "bonus":
             # i do NOT gaf of ensuring there wont be a duplicate "catch" weekly
             correct_weekly = "catch"
+            if correct_weekly == user.weekly_quest:
+                # already set, no need to update
+                return
         user.weekly_progress = 0
         user.weekly_cattypes = []
         user.weekly_quest = correct_weekly
