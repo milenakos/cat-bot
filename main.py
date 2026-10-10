@@ -6778,6 +6778,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
     players = [message.user, person]
     random.shuffle(players)
     bot_is_playing = person == bot.user
+    bot_turn_in_progress = False
     current_turn = 0
 
     def check_win(board: list[Literal["❌", "⭕"] | None]) -> list[int]:
@@ -6859,7 +6860,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
         return best_move
 
     async def finish_turn(interaction: discord.Interaction) -> None:
-        nonlocal do_edit, current_turn
+        nonlocal do_edit, current_turn, bot_turn_in_progress
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
         wins = check_win(board)
@@ -6918,13 +6919,22 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
             await interaction.response.send_message(view=view)
             do_edit = True
 
-        if bot_is_playing and players[current_turn].bot and wins == [-1] and not tie:
+        if not bot_is_playing or not players[current_turn].bot or wins != [-1] or tie or bot_turn_in_progress:
+            return
+
+        bot_turn_in_progress = True
+        try:
             await asyncio.sleep(1)
+            if not players[current_turn].bot or check_win(board) != [-1]:
+                return
             best_move = get_best_move(board)
-            if best_move is not None:
-                board[best_move] = "❌" if current_turn == 0 else "⭕"
-                current_turn = 1 - current_turn
-                await finish_turn(interaction)
+            if best_move is None:
+                return
+            board[best_move] = "❌" if current_turn == 0 else "⭕"
+            current_turn = 1 - current_turn
+        finally:
+            bot_turn_in_progress = False
+        await finish_turn(interaction)
 
     async def play(interaction: discord.Interaction) -> None:
         nonlocal current_turn
