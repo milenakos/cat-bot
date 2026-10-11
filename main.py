@@ -567,7 +567,7 @@ async def generate_quest(user: Profile, quest_type: str) -> None:
 
 async def refresh_quests(user: Profile) -> None:
     await user.refresh_from_db()
-    start_date = datetime.datetime(2024, 12, 1, tzinfo=datetime.timezone.utc)
+    start_date = datetime.datetime(2024, 12, 1, tzinfo=datetime.UTC)
     current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
     full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
     if current_date.day < start_date.day:
@@ -603,7 +603,7 @@ async def refresh_quests(user: Profile) -> None:
     # randomize weeklies seeded by guild_id
     weeklies = random.Random(user.guild_id).sample(list(config.battle["quests"]["weekly"].keys()), 4)
     weeklies.append("")
-    month_start = datetime.datetime(current_date.year, current_date.month, 1, tzinfo=datetime.timezone.utc) - datetime.timedelta(hours=4)
+    month_start = datetime.datetime(current_date.year, current_date.month, 1, tzinfo=datetime.UTC) - datetime.timedelta(hours=4)
     week_number = int((time.time() - int(month_start.timestamp())) // 604800)
     correct_weekly = weeklies[week_number]
     if correct_weekly != user.weekly_quest:
@@ -700,7 +700,7 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
 
         # Weekdays 0 Mon - 6 Sun
         # double vote xp rewards if Friday, Saturday or Sunday
-        voted_at = datetime.datetime.fromtimestamp(global_user.vote_time_topgg, tz=datetime.timezone.utc)
+        voted_at = datetime.datetime.fromtimestamp(global_user.vote_time_topgg, tz=datetime.UTC)
         if voted_at.weekday() >= 4:
             user.vote_reward *= 2
 
@@ -1852,7 +1852,7 @@ async def belated_window_task(
     if full_event := belated_pre.get("full_event"):
         try:
             await asyncio.wait_for(full_event.wait(), timeout=window)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             pass
     else:
         await asyncio.sleep(window)
@@ -6194,9 +6194,9 @@ async def battlepass(message: discord.Interaction):
         now = discord.utils.utcnow() + datetime.timedelta(hours=4)
 
         if now.month == 12:
-            next_month = datetime.datetime(now.year + 1, 1, 1, tzinfo=datetime.timezone.utc)
+            next_month = datetime.datetime(now.year + 1, 1, 1, tzinfo=datetime.UTC)
         else:
-            next_month = datetime.datetime(now.year, now.month + 1, 1, tzinfo=datetime.timezone.utc)
+            next_month = datetime.datetime(now.year, now.month + 1, 1, tzinfo=datetime.UTC)
 
         next_month -= datetime.timedelta(hours=4)
 
@@ -6217,7 +6217,7 @@ async def battlepass(message: discord.Interaction):
         # weekly
         if user.weekly_quest:
             weekly_quest = config.battle["quests"]["weekly"][user.weekly_quest]
-            month_start = int((datetime.datetime(now.year, now.month, 1, tzinfo=datetime.timezone.utc) - datetime.timedelta(hours=4)).timestamp())
+            month_start = int((datetime.datetime(now.year, now.month, 1, tzinfo=datetime.UTC) - datetime.timedelta(hours=4)).timestamp())
             refresh_time = month_start + 604800 * (int((time.time() - month_start) // 604800) + 1)
             description = f"__Weekly Quest__ *(refreshes <t:{refresh_time}:R>)*\n"
             if weekly_quest["progress"] > user.weekly_progress:
@@ -8131,7 +8131,7 @@ async def brew(message: discord.Interaction):
 
 
 def get_current_week() -> int:
-    epoch_monday = datetime.datetime(1970, 1, 5, tzinfo=datetime.timezone.utc).date()
+    epoch_monday = datetime.datetime(1970, 1, 5, tzinfo=datetime.UTC).date()
     today = discord.utils.utcnow().date()
     return (today - epoch_monday).days // 7
 
@@ -8142,7 +8142,7 @@ def get_timestamp_of_next_week() -> int:
     if days_until_next_monday == 0:
         days_until_next_monday = 7
     next_monday_date = today + datetime.timedelta(days=days_until_next_monday)
-    next_monday_dt = datetime.datetime(next_monday_date.year, next_monday_date.month, next_monday_date.day, tzinfo=datetime.timezone.utc)
+    next_monday_dt = datetime.datetime(next_monday_date.year, next_monday_date.month, next_monday_date.day, tzinfo=datetime.UTC)
     return int(next_monday_dt.timestamp())
 
 
@@ -10797,7 +10797,7 @@ async def leaderboards(
                     ahead = "(entry.timeslow > target.timeslow) OR (entry.timeslow = target.timeslow AND entry.user_id < target.user_id)"
                     final_value = "timeslow"
                 case "Cattlepass":
-                    start_date = datetime.datetime(2024, 12, 1, tzinfo=datetime.timezone.utc)
+                    start_date = datetime.datetime(2024, 12, 1, tzinfo=datetime.UTC)
                     current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
                     full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
                     bp_season = config.battle["seasons"][str(full_months_passed)]
