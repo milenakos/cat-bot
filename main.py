@@ -10605,7 +10605,7 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
         await _get_pool().execute(
             f"""
             WITH stats AS (
-                SELECT SUM({column}) FILTER (WHERE {column} > 0) AS total, MAX({column}) AS maximum
+                SELECT SUM({column}) FILTER (WHERE {column} > 0) AS total, MAX({column}) FILTER (WHERE {column} > 0) AS maximum
                 FROM profile
                 WHERE guild_id = $1
             )
@@ -10619,7 +10619,8 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
         return
 
     stats = ", ".join(
-        f'SUM("cat_{cat}") FILTER (WHERE "cat_{cat}" > 0) AS total_{idx}, MAX("cat_{cat}") AS maximum_{idx}' for idx, cat in enumerate(cattypes, start=1)
+        f'SUM("cat_{cat}") FILTER (WHERE "cat_{cat}" > 0) AS total_{idx}, MAX("cat_{cat}") FILTER (WHERE "cat_{cat}" > 0) AS maximum_{idx}'
+        for idx, cat in enumerate(cattypes, start=1)
     )
     auras = ", ".join(aura_case(idx, cat, f"stats.total_{idx}", f"stats.maximum_{idx}") for idx, cat in enumerate(cattypes, start=1))
     await _get_pool().execute(
