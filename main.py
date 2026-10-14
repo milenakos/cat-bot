@@ -4958,7 +4958,7 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
         assert message.guild is not None
         embed_view, give_achs = await gen_inventory(message.guild.id, person_id, message if person_id == message.user else None, run_debt_cutscene=first)
 
-        if person.toggle_reactions:
+        if person.reactions_enabled:
             reaction_row = ActionRow()
             for profile_emoji in data.profile_emojis:
                 btn = Button(
