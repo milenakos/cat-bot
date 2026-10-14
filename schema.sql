@@ -350,7 +350,8 @@ CREATE TABLE public.profile (
     failed boolean DEFAULT false,
     tiktoker boolean DEFAULT false,
     sharing_enabled boolean DEFAULT false,
-    pack_pumpkin integer DEFAULT 0
+    pack_pumpkin integer DEFAULT 0,
+    reactions_enabled boolean DEFAULT true
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;
@@ -428,7 +429,6 @@ CREATE TABLE public."user" (
     last_inventory_view bigint DEFAULT 0,
     reaction_staring_cat integer DEFAULT 0,
     reaction_silence integer DEFAULT 0,
-    reaction_aysm integer DEFAULT 0,
     reaction_insane integer DEFAULT 0,
     reaction_emoji_13 integer DEFAULT 0
 );

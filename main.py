@@ -4886,13 +4886,22 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
                 content=f"Compact inventory is now {'enabled' if person.compact_inventory else 'disabled'}.", embed=None, view=None
             )
 
+        async def toggle_reactions(interaction: discord.Interaction) -> None:
+            person.reactions_enabled = not person.reactions_enabled
+            await person.save()
+            await interaction.response.edit_message(
+                content=f"Reactions are now {'enabled' if person.reactions_enabled else 'disabled'}.", embed=None, view=None
+            )
+
         highlights = get_highlights(person, stats)
         highlighted_ach = person.highlighted_ach.strip() if person.highlighted_ach else None
 
         view = View(timeout=VIEW_TIMEOUT)
         button = Button(style=discord.ButtonStyle.blurple, label="Toggle Compact Inventory")
         button.callback = toggle_compact_inventory
-        view.add_item(button)
+        button2 = Button(style=discord.ButtonStyle.blurple, label="Toggle Reactions")
+        button2.callback = toggle_reactions
+        view.add_item(ActionRow(button, button2))
         view.add_item(line_select())
 
         suffix = f"""__Highlighted Stats__
@@ -4949,17 +4958,18 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
         assert message.guild is not None
         embed_view, give_achs = await gen_inventory(message.guild.id, person_id, message if person_id == message.user else None, run_debt_cutscene=first)
 
-        reaction_row = ActionRow()
-        for profile_emoji in data.profile_emojis:
-            btn = Button(
-                emoji=get_emoji(profile_emoji),
-                label=view_user[f"reaction_{profile_emoji}"],
-                style=ButtonStyle.gray,
-                custom_id=profile_emoji,
-            )
-            btn.callback = add_reaction
-            reaction_row.add_item(btn)
-        embed_view.add_item(reaction_row)
+        if person.toggle_reactions:
+            reaction_row = ActionRow()
+            for profile_emoji in data.profile_emojis:
+                btn = Button(
+                    emoji=get_emoji(profile_emoji),
+                    label=view_user[f"reaction_{profile_emoji}"],
+                    style=ButtonStyle.gray,
+                    custom_id=profile_emoji,
+                )
+                btn.callback = add_reaction
+                reaction_row.add_item(btn)
+            embed_view.add_item(reaction_row)
 
         embed_view.add_item(TextDisplay(rain_shill))
         view = LayoutView(timeout=VIEW_TIMEOUT)
