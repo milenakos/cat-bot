@@ -148,6 +148,7 @@ class DataWrapper:
     nuke_confirmation_lines: list[str]
     fishing_upgrades: dict[str, list[FishingEntry]]
     ach_categories: dict[str, str]
+    profile_emojis: list[str]
 
     def __init__(self, data):
         self.data = data
@@ -4936,9 +4937,30 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
         else:
             await interaction.response.edit_message(embed=embed, view=view)
 
+    async def add_reaction(interaction: discord.Interaction) -> None:
+        assert interaction.custom_id is not None
+        await view_user.refresh_from_db()
+        reaction = interaction.custom_id
+        view_user[f"reaction_{reaction}"] += 1
+        await view_user.save()
+        await render_inventory(interaction)
+
     async def render_inventory(interaction: discord.Interaction, first: bool = False) -> None:
         assert message.guild is not None
         embed_view, give_achs = await gen_inventory(message.guild.id, person_id, message if person_id == message.user else None, run_debt_cutscene=first)
+
+        reaction_row = ActionRow()
+        for profile_emoji in data.profile_emojis:
+            btn = Button(
+                emoji=get_emoji(profile_emoji),
+                label=view_user[f"reaction_{profile_emoji}"],
+                style=ButtonStyle.gray,
+                custom_id=profile_emoji,
+            )
+            btn.callback = add_reaction
+            reaction_row.add_item(btn)
+        embed_view.add_item(reaction_row)
+
         embed_view.add_item(TextDisplay(rain_shill))
         view = LayoutView(timeout=VIEW_TIMEOUT)
         view.add_item(embed_view)
