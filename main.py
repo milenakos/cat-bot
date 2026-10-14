@@ -4908,11 +4908,9 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
         suffix = f"""__Highlighted Stats__
 {"\n".join(highlights)}
 
-__Highlighted Ach__
-{"None" if not highlighted_ach or highlighted_ach not in ach_list else ach_list[highlighted_ach]["title"]}
-
-__Compact Inventory__
-{"✅ True" if person.compact_inventory else "❌ False"}"""
+__Highlighted Ach__: {get_emoji("ach")} {"None" if not highlighted_ach or highlighted_ach not in ach_list else ach_list[highlighted_ach]["title"]}
+__Compact Inventory__: {"✅ True" if person.compact_inventory else "❌ False"}
+__Reactions Enabled__: {"✅ True" if person.reactions_enabled else "❌ False"}"""
 
         if user.premium:
             if not user.color:
