@@ -4901,7 +4901,8 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
         button.callback = toggle_compact_inventory
         button2 = Button(style=discord.ButtonStyle.blurple, label="Toggle Reactions")
         button2.callback = toggle_reactions
-        view.add_item(ActionRow(button, button2))
+        view.add_item(button)
+        view.add_item(button2)
         view.add_item(line_select())
 
         suffix = f"""__Highlighted Stats__
