@@ -3290,7 +3290,7 @@ async def hub(message: discord.Interaction):
     # bakery section
     silver_done = "✅" if user.last_bakegg_send == get_current_week() else "❌"
     chef_done = "✅" if user.last_bakegg_get == get_current_week() else "❌"
-    refresh_word = "refresh" if silver_done == "✅" and chef_done == "✅" else "*end*"
+    refresh_word = "refresh" if silver_done == "✅" and chef_done == "✅" else "**end**"
     bakery_section = Section(
         f"""🧑‍🍳 *Rewards* ({refresh_word} <t:{get_timestamp_of_next_week()}:R>):
 {silver_done} {get_emoji("bakegg_egg")}{get_emoji("silverpack")}; {chef_done} {get_emoji("chefpack")}""",
