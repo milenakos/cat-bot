@@ -3283,15 +3283,16 @@ async def hub(message: discord.Interaction):
     vote_streak_text = "**can vote!**" if next_vote_time <= time.time() else f"next vote <t:{next_vote_time}:R>"
     vote_streak_section = Section(
         f"""🔥 {user.vote_streak:,}x streak, {vote_streak_text}
-Rewards: {get_emoji("diamondpack")}{get_emoji("platinumpack")}{get_emoji("goldpack")}""",
+*Rewards:* {get_emoji("diamondpack")}{get_emoji("platinumpack")}{get_emoji("goldpack")}""",
         Button(label="Vote", emoji=get_emoji("topgg"), url="https://top.gg/bot/966695034340663367/vote"),
     )
 
     # bakery section
     silver_done = "✅" if user.last_bakegg_send == get_current_week() else "❌"
     chef_done = "✅" if user.last_bakegg_get == get_current_week() else "❌"
+    refresh_word = "refresh" if silver_done == "✅" and chef_done == "✅" else "*end*"
     bakery_section = Section(
-        f"""🧑‍🍳 *Rewards* (refresh <t:{get_timestamp_of_next_week()}:R>):
+        f"""🧑‍🍳 *Rewards* ({refresh_word} <t:{get_timestamp_of_next_week()}:R>):
 {silver_done} {get_emoji("bakegg_egg")}{get_emoji("silverpack")}; {chef_done} {get_emoji("chefpack")}""",
         make_command_button("Bakery", "🧑‍🍳", bakery.callback),
     )
