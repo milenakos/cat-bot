@@ -3067,8 +3067,9 @@ async def on_guild_update(before: discord.Guild, after: discord.Guild) -> None:
 # 6 - /leaderboards done, fourth tutorial page shown, /achievements required
 # 7 - /achievements done, fifth tutorial page shown, /battlepass required
 # 8 - /battlepass done, sixth tutorial page shown, pack open required
-# 9 - pack open done, final page shown, rain given
-# 10 - tutorial complete
+# 9 - pack open done, seventh page shown, rain given, /hub required
+# 10 - last page shown
+# 11 - tutorial complete
 async def get_tutorial_view(user_id: int) -> LayoutView:
     user = await User.get_or_create(user_id=user_id)
     if user.tutorial_state == 0:
@@ -3148,25 +3149,33 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
             )
             view.add_item(container)
         case 9:
-            user.tutorial_state = 10
             if not user.claimed_free_rain:
                 user.claimed_free_rain = True
                 user.rain_minutes += 2
             container = Container(
-                "Nice! One last thing - catching gets __a lot more fun__ if you use the various *power-ups* inside Cat Bot!",
+                f"Nice! Let's finish by running {get_command_mention('hub')}!",
+                "===",
+                f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
+            )
+            view.add_item(container)
+        case 10:
+            user.tutorial_state = 11
+            container = Container(
+                f"**Cat Bot Hub**, together with {get_emoji('ach')} *Achievements*, is your best friend for getting to know Cat Bot features.",
+                "One last thing - catching gets __a lot more fun__ if you use the various *power-ups* inside Cat Bot!",
                 (
                     f"These include {get_emoji('prism')} {get_command_mention('prism')}s, {get_emoji('catnip')} {get_command_mention('catnip')}, "
                     f"💫 {get_command_mention('bless')}ings, and ☔ {get_command_mention('rain')}."
                 ),
                 (
                     "Speaking of the last one, for completing the tutorial you get **+2 free ☔ Rain Minutes**! "
-                    f"You can use them via {get_command_mention('rain')}."
+                    f'You can use them via {get_command_mention("rain")} or by clicking "☔ Rain" in the Hub.'
                 ),
                 "===",
                 '-# ✅ Tutorial Complete! Go catch cats, do some achievements like saying "i read help", or discover the power-ups! Have fun!',
             )
             view.add_item(container)
-        case 10:
+        case 11:
             button = Button(label="Restart Tutorial")
             button.callback = restart_tutorial
             view.add_item(
@@ -3344,6 +3353,11 @@ async def hub(message: discord.Interaction):
     view.add_item(ActionRow(make_command_button(news_name, "📰", news.callback)))
     await message.response.send_message(view=view)
     await achemb(message, "cathub", "followup")
+
+    if user.tutorial_state == 9:
+        user.tutorial_state = 10
+        await user.save()
+        await message.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
 
 @bot.tree.command(description="Roll the credits")
