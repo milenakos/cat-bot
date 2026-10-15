@@ -3198,6 +3198,8 @@ async def hub(message: discord.Interaction):
     assert message.guild is not None
     profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
     user = await User.get_or_create(user_id=message.user.id)
+    await refresh_quests(profile)
+    await profile.refresh_from_db()
     stats = await gen_stats(profile, "")
 
     inv_buttons = ActionRow()
@@ -3230,7 +3232,7 @@ async def hub(message: discord.Interaction):
         inv_buttons.add_item(make_command_button(f"Prisms ({prism_count:,})", get_emoji("prism"), prism.callback, message.user))
     if user.rain_minutes or profile.rain_minutes:
         bonus_amount = "" if profile.rain_minutes == 0 else f"+{profile.rain_minutes:,}"
-        inv_buttons.add_item(make_command_button(f"Rain ({user.rain_minutes:,}{bonus_amount})", "☔", rain.callback))
+        inv_buttons.add_item(make_command_button(f"Rain ({user.rain_minutes:,}{bonus_amount})", "☔", rain.callback, None))
     if profile.scratchcards:
         inv_buttons.add_item(make_command_button(f"Scratchcards ({profile.scratchcards:,})", "🍀", scratch.callback))
 
@@ -3257,12 +3259,15 @@ async def hub(message: discord.Interaction):
     else:
         quest_line = f"Next quest <t:{min(min(quest_times) + 3600 * 12, timestamp)}:R>"
 
-    month_start = int((datetime.datetime(now.year, now.month, 1, tzinfo=datetime.UTC) - datetime.timedelta(hours=4)).timestamp())
-    refresh_time = month_start + 604800 * (int((time.time() - month_start) // 604800) + 1)
-    if config.battle["quests"]["weekly"][profile.weekly_quest]["progress"] < profile.weekly_progress:
-        weekly_line = f"✅ **Weekly Quest** (next <t:{refresh_time}:R>)"
+    if profile.weekly_quest:
+        month_start = int((datetime.datetime(now.year, now.month, 1, tzinfo=datetime.UTC) - datetime.timedelta(hours=4)).timestamp())
+        refresh_time = month_start + 604800 * (int((time.time() - month_start) // 604800) + 1)
+        if config.battle["quests"]["weekly"][profile.weekly_quest]["progress"] <= profile.weekly_progress:
+            weekly_line = f"✅ **Weekly Quest** (next <t:{refresh_time}:R>)"
+        else:
+            weekly_line = f"**Weekly Quest** (ends <t:{refresh_time}:R>): 🍀 + XP"
     else:
-        weekly_line = f"**Weekly Quest** (ends <t:{refresh_time}:R>): 🍀 + XP"
+        weekly_line = f"**Weekly Quest** (next <t:{timestamp}:R>)"
 
     cattlepass_section = Section(
         f"### ⬆️ Cattlepass (ends <t:{timestamp}:R>)\n{quest_line}\nRewards: ☔{pack_emojis}...",
@@ -3272,7 +3277,7 @@ async def hub(message: discord.Interaction):
 
     # vote streak section
     next_vote_time = user.vote_time_topgg + 3600 * 12
-    vote_streak_text = "Can vote!" if next_vote_time > time.time() else f"Can vote <t:{next_vote_time}:R>"
+    vote_streak_text = "Can vote!" if next_vote_time <= time.time() else f"Can vote <t:{next_vote_time}:R>"
     vote_streak_section = Section(
         f"""### 🔥 Vote Streak ({user.vote_streak:,}x)\n
 {vote_streak_text}\n
@@ -3333,7 +3338,7 @@ Boost: multiplying, packs, rain...""",
         catnip_section,
         "===",
         make_command_button(news_name, "📰", news.callback),
-        accent_color=user.color if user.color else "#6E593C",
+        accent_color=discord.Colour.from_str(user.color) if user.color else Colors.brown,
     )
     view.add_item(embed)
     await message.response.send_message(view=view)
