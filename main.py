@@ -3304,7 +3304,7 @@ Boost: catch rarity increase""",
     )
 
     # catnip section
-    if not user.dark_market_active:
+    if not profile.dark_market_active:
         catnip_section = f"### {get_emoji('catnip')} Catnip\n🔒 Locked"
     else:
         catnip_status = "hibernating" if profile.hibernation else f"expires <t:{profile.catnip_active}>"
