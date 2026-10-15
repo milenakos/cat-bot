@@ -3273,7 +3273,7 @@ Rewards: {get_emoji("diamondpack")}{get_emoji("platinumpack")}{get_emoji("goldpa
     silver_done = "✅" if user.last_bakegg_send == get_current_week() else "❌"
     chef_done = "✅" if user.last_bakegg_get == get_current_week() else "❌"
     bakery_section = Section(
-        f"""🧑‍🍳 Rewards (refreshes <t:{get_timestamp_of_next_week()}:R>):
+        f"""🧑‍🍳 Rewards (refresh <t:{get_timestamp_of_next_week()}:R>):
 {silver_done} {get_emoji("bakegg_egg")}{get_emoji("silverpack")}; {chef_done} {get_emoji("chefpack")}""",
         make_command_button("Bakery", "🧑‍🍳", bakery.callback),
     )
@@ -3303,20 +3303,11 @@ Boost: multiplying, packs, rain...""",
         news_name = "News"
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
-    embed = Container(
-        cattlepass_section,
-        Separator(),
-        vote_streak_section,
-        Separator(),
-        bakery_section,
-        Separator(spacing=discord.SeparatorSpacing.large),
-        prism_section,
-        Separator(),
-        catnip_section,
-        Separator(spacing=discord.SeparatorSpacing.large),
-        make_command_button(news_name, "📰", news.callback),
-    )
+    embed = Container("## Rewards", cattlepass_section, Separator(), vote_streak_section, Separator(), bakery_section)
+    embed2 = Container("## Boosts", prism_section, Separator(), catnip_section)
     view.add_item(embed)
+    view.add_item(embed2)
+    view.add_item(ActionRow(make_command_button(news_name, "📰", news.callback)))
     await message.response.send_message(view=view)
 
 
