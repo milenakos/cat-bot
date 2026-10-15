@@ -3202,8 +3202,6 @@ async def hub(message: discord.Interaction):
     await profile.refresh_from_db()
     stats = await gen_stats(profile, "")
 
-    inv_buttons = ActionRow()
-
     def call_callback(command_callback: Callable[..., Awaitable[object]], *callback_args: object):
         async def callback(interaction: discord.Interaction):
             if interaction.user.id != message.user.id:
@@ -3222,19 +3220,6 @@ async def hub(message: discord.Interaction):
         button = Button(emoji=emoji, label=label)
         button.callback = call_callback(command_callback, *callback_args)
         return button
-
-    # profile buttons
-    total = sum(profile[f"cat_{cat}"] for cat in cattypes)
-    inv_buttons.add_item(make_command_button(f"Cats ({total:,})", get_emoji("nicecat"), inventory.callback))
-    if pack_count := sum(profile[f"pack_{pack['name'].lower()}"] for pack in data.pack_data):
-        inv_buttons.add_item(make_command_button(f"Packs ({pack_count:,})", get_emoji("goldpack"), packs.callback))
-    if prism_count := await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.user.id):
-        inv_buttons.add_item(make_command_button(f"Prisms ({prism_count:,})", get_emoji("prism"), prism.callback, message.user))
-    if user.rain_minutes or profile.rain_minutes:
-        bonus_amount = "" if profile.rain_minutes == 0 else f"+{profile.rain_minutes:,}"
-        inv_buttons.add_item(make_command_button(f"Rain ({user.rain_minutes:,}{bonus_amount})", "☔", rain.callback, None))
-    if profile.scratchcards:
-        inv_buttons.add_item(make_command_button(f"Scratchcards ({profile.scratchcards:,})", "🍀", scratch.callback))
 
     # cattlepass section
     now = discord.utils.utcnow() + datetime.timedelta(hours=4)
@@ -3279,8 +3264,8 @@ async def hub(message: discord.Interaction):
     next_vote_time = user.vote_time_topgg + 3600 * 12
     vote_streak_text = "Can vote!" if next_vote_time <= time.time() else f"Can vote <t:{next_vote_time}:R>"
     vote_streak_section = Section(
-        f"""### 🔥 Vote Streak ({user.vote_streak:,}x)\n
-{vote_streak_text}\n
+        f"""### 🔥 Vote Streak ({user.vote_streak:,}x)
+{vote_streak_text}
 Rewards: {get_emoji("diamondpack")}{get_emoji("platinumpack")}{get_emoji("goldpack")}""",
         Button(label="Vote", emoji=get_emoji("topgg"), url="https://top.gg/bot/966695034340663367/vote"),
     )
@@ -3289,16 +3274,16 @@ Rewards: {get_emoji("diamondpack")}{get_emoji("platinumpack")}{get_emoji("goldpa
     silver_done = "✅" if user.last_bakegg_send == get_current_week() else "❌"
     chef_done = "✅" if user.last_bakegg_get == get_current_week() else "❌"
     bakery_section = Section(
-        f"""### 🧑‍🍳 Bakery (refreshes <t:{get_timestamp_of_next_week()}:R>)\n
-{silver_done} {get_emoji("silverpack")}, {chef_done} {get_emoji("chefpack")}\n
+        f"""### 🧑‍🍳 Bakery (refreshes <t:{get_timestamp_of_next_week()}:R>)
+{silver_done} {get_emoji("silverpack")}, {chef_done} {get_emoji("chefpack")}
 Rewards: {get_emoji("bakegg_egg")}{get_emoji("chefpack")}{get_emoji("silverpack")}""",
         make_command_button("Bakery", "🧑‍🍳", bakery.callback),
     )
 
     # prism section
     prism_section = Section(
-        f"""### {get_emoji("prism")} Prism\n
-{next(i for i in stats if i[0] == "prism_owned")[2]}\n
+        f"""### {get_emoji("prism")} Prism
+{next(i for i in stats if i[0] == "prism_owned")[2]}
 Boost: catch rarity increase""",
         make_command_button("Prisms", get_emoji("prism"), prism.callback, message.user),
     )
@@ -3309,8 +3294,8 @@ Boost: catch rarity increase""",
     else:
         catnip_status = "hibernating" if profile.hibernation else f"expires <t:{profile.catnip_active}>"
         catnip_section = Section(
-            f"""### {get_emoji("catnip")} Catnip\n
-Level {profile.catnip_level}, {catnip_status}\n
+            f"""### {get_emoji("catnip")} Catnip
+Level {profile.catnip_level}, {catnip_status}
 Boost: multiplying, packs, rain...""",
             make_command_button("Catnip", get_emoji("catnip"), catnip.callback),
         )
@@ -3321,13 +3306,8 @@ Boost: multiplying, packs, rain...""",
     else:
         news_name = "News"
 
-    emoji_prefix = str(user.emoji) + " " if user.emoji else ""
     view = LayoutView(timeout=VIEW_TIMEOUT)
     embed = Container(
-        f"# {emoji_prefix}{message.user.name.replace('_', r'\_')}",
-        next(i for i in stats if i[0] == "profile_value")[2],
-        inv_buttons,
-        "===",
         "## Rewards",
         cattlepass_section,
         vote_streak_section,
@@ -3338,7 +3318,6 @@ Boost: multiplying, packs, rain...""",
         catnip_section,
         "===",
         make_command_button(news_name, "📰", news.callback),
-        accent_color=discord.Colour.from_str(user.color) if user.color else Colors.brown,
     )
     view.add_item(embed)
     await message.response.send_message(view=view)
