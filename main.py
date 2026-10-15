@@ -3258,7 +3258,7 @@ async def hub(message: discord.Interaction):
 
     quest_times = [profile.vote_cooldown, profile.misc_cooldown, profile.catch_cooldown]
     if quest_times.count(0) != 0:
-        quest_line = f"{quest_times.count(0)} quests uncomplete"
+        quest_line = f"{quest_times.count(0)} quests **uncomplete**"
     else:
         quest_line = f"Next quest <t:{min(min(quest_times) + 3600 * 12, timestamp)}:R>"
 
@@ -3268,19 +3268,19 @@ async def hub(message: discord.Interaction):
         if config.battle["quests"]["weekly"][profile.weekly_quest]["progress"] <= profile.weekly_progress:
             weekly_line = f"✅ Weekly Quest (next <t:{refresh_time}:R>)"
         else:
-            weekly_line = f"Weekly Quest (ends <t:{refresh_time}:R>): 🍀 + XP"
+            weekly_line = f"Weekly Quest (**ends** <t:{refresh_time}:R>): *🍀 + XP*"
     else:
         weekly_line = f"Weekly Quest (next <t:{timestamp}:R>)"
 
     cattlepass_section = Section(
-        f"⬆️ Season ends <t:{timestamp}:R>\n{quest_line}\nRewards: ☔{pack_emojis}...",
+        f"⬆️ Season ends <t:{timestamp}:R>\n{quest_line}\n*Rewards:* ☔{pack_emojis}...",
         weekly_line,
         make_command_button("Cattlepass", "⬆️", battlepass.callback),
     )
 
     # vote streak section
     next_vote_time = user.vote_time_topgg + 3600 * 12
-    vote_streak_text = "can vote!" if next_vote_time <= time.time() else f"next vote <t:{next_vote_time}:R>"
+    vote_streak_text = "**can vote!**" if next_vote_time <= time.time() else f"next vote <t:{next_vote_time}:R>"
     vote_streak_section = Section(
         f"""🔥 {user.vote_streak:,}x streak, {vote_streak_text}
 Rewards: {get_emoji("diamondpack")}{get_emoji("platinumpack")}{get_emoji("goldpack")}""",
@@ -3291,7 +3291,7 @@ Rewards: {get_emoji("diamondpack")}{get_emoji("platinumpack")}{get_emoji("goldpa
     silver_done = "✅" if user.last_bakegg_send == get_current_week() else "❌"
     chef_done = "✅" if user.last_bakegg_get == get_current_week() else "❌"
     bakery_section = Section(
-        f"""🧑‍🍳 Rewards (refresh <t:{get_timestamp_of_next_week()}:R>):
+        f"""🧑‍🍳 *Rewards* (refresh <t:{get_timestamp_of_next_week()}:R>):
 {silver_done} {get_emoji("bakegg_egg")}{get_emoji("silverpack")}; {chef_done} {get_emoji("chefpack")}""",
         make_command_button("Bakery", "🧑‍🍳", bakery.callback),
     )
@@ -3299,7 +3299,7 @@ Rewards: {get_emoji("diamondpack")}{get_emoji("platinumpack")}{get_emoji("goldpa
     # prism section
     prism_section = Section(
         f"""{get_emoji("prism")} {next(i for i in stats if i[0] == "prism_owned")[2]}
-Boost: catch rarity increase""",
+*Boost: catch rarity increase*""",
         make_command_button("Prisms", get_emoji("prism"), prism.callback, message.user),
     )
 
@@ -3307,10 +3307,15 @@ Boost: catch rarity increase""",
     if not profile.dark_market_active:
         catnip_section = f"{get_emoji('catnip_disabled')} *Locked*"
     else:
-        catnip_status = "hibernating" if profile.hibernation else f"expires <t:{profile.catnip_active}>"
+        if profile.hibernation:
+            catnip_status = "hibernating"
+        elif profile.catnip_active > time.time():
+            catnip_status = f"expires <t:{profile.catnip_active}:R>"
+        else:
+            catnip_status = "expired"
         catnip_section = Section(
             f"""{get_emoji("catnip")} Level {profile.catnip_level}, {catnip_status}
-Boost: multiplying, packs, rain...""",
+*Boost: multiplying, packs, rain...*""",
             make_command_button("Catnip", get_emoji("catnip"), catnip.callback),
         )
 
@@ -3323,8 +3328,10 @@ Boost: multiplying, packs, rain...""",
     emoji_prefix = str(user.emoji) + " " if user.emoji else ""
     view = LayoutView(timeout=VIEW_TIMEOUT)
     profile_embed = Container(
-        f"# {emoji_prefix}{message.user.name.replace('_', r'\_')}",
-        next(i for i in stats if i[0] == "profile_value")[2],
+        Section(
+            f"# {emoji_prefix}{message.user.name.replace('_', r'\_')}",
+            make_command_button("Stats", "🧮", stats_command.callback),
+        ),
         *rows,
         accent_color=discord.Colour.from_str(user.color) if user.color else Colors.brown,
     )
