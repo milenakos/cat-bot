@@ -16,6 +16,7 @@
     "cat_rain": {"title": "It's Raining Cats", "description": "participate in a cat rain", "difficulty": 6, "parent": "first"},
     "lucky": {"title": "Lucky", "description": "0.1% chance you get it each time you catch a cat", "difficulty": 6, "parent": "first"},
 
+  "cathub": {"title": "CatHub", "description": "visit /hub", "difficulty": 1, "parent": "Economy"},
   "second": {"title": "Pro Catcher", "description": "get 100 cats", "difficulty": 4, "parent": "Economy"},
     "third": {"title": "Overpopulated", "description": "get 1000 cats", "difficulty": 5, "parent": "second"},
       "fourth": {"title": "And they don't stop coming", "description": "get 10000 cats", "difficulty": 6, "parent": "third"},

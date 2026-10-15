@@ -3343,6 +3343,7 @@ async def hub(message: discord.Interaction):
     view.add_item(boosts_embed)
     view.add_item(ActionRow(make_command_button(news_name, "📰", news.callback)))
     await message.response.send_message(view=view)
+    await achemb(message, "cathub", "followup")
 
 
 @bot.tree.command(description="Roll the credits")

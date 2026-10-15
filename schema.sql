@@ -351,7 +351,8 @@ CREATE TABLE public.profile (
     tiktoker boolean DEFAULT false,
     sharing_enabled boolean DEFAULT false,
     pack_pumpkin integer DEFAULT 0,
-    reactions_enabled boolean DEFAULT true
+    reactions_enabled boolean DEFAULT true,
+    cathub boolean DEFAULT false
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;
