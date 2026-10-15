@@ -3221,6 +3221,24 @@ async def hub(message: discord.Interaction):
         button.callback = call_callback(command_callback, *callback_args)
         return button
 
+    # profile buttons
+    inv_buttons = []
+    total = sum(profile[f"cat_{cat}"] for cat in cattypes)
+    inv_buttons.append(make_command_button(f"Cats ({total:,})", get_emoji("nicecat"), inventory.callback))
+    if pack_count := sum(profile[f"pack_{pack['name'].lower()}"] for pack in data.pack_data):
+        inv_buttons.append(make_command_button(f"Packs ({pack_count:,})", get_emoji("goldpack"), packs.callback))
+    if prism_count := await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.user.id):
+        inv_buttons.append(make_command_button(f"Prisms ({prism_count:,})", get_emoji("prism"), prism.callback, message.user))
+    if user.rain_minutes or profile.rain_minutes:
+        bonus_amount = "" if profile.rain_minutes == 0 else f"+{profile.rain_minutes:,}"
+        inv_buttons.append(make_command_button(f"Rain ({user.rain_minutes:,}{bonus_amount})", "☔", rain.callback, None))
+    if profile.scratchcards:
+        inv_buttons.append(make_command_button(f"Scratchcards ({profile.scratchcards:,})", "🍀", scratch.callback))
+
+    rows = []
+    for i in range(0, len(inv_buttons), 2):
+        rows.append(ActionRow(*inv_buttons[i : i + 2]))
+
     # cattlepass section
     now = discord.utils.utcnow() + datetime.timedelta(hours=4)
     if now.month == 12:
@@ -3302,11 +3320,19 @@ Boost: multiplying, packs, rain...""",
     else:
         news_name = "News"
 
+    emoji_prefix = str(user.emoji) + " " if user.emoji else ""
     view = LayoutView(timeout=VIEW_TIMEOUT)
-    embed = Container("## Rewards", cattlepass_section, Separator(), vote_streak_section, Separator(), bakery_section)
-    embed2 = Container("## Boosts", prism_section, Separator(), catnip_section)
-    view.add_item(embed)
-    view.add_item(embed2)
+    profile_embed = Container(
+        f"# {emoji_prefix}{message.user.name.replace('_', r'\_')}",
+        next(i for i in stats if i[0] == "profile_value")[2],
+        *rows,
+        accent_color=discord.Colour.from_str(user.color) if user.color else Colors.brown,
+    )
+    rewards_embed = Container("## Rewards", cattlepass_section, Separator(), vote_streak_section, Separator(), bakery_section)
+    boosts_embed = Container("## Boosts", prism_section, Separator(), catnip_section)
+    view.add_item(profile_embed)
+    view.add_item(rewards_embed)
+    view.add_item(boosts_embed)
     view.add_item(ActionRow(make_command_button(news_name, "📰", news.callback)))
     await message.response.send_message(view=view)
 
