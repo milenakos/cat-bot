@@ -6046,16 +6046,17 @@ async def packs(message: discord.Interaction):
         await asyncio.sleep(1)
 
         assert last_container is not None
-        buttons, _, _, _ = gen_buttons(user)
+        buttons, _, total_packs, _ = gen_buttons(user)
         view = LayoutView(timeout=VIEW_TIMEOUT)
         last_container.add_item(Separator())
         for i in buttons:
             last_container.add_item(i)
         view.add_item(last_container)
 
-        back_button = Button(label="Back", style=ButtonStyle.primary, emoji="⬅️")
-        back_button.callback = go_back
-        view.add_item(ActionRow(back_button))
+        if total_packs:
+            back_button = Button(label="Back", style=ButtonStyle.primary, emoji="⬅️")
+            back_button.callback = go_back
+            view.add_item(ActionRow(back_button))
 
         await interaction.edit_original_response(view=view)
 
