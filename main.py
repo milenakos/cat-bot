@@ -3193,6 +3193,152 @@ async def tutorial(message: discord.Interaction):
     await message.response.send_message(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
 
+@bot.tree.command(description="the hub of all things cat bot")
+async def hub(message: discord.Interaction):
+    assert message.guild is not None
+    profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
+    user = await User.get_or_create(user_id=message.user.id)
+    stats = await gen_stats(profile, "")
+
+    inv_buttons = ActionRow()
+
+    def call_callback(command_callback: Callable[..., Awaitable[object]], *callback_args: object):
+        async def callback(interaction: discord.Interaction):
+            if interaction.user.id != message.user.id:
+                await do_funny(interaction)
+                return
+            await command_callback(interaction, *callback_args)
+
+        return callback
+
+    def make_command_button(
+        label: str,
+        emoji: str,
+        command_callback: Callable[..., Awaitable[object]],
+        *callback_args: object,
+    ) -> Button:
+        button = Button(emoji=emoji, label=label)
+        button.callback = call_callback(command_callback, *callback_args)
+        return button
+
+    # profile buttons
+    total = sum(profile[f"cat_{cat}"] for cat in cattypes)
+    inv_buttons.add_item(make_command_button(f"Cats ({total:,})", get_emoji("nicecat"), inventory.callback))
+    if pack_count := sum(profile[f"pack_{pack['name'].lower()}"] for pack in data.pack_data):
+        inv_buttons.add_item(make_command_button(f"Packs ({pack_count:,})", get_emoji("goldpack"), packs.callback))
+    if prism_count := await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.user.id):
+        inv_buttons.add_item(make_command_button(f"Prisms ({prism_count:,})", get_emoji("prism"), prism.callback, message.user))
+    if user.rain_minutes or profile.rain_minutes:
+        bonus_amount = "" if profile.rain_minutes == 0 else f"+{profile.rain_minutes:,}"
+        inv_buttons.add_item(make_command_button(f"Rain ({user.rain_minutes:,}{bonus_amount})", "☔", rain.callback))
+    if profile.scratchcards:
+        inv_buttons.add_item(make_command_button(f"Scratchcards ({profile.scratchcards:,})", "🍀", scratch.callback))
+
+    # cattlepass section
+    now = discord.utils.utcnow() + datetime.timedelta(hours=4)
+    if now.month == 12:
+        next_month = datetime.datetime(now.year + 1, 1, 1, tzinfo=datetime.UTC)
+    else:
+        next_month = datetime.datetime(now.year, now.month + 1, 1, tzinfo=datetime.UTC)
+    next_month -= datetime.timedelta(hours=4)
+    timestamp = int(next_month.timestamp())
+
+    unique_packs = []
+    for level in config.battle["seasons"][str(profile.season)]:
+        if level["reward"] not in pack_names:
+            continue
+        unique_packs.append(pack_names.index(level["reward"]))
+    chosen_packs = [pack_names[i] for i in sorted(set(unique_packs), key=lambda i: data.pack_data[i]["totalvalue"], reverse=True)[:5]]
+    pack_emojis = "".join([get_emoji(f"{i.lower()}pack") for i in chosen_packs])
+
+    quest_times = [profile.vote_cooldown, profile.misc_cooldown, profile.catch_cooldown]
+    if quest_times.count(0) != 0:
+        quest_line = f"{quest_times.count(0)} quests uncomplete"
+    else:
+        quest_line = f"Next quest <t:{min(min(quest_times) + 3600 * 12, timestamp)}:R>"
+
+    month_start = int((datetime.datetime(now.year, now.month, 1, tzinfo=datetime.UTC) - datetime.timedelta(hours=4)).timestamp())
+    refresh_time = month_start + 604800 * (int((time.time() - month_start) // 604800) + 1)
+    if config.battle["quests"]["weekly"][profile.weekly_quest]["progress"] < profile.weekly_progress:
+        weekly_line = f"✅ **Weekly Quest** (next <t:{refresh_time}:R>)"
+    else:
+        weekly_line = f"**Weekly Quest** (ends <t:{refresh_time}:R>): 🍀 + XP"
+
+    cattlepass_section = Section(
+        f"### ⬆️ Cattlepass (ends <t:{timestamp}:R>)\n{quest_line}\nRewards: ☔{pack_emojis}...",
+        weekly_line,
+        make_command_button("Cattlepass", "⬆️", battlepass.callback),
+    )
+
+    # vote streak section
+    next_vote_time = user.vote_time_topgg + 3600 * 12
+    vote_streak_text = "Can vote!" if next_vote_time > time.time() else f"Can vote <t:{next_vote_time}:R>"
+    vote_streak_section = Section(
+        f"""### 🔥 Vote Streak ({user.vote_streak:,}x)\n
+{vote_streak_text}\n
+Rewards: {get_emoji("diamondpack")}{get_emoji("platinumpack")}{get_emoji("goldpack")}""",
+        Button(label="Vote", emoji=get_emoji("topgg"), url="https://top.gg/bot/966695034340663367/vote"),
+    )
+
+    # bakery section
+    silver_done = "✅" if user.last_bakegg_send == get_current_week() else "❌"
+    chef_done = "✅" if user.last_bakegg_get == get_current_week() else "❌"
+    bakery_section = Section(
+        f"""### 🧑‍🍳 Bakery (refreshes <t:{get_timestamp_of_next_week()}:R>)\n
+{silver_done} {get_emoji("silverpack")}, {chef_done} {get_emoji("chefpack")}\n
+Rewards: {get_emoji("bakegg_egg")}{get_emoji("chefpack")}{get_emoji("silverpack")}""",
+        make_command_button("Bakery", "🧑‍🍳", bakery.callback),
+    )
+
+    # prism section
+    prism_section = Section(
+        f"""### {get_emoji("prism")} Prism\n
+{next(i for i in stats if i[0] == "prism_owned")[2]}\n
+Boost: catch rarity increase""",
+        make_command_button("Prisms", get_emoji("prism"), prism.callback, message.user),
+    )
+
+    # catnip section
+    if not user.dark_market_active:
+        catnip_section = f"### {get_emoji('catnip')} Catnip\n🔒 Locked"
+    else:
+        catnip_status = "hibernating" if profile.hibernation else f"expires <t:{profile.catnip_active}>"
+        catnip_section = Section(
+            f"""### {get_emoji("catnip")} Catnip\n
+Level {profile.catnip_level}, {catnip_status}\n
+Boost: multiplying, packs, rain...""",
+            make_command_button("Catnip", get_emoji("catnip"), catnip.callback),
+        )
+
+    # news button
+    if len(data.news_list) > len(user.news_state.strip()) or user.news_state.strip()[last_active_article] == "0":
+        news_name = "News (unread!)"
+    else:
+        news_name = "News"
+
+    emoji_prefix = str(user.emoji) + " " if user.emoji else ""
+    view = LayoutView(timeout=VIEW_TIMEOUT)
+    embed = Container(
+        f"# {emoji_prefix}{message.user.name.replace('_', r'\_')}",
+        next(i for i in stats if i[0] == "profile_value")[2],
+        inv_buttons,
+        "===",
+        "## Rewards",
+        cattlepass_section,
+        vote_streak_section,
+        bakery_section,
+        "===",
+        "## Boosts",
+        prism_section,
+        catnip_section,
+        "===",
+        make_command_button(news_name, "📰", news.callback),
+        accent_color=user.color if user.color else "#6E593C",
+    )
+    view.add_item(embed)
+    await message.response.send_message(view=view)
+
+
 @bot.tree.command(description="Roll the credits")
 async def credits(message: discord.Interaction):
     if not gen_credits:
