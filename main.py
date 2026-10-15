@@ -3248,24 +3248,23 @@ async def hub(message: discord.Interaction):
         month_start = int((datetime.datetime(now.year, now.month, 1, tzinfo=datetime.UTC) - datetime.timedelta(hours=4)).timestamp())
         refresh_time = month_start + 604800 * (int((time.time() - month_start) // 604800) + 1)
         if config.battle["quests"]["weekly"][profile.weekly_quest]["progress"] <= profile.weekly_progress:
-            weekly_line = f"✅ **Weekly Quest** (next <t:{refresh_time}:R>)"
+            weekly_line = f"✅ Weekly Quest (next <t:{refresh_time}:R>)"
         else:
-            weekly_line = f"**Weekly Quest** (ends <t:{refresh_time}:R>): 🍀 + XP"
+            weekly_line = f"Weekly Quest (ends <t:{refresh_time}:R>): 🍀 + XP"
     else:
-        weekly_line = f"**Weekly Quest** (next <t:{timestamp}:R>)"
+        weekly_line = f"Weekly Quest (next <t:{timestamp}:R>)"
 
     cattlepass_section = Section(
-        f"### ⬆️ Cattlepass (ends <t:{timestamp}:R>)\n{quest_line}\nRewards: ☔{pack_emojis}...",
+        f"⬆️ Season ends <t:{timestamp}:R>\n{quest_line}\nRewards: ☔{pack_emojis}...",
         weekly_line,
         make_command_button("Cattlepass", "⬆️", battlepass.callback),
     )
 
     # vote streak section
     next_vote_time = user.vote_time_topgg + 3600 * 12
-    vote_streak_text = "Can vote!" if next_vote_time <= time.time() else f"Can vote <t:{next_vote_time}:R>"
+    vote_streak_text = "can vote!" if next_vote_time <= time.time() else f"next vote <t:{next_vote_time}:R>"
     vote_streak_section = Section(
-        f"""### 🔥 Vote Streak ({user.vote_streak:,}x)
-{vote_streak_text}
+        f"""🔥 {user.vote_streak:,}x streak, {vote_streak_text}
 Rewards: {get_emoji("diamondpack")}{get_emoji("platinumpack")}{get_emoji("goldpack")}""",
         Button(label="Vote", emoji=get_emoji("topgg"), url="https://top.gg/bot/966695034340663367/vote"),
     )
@@ -3274,28 +3273,25 @@ Rewards: {get_emoji("diamondpack")}{get_emoji("platinumpack")}{get_emoji("goldpa
     silver_done = "✅" if user.last_bakegg_send == get_current_week() else "❌"
     chef_done = "✅" if user.last_bakegg_get == get_current_week() else "❌"
     bakery_section = Section(
-        f"""### 🧑‍🍳 Bakery (refreshes <t:{get_timestamp_of_next_week()}:R>)
-{silver_done} {get_emoji("silverpack")}, {chef_done} {get_emoji("chefpack")}
-Rewards: {get_emoji("bakegg_egg")}{get_emoji("chefpack")}{get_emoji("silverpack")}""",
+        f"""🧑‍🍳 Rewards (refreshes <t:{get_timestamp_of_next_week()}:R>):
+{silver_done} {get_emoji("bakegg_egg")}{get_emoji("silverpack")}; {chef_done} {get_emoji("chefpack")}""",
         make_command_button("Bakery", "🧑‍🍳", bakery.callback),
     )
 
     # prism section
     prism_section = Section(
-        f"""### {get_emoji("prism")} Prism
-{next(i for i in stats if i[0] == "prism_owned")[2]}
+        f"""{get_emoji("prism")} {next(i for i in stats if i[0] == "prism_owned")[2]}
 Boost: catch rarity increase""",
         make_command_button("Prisms", get_emoji("prism"), prism.callback, message.user),
     )
 
     # catnip section
     if not profile.dark_market_active:
-        catnip_section = f"### {get_emoji('catnip')} Catnip\n🔒 Locked"
+        catnip_section = f"{get_emoji('catnip_disabled')} *Locked*"
     else:
         catnip_status = "hibernating" if profile.hibernation else f"expires <t:{profile.catnip_active}>"
         catnip_section = Section(
-            f"""### {get_emoji("catnip")} Catnip
-Level {profile.catnip_level}, {catnip_status}
+            f"""{get_emoji("catnip")} Level {profile.catnip_level}, {catnip_status}
 Boost: multiplying, packs, rain...""",
             make_command_button("Catnip", get_emoji("catnip"), catnip.callback),
         )
@@ -3308,15 +3304,16 @@ Boost: multiplying, packs, rain...""",
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
     embed = Container(
-        "## Rewards",
         cattlepass_section,
+        Separator(),
         vote_streak_section,
+        Separator(),
         bakery_section,
-        "===",
-        "## Boosts",
+        Separator(spacing=discord.SeparatorSpacing.large),
         prism_section,
+        Separator(),
         catnip_section,
-        "===",
+        Separator(spacing=discord.SeparatorSpacing.large),
         make_command_button(news_name, "📰", news.callback),
     )
     view.add_item(embed)
