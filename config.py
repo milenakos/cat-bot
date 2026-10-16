@@ -8,6 +8,10 @@ TOKEN = os.environ["TOKEN"]
 DB_HOST = os.environ.get("psql_host", "127.0.0.1")
 DB_PASS = os.environ.get("psql_password", "")
 
+# git repo web link, no leading / (used for getting some images)
+# you can leave as is if you dont plan to change the images
+GIT_REPO_LINK = "https://raw.githubusercontent.com/milenakos/cat-bot/main"
+
 #
 # all the following are optional (setting to None will disable the feature)
 #

@@ -952,18 +952,17 @@ async def finale(message: discord.Interaction | discord.Message, user: Profile) 
     await asyncio.sleep(3)
     await message.channel.send("...actually did it.")
     await asyncio.sleep(3)
-    await message.channel.send(
-        embed=discord.Embed(
-            title="True Ending achieved!",
-            description="You are finally free.",
-            color=Colors.rose,
+    view = LayoutView(timeout=1)
+    view.add_item(
+        Container(
+            f"{get_emoji('staring_cat')} All achievements complete!",
+            "## True Ending achieved!",
+            "You are finally free.",
+            f"-# Congrats to {author_string.mention}!",
+            accent_color=Colors.rose,
         )
-        .set_author(
-            name="All achievements complete!",
-            icon_url="https://raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png",
-        )
-        .set_footer(text=f"Congrats to {author_string}")
     )
+    await message.channel.send(view=view)
 
 
 # function to autocomplete cat_type choices for /givecat, which also allows more than 25 options
@@ -1064,7 +1063,7 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     if not localcat:
         localcat = random.choices(cattypes, weights=list(data.type_dict.values()))[0]
     icon = get_emoji(localcat.lower() + "cat")
-    image_path = f"https://raw.githubusercontent.com/milenakos/cat-bot/main/assets/images/spawn/{localcat.lower()}_cat.webp"
+    image_path = f"{config.GIT_REPO_LINK}/assets/images/spawn/{localcat.lower()}_cat.webp"
     channeley = bot.get_partial_messageable(ch_id)
 
     appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
@@ -1143,16 +1142,15 @@ async def send_quest_reminders(quest_type: str, start_time: int) -> None:
 
         quest_data = config.battle["quests"][quest_type][user[f"{quest_type}_quest"]]
 
-        embed = discord.Embed(
-            title=f"{get_emoji(quest_data['emoji'])} {quest_data['title']}",
-            description=f"Reward: **{user[f'{quest_type}_reward']}** XP",
-            color=Colors.green,
-        )
-
-        view = View(timeout=VIEW_TIMEOUT)
+        view = LayoutView(timeout=VIEW_TIMEOUT)
         button = Button(label="Postpone", custom_id=f"{quest_type}_{user.guild_id}")
         button.callback = postpone_reminder
-        view.add_item(button)
+        embed = Container(
+            f"## {get_emoji(quest_data['emoji'])} {quest_data['title']}",
+            f"Reward: **{user[f'{quest_type}_reward']}** XP",
+            button,
+            color=Colors.green,
+        )
 
         guild = await Server.get_or_create(server_id=user.guild_id)
         try:
@@ -1163,10 +1161,12 @@ async def send_quest_reminders(quest_type: str, start_time: int) -> None:
             guild.name = "Unknown Server"
             await guild.save()
 
+        view.add_item(TextDisplay(f"A new quest is available in {guild.name}!"))
+        view.add_item(embed)
         try:
             user_user = await User.get_or_create(user_id=user.user_id)
             user_dm = await fetch_dm_channel(user_user)
-            await user_dm.send(f"A new quest is available in {guild.name}!", embed=embed, view=view)
+            await user_dm.send(view=view)
         except Exception:
             pass
         user[f"reminder_{quest_type}"] = 0
@@ -2169,10 +2169,11 @@ Enjoy your goods!"""
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
         if await check_channel_setupped(server, message.channel):
-            file = discord.File("assets/images/car.png")
-            embed = discord.Embed(title="car!", color=Colors.brown).set_image(url="attachment://car.png")
+            view = LayoutView(timeout=1)
+            file = f"{config.GIT_REPO_LINK}/assets/images/mafia/car.png"
+            view.add_item(Container("## car!", discord.ui.MediaGallery(discord.MediaGalleryItem(file))))
             try:
-                await message.reply(file=file, embed=embed)
+                await message.reply(view=view)
             except Exception:
                 pass
             log_stats("response", {"type": "car"})
@@ -2182,17 +2183,18 @@ Enjoy your goods!"""
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
         if await check_channel_setupped(server, message.channel):
-            file = discord.File("assets/images/cart.png")
-            embed = discord.Embed(title="cart!", color=Colors.brown).set_image(url="attachment://cart.png")
+            view = LayoutView(timeout=1)
+            file = f"{config.GIT_REPO_LINK}/assets/images/mafia/cart.png"
+            view.add_item(Container("## cart!", discord.ui.MediaGallery(discord.MediaGalleryItem(file))))
             try:
-                await message.reply(file=file, embed=embed)
+                await message.reply(view=view)
             except Exception:
                 pass
             log_stats("response", {"type": "cart"})
 
     try:
         if (
-            ("sus" in text.lower() or "amog" in text.lower() or "among" in text.lower() or "impost" in text.lower() or "report" in text.lower())
+            any(word in text.lower() for word in ["sus", "amog", "among", "impost", "report"])
             and (channel := await Channel.get_or_none(channel_id=message.channel.id))
             and channel.cattype == "Sus"
         ):
@@ -3369,11 +3371,9 @@ async def credits(message: discord.Interaction):
         )
         return
 
-    embedVar = discord.Embed(title="Cat Bot", color=Colors.brown, description=gen_credits).set_thumbnail(
-        url="https://raw.githubusercontent.com/milenakos/cat-bot/main/images/cat.png"
-    )
-
-    await message.response.send_message(embed=embedVar)
+    view = LayoutView(timeout=1)
+    view.add_item(Container("## Cat Bot", gen_credits))
+    await message.response.send_message(view=view)
 
 
 @bot.tree.command(description="add cat bot to your server")
@@ -3388,7 +3388,6 @@ async def invite(message: discord.Interaction):
 @bot.tree.command(description="View various info and stats about the bot")
 async def info(message: discord.Interaction):
     assert message.guild is not None
-    embed = discord.Embed(title="Cat Bot Info", color=Colors.brown)
     try:
         assert COMMIT != "unknown"
         proc = await asyncio.create_subprocess_exec("git", "show", "-s", "--format=%ct", COMMIT, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
@@ -3397,7 +3396,7 @@ async def info(message: discord.Interaction):
     except Exception:
         git_timestamp = 0
 
-    embed.description = f"""
+    description = f"""
 **__System__**
 OS Version: `{platform.system()} {platform.release()}`
 Python Version: `{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}`
@@ -3425,12 +3424,16 @@ DB Prisms: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class 
 DB Servers: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.server'::regclass;"):,}`
 """
 
-    await message.response.send_message(embed=embed)
+    view = LayoutView(timeout=1)
+    view.add_item(Container("## Cat Bot Info", description))
+    await message.response.send_message(view=view)
 
 
 @bot.tree.command(description="Confused? Check out the Cat Bot Wiki!")
 async def wiki(message: discord.Interaction):
-    await message.response.send_message(embed=discord.Embed(title="Cat Bot Wiki", color=Colors.brown, description="\n".join(data.wiki_lines)))
+    view = LayoutView(timeout=1)
+    view.add_item(Container("## Cat Bot Wiki", "\n".join(data.wiki_lines)))
+    await message.response.send_message(view=view)
 
 
 @bot.tree.command(description="Read The Cat Bot Times™️")
@@ -4945,7 +4948,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
 
         column = ""
 
-        def stat_select(category) -> discord.ui.Select:
+        def stat_select(category) -> None:
             if "ach" in column:
                 ach_ids = get_category_achs(category)
                 options = [
@@ -4967,12 +4970,10 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
                         options.append(discord.SelectOption(value=stat[0], emoji=stat[1], label=stat[2]))
 
             options.insert(0, discord.SelectOption(emoji="⬅️", label="Back", value="back"))
-            select = discord.ui.Select(placeholder="Edit highlighted stat... (3/3)", options=options)
 
             async def select_callback(interaction: discord.Interaction) -> None:
                 if select.values[0] == "back":
-                    view = View(timeout=VIEW_TIMEOUT)
-                    view.add_item(category_select())
+                    category_select()
                     await interaction.response.edit_message(view=view)
                 else:
                     # update the stat
@@ -4980,10 +4981,11 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
                     await person.save()
                     await edit_profile(interaction, True)
 
+            select.options = options
+            select.placeholder = "Edit highlighted stat... (3/3)"
             select.callback = select_callback
-            return select
 
-        def category_select() -> discord.ui.Select:
+        def category_select() -> None:
             if "ach" in column:
                 options = [discord.SelectOption(emoji=get_emoji(v), label=k) for k, v in data.ach_categories.items()]
                 options.insert(0, discord.SelectOption(label="None", emoji="❌", description="No featured achievement."))
@@ -4991,12 +4993,10 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
                 options = [discord.SelectOption(emoji=stat[0], label=stat[1]) for stat in stats if len(stat) == 2]
 
             options.insert(0, discord.SelectOption(emoji="⬅️", label="Back", value="back"))
-            select = discord.ui.Select(placeholder="Edit highlighted stat... (2/3)", options=options)
 
             async def select_callback(interaction: discord.Interaction) -> None:
-                view = View(timeout=VIEW_TIMEOUT)
                 if select.values[0] == "back":
-                    view.add_item(line_select())
+                    line_select()
                     await interaction.response.edit_message(view=view)
                     return
                 if select.values[0] == "None":
@@ -5004,13 +5004,14 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
                     await person.save()
                     await edit_profile(interaction, True)
                     return
-                view.add_item(stat_select(select.values[0]))
+                stat_select(select.values[0])
                 await interaction.response.edit_message(view=view)
 
+            select.options = options
+            select.placeholder = "Edit highlighted stat... (2/3)"
             select.callback = select_callback
-            return select
 
-        def line_select() -> discord.ui.Select:
+        def line_select() -> None:
             options = []
             mappings = ["highlighted_stat", "highlighted_stat_two", "highlighted_stat_three"]
             for num, (col, stat) in enumerate(zip(mappings, highlights)):
@@ -5027,83 +5028,70 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
                 )
             )
 
-            select = discord.ui.Select(placeholder="Edit highlighted stat... (1/3)", options=options)
-
             async def select_callback(interaction: discord.Interaction) -> None:
                 nonlocal column
                 column = select.values[0]
-                view = View(timeout=VIEW_TIMEOUT)
-                view.add_item(category_select())
+                category_select()
                 await interaction.response.edit_message(view=view)
 
+            select.options = options
+            select.placeholder = "Edit highlighted stat... (1/3)"
             select.callback = select_callback
-            return select
 
         async def toggle_compact_inventory(interaction: discord.Interaction) -> None:
             person.compact_inventory = not person.compact_inventory
             await person.save()
-            await interaction.response.edit_message(
-                content=f"Compact inventory is now {'enabled' if person.compact_inventory else 'disabled'}.", embed=None, view=None
-            )
+            await edit_profile(interaction, True)
 
         async def toggle_reactions(interaction: discord.Interaction) -> None:
             person.reactions_enabled = not person.reactions_enabled
             await person.save()
-            await interaction.response.edit_message(
-                content=f"Reactions are now {'enabled' if person.reactions_enabled else 'disabled'}.", embed=None, view=None
-            )
+            await edit_profile(interaction, True)
 
         highlights = get_highlights(person, stats)
         highlighted_ach = person.highlighted_ach.strip() if person.highlighted_ach else None
 
-        view = View(timeout=VIEW_TIMEOUT)
-        button = Button(style=discord.ButtonStyle.blurple, label="Toggle Compact Inventory")
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        button = Button(style=discord.ButtonStyle.blurple, label="Compact Inventory", emoji="✅" if person.compact_inventory else "❌")
         button.callback = toggle_compact_inventory
-        button2 = Button(style=discord.ButtonStyle.blurple, label="Toggle Reactions")
+        button2 = Button(style=discord.ButtonStyle.blurple, label="Reactions", emoji="✅" if person.reactions_enabled else "❌")
         button2.callback = toggle_reactions
-        view.add_item(button)
-        view.add_item(button2)
-        view.add_item(line_select())
 
-        suffix = f"""__Highlighted Stats__
+        highlights = f"""__Highlights__
 {"\n".join(highlights)}
+{get_emoji("ach")} {"None" if not highlighted_ach or highlighted_ach not in ach_list else ach_list[highlighted_ach]["title"]}"""
 
-__Highlighted Ach__: {get_emoji("ach")} {"None" if not highlighted_ach or highlighted_ach not in ach_list else ach_list[highlighted_ach]["title"]}
-__Compact Inventory__: {"✅ True" if person.compact_inventory else "❌ False"}
-__Reactions Enabled__: {"✅ True" if person.reactions_enabled else "❌ False"}"""
+        select = discord.ui.Select()
+        line_select()
 
+        elements = [f"## {(user.emoji + ' ') if user.emoji else ''}Edit Profile"]
         if user.premium:
-            if not user.color:
-                user.color = "#6E593C"
-            description = f"""👑 __Supporter Settings__
+            elements.append(f"""👑 __Supporter Settings__
 Global, change with `/editprofile`.
 **Color**: {user.color.lower() if user.color.upper() not in ["", "#6E593C"] else "Default"}
 **Emoji**: {user.emoji if user.emoji else "None"}
-**Image**: {"Yes" if "/attachments" in user.image else "No"}
-
-{suffix}"""
-
-            embed = discord.Embed(
-                title=f"{(user.emoji + ' ') if user.emoji else ''}Edit Profile", description=description, color=discord.Colour.from_str(user.color)
-            )
-            if "discordapp" in user.image:
-                embed.set_thumbnail(url=user.image)
-
+**Image**: {"Yes" if "/attachments" in user.image else "No"}""")
         else:
-            description = f"""👑 __Supporter Settings__
+            elements.append("""👑 __Supporter Settings__
 Global, buy anything from [the store](https://catbot.shop) to unlock.
 👑 **Color**
 👑 **Emoji**
-👑 **Image**
+👑 **Image**""")
 
-{suffix}"""
-
-            embed = discord.Embed(title="Edit Profile", description=description, color=Colors.brown)
+        embed = Container(
+            *(elements if "discordapp" not in user.image else [Section(*elements, Thumbnail(user.image))]),
+            highlights,
+            select,
+            "===",
+            ActionRow(button, button2),
+            accent_color=discord.Colour.from_str(user.color) if user.color else Colors.brown,
+        )
+        view.add_item(embed)
 
         if not edit:
-            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+            await interaction.response.send_message(view=view, ephemeral=True)
         else:
-            await interaction.response.edit_message(embed=embed, view=view)
+            await interaction.response.edit_message(view=view)
 
     async def add_reaction(interaction: discord.Interaction) -> None:
         assert interaction.custom_id is not None
@@ -5369,7 +5357,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
                 if ":i:" not in rain_msg:
                     continue
                 # this is to bypass character limit up to 4k
-                v = LayoutView()
+                v = LayoutView(timeout=1)
                 v.add_item(TextDisplay(rain_msg))
                 try:
                     await message.channel.send(view=v)
@@ -7175,7 +7163,7 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 @bot.tree.command(description="dont select a person to make an everyone vs you game")
 @discord.app_commands.describe(person="Who do you want to play with?")
 async def rps(message: discord.Interaction, person: discord.Member | None = None):
-    clean_name = message.user.name.replace("_", "\\_")
+    clean_name = message.user.mention
     picks = {"Rock": [], "Paper": [], "Scissors": []}
     mappings = {"Rock": ["Paper", "Rock", "Scissors"], "Paper": ["Scissors", "Paper", "Rock"], "Scissors": ["Rock", "Scissors", "Paper"]}
     vs_picks = {}
@@ -7195,15 +7183,16 @@ async def rps(message: discord.Interaction, person: discord.Member | None = None
             if interaction.user.id in players:
                 return
             if person:
-                vs_picks[interaction.user.name.replace("_", "\\_")] = thing
+                vs_picks[interaction.user.mention] = thing
             else:
-                picks[thing].append(interaction.user.name.replace("_", "\\_"))
+                picks[thing].append(interaction.user.mention)
             players.append(interaction.user.id)
             if person and person.id == bot.user.id:
                 players.append(bot.user.id)
-                vs_picks[bot.user.name.replace("_", "\\_")] = mappings[thing][0]
+                vs_picks[bot.user.mention] = mappings[thing][0]
             if not person or len(players) == 1:
-                await interaction.response.edit_message(content=f"Players picked: {len(players)}")
+                players_text.content = f"Players picked: {len(players):,}"
+                await interaction.response.edit_message(view=view)
                 return
 
         result = mappings[thing]
@@ -7226,33 +7215,26 @@ async def rps(message: discord.Interaction, person: discord.Member | None = None
             else:
                 description += f"**Winner**: {clean_name}!"
 
-        embed = discord.Embed(
-            title=f"{clean_name_2} vs {clean_name}",
-            description=description,
-            color=Colors.brown,
-        )
-        await interaction.response.edit_message(content=None, embed=embed, view=None)
+        new_view = LayoutView(timeout=1)
+        new_view.add_item(Container(f"## {clean_name_2} vs {clean_name}", description))
+        await interaction.response.edit_message(view=new_view)
 
-    if person:
-        clean_name_2 = person.name.replace("_", "\\_")
-    else:
-        clean_name_2 = "Rock Paper Scissors"
+    clean_name_2 = person.mention if person else "Rock Paper Scissors"
 
     if person:
         description = "Pick what to play!"
     else:
         description = "Any amount of users can play. The game ends when the person who ran the command picks. Max time is 24 hours."
-    embed = discord.Embed(
-        title=f"{clean_name_2} vs {clean_name}",
-        description=description,
-        color=Colors.brown,
-    )
-    view = View(timeout=24 * 3600)
+    view = LayoutView(timeout=24 * 3600)
+    row = ActionRow()
     for i in ["Rock", "Paper", "Scissors"]:
         button = Button(label=i, custom_id=i)
         button.callback = pick
-        view.add_item(button)
-    await message.response.send_message("Players picked: 0", embed=embed, view=view)
+        row.add_item(button)
+    players_text = TextDisplay("Players picked: 0")
+    view.add_item(players_text)
+    view.add_item(Container(f"## {clean_name_2} vs {clean_name}", description, row))
+    await message.response.send_message(view=view)
 
 
 @bot.tree.command(description="you feel like making cookies")
@@ -8280,9 +8262,10 @@ async def cursed(message: discord.Interaction):
 
 @bot.tree.command(description="Get Your balance")
 async def bal(message: discord.Interaction):
-    file = discord.File("assets/images/money.png")
-    embed = discord.Embed(title="cat coins", color=Colors.brown).set_image(url="attachment://money.png")
-    await message.response.send_message(file=file, embed=embed)
+    view = LayoutView(timeout=1)
+    file = f"{config.GIT_REPO_LINK}/assets/images/mafia/money.png"
+    view.add_item(Container("## cat coins", discord.ui.MediaGallery(discord.MediaGalleryItem(file))))
+    await message.response.send_message(view=view)
 
 
 @bot.tree.command(description="Brew some coffee to catch cats more efficiently")
@@ -9793,7 +9776,7 @@ async def get_perks(level: int, user: Profile, do_rain: bool = True) -> list[dic
     return current_perks
 
 
-async def level_down(user: Profile, message: discord.Interaction, ephemeral: bool = False) -> discord.Embed | None:
+async def level_down(user: Profile, message: discord.Interaction, ephemeral: bool = False) -> discord.ui.Container | None:
     if user.catnip_level == 0:
         return
 
@@ -9834,10 +9817,10 @@ async def level_down(user: Profile, message: discord.Interaction, ephemeral: boo
 
         removed_line = f"\nYou lost your **{perk_data['name']} ({rarities[perk_rarity]})** perk."
 
-    embed = discord.Embed(
-        title="❌ Mafia Level Failed",
+    embed = Container(
+        "## ❌ Mafia Level Failed",
+        f"**{name}**: *{quote}*\n\nLevel {user.catnip_level + 1} bounties failed!\nYou're now on level {user.catnip_level}.{removed_line}",
         color=Colors.red,
-        description=f"**{name}**: *{quote}*\n\nLevel {user.catnip_level + 1} bounties failed!\nYou're now on level {user.catnip_level}.{removed_line}",
     )
 
     log_stats("level_down", {"to": str(user.catnip_level)})
@@ -9845,8 +9828,11 @@ async def level_down(user: Profile, message: discord.Interaction, ephemeral: boo
     if ephemeral:
         return embed
 
+    view = LayoutView(timeout=1)
+    view.add_item(TextDisplay(f"<@{user.user_id}>"))
+    view.add_item(embed)
     assert isinstance(message.channel, GuildMessageable)
-    await message.channel.send(f"<@{user.user_id}>", embed=embed)
+    await message.channel.send(view=view)
 
 
 async def mafia_cutscene(interaction: discord.Interaction, user: Profile) -> None:
@@ -10197,11 +10183,13 @@ You can stop. That's okay. Seriously."""
             perk_embed.add_item(TextDisplay(pack_string.strip()))
 
         async def send_breakdown(interaction: discord.Interaction) -> None:
-            full_desc = ""
+            view = LayoutView(timeout=1)
+            embed = Container()
             for level_num, perk in enumerate(user_perks):
                 perk_rarity, perk_data, desc = describe_perk(perk, perks, global_user)
-                full_desc += f"{rarity_colors[perk_rarity]} __{perk_data.get('name', '')}__ (Level {level_num + 1})\n{desc}\n\n"
-            await interaction.response.send_message(embed=discord.Embed(description=full_desc, color=Colors.brown), ephemeral=True)
+                embed.add_item(TextDisplay(f"{rarity_colors[perk_rarity]} __{perk_data.get('name', '')}__ (Level {level_num + 1})\n{desc}"))
+            view.add_item(embed)
+            await interaction.response.send_message(view=view, ephemeral=True)
 
         if len(user_perks) == 0:
             perk_embed.add_item(TextDisplay("You have no perks!"))
@@ -10330,8 +10318,9 @@ You can view your current perks with the "View Perks" button.
 ⬆️ **Bounties:**
 Bounties are tasks you need to complete before you can level up. They involve catching a certain number of cats of specific types or rarities.
 You can view your current bounties in the catnip menu."""
-        help_embed = discord.Embed(title="Catnip Help", color=Colors.brown, description=desc)
-        await interaction.response.send_message(embed=help_embed, ephemeral=True)
+        view = LayoutView(timeout=1)
+        view.add_item(Container(desc))
+        await interaction.response.send_message(view=view, ephemeral=True)
 
     async def start_bounties(user_id: int) -> None:
         duration = catnip_list["levels"][user.catnip_level]["duration"]
@@ -10472,14 +10461,13 @@ This will remove the remaining catnip time you have.""",
 
         myview = LayoutView(timeout=VIEW_TIMEOUT)
 
-        filename = f"assets/images/mafia/{name.replace(' ', '')}.png"
-
+        filename = f"{name.replace(' ', '')}.png"
         if name == "Whiskers" and user.catnip_level == 10:
-            filename = "assets/images/mafia/WhiskersII.png"
+            filename = "WhiskersII.png"
         if name == "Jeremy" and random.randint(1, 100) == 69:
-            filename = "assets/images/mafia/sus.png"
+            filename = "sus.png"
 
-        filename = "https://raw.githubusercontent.com/milenakos/cat-bot/refs/heads/main/" + filename
+        filename = f"{config.GIT_REPO_LINK}/assets/images/mafia/{filename}"
 
         if not desc:
             embed = Container(f"# Mafia - {rank} (Level {level})")
@@ -10544,7 +10532,9 @@ This will remove the remaining catnip time you have.""",
     main_message = await message.original_response()
 
     if level_down_embed:
-        await message.followup.send(f"<@{user.user_id}>", embed=level_down_embed, ephemeral=True)
+        view = LayoutView(timeout=1)
+        view.add_item(level_down_embed)
+        await message.followup.send(view=view, ephemeral=True)
     await achemb(message, "dark_market", "followup")
     if user.cutscene >= 1:
         await achemb(message, "thanksforplaying", "followup")
