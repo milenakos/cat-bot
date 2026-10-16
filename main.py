@@ -2170,7 +2170,7 @@ Enjoy your goods!"""
             server = await Server.get_or_create(server_id=message.guild.id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
             view = LayoutView(timeout=1)
-            file = f"{config.GIT_REPO_LINK}/assets/images/mafia/car.png"
+            file = f"{config.GIT_REPO_LINK}/assets/images/car.png"
             view.add_item(Container("## car!", discord.ui.MediaGallery(discord.MediaGalleryItem(file))))
             try:
                 await message.reply(view=view)
@@ -2184,7 +2184,7 @@ Enjoy your goods!"""
             server = await Server.get_or_create(server_id=message.guild.id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
             view = LayoutView(timeout=1)
-            file = f"{config.GIT_REPO_LINK}/assets/images/mafia/cart.png"
+            file = f"{config.GIT_REPO_LINK}/assets/images/cart.png"
             view.add_item(Container("## cart!", discord.ui.MediaGallery(discord.MediaGalleryItem(file))))
             try:
                 await message.reply(view=view)
@@ -5027,7 +5027,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
         button2 = Button(style=discord.ButtonStyle.blurple, label="Reactions", emoji="✅" if person.reactions_enabled else "❌")
         button2.callback = toggle_reactions
 
-        highlights = f"""__Highlights__
+        highlights_section = f"""__Highlights__
 {"\n".join(highlights)}
 {get_emoji("ach")} {"None" if not highlighted_ach or highlighted_ach not in ach_list else ach_list[highlighted_ach]["title"]}"""
 
@@ -5050,7 +5050,7 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
 
         embed = Container(
             *(elements if "discordapp" not in user.image else [Section(*elements, Thumbnail(user.image))]),
-            highlights,
+            highlights_section,
             select,
             "===",
             ActionRow(button, button2),
