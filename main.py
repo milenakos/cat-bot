@@ -4953,7 +4953,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
                     await edit_profile(interaction, True)
 
             select.options = options
-            select.placeholder = "Edit highlighted stat... (3/3)"
+            select.placeholder = "Edit highlights... (3/3)"
             select.callback = select_callback
 
         def category_select() -> None:
@@ -4979,7 +4979,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
                 await interaction.response.edit_message(view=view)
 
             select.options = options
-            select.placeholder = "Edit highlighted stat... (2/3)"
+            select.placeholder = "Edit highlights... (2/3)"
             select.callback = select_callback
 
         def line_select() -> None:
@@ -5006,7 +5006,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
                 await interaction.response.edit_message(view=view)
 
             select.options = options
-            select.placeholder = "Edit highlighted stat... (1/3)"
+            select.placeholder = "Edit highlights... (1/3)"
             select.callback = select_callback
 
         async def toggle_compact_inventory(interaction: discord.Interaction) -> None:
