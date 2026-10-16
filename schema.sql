@@ -439,6 +439,7 @@ ALTER TABLE public."user" OWNER TO cat_bot;
 CREATE TABLE public.server (
     server_id bigint NOT NULL,
     only_setupped_channels boolean DEFAULT false,
+    do_responses boolean DEFAULT true,
     do_rain boolean DEFAULT true,
     anti_double_catch boolean DEFAULT false,
     legacy_catching boolean DEFAULT false,

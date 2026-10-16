@@ -2101,7 +2101,7 @@ Enjoy your goods!"""
         if response_prompt in text.lower():
             if not server:
                 server = await Server.get_or_create(server_id=message.guild.id)
-            if await check_channel_setupped(server, message.channel):
+            if server.do_responses and await check_channel_setupped(server, message.channel):
                 try:
                     await message.reply(response_reply)
                 except Exception:
@@ -2129,7 +2129,7 @@ Enjoy your goods!"""
     if text.lower() in ["testing testing 1 2 3", "cat!ach"]:
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
-        if await check_channel_setupped(server, message.channel):
+        if server.do_responses and await check_channel_setupped(server, message.channel):
             try:
                 await message.reply("test success")
             except Exception:
@@ -2144,7 +2144,7 @@ Enjoy your goods!"""
         await user.save()
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
-        if await check_channel_setupped(server, message.channel):
+        if server.do_responses and await check_channel_setupped(server, message.channel):
             try:
                 personname = message.author.name.replace("_", "\\_")
                 await message.reply(f"ok then\n{personname} lost 1 fine cat!!!1!\nYou now have {user.cat_Fine:,} {plural('cat', user.cat_Fine)} of dat type!")
@@ -2156,7 +2156,7 @@ Enjoy your goods!"""
     if text.lower() == "please do the cat":
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
-        if await check_channel_setupped(server, message.channel):
+        if server.do_responses and await check_channel_setupped(server, message.channel):
             thing = discord.File("assets/images/socialcredit.png")
             try:
                 await message.reply(file=thing)
@@ -2168,7 +2168,7 @@ Enjoy your goods!"""
     if text.lower() == "car":
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
-        if await check_channel_setupped(server, message.channel):
+        if server.do_responses and await check_channel_setupped(server, message.channel):
             view = LayoutView(timeout=1)
             file = f"{config.GIT_REPO_LINK}/assets/images/mafia/car.png"
             view.add_item(Container("## car!", discord.ui.MediaGallery(discord.MediaGalleryItem(file))))
@@ -2182,7 +2182,7 @@ Enjoy your goods!"""
     if text.lower() == "cart":
         if not server:
             server = await Server.get_or_create(server_id=message.guild.id)
-        if await check_channel_setupped(server, message.channel):
+        if server.do_responses and await check_channel_setupped(server, message.channel):
             view = LayoutView(timeout=1)
             file = f"{config.GIT_REPO_LINK}/assets/images/mafia/cart.png"
             view.add_item(Container("## cart!", discord.ui.MediaGallery(discord.MediaGalleryItem(file))))
@@ -4310,7 +4310,7 @@ async def settings(message: discord.Interaction):
 
             enabled = basic_settings.values + advanced_settings.values
 
-            for i in ["do_rain", "anti_double_catch", "legacy_catching", "only_setupped_channels"]:
+            for i in ["do_responses", "do_rain", "anti_double_catch", "legacy_catching", "only_setupped_channels"]:
                 server[i] = i in enabled
             await server.save()
 
@@ -4332,6 +4332,12 @@ async def settings(message: discord.Interaction):
                 description="Disables reactions/responses/achs/etc outside of setupped channels",
                 value="only_setupped_channels",
                 default=server.only_setupped_channels,
+            ),
+            discord.CheckboxGroupOption(
+                label="Easter Egg Responses",
+                description="Controls easter egg replies like car/cart/etc",
+                value="do_responses",
+                default=server.do_responses,
             ),
         ]
         modal.add_item(
