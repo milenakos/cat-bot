@@ -9530,26 +9530,38 @@ async def bounty(message: discord.Message, user: Profile, cattype: str) -> None:
             if _bounty_matches(bid, btype, cattype):
                 user.bounty_progress_bonus = min(b_progress + 1, b_total)
             if user.bounty_progress_bonus >= b_total:
-                description = "Bonus Bounty Complete!\nGo to `/catnip` to reroll a perk!"
-                embed = discord.Embed(title=f"✅ {bonus_title}", color=Colors.green, description=description).set_author(
-                    name="Mafia Level " + str(user.catnip_level)
+                view = LayoutView(timeout=1)
+                view.add_item(TextDisplay(f"<@{user.user_id}>"))
+                embed = Container(
+                    f"{get_emoji('catnip')} Mafia Level {user.catnip_level}",
+                    f"## ✅ {bonus_title}",
+                    f"Bonus Bounty Complete!\nGo to {get_command_mention('catnip')} to reroll a perk!",
+                    accent_color=Colors.green,
                 )
-                if not (raining and await try_dm(user.user_id, content=f"<@{user.user_id}>", embed=embed)):
-                    await message.channel.send(f"<@{user.user_id}>", embed=embed)
+                view.add_item(embed)
+                if not (raining and await try_dm(user.user_id, view=view)):
+                    await message.channel.send(view=view)
                 user.reroll = False
                 user.reroll_level = 0
             await user.save()
 
     for title in newly_completed_titles:
         log_stats("bounty_complete", {"title": title})
-        level = user.catnip_level
         colored = _bounty_progress_segments(user)
-        progress_line = f"\n{level} " + get_emoji("staring_square") * colored + "⬛" * (10 - colored) + f" {level + 1}"
+        progress_line = get_emoji("staring_square") * colored + "⬛" * (10 - colored)
         if completed_count == user.bounties:
-            description = f"{progress_line}\nAll Bounties Complete!\nGo to `/catnip` to pay up and pick a perk!"
+            description = f"{progress_line}\nAll Bounties Complete!\nGo to {get_command_mention('catnip')} to pay up and pick a perk!"
         else:
             description = f"{progress_line}\n{completed_count}/{user.bounties} Bounties Complete"
-        embed = discord.Embed(title=f"✅ {title}", color=Colors.green, description=description).set_author(name="Mafia Level " + str(level))
+        view = LayoutView(timeout=1)
+        view.add_item(TextDisplay(f"<@{user.user_id}>"))
+        embed = Container(
+            f"{get_emoji('catnip')} Mafia Level {user.catnip_level}",
+            f"## ✅ {title}",
+            description,
+            accent_color=Colors.green,
+        )
+        view.add_item(embed)
         user.bounties_complete += 1
         if user.bounties_complete >= 5:
             await achemb(message, "bounty_novice", "reply")
@@ -9557,8 +9569,8 @@ async def bounty(message: discord.Message, user: Profile, cattype: str) -> None:
             await achemb(message, "bounty_hunter", "reply")
         if user.bounties_complete >= 100:
             await achemb(message, "bounty_lord", "reply")
-        if not (raining and await try_dm(user.user_id, content=f"<@{user.user_id}>", embed=embed)):
-            await message.channel.send(f"<@{user.user_id}>", embed=embed)
+        if not (raining and await try_dm(user.user_id, view=view)):
+            await message.channel.send(view=view)
         await user.save()
 
 
