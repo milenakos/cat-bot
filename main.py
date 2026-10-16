@@ -4464,26 +4464,19 @@ async def last(message: discord.Interaction):
 @bot.tree.command(description="View all the juicy numbers and info behind cat types")
 async def catalogue(message: discord.Interaction):
     assert message.guild is not None
-    embed = discord.Embed(title=f"{get_emoji('staring_cat')} The Catalogue", color=Colors.brown)
     sums = await _get_pool().fetchrow(
         "SELECT " + ", ".join(f'SUM("cat_{t}") FILTER (WHERE "cat_{t}" > 0) AS "{t}"' for t in cattypes) + ' FROM "profile" WHERE guild_id = $1;',
         message.guild.id,
     )
+    desc = ""
     for cat_type in cattypes:
         in_server = sums[cat_type] or 0
-        title = f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}"
-        if in_server == 0 or not in_server:
-            in_server = 0
-            title = f"{get_emoji('mysterycat')} ???"
+        title = f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}" if in_server else f"{get_emoji('mysterycat')} ???"
+        desc += f"**{title}** ({data.type_dict[cat_type] / TOTAL_CAT_WEIGHT * 100:,.2f}%, {CAT_VALUES[cat_type]:,.2f} value) - {in_server:,} in this server\n"
 
-        title += f" ({round((data.type_dict[cat_type] / TOTAL_CAT_WEIGHT) * 100, 2)}%)"
-
-        embed.add_field(
-            name=title,
-            value=f"{round(CAT_VALUES[cat_type], 2)} value\n{in_server:,} in this server",
-        )
-
-    await message.response.send_message(embed=embed)
+    view = LayoutView(timeout=1)
+    view.add_item(Container(f"## {get_emoji('staring_cat')} The Catalogue", desc))
+    await message.response.send_message(view=view)
 
 
 async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
