@@ -4343,6 +4343,7 @@ async def settings(message: discord.Interaction):
         modal.add_item(
             discord.ui.Label(
                 text="Visibility Settings",
+                description="Control whether various Cat Bot things are visible",
                 component=discord.ui.CheckboxGroup(options=options2, id=67, min_values=0, max_values=len(options2), required=False),
             )
         )
