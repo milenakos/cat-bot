@@ -4993,7 +4993,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
             options.append(
                 discord.SelectOption(
                     emoji=get_emoji("ach"),
-                    label="Achievement",
+                    label="Achievement" if not highlighted_ach or highlighted_ach not in ach_list else ach_list[highlighted_ach]["title"],
                     description="Choose an unlocked achievement to highlight",
                     value="highlighted_ach",
                 )
