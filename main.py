@@ -4472,7 +4472,7 @@ async def catalogue(message: discord.Interaction):
     for cat_type in cattypes:
         in_server = sums[cat_type] or 0
         title = f"{get_emoji(cat_type.lower() + 'cat')} {cat_type}" if in_server else f"{get_emoji('mysterycat')} ???"
-        desc += f"**{title}** ({data.type_dict[cat_type] / TOTAL_CAT_WEIGHT * 100:,.2f}%, {CAT_VALUES[cat_type]:,.2f} value) - {in_server:,} in this server\n"
+        desc += f"**{title}** ({data.type_dict[cat_type] / TOTAL_CAT_WEIGHT * 100:,.2f}%, {CAT_VALUES[cat_type]:,.2f} value) - {in_server:,} in server\n"
 
     view = LayoutView(timeout=1)
     view.add_item(Container(f"## {get_emoji('staring_cat')} The Catalogue", desc))
@@ -5513,6 +5513,12 @@ async def rain(message: discord.Interaction, minutes: int | None):
         disabled=not server.do_rain,
     )
 
+    server_rains = ""
+    server_minutes = profile.rain_minutes
+    if server_minutes > 0:
+        server_rains = f" (+**{server_minutes:,}** bonus {plural('minute', server_minutes)})"
+    balance_line = f"You currently have **{user.rain_minutes:,}** {plural('minute', user.rain_minutes)} of rains!{server_rains}"
+
     if minutes is not None:
         try:
             minutes = int(minutes)
@@ -5535,17 +5541,12 @@ async def rain(message: discord.Interaction, minutes: int | None):
         button2.callback = confirm_anon
         view.add_item(button)
         view.add_item(button2)
-        await message.response.send_message(f"Are you sure you want to start a {minutes}m Cat Rain?", view=view, ephemeral=True)
+        await message.response.send_message(f"Are you sure you want to start a {minutes}m Cat Rain?\n-# {balance_line}", view=view, ephemeral=True)
         return
 
     button.callback = rain_modal
 
     shopbutton = Button(emoji="🛒", label="Store", url="https://catbot.shop")
-
-    server_rains = ""
-    server_minutes = profile.rain_minutes
-    if server_minutes > 0:
-        server_rains = f" (+**{server_minutes}** bonus {plural('minute', server_minutes)})"
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
 
@@ -5560,7 +5561,7 @@ As a bonus, you will get access to {get_command_mention("editprofile")} and {get
 - Late catching time is reduced to 1 second.
 - Bonus cats are +1 instead of minigame.""",
         "===",
-        f"You currently have **{user.rain_minutes:,}** {plural('minute', user.rain_minutes)} of rains!{server_rains}",
+        balance_line,
         ActionRow(button, shopbutton),
     )
 
