@@ -4182,144 +4182,108 @@ async def changetimings(
 @discord.app_commands.default_permissions(manage_guild=True)
 async def changemessage(message: discord.Interaction):
     assert isinstance(message.channel, GuildMessageable)
-    caller = message.user
     if not (channel := await Channel.get_or_none(channel_id=message.channel.id)):
         await message.response.send_message("pls setup this channel first", ephemeral=True)
         return
 
-    # this is the silly popup when you click the button
-    class InputModal(Modal):
-        def __init__(self, type: str):
-            super().__init__(
-                title=f"Change {type} Message",
-                timeout=VIEW_TIMEOUT,
-            )
-
-            self.type = type
-
-            if self.type == "Appear":
-                default = channel.appear if channel.appear else '{emoji} {type} cat has appeared! Type "cat" to catch it!'
-            else:
-                default = (
-                    channel.cought
-                    if channel.cought
-                    else "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} {cats} of dat type!!!\nthis fella was cought in {time}!!!!"
-                )
-
-            self.input = TextInput(
-                min_length=0,
-                max_length=1000,
-                label="Input",
-                style=discord.TextStyle.long,
-                required=False,
-                default=default,
-            )
-            self.add_item(self.input)
-
-        async def on_submit(self, interaction: discord.Interaction) -> None:
-            await channel.refresh_from_db()
-            if not channel:
-                await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
-                return
-            input_value = self.input.value
-
-            # check if all placeholders are there
-            if input_value != "":
-                check = ["{emoji}", "{type}"] + (["{username}", "{count}", "{time}"] if self.type == "Cought" else [])
-
-                for i in check:
-                    if i not in input_value:
-                        await interaction.response.send_message(
-                            f"""nuh uh! you are missing `{i}`.
-you must include the placeholders exactly like they are shown, the values will be replaced by cat bot when it uses them.""",
-                            ephemeral=True,
-                        )
-                        return
-                    elif input_value.count(i) > 10:
-                        await interaction.response.send_message(f"nuh uh! you are using too much of `{i}`.", ephemeral=True)
-                        return
-
-                # check there are no emojis as to not break catching
-                for i in allowedemojis:
-                    if i in input_value:
-                        await interaction.response.send_message(f"nuh uh! you cant use `{i}`. sorry!", ephemeral=True)
-                        return
-
-                icon = get_emoji("finecat")
-                await interaction.response.send_message(
-                    "Success! Here is a preview:\n"
-                    + input_value.replace("{emoji}", str(icon))
-                    .replace("{type}", "Fine")
-                    .replace("{username}", "Cat Bot")
-                    .replace("{count}", "1")
-                    .replace("{cats}", plural("cat", 1))
-                    .replace("{time}", "69 years 420 days")
-                )
-            else:
-                await interaction.response.send_message("Reset to defaults.")
-
-            if self.type == "Appear":
-                channel.appear = input_value
-            else:
-                channel.cought = input_value
-
-            await channel.save()
-
-    # helper to make the above popup appear
-    async def ask_appear(interaction: discord.Interaction) -> None:
-        nonlocal caller
-
-        if interaction.user != caller:
-            await do_funny(interaction)
-            return
-
-        modal = InputModal("Appear")
-        await interaction.response.send_modal(modal)
-
-    async def ask_catch(interaction: discord.Interaction) -> None:
-        nonlocal caller
-
-        if interaction.user != caller:
-            await do_funny(interaction)
-            return
-
-        modal = InputModal("Cought")
-        await interaction.response.send_modal(modal)
-
-    embed = discord.Embed(
-        title="Change appear and cought messages",
-        description="""below are buttons to change them.
-they are required to have all placeholders somewhere in them.
-you must include the placeholders exactly like they are shown below, the values will be replaced by cat bot when it uses them.
-that being:
-
-for appear:
-`{emoji}`, `{type}`
-
-for cought:
-`{emoji}`, `{type}`, `{username}`, `{count}`, `{time}`
-
-optionally, you can also use `{cats}` for cought, which will say "cat" or "cats" depending on the count.
-
-missing any of the required ones will result in a failure.
-how to do mentions: `@everyone`, `@here`, `<@userid>`, `<@&roleid>`
-to get ids, run `/getid` with the thing you want to mention.
-if it doesnt work make sure the bot has mention permissions.
-leave blank to reset.""",
-        color=Colors.brown,
+    appear_default = channel.appear or '{emoji} {type} cat has appeared! Type "cat" to catch it!'
+    cought_default = channel.cought or (
+        "{username} cought {emoji} {type} cat!!!!1!\nYou now have {count} {cats} of dat type!!!\nthis fella was cought in {time}!!!!"
     )
 
-    button1 = Button(label="Appear Message", style=ButtonStyle.blurple)
-    button1.callback = ask_appear
+    async def update_messages(interaction: discord.Interaction) -> None:
+        appear_input = modal.find_item(1)
+        cought_input = modal.find_item(2)
+        assert isinstance(appear_input, TextInput)
+        assert isinstance(cought_input, TextInput)
 
-    button2 = Button(label="Catch Message", style=ButtonStyle.blurple)
-    button2.callback = ask_catch
+        await channel.refresh_from_db()
+        if not channel:
+            await interaction.response.send_message("this channel is not /setup-ed", ephemeral=True)
+            return
 
-    view = View(timeout=VIEW_TIMEOUT)
-    view.add_item(button1)
-    view.add_item(button2)
+        values = [
+            ("Appear", appear_input.value, ["{emoji}", "{type}"]),
+            ("Cought", cought_input.value, ["{emoji}", "{type}", "{username}", "{count}", "{time}"]),
+        ]
+        for name, input_value, placeholders in values:
+            if input_value == "":
+                continue
+            for placeholder in placeholders:
+                if placeholder not in input_value:
+                    await interaction.response.send_message(
+                        f"""nuh uh! {name.lower()} message is missing `{placeholder}`.
+you must include the placeholders exactly like they are shown, the values will be replaced by cat bot when it uses them.""",
+                        ephemeral=True,
+                    )
+                    return
+                if input_value.count(placeholder) > 10:
+                    await interaction.response.send_message(f"nuh uh! you are using too much of `{placeholder}`.", ephemeral=True)
+                    return
 
-    await message.response.send_message(embed=embed, view=view)
+            for forbidden_emoji in allowedemojis:
+                if forbidden_emoji in input_value:
+                    await interaction.response.send_message(f"nuh uh! you cant use `{forbidden_emoji}`. sorry!", ephemeral=True)
+                    return
+
+        channel.appear = appear_input.value
+        channel.cought = cought_input.value
+        await channel.save()
+
+        icon = get_emoji("finecat")
+
+        def preview(input_value: str) -> str:
+            return (
+                input_value.replace("{emoji}", str(icon))
+                .replace("{type}", "Fine")
+                .replace("{username}", "Cat Bot")
+                .replace("{count}", "1")
+                .replace("{cats}", plural("cat", 1))
+                .replace("{time}", "69 years 420 days")
+            )
+
+        await interaction.response.send_message(
+            "Appear message:\n"
+            + (preview(appear_input.value) if appear_input.value else "Reset to defaults.")
+            + "\n\nCatch message:\n"
+            + (preview(cought_input.value) if cought_input.value else "Reset to defaults.")
+        )
+
+    modal = Modal(title="Change Cat Messages", timeout=VIEW_TIMEOUT)
+    modal.add_item(
+        TextDisplay(
+            """You must include all `{}` placeholders in your message exactly as they are.
+To mention a user or role, run `/getid` on it.
+Leave blank to reset."""
+        )
+    )
+    modal.add_item(
+        TextInput(
+            min_length=0,
+            max_length=1000,
+            label="Appear Message",
+            placeholder="Required: {emoji}, {type}",
+            style=discord.TextStyle.long,
+            required=False,
+            default=appear_default,
+            id=1,
+        )
+    )
+    modal.add_item(
+        TextInput(
+            min_length=0,
+            max_length=1000,
+            label="Catch Message",
+            placeholder="Required: {emoji}, {type}, {username}, {count}, {time}; optional: {cats}",
+            style=discord.TextStyle.long,
+            required=False,
+            default=cought_default,
+            id=2,
+        )
+    )
+    modal.on_submit = update_messages
+
+    await message.response.send_modal(modal)
 
 
 @bot.tree.command(description="Get ID of a thing")
