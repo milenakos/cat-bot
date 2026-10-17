@@ -1142,15 +1142,16 @@ async def send_quest_reminders(quest_type: str, start_time: int) -> None:
 
         quest_data = config.battle["quests"][quest_type][user[f"{quest_type}_quest"]]
 
-        view = LayoutView(timeout=VIEW_TIMEOUT)
-        button = Button(label="Postpone", custom_id=f"{quest_type}_{user.guild_id}")
-        button.callback = postpone_reminder
-        embed = Container(
-            f"## {get_emoji(quest_data['emoji'])} {quest_data['title']}",
-            f"Reward: **{user[f'{quest_type}_reward']}** XP",
-            button,
+        embed = discord.Embed(
+            title=f"{get_emoji(quest_data['emoji'])} {quest_data['title']}",
+            description=f"Reward: **{user[f'{quest_type}_reward']}** XP",
             color=Colors.green,
         )
+
+        view = View(timeout=VIEW_TIMEOUT)
+        button = Button(label="Postpone", custom_id=f"{quest_type}_{user.guild_id}")
+        button.callback = postpone_reminder
+        view.add_item(button)
 
         guild = await Server.get_or_create(server_id=user.guild_id)
         try:
@@ -1161,12 +1162,10 @@ async def send_quest_reminders(quest_type: str, start_time: int) -> None:
             guild.name = "Unknown Server"
             await guild.save()
 
-        view.add_item(TextDisplay(f"A new quest is available in {guild.name}!"))
-        view.add_item(embed)
         try:
             user_user = await User.get_or_create(user_id=user.user_id)
             user_dm = await fetch_dm_channel(user_user)
-            await user_dm.send(view=view)
+            await user_dm.send(f"A new quest is available in {guild.name}!", embed=embed, view=view)
         except Exception:
             pass
         user[f"reminder_{quest_type}"] = 0
