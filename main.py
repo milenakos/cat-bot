@@ -8576,13 +8576,13 @@ async def slots(message: discord.Interaction):
             profile.slot_wins += 1
             if finals[0] == ":seven:":
                 title = "BIG WINNER!!!"
-                desc = f"*x60 = +{bet_amount*60}*\n" + desc
+                desc = f"*x60 = +{bet_amount * 60}*\n" + desc
                 profile.slot_big_wins += 1
                 big_win = True
                 profile.casino_balance += bet_amount * 60
             else:
                 title = "winner!!!"
-                desc = f"*x12 = +{bet_amount*12}*\n" + desc
+                desc = f"*x12 = +{bet_amount * 12}*\n" + desc
                 profile.casino_balance += bet_amount * 12
             await profile.save()
             await achemb(interaction, "win_slots", "followup")
@@ -10236,10 +10236,8 @@ You can stop. That's okay. Seriously."""
 
         perk_embed = Container("# Select one of these perks!")
 
-        if user.perk1 and user.perk2 and user.perk3:
+        if user.perk1 and user.perk2 and user.perk3 and (not reroll or user.reroll_level == level):
             perks = [user.perk1, user.perk2, user.perk3]
-        elif level:
-            perks = [p["uuid"] for p in await get_perks(level, user, server.do_rain)]
         else:
             perks = [p["uuid"] for p in await get_perks(user.catnip_level, user, server.do_rain)]
 
