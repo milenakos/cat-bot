@@ -8576,13 +8576,13 @@ async def slots(message: discord.Interaction):
             profile.slot_wins += 1
             if finals[0] == ":seven:":
                 title = "BIG WINNER!!!"
-                desc = "*x60*\n" + desc
+                desc = f"*x60 = +{bet_amount*60}*\n" + desc
                 profile.slot_big_wins += 1
                 big_win = True
                 profile.casino_balance += bet_amount * 60
             else:
                 title = "winner!!!"
-                desc = "*x12*\n" + desc
+                desc = f"*x12 = +{bet_amount*12}*\n" + desc
                 profile.casino_balance += bet_amount * 12
             await profile.save()
             await achemb(interaction, "win_slots", "followup")
@@ -8741,14 +8741,17 @@ async def roulette(message: discord.Interaction):
         win = False
         funny_win = False
         odd_even_win = False
+        desc = f"your bet was {bet_amount:,} {plural('cat dollar', bet_amount)} on {bet_type.capitalize()}"
         if final_choice != 0:
             odd_even_win = (bet_type == "even" and final_choice % 2 == 0) or (bet_type == "odd" and final_choice % 2 == 1)
         if odd_even_win or colors[final_choice] == bet_type:
             if bet_type == "green":
                 user.casino_balance += bet_amount * 36
+                desc = f"*x36 = +{bet_amount * 36}*\n" + desc
                 funny_win = True
             else:
                 user.casino_balance += bet_amount * 2
+                desc = f"*x2 = +{bet_amount * 2}*\n" + desc
             user.roulette_wins += 1
             win = True
         user.casino_balance = round(user.casino_balance)
@@ -8790,7 +8793,7 @@ async def roulette(message: discord.Interaction):
         b2.callback = modal_select
         embed = Container(
             "## winner!!!" if win else "## womp womp",
-            f"your bet was {bet_amount:,} {plural('cat dollar', bet_amount)} on {bet_type.capitalize()}",
+            desc,
             f"{emoji_map[color]} **{final_choice}**",
             ActionRow(b, b2),
             color=Colors.maroon,
@@ -8949,10 +8952,15 @@ async def blackcat(message: discord.Interaction):
             win = not busted and (dealer_score > 21 or score > dealer_score)
             tie = not busted and score == dealer_score
             user.blackjacks += 1
+            desc = f"your bet was {bet_amount:,} {plural('cat dollar', bet_amount)}"
             if win:
                 user.casino_balance += bet_amount * 2 if score != 21 else int(bet_amount * 2.5)
                 user.blackjack_wins += 1
                 title = "winner!!!" if score != 21 else "big winner!!!!"
+                if score == 21:
+                    desc = f"*x2.5 = +{int(bet_amount * 2.5)}*\n" + desc
+                else:
+                    desc = f"*x2 = +{bet_amount * 2}*\n" + desc
             elif tie:
                 user.casino_balance += bet_amount
                 title = "refunded..."
@@ -8980,7 +8988,7 @@ async def blackcat(message: discord.Interaction):
             b2.callback = modal_select
             embed = Container(
                 f"## {title}",
-                f"your bet was {bet_amount:,} {plural('cat dollar', bet_amount)}",
+                desc,
                 f"you: **{score}**" + (f", {bot.user.name}: **{dealer_score}**" if not busted else ""),
                 ActionRow(b, b2),
                 color=Colors.maroon,
