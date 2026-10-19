@@ -8959,6 +8959,8 @@ async def blackcat(message: discord.Interaction):
                 title = "winner!!!" if score != 21 else "big winner!!!!"
                 if score == 21:
                     desc = f"*x2.5 = +{int(bet_amount * 2.5)}*\n" + desc
+                else:
+                    desc = f"*x2 = +{bet_amount * 2}*\n" + desc
             elif tie:
                 user.casino_balance += bet_amount
                 title = "refunded..."
