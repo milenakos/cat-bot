@@ -10216,6 +10216,11 @@ You can stop. That's okay. Seriously."""
         if reroll and user.reroll:
             await interaction.response.send_message("your die rerolls through the floor", ephemeral=True)
             return
+        if reroll:
+            await user.refresh_from_db()
+            if user.reroll_level and user.reroll_level != level:
+                await interaction.response.send_message(f"you already chose to reroll level {user.reroll_level}", ephemeral=True)
+                return
 
         perks_data = catnip_list["perks"]
         rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
