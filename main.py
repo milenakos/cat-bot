@@ -285,6 +285,9 @@ temp_catches_storage = TTLStore(60)
 # to prevent double spawns
 temp_spawns_storage = TTLStore(60)
 
+# to prevent fnnuy
+temp_guilds = {}
+
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
 
@@ -1942,6 +1945,12 @@ async def on_message(message: discord.Message) -> None:
     global last_loop_time
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
+        if "Thanks for adding me!" and "-# " in text:
+            guild = temp_guilds.get(text.split("-# ")[1])
+            if not guild:
+                return
+            bot._connection._add_guild_from_data(guild)
+            del temp_guilds[text.split("-# ")[1]]
         return
 
     if time.time() > last_loop_time + 60:
@@ -3015,7 +3024,8 @@ async def on_guild_join(guild: discord.Guild, user: discord.User) -> None:
 Thanks for adding me!
 Use `/setup` to start (creating a new channel just for Cat Bot is recommended)!
 Join the support server here: https://discord.gg/staring
-Have a nice day :)"""
+Have a nice day :)
+-# {guild.id}"""
 
     try:
         if found:
@@ -11757,11 +11767,11 @@ async def discord_webhook(request: web.Request) -> web.Response:
         event_data = json_data["event"]["data"]
         guild = event_data["guild"]
         user = event_data["user"]
+        temp_guilds[guild["id"]] = guild
         bot._connection.parse_guild_create(guild)
         guild_full = bot._connection._get_create_guild(guild)
         user_full = await bot.fetch_user(user["id"])
         await on_guild_join(guild_full, user_full)
-        bot._connection._add_guild_from_data(guild)
 
     return response
 
