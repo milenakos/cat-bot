@@ -1983,6 +1983,7 @@ async def on_message(message: discord.Message) -> None:
     if not isinstance(message.channel, GuildMessageable):
         return
 
+    guild_id = message.to_reference().guild_id
     server = None
 
     # here are some automation hooks for giving out purchases and similiar
@@ -2022,7 +2023,7 @@ Enjoy your goods!"""
     react_count = 0
 
     # :staring_cat: reaction on some system messages
-    if reactions_ratelimit.get(message.guild.id, 0) < 30 and message.type in [
+    if reactions_ratelimit.get(guild_id, 0) < 30 and message.type in [
         discord.MessageType.channel_follow_add,
         discord.MessageType.recipient_remove,
         discord.MessageType.guild_discovery_disqualified,
@@ -2034,11 +2035,11 @@ Enjoy your goods!"""
         discord.MessageType.purchase_notification,
     ]:
         if not server:
-            server = await Server.get_or_create(server_id=message.guild.id)
+            server = await Server.get_or_create(server_id=guild_id)
         if await check_channel_setupped(server, message.channel):
             await message.add_reaction(get_emoji("staring_cat"))
         react_count += 1
-        reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
+        reactions_ratelimit[guild_id] = reactions_ratelimit.get(guild_id, 0) + 1
         log_stats("reaction", {"reaction": "staring_cat"})
         return
     elif message.type not in [discord.MessageType.default, discord.MessageType.reply]:
@@ -2057,13 +2058,13 @@ Enjoy your goods!"""
         vow_perc = total_vow / len(text)
         if (vow_perc >= 0.82) or total_illegal >= 2:
             try:
-                if reactions_ratelimit.get(message.guild.id, 0) < 30:
+                if reactions_ratelimit.get(guild_id, 0) < 30:
                     if not server:
-                        server = await Server.get_or_create(server_id=message.guild.id)
+                        server = await Server.get_or_create(server_id=guild_id)
                     if await check_channel_setupped(server, message.channel):
                         await message.add_reaction(get_emoji("staring_cat"))
                     react_count += 1
-                    reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
+                    reactions_ratelimit[guild_id] = reactions_ratelimit.get(guild_id, 0) + 1
                     log_stats("reaction", {"reaction": "staring_cat"})
             except Exception:
                 pass
@@ -2082,14 +2083,14 @@ Enjoy your goods!"""
         await achemb(message, "who_ping", "reply")
 
     for reaction_prompt, reaction_name in data.reactions.items():
-        if reaction_prompt in text.lower() and reactions_ratelimit.get(message.guild.id, 0) < 30:
+        if reaction_prompt in text.lower() and reactions_ratelimit.get(guild_id, 0) < 30:
             try:
                 if not server:
-                    server = await Server.get_or_create(server_id=message.guild.id)
+                    server = await Server.get_or_create(server_id=guild_id)
                 if await check_channel_setupped(server, message.channel):
                     await message.add_reaction(get_emoji(reaction_name))
                 react_count += 1
-                reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
+                reactions_ratelimit[guild_id] = reactions_ratelimit.get(guild_id, 0) + 1
                 log_stats("reaction", {"reaction": reaction_name})
             except Exception:
                 pass
@@ -2101,7 +2102,7 @@ Enjoy your goods!"""
     for response_prompt, response_reply in responses.items():
         if response_prompt in text.lower():
             if not server:
-                server = await Server.get_or_create(server_id=message.guild.id)
+                server = await Server.get_or_create(server_id=guild_id)
             if server.do_responses and await check_channel_setupped(server, message.channel):
                 try:
                     await message.reply(response_reply)
@@ -2110,13 +2111,13 @@ Enjoy your goods!"""
                 log_stats("response", {"type": response_reply})
 
     try:
-        if message.author in message.mentions and message.type != discord.MessageType.poll_result and reactions_ratelimit.get(message.guild.id, 0) < 30:
+        if message.author in message.mentions and message.type != discord.MessageType.poll_result and reactions_ratelimit.get(guild_id, 0) < 30:
             if not server:
-                server = await Server.get_or_create(server_id=message.guild.id)
+                server = await Server.get_or_create(server_id=guild_id)
             if await check_channel_setupped(server, message.channel):
                 await message.add_reaction(get_emoji("staring_cat"))
             react_count += 1
-            reactions_ratelimit[message.guild.id] = reactions_ratelimit.get(message.guild.id, 0) + 1
+            reactions_ratelimit[guild_id] = reactions_ratelimit.get(guild_id, 0) + 1
             log_stats("reaction", {"reaction": "staring_cat"})
     except Exception:
         pass
@@ -2129,7 +2130,7 @@ Enjoy your goods!"""
 
     if text.lower() in ["testing testing 1 2 3", "cat!ach"]:
         if not server:
-            server = await Server.get_or_create(server_id=message.guild.id)
+            server = await Server.get_or_create(server_id=guild_id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
             try:
                 await message.reply("test success")
@@ -2140,11 +2141,11 @@ Enjoy your goods!"""
         await achemb(message, "test_ach", "reply")
 
     if text.lower() == "please do not the cat":
-        user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.author.id)
+        user = await Profile.get_or_create(guild_id=guild_id, user_id=message.author.id)
         user.cat_Fine -= 1
         await user.save()
         if not server:
-            server = await Server.get_or_create(server_id=message.guild.id)
+            server = await Server.get_or_create(server_id=guild_id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
             try:
                 personname = message.author.name.replace("_", "\\_")
@@ -2156,7 +2157,7 @@ Enjoy your goods!"""
 
     if text.lower() == "please do the cat":
         if not server:
-            server = await Server.get_or_create(server_id=message.guild.id)
+            server = await Server.get_or_create(server_id=guild_id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
             thing = discord.File("assets/images/socialcredit.png")
             try:
@@ -2168,7 +2169,7 @@ Enjoy your goods!"""
 
     if text.lower() == "car":
         if not server:
-            server = await Server.get_or_create(server_id=message.guild.id)
+            server = await Server.get_or_create(server_id=guild_id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
             view = LayoutView(timeout=1)
             file = f"{config.GIT_REPO_LINK}/assets/images/car.png"
@@ -2182,7 +2183,7 @@ Enjoy your goods!"""
 
     if text.lower() == "cart":
         if not server:
-            server = await Server.get_or_create(server_id=message.guild.id)
+            server = await Server.get_or_create(server_id=guild_id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
             view = LayoutView(timeout=1)
             file = f"{config.GIT_REPO_LINK}/assets/images/cart.png"
@@ -2206,15 +2207,15 @@ Enjoy your goods!"""
     # this is run whether someone says "cat" (very complex)
     if text.lower() == "cat":
         user, channel, server = await asyncio.gather(
-            Profile.get_or_create(guild_id=message.guild.id, user_id=message.author.id),
+            Profile.get_or_create(guild_id=guild_id, user_id=message.author.id),
             Channel.get_or_none(channel_id=message.channel.id),
-            Server.get_or_create(server_id=message.guild.id),
+            Server.get_or_create(server_id=guild_id),
         )
         if not server.name_style_set:
             try:
                 # set the bot display name style
                 await bot.http.request(
-                    discord.http.Route("PATCH", f"/guilds/{message.guild.id}/members/@me"),
+                    discord.http.Route("PATCH", f"/guilds/{guild_id}/members/@me"),
                     json={"display_name_font_id": 3, "display_name_effect_id": 5, "display_name_colors": [16738816]},
                 )
                 server.name_style_set = True
@@ -2278,7 +2279,7 @@ Enjoy your goods!"""
                         await bounty(message, user, channel.cattype)
                     prism_counts = await _get_pool().fetchrow(
                         'SELECT count(*) AS total, count(*) FILTER (WHERE user_id = $2) AS mine FROM "prism" WHERE guild_id = $1;',
-                        message.guild.id,
+                        guild_id,
                         message.author.id,
                     )
                     total_count = prism_counts["total"]
@@ -2397,12 +2398,12 @@ Enjoy your goods!"""
                     _get_pool().fetchval("SELECT sum_blessing_minutes FROM user_sums_mv;"),
                     _get_pool().fetchrow(
                         'SELECT count(*) AS total, count(*) FILTER (WHERE user_id = $2) AS mine FROM "prism" WHERE guild_id = $1;',
-                        message.guild.id,
+                        guild_id,
                         message.author.id,
                     ),
                     User.get_or_create(user_id=message.author.id),
-                    Prism.collect("guild_id = $1 AND user_id = $2 ORDER BY random() LIMIT 1", message.guild.id, message.author.id),
-                    Prism.collect("guild_id = $1 ORDER BY random() LIMIT 1", message.guild.id),
+                    Prism.collect("guild_id = $1 AND user_id = $2 ORDER BY random() LIMIT 1", guild_id, message.author.id),
+                    Prism.collect("guild_id = $1 ORDER BY random() LIMIT 1", guild_id),
                 )
                 try:
                     # some math to make time look cool
