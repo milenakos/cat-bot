@@ -24,6 +24,7 @@ import json
 import logging
 import math
 import os
+import pathlib
 import platform
 import random
 import re
@@ -284,9 +285,6 @@ temp_catches_storage = TTLStore(60)
 
 # to prevent double spawns
 temp_spawns_storage = TTLStore(60)
-
-# to prevent fnnuy
-temp_guilds = {}
 
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
@@ -1945,13 +1943,16 @@ async def on_message(message: discord.Message) -> None:
     global last_loop_time
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
-        if "Thanks for adding me!" in text and "-# " in text:
-            key = int(text.split("-# ")[1])
-            guild = temp_guilds.get(key)
-            if not guild:
+        if config.CLUSTERING and isinstance(message.channel, GuildMessageable) and not message.guild:
+            cluster_id = int(bot.guilds[0].shard_id / len(bot.shards))
+            path = pathlib.Path(f"guilds/{cluster_id}.json")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if not path.is_file():
                 return
-            bot._connection._add_guild_from_data(guild)
-            del temp_guilds[key]
+            async with await anyio.open_file(path, "r") as f:
+                guild = json.loads(await f.read())
+                bot._connection._add_guild_from_data(guild)
+            path.unlink()
         return
 
     if time.time() > last_loop_time + 60:
@@ -11768,11 +11769,16 @@ async def discord_webhook(request: web.Request) -> web.Response:
         event_data = json_data["event"]["data"]
         guild = event_data["guild"]
         user = event_data["user"]
-        temp_guilds[guild["id"]] = guild
-        bot._connection.parse_guild_create(guild)
-        guild_full = bot._connection._get_create_guild(guild)
+        guild_full = bot._connection._add_guild_from_data(guild)
         user_full = await bot.fetch_user(user["id"])
         await on_guild_join(guild_full, user_full)
+
+        if config.CLUSTERING:
+            cluster_id = int(guild_full.shard_id / len(bot.shards))
+            path = pathlib.Path(f"guilds/{cluster_id}.json")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            async with await anyio.open_file(path, "w") as f:
+                json.dump(guild, f)
 
     return response
 
