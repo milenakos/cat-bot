@@ -11770,7 +11770,6 @@ async def discord_webhook(request: web.Request) -> web.Response:
         user = event_data["user"]
         guild_full = bot._connection._add_guild_from_data(guild)
         user_full = await bot.fetch_user(user["id"])
-        await on_guild_join(guild_full, user_full)
 
         if config.CLUSTERING:
             cluster_id = int(guild_full.shard_id / len(bot.shards))
@@ -11778,6 +11777,8 @@ async def discord_webhook(request: web.Request) -> web.Response:
             path.parent.mkdir(parents=True, exist_ok=True)
             async with await anyio.open_file(path, "w") as f:
                 await f.write(json.dumps(guild))
+
+        await on_guild_join(guild_full, user_full)
 
     return response
 
