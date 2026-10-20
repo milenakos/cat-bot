@@ -11757,7 +11757,7 @@ async def discord_webhook(request: web.Request) -> web.Response:
         event_data = json_data["event"]["data"]
         guild = event_data["guild"]
         user = event_data["user"]
-        print(guild)
+        logger.info(f"guild: {guild}")
         bot._connection.parse_guild_create(guild)
         user_full = await bot.fetch_user(user["id"])
         guild_full = await bot.fetch_guild(guild["id"])
