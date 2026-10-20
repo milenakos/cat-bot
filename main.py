@@ -11761,6 +11761,7 @@ async def discord_webhook(request: web.Request) -> web.Response:
         guild_full = bot._connection._get_create_guild(guild)
         user_full = await bot.fetch_user(user["id"])
         await on_guild_join(guild_full, user_full)
+        bot._connection._add_guild_from_data(guild)
 
     return response
 
