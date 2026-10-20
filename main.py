@@ -24,7 +24,6 @@ import json
 import logging
 import math
 import os
-import pathlib
 import platform
 import random
 import re
@@ -1943,16 +1942,6 @@ async def on_message(message: discord.Message) -> None:
     global last_loop_time
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
-        if config.CLUSTERING and isinstance(message.channel, GuildMessageable) and not message.guild:
-            cluster_id = int(bot.guilds[0].shard_id / len(bot.shards))
-            path = pathlib.Path(f"guilds/{cluster_id}.json")
-            path.parent.mkdir(parents=True, exist_ok=True)
-            if not path.is_file():
-                return
-            async with await anyio.open_file(path, "r") as f:
-                guild = json.loads(await f.read())
-                bot._connection._add_guild_from_data(guild)
-            path.unlink()
         return
 
     if time.time() > last_loop_time + 60:
@@ -1994,7 +1983,12 @@ async def on_message(message: discord.Message) -> None:
     if not isinstance(message.channel, GuildMessageable):
         return
 
-    guild_id = message.to_reference().guild_id
+    if message.guild:
+        guild_id = message.guild.id
+    elif isinstance(message.channel, discord.PartialMessageable):
+        guild_id = message.channel.guild_id
+    else:
+        return
     server = None
 
     # here are some automation hooks for giving out purchases and similiar
@@ -11770,14 +11764,6 @@ async def discord_webhook(request: web.Request) -> web.Response:
         user = event_data["user"]
         guild_full = bot._connection._add_guild_from_data(guild)
         user_full = await bot.fetch_user(user["id"])
-
-        if config.CLUSTERING:
-            cluster_id = int(guild_full.shard_id / len(bot.shards))
-            path = pathlib.Path(f"guilds/{cluster_id}.json")
-            path.parent.mkdir(parents=True, exist_ok=True)
-            async with await anyio.open_file(path, "w") as f:
-                await f.write(json.dumps(guild))
-
         await on_guild_join(guild_full, user_full)
 
     return response
