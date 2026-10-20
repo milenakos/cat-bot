@@ -1427,8 +1427,12 @@ async def background_loop() -> None:
         except Exception:
             pass
 
-        # no repeat reminers for now
-        user.reminder_vote = 0
+        next_reminder = int(time.time()) + 12 * 3600
+        streak_expires = user.vote_time_topgg + get_streak_extend_time(user.vote_streak) * 3600
+        if user.vote_streak > 20 and next_reminder < streak_expires:
+            user.reminder_vote = next_reminder
+        else:
+            user.reminder_vote = 0
         reminder_count += 1
         await user.save()
 
@@ -2841,7 +2845,6 @@ Enjoy your goods!"""
                         return result
 
                     except Exception:
-                        # Silently fail if we can't send the confirmation message (e.g. permission issues)
                         pass
 
                 if server.legacy_catching:
@@ -11811,17 +11814,20 @@ async def recieve_vote(request: web.Request) -> web.Response:
     return web.Response(text="ok", status=200)
 
 
+def get_streak_extend_time(vote_streak: int) -> int:
+    if vote_streak < 10:
+        return 24
+    if vote_streak < 20:
+        return 36
+    if vote_streak < 50:
+        return 48
+    if vote_streak < 100:
+        return 60
+    return 72
+
+
 async def do_vote(user: User, created_at: float) -> None:
-    if user.vote_streak < 10:
-        extend_time = 24
-    elif user.vote_streak < 20:
-        extend_time = 36
-    elif user.vote_streak < 50:
-        extend_time = 48
-    elif user.vote_streak < 100:
-        extend_time = 60
-    else:
-        extend_time = 72
+    extend_time = get_streak_extend_time(user.vote_streak)
 
     if created_at - user.vote_time_topgg < 3600:
         return
