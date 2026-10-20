@@ -10045,6 +10045,11 @@ You can stop. That's okay. Seriously."""
         global_user = await User.get_or_create(user_id=interaction.user.id)
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         await user.refresh_from_db()
+
+        if not user.reroll and user.reroll_level and 0 < user.reroll_level <= len(user.perks or []):
+            await perk_screen(interaction, user.reroll_level, True)
+            return
+
         perks = catnip_list["perks"]
         rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
         rarity_colors = [get_emoji("common"), get_emoji("uncommon"), get_emoji("rare"), get_emoji("epic"), get_emoji("legendary")]
