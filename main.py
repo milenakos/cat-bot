@@ -383,6 +383,14 @@ async def try_dm(user_id: int, *args, **kwargs) -> discord.Message | None:
         return None
 
 
+def get_guild_id(msg: discord.PartialMessage) -> int:
+    if msg.guild and msg.guild.id:
+        return msg.guild.id
+    else:
+        assert isinstance(msg.channel, discord.PartialMessageable) and msg.channel.guild_id
+        return msg.channel.guild_id
+
+
 async def check_channel_setupped(guild: Server, channel: GuildMessageable) -> bool:
     if not guild.only_setupped_channels:
         return True
@@ -838,9 +846,8 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
     elif bot.user and user.user_id == bot.user.id:
         embed_progress.add_item(TextDisplay("-# im so good at this"))
 
-    assert message.guild is not None
     assert isinstance(message.channel, GuildMessageable)
-    server = await Server.get_or_create(server_id=message.guild.id)
+    server = await Server.get_or_create(server_id=user.guild_id)
     if await check_channel_setupped(server, message.channel):
         view = LayoutView(timeout=1)
         view.add_item(TextDisplay(f"<@{user.user_id}>"))
@@ -1886,9 +1893,9 @@ async def belated_window_task(
         except Exception:
             return await msg.channel.send(text, **kwargs)
 
-    assert msg.guild is not None
-    profiles = [await Profile.get_or_create(user_id=catcher[0], guild_id=msg.guild.id) for catcher in catchers]
-    eligible_profiles = [await Profile.get_or_create(user_id=catcher[0], guild_id=msg.guild.id) for catcher in eligible_catchers]
+    guild_id = get_guild_id(msg)
+    profiles = [await Profile.get_or_create(user_id=catcher[0], guild_id=guild_id) for catcher in catchers]
+    eligible_profiles = [await Profile.get_or_create(user_id=catcher[0], guild_id=guild_id) for catcher in eligible_catchers]
 
     def late_overview() -> str:
         build_string = f"{get_emoji('pointlaugh')} Late {belated['cattype']} catchers:\n"
@@ -1983,12 +1990,7 @@ async def on_message(message: discord.Message) -> None:
     if not isinstance(message.channel, GuildMessageable):
         return
 
-    if message.guild:
-        guild_id = message.guild.id
-    elif isinstance(message.channel, discord.PartialMessageable):
-        guild_id = message.channel.guild_id
-    else:
-        return
+    guild_id = get_guild_id(message)
     server = None
 
     # here are some automation hooks for giving out purchases and similiar
@@ -5179,7 +5181,6 @@ async def rain_recovery_loop(channel: Channel) -> None:
 
 async def rain_end(message: discord.Message, channel: Channel, force_summary: dict) -> None:
     assert isinstance(message.channel, GuildMessageable)
-    assert message.guild is not None
     try:
         for _ in range(3):
             await message.channel.send("# :bangbang: cat rain has ended")
@@ -5187,12 +5188,13 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
     except Exception:
         pass
 
+    guild = await bot.fetch_guild(get_guild_id(message))
+
     lock_success = False
     unlock_info = None
     if not isinstance(message.channel, discord.Thread):
         try:
             assert bot.user is not None
-            guild = await bot.fetch_guild(message.guild.id)
             api_channel = await guild.fetch_channel(message.channel.id)
             me = await guild.fetch_member(bot.user.id)
             default_role = await guild.fetch_role(guild.id)
@@ -5276,7 +5278,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
 
             for user_id, cat_types in sorted(reverse_mapping.items(), key=lambda item: len(item[1]), reverse=True):
                 uid = "".join(ch for ch in str(user_id) if ch.isdigit())
-                profile = await Profile.get_or_create(user_id=int(uid), guild_id=message.guild.id)
+                profile = await Profile.get_or_create(user_id=int(uid), guild_id=guild.id)
                 aura_suffixes = {cattypes[k]: v.strip() for k, v in enumerate(profile.cat_auras)}
                 show_cats = ""
                 shortened_types = False
