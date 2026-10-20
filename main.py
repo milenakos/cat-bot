@@ -11754,9 +11754,13 @@ async def discord_webhook(request: web.Request) -> web.Response:
     await response.write_eof()
 
     if json_data["type"] == 1 and json_data["event"]["type"] == "APPLICATION_AUTHORIZED" and json_data["event"]["data"]["integration_type"] == 0:
-        user = await bot.fetch_user(json_data["event"]["data"]["user"]["id"])
-        guild = await bot.fetch_guild(json_data["event"]["data"]["guild"]["id"])
-        await on_guild_join(guild, user)
+        event_data = json_data["event"]["data"]
+        guild = event_data["guild"]
+        user = event_data["user"]
+        bot._connection.parse_guild_create(guild)
+        user_full = await bot.fetch_user(user["id"])
+        guild_full = await bot.fetch_guild(guild["id"])
+        await on_guild_join(guild_full, user_full)
 
     return response
 
