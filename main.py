@@ -3411,7 +3411,10 @@ Last soft restart: <t:{int(config.SOFT_RESTART_TIME)}:R>
 Commit: `{COMMIT[:7]}`
 Commit time: {f"<t:{int(git_timestamp)}:R>" if git_timestamp else "N/A"}
 Loops since soft restart: `{loop_count + 1:,}`
-Guild shard: `{message.guild.shard_id:,}`, cluster: `{int(message.guild.shard_id / len(bot.shards)) if config.CLUSTERING else "N/A"}`
+
+Guild shard: `{message.guild.shard_id:,}`
+Guild cluster: `{int(message.guild.shard_id / len(bot.shards)) if config.CLUSTERING else "N/A"}`
+Guilds in cluster: `{format(len(bot.guilds), ",") if config.CLUSTERING else "N/A"}`
 
 **__Global Stats__**
 Guilds: `{server_count}`
