@@ -383,7 +383,7 @@ async def try_dm(user_id: int, *args, **kwargs) -> discord.Message | None:
         return None
 
 
-def get_guild_id(msg: discord.PartialMessage) -> int:
+def get_guild_id(msg: discord.Interaction | discord.PartialMessage) -> int:
     if msg.guild and msg.guild.id:
         return msg.guild.id
     else:
@@ -10736,7 +10736,7 @@ async def catch(message: discord.Interaction, msg: discord.Message):
 
 
 async def refresh_auras(message: discord.Interaction | discord.Message, specific_cat: str | None = None) -> None:
-    assert message.guild is not None
+    guild_id = get_guild_id(message)
 
     def aura_case(idx: int, cat: str, total: str, maximum: str) -> str:
         column = f'p."cat_{cat}"'
@@ -10768,7 +10768,7 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
             FROM stats
             WHERE p.guild_id = $1
             """,
-            message.guild.id,
+            guild_id,
         )
         return
 
@@ -10789,7 +10789,7 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
         FROM stats
         WHERE p.guild_id = $1
         """,
-        message.guild.id,
+        guild_id,
     )
 
 
@@ -11763,7 +11763,12 @@ async def discord_webhook(request: web.Request) -> web.Response:
     await response.prepare(request)
     await response.write_eof()
 
-    if json_data["type"] == 1 and json_data["event"]["type"] == "APPLICATION_AUTHORIZED" and json_data["event"]["data"]["integration_type"] == 0:
+    if (
+        json_data["type"] == 1
+        and json_data["event"]["type"] == "APPLICATION_AUTHORIZED"
+        and "integration_type" in json_data["event"]["data"]
+        and json_data["event"]["data"]["integration_type"] == 0
+    ):
         event_data = json_data["event"]["data"]
         guild = event_data["guild"]
         user = event_data["user"]
