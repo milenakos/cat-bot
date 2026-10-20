@@ -1945,12 +1945,13 @@ async def on_message(message: discord.Message) -> None:
     global last_loop_time
     text = message.content
     if not bot.user or message.author.id == bot.user.id:
-        if "Thanks for adding me!" and "-# " in text:
-            guild = temp_guilds.get(text.split("-# ")[1])
+        if "Thanks for adding me!" in text and "-# " in text:
+            key = int(text.split("-# ")[1])
+            guild = temp_guilds.get(key)
             if not guild:
                 return
             bot._connection._add_guild_from_data(guild)
-            del temp_guilds[text.split("-# ")[1]]
+            del temp_guilds[key]
         return
 
     if time.time() > last_loop_time + 60:
