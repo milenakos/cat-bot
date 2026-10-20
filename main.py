@@ -1948,7 +1948,7 @@ async def on_message(message: discord.Message) -> None:
         last_loop_time = time.time()
         bot.loop.create_task(background_loop())
 
-    if message.guild is None:
+    if isinstance(message.channel, discord.DMChannel):
         if message.author.bot:
             return
         try:
@@ -2969,7 +2969,7 @@ Enjoy your goods!"""
 # the message when cat gets added to a new server
 async def on_guild_join(guild: discord.Guild, user: discord.User) -> None:
     def verify(ch: discord.abc.GuildChannel | None) -> bool:
-        return bool(ch) and isinstance(ch, discord.TextChannel) and ch.permissions_for(guild.me).send_messages
+        return bool(ch) and isinstance(ch, discord.TextChannel) and ch.permissions_for(me).send_messages
 
     def find(patt: str, channels: list[discord.abc.GuildChannel]) -> discord.abc.GuildChannel | None:
         for i in channels:
@@ -2989,6 +2989,9 @@ async def on_guild_join(guild: discord.Guild, user: discord.User) -> None:
     found = False
     ch = None
     names = ["cat", "bot", "command", "welcome", "general"]
+
+    assert bot.user is not None
+    me = await guild.fetch_member(bot.user.id)
     channels = await guild.fetch_channels()
     for name in names:
         ch = find(name, list(channels))
@@ -5179,24 +5182,27 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
     unlock_info = None
     if not isinstance(message.channel, discord.Thread):
         try:
+            assert bot.user is not None
             guild = await bot.fetch_guild(message.guild.id)
             api_channel = await guild.fetch_channel(message.channel.id)
+            me = await guild.fetch_member(bot.user.id)
+            default_role = await guild.fetch_role(guild.id)
 
             assert not isinstance(api_channel, discord.Thread)
-            me_overwrites = api_channel.overwrites_for(message.guild.me)
+            me_overwrites = api_channel.overwrites_for(me)
             me_overwrites.send_messages = True
 
-            everyone_overwrites = api_channel.overwrites_for(guild.default_role)
+            everyone_overwrites = api_channel.overwrites_for(default_role)
             current_perm = everyone_overwrites.send_messages
             everyone_overwrites.send_messages = False
 
             await asyncio.gather(
-                api_channel.set_permissions(guild.default_role, overwrite=everyone_overwrites),
-                api_channel.set_permissions(message.guild.me, overwrite=me_overwrites),
+                api_channel.set_permissions(default_role, overwrite=everyone_overwrites),
+                api_channel.set_permissions(me, overwrite=me_overwrites),
             )
 
             lock_success = True
-            unlock_info = (api_channel, guild.default_role, everyone_overwrites, current_perm)
+            unlock_info = (api_channel, default_role, everyone_overwrites, current_perm)
         except Exception:
             pass
 
@@ -11230,13 +11236,15 @@ async def fake(message: discord.Interaction):
 async def setup_channel(message: discord.Interaction):
     try:
         assert message.guild is not None
+        assert bot.user is not None
         assert isinstance(message.channel, GuildMessageable)
         guild = await bot.fetch_guild(message.guild.id)
         if isinstance(message.channel, discord.Thread):
             channel = await guild.fetch_channel(message.channel.parent_id)
         else:
             channel = await guild.fetch_channel(message.channel.id)
-        channel_permissions = channel.permissions_for(message.guild.me)
+        me = await guild.fetch_member(bot.user.id)
+        channel_permissions = channel.permissions_for(me)
         needed_perms = {
             "View Channel": channel_permissions.view_channel,
             "Attach Files": channel_permissions.attach_files,
@@ -11738,14 +11746,18 @@ async def discord_webhook(request: web.Request) -> web.Response:
     except Exception:
         return web.Response(text="bad", status=401)
 
-    try:
-        return web.Response(status=204)
-    finally:
-        json_data = await request.json()
-        if json_data["type"] == 1 and json_data["event"]["type"] == "APPLICATION_AUTHORIZED" and json_data["event"]["data"]["integration_type"] == 0:
-            user = await bot.fetch_user(json_data["event"]["data"]["user"]["id"])
-            guild = await bot.fetch_guild(json_data["event"]["data"]["guild"]["id"])
-            await on_guild_join(guild, user)
+    json_data = await request.json()
+
+    response = web.Response(status=204)
+    await response.prepare(request)
+    await response.write_eof()
+
+    if json_data["type"] == 1 and json_data["event"]["type"] == "APPLICATION_AUTHORIZED" and json_data["event"]["data"]["integration_type"] == 0:
+        user = await bot.fetch_user(json_data["event"]["data"]["user"]["id"])
+        guild = await bot.fetch_guild(json_data["event"]["data"]["guild"]["id"])
+        await on_guild_join(guild, user)
+
+    return response
 
 
 async def recieve_vote(request: web.Request) -> web.Response:
