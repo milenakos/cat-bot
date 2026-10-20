@@ -10066,7 +10066,7 @@ You can stop. That's okay. Seriously."""
             emojied_options[index + 1] = (f"{perk_data.get('name', '')} ({rarities[perk_rarity]})", rarity_colors[perk_rarity], desc.replace("**", ""))
 
         myview = LayoutView(timeout=VIEW_TIMEOUT)
-        options = [discord.SelectOption(label=f"Lv{k}: {t}", emoji=e, description=d, value=str(k)) for k, (t, e, d) in emojied_options.items()]
+        options = [discord.SelectOption(label=t, emoji=e, description=d, value=str(k)) for k, (t, e, d) in emojied_options.items()]
         perk_select = Select(
             "rr_type",
             placeholder="Select a perk to reroll",
@@ -10162,7 +10162,7 @@ You can stop. That's okay. Seriously."""
             embed = Container()
             for level_num, perk in enumerate(user_perks):
                 perk_rarity, perk_data, desc = describe_perk(perk, perks, global_user)
-                embed.add_item(TextDisplay(f"{rarity_colors[perk_rarity]} __{perk_data.get('name', '')}__ (Level {level_num + 1})\n{desc}"))
+                embed.add_item(TextDisplay(f"{rarity_colors[perk_rarity]} __{perk_data.get('name', '')}__ (Level {level_num + 2})\n{desc}"))
             view.add_item(embed)
             await interaction.response.send_message(view=view, ephemeral=True)
 
