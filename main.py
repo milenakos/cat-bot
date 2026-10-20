@@ -48,6 +48,7 @@ from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
 from discord.ui import ActionRow, Button, LayoutView, Modal, Separator, TextDisplay, TextInput, Thumbnail, View
+from nacl.signing import VerifyKey
 from PIL import Image
 
 import config
@@ -303,6 +304,9 @@ COMMAND_IDS = {}
 # for dev commands, this is fetched in on_ready
 OWNER_ID = 553093932012011520
 
+# for discord webhook auth
+public_key = None
+
 # for funny stats, you can probably edit background_loop to restart every X of them
 loop_count = 0
 
@@ -312,7 +316,7 @@ murdered = False
 # loops in dpy can randomly break, i check if is been over X minutes since last loop to restart it
 last_loop_time = 0
 
-server_count = 0
+server_count = "..."
 
 
 def get_emoji(name: str) -> str:
@@ -1294,22 +1298,19 @@ async def background_loop() -> None:
     except Exception:
         pass
 
-    if config.CLUSTERING:
-        try:
-            async with aiohttp.ClientSession() as session, session.get("http://localhost:7878/metrics") as response:
-                metrics_data = await response.text()
-                server_count = 0
-                for line in metrics_data.split("\n"):
-                    if line.startswith("gateway_cache_guilds{shard="):
-                        if "NaN" in line:
-                            continue
-                        server_count += int(line.split(" ")[1])
-        except Exception:
-            pass
-    else:
-        server_count = len(bot.guilds)
+    try:
+        app_info = await bot.application_info()
+        approx_server_count = app_info.approximate_guild_count
+        if approx_server_count < 10_000:
+            server_count = f"{approx_server_count:,}"
+        elif approx_server_count < 100_000:
+            server_count = f"{approx_server_count / 1000:,.1f}K"
+        else:
+            server_count = f"{approx_server_count // 1000:,}K"
+        await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {server_count} servers"))
+    except Exception:
+        approx_server_count = None
 
-    await bot.change_presence(activity=discord.CustomActivity(name=f"Catting in {server_count:,} servers"))
     if config.CLUSTERING and not config.CLUSTERING_ZERO:
         loop_count += 1
         return
@@ -1317,12 +1318,12 @@ async def background_loop() -> None:
     if config.TOP_GG_MODERN_TOKEN:
         try:
             async with aiohttp.ClientSession() as session:
-                if not config.MIN_SERVER_SEND or server_count > config.MIN_SERVER_SEND:
+                if approx_server_count and (not config.MIN_SERVER_SEND or approx_server_count > config.MIN_SERVER_SEND):
                     # send server count to top.gg
                     r = await session.post(
                         "https://top.gg/api/v1/projects/@me/metrics",
                         headers={"Authorization": f"Bearer {config.TOP_GG_MODERN_TOKEN}"},
-                        json={"server_count": server_count},
+                        json={"server_count": approx_server_count},
                     )
                     r.close()
 
@@ -1458,13 +1459,13 @@ async def background_loop() -> None:
 
                 if exportbackup:
                     await bot.loop.run_in_executor(None, exportbackup.export)
-                    await backupchannel.send(f"In {server_count:,} servers, loop {loop_count}.\nBackup exported.")
+                    await backupchannel.send(f"In {server_count} servers, loop {loop_count}.\nBackup exported.")
                 else:
-                    await backupchannel.send(f"In {server_count:,} servers, loop {loop_count}.", file=discord.File(backup_file))
+                    await backupchannel.send(f"In {server_count} servers, loop {loop_count}.", file=discord.File(backup_file))
             except Exception as e:
                 logger.warning(f"Error during backup: {e}")
         else:
-            await backupchannel.send(f"In {server_count:,} servers, loop {loop_count}.")
+            await backupchannel.send(f"In {server_count} servers, loop {loop_count}.")
 
     loop_count += 1
 
@@ -1491,7 +1492,7 @@ async def on_connect() -> None:
 
 # some code which is run when bot is started
 async def on_ready() -> None:
-    global OWNER_ID, on_ready_debounce, gen_credits
+    global OWNER_ID, on_ready_debounce, gen_credits, public_key
     if on_ready_debounce:
         return
     on_ready_debounce = True
@@ -1502,6 +1503,7 @@ async def on_ready() -> None:
             OWNER_ID = appinfo.team.owner_id
         else:
             OWNER_ID = appinfo.owner.id
+        public_key = VerifyKey(bytes.fromhex(appinfo.verify_key))
 
     # fetch github contributors
     url = "https://api.github.com/repos/milenakos/cat-bot/contributors"
@@ -1523,7 +1525,7 @@ async def on_ready() -> None:
             "With contributions from **" + ", ".join(contributors) + "**",
             "Original Cat Image: **pathologicals**",
             "APIs: **catfact.ninja, weilbyte.dev, wordnik.com, thecatapi.com**",
-            "Open Source Projects: **[discord.py](https://github.com/Rapptz/discord.py), [asyncpg](https://github.com/MagicStack/asyncpg), [gateway-proxy](https://github.com/Gelbpunkt/gateway-proxy)**",
+            "Open Source Projects: **[discord.py](https://github.com/Rapptz/discord.py), [asyncpg](https://github.com/MagicStack/asyncpg)**",
             "Art, suggestions, and a lot more: **TheTrashCell**",
             "Banner art: **2braincelledcreature**",
             "Testers: **aflyde, azalichia, amethystultrakill, thetrashcell, ruby404._., sior_.**",
@@ -2965,11 +2967,11 @@ Enjoy your goods!"""
 
 
 # the message when cat gets added to a new server
-async def on_guild_join(guild: discord.Guild) -> None:
-    def verify(ch: discord.TextChannel | None) -> bool:
-        return bool(ch) and ch.permissions_for(guild.me).send_messages
+async def on_guild_join(guild: discord.Guild, user: discord.User) -> None:
+    def verify(ch: discord.abc.GuildChannel | None) -> bool:
+        return bool(ch) and isinstance(ch, discord.TextChannel) and ch.permissions_for(guild.me).send_messages
 
-    def find(patt: str, channels: list[discord.TextChannel]) -> discord.TextChannel | None:
+    def find(patt: str, channels: list[discord.abc.GuildChannel]) -> discord.abc.GuildChannel | None:
         for i in channels:
             if patt in i.name:
                 return i
@@ -2987,14 +2989,15 @@ async def on_guild_join(guild: discord.Guild) -> None:
     found = False
     ch = None
     names = ["cat", "bot", "command", "welcome", "general"]
+    channels = await guild.fetch_channels()
     for name in names:
-        ch = find(name, guild.text_channels)
+        ch = find(name, list(channels))
         if verify(ch):
             found = True
             break
 
     if not found:
-        for ch in guild.text_channels:
+        for ch in channels:
             if verify(ch):
                 found = True
                 break
@@ -3013,17 +3016,16 @@ Have a nice day :)"""
     try:
         if found:
             assert ch is not None
+            assert isinstance(ch, discord.TextChannel)
             await ch.send(msg)
             log_stats("welcome_message")
     except Exception:
         pass
 
     try:
-        async for entry in guild.audit_logs(action=discord.AuditLogAction.bot_add, limit=20):
-            if bot.user and entry.target and entry.user and entry.target.id == bot.user.id:
-                await entry.user.send(msg)
-                log_stats("welcome_dm")
-                break
+        if user:
+            await user.send(msg)
+            log_stats("welcome_dm")
     except Exception:
         pass
 
@@ -3045,17 +3047,9 @@ Have a nice day :)"""
     try:
         if config.INVITE_LOGS_CHANNEL:
             ch = bot.get_partial_messageable(config.INVITE_LOGS_CHANNEL)
-            await ch.send(f"~#{server_count:,} | {guild.member_count:,} members | Invite source: {source}")
+            await ch.send(f"~#{server_count} | {guild.approximate_member_count:,} members | Invite source: {source}")
     except Exception:
         pass
-
-
-# keep db server name in sync
-async def on_guild_update(before: discord.Guild, after: discord.Guild) -> None:
-    if before.name != after.name:
-        server = await Server.get_or_create(server_id=after.id)
-        server.name = after.name
-        await server.save()
 
 
 # 0 - not started
@@ -3398,7 +3392,7 @@ async def info(message: discord.Interaction):
 **__System__**
 OS Version: `{platform.system()} {platform.release()}`
 Python Version: `{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}`
-discord.py Version: `{discord.__version__}{"-catbot" if "localhost" in str(discord.gateway.DiscordWebSocket.DEFAULT_GATEWAY) else ""}`
+discord.py Version: `{discord.__version__}`
 CPU usage: `{psutil.cpu_percent():.1f}%`
 RAM usage: `{psutil.virtual_memory().percent:.1f}%`
 
@@ -3408,13 +3402,10 @@ Last soft restart: <t:{int(config.SOFT_RESTART_TIME)}:R>
 Commit: `{COMMIT[:7]}`
 Commit time: {f"<t:{int(git_timestamp)}:R>" if git_timestamp else "N/A"}
 Loops since soft restart: `{loop_count + 1:,}`
-
-Guild shard: `{message.guild.shard_id:,}`
-Guild cluster: `{int(message.guild.shard_id / len(bot.shards)) if config.CLUSTERING else "N/A"}`
-Guilds in cluster: `{format(len(bot.guilds), ",") if config.CLUSTERING else "N/A"}`
+Guild shard: `{message.guild.shard_id:,}`, cluster: `{int(message.guild.shard_id / len(bot.shards)) if config.CLUSTERING else "N/A"}`
 
 **__Global Stats__**
-Guilds: `{f"{server_count:,}" if server_count else "..."}`
+Guilds: `{server_count}`
 DB Profiles: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.profile'::regclass;"):,}`
 DB Users: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.user'::regclass;"):,}`
 DB Channels: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.channel'::regclass;"):,}`
@@ -6303,11 +6294,18 @@ async def battlepass(message: discord.Interaction):
             await do_funny(interaction)
             return
         await user.refresh_from_db()
+
+        server = await Server.get_or_create(server_id=interaction.guild.id)
+        current_server = await bot.fetch_guild(interaction.guild.id)
+        if server.name != current_server.name:
+            server.name = current_server.name
+            await server.save()
+
         if not user.reminders_enabled:
             try:
                 dm_channel = await fetch_dm_channel(global_user)
                 await dm_channel.send(
-                    f"You have enabled reminders in {interaction.guild.name}. "
+                    f"You have enabled reminders in {server.name}. "
                     f"You can disable them in the /battlepass command in that server or by saying `disable {interaction.guild.id}` here any time."
                 )
             except Exception:
@@ -6738,34 +6736,8 @@ async def ping(message: discord.Interaction):
         latency = round(bot.latency * 1000)
     except Exception:
         latency = "infinite"
-    if latency == 0:
-        # probably using gateway proxy, try fetching latency from metrics
-        shard_latency = 0
-        try:
-            async with aiohttp.ClientSession() as session, session.get("http://localhost:7878/metrics") as response:
-                data = await response.text()
-                total_latencies = 0
-                total_shards = 0
-                for line in data.split("\n"):
-                    if line.startswith("gateway_shard_latency{shard="):
-                        if "NaN" in line:
-                            continue
-                        if f'shard="{message.guild.shard_id}"' in line:
-                            shard_latency = int(float(line.split(" ")[1]) * 1000)
-                        try:
-                            total_latencies += float(line.split(" ")[1])
-                            total_shards += 1
-                        except Exception:
-                            pass
-                latency = round((total_latencies / total_shards) * 1000)
-        except Exception:
-            pass
-        postfix = ""
-        if shard_latency:
-            postfix = f"\nthe neuron for this server has a delay of {shard_latency} ms {get_emoji('staring_cat')}{get_emoji('staring_cat')}"
-        await message.response.send_message(f"🏓 cat has global brain delay of {latency} ms {get_emoji('staring_cat')}{postfix}")
-    else:
-        await message.response.send_message(f"🏓 cat has brain delay of {latency} ms {get_emoji('staring_cat')}")
+
+    await message.response.send_message(f"🏓 cat has brain delay of {latency} ms {get_emoji('staring_cat')}")
 
 
 @bot.tree.command(description="the most useful command ever")
@@ -9397,7 +9369,7 @@ async def cat_fact(message: discord.Interaction):
     assert isinstance(message.channel, GuildMessageable)
     facts = [
         "you love cats",
-        f"cat bot is in {f'{server_count:,}' if server_count else '...'} servers",
+        f"cat bot is in {server_count} servers",
         "cat",
         "cats are the best",
     ]
@@ -11754,6 +11726,28 @@ async def owner_transfer(ctx: commands.Context, *, args: str = "") -> None:
     )
 
 
+async def discord_webhook(request: web.Request) -> web.Response:
+    # verify signature
+    try:
+        assert public_key is not None
+        signature = request.headers.get("X-Signature-Ed25519", "")
+        timestamp = request.headers.get("X-Signature-Timestamp", "")
+        raw_body = await request.read()
+        body = f"{timestamp}{raw_body.decode()}".encode()
+        public_key.verify(body, bytes.fromhex(signature))
+    except Exception:
+        return web.Response(text="bad", status=401)
+
+    try:
+        return web.Response(status=204)
+    finally:
+        json_data = await request.json()
+        if json_data["type"] == 1 and json_data["event"]["type"] == "APPLICATION_AUTHORIZED" and json_data["event"]["data"]["integration_type"] == 0:
+            user = await bot.fetch_user(json_data["event"]["data"]["user"]["id"])
+            guild = await bot.fetch_guild(json_data["event"]["data"]["guild"]["id"])
+            await on_guild_join(guild, user)
+
+
 async def recieve_vote(request: web.Request) -> web.Response:
     signature = request.headers.get("x-topgg-signature", "")
     try:
@@ -11986,8 +11980,6 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
     bot2.on_command_error = on_command_error  # type: ignore
     bot2.on_error = on_error  # type: ignore
     bot2.on_ready = on_ready  # type: ignore
-    bot2.on_guild_join = on_guild_join  # type: ignore
-    bot2.on_guild_update = on_guild_update  # type: ignore
     bot2.on_connect = on_connect  # type: ignore
     bot2.on_interaction = on_interaction  # type: ignore
 
@@ -12006,6 +11998,7 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
                 web.post("/bakegg", bake_gg_reward),
                 web.get("/{profile_id}", profile_wrapper),
                 web.get("/profile/{profile_id}.json", profile_embed),
+                web.post("/hook", discord_webhook),
             ]
         )
         vote_server = web.AppRunner(app)
