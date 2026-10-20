@@ -3026,8 +3026,7 @@ async def on_guild_join(guild: discord.Guild, user: discord.User) -> None:
 Thanks for adding me!
 Use `/setup` to start (creating a new channel just for Cat Bot is recommended)!
 Join the support server here: https://discord.gg/staring
-Have a nice day :)
--# {guild.id}"""
+Have a nice day :)"""
 
     try:
         if found:
@@ -11778,7 +11777,7 @@ async def discord_webhook(request: web.Request) -> web.Response:
             path = pathlib.Path(f"guilds/{cluster_id}.json")
             path.parent.mkdir(parents=True, exist_ok=True)
             async with await anyio.open_file(path, "w") as f:
-                json.dump(guild, f)
+                await f.write(json.dumps(guild))
 
     return response
 
