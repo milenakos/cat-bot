@@ -433,10 +433,8 @@ async def achemb(
             return
     author = author_string.id
 
-    if not message.guild:
-        return
-
-    profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=author)
+    guild_id = get_guild_id(message)
+    profile = await Profile.get_or_create(guild_id=guild_id, user_id=author)
 
     if ach_id == "failed_gambler":
         assert isinstance(message, discord.Interaction)
@@ -500,7 +498,7 @@ async def achemb(
     view.add_item(embed)
 
     result = None
-    server = await Server.get_or_create(server_id=message.guild.id)
+    server = await Server.get_or_create(server_id=guild_id)
     assert isinstance(message.channel, GuildMessageable)
     mute = not await check_channel_setupped(server, message.channel)
     # during cat rains, channel-visible achievement embeds get dmed instead to ratelimits
