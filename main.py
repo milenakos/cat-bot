@@ -3069,13 +3069,6 @@ Have a nice day :)"""
 
     await server.save()
 
-    try:
-        if config.INVITE_LOGS_CHANNEL:
-            ch = bot.get_partial_messageable(config.INVITE_LOGS_CHANNEL)
-            await ch.send(f"~#{server_count} | {guild.approximate_member_count:,} members | Invite source: {source}")
-    except Exception:
-        pass
-
 
 # 0 - not started
 # 1 - seen cta message on catch, /tutorial required

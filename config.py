@@ -48,9 +48,6 @@ RAIN_CHANNEL_ID = 1278705994536321157
 # channel for reports of inappropriate supporter perks
 REPORT_CHANNEL_ID = 967080927937323138
 
-# channel for invite logs
-INVITE_LOGS_CHANNEL = 1509292465088368640
-
 
 # config.py is used as a place to store persistent data, do not modify these
 filtered_errors = []
