@@ -61,30 +61,7 @@ try:
 except ImportError:
     exportbackup = None
 
-try:
-    COMMIT = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
-except subprocess.CalledProcessError:
-    COMMIT = "unknown"
-
 logger = logging.getLogger()
-
-
-def generate_ip():
-    banned_ip = "178.41.42.255"  # check for Regon's IPv4 address
-    while True:
-        ip = ".".join(str(random.randint(1, 255)) for _ in range(4))
-        if ip != banned_ip:
-            return ip
-
-
-def plural(word: str, count: int) -> str:
-    if count == 1:
-        return word
-    return word + "s"
-
-
-# trigger warning, base64 encoded for your convinience
-NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
 
 
 class PackEntry(TypedDict):
@@ -253,6 +230,14 @@ rain_shill = "-# ☔ Get tons of cats /rain"
 # unread news notice
 news_notice = "-# You have unread news! /news"
 
+try:
+    COMMIT = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
+except subprocess.CalledProcessError:
+    COMMIT = "unknown"
+
+# trigger warning, base64 encoded for your convinience
+NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy", "bmlnYQ==", "bmlnZ2E=", "bmlnZ2Vy"]]
+
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
 VIEW_TIMEOUT = 3600 * 24
@@ -338,6 +323,8 @@ def get_short_emoji(emoji: str) -> str:
 
 def get_aura_emoji(emoji: str, auras: list[str], short: bool = False) -> str:
     emoji_pre = emoji.lower() + "cat"
+    if config.EMOJI and emoji_pre in allowedemojis:
+        emoji_pre = data.emoji_theme_prefixes[config.EMOJI] + emoji_pre
     cattype_index = cattypes.index(emoji)
     suffix = auras[cattype_index]
     if suffix and suffix in ["r", "p", "c", "y", "a"]:
@@ -347,6 +334,20 @@ def get_aura_emoji(emoji: str, auras: list[str], short: bool = False) -> str:
 
 def get_command_mention(name: str) -> str:
     return f"</{name}:{COMMAND_IDS[name]}>" if name in COMMAND_IDS else f"/{name}"
+
+
+def generate_ip():
+    banned_ip = "178.41.42.255"  # check for Regon's IPv4 address
+    while True:
+        ip = ".".join(str(random.randint(1, 255)) for _ in range(4))
+        if ip != banned_ip:
+            return ip
+
+
+def plural(word: str, count: int) -> str:
+    if count == 1:
+        return word
+    return word + "s"
 
 
 def log_stats(key: str, tags: dict[str, str] | None = None, value: float = 1) -> None:
@@ -910,6 +911,18 @@ def get_streak_reward(streak: int) -> dict:
         return {"reward": "gold", "emoji": get_emoji("goldpack"), "done_emoji": get_emoji("goldpack_claimed")}
     else:
         return {"reward": None, "emoji": "⬛", "done_emoji": get_emoji("staring_square")}
+
+
+def get_streak_extend_time(vote_streak: int) -> int:
+    if vote_streak < 10:
+        return 24
+    if vote_streak < 20:
+        return 36
+    if vote_streak < 50:
+        return 48
+    if vote_streak < 100:
+        return 60
+    return 72
 
 
 # handle curious people clicking buttons
@@ -11813,18 +11826,6 @@ async def recieve_vote(request: web.Request) -> web.Response:
     await do_vote(user, created_at)
 
     return web.Response(text="ok", status=200)
-
-
-def get_streak_extend_time(vote_streak: int) -> int:
-    if vote_streak < 10:
-        return 24
-    if vote_streak < 20:
-        return 36
-    if vote_streak < 50:
-        return 48
-    if vote_streak < 100:
-        return 60
-    return 72
 
 
 async def do_vote(user: User, created_at: float) -> None:
