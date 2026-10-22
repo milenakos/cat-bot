@@ -12070,6 +12070,8 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
     # finally replace the fake bot with the real one
     bot = bot2
 
+    patch_view_store()
+
     config.SOFT_RESTART_TIME = time.time()
 
     vote_server = None
