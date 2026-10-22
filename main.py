@@ -38,12 +38,12 @@ import aiohttp
 import anyio
 import asyncpg
 import discord
-import discord.gateway
 import discord.http
+import discord.ui.view as _uiv
 import discord_emoji
 import emoji
 import psutil
-import unidecode  # type: ignore
+import unidecode
 from aiohttp import web
 from discord import ButtonStyle
 from discord.ext import commands
@@ -240,7 +240,7 @@ NONOWORDS = [base64.b64decode(i).decode("utf-8") for i in ["bmlja2E=", "bmlja2Vy
 
 # timeout for views
 # higher one means buttons work for longer but uses more ram to keep track of them
-VIEW_TIMEOUT = 3600 * 24
+VIEW_TIMEOUT = 3600
 
 # store credits usernames to prevent excessive api calls
 gen_credits = {}
@@ -4047,6 +4047,8 @@ async def tiktok(message: discord.Interaction, text: str):
         await achemb(message, "bwomp", "followup")
         return
 
+    await message.response.defer()
+
     try:
         async with (
             aiohttp.ClientSession() as session,
@@ -4054,6 +4056,7 @@ async def tiktok(message: discord.Interaction, text: str):
                 "https://tiktok-tts.weilnet.workers.dev/api/generation",
                 json={"text": text, "voice": "en_us_001"},
                 headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
+                timeout=aiohttp.ClientTimeout(total=5),
             ) as response,
         ):
             stuff = await response.json()
@@ -4061,9 +4064,9 @@ async def tiktok(message: discord.Interaction, text: str):
                 ba = "data:audio/mpeg;base64," + stuff["data"]
                 f.write(base64.b64decode(ba))
                 f.seek(0)
-                await message.response.send_message(file=discord.File(fp=f, filename="output.mp3"))
+                await message.followup.send(file=discord.File(fp=f, filename="output.mp3"))
     except Exception:
-        await message.response.send_message("i dont speak guacamole (remove non-english characters, make sure the message is below 300 characters)")
+        await message.followup.send("i dont speak guacamole (remove non-english characters, make sure the message is below 300 characters)")
 
     await achemb(message, "tiktoker", "followup")
 
@@ -7278,10 +7281,10 @@ async def fish(message: discord.Interaction):
         if profile.fish_rod_durability > 0:
             mult = data.fishing_upgrades["rod"][profile.fish_rod_level]["value"]
             used_rod = True
-        for _ in range(random.randint(int(1000 * mult), int(3000 * mult))):
+        for _ in range(random.randint(int(100 * mult), int(300 * mult))):
             if (interaction.guild.id, interaction.user.id) not in fish_lock:
                 fish_lock.add((interaction.guild.id, interaction.user.id))
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0.1)
 
         fish_caught = False
 
@@ -7358,7 +7361,7 @@ async def fish(message: discord.Interaction):
 
             await progress(message, profile, "fish")
 
-        view = LayoutView(timeout=VIEW_TIMEOUT)
+        view = LayoutView(timeout=10)
         button = Button(label="Pull!", style=ButtonStyle.blurple)
         button.callback = pull_fish
 
@@ -11997,6 +12000,42 @@ async def start_tutorial(ctx: discord.Interaction) -> None:
     global_user = await User.get_or_create(user_id=ctx.user.id)
     if global_user.tutorial_state == 0:
         await ctx.followup.send(view=await get_tutorial_view(ctx.user.id), ephemeral=True)
+
+
+def patch_view_store() -> None:
+    # patches the memory leak from view hot reloading
+    VS = _uiv.ViewStore
+    if getattr(VS, "_catbot_patched", False):
+        return
+    VS._catbot_patched = True  # pyright: ignore[reportAttributeAccessIssue]
+    orig_add, orig_untrack = VS.add_view, VS.remove_message_tracking
+
+    def remove_message_tracking(self, message_id):
+        old = orig_untrack(self, message_id)
+        if old is not None:
+            pending = self.__dict__.setdefault("_catbot_pending", {})
+            pending[message_id] = old
+
+            def expire():
+                if pending.get(message_id) is old:
+                    del pending[message_id]
+                    old.stop()
+
+            asyncio.get_running_loop().call_later(120, expire)
+        return old
+
+    def add_view(self, view, message_id=None):
+        if message_id is not None:
+            pending = self.__dict__.get("_catbot_pending")
+            old = pending.pop(message_id, None) if pending else None
+            if old is None:
+                old = self._synced_message_views.get(message_id)
+            if old is not None and old is not view:
+                old.stop()
+        orig_add(self, view, message_id)
+
+    VS.add_view = add_view
+    VS.remove_message_tracking = remove_message_tracking
 
 
 async def setup(bot2: commands.AutoShardedBot) -> None:
