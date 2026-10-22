@@ -10117,7 +10117,7 @@ You can stop. That's okay. Seriously."""
         perk_values["double"] = double_chance
         perk_values["triple_none"] = triple_chance
         perk_values["none"] = none_chance
-        perk_values["double_boost"] = max(100, perk_values.get("double_boost", 0))
+        perk_values["double_boost"] = min(100, perk_values.get("double_boost", 0))
 
         # non-pack perks
         for current_perk in [
