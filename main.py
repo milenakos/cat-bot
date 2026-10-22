@@ -1317,6 +1317,8 @@ async def background_loop() -> None:
         pass
 
     try:
+        if loop_count % 10 == 0:
+            raise NotImplementedError
         app_info = await bot.application_info()
         approx_server_count = app_info.approximate_guild_count
         if approx_server_count < 10_000:
@@ -8731,6 +8733,7 @@ async def roulette(message: discord.Interaction):
             "green": "🟢",
         }
 
+        await user.refresh_from_db()
         final_choice = random.randint(0, 36)
         user.casino_balance -= bet_amount
         user.roulette_spins += 1
@@ -8871,6 +8874,7 @@ async def blackcat(message: discord.Interaction):
             await play(interaction, bet_amount)
 
     async def play(interaction: discord.Interaction, bet_amount: int) -> None:
+        await user.refresh_from_db()
         user.casino_balance -= bet_amount
         await user.save()
 
@@ -8945,6 +8949,7 @@ async def blackcat(message: discord.Interaction):
                     await interaction.edit_original_response(view=view)
                 await asyncio.sleep(1)
 
+            await user.refresh_from_db()
             win = not busted and (dealer_score > 21 or score > dealer_score)
             tie = not busted and score == dealer_score
             user.blackjacks += 1
