@@ -1,4 +1,10 @@
 {
+  "pumpkin_packer": {"title": "Pumpkin Packer", "description": "open a pumpkin pack", "difficulty": 1, "parent": "Halloween"},
+  "ghost_buster": {"title": "Ghost Buster", "description": "catch a ghost cat", "difficulty": 2, "parent": "Halloween"},
+  "ghost_fast": {"title": "Fast Catcher?", "description": "catch a ghost cat in under 5 seconds", "difficulty": 3, "parent": "Halloween"},
+  "ghost_fine": {"title": "Fine Buster", "description": "catch a fine ghost cat", "difficulty": 3, "parent": "Halloween"},
+  "ghost_rare": {"title": "Brave Buster", "description": "catch a ghost cat rarer than brave", "difficulty": 3, "parent": "Halloween"},
+
   "first": {"title": "First cat!", "description": "the journey begins...", "difficulty": 1, "parent": "Catching"},
     "fast_catcher": {"title": "Fast Catcher", "description": "catch a cat in under 5 seconds", "difficulty": 2, "parent": "first"},
       "slow_catcher": {"title": "Slow Catcher", "description": "catch a cat in over an hour", "difficulty": 4, "parent": "fast_catcher"},

@@ -28,7 +28,8 @@ CREATE TABLE public.channel (
     forcespawned boolean DEFAULT false,
     cattype character varying(20) DEFAULT ''::character varying,
     cat_rains bigint DEFAULT 0,
-    rain_should_end bigint DEFAULT 0
+    rain_should_end bigint DEFAULT 0,
+    is_ghost boolean DEFAULT false
 );
 
 ALTER TABLE public.channel OWNER TO cat_bot;
@@ -352,7 +353,13 @@ CREATE TABLE public.profile (
     sharing_enabled boolean DEFAULT false,
     pack_pumpkin integer DEFAULT 0,
     reactions_enabled boolean DEFAULT true,
-    cathub boolean DEFAULT false
+    cathub boolean DEFAULT false,
+    ghosts_caught smallint DEFAULT 0,
+    pumpkin_packer boolean DEFAULT false,
+    ghost_buster boolean DEFAULT false,
+    ghost_fast boolean DEFAULT false,
+    ghost_fine boolean DEFAULT false,
+    ghost_rare boolean DEFAULT false
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;
