@@ -2777,9 +2777,10 @@ Enjoy your goods!"""
                     if user.ghosts_caught % 13 == 0:
                         suffix_string += f"\n👻 Ghost Cat! 13/13, +1 {get_emoji('pumpkinpack')}. Next {get_emoji('pumpkinpack')} in 0/13 ghosts"
                         user.pack_pumpkin += 1
-                        if "Pumpkin" not in config.cat_cought_rain[channel.channel_id]:
-                            config.cat_cought_rain[channel.channel_id]["Pumpkin"] = []
-                        config.cat_cought_rain[channel.channel_id]["Pumpkin"].append(f"<@{user.user_id}>")
+                        if channel.channel_id in config.cat_cought_rain:
+                            if "Pumpkin" not in config.cat_cought_rain[channel.channel_id]:
+                                config.cat_cought_rain[channel.channel_id]["Pumpkin"] = []
+                            config.cat_cought_rain[channel.channel_id]["Pumpkin"].append(f"<@{user.user_id}>")
                     else:
                         suffix_string += f"\n👻 Ghost Cat! Progress for +1 {get_emoji('pumpkinpack')}: {user.ghosts_caught % 13}/13 ghosts"
 
