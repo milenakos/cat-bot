@@ -5306,11 +5306,11 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
         funny_cat_emojis = {k: get_short_emoji(k.lower() + "cat") for k in rain_cats}
         funny_pack_emojis = {k: get_short_emoji(k.lower() + "pack") for k in rain_packs}
         funny_aura_emojis = (
-            {k + "y": get_short_emoji(k.lower() + "cat_y") for k in rain_cats}
-            | {k + "c": get_short_emoji(k.lower() + "cat_c") for k in rain_cats}
-            | {k + "p": get_short_emoji(k.lower() + "cat_p") for k in rain_cats}
-            | {k + "r": get_short_emoji(k.lower() + "cat_r") for k in rain_cats}
-            | {k + "a": get_short_emoji(k.lower() + "cat_a") for k in rain_cats}
+            {k + "y": get_short_emoji("p_" + k.lower() + "cat_y") for k in rain_cats}
+            | {k + "c": get_short_emoji("p_" + k.lower() + "cat_c") for k in rain_cats}
+            | {k + "p": get_short_emoji("p_" + k.lower() + "cat_p") for k in rain_cats}
+            | {k + "r": get_short_emoji("p_" + k.lower() + "cat_r") for k in rain_cats}
+            | {k + "a": get_short_emoji("p_" + k.lower() + "cat_a") for k in rain_cats}
         )
 
         funny_emojis = funny_cat_emojis | funny_pack_emojis | funny_aura_emojis
