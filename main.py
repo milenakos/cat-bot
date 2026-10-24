@@ -10684,7 +10684,11 @@ async def achievements(message: discord.Interaction):
         if category == "Museum":
             embed.add_item(TextDisplay("Achievements in this category are no longer obtainable, and don't count towards anything."))
         elif category == "Halloween":
-            embed.add_item(TextDisplay(f"Get +1 {get_emoji('pumpkinpack')} when completing achievements below.\nEnds <t:1793476800:R>"))
+            embed.add_item(
+                TextDisplay(f"""Get +1 {get_emoji("pumpkinpack")} when completing achievements below.
+Ghost Catch Progress: {user.ghosts_caught}/13
+Ends <t:1793476800:R>""")
+            )
             embed.accent_color = Colors.orange
         else:
             embed.add_item(TextDisplay(f"Total: {unlocked}/{total_achs}\nCategory: {unlocked_achs}/{len(ach_ids)}"))
