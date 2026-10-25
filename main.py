@@ -1616,8 +1616,6 @@ async def play_minigame(interaction: discord.Interaction) -> None:
 
     belated["late_catchers"] = [c for c in belated["late_catchers"] if c[0] != interaction.user.id]
     cattype = belated["cattype"]
-    start = time.time()
-    end = int(start) + 45
 
     log_stats("minigame_start", {"cattype": cattype})
 
@@ -1701,7 +1699,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
                 if all(candidate_digits[i] < candidate_digits[i + 1] for i in range(5)):
                     continue
                 option_texts.append(candidate)
-            random.shuffle(option_texts)
+            mrandom.shuffle(option_texts)
             options = [discord.SelectOption(label=text, value=text) for text in option_texts]
             modal.add_item(discord.ui.Label(text="Find the number whose digits only ascend", component=discord.ui.Select(options=options, id=67)))
         case "Rickroll":
@@ -1773,31 +1771,10 @@ async def play_minigame(interaction: discord.Interaction) -> None:
             modal.add_item(TextDisplay(f"## How many letters are different between the sentences?\n\n{sentence}\n\n{changed}"))
             modal.add_item(discord.ui.TextInput(label="Answer", id=67, min_length=1, max_length=2))
         case "Real":
-            if "trivia_answer" not in belated:
-                try:
-                    async with (
-                        aiohttp.ClientSession() as session,
-                        session.get(
-                            "https://the-trivia-api.com/v2/questions?limit=1&difficulties=easy",
-                            headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
-                        ) as response,
-                    ):
-                        stuff = await response.json()
-                        question = stuff[0]
-                        question_text = question["question"]["text"]
-                        correct_answer = question["correctAnswer"]
-                        answers = question["incorrectAnswers"] + [correct_answer]
-                except Exception:
-                    question_text = "Are cats awesome?"
-                    answers = ["Yes", "No", "Meh", "IDK"]
-                    correct_answer = "Yes"
-                config.belated_catchers[interaction.channel.id]["trivia_answer"] = { "question_text": question_text, "correct_answer": correct_answer, "answers": answers }
-            else:
-                question_text = belated["trivia_answer"]["question_text"]
-                correct_answer = belated["trivia_answer"]["correct_answer"]
-                answers = belated["trivia_answer"]["answers"]
-            
-            mrandom.shuffle(answers)
+            question_text = belated["trivia_answer"]["question_text"]
+            correct_answer = belated["trivia_answer"]["correct_answer"]
+            answers = belated["trivia_answer"]["answers"]
+
             options = []
             answer = correct_answer
             for answer_value in answers:
@@ -1817,6 +1794,8 @@ async def play_minigame(interaction: discord.Interaction) -> None:
                     component=discord.ui.TextInput(placeholder="meow mrrrp miau nyaa~ :3", min_length=69, max_length=2000, style=discord.TextStyle.long, id=67),
                 )
             )
+    start = time.time()
+    end = int(start) + 45
     modal.add_item(TextDisplay(f"-# Time's up <t:{end}:R>"))
 
     async def check_minigame(interaction: discord.Interaction) -> None:
@@ -1985,6 +1964,30 @@ async def belated_window_task(
         button.callback = play_minigame
         view.add_item(button)
         pings = " ".join([f"<@{catcher[0]}>" for catcher in eligible_catchers])
+
+        if belated["cattype"] == "Real":
+            # pre-fetch the trivia question so it's consistent for all players
+            try:
+                async with (
+                    aiohttp.ClientSession() as session,
+                    session.get(
+                        "https://the-trivia-api.com/v2/questions?limit=1&difficulties=easy",
+                        headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"},
+                    ) as response,
+                ):
+                    stuff = await response.json()
+                    question = stuff[0]
+                    question_text = question["question"]["text"]
+                    correct_answer = question["correctAnswer"]
+                    answers = question["incorrectAnswers"] + [correct_answer]
+            except Exception:
+                question_text = "Are cats awesome?"
+                answers = ["Yes", "No", "Meh", "IDK"]
+                correct_answer = "Yes"
+
+            answers = random.shuffle(answers)
+            config.belated_catchers[msg.channel.id]["trivia_answer"] = { "question_text": question_text, "correct_answer": correct_answer, "answers": answers }
+
         h = await reply_or_send(
             catch_confirm,
             f"""🎁 **BONUS {icon} {belated["cattype"].upper()} CAT!**
