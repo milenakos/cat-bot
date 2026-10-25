@@ -1664,6 +1664,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
             colors = ["red", "yellow", "blue", "green"]
             options = [discord.RadioGroupOption(label=color) for color in colors]
             modal.add_item(discord.ui.Label(text="Three options are safe, and one is a fail", component=discord.ui.RadioGroup(options=options, id=67)))
+            random.seed(interaction.user.id)
             answer = random.choice(colors)
         case "Gremlin":
             expr = str(random.randint(1, 15)) + " + " + str(random.randint(1, 15)) + " * " + str(random.randint(2, 10))
