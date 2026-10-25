@@ -1622,6 +1622,11 @@ async def play_minigame(interaction: discord.Interaction) -> None:
     log_stats("minigame_start", {"cattype": cattype})
 
     modal = Modal(title="Bonus Cat Minigame")
+
+    old_random_state = random.getstate()
+    assert interaction.message is not None
+    # ensure minigame is the same for all participants
+    random.seed(interaction.message.id)
     match cattype:
         case "Fine":
             random_text = random.choice(data.sentences) + "\n" + random.choice(data.sentences)
@@ -1882,6 +1887,8 @@ async def play_minigame(interaction: discord.Interaction) -> None:
         else:
             await interaction.response.send_message(f"❌ Better luck next time!\nCorrect answer: `{answer}`\nYour answer: `{answer_clean}`", ephemeral=True)
             log_stats("minigame_fail", {"cattype": cattype})
+
+    random.setstate(old_random_state)
 
     modal.on_submit = check_minigame
     await interaction.response.send_modal(modal)
