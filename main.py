@@ -1812,8 +1812,10 @@ async def play_minigame(interaction: discord.Interaction) -> None:
     modal.add_item(TextDisplay(f"-# Time's up <t:{end}:R>"))
 
     async def check_minigame(interaction: discord.Interaction) -> None:
-        nonlocal answer
-        if time.time() > end:
+        nonlocal answer, start
+
+        submitted_time = time.time()
+        if submitted_time > end:
             await interaction.response.send_message("❌ You weren't fast enough!", ephemeral=True)
             log_stats("minigame_timeout")
             return
@@ -1878,7 +1880,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
             profile[f"cat_{cattype}"] += 3
             await profile.save()
             icon = get_aura_emoji(cattype, profile.cat_auras)
-            await interaction.response.send_message(f"✅ {interaction.user.mention} got +3 {icon} {cattype} bonus cats.")
+            await interaction.response.send_message(f"✅ {interaction.user.mention} got +3 {icon} {cattype} bonus cats. ({submitted_time - start:.2f}s)")
             await progress(interaction, profile, "bonus")
             log_stats("minigame_success", {"cattype": cattype})
             await achemb(interaction, "minigamer", "followup")
