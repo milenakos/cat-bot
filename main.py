@@ -10708,7 +10708,7 @@ async def achievements(message: discord.Interaction):
         elif category == "Halloween":
             embed.add_item(
                 TextDisplay(f"""Get +1 {get_emoji("pumpkinpack")} when completing achievements below.
-Ghost Catch Progress: {user.ghosts_caught}/13
+Ghost Catch Progress: {user.ghosts_caught % 13}/13
 Ends <t:1793476800:R>""")
             )
             embed.accent_color = Colors.orange
