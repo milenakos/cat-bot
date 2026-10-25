@@ -31,6 +31,7 @@ import subprocess
 import sys
 import time
 import traceback
+from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from typing import Literal, TypedDict
 
@@ -273,6 +274,10 @@ temp_catches_storage = TTLStore(60)
 
 # to prevent double spawns
 temp_spawns_storage = TTLStore(60)
+
+# to prevent bugged edits
+temp_message_storage = TTLStore(5)
+temp_message_queue = defaultdict(asyncio.Queue)
 
 # docs suggest on_ready can be called multiple times
 on_ready_debounce = False
@@ -1135,6 +1140,8 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
         temp_spawns_storage.discard(ch_id)
         return str(e)
 
+    if channel.cat_rains:
+        temp_message_storage.add(message_is_sus.id)
     config.belated_catchers.pop(ch_id, None)
     channel.cat = message_is_sus.id
     channel.yet_to_spawn = 0
@@ -1322,6 +1329,7 @@ async def background_loop() -> None:
 
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
+    temp_message_queue.clear()
 
     for store in (catchcooldown, fakecooldown, customcatcooldown, casino_lock, slots_lock, fish_lock, temp_catches_storage, temp_spawns_storage):
         store.expire(time.time())
@@ -1999,6 +2007,14 @@ Anyone who cought this cat can play a minigame and potentially **get +3 more!**
         await h.delete(delay=10)
 
 
+async def on_raw_message_edit(payload: discord.RawMessageUpdateEvent) -> None:
+    # spawn message edits fail if you edit a message too quickly after sending it
+    # due to a race with image fetching on discord-side
+    if payload.message_id in temp_message_storage:
+        temp_message_storage.discard(payload.message_id)
+        await temp_message_queue[payload.message_id].put("ok")
+
+
 # this is all the code which is ran on every message sent
 # a lot of it is for easter eggs or achievements
 async def on_message(message: discord.Message) -> None:
@@ -2502,7 +2518,6 @@ Enjoy your goods!"""
                     do_time = False
                     caught_time = "undefined amounts of time "
                     time_caught = 0
-                    then = time.time()
                 belated_entry["time"] = time_caught
 
                 if channel.cat_rains > 0 or cat_rain_end:
@@ -2899,9 +2914,10 @@ Enjoy your goods!"""
                             view.add_item(TextDisplay(catch_text))
                             if button:
                                 view.add_item(ActionRow(button))
-                            time_since_sent = time.time() - then
-                            if time_since_sent < 0.1:
-                                await asyncio.sleep(0.1 - time_since_sent)
+                            try:
+                                _ = await asyncio.wait_for(temp_message_queue[cat_temp].get(), timeout=0.1)
+                            except TimeoutError:
+                                pass
                             result = await cat_spawn.edit(view=view, allowed_mentions=discord.AllowedMentions.none())
                             return result
 
@@ -12212,7 +12228,8 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
     bot2.tree.add_command(context_menu_command)
 
     # copy all the events
-    bot2.on_message = on_message
+    bot2.on_message = on_message  # type: ignore
+    bot2.on_raw_message_edit = on_raw_message_edit  # type: ignore
     bot2.on_command_error = on_command_error  # type: ignore
     bot2.on_error = on_error  # type: ignore
     bot2.on_ready = on_ready  # type: ignore
