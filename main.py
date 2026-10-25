@@ -1986,7 +1986,7 @@ async def belated_window_task(
                 correct_answer = "Yes"
 
             answers = random.shuffle(answers)
-            config.belated_catchers[msg.channel.id]["trivia_answer"] = { "question_text": question_text, "correct_answer": correct_answer, "answers": answers }
+            config.belated_catchers[msg.channel.id]["trivia_answer"] = {"question_text": question_text, "correct_answer": correct_answer, "answers": answers}
 
         h = await reply_or_send(
             catch_confirm,
@@ -2502,6 +2502,7 @@ Enjoy your goods!"""
                     do_time = False
                     caught_time = "undefined amounts of time "
                     time_caught = 0
+                    then = time.time()
                 belated_entry["time"] = time_caught
 
                 if channel.cat_rains > 0 or cat_rain_end:
@@ -2898,6 +2899,9 @@ Enjoy your goods!"""
                             view.add_item(TextDisplay(catch_text))
                             if button:
                                 view.add_item(ActionRow(button))
+                            time_since_sent = time.time() - then
+                            if time_since_sent < 0.1:
+                                await asyncio.sleep(0.1 - time_since_sent)
                             result = await cat_spawn.edit(view=view, allowed_mentions=discord.AllowedMentions.none())
                             return result
 
