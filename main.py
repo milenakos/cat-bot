@@ -2915,7 +2915,7 @@ Enjoy your goods!"""
                             if button:
                                 view.add_item(ActionRow(button))
                             try:
-                                _ = await asyncio.wait_for(temp_message_queue[cat_temp].get(), timeout=0.1)
+                                _ = await asyncio.wait_for(temp_message_queue[cat_temp].get(), timeout=0.2)
                             except TimeoutError:
                                 pass
                             result = await cat_spawn.edit(view=view, allowed_mentions=discord.AllowedMentions.none())
@@ -12191,20 +12191,31 @@ def patch_view_store() -> None:
         old = orig_untrack(self, message_id)
         if old is not None:
             pending = self.__dict__.setdefault("_catbot_pending", {})
-            pending[message_id] = old
+            previous = pending.pop(message_id, None)
+            if previous is not None:
+                previous[1].cancel()
+
+            entry: list = [old, None]
 
             def expire():
-                if pending.get(message_id) is old:
+                if pending.get(message_id) is entry:
                     del pending[message_id]
-                    old.stop()
 
-            asyncio.get_running_loop().call_later(120, expire)
+                    if self._synced_message_views.get(message_id) is not old:
+                        old.stop()
+
+            entry[1] = asyncio.get_running_loop().call_later(120, expire)
+            pending[message_id] = entry
         return old
 
     def add_view(self, view, message_id=None):
         if message_id is not None:
             pending = self.__dict__.get("_catbot_pending")
-            old = pending.pop(message_id, None) if pending else None
+            entry = pending.pop(message_id, None) if pending else None
+            old = None
+            if entry is not None:
+                entry[1].cancel()
+                old = entry[0]
             if old is None:
                 old = self._synced_message_views.get(message_id)
             if old is not None and old is not view:
