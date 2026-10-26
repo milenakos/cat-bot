@@ -1856,7 +1856,7 @@ async def play_minigame(interaction: discord.Interaction) -> None:
                 signals = 0
                 answer_clean = answer_raw.lower()
                 for word in ["meow", "purr", "nya", "miau", "mrrp", "www", "ppp", "uuu", "333", ":3", "~"]:
-                    signals += answer_raw.count(word)
+                    signals += answer_clean.count(word)
                 correct = signals >= 10
                 answer = "10+ meow signals"
                 answer_clean = f"{signals} meow signals"
