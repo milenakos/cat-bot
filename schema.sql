@@ -522,6 +522,8 @@ CREATE INDEX profile_pig_leaderboard ON public.profile (guild_id, best_pig_score
 CREATE INDEX profile_casino_leaderboard ON public.profile (guild_id, casino_balance DESC, user_id ASC) WHERE casino_balance <> 1000;
 CREATE INDEX profile_fish_leaderboard ON public.profile (guild_id, fish_caught DESC, user_id ASC) WHERE fish_caught <> 0;
 
+CREATE INDEX profile_voted_snake ON public.profile (user_id) WHERE voted_snake = true;
+
 CREATE UNIQUE INDEX profile_user_id_guild_id ON public.profile USING btree (user_id, guild_id);
 
 CREATE INDEX prism_guild_id ON public.prism USING btree (guild_id);

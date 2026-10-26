@@ -10950,17 +10950,20 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
     if specific_cat is not None:
         idx = cattypes.index(specific_cat) + 1  # PostgreSQL array indexes start at 1.
         column = f'"cat_{specific_cat}"'
+        new_aura = aura_case(idx, specific_cat, "stats.total", "stats.maximum")
         await _get_pool().execute(
             f"""
             WITH stats AS (
-                SELECT SUM({column}) FILTER (WHERE {column} > 0) AS total, MAX({column}) FILTER (WHERE {column} > 0) AS maximum
+                SELECT SUM({column}) AS total, MAX({column}) AS maximum
                 FROM profile
-                WHERE guild_id = $1
+                WHERE guild_id = $1 AND {column} > 0
             )
             UPDATE profile AS p
-            SET cat_auras[{idx}] = {aura_case(idx, specific_cat, "stats.total", "stats.maximum")}
+            SET cat_auras[{idx}] = {new_aura}
             FROM stats
             WHERE p.guild_id = $1
+              AND (p.{column} > 0 OR p.cat_auras[{idx}] IN ('y', 'c', 'p', 'a'))
+              AND p.cat_auras[{idx}] IS DISTINCT FROM {new_aura}
             """,
             guild_id,
         )
@@ -10977,11 +10980,17 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
             SELECT {stats}
             FROM profile
             WHERE guild_id = $1
+        ),
+        computed AS (
+            SELECT p.id, ARRAY[{auras}]::char(1)[] AS new_auras
+            FROM profile AS p, stats
+            WHERE p.guild_id = $1
         )
         UPDATE profile AS p
-        SET cat_auras = ARRAY[{auras}]
-        FROM stats
-        WHERE p.guild_id = $1
+        SET cat_auras = computed.new_auras
+        FROM computed
+        WHERE p.id = computed.id
+          AND p.cat_auras IS DISTINCT FROM computed.new_auras
         """,
         guild_id,
     )
