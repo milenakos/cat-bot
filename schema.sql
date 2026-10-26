@@ -352,7 +352,6 @@ CREATE TABLE public.profile (
     tiktoker boolean DEFAULT false,
     sharing_enabled boolean DEFAULT false,
     pack_pumpkin integer DEFAULT 0,
-    reactions_enabled boolean DEFAULT true,
     cathub boolean DEFAULT false,
     ghosts_caught smallint DEFAULT 0,
     pumpkin_packer boolean DEFAULT false,
@@ -434,11 +433,7 @@ CREATE TABLE public."user" (
     second_birthday_badge boolean DEFAULT false,
     tutorial_state smallint DEFAULT 0,
     snake_dms boolean DEFAULT true,
-    last_inventory_view bigint DEFAULT 0,
-    reaction_staring_cat integer DEFAULT 0,
-    reaction_silence integer DEFAULT 0,
-    reaction_insane integer DEFAULT 0,
-    reaction_emoji_13 integer DEFAULT 0
+    last_inventory_view bigint DEFAULT 0
 );
 
 ALTER TABLE public."user" OWNER TO cat_bot;
