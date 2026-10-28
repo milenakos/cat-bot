@@ -2367,6 +2367,18 @@ Enjoy your goods!"""
                                 config.cat_cought_rain[channel.channel_id][channel.cattype] = []
                             config.cat_cought_rain[channel.channel_id][channel.cattype].append(f"<@{user.user_id}>")
                         await user.save()
+                        if belated.get("is_ghost"):
+                            ghost_type = belated["cattype"]
+                            ghost_time = belated["time"] + current_time - belated["timestamp"]
+
+                            if not user.ghost_buster:
+                                await achemb(message, "ghost_buster", "send")
+                            if ghost_time <= 5 and not user.ghost_fast:
+                                await achemb(message, "ghost_fast", "send")
+                            if ghost_type == "Fine" and not user.ghost_fine:
+                                await achemb(message, "ghost_fine", "send")
+                            if cattypes.index(ghost_type) > 8 and not user.ghost_rare:
+                                await achemb(message, "ghost_rare", "send")
                     if user.catnip_active >= time.time() or user.hibernation:
                         await bounty(message, user, channel.cattype)
                     prism_counts = await _get_pool().fetchrow(
