@@ -1993,6 +1993,8 @@ async def belated_window_task(
                 correct_answer = "Yes"
 
             random.shuffle(answers)
+            if msg.channel.id not in config.cat_cought_rain:
+                config.cat_cought_rain[msg.channel.id] = {}
             config.belated_catchers[msg.channel.id]["trivia_answer"] = {"question_text": question_text, "correct_answer": correct_answer, "answers": answers}
 
         h = await reply_or_send(
