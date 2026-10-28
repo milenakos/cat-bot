@@ -1107,7 +1107,7 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     if not localcat:
         localcat = random.choices(cattypes, weights=list(data.type_dict.values()))[0]
     icon = get_emoji(localcat.lower() + "cat")
-    do_ghost = random.randint(1, 13) == 1
+    do_ghost = random.randint(1, 10) == 1
     ghost_suffix = "_g" if do_ghost else ""
     image_path = f"{config.GIT_REPO_LINK}/assets/images/spawn/{localcat.lower()}_cat{ghost_suffix}.webp"
     channeley = bot.get_partial_messageable(ch_id)
@@ -2345,8 +2345,20 @@ Enjoy your goods!"""
                         new_count = user[f"cat_{channel.cattype}"]
                         delay = abs(current_time - belated["timestamp"])
                         delay_str = f"+{round(delay, 3) if delay < 1 else round(delay, 2)}s"
+                        ghost_str = ""
+                        if belated.get("is_ghost"):
+                            user.ghosts_caught += 1
+                            if user.ghosts_caught % 13 == 0:
+                                user.pack_pumpkin += 1
+                                ghost_str = f" 👻 +1 {get_emoji('pumpkinpack')}"
+                                if channel.channel_id in config.cat_cought_rain:
+                                    if "Pumpkin" not in config.cat_cought_rain[channel.channel_id]:
+                                        config.cat_cought_rain[channel.channel_id]["Pumpkin"] = []
+                                    config.cat_cought_rain[channel.channel_id]["Pumpkin"].append(f"<@{user.user_id}>")
+                            else:
+                                ghost_str = f" 👻 {user.ghosts_caught % 13}/13"
                         belated["late_catchers"].append(
-                            (message.author.id, f"{message.author.name.replace('_', '\\_')} ({delay_str}, {new_count:,} total)"),
+                            (message.author.id, f"{message.author.name.replace('_', '\\_')} ({delay_str}, {new_count:,} total){ghost_str}"),
                         )
                         if len(belated["late_catchers"]) >= 4 and "full_event" in belated:
                             belated["full_event"].set()
@@ -2413,6 +2425,7 @@ Enjoy your goods!"""
                 "timestamp": message.created_at.timestamp(),
                 "cattype": channel.cattype,
                 "is_rain": cat_rain_end or channel.cat_rains > 0,
+                "is_ghost": bool(channel.is_ghost),
                 "late_catchers": [(message.author.id, None)],
                 "full_event": asyncio.Event(),
             }
