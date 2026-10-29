@@ -8379,7 +8379,7 @@ async def cursed(message: discord.Interaction):
 @bot.tree.command(description="Get Your balance")
 async def bal(message: discord.Interaction):
     view = LayoutView(timeout=1)
-    file = f"{config.GIT_REPO_LINK}/assets/images/mafia/money.png"
+    file = f"{config.GIT_REPO_LINK}/assets/images/money.png"
     view.add_item(Container("## cat coins", discord.ui.MediaGallery(discord.MediaGalleryItem(file))))
     await message.response.send_message(view=view)
 
