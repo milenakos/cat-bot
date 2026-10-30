@@ -10169,7 +10169,7 @@ async def catnip(message: discord.Interaction):
             else:
                 user.perk_selected = False
         else:
-            user.catnip_active += 86400
+            user.hibernation = True
             trigger_cutscene = True
         user.catnip_bought += 1
         user.first_quote_seen = False
@@ -10187,7 +10187,7 @@ async def catnip(message: discord.Interaction):
 
         log_stats("level_down", {"to": str(user.catnip_level)})
 
-        if user.catnip_level > 1:
+        if user.catnip_level > 1 and not trigger_cutscene:
             await perk_screen(interaction)
         else:
             await interaction.response.edit_message(view=await gen_main())
