@@ -2929,7 +2929,7 @@ Enjoy your goods!"""
                             if button:
                                 view.add_item(ActionRow(button))
                             try:
-                                _ = await asyncio.wait_for(temp_message_queue[cat_temp].get(), timeout=0.2)
+                                _ = await asyncio.wait_for(temp_message_queue[cat_temp].get(), timeout=0.5)
                             except TimeoutError:
                                 pass
                             result = await cat_spawn.edit(view=view, allowed_mentions=discord.AllowedMentions.none())
