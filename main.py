@@ -2548,6 +2548,7 @@ Enjoy your goods!"""
                 double_boost_chance = 0
                 rain_chance = 0
                 purr_all_triple = False
+                purr_all_hit = False
                 packs = []
                 double_boost = False
                 double_first = 0
@@ -2630,7 +2631,8 @@ Enjoy your goods!"""
                     if time_caught > 0 and time_caught == int(time_caught):
                         user.perfection_count += 1
                         if purr_all_triple:
-                            triple_chance = 100
+                            purr_all_hit = True
+                            triple_chance = 0
                             double_chance = 0
                             single_chance = 0
                             none_chance = 0
@@ -2638,7 +2640,8 @@ Enjoy your goods!"""
                     if "undefined" not in caught_time and time_caught > 0:
                         raw_digits = "".join(char for char in caught_time[:-1] if char.isdigit())
                         if len(set(raw_digits)) == 1 and purr_all_triple:
-                            triple_chance = 100
+                            purr_all_hit = True
+                            triple_chance = 0
                             double_chance = 0
                             single_chance = 0
                             none_chance = 0
@@ -2666,7 +2669,11 @@ Enjoy your goods!"""
                         bot.loop.create_task(rain_recovery_loop(channel))
 
                     chance = random.random() * 100
-                    if chance <= triple_chance:
+                    if purr_all_hit:
+                        silly_amount *= 4
+                        suffix_string += f"\n{get_emoji('catnip')}{get_emoji('catnip')} catnip worked! your cat was QUADRUPLED by catnip!1!!1!"
+                        user.catnip_activations += 3
+                    elif chance <= triple_chance:
                         silly_amount *= 3
                         suffix_string += f"\n{get_emoji('catnip')}{get_emoji('catnip')} catnip worked! your cat was TRIPLED by catnip!1!!1!"
                         user.catnip_activations += 2
