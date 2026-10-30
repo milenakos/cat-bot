@@ -9644,7 +9644,7 @@ async def bounty(message: discord.Message, user: Profile, cattype: str) -> None:
                 embed = Container(
                     f"{get_emoji('catnip')} Mafia Level {user.catnip_level}",
                     f"## ✅ {bonus_title}",
-                    f"Bonus Bounty Complete!\nGo to {get_command_mention('catnip')} to reroll a perk!",
+                    f"Reroll Bounty Complete!\nGo to {get_command_mention('catnip')} to reroll a perk!",
                     accent_color=Colors.green,
                 )
                 view.add_item(embed)
@@ -9749,9 +9749,8 @@ async def get_bounties(level: int) -> list[dict]:
         # to add a bit of randomness
         variation = random.uniform(0.85, 1.15)
         if len(bounties) == num_bounties:
+            # bonus bounty
             variation *= 1.5
-            if level == 10:
-                variation *= 10
         if bounty_type == "rarity":
             margin = 0.2
             rarity_i = random.randint(2, len(cattypes) - 2)
@@ -10175,6 +10174,10 @@ async def catnip(message: discord.Interaction):
         user.catnip_bought += 1
         user.first_quote_seen = False
         user.reroll = True
+        user.reroll_level = 0
+        user.perk1 = ""
+        user.perk2 = ""
+        user.perk3 = ""
 
         user.highest_catnip_level = max(user.highest_catnip_level, user.catnip_level)
 
@@ -10202,38 +10205,78 @@ You can stop. That's okay. Seriously."""
 
     async def reroll(interaction: discord.Interaction) -> None:
         assert interaction.guild is not None
-        global_user = await User.get_or_create(user_id=interaction.user.id)
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         await user.refresh_from_db()
 
-        if not user.reroll and user.reroll_level and 0 < user.reroll_level <= len(user.perks or []):
-            await perk_screen(interaction, user.reroll_level, True)
+        if user.reroll:
+            await interaction.response.send_message("your die rerolls through the floor", ephemeral=True)
             return
+        if not user.perk_selected:
+            await interaction.response.send_message("You need to select a perk from your current level first!", ephemeral=True)
+            return
+
+        await perk_screen(interaction, True)
+
+    async def slot_screen(interaction: discord.Interaction, new_perk: str) -> None:
+        assert interaction.guild is not None
+        global_user = await User.get_or_create(user_id=interaction.user.id)
+        user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
+        await user.refresh_from_db()
 
         perks = catnip_list["perks"]
         rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
         rarity_colors = [get_emoji("common"), get_emoji("uncommon"), get_emoji("rare"), get_emoji("epic"), get_emoji("legendary")]
         emojied_options = {}
-        user_perks = user.perks
+        user_perks = user.perks or []
         full_desc = ""
+
+        new_rarity, new_data, new_desc = describe_perk(new_perk, perks, global_user)
+        new_text = f"{rarity_colors[new_rarity]} {new_data.get('name', '')} ({rarities[new_rarity]})\n{new_desc}"
 
         for index, perk in enumerate(user_perks):
             perk_rarity, perk_data, desc = describe_perk(perk, perks, global_user)
             full_desc += f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')} ({rarities[perk_rarity]})\n{desc}\n\n"
             emojied_options[index + 1] = (f"{perk_data.get('name', '')} ({rarities[perk_rarity]})", rarity_colors[perk_rarity], desc.replace("**", ""))
 
+        async def replace_perk(interaction: discord.Interaction, slot: str) -> None:
+            await user.refresh_from_db()
+            if user.reroll:
+                await interaction.response.send_message("your die rerolls through the floor", ephemeral=True)
+                return
+            if new_perk not in (user.perk1, user.perk2, user.perk3):
+                await interaction.response.send_message("That perk is no longer available to pick.", ephemeral=True)
+                return
+
+            h = list(user.perks) if user.perks else []
+            index = int(slot) - 1
+            if not 0 <= index < len(h):
+                await interaction.response.send_message(f"Failed to reroll! Perk slot {slot} not found. (Count: {len(h)})", ephemeral=True)
+                return
+
+            h[index] = new_perk
+            user.perks = h.copy()
+            user.reroll = True
+            user.reroll_level = 0
+            user.perk1 = ""
+            user.perk2 = ""
+            user.perk3 = ""
+            await user.save()
+
+            log_stats("perk_reroll", {"level": str(user.catnip_level)})
+
+            await interaction.response.edit_message(view=await gen_main())
+
         myview = LayoutView(timeout=VIEW_TIMEOUT)
         options = [discord.SelectOption(label=t, emoji=e, description=d, value=str(k)) for k, (t, e, d) in emojied_options.items()]
         perk_select = Select(
             "rr_type",
-            placeholder="Select a perk to reroll",
+            placeholder="Select a perk to replace",
             options=options,
-            on_select=lambda interaction, level: perk_screen(interaction, int(level), True),
+            on_select=replace_perk,
         )
-        perk_embed = Container("# Your Perks", full_desc)
-        myview.add_item(perk_embed)
-        action_row = ActionRow(perk_select)
-        myview.add_item(action_row)
+        myview.add_item(Container("# Your Perks", full_desc))
+        myview.add_item(Container("# Replace which perk?", f"You picked:\n{new_text}"))
+        myview.add_item(ActionRow(perk_select))
         await interaction.response.edit_message(view=myview)
 
     async def view_perks(interaction: discord.Interaction) -> None:
@@ -10334,7 +10377,7 @@ You can stop. That's okay. Seriously."""
         myview.add_item(perk_embed)
         await interaction.response.send_message(view=myview, ephemeral=True)
 
-    async def perk_screen(interaction: discord.Interaction, level: int = 0, reroll: bool = False) -> None:
+    async def perk_screen(interaction: discord.Interaction, reroll: bool = False) -> None:
         assert interaction.guild is not None
         global_user = await User.get_or_create(user_id=interaction.user.id)
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
@@ -10348,24 +10391,17 @@ You can stop. That's okay. Seriously."""
             if reroll and user.reroll:
                 await interaction.response.send_message("your die rerolls through the floor", ephemeral=True)
                 return
-            if reroll and user.reroll_level and user.reroll_level != level:
-                await interaction.response.send_message(f"you already chose to reroll level {user.reroll_level}", ephemeral=True)
+            if reroll:
+                if not interaction.custom_id or interaction.custom_id not in (user.perk1, user.perk2, user.perk3):
+                    await interaction.response.send_message("That perk is no longer available to pick.", ephemeral=True)
+                    return
+                await slot_screen(interaction, interaction.custom_id)
                 return
 
             h = list(user.perks) if user.perks else []
-            if reroll:
-                # We use level-1 because level is 1-based (Lv1, Lv2, etc) defined in the UI
-                if 0 <= level - 1 < len(h):
-                    h[level - 1] = interaction.custom_id
-                else:
-                    await interaction.response.send_message(f"Failed to reroll! Perk slot {level} not found. (Count: {len(h)})", ephemeral=True)
-                    return
-                # Mark reroll as consumed
-                user.reroll = True
-            else:
-                user.perk_selected = True
-                h.append(interaction.custom_id)
-            user.perks = h[:]  # black magic
+            user.perk_selected = True
+            h.append(interaction.custom_id)
+            user.perks = h.copy()
 
             user.perk1 = ""
             user.perk2 = ""
@@ -10384,8 +10420,8 @@ You can stop. That's okay. Seriously."""
             return
         if reroll:
             await user.refresh_from_db()
-            if user.reroll_level and user.reroll_level != level:
-                await interaction.response.send_message(f"you already chose to reroll level {user.reroll_level}", ephemeral=True)
+            if user.reroll:
+                await interaction.response.send_message("your die rerolls through the floor", ephemeral=True)
                 return
 
         perks_data = catnip_list["perks"]
@@ -10395,8 +10431,10 @@ You can stop. That's okay. Seriously."""
         myview = LayoutView(timeout=VIEW_TIMEOUT)
 
         perk_embed = Container("# Select one of these perks!")
+        if reroll:
+            perk_embed.add_item(TextDisplay("Pick a perk, then choose which of your current perks it replaces."))
 
-        if user.perk1 and user.perk2 and user.perk3 and (not reroll or user.reroll_level == level):
+        if user.perk1 and user.perk2 and user.perk3 and (not reroll or user.reroll_level == -1):
             perks = [user.perk1, user.perk2, user.perk3]
         else:
             perks = [p["uuid"] for p in await get_perks(user.catnip_level, user, server.do_rain)]
@@ -10430,7 +10468,7 @@ You can stop. That's okay. Seriously."""
         user.perk2 = perks[1]["uuid"] if len(perks) > 1 else None
         user.perk3 = perks[2]["uuid"] if len(perks) > 2 else None
         if reroll:
-            user.reroll_level = level
+            user.reroll_level = -1
         await user.save()
 
         perk_embed.add_item(TextDisplay("-# The catnip timer will not start until you begin your bounties."))
@@ -10555,7 +10593,7 @@ This will remove the remaining catnip time you have.""",
                 for slot in BOUNTY_SLOTS[: user.bounties]:
                     format_bounty(slot)
                 if bonus:
-                    bounties += "\n**__Bonus Bounty:__**"
+                    bounties += "\n**__Reroll Bounty:__**"
                     format_bounty("bonus")
 
                 desc.append(bounties.strip())
