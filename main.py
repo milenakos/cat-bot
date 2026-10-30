@@ -11823,17 +11823,6 @@ async def owner_sync(ctx: commands.Context) -> None:
     try:
         await ctx.reply("syncing commands!")
         await bot.tree.sync()
-
-        # add activity command
-        payload = {
-            "name": "launch",
-            "description": "Launch the Cat Bot activity",
-            "type": 4,
-            "handler": 1,
-            "contexts": [0],
-        }
-        assert bot.user is not None
-        await bot.http.upsert_global_command(bot.user.id, payload)  # pyright: ignore[reportArgumentType]
     except Exception:
         pass
 
@@ -12164,9 +12153,6 @@ async def on_interaction(ctx: discord.Interaction) -> None:
         if ctx.command:
             log_stats("command_use", {"name": ctx.command.name})
             bot.loop.create_task(start_tutorial(ctx))
-            if ctx.command.name == "launch":
-                await ctx.response.send_message("do i look like an activity to you", ephemeral=True)
-                await achemb(ctx, "activity", "followup")
     except Exception:
         pass
 

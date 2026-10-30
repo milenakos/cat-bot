@@ -125,7 +125,6 @@
       "coupon_user": {"title": "Coupon User", "description": "use a coupon for a 10% discount on all cats!!!", "difficulty": 5, "parent": "nerd"},
         "dataminer": {"title": "Dataminer", "description": "say `cat!n4lltvuCOKe2iuDCmc6JsU7Jmg4vmFBj8G8l5xvoDHmCoIJMcxkeXZObR6HbIV6`", "difficulty": 5, "parent": "coupon_user"},
   "dm": {"title": "DM", "description": "dm cat", "difficulty": 1, "parent": "Silly"},
-  "activity": {"title": "Activity", "description": "launch the cat bot activity", "difficulty": 1, "parent": "Silly"},
   "silly": {"title": "Nuclear Reactor", "description": "triple-react!", "difficulty": 4, "parent": "Silly"},
 
   "imagine_deleting": {"title": "Imagine Deleting", "description": "imagine deleting your message", "difficulty": 2, "parent": "Museum"},
