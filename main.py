@@ -2654,17 +2654,16 @@ Enjoy your goods!"""
                     if bonus_chance_increase > 0:
                         bonus_chance *= 1 + (bonus_chance_increase * 0.01)
 
-                    if random.random() * 100 < rain_chance and server.do_rain:
+                    if random.random() * 100 < rain_chance and server.do_rain and channel.cat_rains == 0:
                         channel.cat_rains += 10
                         force_rain_summary = config.cat_cought_rain.get(channel.channel_id, {}).copy()
                         decided_time = random.uniform(1, 2)
                         channel.rain_should_end = int(time.time() + decided_time)
                         channel.yet_to_spawn = 0
                         suffix_string += f"\n☔{get_emoji('catnip')} Catnip started a short rain! 10 cats will spawn."
-                        if channel.cat_rains == 10:
-                            config.cat_cought_rain[channel.channel_id] = {}
-                            config.rain_starter[channel.channel_id] = message.author.id
-                            bot.loop.create_task(rain_recovery_loop(channel))
+                        config.cat_cought_rain[channel.channel_id] = {}
+                        config.rain_starter[channel.channel_id] = message.author.id
+                        bot.loop.create_task(rain_recovery_loop(channel))
 
                     chance = random.random() * 100
                     if chance <= triple_chance:
