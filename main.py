@@ -2017,6 +2017,15 @@ async def on_raw_message_edit(payload: discord.RawMessageUpdateEvent) -> None:
 
 
 # this is all the code which is ran on every message sent
+async def on_message_delete(message: discord.Message) -> None:
+    if message.author.bot or message.webhook_id is not None:
+        return
+    if not isinstance(message.channel, GuildMessageable):
+        return
+
+    await achemb(message, "imagine_deleting", "send")
+
+
 # a lot of it is for easter eggs or achievements
 async def on_message(message: discord.Message) -> None:
     global last_loop_time
@@ -12234,6 +12243,7 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
 
     # copy all the events
     bot2.on_message = on_message  # type: ignore
+    bot2.on_message_delete = on_message_delete  # type: ignore
     bot2.on_raw_message_edit = on_raw_message_edit  # type: ignore
     bot2.on_command_error = on_command_error  # type: ignore
     bot2.on_error = on_error  # type: ignore
