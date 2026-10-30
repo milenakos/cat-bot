@@ -10228,14 +10228,12 @@ You can stop. That's okay. Seriously."""
         rarity_colors = [get_emoji("common"), get_emoji("uncommon"), get_emoji("rare"), get_emoji("epic"), get_emoji("legendary")]
         emojied_options = {}
         user_perks = user.perks or []
-        full_desc = ""
 
         new_rarity, new_data, new_desc = describe_perk(new_perk, perks, global_user)
-        new_text = f"{rarity_colors[new_rarity]} {new_data.get('name', '')} ({rarities[new_rarity]})\n{new_desc}"
+        new_text = f"{rarity_colors[new_rarity]} __{new_data.get('name', '')}__ ({rarities[new_rarity]})\n{new_desc}"
 
         for index, perk in enumerate(user_perks):
             perk_rarity, perk_data, desc = describe_perk(perk, perks, global_user)
-            full_desc += f"{rarity_colors[perk_rarity]} {perk_data.get('name', '')} ({rarities[perk_rarity]})\n{desc}\n\n"
             emojied_options[index + 1] = (f"{perk_data.get('name', '')} ({rarities[perk_rarity]})", rarity_colors[perk_rarity], desc.replace("**", ""))
 
         async def replace_perk(interaction: discord.Interaction, slot: str) -> None:
@@ -10274,9 +10272,7 @@ You can stop. That's okay. Seriously."""
             options=options,
             on_select=replace_perk,
         )
-        myview.add_item(Container("# Your Perks", full_desc))
-        myview.add_item(Container("# Replace which perk?", f"You picked:\n{new_text}"))
-        myview.add_item(ActionRow(perk_select))
+        myview.add_item(Container("# Select a perk to replace", f"Replacing with:\n{new_text}", ActionRow(perk_select)))
         await interaction.response.edit_message(view=myview)
 
     async def view_perks(interaction: discord.Interaction) -> None:
