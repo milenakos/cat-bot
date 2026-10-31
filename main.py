@@ -310,6 +310,8 @@ last_loop_time = 0
 
 server_count = "..."
 
+config.EMOJI = ""
+
 
 def get_emoji(name: str) -> str:
     if config.EMOJI and name in allowedemojis:
