@@ -226,10 +226,10 @@ GuildMessageable = discord.TextChannel | discord.Thread | discord.VoiceChannel |
 
 
 # muted ach categories. they are ignored when counting total ach number
-muted_ach_categories = ["Museum", "Halloween"]
+muted_ach_categories = ["Museum"]
 
 # rain shill message for footers
-rain_shill = "-# 👻 Halloween Sale! -20% /rain"
+rain_shill = "-# ☔ Get tons of cats /rain"
 
 # unread news notice
 news_notice = "-# You have unread news! /news"
@@ -310,8 +310,6 @@ murdered = False
 last_loop_time = 0
 
 server_count = "..."
-
-config.EMOJI = "halloween"
 
 
 def get_emoji(name: str) -> str:
@@ -474,19 +472,7 @@ async def achemb(
         unlocks_str = "\n".join(f"-# Discovered: {i}" for i in unlocks)
 
     view = LayoutView(timeout=10)
-    if ach_data["parent"] == "Halloween":
-        embed = Container(
-            "👻 Halloween Achievement get!",
-            f"## {title}",
-            desc,
-            f"+1 {get_emoji('pumpkinpack')} Pumpkin Pack",
-            "===",
-            f"-# Unlocked by {username}",
-            accent_color=Colors.orange,
-        )
-        profile.pack_pumpkin += 1
-        view2 = None
-    elif ach_data["difficulty"] != 6:
+    if ach_data["difficulty"] != 6:
         embed = Container(
             f"{get_emoji('ach')} Achievement get!",
             f"## {title}",
@@ -1107,13 +1093,11 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     if not localcat:
         localcat = random.choices(cattypes, weights=list(data.type_dict.values()))[0]
     icon = get_emoji(localcat.lower() + "cat")
-    do_ghost = random.randint(1, 10) == 1
-    ghost_suffix = "_g" if do_ghost else ""
-    image_path = f"{config.GIT_REPO_LINK}/assets/images/spawn/{localcat.lower()}_cat{ghost_suffix}.webp"
+    image_path = f"{config.GIT_REPO_LINK}/assets/images/spawn/{localcat.lower()}_cat.webp"
     channeley = bot.get_partial_messageable(ch_id)
 
     appearstring = '{emoji} {type} cat has appeared! Type "cat" to catch it!' if not channel.appear else channel.appear
-    appearstring = appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat if not do_ghost else f"👻 *Ghostly* {localcat}")
+    appearstring = appearstring.replace("{emoji}", str(icon)).replace("{type}", localcat)
 
     if ch_id in temp_spawns_storage:
         return "cat spawn already in progress"
@@ -1146,7 +1130,6 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     channel.yet_to_spawn = 0
     channel.forcespawned = bool(force_spawn)
     channel.cattype = localcat
-    channel.is_ghost = do_ghost
     await channel.save()
     temp_spawns_storage.discard(ch_id)
     log_stats("spawn")
@@ -2345,20 +2328,8 @@ Enjoy your goods!"""
                         new_count = user[f"cat_{channel.cattype}"]
                         delay = abs(current_time - belated["timestamp"])
                         delay_str = f"+{round(delay, 3) if delay < 1 else round(delay, 2)}s"
-                        ghost_str = ""
-                        if belated.get("is_ghost"):
-                            user.ghosts_caught += 1
-                            if user.ghosts_caught % 13 == 0:
-                                user.pack_pumpkin += 1
-                                ghost_str = f" 👻 +1 {get_emoji('pumpkinpack')}"
-                                if channel.channel_id in config.cat_cought_rain:
-                                    if "Pumpkin" not in config.cat_cought_rain[channel.channel_id]:
-                                        config.cat_cought_rain[channel.channel_id]["Pumpkin"] = []
-                                    config.cat_cought_rain[channel.channel_id]["Pumpkin"].append(f"<@{user.user_id}>")
-                            else:
-                                ghost_str = f" 👻 {user.ghosts_caught % 13}/13"
                         belated["late_catchers"].append(
-                            (message.author.id, f"{message.author.name.replace('_', '\\_')} ({delay_str}, {new_count:,} total){ghost_str}"),
+                            (message.author.id, f"{message.author.name.replace('_', '\\_')} ({delay_str}, {new_count:,} total)"),
                         )
                         if len(belated["late_catchers"]) >= 4 and "full_event" in belated:
                             belated["full_event"].set()
@@ -2425,7 +2396,6 @@ Enjoy your goods!"""
                 "timestamp": message.created_at.timestamp(),
                 "cattype": channel.cattype,
                 "is_rain": cat_rain_end or channel.cat_rains > 0,
-                "is_ghost": bool(channel.is_ghost),
                 "late_catchers": [(message.author.id, None)],
                 "full_event": asyncio.Event(),
             }
@@ -2809,9 +2779,9 @@ Enjoy your goods!"""
                             config.cat_cought_rain[channel.channel_id][i] = []
                         config.cat_cought_rain[channel.channel_id][i].append(f"<@{user.user_id}>")
 
-                if random.randint(0, 5) == 0:
+                if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n👻 halloween sale! -20% {get_command_mention('rain')}"
+                    suffix_string += f"\n☔ get tons of cats and have fun: {get_command_mention('rain')}"
                 if random.randint(1, 20) == 1:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(data.hints)
@@ -2824,19 +2794,6 @@ Enjoy your goods!"""
                         suffix_string += f"\n{get_emoji(sparkle['emoji'])} This message appears on {sparkle['percent']} of catches{sparkle['punct']}"
                         sparkle_fired = True
                         break
-
-                # spooky
-                if channel.is_ghost:
-                    user.ghosts_caught += 1
-                    if user.ghosts_caught % 13 == 0:
-                        suffix_string += f"\n👻 Ghost Cat! 13/13, +1 {get_emoji('pumpkinpack')}. Next {get_emoji('pumpkinpack')} in 0/13 ghosts"
-                        user.pack_pumpkin += 1
-                        if channel.channel_id in config.cat_cought_rain:
-                            if "Pumpkin" not in config.cat_cought_rain[channel.channel_id]:
-                                config.cat_cought_rain[channel.channel_id]["Pumpkin"] = []
-                            config.cat_cought_rain[channel.channel_id]["Pumpkin"].append(f"<@{user.user_id}>")
-                    else:
-                        suffix_string += f"\n👻 Ghost Cat! Progress for +1 {get_emoji('pumpkinpack')}: {user.ghosts_caught % 13}/13 ghosts"
 
                 if channel.cought:
                     # custom spawn message
@@ -2986,16 +2943,6 @@ Enjoy your goods!"""
                     user.rain_participations += 1
 
                 await user.save()
-
-                if channel.is_ghost:
-                    if not user.ghost_buster:
-                        await achemb(message, "ghost_buster", "send")
-                    if time_caught <= 5 and not user.ghost_fast:
-                        await achemb(message, "ghost_fast", "send")
-                    if channel.cattype == "Fine" and not user.ghost_fine:
-                        await achemb(message, "ghost_fine", "send")
-                    if cattypes.index(channel.cattype) > 8 and not user.ghost_rare:
-                        await achemb(message, "ghost_rare", "send")
 
                 if sparkle_fired and not user.lucky:
                     await achemb(message, "lucky", "send")
@@ -5322,8 +5269,8 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
                 return
             rain_server = config.cat_cought_rain[channel.channel_id]
 
-        pack_names = ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial", "Pumpkin"]
-        pack_yeah = {"Wooden": 1, "Stone": 0.9, "Bronze": 0.8, "Silver": 0.7, "Gold": 0.6, "Platinum": 0.5, "Diamond": 0.4, "Celestial": 0.3, "Pumpkin": 0.2}
+        pack_names = ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]
+        pack_yeah = {"Wooden": 1, "Stone": 0.9, "Bronze": 0.8, "Silver": 0.7, "Gold": 0.6, "Platinum": 0.5, "Diamond": 0.4, "Celestial": 0.3}
         rain_packs = []
         rain_cats = []
 
@@ -5336,11 +5283,11 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
         funny_cat_emojis = {k: get_short_emoji(k.lower() + "cat") for k in rain_cats}
         funny_pack_emojis = {k: get_short_emoji(k.lower() + "pack") for k in rain_packs}
         funny_aura_emojis = (
-            {k + "y": get_short_emoji("p_" + k.lower() + "cat_y") for k in rain_cats}
-            | {k + "c": get_short_emoji("p_" + k.lower() + "cat_c") for k in rain_cats}
-            | {k + "p": get_short_emoji("p_" + k.lower() + "cat_p") for k in rain_cats}
-            | {k + "r": get_short_emoji("p_" + k.lower() + "cat_r") for k in rain_cats}
-            | {k + "a": get_short_emoji("p_" + k.lower() + "cat_a") for k in rain_cats}
+            {k + "y": get_short_emoji(k.lower() + "cat_y") for k in rain_cats}
+            | {k + "c": get_short_emoji(k.lower() + "cat_c") for k in rain_cats}
+            | {k + "p": get_short_emoji(k.lower() + "cat_p") for k in rain_cats}
+            | {k + "r": get_short_emoji(k.lower() + "cat_r") for k in rain_cats}
+            | {k + "a": get_short_emoji(k.lower() + "cat_a") for k in rain_cats}
         )
 
         funny_emojis = funny_cat_emojis | funny_pack_emojis | funny_aura_emojis
@@ -5596,7 +5543,7 @@ async def rain(message: discord.Interaction, minutes: int | None):
 
     button.callback = rain_modal
 
-    shopbutton = Button(emoji="🛒", label="Store (-20%!)", url="https://catbot.shop")
+    shopbutton = Button(emoji="🛒", label="Store", url="https://catbot.shop")
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
 
@@ -5995,14 +5942,14 @@ async def packs(message: discord.Interaction):
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     global_user = await User.get_or_create(user_id=message.user.id)
 
-    async def process_pack_opening(pack_types: set[str] | None = None, max_packs: int | None = None) -> tuple[Container | None, int, bool, bool]:
+    async def process_pack_opening(pack_types: set[str] | None = None, max_packs: int | None = None) -> tuple[Container | None, int, bool]:
         await user.refresh_from_db()
 
         total_packs = sum(user[f"pack_{pack['name'].lower()}"] for pack in data.pack_data if pack_types is None or pack["name"] in pack_types)
         if max_packs is not None:
             total_packs = min(total_packs, max_packs)
         if total_packs < 1:
-            return None, 0, False, False
+            return None, 0, False
 
         pack_results: list[str] = []
         reward_results: list[str] = []
@@ -6012,7 +5959,6 @@ async def packs(message: discord.Interaction):
         opened_packs = 0
         highest_upgrades = 0
         has_fails = False
-        opened_pumpkin = False
 
         for level, pack_data in enumerate(data.pack_data):
             if opened_packs >= total_packs:
@@ -6029,7 +5975,6 @@ async def packs(message: discord.Interaction):
 
             log_stats("pack_open", {"pack": pack_name})
             amount_to_open = min(pack_count, total_packs - opened_packs)
-            opened_pumpkin |= pack_name == "Pumpkin"
             pack_results.append(f"{amount_to_open:,}x {get_short_emoji(pack_name.lower() + 'pack')}")
 
             for _ in range(amount_to_open):
@@ -6066,7 +6011,7 @@ async def packs(message: discord.Interaction):
                 summary_lines.append(f"☔ {extras_received['rain_minutes']:,}m")
             reward_list = "\n".join(summary_lines)
 
-        return Container(title, f"{pack_list}\n\n{reward_list}"), highest_upgrades, has_fails, opened_pumpkin
+        return Container(title, f"{pack_list}\n\n{reward_list}"), highest_upgrades, has_fails
 
     async def ask_bulk(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
@@ -6353,8 +6298,6 @@ async def packs(message: discord.Interaction):
             await achemb(interaction, "super_packer", "followup")
         if upgrades >= 5:
             await achemb(interaction, "lucky_packy", "followup")
-        if pack == "Pumpkin":
-            await achemb(interaction, "pumpkin_packer", "followup")
         await advance_tutorial(interaction)
 
     async def advance_tutorial(interaction: discord.Interaction) -> None:
@@ -6365,7 +6308,7 @@ async def packs(message: discord.Interaction):
             await interaction.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
     async def open_all_packs(interaction: discord.Interaction, pack_types: set[str] | None = None, max_packs: int | None = None) -> None:
-        embed, highest_upgrades, has_fails, opened_pumpkin = await process_pack_opening(pack_types, max_packs)
+        embed, highest_upgrades, has_fails = await process_pack_opening(pack_types, max_packs)
         if not embed:
             await interaction.response.edit_message(view=await gen_main())
             return
@@ -6389,8 +6332,6 @@ async def packs(message: discord.Interaction):
         await message.edit_original_response(view=view)
 
         await achemb(interaction, "packer", "followup")
-        if opened_pumpkin:
-            await achemb(interaction, "pumpkin_packer", "followup")
         if has_fails:
             await achemb(interaction, "failed", "followup")
         if highest_upgrades >= 5:
@@ -10746,13 +10687,6 @@ async def achievements(message: discord.Interaction):
         embed.add_item(TextDisplay(f"## {get_emoji('ach')}{get_emoji(data.ach_categories[category])} {category}"))
         if category == "Museum":
             embed.add_item(TextDisplay("Achievements in this category are no longer obtainable, and don't count towards anything."))
-        elif category == "Halloween":
-            embed.add_item(
-                TextDisplay(f"""Get +1 {get_emoji("pumpkinpack")} when completing achievements below.
-Ghost Catch Progress: {user.ghosts_caught % 13}/13
-Ends <t:1793476800:R>""")
-            )
-            embed.accent_color = Colors.orange
         else:
             embed.add_item(TextDisplay(f"Total: {unlocked}/{total_achs}\nCategory: {unlocked_achs}/{len(ach_ids)}"))
 
@@ -10878,7 +10812,7 @@ Ends <t:1793476800:R>""")
             button = Button(
                 label=title + (f" ({unlocked_achs}/{len(ach_ids)})" if title != "Museum" else ""),
                 emoji=get_emoji(category_emoji),
-                style=ButtonStyle.blurple if title != "Halloween" else ButtonStyle.green,
+                style=ButtonStyle.blurple,
                 custom_id=title,
             )
             button.callback = gen_page
