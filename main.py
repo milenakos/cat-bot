@@ -310,8 +310,6 @@ last_loop_time = 0
 
 server_count = "..."
 
-config.EMOJI = ""
-
 
 def get_emoji(name: str) -> str:
     if config.EMOJI and name in allowedemojis:
@@ -8818,7 +8816,7 @@ async def roulette(message: discord.Interaction):
     async def play(interaction: discord.Interaction, bet_type: str, bet_amount: int) -> None:
         assert message.guild is not None
         if (message.guild.id, message.user.id) in casino_lock:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "you get kicked from the casino because you are already there, and two of you playing at once would cause a glitch in the universe",
                 ephemeral=True,
             )
