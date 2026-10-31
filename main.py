@@ -262,7 +262,6 @@ customcatcooldown = TTLStore(300)
 
 # prevent ratelimits/abuse
 casino_lock = TTLStore(60)
-slots_lock = TTLStore(60)
 fish_lock = TTLStore(60)
 
 # ???
@@ -1313,7 +1312,7 @@ async def background_loop() -> None:
     reactions_ratelimit = {}
     temp_message_queue.clear()
 
-    for store in (catchcooldown, fakecooldown, customcatcooldown, casino_lock, slots_lock, fish_lock, temp_catches_storage, temp_spawns_storage):
+    for store in (catchcooldown, fakecooldown, customcatcooldown, casino_lock, fish_lock, temp_catches_storage, temp_spawns_storage):
         store.expire(time.time())
 
     # clean up anything older than 5 minutes
@@ -8541,13 +8540,6 @@ async def slots(message: discord.Interaction):
     if casino_impostor(message):
         return await do_funny(message)
     assert message.guild is not None
-    if (message.guild.id, message.user.id) in slots_lock:
-        await message.response.send_message(
-            "you get kicked from the slot machine because you are already there, and two of you playing at once would cause a glitch in the universe",
-            ephemeral=True,
-        )
-        await achemb(message, "paradoxical_gambler", "followup")
-        return
 
     debt_debounce = False
 
@@ -8603,11 +8595,12 @@ async def slots(message: discord.Interaction):
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
             return
-        if (message.guild.id, message.user.id) in slots_lock:
+        if (message.guild.id, message.user.id) in casino_lock:
             await interaction.response.send_message(
-                "you get kicked from the slot machine because you are already there, and two of you playing at once would cause a glitch in the universe",
+                "you get kicked from the casino because you are already there, and two of you playing at once would cause a glitch in the universe",
                 ephemeral=True,
             )
+            await achemb(message, "paradoxical_gambler", "followup")
             return
         await profile.refresh_from_db()
         await interaction.response.defer()
@@ -8616,7 +8609,7 @@ async def slots(message: discord.Interaction):
         profile.slot_spins += 1
         await profile.save()
 
-        slots_lock.add((message.guild.id, message.user.id))
+        casino_lock.add((message.guild.id, message.user.id))
 
         await progress(message, profile, "slots2")
 
@@ -8724,7 +8717,7 @@ async def slots(message: discord.Interaction):
                 button.callback = remove_debt
                 row.add_item(button)
 
-        slots_lock.discard((message.guild.id, message.user.id))
+        casino_lock.discard((message.guild.id, message.user.id))
 
         result_title = f"## {title}"
         embed = Container(result_title, desc, row, color=Colors.maroon)
@@ -8821,6 +8814,17 @@ async def roulette(message: discord.Interaction):
             await play(interaction, self.bettype.values[0].lower(), bet_amount)
 
     async def play(interaction: discord.Interaction, bet_type: str, bet_amount: int) -> None:
+        assert message.guild is not None
+        if (message.guild.id, message.user.id) in casino_lock:
+            await interaction.response.send_message(
+                "you get kicked from the casino because you are already there, and two of you playing at once would cause a glitch in the universe",
+                ephemeral=True,
+            )
+            await achemb(message, "paradoxical_gambler", "followup")
+            return
+
+        casino_lock.add((message.guild.id, message.user.id))
+
         colors = data.roulette_colors
 
         emoji_map = {
@@ -8895,6 +8899,8 @@ async def roulette(message: discord.Interaction):
         )
         view.add_item(embed)
         await interaction.edit_original_response(view=view)
+
+        casino_lock.discard((message.guild.id, message.user.id))
 
         await achemb(message, "gambling_one", "followup")
         if win:
