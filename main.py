@@ -2561,7 +2561,7 @@ Enjoy your goods!"""
                     if user.catnip_active < time.time():
                         if user.catnip_active != 1:
                             user.catnip_active = 1
-                            suffix_string += f"\n{get_emoji('catnip_disabled')} Your catnip expired! Run /catnip to get more."
+                            suffix_string += f"\n{get_emoji('catnip_disabled')} Your catnip expired! Run {get_command_mention('catnip')} to get more."
                         perks = []
                     else:
                         perks = user.perks
