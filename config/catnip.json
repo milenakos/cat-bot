@@ -14,7 +14,7 @@
     {"id": "timer_add_streak", "exclusive": true, "name": "Voting Booster", "desc":"Your vote streak boosts catnip duration by **timer_add_streak** minutes.", "weight": 5, "values": [0, 0, 0, 0, 100]},
     {"id": "rain_boost", "exclusive": false, "name": "Rainy Catcher", "desc":"While not in Cat Rain, **percent%** chance of starting one with **10 cats**.", "weight": 5, "values": [0.33, 0.5, 0.83, 1.66, 2.5]},
     {"id": "double_first", "exclusive": false, "name": "Speedrunner", "desc":"The first **percent** cats caught each level always **double**.", "weight": 5, "values": [8, 12, 20, 40, 60]},
-    {"id": "bonus_catcher", "exclusive": false, "name": "Bonus Catcher", "desc":"Increase bonus minigame chance by **percent%** for your catches.", "weight": 5, "values": [20, 30, 50, 100, 125]}
+    {"id": "bonus_catcher", "exclusive": false, "name": "Bonus Catcher", "desc":"Increase bonus minigame chance by **percent%** for your catches.", "weight": 5, "values": [20, 30, 50, 100, 150]}
   ],
 
   "quotes": [
