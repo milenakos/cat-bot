@@ -1044,15 +1044,6 @@ async def gift_autocomplete(interaction: discord.Interaction, current: str) -> l
     return choices[:25]
 
 
-# function to autocomplete achievement choice for /giveachievement, which also allows more than 25 options
-async def ach_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
-    return [
-        discord.app_commands.Choice(name=val["title"], value=key)
-        for (key, val) in ach_list.items()
-        if (alnum(current) in alnum(key) or alnum(current) in alnum(val["title"])) and val["parent"] not in muted_ach_categories
-    ][:25]
-
-
 # function to convert a snowflake to "X days ago"
 def snow_to_rel(snowflake: int) -> str:
     delta = discord.utils.utcnow() - discord.utils.snowflake_time(snowflake)
@@ -8224,7 +8215,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             modal.on_submit = submitb
             await interaction.response.send_modal(modal)
 
-        view = View(timeout=VIEW_TIMEOUT)
+        view = View(timeout=3600 * 24)
 
         accept = Button(label="Accept", style=ButtonStyle.green)
         accept.callback = acceptb
