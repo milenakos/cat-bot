@@ -8373,6 +8373,8 @@ def get_timestamp_of_next_week() -> int:
 @bot.tree.command(description="Deliver orders from your bakery to get Cat Eggs and Packs!")
 async def bakery(message: discord.Interaction):
     async def refresh(interaction: discord.Interaction) -> None:
+        if interaction.user != message.user:
+            return await do_funny(interaction)
         await interaction.response.edit_message(view=await gen_bakery())
 
     async def gen_bakery() -> LayoutView:
