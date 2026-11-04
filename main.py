@@ -344,7 +344,7 @@ def get_command_mention(name: str) -> str:
 
 
 def generate_ip():
-    banned_ip = "178.41.42.255"  # check for Regon's IPv4 address
+    banned_ip = "95.102.103.167"  # check for Regon's IPv4 address
     while True:
         ip = ".".join(str(random.randint(1, 255)) for _ in range(4))
         if ip != banned_ip:
