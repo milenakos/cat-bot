@@ -10963,6 +10963,56 @@ def aura_emoji(code: str) -> str:
     return get_emoji(AURA_DISPLAY_NAMES[code].lower())
 
 
+async def rainbow_aura_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
+    assert interaction.guild is not None
+    user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
+    return [
+        discord.app_commands.Choice(name=choice, value=choice)
+        for idx, choice in enumerate(cattypes)
+        if user.cat_auras[idx] == "r" and current.lower() in choice.lower()
+    ][:25]
+
+
+@bot.tree.command(description="permanently discard a rainbow aura")
+@discord.app_commands.describe(rainbow_aura="the rainbow aura to discard forever (a long time!)")
+@discord.app_commands.autocomplete(rainbow_aura=rainbow_aura_autocomplete)
+async def discardrainbowaura(message: discord.Interaction, rainbow_aura: str):
+    assert message.guild is not None
+
+    if rainbow_aura not in cattypes:
+        await message.response.send_message("bro what", ephemeral=True)
+        return
+
+    type_idx = cattypes.index(rainbow_aura)
+    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+    if user.cat_auras[type_idx] != "r":
+        await message.response.send_message(f"you dont have a rainbow aura for {rainbow_aura}", ephemeral=True)
+        return
+
+    async def confirm(interaction: discord.Interaction):
+        assert interaction.guild is not None
+        if interaction.user.id != message.user.id:
+            await do_funny(interaction)
+            return
+
+        await user.refresh_from_db()
+        if user.cat_auras[type_idx] != "r":
+            await interaction.response.edit_message(content=f"you no longer have a rainbow aura for {rainbow_aura}", view=None)
+            return
+
+        new_auras = user.cat_auras.copy()
+        new_auras[type_idx] = " "
+        user.cat_auras = new_auras
+        await user.save()
+        await interaction.response.edit_message(content=f"Rainbow Aura for {rainbow_aura} discarded!", view=None)
+
+    view = View(timeout=VIEW_TIMEOUT)
+    button = Button(label="Confirm")
+    button.callback = confirm
+    view.add_item(button)
+    await message.response.send_message(f"Are you sure you want to completely discard your {rainbow_aura} Rainbow aura forever?", view=view, ephemeral=True)
+
+
 @bot.tree.command(description="View the leaderboards (lbs)")
 @discord.app_commands.rename(leaderboard_type="type")
 @discord.app_commands.describe(
