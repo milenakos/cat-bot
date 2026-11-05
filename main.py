@@ -188,6 +188,10 @@ bot = commands.AutoShardedBot(
     intents=discord.Intents.default(),
 )
 
+supporter_group = discord.app_commands.Group(name="supporter", guild_only=True)
+mod_group = discord.app_commands.Group(name="mod", guild_only=True, default_permissions=discord.Permissions(manage_guild=True))
+admin_group = discord.app_commands.Group(name="admin", guild_only=True, default_permissions=discord.Permissions(administrator=True))
+
 
 class TTLStore:
     def __init__(self, ttl: float) -> None:
@@ -4119,8 +4123,7 @@ async def tiktok(message: discord.Interaction, text: str):
     await achemb(message, "tiktoker", "followup")
 
 
-@bot.tree.command(description="(ADMIN) Prevent someone from catching cats for a certain time period")
-@discord.app_commands.default_permissions(manage_guild=True)
+@mod_group.command(description="Prevent someone from catching cats for a certain time period")
 @discord.app_commands.describe(person="A person to timeout!", timeout="How many seconds? (0 to reset, -1 for infinity)")
 async def preventcatch(message: discord.Interaction, person: discord.User, timeout: int):
     assert message.guild is not None
@@ -4158,8 +4161,7 @@ async def preventcatch(message: discord.Interaction, person: discord.User, timeo
     await message.response.send_message(person.name.replace("_", r"\_") + suffix)
 
 
-@bot.tree.command(description="(ADMIN) Change Cat Bot avatar")
-@discord.app_commands.default_permissions(manage_guild=True)
+@mod_group.command(description="Change Cat Bot avatar")
 @discord.app_commands.describe(avatar="The avatar to use (leave empty to reset)")
 async def changeavatar(message: discord.Interaction, avatar: discord.Attachment | None = None):
     if avatar and avatar.content_type not in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
@@ -4184,8 +4186,7 @@ async def changeavatar(message: discord.Interaction, avatar: discord.Attachment 
         return
 
 
-@bot.tree.command(description="(ADMIN) Change the cat spawn/appear times")
-@discord.app_commands.default_permissions(manage_guild=True)
+@mod_group.command(description="Change the cat spawn/appear times")
 @discord.app_commands.describe(
     minimum_time="In seconds, minimum possible time between spawns (leave both empty to reset)",
     maximum_time="In seconds, maximum possible time between spawns (leave both empty to reset)",
@@ -4241,8 +4242,7 @@ async def changetimings(
         await message.response.send_message("Please input all times.", ephemeral=True)
 
 
-@bot.tree.command(description="(ADMIN) Change the cat appear and cought message texts")
-@discord.app_commands.default_permissions(manage_guild=True)
+@mod_group.command(description="Change the cat appear and cought message texts")
 async def changemessage(message: discord.Interaction):
     assert isinstance(message.channel, GuildMessageable)
     if not (channel := await Channel.get_or_none(channel_id=message.channel.id)):
@@ -4349,13 +4349,12 @@ Leave blank to reset."""
     await message.response.send_modal(modal)
 
 
-@bot.tree.command(description="Get ID of a thing")
+@mod_group.command(description="Get ID of a thing")
 async def getid(message: discord.Interaction, thing: discord.User | discord.Role):
     await message.response.send_message(f"The ID of {thing.mention} is {thing.id}\nyou can use it in /changemessage like this: `{thing.mention}`")
 
 
-@bot.tree.command(description="(ADMIN) tune various cat bot things")
-@discord.app_commands.default_permissions(manage_guild=True)
+@mod_group.command(description="tune various cat bot things")
 async def settings(message: discord.Interaction):
     assert message.guild is not None
     server = await Server.get_or_create(server_id=message.guild.id)
@@ -5543,7 +5542,7 @@ As a bonus, you will get access to {get_command_mention("editprofile")} and {get
 
 if config.DONOR_CHANNEL_ID:
 
-    @bot.tree.command(description="(SUPPORTER) Get a cosmetic custom cat! (non-tradeable, doesn't count towards anything)")
+    @supporter_group.command(description="(SUPPORTER) Get a cosmetic custom cat! (non-tradeable, doesn't count towards anything)")
     @discord.app_commands.describe(
         name='The name of your custom cat. ("None" to remove)',
         image="Static/animated GIF, PNG, JPEG, WEBP, AVIF below 256 KB. Static images will be auto-compressed.",
@@ -5642,7 +5641,7 @@ if config.DONOR_CHANNEL_ID:
         view.add_item(embedVar)
         await message.response.send_message(view=view, ephemeral=True)
 
-    @bot.tree.command(description="(SUPPORTER) Bless random Cat Bot users with doubled cats!")
+    @supporter_group.command(description="(SUPPORTER) Bless random Cat Bot users with doubled cats!")
     async def bless(message: discord.Interaction):
         user = await User.get_or_create(user_id=message.user.id)
         do_edit = False
@@ -5731,7 +5730,7 @@ Global bless chance is **{global_bless_chance:.4f}%**""",
 
         await regen(message)
 
-    @bot.tree.command(description="(SUPPORTER) Customize your profile!")
+    @supporter_group.command(description="Customize your profile!")
     @discord.app_commands.rename(provided_emoji="emoji")
     @discord.app_commands.describe(
         color="Color for your profile in hex form (e.g. #6E593C)",
@@ -11173,8 +11172,7 @@ async def fake(message: discord.Interaction):
     await achemb(message, "trolled", "ephemeral")
 
 
-@bot.tree.command(name="setup", description="(ADMIN) Setup cat in current channel")
-@discord.app_commands.default_permissions(manage_guild=True)
+@mod_group.command(name="setup", description="Setup cat in current channel")
 async def setup_channel(message: discord.Interaction):
     try:
         assert message.guild is not None
@@ -11222,8 +11220,7 @@ async def setup_channel(message: discord.Interaction):
     await message.response.send_message(await spawn_cat(message.channel.id))
 
 
-@bot.tree.command(description="(ADMIN) Undo the setup/unsetup")
-@discord.app_commands.default_permissions(manage_guild=True)
+@mod_group.command(description="Undo the setup/unsetup")
 async def forget(message: discord.Interaction):
     assert isinstance(message.channel, GuildMessageable)
     if channel := await Channel.get_or_none(channel_id=message.channel.id):
@@ -11233,8 +11230,7 @@ async def forget(message: discord.Interaction):
         await message.response.send_message("your an idiot there is literally no cat setupped in this channel you stupid")
 
 
-@bot.tree.command(description="(HIGH ADMIN) Force cats to appear/spawn")
-@discord.app_commands.default_permissions(administrator=True)
+@admin_group.command(description="Force cats to appear/spawn")
 @discord.app_commands.rename(cat_type="type")
 @discord.app_commands.describe(cat_type="select a cat type ok")
 @discord.app_commands.autocomplete(cat_type=cat_type_autocomplete)
@@ -11259,8 +11255,7 @@ async def forcespawn(message: discord.Interaction, cat_type: str | None = None):
     await message.response.send_message("done!")
 
 
-@bot.tree.command(description="(HIGH ADMIN) Swap people's Cat Bot data")
-@discord.app_commands.default_permissions(administrator=True)
+@admin_group.command(description="Swap people's Cat Bot data")
 @discord.app_commands.describe(user1="First person in the swap", user2="Person to swap them with")
 async def swap(message: discord.Interaction, user1: discord.User, user2: discord.User):
     async def confirmed(interaction: discord.Interaction) -> None:
@@ -11309,8 +11304,7 @@ async def swap(message: discord.Interaction, user1: discord.User, user2: discord
     the_id = res.message_id
 
 
-@bot.tree.command(description="(HIGH ADMIN) Reset people")
-@discord.app_commands.default_permissions(administrator=True)
+@admin_group.command(description="Reset people")
 @discord.app_commands.rename(person_id="user")
 @discord.app_commands.describe(person_id="who")
 async def reset(message: discord.Interaction, person_id: discord.User):
@@ -11350,8 +11344,7 @@ async def reset(message: discord.Interaction, person_id: discord.User):
     the_id = res.message_id
 
 
-@bot.tree.command(description="(HIGH ADMIN) [VERY DANGEROUS] Reset/wipe all Cat Bot data of this server")
-@discord.app_commands.default_permissions(administrator=True)
+@admin_group.command(description="[VERY DANGEROUS] Reset/wipe all Cat Bot data of this server")
 async def nuke(message: discord.Interaction):
     warning_text = """⚠️ This will completely reset **all** Cat Bot progress of **everyone** in this server.
 Spawn channels and their settings *will not be affected*.
@@ -11412,8 +11405,7 @@ Press the button 5 times to continue."""
     await message.response.send_message(warning_text, view=view)
 
 
-@bot.tree.command(description="(HIGH ADMIN) Undo/revert/restore nukes and resets")
-@discord.app_commands.default_permissions(administrator=True)
+@admin_group.command(description="Undo/revert/restore nukes and resets")
 @discord.app_commands.autocomplete(operation=undo_autocomplete)
 @discord.app_commands.describe(operation="pick the lowest/oldest operation if there are multiple")
 async def undo(message: discord.Interaction, operation: str):
@@ -11971,9 +11963,15 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
         # copy the owner prefix commands too
         bot2.add_command(command)
 
+    # copy catch in 4k
     context_menu_command = discord.app_commands.ContextMenu(name="catch", callback=catch)
     context_menu_command.guild_only = True
     bot2.tree.add_command(context_menu_command)
+
+    # copy groups
+    bot2.tree.add_command(supporter_group)
+    bot2.tree.add_command(mod_group)
+    bot2.tree.add_command(admin_group)
 
     # copy all the events
     bot2.on_message = on_message  # type: ignore
