@@ -111,7 +111,6 @@ class DataWrapper:
     sparkle_messages: list[SparkleEntry]
     roulette_colors: list[str]  # mapping of colors to numbers by indexes
     cat_translations: list[str]
-    wiki_lines: list[str]
     illegal: list[str]
     bomb_party_prompts: list[str]
     sentences: list[str]
@@ -3415,41 +3414,28 @@ async def hub(message: discord.Interaction):
         await message.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
 
-@bot.tree.command(description="Roll the credits")
-async def credits(message: discord.Interaction):
-    if not gen_credits:
-        await message.response.send_message(
-            "credits not yet ready! this is a very rare error, congrats.",
-            ephemeral=True,
-        )
-        return
-
-    view = LayoutView(timeout=1)
-    view.add_item(Container("## Cat Bot", gen_credits))
-    await message.response.send_message(view=view)
-
-
-@bot.tree.command(description="add cat bot to your server")
-async def invite(message: discord.Interaction):
-    assert bot.user is not None
-    view = View(timeout=1)
-    invite_button = Button(label="Invite", url=discord.utils.oauth_url(bot.user.id, scopes=None))
-    view.add_item(invite_button)
-    await message.response.send_message("Click the button below to invite Cat Bot to your server!", view=view)
-
-
-@bot.tree.command(description="View various info and stats about the bot")
+@bot.tree.command(description="View Cat Bot info, credits, ping; wiki, invite, store, vote links")
 async def info(message: discord.Interaction):
     assert message.guild is not None
-    try:
-        assert COMMIT != "unknown"
-        proc = await asyncio.create_subprocess_exec("git", "show", "-s", "--format=%ct", COMMIT, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-        stdout, _ = await proc.communicate()
-        git_timestamp = int(stdout.decode("utf-8").strip())
-    except Exception:
-        git_timestamp = 0
+    guild = message.guild
 
-    description = f"""
+    async def gen_info_text() -> str:
+        try:
+            assert COMMIT != "unknown"
+            proc = await asyncio.create_subprocess_exec(
+                "git", "show", "-s", "--format=%ct", COMMIT, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            stdout, _ = await proc.communicate()
+            git_timestamp = int(stdout.decode("utf-8").strip())
+        except Exception:
+            git_timestamp = 0
+
+        try:
+            latency = round(bot.latency * 1000)
+        except Exception:
+            latency = "infinite"
+
+        return f"""
 **__System__**
 OS Version: `{platform.system()} {platform.release()}`
 Python Version: `{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}`
@@ -3463,9 +3449,10 @@ Last soft restart: <t:{int(config.SOFT_RESTART_TIME)}:R>
 Commit: `{COMMIT[:7]}`
 Commit time: {f"<t:{int(git_timestamp)}:R>" if git_timestamp else "N/A"}
 Loops since soft restart: `{loop_count + 1:,}`
+Ping: `{latency} ms`
 
-Guild shard: `{message.guild.shard_id:,}`
-Guild cluster: `{int(message.guild.shard_id / len(bot.shards)) if config.CLUSTERING else "N/A"}`
+Guild shard: `{guild.shard_id:,}`
+Guild cluster: `{int(guild.shard_id / len(bot.shards)) if config.CLUSTERING else "N/A"}`
 Guilds in cluster: `{format(len(bot.guilds), ",") if config.CLUSTERING else "N/A"}`
 
 **__Global Stats__**
@@ -3477,16 +3464,45 @@ DB Prisms: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class 
 DB Servers: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.server'::regclass;"):,}`
 """
 
-    view = LayoutView(timeout=1)
-    view.add_item(Container("## Cat Bot Info", description))
-    await message.response.send_message(view=view)
+    def make_tab_button(label: str, tab: str, current_tab: str) -> Button:
+        async def switch_tab(interaction: discord.Interaction) -> None:
+            if interaction.user.id != message.user.id:
+                await do_funny(interaction)
+                return
+            await interaction.response.edit_message(view=await gen_view(tab))
 
+        is_current = tab == current_tab
+        button = Button(label=label, style=ButtonStyle.blurple if is_current else ButtonStyle.gray, disabled=is_current)
+        button.callback = switch_tab
+        return button
 
-@bot.tree.command(description="Confused? Check out the Cat Bot Wiki!")
-async def wiki(message: discord.Interaction):
-    view = LayoutView(timeout=1)
-    view.add_item(Container("## Cat Bot Wiki", "\n".join(data.wiki_lines)))
-    await message.response.send_message(view=view)
+    async def gen_view(tab: str) -> LayoutView:
+        assert bot.user is not None
+        if tab == "credits":
+            content = gen_credits or "credits not yet ready! this is a very rare error, congrats."
+        else:
+            content = await gen_info_text()
+
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        view.add_item(
+            Container(
+                "## Cat Bot",
+                ActionRow(make_tab_button("Info", "info", tab), make_tab_button("Credits", "credits", tab)),
+                "===",
+                content,
+            )
+        )
+        view.add_item(
+            ActionRow(
+                Button(label="Invite", emoji="➕", url=discord.utils.oauth_url(bot.user.id, scopes=None)),
+                Button(label="Vote", emoji=get_emoji("topgg"), url="https://top.gg/bot/966695034340663367/vote"),
+                Button(label="Store", emoji="🛒", url="https://catbot.shop"),
+                Button(label="Wiki", emoji="📚", url="https://catbot.wiki"),
+            )
+        )
+        return view
+
+    await message.response.send_message(view=await gen_view("info"))
 
 
 @bot.tree.command(description="Read The Cat Bot Times™️")
@@ -5592,11 +5608,6 @@ As a bonus, you will get access to {get_command_mention("editprofile")} and {get
     await message.response.send_message(view=view)
 
 
-@bot.tree.command(description="Buy Cat Rains!")
-async def store(message: discord.Interaction):
-    await message.response.send_message("☔ Cat rains make cats spawn instantly! Make your server active, get more cats and have fun!\n<https://catbot.shop>")
-
-
 if config.DONOR_CHANNEL_ID:
 
     @bot.tree.command(description="(SUPPORTER) Get a cosmetic custom cat! (non-tradeable, doesn't count towards anything)")
@@ -6662,14 +6673,6 @@ async def battlepass(message: discord.Interaction):
         await message.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
 
-@bot.tree.command(description="vote for cat bot")
-async def vote(message: discord.Interaction):
-    view = View(timeout=1)
-    button = Button(label="Vote!", url="https://top.gg/bot/966695034340663367/vote", emoji=get_emoji("topgg"))
-    view.add_item(button)
-    await message.response.send_message(view=view)
-
-
 @bot.tree.command(description="cat prisms are a special power up")
 @discord.app_commands.describe(person="Person to view the prisms of")
 async def prism(message: discord.Interaction, person: discord.User | discord.Member | None = None):
@@ -6873,18 +6876,6 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
 
     total_count, user_count, global_boost, user_boost, prism_texts = await regen_texts()
     await message.response.send_message(view=gen_page())
-
-
-@bot.tree.command(description="Pong")
-async def ping(message: discord.Interaction):
-    assert message.guild is not None
-
-    try:
-        latency = round(bot.latency * 1000)
-    except Exception:
-        latency = "infinite"
-
-    await message.response.send_message(f"🏓 cat has brain delay of {latency} ms {get_emoji('staring_cat')}")
 
 
 @bot.tree.command(description="the most useful command ever")
