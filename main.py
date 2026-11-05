@@ -4461,50 +4461,34 @@ async def daily(message: discord.Interaction):
     await achemb(message, "daily", "followup")
 
 
-@bot.tree.command(description="View when and where your last catch was")
-async def lastcatch(message: discord.Interaction):
+@bot.tree.command(description="View the last cat in this channel, when the next one might spawn, and your last catch")
+async def last(message: discord.Interaction):
     assert message.guild is not None
+    assert isinstance(message.channel, GuildMessageable)
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     server = await Server.get_or_create(server_id=message.guild.id)
-
-    res = []
-    if profile.last_catch_channel:
-        res.append(f"your last catch was in <#{profile.last_catch_channel}>")
-    if profile.last_catch:
-        res.append(f"your last catch was <t:{profile.last_catch}:R>")
-    if server.anti_double_catch and profile.last_catch + 300 > time.time():
-        res.append(f"you will be able to catch in other chnanels <t:{profile.last_catch + 300}:R>")
-
-    if not res:
-        res = ["you haven't caught anything in a while..."]
-
-    await message.response.send_message("\n".join(res), ephemeral=True)
-
-
-@bot.tree.command(description="View when the last cat was caught in this channel, and when the next one might spawn")
-async def last(message: discord.Interaction):
-    assert isinstance(message.channel, GuildMessageable)
     channel = await Channel.get_or_none(channel_id=message.channel.id)
-    nextpossible = ""
 
-    try:
-        assert channel is not None
-        lasttime = channel.lastcatches
-        if int(lasttime) == 0:
-            displayedtime = "forever ago"
-        else:
-            displayedtime = f"<t:{int(lasttime)}:R>"
+    lasttime = channel.lastcatches if channel else 0
+    displayedtime = f"<t:{lasttime}:R>" if lasttime else "forever ago"
+    lines = [f"the last cat in this channel was caught {displayedtime}."]
 
+    if channel:
         if not channel.cat:
-            times = [channel.spawn_times_min, channel.spawn_times_max]
-            nextpossible = f"\nthe next cat will spawn between <t:{int(lasttime) + times[0]}:R> and <t:{int(lasttime) + times[1]}:R>"
-    except Exception:
-        displayedtime = "forever ago"
+            lines.append(f"the next cat will spawn between <t:{lasttime + channel.spawn_times_min}:R> and <t:{lasttime + channel.spawn_times_max}:R>")
+        if channel.cat_rains:
+            lines.append(f"cat rain! {channel.cat_rains} {plural('cat', channel.cat_rains)} remaining...")
 
-    if channel and channel.cat_rains:
-        nextpossible += f"\ncat rain! {channel.cat_rains} {plural('cat', channel.cat_rains)} remaining..."
+    if profile.last_catch_channel and profile.last_catch:
+        lines.append(f"your last catch was in <#{profile.last_catch_channel}> <t:{profile.last_catch}:R>")
+    else:
+        lines.append("you haven't caught anything in a while...")
+    if server.anti_double_catch and profile.last_catch + 300 > time.time():
+        lines.append(f"you will be able to catch in other chnanels <t:{profile.last_catch + 300}:R>")
+    if profile.timeout > 1:
+        lines.append(f"you are currently timed out until <t:{profile.timeout}:R>")
 
-    await message.response.send_message(f"the last cat in this channel was caught {displayedtime}.{nextpossible}")
+    await message.response.send_message("\n".join(lines), ephemeral=True)
 
 
 @bot.tree.command(description="View all the juicy numbers and info behind cat types")
