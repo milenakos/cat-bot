@@ -169,9 +169,6 @@ with open("config/battlepass.json", "r", encoding="utf-8") as f:
 with open("config/catnip.json", "r", encoding="utf-8") as f:
     catnip_list = json.load(f)
 
-with open("assets/lists/facts.txt") as f:
-    cat_facts_list = f.read().split("\n")
-
 with open("assets/lists/fanhalo.txt") as f:
     fanhalo_list = f.read().split("\n")
 
@@ -188,9 +185,13 @@ bot = commands.AutoShardedBot(
     intents=discord.Intents.default(),
 )
 
-supporter_group = discord.app_commands.Group(name="supporter", guild_only=True)
-mod_group = discord.app_commands.Group(name="mod", guild_only=True, default_permissions=discord.Permissions(manage_guild=True))
-admin_group = discord.app_commands.Group(name="admin", guild_only=True, default_permissions=discord.Permissions(administrator=True))
+supporter_group = discord.app_commands.Group(name="supporter", description="supporter-only commands", guild_only=True)
+mod_group = discord.app_commands.Group(
+    name="mod", description="server mod-only commands", guild_only=True, default_permissions=discord.Permissions(manage_guild=True)
+)
+admin_group = discord.app_commands.Group(
+    name="admin", description="dangerous admin-only commands", guild_only=True, default_permissions=discord.Permissions(administrator=True)
+)
 
 
 class TTLStore:
@@ -3430,33 +3431,21 @@ async def info(message: discord.Interaction):
         except Exception:
             latency = "infinite"
 
+        db_counts = {}
+        for table in ["profile", "user", "channel", "prism", "server"]:
+            res = await _get_pool().fetchval(f"SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.{table}'::regclass;")
+            db_counts[table] = res
+
         return f"""
-**__System__**
-OS Version: `{platform.system()} {platform.release()}`
-Python Version: `{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}`
-discord.py Version: `{discord.__version__}`
-CPU usage: `{psutil.cpu_percent():.1f}%`
-RAM usage: `{psutil.virtual_memory().percent:.1f}%`
-
-**__Tech__**
-Last hard restart: <t:{int(config.HARD_RESTART_TIME)}:R>
-Last soft restart: <t:{int(config.SOFT_RESTART_TIME)}:R>
-Commit: `{COMMIT[:7]}`
-Commit time: {f"<t:{int(git_timestamp)}:R>" if git_timestamp else "N/A"}
-Loops since soft restart: `{loop_count + 1:,}`
-Ping: `{latency} ms`
-
-Guild shard: `{guild.shard_id:,}`
-Guild cluster: `{int(guild.shard_id / len(bot.shards)) if config.CLUSTERING else "N/A"}`
-Guilds in cluster: `{format(len(bot.guilds), ",") if config.CLUSTERING else "N/A"}`
-
-**__Global Stats__**
-Guilds: `{server_count}`
-DB Profiles: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.profile'::regclass;"):,}`
-DB Users: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.user'::regclass;"):,}`
-DB Channels: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.channel'::regclass;"):,}`
-DB Prisms: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.prism'::regclass;"):,}`
-DB Servers: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.server'::regclass;"):,}`
+OS: `{platform.system()} {platform.release()}`
+Python: `{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}`, discord.py: `{discord.__version__}`
+CPU: `{psutil.cpu_percent():.1f}%`, RAM: `{psutil.virtual_memory().percent:.1f}%`
+Hard restart: <t:{int(config.HARD_RESTART_TIME)}:R>, soft restart: <t:{int(config.SOFT_RESTART_TIME)}:R> ({loop_count + 1:,} loops)
+Commit: `{COMMIT[:7]}`, {f"<t:{int(git_timestamp)}:R>" if git_timestamp else "N/A"}
+Ping: `{latency}ms`
+Guild shard: `{guild.shard_id:,}`, cluster: `{int(guild.shard_id / len(bot.shards)) if config.CLUSTERING else "N/A"}`
+Guilds: `{server_count}`, in cluster: `{format(len(bot.guilds), ",") if config.CLUSTERING else "N/A"}`
+Profiles: `{db_counts["profile"]:,}`, Users: `{db_counts["user"]:,}`, Channels: `{db_counts["channel"]:,}`, Servers: `{db_counts["server"]:,}`
 """
 
     def make_tab_button(label: str, tab: str, current_tab: str) -> Button:
@@ -3467,7 +3456,7 @@ DB Servers: `{await _get_pool().fetchval("SELECT reltuples::bigint FROM pg_class
             await interaction.response.edit_message(view=await gen_view(tab))
 
         is_current = tab == current_tab
-        button = Button(label=label, style=ButtonStyle.blurple if is_current else ButtonStyle.gray, disabled=is_current)
+        button = Button(label=label, style=ButtonStyle.blurple if is_current else ButtonStyle.gray)
         button.callback = switch_tab
         return button
 
@@ -8140,7 +8129,7 @@ def get_timestamp_of_next_week() -> int:
     return int(next_monday_dt.timestamp())
 
 
-@bot.tree.command(description="Deliver orders from your bakery to get Cat Eggs and Packs!")
+@bot.tree.command(description="Deliver orders, bake cookies and brew coffee!")
 async def bakery(message: discord.Interaction):
     async def refresh(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
@@ -8164,7 +8153,7 @@ async def bakery(message: discord.Interaction):
             return
 
         count = profile[field]
-        back_button = Button(label="Back", style=ButtonStyle.gray)
+        back_button = Button(label="Back", style=ButtonStyle.gray, emoji="⬅️")
         back_button.callback = refresh
         view = LayoutView(timeout=VIEW_TIMEOUT)
         view.add_item(ActionRow(make_grind_button(field, quest, emoji, f"{count:,}"), back_button))
@@ -8342,7 +8331,10 @@ async def casino(message: discord.Interaction):
             color=Colors.maroon,
         )
     )
-    await message.response.edit_message(view=view)
+    if message.type == discord.InteractionType.application_command:
+        await message.response.send_message(view=view)
+    else:
+        await message.response.edit_message(view=view)
 
 
 async def slots(message: discord.Interaction):
