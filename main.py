@@ -4444,6 +4444,23 @@ async def daily(message: discord.Interaction):
 async def last(message: discord.Interaction):
     assert message.guild is not None
     assert isinstance(message.channel, GuildMessageable)
+
+    async def refresh(interaction: discord.Interaction):
+        await interaction.response.edit_message(content=await build_last_text(interaction), view=build_view())
+
+    def build_view():
+        view = View(timeout=VIEW_TIMEOUT)
+        button = Button(emoji="🔄", label="Refresh")
+        button.callback = refresh
+        view.add_item(button)
+        return view
+
+    await message.response.send_message(await build_last_text(message), view=build_view(), ephemeral=True)
+
+
+async def build_last_text(message: discord.Interaction) -> str:
+    assert message.guild is not None
+    assert message.channel is not None
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     server = await Server.get_or_create(server_id=message.guild.id)
     channel = await Channel.get_or_none(channel_id=message.channel.id)
@@ -4467,7 +4484,7 @@ async def last(message: discord.Interaction):
     if profile.timeout > time.time():
         lines.append(f"you are currently timed out until <t:{profile.timeout}:R>")
 
-    await message.response.send_message("\n".join(lines), ephemeral=True)
+    return "\n".join(lines)
 
 
 @bot.tree.command(description="View all the juicy numbers and info behind cat types")
