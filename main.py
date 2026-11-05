@@ -1120,7 +1120,7 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     await channel.save()
     temp_spawns_storage.discard(ch_id)
     log_stats("spawn")
-    return f"ok, now i will send cats in <#{ch_id}>\nrun {get_command_mention('forget')} to undo this"
+    return f"ok, now i will send cats in <#{ch_id}>\nrun `/mod forget` to undo this"
 
 
 async def postpone_reminder(interaction: discord.Interaction) -> None:
@@ -3072,7 +3072,7 @@ async def on_guild_join(guild: discord.Guild, user: discord.User) -> None:
 
     msg = f"""{unofficial_note}
 Thanks for adding me!
-Use `/setup` to start (creating a new channel just for Cat Bot is recommended)!
+Use `/mod setup` to start (creating a new channel just for Cat Bot is recommended)!
 Join the support server here: https://discord.gg/staring
 Have a nice day :)"""
 
@@ -3215,7 +3215,7 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
                 "One last thing - catching gets __a lot more fun__ if you use the various *power-ups* inside Cat Bot!",
                 (
                     f"These include {get_emoji('prism')} {get_command_mention('prism')}s, {get_emoji('catnip')} {get_command_mention('catnip')}, "
-                    f"💫 {get_command_mention('bless')}ings, and ☔ {get_command_mention('rain')}."
+                    f"💫 blessings, and ☔ {get_command_mention('rain')}."
                 ),
                 (
                     "Speaking of the last one, for completing the tutorial you get **+2 free ☔ Rain Minutes**! "
@@ -4251,7 +4251,7 @@ async def changemessage(message: discord.Interaction):
 
         await channel.refresh_from_db()
         if not channel:
-            await interaction.response.send_message("this channel is not /setup-ed", ephemeral=True)
+            await interaction.response.send_message("this channel is not /mod setup-ed", ephemeral=True)
             return
 
         values = [
@@ -5512,9 +5512,9 @@ async def rain(message: discord.Interaction, minutes: int | None):
     embed = Container(
         "## ☔ Cat Rains",
         "Cat Rains are power-ups which spawn cats super fast for a limited amounts of time in a channel of your choice.",
-        f"""You can get those by buying them at our [store](<https://catbot.shop>) or by winning them in an event.
+        """You can get those by buying them at our [store](<https://catbot.shop>) or by winning them in an event.
 This bot is developed by a single person so buying one would be very appreciated.
-As a bonus, you will get access to {get_command_mention("editprofile")} and {get_command_mention("customcat")} commands!
+As a bonus, you will get access to `/editprofile` and `/customcat` commands!
 - 1 Rain Minute = 22 cats
 - Fastest times are not saved during rains.
 - Late catching time is reduced to 1 second.
@@ -11236,7 +11236,7 @@ async def forcespawn(message: discord.Interaction, cat_type: str | None = None):
 
     ch = await Channel.get_or_none(channel_id=message.channel.id)
     if ch is None:
-        await message.response.send_message("this channel is not /setup-ed", ephemeral=True)
+        await message.response.send_message("this channel is not /mod setup-ed", ephemeral=True)
         return
     if ch.cat:
         await message.response.send_message("there is already a cat", ephemeral=True)
@@ -11276,7 +11276,7 @@ async def swap(message: discord.Interaction, user1: discord.User, user2: discord
                 p.user_id = user1.id
                 await p.save()
 
-            await interaction.response.edit_message(content=f"done! you can revert this by {get_command_mention('swap')}ping them back lmao", view=None)
+            await interaction.response.edit_message(content="done! you can revert this by swapping them back lmao", view=None)
         except Exception:
             await interaction.response.edit_message(
                 content="ummmm something went wrong. if data was lost, please contact us at <https://discord.gg/staring> for extra assistance.",
