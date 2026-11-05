@@ -8330,10 +8330,10 @@ async def bakery(message: discord.Interaction):
 
 def casino_row(user: Profile, current: str) -> ActionRow:
     casino_view_data = [
-        {"emoji": "🎰", "callback": slots.callback},
-        {"emoji": "🎡", "callback": roulette.callback},
-        {"emoji": "🃏", "callback": blackcat.callback},
-        {"label": f"{user.casino_balance:,}", "emoji": "💰", "callback": casino_overview},
+        {"emoji": "🎰", "callback": slots},
+        {"emoji": "🎡", "callback": roulette},
+        {"emoji": "🃏", "callback": blackcat},
+        {"label": f"{user.casino_balance:,}", "emoji": "💰", "callback": casino.callback},
     ]
     row = ActionRow()
     for entry in casino_view_data:
@@ -8351,7 +8351,8 @@ def casino_impostor(interaction: discord.Interaction) -> bool:
     return bool(interaction.message) and bool(interaction.message.interaction_metadata) and interaction.message.interaction_metadata.user != interaction.user
 
 
-async def casino_overview(message: discord.Interaction):
+@bot.tree.command(description="play slots, roulette and blackcat!")
+async def casino(message: discord.Interaction):
     if casino_impostor(message):
         return await do_funny(message)
     assert message.guild is not None
@@ -8360,6 +8361,8 @@ async def casino_overview(message: discord.Interaction):
     view.add_item(casino_row(profile, "💰"))
     view.add_item(
         Container(
+            "pick a game above to play!",
+            "===",
             f"your balance is **{profile.casino_balance:,}** {plural('cat dollar', profile.casino_balance)}",
             f"you earn **100 cat dollars** whenever you complete the vote quest: {get_command_mention('battlepass')}",
             color=Colors.maroon,
@@ -8368,7 +8371,6 @@ async def casino_overview(message: discord.Interaction):
     await message.response.edit_message(view=view)
 
 
-@bot.tree.command(description="oh no [casino]")
 async def slots(message: discord.Interaction):
     if casino_impostor(message):
         return await do_funny(message)
@@ -8595,7 +8597,6 @@ async def slots(message: discord.Interaction):
         await achemb(message, "big_win_slots", "followup")
 
 
-@bot.tree.command(description="what [casino]")
 async def roulette(message: discord.Interaction):
     if casino_impostor(message):
         return await do_funny(message)
@@ -8774,7 +8775,6 @@ async def roulette(message: discord.Interaction):
         await achemb(message, "failed_gambler", "followup")
 
 
-@bot.tree.command(description="catjack is awful [casino]")
 async def blackcat(message: discord.Interaction):
     if casino_impostor(message):
         return await do_funny(message)
