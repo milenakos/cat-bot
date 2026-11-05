@@ -1000,15 +1000,6 @@ async def cat_type_autocomplete(interaction: discord.Interaction, current: str) 
     return [discord.app_commands.Choice(name=choice, value=choice) for choice in [*cattypes, "Random"] if current.lower() in choice.lower()][:25]
 
 
-# function to autocomplete /cat, it only shows the cats you have
-async def cat_command_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
-    assert interaction.guild is not None
-    user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
-    return [discord.app_commands.Choice(name=choice, value=choice) for choice in cattypes if current.lower() in choice.lower() and user[f"cat_{choice}"] > 0][
-        :25
-    ]
-
-
 async def lb_type_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     assert interaction.guild is not None
     return [
@@ -1550,7 +1541,7 @@ async def on_ready() -> None:
             "Made by **Lia Milenakos**",
             "With contributions from **" + ", ".join(contributors) + "**",
             "Original Cat Image: **pathologicals**",
-            "APIs: **catfact.ninja, weilbyte.dev, wordnik.com, thecatapi.com**",
+            "APIs: **weilbyte.dev, wordnik.com**",
             "Open Source Projects: **[discord.py](https://github.com/Rapptz/discord.py), [asyncpg](https://github.com/MagicStack/asyncpg)**",
             "Art, suggestions, and a lot more: **TheTrashCell**",
             "Banner art: **2braincelledcreature**",
@@ -3908,7 +3899,7 @@ Collect 10 of them to get ☔ **2 free Rain Minutes**!""",
                     Container(
                         "## Cat Bot Plush [ended]",
                         "~~[Pre-order now for $2!](https://www.makeship.com/petitions/cat-bot-plush)~~",
-                        "Everyone who pre-ordered will also get ☔ **60 Rain Minutes** and a badge! Run `/plushbadge` to redeem.",
+                        "Everyone who pre-ordered will also get ☔ **60 Rain Minutes** and a badge! [Join our Discord](https://discord.gg/staring) to redeem.",
                         "===",
                         "-# <t:1777921200>",
                     )
@@ -3924,7 +3915,7 @@ Collect 10 of them to get ☔ **2 free Rain Minutes**!""",
 - {get_emoji("cataine_badge")} *Cataine Badge* - Defeat the Dog Mafia prior to Oct 13 2025 (4200 people)
 - {get_emoji("second_birthday_badge")} *Second Birthday Badge* - Join the Cat Bot Birthday Server on Apr 21 2024 (1708 people)
 - {get_emoji("puzzle_badge")} *Puzzle Badge* - Collect at least 25 puzzle pieces during 2025 Birthday event (8893 people)
-- {get_emoji("plush_badge")} *Plush Badge* - Pre-order the Cat Bot Plush and run `/plushbadge`""",
+- {get_emoji("plush_badge")} *Plush Badge* - Pre-order the Cat Bot Plush ([join our Discord](https://discord.gg/staring) to redeem)""",
                         "we hit the petition goal! i will give everyone who pre-orders (or already did) ☔ **60 Rain Minutes** as well! so",
                         "-# june update will be hype, sry for all the shilling",
                         "===",
@@ -4730,7 +4721,7 @@ def get_highlights(person: Profile, stats: list[list[str]]) -> list[str]:
 
 async def gen_inventory(
     guild_id: int,
-    inv_user: discord.abc.User | discord.Object,
+    inv_user: discord.User | discord.Member,
     me_msg: discord.Interaction | None = None,
     run_debt_cutscene: bool = True,
 ) -> tuple[discord.ui.Container, list[str]]:
@@ -4772,7 +4763,7 @@ async def gen_inventory(
         total += cat_num
         cat_elements.append(f"{icon} **{i}** {cat_num:,}")
 
-    if user.custom and hasattr(inv_user, "name"):
+    if user.custom:
         key = str(user.user_id) + "cat"
         if key in emojis:
             icon = get_emoji(key)
@@ -4881,7 +4872,7 @@ async def gen_inventory(
     if me_msg and (len(data.news_list) > len(user.news_state.strip()) or user.news_state.strip()[last_active_article] == "0"):
         has_news = news_notice
 
-    uname = inv_user.name if isinstance(inv_user, discord.abc.User) else "Cat Bot User"
+    uname = inv_user.name
     username = f"## {emoji_prefix}{uname.replace('_', r'\_')}"
 
     badges = ""
@@ -4891,7 +4882,7 @@ async def gen_inventory(
 
     badges = f"### {badges}" if badges else None
 
-    if "discordapp" in user.image and isinstance(inv_user, discord.abc.User):
+    if "discordapp" in user.image:
         embedVar = Container(
             has_news,
             Section(username, badges, things, Thumbnail(user.image)),
@@ -4929,9 +4920,8 @@ async def gen_inventory(
         if debt and run_debt_cutscene:
             bot.loop.create_task(debt_cutscene(me_msg, person))
 
-    if hasattr(inv_user, "name"):
-        user.last_inventory_view = int(time.time())
-        bot.loop.create_task(user.save())
+    user.last_inventory_view = int(time.time())
+    bot.loop.create_task(user.save())
 
     return embedVar, give_achs
 
@@ -5152,34 +5142,6 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
         user.tutorial_state = 5
         await user.save()
         await message.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
-
-
-@bot.tree.command(description="Browse inventories of completely random Cat Bot users")
-async def randomizer(message: discord.Interaction):
-    async def gen_random_inventory(interaction: discord.Interaction, first: bool = False) -> None:
-        view = LayoutView(timeout=VIEW_TIMEOUT)
-
-        if result := await _get_pool().fetchrow("SELECT user_id, guild_id FROM profile TABLESAMPLE BERNOULLI (1) LIMIT 1;"):
-            embedVar, _ = await gen_inventory(
-                result["guild_id"],
-                discord.Object(result["user_id"], type=discord.User),
-                None,
-            )
-            view.add_item(embedVar)
-        else:
-            view.add_item(TextDisplay("uhhh"))
-
-        button = Button(label="Reroll", emoji="🔄", style=discord.ButtonStyle.primary)
-        button.callback = gen_random_inventory
-        view.add_item(ActionRow(button))
-
-        if first:
-            await interaction.response.send_message(view=view)
-        else:
-            await interaction.response.edit_message(view=view)
-
-    await gen_random_inventory(message, first=True)
-    await achemb(message, "randomizer2", "followup")
 
 
 @bot.tree.command(description="Get a link which embeds to your Cat Bot profile in any server!")
@@ -5404,19 +5366,6 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
         del config.rain_starter[channel.channel_id]
     except discord.Forbidden:
         pass
-
-
-@bot.tree.command(description="redeem plush badge")
-async def plushbadge(message: discord.Interaction):
-    await message.response.send_message(
-        f"""if you:
-1. have previously *purchased* **[the cat bot plush](<https://makeship.com/products/cat-bot-plush>)**,
-2. *dont* already have {get_emoji("plush_badge")} in your /inventory, and
-3. have a *proof* of purchase;
-
-please **open a ticket** in our support server to get the badge: discord.gg/staring""",
-        ephemeral=True,
-    )
 
 
 @bot.tree.command(description="its raining cats")
@@ -6862,12 +6811,6 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
     await message.response.send_message(view=gen_page())
 
 
-@bot.tree.command(description="the most useful command ever")
-async def bruh(message: discord.Interaction):
-    await message.response.defer()
-    await message.delete_original_response()
-
-
 @bot.tree.command(description="do cats even eat apples")
 async def snake(message: discord.Interaction):
     snake_data = await Snake.get_or_create(id=1)
@@ -8295,42 +8238,6 @@ async def trade(message: discord.Interaction, other_user: discord.User):
         await achemb(message, "introvert", "followup")
 
 
-@bot.tree.command(description="Get Cat Image, does not add a cat to your inventory")
-@discord.app_commands.rename(cat_type="type")
-@discord.app_commands.describe(cat_type="select a cat type ok")
-@discord.app_commands.autocomplete(cat_type=cat_command_autocomplete)
-async def cat(message: discord.Interaction, cat_type: str | None = None):
-    assert message.guild is not None
-
-    if cat_type and cat_type not in cattypes:
-        await message.response.send_message("bro what", ephemeral=True)
-        return
-
-    # check the user has the cat if required
-    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    if cat_type and user[f"cat_{cat_type}"] <= 0:
-        await message.response.send_message("you dont have that cat", ephemeral=True)
-        return
-
-    image = f"assets/images/spawn/{cat_type.lower()}_cat.webp" if cat_type else "assets/images/cat.png"
-    file = discord.File(image)
-    await message.response.send_message(file=file)
-
-
-@bot.tree.command(description="Get Cursed Cat")
-async def cursed(message: discord.Interaction):
-    file = discord.File("assets/images/cursed.png")
-    await message.response.send_message(file=file)
-
-
-@bot.tree.command(description="Get Your balance")
-async def bal(message: discord.Interaction):
-    view = LayoutView(timeout=1)
-    file = f"{config.GIT_REPO_LINK}/assets/images/money.png"
-    view.add_item(Container("## cat coins", discord.ui.MediaGallery(discord.MediaGalleryItem(file))))
-    await message.response.send_message(view=view)
-
-
 @bot.tree.command(description="Brew some coffee to catch cats more efficiently")
 async def brew(message: discord.Interaction):
     async def brew_coffee(interaction: discord.Interaction) -> None:
@@ -9274,55 +9181,6 @@ async def eightball(message: discord.Interaction, question: str):
     await achemb(message, "balling", "followup")
 
 
-@bot.tree.command(description="The best Artificial Catelligence on the Planet")
-@discord.app_commands.describe(query="Your query to CatGPT")
-async def catgpt(message: discord.Interaction, query: str):
-    await message.response.defer(thinking=True)
-
-    # initial random noise
-    a = [random.gauss(0, 1.0) for _ in range(128)]
-    b = math.fsum(a)
-    for _ in range(11):
-        b = math.tanh(b) + math.atan(math.sin(b))
-    c = [[(i * j + b) % 1.0 for j in range(6)] for i in range(6)]
-    d = sum(c[i][i] for i in range(6))
-
-    # sentiment analysis
-    e = 0.0
-    for n in range(1, 73):
-        e += math.sin(n * b) / (n * n) + ord(query[n % len(query)])
-    f = math.sin(d) ** 2 + math.cos(d) ** 2 - 1
-    e = int(e)
-    g = ((e & ~e) - (e & ~e)) + f
-
-    # main loop
-    h = 0xC0FFEE
-    for _ in range(13):
-        h = (((h << 5) ^ (h >> 3)) + 0x5A5A5A5A) & 0xFFFFFFFF
-        h ^= (h >> 11) & 0xDEADBEEF
-        await asyncio.sleep(0.5)  # make sure the beef is dead
-
-    # convert the values back to text
-    i = ((h ^ h) | (h & 0)) >> 4
-    j = (i << 17) ^ ((i + 1) - 1)
-    k = (j | (j << 3) | (j >> 2)) & 0xFF
-    L = ((k << 5) ^ (k >> 2)) & 0xFF
-    p = int(math.pi**4 + g) ^ k
-    q = int(math.e + abs(g)) | (L << 1)
-    r = int(math.factorial(5) - int(math.pi + math.cos(g))) ^ (k | L)
-    s = [
-        ((p + q) | k) ^ L,
-        (p | (k << 4)) & (~L & 0xFF),
-        (r ^ (k & 0xF0)) | (L >> 3),
-    ]
-    t = sum(random.randint(0, 9) for _ in range(32)) & 0
-    u = ((t << 9) ^ (t >> 1)) & 0
-    result = "".join(chr(((x ^ t) & 0x7F) | u) for x in s)
-
-    await message.followup.send(f"{result}\n-# ℹ️ CatGPT can't make mistakes.")
-    await achemb(message, "catgpt", "followup")
-
-
 @bot.tree.command(description="the most engaging boring game")
 async def pig(message: discord.Interaction):
     assert message.guild is not None
@@ -9448,21 +9306,6 @@ async def remind(
     await achemb(message, "reminder", "followup")  # the ai autocomplete thing suggested this and its actually a cool ach
 
 
-@bot.tree.command(name="random", description="Get a random cat")
-async def random_cat(message: discord.Interaction):
-    try:
-        async with (
-            aiohttp.ClientSession() as session,
-            session.get("https://api.thecatapi.com/v1/images/search", headers={"User-Agent": "CatBot/1.0 https://github.com/milenakos/cat-bot"}) as response,
-        ):
-            data = await response.json()
-            await message.response.send_message(data[0]["url"])
-    except Exception:
-        await message.response.send_message("no cats :(")
-
-    await achemb(message, "randomizer", "followup")
-
-
 if config.WORDNIK_API_KEY:
 
     @bot.tree.command(description="define a word")
@@ -9495,37 +9338,6 @@ if config.WORDNIK_API_KEY:
                 raise LookupError
         except Exception:
             await message.response.send_message("no definition found", ephemeral=True)
-
-
-@bot.tree.command(name="fact", description="get a random cat fact")
-async def cat_fact(message: discord.Interaction):
-    assert message.guild is not None
-    assert isinstance(message.channel, GuildMessageable)
-    facts = [
-        "you love cats",
-        f"cat bot is in {server_count} servers",
-        "cat",
-        "cats are the best",
-    ]
-
-    # give a fact from the list or the file
-    if random.randint(0, 10) == 0:
-        await message.response.send_message(random.choice(facts))
-    else:
-        await message.response.send_message(random.choice(cat_facts_list))
-
-    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    user.facts += 1
-    await user.save()
-    if user.facts >= 10:
-        await achemb(message, "fact_enjoyer", "followup")
-
-    try:
-        channel = await Channel.get_or_none(channel_id=message.channel.id)
-        if channel and channel.cattype == "Professor":
-            await achemb(message, "nerd_battle", "followup")
-    except Exception:
-        pass
 
 
 BOUNTY_SLOTS = ("one", "two", "three")

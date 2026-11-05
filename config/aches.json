@@ -85,14 +85,10 @@
     "8k": {"title": "Cought in 8k", "description": "catchception!", "difficulty": 2, "parent": "4k"},
     "not_like_that": {"title": "Not like that...", "description": "catch the cat the wrong way", "difficulty": 2, "parent": "4k"},
   "randomizer": {"title": "Randomizer", "description": "look at a random cat", "difficulty": 1, "parent": "Commands"},
-    "randomizer2": {"title": "Randomizer, Again", "description": "use /randomizer to travel around the world", "difficulty": 1, "parent": "randomizer"},
-  "fact_enjoyer": {"title": "Fact Enjoyer", "description": "wow such good facts thanks cat bot", "difficulty": 2, "parent": "Commands"},
-    "nerd_battle": {"title": "Battle of the Wits", "description": "run /fact when a professor spawns", "difficulty": 5, "parent": "fact_enjoyer"},
   "trolled": {"title": "Fake Out", "description": "TROLLED SO HARD LMAOOO :joy:", "difficulty": 1, "parent": "Commands"},
   "define": {"title": "Definer", "description": "find out a definition of a word", "difficulty": 1, "parent": "Commands"},
   "reminder": {"title": "Reminder", "description": "set a reminder", "difficulty": 1, "parent": "Commands"},
   "balling": {"title": "Balling", "description": "ball ball ball ball ball ball ball ball", "difficulty": 1, "parent": "Commands"},
-  "catgpt": {"title": "Make No Mistakes", "description": "ask /catgpt a question", "difficulty": 1, "parent": "Commands"},
   "daily": {"title": "Daily Catter", "description": "get daily cats", "difficulty": 1, "parent": "Commands"},
   "curious": {"title": "Curious", "description": "try to click a private button", "difficulty": 1, "parent": "Commands"},
     "its_not_working": {"title": "It's not working", "description": "click a private button 50 times", "difficulty": 3, "parent": "curious"},
@@ -137,5 +133,9 @@
   "slots": {"title": "More gambling??", "description": "spin the /slots machine", "difficulty": 1, "parent": "Museum"},
   "darkest_market": {"title": "Hyper Hidden", "description": "20x more hidden", "difficulty": 2, "parent": "Museum"},
   "website_user": {"title": "Website User", "description": "catbot.minkos.lol", "difficulty": 3, "parent": "Museum"},
-  "ghost_buster": {"title": "Ghost Buster", "description": "catch a ghost cat", "difficulty": 2, "parent": "Museum"}
+  "ghost_buster": {"title": "Ghost Buster", "description": "catch a ghost cat", "difficulty": 2, "parent": "Museum"},
+  "fact_enjoyer": {"title": "Fact Enjoyer", "description": "wow such good facts thanks cat bot", "difficulty": 2, "parent": "Museum"},
+  "nerd_battle": {"title": "Battle of the Wits", "description": "run /fact when a professor spawns", "difficulty": 5, "parent": "Museum"},
+  "catgpt": {"title": "Make No Mistakes", "description": "ask /catgpt a question", "difficulty": 1, "parent": "Museum"},
+  "randomizer2": {"title": "Randomizer, Again", "description": "use /randomizer to travel around the world", "difficulty": 1, "parent": "Museum"}
 }
