@@ -7166,42 +7166,6 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
     await finish_turn(message)
 
 
-@bot.tree.command(description="you feel like making cookies")
-async def cookie(message: discord.Interaction):
-    assert message.guild is not None
-    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-
-    async def bake(interaction: discord.Interaction) -> None:
-        nonlocal user
-        assert message.guild is not None
-        if interaction.user != message.user:
-            await do_funny(interaction)
-            return
-        try:
-            user = await Profile.get(["cookies", "misc_quest"], guild_id=message.guild.id, user_id=message.user.id)
-            user.cookies += 1
-            await user.save()
-        except (AttributeError, LookupError):
-            await interaction.response.edit_message(content="...", view=None)
-            return
-        btn = view.children[0]
-        assert isinstance(btn, Button)
-        btn.label = f"{user.cookies:,}"
-        await interaction.response.edit_message(view=view)
-        if user.cookies < 5:
-            await achemb(interaction, "cookieclicker", "followup")
-        if 5100 > user.cookies >= 5000:
-            await achemb(interaction, "cookiesclicked", "followup")
-        if user.misc_quest.strip() == "cookie":
-            await progress(message, user, "cookie")
-
-    view = View(timeout=VIEW_TIMEOUT)
-    button = Button(emoji="🍪", label=f"{user.cookies:,}", style=ButtonStyle.blurple)
-    button.callback = bake
-    view.add_item(button)
-    await message.response.send_message(view=view)
-
-
 @bot.tree.command(description="yeah i made this solely so i could name it catfishing")
 async def fish(message: discord.Interaction):
     assert message.guild is not None
@@ -8161,39 +8125,6 @@ async def trade(message: discord.Interaction, other_user: discord.User):
         await achemb(message, "introvert", "followup")
 
 
-@bot.tree.command(description="Brew some coffee to catch cats more efficiently")
-async def brew(message: discord.Interaction):
-    async def brew_coffee(interaction: discord.Interaction) -> None:
-        nonlocal view
-        assert message.guild is not None
-        if interaction.user != message.user:
-            await do_funny(interaction)
-            return
-
-        try:
-            user = await Profile.get(["coffees", "misc_quest"], guild_id=message.guild.id, user_id=message.user.id)
-            user.coffees += 1
-            await user.save()
-        except (AttributeError, LookupError):
-            await interaction.response.edit_message(content="...", view=None)
-            return
-
-        btn = view.children[0]
-        assert isinstance(btn, Button)
-        btn.label = f"{user.coffees:,}"
-        await interaction.response.edit_message(content="ugh fine", view=view)
-
-        if user.misc_quest.strip() == "coffee":
-            await progress(message, user, "coffee")
-
-    view = View(timeout=VIEW_TIMEOUT)
-    button = Button(emoji="☕", label="Retry", style=ButtonStyle.blurple)
-    button.callback = brew_coffee
-    view.add_item(button)
-    await message.response.send_message("HTTP 418: I'm a teapot. <https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418>", view=view)
-    await achemb(message, "coffee", "followup")
-
-
 def get_current_week() -> int:
     epoch_monday = datetime.datetime(1970, 1, 5, tzinfo=datetime.UTC).date()
     today = discord.utils.utcnow().date()
@@ -8217,6 +8148,44 @@ async def bakery(message: discord.Interaction):
             return await do_funny(interaction)
         await interaction.response.edit_message(view=await gen_bakery())
 
+    async def grind(interaction: discord.Interaction, field: str, quest: str, emoji: str) -> None:
+        assert message.guild is not None
+        if interaction.user != message.user:
+            await do_funny(interaction)
+            return
+
+        try:
+            profile = await Profile.get([field, "misc_quest"], guild_id=message.guild.id, user_id=message.user.id)
+            profile[field] += 1
+            await profile.save()
+        except (AttributeError, LookupError):
+            error_view = LayoutView(timeout=VIEW_TIMEOUT)
+            error_view.add_item(TextDisplay("..."))
+            await interaction.response.edit_message(view=error_view)
+            return
+
+        count = profile[field]
+        back_button = Button(label="Back", style=ButtonStyle.gray)
+        back_button.callback = refresh
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        view.add_item(ActionRow(make_grind_button(field, quest, emoji, f"{count:,}"), back_button))
+        await interaction.response.edit_message(view=view)
+
+        if field == "cookies":
+            if count < 5:
+                await achemb(interaction, "cookieclicker", "followup")
+            if 5100 > count >= 5000:
+                await achemb(interaction, "cookiesclicked", "followup")
+        elif count < 5:
+            await achemb(interaction, "coffee", "followup")
+        if profile.misc_quest.strip() == quest:
+            await progress(message, profile, quest)
+
+    def make_grind_button(field: str, quest: str, emoji: str, label: str) -> Button:
+        button = Button(emoji=emoji, label=label, style=ButtonStyle.blurple)
+        button.callback = lambda interaction: grind(interaction, field, quest, emoji)
+        return button
+
     async def gen_bakery() -> LayoutView:
         assert message.guild is not None
         assert isinstance(message.channel, GuildMessageable)
@@ -8235,6 +8204,10 @@ async def bakery(message: discord.Interaction):
 
         refresh_button = Button(label="Refresh", emoji="🔄")
         refresh_button.callback = refresh
+        grind_row = ActionRow(
+            make_grind_button("cookies", "cookie", "🍪", f"{profile.cookies:,}"),
+            make_grind_button("coffees", "coffee", "☕", f"{profile.coffees:,}"),
+        )
 
         if user.last_bakegg_send == get_current_week():
             # order already delivered for this week
@@ -8254,6 +8227,7 @@ async def bakery(message: discord.Interaction):
                     ActionRow(Button(label="Bake.gg", url="https://bake.gg/"), refresh_button),
                 )
             )
+            view.add_item(grind_row)
             return view
 
         async def deliver(interaction: discord.Interaction) -> None:
@@ -8312,8 +8286,8 @@ async def bakery(message: discord.Interaction):
             "## 📝 Bakery Order",
             "In collaboration with [Bake.gg](https://bake.gg)",
             "__Order Details__",
-            f"""{get_emoji("bakegg_cookie")} {min(profile.cookies, 120)}/120 {"✅" if profile.cookies >= 120 else "(`/cookie`)"}
-{get_emoji("bakegg_coffee")} {min(profile.coffees, 140)}/140 {"✅" if profile.coffees >= 140 else "(`/brew`)"}
+            f"""{get_emoji("bakegg_cookie")} {min(profile.cookies, 120)}/120 {"✅" if profile.cookies >= 120 else ""}
+{get_emoji("bakegg_coffee")} {min(profile.coffees, 140)}/140 {"✅" if profile.coffees >= 140 else ""}
 {get_emoji("nicecat")} {min(profile.cat_Nice, 2)}/2 {"✅" if profile.cat_Nice >= 2 else ""}""",
             "===",
             "__Order Reward__",
@@ -8323,6 +8297,7 @@ async def bakery(message: discord.Interaction):
             ActionRow(button, refresh_button),
         )
         view.add_item(embed)
+        view.add_item(grind_row)
         return view
 
     await message.response.send_message(view=await gen_bakery())

@@ -819,18 +819,18 @@
       "finenice": {"emoji": "finecat", "title": "Catch a Fine and a Nice cat", "xp_min": 340, "xp_max": 400, "progress": 3}
     },
     "misc": {
-      "slots2": {"emoji": "🎰", "title": "Spin /slots 5 times", "xp_min": 250, "xp_max": 350, "progress": 5},
+      "slots2": {"emoji": "🎰", "title": "Spin /casino slots 5 times", "xp_min": 250, "xp_max": 350, "progress": 5},
       "achievement": {"emoji": "cat_throphy", "title": "Get an /achievement", "xp_min": 200, "xp_max": 300, "progress": 1},
       "trade": {"emoji": "💱", "title": "Complete a /trade", "xp_min": 270, "xp_max": 370, "progress": 1},
       "ttc": {"emoji": "⭕", "title": "Tie Cat Bot 3 times in /tictactoe", "xp_min": 270, "xp_max": 370, "progress": 3},
       "roll": {"emoji": "🎲", "title": "/Roll a 6 on default dice", "xp_min": 175, "xp_max": 225, "progress": 1},
       "pig": {"emoji": "🎲", "title": "Get 40+ score in /pig", "xp_min": 300, "xp_max": 400, "progress": 1},
-      "roulette": {"emoji": "🎰", "title": "Win 3 /roulette bets", "xp_min": 300, "xp_max": 400, "progress": 3},
-      "cookie": {"emoji": "🍪", "title": "Bake 50 /cookies", "xp_min": 250, "xp_max": 350, "progress": 50},
-      "coffee": {"emoji": "☕", "title": "/Brew 50 coffees", "xp_min": 250, "xp_max": 350, "progress": 50},
+      "roulette": {"emoji": "🎰", "title": "Win 3 /casino roulette bets", "xp_min": 300, "xp_max": 400, "progress": 3},
+      "cookie": {"emoji": "🍪", "title": "Bake 50 /bakery cookies", "xp_min": 250, "xp_max": 350, "progress": 50},
+      "coffee": {"emoji": "☕", "title": "Brew 50 /bakery coffees", "xp_min": 250, "xp_max": 350, "progress": 50},
       "fish": {"emoji": "🎣", "title": "Catch 5 /fish", "xp_min": 250, "xp_max": 350, "progress": 5},
       "chaos": {"emoji": "💥", "title": "Cause /chaos 50 times", "xp_min": 250, "xp_max": 350, "progress": 50},
-      "blackcat": {"emoji": "🃏", "title": "Win 2 /blackcat games", "xp_min": 250, "xp_max": 350, "progress": 2}
+      "blackcat": {"emoji": "🃏", "title": "Win 2 /casino blackcat games", "xp_min": 250, "xp_max": 350, "progress": 2}
     },
     "weekly": {
       "catch": {"emoji": "nicecat", "title": "Catch 70 cats", "progress": 70},
