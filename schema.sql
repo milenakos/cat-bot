@@ -246,6 +246,7 @@ CREATE TABLE public.profile (
     perfection_count integer DEFAULT 0,
     rain_participations integer DEFAULT 0,
     rain_minutes_started integer DEFAULT 0,
+    rain_thanks integer DEFAULT 0,
     reminders_set integer DEFAULT 0,
     cats_gifted integer DEFAULT 0,
     cat_gifts_recieved integer DEFAULT 0,

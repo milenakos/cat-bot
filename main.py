@@ -4617,6 +4617,7 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
     stats.append(["rain_minutes_bought", "☔", f"Rain minutes bought: {user.rain_minutes_bought:,}"])
     stats.append(["cats_caught_during_rains", "☔", f"Cats caught during rains: {profile.rain_participations:,}{star}"])
     stats.append(["rain_minutes_started", "☔", f"Rain minutes started: {profile.rain_minutes_started:,}{star}"])
+    stats.append(["rain_thanks", "💖", f"Rain thanks received: {profile.rain_thanks:,}"])
     stats.append(["cats_blessed", "🌠", f"Cats blessed: {user.cats_blessed:,}"])
 
     # misc
@@ -5203,6 +5204,39 @@ async def rain_recovery_loop(channel: Channel) -> None:
             await channel.save()
 
 
+def build_rain_summary_view(text: str, starter_id: int, guild_id: int, thankable: bool) -> LayoutView:
+    view = LayoutView(timeout=VIEW_TIMEOUT if thankable else 1)
+    view.add_item(TextDisplay(text))
+    if not thankable:
+        return view
+
+    thanked: set[int] = set()
+    button = Button(label="Thanks! (0)", style=ButtonStyle.blurple, emoji="💖")
+
+    async def thank(interaction: discord.Interaction) -> None:
+        if starter_id and interaction.user.id == starter_id:
+            await interaction.response.send_message("you can't thank yourself!", ephemeral=True)
+            return
+        if interaction.user.id in thanked:
+            await interaction.response.send_message("you already said thanks!", ephemeral=True)
+            return
+        thanked.add(interaction.user.id)
+        button.label = f"Thanks! ({len(thanked)})"
+        await interaction.response.edit_message(view=view)
+
+        if not starter_id:
+            return
+        try:
+            await Profile.get_or_create(user_id=starter_id, guild_id=guild_id)
+            await _get_pool().execute("UPDATE profile SET rain_thanks = rain_thanks + 1 WHERE user_id = $1 AND guild_id = $2", starter_id, guild_id)
+        except Exception:
+            pass
+
+    button.callback = thank
+    view.add_item(ActionRow(button))
+    return view
+
+
 async def rain_end(message: discord.Message, channel: Channel, force_summary: dict) -> None:
     assert isinstance(message.channel, GuildMessageable)
     try:
@@ -5294,6 +5328,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
 
         schedule_unlock(max(10, len(reverse_mapping) * 2))
 
+        starter_id = config.rain_starter.get(channel.channel_id, 0)
         evil_types = []
         epic_fail = False
         thingtypes = cattypes + pack_names
@@ -5354,12 +5389,10 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
 
                 parts.append(part_two)
 
-            for rain_msg in parts:
-                if ":i:" not in rain_msg:
-                    continue
+            parts = [rain_msg for rain_msg in parts if ":i:" in rain_msg]
+            for i, rain_msg in enumerate(parts):
                 # this is to bypass character limit up to 4k
-                v = LayoutView(timeout=1)
-                v.add_item(TextDisplay(rain_msg))
+                v = build_rain_summary_view(rain_msg, starter_id, guild.id, i == len(parts) - 1)
                 try:
                     await message.channel.send(view=v)
                 except Exception:
