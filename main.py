@@ -1301,6 +1301,9 @@ async def snake_dms(voter_ids: set[int], msg: str) -> None:
 async def background_loop() -> None:
     global pointlaugh_ratelimit, reactions_ratelimit, loop_count, last_vote_cursor, server_count, emojis
 
+    current_loop = loop_count
+    loop_count += 1
+
     pointlaugh_ratelimit = {}
     reactions_ratelimit = {}
     temp_message_queue.clear()
@@ -1320,7 +1323,7 @@ async def background_loop() -> None:
         pass
 
     try:
-        if loop_count % 10 == 0:
+        if current_loop % 10 == 0:
             raise NotImplementedError
         app_info = await bot.application_info()
         approx_server_count = app_info.approximate_guild_count
@@ -1335,7 +1338,6 @@ async def background_loop() -> None:
         approx_server_count = None
 
     if config.CLUSTERING and not config.CLUSTERING_ZERO:
-        loop_count += 1
         return
 
     if config.TOP_GG_MODERN_TOKEN:
@@ -1473,7 +1475,7 @@ async def background_loop() -> None:
     if config.BACKUP_ID:
         backupchannel = bot.get_partial_messageable(config.BACKUP_ID)
 
-        if loop_count % 60 == 0:
+        if current_loop % 60 == 0:
             backup_file = "./backup.dump"
             try:
                 os.remove(backup_file)
@@ -1486,15 +1488,13 @@ async def background_loop() -> None:
 
                 if exportbackup:
                     await bot.loop.run_in_executor(None, exportbackup.export)
-                    await backupchannel.send(f"In {server_count} servers, loop {loop_count}.\nBackup exported.")
+                    await backupchannel.send(f"In {server_count} servers, loop {current_loop}.\nBackup exported.")
                 else:
-                    await backupchannel.send(f"In {server_count} servers, loop {loop_count}.", file=discord.File(backup_file))
+                    await backupchannel.send(f"In {server_count} servers, loop {current_loop}.", file=discord.File(backup_file))
             except Exception as e:
                 logger.warning(f"Error during backup: {e}")
         else:
-            await backupchannel.send(f"In {server_count} servers, loop {loop_count}.")
-
-    loop_count += 1
+            await backupchannel.send(f"In {server_count} servers, loop {current_loop}.")
 
 
 async def on_connect() -> None:
