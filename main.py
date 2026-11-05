@@ -445,7 +445,9 @@ async def achemb(
 
     if ach_id == "failed_gambler":
         assert isinstance(message, discord.Interaction)
-        await message.followup.send("you lost all your money! get *+100 more cat dollars* whenever you complete the vote quest.", ephemeral=True)
+        await message.followup.send(
+            f"you lost all your money! get *+100 more cat dollars* whenever you complete the vote quest: {get_command_mention('battlepass')}", ephemeral=True
+        )
 
     if profile[ach_id]:
         return
@@ -8521,7 +8523,7 @@ async def casino_overview(message: discord.Interaction):
     view.add_item(
         Container(
             f"your balance is **{profile.casino_balance:,}** {plural('cat dollar', profile.casino_balance)}",
-            "you earn **100 cat dollars** whenever you complete the vote quest.",
+            f"you earn **100 cat dollars** whenever you complete the vote quest: {get_command_mention('battlepass')}",
             color=Colors.maroon,
         )
     )
