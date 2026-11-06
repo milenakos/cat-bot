@@ -5548,7 +5548,7 @@ As a bonus, you will get access to `/editprofile` and `/customcat` commands!
 
 if config.DONOR_CHANNEL_ID:
 
-    @supporter_group.command(description="(SUPPORTER) Get a cosmetic custom cat! (non-tradeable, doesn't count towards anything)")
+    @supporter_group.command(description="Get a cosmetic custom cat! (non-tradeable, doesn't count towards anything)")
     @discord.app_commands.describe(
         name='The name of your custom cat. ("None" to remove)',
         image="Static/animated GIF, PNG, JPEG, WEBP, AVIF below 256 KB. Static images will be auto-compressed.",
@@ -5647,7 +5647,7 @@ if config.DONOR_CHANNEL_ID:
         view.add_item(embedVar)
         await message.response.send_message(view=view, ephemeral=True)
 
-    @supporter_group.command(description="(SUPPORTER) Bless random Cat Bot users with doubled cats!")
+    @supporter_group.command(description="Bless random Cat Bot users with doubled cats!")
     async def bless(message: discord.Interaction):
         user = await User.get_or_create(user_id=message.user.id)
         do_edit = False
@@ -8337,10 +8337,7 @@ def casino_impostor(interaction: discord.Interaction) -> bool:
 )
 async def casino(
     message: discord.Interaction,
-    game: Literal[
-        "slots", "roulette", "blackcat"
-    ]
-    | None = None,
+    game: Literal["slots", "roulette", "blackcat"] | None = None,
 ):
     if game == "slots":
         return await slots(message)
