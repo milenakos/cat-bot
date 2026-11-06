@@ -8343,11 +8343,11 @@ async def casino(
     | None = None,
 ):
     if game == "slots":
-        return slots(message)
+        return await slots(message)
     if game == "roulette":
-        return roulette(message)
+        return await roulette(message)
     if game == "blackcat":
-        return blackcat(message)
+        return await blackcat(message)
 
     if casino_impostor(message):
         return await do_funny(message)
