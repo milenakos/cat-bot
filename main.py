@@ -8332,7 +8332,23 @@ def casino_impostor(interaction: discord.Interaction) -> bool:
 
 
 @bot.tree.command(description="play slots, roulette and blackcat!")
-async def casino(message: discord.Interaction):
+@discord.app_commands.describe(
+    game="The casino game to play!",
+)
+async def casino(
+    message: discord.Interaction,
+    game: Literal[
+        "slots", "roulette", "blackcat"
+    ]
+    | None = None,
+):
+    if game == "slots":
+        return slots(message)
+    if game == "roulette":
+        return roulette(message)
+    if game == "blackcat":
+        return blackcat(message)
+
     if casino_impostor(message):
         return await do_funny(message)
     assert message.guild is not None
