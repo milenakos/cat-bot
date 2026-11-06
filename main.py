@@ -4088,6 +4088,10 @@ async def tiktok(message: discord.Interaction, text: str):
         await achemb(message, "bwomp", "followup")
         return
 
+    if len(text) > 300:
+        await message.response.send_message("must be 300 characters or less", ephemeral=True)
+        return
+
     await message.response.defer()
 
     try:
@@ -4107,7 +4111,7 @@ async def tiktok(message: discord.Interaction, text: str):
                 f.seek(0)
                 await message.followup.send(file=discord.File(fp=f, filename="output.mp3"))
     except Exception:
-        await message.followup.send("i dont speak guacamole (remove non-english characters, make sure the message is below 300 characters)")
+        await message.followup.send("error. try removing non-english characters, or shortening the message")
 
     await achemb(message, "tiktoker", "followup")
 
