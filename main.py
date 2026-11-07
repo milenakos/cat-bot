@@ -4480,7 +4480,7 @@ async def build_last_text(message: discord.Interaction) -> str:
     else:
         lines.append("You haven't caught anything in a while...")
     if server.anti_double_catch and profile.last_catch + 300 > time.time():
-        lines.append(f"You will be able to catch in other chnanels <t:{profile.last_catch + 300}:R>.")
+        lines.append(f"You will be able to catch in other channels <t:{profile.last_catch + 300}:R>.")
     if profile.timeout > time.time():
         lines.append(f"You are currently timed out until <t:{profile.timeout}:R>.")
 
