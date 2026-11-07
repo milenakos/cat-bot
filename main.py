@@ -4467,22 +4467,22 @@ async def build_last_text(message: discord.Interaction) -> str:
 
     lasttime = channel.lastcatches if channel else 0
     displayedtime = f"<t:{lasttime}:R>" if lasttime else "forever ago"
-    lines = [f"the last cat in this channel was caught {displayedtime}."]
+    lines = [f"The last cat in this channel was caught {displayedtime}."]
 
     if channel:
         if not channel.cat:
-            lines.append(f"the next cat will spawn between <t:{lasttime + channel.spawn_times_min}:R> and <t:{lasttime + channel.spawn_times_max}:R>")
+            lines.append(f"The next cat will spawn between <t:{lasttime + channel.spawn_times_min}:R> and <t:{lasttime + channel.spawn_times_max}:R>.")
         if channel.cat_rains:
-            lines.append(f"cat rain! {channel.cat_rains} {plural('cat', channel.cat_rains)} remaining...")
+            lines.append(f"Cat rain! {channel.cat_rains} {plural('cat', channel.cat_rains)} remaining...")
 
     if profile.last_catch_channel and profile.last_catch:
-        lines.append(f"your last catch was in <#{profile.last_catch_channel}> <t:{profile.last_catch}:R>")
+        lines.append(f"Your last catch was in <#{profile.last_catch_channel}> <t:{profile.last_catch}:R>.")
     else:
-        lines.append("you haven't caught anything in a while...")
+        lines.append("You haven't caught anything in a while...")
     if server.anti_double_catch and profile.last_catch + 300 > time.time():
-        lines.append(f"you will be able to catch in other chnanels <t:{profile.last_catch + 300}:R>")
+        lines.append(f"You will be able to catch in other chnanels <t:{profile.last_catch + 300}:R>.")
     if profile.timeout > time.time():
-        lines.append(f"you are currently timed out until <t:{profile.timeout}:R>")
+        lines.append(f"You are currently timed out until <t:{profile.timeout}:R>.")
 
     return "\n".join(lines)
 
