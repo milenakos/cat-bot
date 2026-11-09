@@ -1580,19 +1580,25 @@ def is_prime(n: int) -> bool:
     return True
 
 
-async def play_minigame(interaction: discord.Interaction) -> None:
+async def play_minigame(interaction: discord.Interaction, belated: dict | None = None) -> None:
     assert isinstance(interaction.channel, GuildMessageable)
-    if interaction.channel.id not in config.belated_catchers:
-        await interaction.response.send_message("No active minigame in this channel.", ephemeral=True)
-        return
+    if belated is None:
+        if interaction.channel.id not in config.belated_catchers:
+            await interaction.response.send_message("No active minigame in this channel.", ephemeral=True)
+            return
+        belated = config.belated_catchers[interaction.channel.id]
+    assert belated is not None
 
-    belated = config.belated_catchers[interaction.channel.id]
     if interaction.user.id not in [c[0] for c in belated["late_catchers"]]:
         await interaction.response.send_message("You are not eligible to play this minigame.", ephemeral=True)
         return
 
-    belated["late_catchers"] = [c for c in belated["late_catchers"] if c[0] != interaction.user.id]
     cattype = belated["cattype"]
+    if cattype == "Real" and not belated.get("trivia_answer"):
+        await interaction.response.send_message("This minigame has expired.", ephemeral=True)
+        return
+
+    belated["late_catchers"] = [c for c in belated["late_catchers"] if c[0] != interaction.user.id]
 
     log_stats("minigame_start", {"cattype": cattype})
 
@@ -1938,7 +1944,6 @@ async def belated_window_task(
         log_stats("bonus_cat", {"rain": "false", "cattype": belated["cattype"]})
         view = View(timeout=10)
         button = Button(style=discord.ButtonStyle.green, label="Go!")
-        button.callback = play_minigame
         view.add_item(button)
         pings = " ".join([f"<@{catcher[0]}>" for catcher in eligible_catchers])
 
@@ -1965,7 +1970,15 @@ async def belated_window_task(
             random.shuffle(answers)
             if msg.channel.id not in config.cat_cought_rain:
                 config.cat_cought_rain[msg.channel.id] = {}
-            config.belated_catchers[msg.channel.id]["trivia_answer"] = {"question_text": question_text, "correct_answer": correct_answer, "answers": answers}
+
+            belated["trivia_answer"] = {"question_text": question_text, "correct_answer": correct_answer, "answers": answers}
+
+        minigame_entry = belated
+
+        async def play_this_minigame(interaction: discord.Interaction) -> None:
+            await play_minigame(interaction, minigame_entry)
+
+        button.callback = play_this_minigame
 
         h = await reply_or_send(
             catch_confirm,
