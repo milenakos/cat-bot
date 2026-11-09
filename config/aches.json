@@ -84,7 +84,6 @@
   "4k": {"title": "Cought in 4k", "description": "catch someone in 4k", "difficulty": 1, "parent": "Commands"},
     "8k": {"title": "Cought in 8k", "description": "catchception!", "difficulty": 2, "parent": "4k"},
     "not_like_that": {"title": "Not like that...", "description": "catch the cat the wrong way", "difficulty": 2, "parent": "4k"},
-  "randomizer": {"title": "Randomizer", "description": "look at a random cat", "difficulty": 1, "parent": "Commands"},
   "trolled": {"title": "Fake Out", "description": "TROLLED SO HARD LMAOOO :joy:", "difficulty": 1, "parent": "Commands"},
   "define": {"title": "Definer", "description": "find out a definition of a word", "difficulty": 1, "parent": "Commands"},
   "reminder": {"title": "Reminder", "description": "set a reminder", "difficulty": 1, "parent": "Commands"},
@@ -137,5 +136,6 @@
   "fact_enjoyer": {"title": "Fact Enjoyer", "description": "wow such good facts thanks cat bot", "difficulty": 2, "parent": "Museum"},
   "nerd_battle": {"title": "Battle of the Wits", "description": "run /fact when a professor spawns", "difficulty": 5, "parent": "Museum"},
   "catgpt": {"title": "Make No Mistakes", "description": "ask /catgpt a question", "difficulty": 1, "parent": "Museum"},
+  "randomizer": {"title": "Randomizer", "description": "look at a random cat", "difficulty": 1, "parent": "Museum"},
   "randomizer2": {"title": "Randomizer, Again", "description": "use /randomizer to travel around the world", "difficulty": 1, "parent": "Museum"}
 }
