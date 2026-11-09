@@ -11723,6 +11723,129 @@ async def owner_transfer(ctx: commands.Context, *, args: str = "") -> None:
     )
 
 
+@bot.command(name="find")
+@is_bot_owner()
+async def owner_find(ctx: commands.Context, user_id: int, guild_id: int | None = None) -> None:
+    # syntax: cat!find <user_id> [<guild_id>]
+    total_cats = " + ".join(f'"cat_{c}"::bigint' for c in cattypes)
+    query = f"""SELECT id, user_id, guild_id,
+        (SELECT COUNT(*) FROM prism WHERE prism.guild_id = profile.guild_id AND prism.user_id = profile.user_id) AS prisms,
+        {total_cats} AS cats
+        FROM profile WHERE user_id = $1"""
+    args = [user_id]
+    if guild_id is not None:
+        query += " AND guild_id = $2"
+        args.append(guild_id)
+    rows = await _get_pool().fetch(query + " ORDER BY id", *args)
+    if not rows:
+        await ctx.reply("no profiles found")
+        return
+    result = "\n".join(f"id={r['id']} user_id={r['user_id']} guild_id={r['guild_id']} prisms={r['prisms']:,} cats={r['cats']:,}" for r in rows)
+    if len(result) < 1900:
+        await ctx.reply(result)
+    else:
+        await ctx.reply(file=discord.File(io.StringIO(result), filename="result.txt"))  # pyright: ignore[reportArgumentType]
+
+
+async def move_prisms(conn, from_profile: asyncpg.Record, to_guild_id: int, to_user_id: int) -> int:
+    # moves prisms owned by from_profile, returns how many were deleted due to a name collision in the destination guild
+    taken = {r["name"] for r in await conn.fetch("SELECT name FROM prism WHERE guild_id = $1", to_guild_id)}
+    moved_ids = []
+    deleted_ids = []
+    for p in await conn.fetch("SELECT id, name FROM prism WHERE guild_id = $1 AND user_id = $2", from_profile["guild_id"], from_profile["user_id"]):
+        if p["name"] in taken and from_profile["guild_id"] != to_guild_id:
+            deleted_ids.append(p["id"])
+        else:
+            moved_ids.append(p["id"])
+    if deleted_ids:
+        await conn.execute("DELETE FROM prism WHERE id = ANY($1)", deleted_ids)
+    if moved_ids:
+        await conn.execute("UPDATE prism SET guild_id = $1, user_id = $2 WHERE id = ANY($3)", to_guild_id, to_user_id, moved_ids)
+    return len(deleted_ids)
+
+
+async def resolve_profile_id(conn, ref: str) -> int | None:
+    # accepts either a profile id or guild_id.user_id
+    try:
+        if "." in ref:
+            guild_id, user_id = ref.split(".")
+            return await conn.fetchval("SELECT id FROM profile WHERE guild_id = $1 AND user_id = $2", int(guild_id), int(user_id))
+        return int(ref)
+    except ValueError:
+        return None
+
+
+@bot.command(name="merge")
+@is_bot_owner()
+async def owner_merge(ctx: commands.Context, from_ref: str, to_ref: str) -> None:
+    # syntax: cat!merge <from_profile_id | guild_id.user_id> <to_profile_id | guild_id.user_id>
+    async with transaction() as conn:
+        from_id = await resolve_profile_id(conn, from_ref)
+        to_id = await resolve_profile_id(conn, to_ref)
+        if from_id is None or to_id is None:
+            await ctx.reply("profile not found")
+            return
+        if from_id == to_id:
+            await ctx.reply("profiles must be different")
+            return
+
+        rows = {r["id"]: r for r in await conn.fetch("SELECT * FROM profile WHERE id = ANY($1) ORDER BY id FOR UPDATE", [from_id, to_id])}
+        if from_id not in rows or to_id not in rows:
+            await ctx.reply("profile not found")
+            return
+        src, dst = rows[from_id], rows[to_id]
+
+        refunded = await move_prisms(conn, src, dst["guild_id"], dst["user_id"])
+
+        columns = [f"cat_{c}" for c in cattypes] + list(ach_names)
+        new_values = {}
+        for col in cattypes:
+            new_values[f"cat_{col}"] = min(2147483647, src[f"cat_{col}"] + dst[f"cat_{col}"] + refunded)
+        for ach in ach_names:
+            new_values[ach] = bool(src[ach] or dst[ach])
+
+        # to profile gets everything, from profile is cleared
+        sets = ", ".join(f'"{col}" = ${i}' for i, col in enumerate(columns, start=1))
+        await conn.execute(f"UPDATE profile SET {sets} WHERE id = ${len(columns) + 1}", *(new_values[c] for c in columns), to_id)
+        clear = ", ".join(f'"cat_{c}" = 0' for c in cattypes) + ", " + ", ".join(f'"{a}" = false' for a in ach_names)
+        await conn.execute(f"UPDATE profile SET {clear} WHERE id = $1", from_id)
+
+    await ctx.reply(f"merged profile {from_id} into {to_id} ({refunded} {plural('prism', refunded)} refunded as cats)")
+
+
+@bot.command(name="move")
+@is_bot_owner()
+async def owner_move(ctx: commands.Context, from_ref: str, to_ref: str) -> None:
+    # syntax: cat!move <from_profile_id | guild_id.user_id> <to_profile_id | guild_id.user_id>
+    async with transaction() as conn:
+        from_id = await resolve_profile_id(conn, from_ref)
+        to_id = await resolve_profile_id(conn, to_ref)
+        if from_id is None or to_id is None:
+            await ctx.reply("profile not found")
+            return
+        if from_id == to_id:
+            await ctx.reply("profiles must be different")
+            return
+
+        rows = {r["id"]: r for r in await conn.fetch("SELECT * FROM profile WHERE id = ANY($1) ORDER BY id FOR UPDATE", [from_id, to_id])}
+        if from_id not in rows or to_id not in rows:
+            await ctx.reply("profile not found")
+            return
+        src, dst = rows[from_id], rows[to_id]
+        guild_id, user_id = dst["guild_id"], dst["user_id"]
+
+        await conn.execute("DELETE FROM prism WHERE guild_id = $1 AND user_id = $2", guild_id, user_id)
+        await conn.execute("DELETE FROM profile WHERE id = $1", to_id)
+
+        refunded = await move_prisms(conn, src, guild_id, user_id)
+        refund_sets = "".join(f', "cat_{c}" = LEAST(2147483647, "cat_{c}"::bigint + $4)' for c in cattypes)
+        await conn.execute(f"UPDATE profile SET guild_id = $1, user_id = $2{refund_sets} WHERE id = $3", guild_id, user_id, from_id, refunded)
+
+    await ctx.reply(
+        f"moved profile {from_id} to guild {guild_id} user {user_id}, deleted profile {to_id} ({refunded} {plural('prism', refunded)} refunded as cats)"
+    )
+
+
 async def discord_webhook(request: web.Request) -> web.Response:
     # verify signature
     try:
