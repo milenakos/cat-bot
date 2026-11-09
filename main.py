@@ -3051,8 +3051,24 @@ async def on_guild_join(guild: discord.Guild, user: discord.User) -> None:
     names = ["cat", "bot", "command", "welcome", "general"]
 
     assert bot.user is not None
-    me = await guild.fetch_member(bot.user.id)
-    channels = await guild.fetch_channels()
+    bot_id = bot.user.id
+
+    async def fetch_join_context():
+        for attempt in range(3):
+            try:
+                return await guild.fetch_member(bot_id), await guild.fetch_channels()
+            except discord.NotFound as e:
+                if e.code != 10004:
+                    raise
+                if attempt == 2:
+                    return None
+                await asyncio.sleep(1)
+        return None
+
+    loaded = await fetch_join_context()
+    if loaded is None:
+        return
+    me, channels = loaded
     for name in names:
         ch = find(name, list(channels))
         if verify(ch):
