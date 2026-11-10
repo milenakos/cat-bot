@@ -5448,14 +5448,7 @@ async def rain(message: discord.Interaction, minutes: int | None):
         # i LOOOOVE checks
         assert interaction.guild is not None
         assert isinstance(interaction.channel, GuildMessageable)
-        user = await User.get_or_create(user_id=interaction.user.id)
-        profile = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
-        channel = await Channel.get_or_none(channel_id=interaction.channel.id)
         await server.refresh_from_db()
-
-        if not user.rain_minutes:
-            user.rain_minutes = 0
-            await user.save()
 
         if not server.do_rain:
             await interaction.response.send_message("rain is disabled in this server.", ephemeral=True)
@@ -5465,39 +5458,49 @@ async def rain(message: discord.Interaction, minutes: int | None):
             await interaction.response.send_message("last time i checked weather can not change for a negative amount of time", ephemeral=True)
             return
 
-        if rain_length > user.rain_minutes + profile.rain_minutes or user.rain_minutes < 0:
-            await interaction.response.send_message(
-                "you dont have enough rain! buy some more [here](<https://catbot.shop>)",
-                ephemeral=True,
-            )
-            return
+        async with transaction() as conn:
+            user = await User.get_or_create(conn, user_id=interaction.user.id)
+            profile = await Profile.get_or_create(conn, guild_id=interaction.guild.id, user_id=interaction.user.id)
 
-        if not channel:
-            await interaction.response.send_message("please run this in a setupped channel.", ephemeral=True)
-            return
+            if not user.rain_minutes:
+                user.rain_minutes = 0
 
-        if channel.cat:
-            await interaction.response.send_message("please catch the cat in this channel first.", ephemeral=True)
-            return
+            if rain_length > user.rain_minutes + profile.rain_minutes or user.rain_minutes < 0:
+                await interaction.response.send_message(
+                    "you dont have enough rain! buy some more [here](<https://catbot.shop>)",
+                    ephemeral=True,
+                )
+                return
 
-        if channel.cat_rains > 0:
-            await interaction.response.send_message("there is already a rain running!", ephemeral=True)
-            return
+            channel_row = await conn.fetchrow("SELECT * FROM channel WHERE channel_id = $1 FOR UPDATE", interaction.channel.id)
+            if not channel_row:
+                await interaction.response.send_message("please run this in a setupped channel.", ephemeral=True)
+                return
+            channel = Channel(channel_row, connection=conn)
 
-        profile.rain_minutes_started += rain_length
-        channel.cat_rains = rain_length * 22
-        channel.yet_to_spawn = 0
-        await channel.save()
-        if profile.rain_minutes:
-            if rain_length > profile.rain_minutes:
-                user.rain_minutes -= rain_length - profile.rain_minutes
-                profile.rain_minutes = 0
+            if channel.cat:
+                await interaction.response.send_message("please catch the cat in this channel first.", ephemeral=True)
+                return
+
+            if channel.cat_rains > 0:
+                await interaction.response.send_message("there is already a rain running!", ephemeral=True)
+                return
+
+            profile.rain_minutes_started += rain_length
+            channel.cat_rains = rain_length * 22
+            channel.yet_to_spawn = 0
+            if profile.rain_minutes:
+                if rain_length > profile.rain_minutes:
+                    user.rain_minutes -= rain_length - profile.rain_minutes
+                    profile.rain_minutes = 0
+                else:
+                    profile.rain_minutes -= rain_length
             else:
-                profile.rain_minutes -= rain_length
-        else:
-            user.rain_minutes -= rain_length
-        await user.save()
-        await profile.save()
+                user.rain_minutes -= rain_length
+            await channel.save()
+            await user.save()
+            await profile.save()
+
         try:
             starter = interaction.user.mention if not anon else "Anonymous"
             await interaction.response.send_message(f"{rain_length:,}m cat rain was started by {starter}!")
@@ -7731,101 +7734,81 @@ async def trade(message: discord.Interaction, other_user: discord.User):
         if person1.accept and person2.accept and not blackhole:
             # accepted!!
             blackhole = True
+            assert interaction.guild is not None
 
-            # verify
             fail = False
+            cat_count = 0
+            async with transaction() as conn:
+                person1.profile = await Profile.get_or_create(conn, guild_id=interaction.guild.id, user_id=person1.user.id)
+                person2.profile = await Profile.get_or_create(conn, guild_id=interaction.guild.id, user_id=person2.user.id)
+                person1.global_user = await User.get_or_create(conn, user_id=person1.user.id)
+                person2.global_user = await User.get_or_create(conn, user_id=person2.user.id)
 
-            async def fetch_all_prisms() -> dict[str, Prism]:
-                assert interaction.guild is not None
-                if not (prism_names := person1.gives_prisms + person2.gives_prisms):
-                    return {}
-                return {
-                    p.name: p
-                    async for p in Prism.filter(
-                        "guild_id = $1 AND name = ANY($2)",
+                prism_names = person1.gives_prisms + person2.gives_prisms
+                temp_prisms: dict[str, Prism] = {}
+                if prism_names:
+                    prism_rows = await conn.fetch(
+                        "SELECT * FROM prism WHERE guild_id = $1 AND name = ANY($2) ORDER BY id FOR UPDATE",
                         interaction.guild.id,
                         prism_names,
-                        refetch=False,
                     )
-                }
+                    temp_prisms = {r["name"]: Prism(r, connection=conn) for r in prism_rows}
 
-            tasks: list[Awaitable[object]] = [
-                person1.profile.refresh_from_db(),
-                person2.profile.refresh_from_db(),
-                person1.global_user.refresh_from_db(),
-                person2.global_user.refresh_from_db(),
-            ]
-            fetch_prisms_task = None
-            if person1.gives_prisms or person2.gives_prisms:
-                fetch_prisms_task = bot.loop.create_task(fetch_all_prisms())
-                tasks.append(fetch_prisms_task)
+                for user in [person1, person2]:
+                    for item, amount in user.gives_cats.items():
+                        if user.profile[f"cat_{item}"] < amount:
+                            fail = f"You don't have enough {item} cats!"
+                    for item, amount in user.gives_packs.items():
+                        if user.profile[f"pack_{item.lower()}"] < amount:
+                            fail = f"You don't have enough {item} packs!"
+                    if user.global_user.rain_minutes < user.gives_rain:
+                        fail = "You don't have enough rain!"
+                    if user.profile.scratchcards < user.gives_scratchcards:
+                        fail = "You don't have enough scratchcards!"
+                    for prism in user.gives_prisms:
+                        if prism not in temp_prisms:
+                            fail = f"Prism {prism} not found!"
+                        elif temp_prisms[prism].user_id != user.user.id:
+                            fail = f"You don't own prism {prism}!"
 
-            await asyncio.gather(*tasks)
+                if fail:
+                    await interaction.response.edit_message(content=fail, embed=None, view=None)
+                    return
 
-            temp_prisms = fetch_prisms_task.result() if fetch_prisms_task else {}
+                for giver in [person1, person2]:
+                    getter = person2 if giver == person1 else person1
+                    for item, amount in giver.gives_cats.items():
+                        giver.profile[f"cat_{item}"] -= amount
+                        getter.profile[f"cat_{item}"] += amount
+                        cat_count += amount
+                    for item, amount in giver.gives_packs.items():
+                        giver.profile[f"pack_{item.lower()}"] -= amount
+                        getter.profile[f"pack_{item.lower()}"] += amount
+                    if giver.gives_rain:
+                        giver.global_user.rain_minutes -= giver.gives_rain
+                        getter.global_user.rain_minutes += giver.gives_rain
+                        try:
+                            ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
+                            bot.loop.create_task(ch.send(f"{giver.user.id} traded {giver.gives_rain}m to {getter.user.id}"))
+                        except Exception:
+                            pass
+                    if giver.gives_scratchcards:
+                        giver.profile.scratchcards -= giver.gives_scratchcards
+                        getter.profile.scratchcards += giver.gives_scratchcards
+                    for prism in giver.gives_prisms:
+                        temp_prisms[prism].user_id = getter.user.id
 
-            for user in [person1, person2]:
-                for item, amount in user.gives_cats.items():
-                    if user.profile[f"cat_{item}"] < amount:
-                        fail = f"You don't have enough {item} cats!"
-                for item, amount in user.gives_packs.items():
-                    if user.profile[f"pack_{item.lower()}"] < amount:
-                        fail = f"You don't have enough {item} packs!"
-                if user.global_user.rain_minutes < user.gives_rain:
-                    fail = "You don't have enough rain!"
-                if user.profile.scratchcards < user.gives_scratchcards:
-                    fail = "You don't have enough scratchcards!"
-                for prism in user.gives_prisms:
-                    if prism not in temp_prisms:
-                        fail = f"Prism {prism} not found!"
-                    elif temp_prisms[prism].user_id != user.user.id:
-                        fail = f"You don't own prism {prism}!"
+                person1.profile.cats_traded += cat_count
+                person2.profile.cats_traded += cat_count
+                person1.profile.trades_completed += 1
+                person2.profile.trades_completed += 1
 
-            if fail:
-                await interaction.response.edit_message(content=fail, embed=None, view=None)
-                return
-
-            # exchange
-            cat_count = 0
-            for giver in [person1, person2]:
-                getter = person2 if giver == person1 else person1
-                for item, amount in giver.gives_cats.items():
-                    giver.profile[f"cat_{item}"] -= amount
-                    getter.profile[f"cat_{item}"] += amount
-                    cat_count += amount
-                for item, amount in giver.gives_packs.items():
-                    giver.profile[f"pack_{item.lower()}"] -= amount
-                    getter.profile[f"pack_{item.lower()}"] += amount
-                if giver.gives_rain:
-                    giver.global_user.rain_minutes -= giver.gives_rain
-                    getter.global_user.rain_minutes += giver.gives_rain
-                    try:
-                        ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
-                        bot.loop.create_task(ch.send(f"{giver.user.id} traded {giver.gives_rain}m to {getter.user.id}"))
-                    except Exception:
-                        pass
-                if giver.gives_scratchcards:
-                    giver.profile.scratchcards -= giver.gives_scratchcards
-                    getter.profile.scratchcards += giver.gives_scratchcards
-                for prism in giver.gives_prisms:
-                    temp_prisms[prism].user_id = getter.user.id
-
-            person1.profile.cats_traded += cat_count
-            person2.profile.cats_traded += cat_count
-            person1.profile.trades_completed += 1
-            person2.profile.trades_completed += 1
-
-            async def save_prisms() -> None:
-                if temp_prisms:
-                    await Prism.bulk_update(list(temp_prisms.values()), "user_id")
-
-            await asyncio.gather(
-                person1.profile.save(),
-                person2.profile.save(),
-                person1.global_user.save(),
-                person2.global_user.save(),
-                save_prisms(),
-            )
+                await person1.profile.save()
+                await person2.profile.save()
+                await person1.global_user.save()
+                await person2.global_user.save()
+                for prism in temp_prisms.values():
+                    await prism.save()
 
             await interaction.response.edit_message(content="Trade finished!", embed=embed, view=None)
 
