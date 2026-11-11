@@ -11117,24 +11117,23 @@ async def leaderboards(
             emoji = aura_emoji(specific_cat)
 
         # add the messager and interactor
+        self_string = ""
         if (messager_placement and not on_page(messager_placement)) or (interactor_placement and not on_page(interactor_placement)):
-            string += "...\n"
 
             def rank_line(placement: int, value, perc, mention: str) -> str:
                 if type == "Cattlepass":
                     assert perc is not None
-                    return f"{placement}\\. Level **{value}** *({perc}%)*: {mention}\n"
-                return f"{placement}\\. {emoji} **{value:,}** {unit}: {mention}\n"
+                    return f"{placement}\\. Level **{value}** *({perc}%)*: {mention}"
+                return f"{placement}\\. {emoji} **{value:,}** {unit}: {mention}"
 
             lines = []
-            if interactor_placement and not on_page(interactor_placement) and str(interaction.user.id) not in string:
+            if interactor_placement and not on_page(interactor_placement):
                 lines.append((interactor_placement, rank_line(interactor_placement, interactor, interactor_perc, interaction.user.mention)))
-            if messager_placement and not on_page(messager_placement) and str(message.user.id) not in string:
+            if messager_placement and not on_page(messager_placement):
                 lines.append((messager_placement, rank_line(messager_placement, messager, messager_perc, message.user.mention)))
 
-            # sort them correctly! (higher placement number = worse rank = shown first)
-            for _, line in sorted(lines, key=lambda entry: entry[0], reverse=True):
-                string += line
+            # sort them correctly! (higher placement number = worse rank = shown last)
+            self_string = "\n".join(line for _, line in sorted(lines, key=lambda entry: entry[0]))
 
         if not string:
             string = "No entries yet. At least, that's my theory. A CAT BOT THE~~~"
@@ -11213,6 +11212,9 @@ async def leaderboards(
             embedVar.add_item(ActionRow(dropdown))
 
         embedVar.add_item(TextDisplay(string.rstrip()))
+        if self_string:
+            embedVar.add_item(Separator())
+            embedVar.add_item(TextDisplay(self_string))
 
         if not locked and last_page > 0:
             prev_button = Button(emoji="⬅️", disabled=page_number == 0, custom_id=str(page_number - 1))
@@ -11220,8 +11222,6 @@ async def leaderboards(
             prev_button.callback = change_page
             next_button.callback = change_page
             embedVar.add_item(ActionRow(prev_button, next_button))
-
-        embedVar.add_item(TextDisplay(rain_shill))
 
         myview.add_item(embedVar)
 
