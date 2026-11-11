@@ -11153,14 +11153,8 @@ async def leaderboards(
 
         async def change_page(interaction: discord.Interaction) -> None:
             nonlocal page_number
-            wanted_page = interaction.custom_id
-            if wanted_page == "first":
-                page_number = 0
-            elif wanted_page == "last":
-                page_number = last_page
-            else:
-                assert wanted_page is not None
-                page_number = int(wanted_page)
+            assert interaction.custom_id is not None
+            page_number = int(interaction.custom_id)
             await lb_handler(interaction, type, True, specific_cat)
 
         dropdown = None
@@ -11221,15 +11215,11 @@ async def leaderboards(
         embedVar.add_item(TextDisplay(string.rstrip()))
 
         if not locked and last_page > 0:
-            buttons = [
-                Button(emoji="⏪", disabled=page_number == 0, custom_id="first"),
-                Button(emoji="⬅️", disabled=page_number == 0, custom_id=str(page_number - 1)),
-                Button(emoji="➡️", disabled=page_number >= last_page, custom_id=str(page_number + 1)),
-                Button(emoji="⏩", disabled=page_number >= last_page, custom_id="last"),
-            ]
-            for button in buttons:
-                button.callback = change_page
-            embedVar.add_item(ActionRow(*buttons))
+            prev_button = Button(emoji="⬅️", disabled=page_number == 0, custom_id=str(page_number - 1))
+            next_button = Button(emoji="➡️", disabled=page_number >= last_page, custom_id=str(page_number + 1))
+            prev_button.callback = change_page
+            next_button.callback = change_page
+            embedVar.add_item(ActionRow(prev_button, next_button))
 
         embedVar.add_item(TextDisplay(rain_shill))
 
