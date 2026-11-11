@@ -10795,9 +10795,12 @@ async def leaderboards(
         await message.response.send_message("invalid cattype", ephemeral=True)
         return
 
+    page_number = 0
+    last_page = 0
+
     # this fat function handles a single page
     async def lb_handler(interaction: discord.Interaction, type: str, do_edit: bool = True, specific_cat: str | None = "All") -> None:
-        nonlocal message
+        nonlocal message, page_number, last_page
         assert message.guild is not None
         if not specific_cat:
             specific_cat = "All"
@@ -10805,9 +10808,13 @@ async def leaderboards(
         # leaderboard top amount
         show_amount = 15
 
-        async def fetch_ranked(query: str, order_by: str, ahead_of: str, *args) -> list:
+        async def fetch_ranked(query: str, order_by: str, ahead_of: str, *args) -> tuple[list, list]:
+            # uhhh
+            nonlocal page_number, last_page
             user_parameter = len(args) + 1
-            top_query = f"SELECT * FROM ({query}) AS leaderboard ORDER BY {order_by} LIMIT ${user_parameter}"
+            offset_parameter = user_parameter + 1
+            top_query = f"SELECT * FROM ({query}) AS leaderboard ORDER BY {order_by} LIMIT ${user_parameter} OFFSET ${offset_parameter}"
+            count_query = f"SELECT COUNT(*) FROM ({query}) AS leaderboard"
             rank_query = f"""
                 SELECT target.*, 1 + (
                     SELECT COUNT(*) FROM ({query}) AS entry WHERE {ahead_of}
@@ -10815,55 +10822,76 @@ async def leaderboards(
                 FROM ({query}) AS target
                 WHERE target.user_id = ${user_parameter}
             """
+
+            offset = page_number * show_amount
             if interaction.user.id == message.user.id:
-                top_rows, interaction_row = await asyncio.gather(
-                    _get_pool().fetch(top_query, *args, show_amount),
+                top_rows, total_count, interaction_row = await asyncio.gather(
+                    _get_pool().fetch(top_query, *args, show_amount, offset),
+                    _get_pool().fetchval(count_query, *args),
                     _get_pool().fetchrow(rank_query, *args, interaction.user.id),
                 )
                 message_row = interaction_row
             else:
-                top_rows, interaction_row, message_row = await asyncio.gather(
-                    _get_pool().fetch(top_query, *args, show_amount),
+                top_rows, total_count, interaction_row, message_row = await asyncio.gather(
+                    _get_pool().fetch(top_query, *args, show_amount, offset),
+                    _get_pool().fetchval(count_query, *args),
                     _get_pool().fetchrow(rank_query, *args, interaction.user.id),
                     _get_pool().fetchrow(rank_query, *args, message.user.id),
                 )
-            result = list(top_rows)
+
+            total_count = total_count or 0
+            last_page = max(0, (total_count - 1) // show_amount) if total_count else 0
+            if page_number > last_page:
+                page_number = last_page
+                top_rows = await _get_pool().fetch(top_query, *args, show_amount, page_number * show_amount)
+
+            page_rows = list(top_rows)
+            result = list(page_rows)
             visible_user_ids = {row["user_id"] for row in result}
             for row in (interaction_row, message_row):
                 if row and row["user_id"] not in visible_user_ids:
                     result.append(row)
                     visible_user_ids.add(row["user_id"])
-            return result
+            return page_rows, result
 
         string = ""
         bp_season = None
         unit = None
         final_value = None
         guild_id = message.guild.id
+        query = order = ahead = None
+        args: list = [guild_id]
 
         if type == "Aura":
             unit = "auras"
             if specific_cat in AURA_ORDER:
-                _count_expr = RawSQL(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{specific_cat}') AS aura_count")
-                result = await Profile.collect_limit(
-                    ["user_id", _count_expr],
-                    f"guild_id = $1 AND (SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{specific_cat}') > 0 ORDER BY aura_count DESC, user_id ASC",
-                    guild_id,
+                query = (
+                    f"SELECT user_id, (SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{specific_cat}') AS aura_count "
+                    f"FROM profile WHERE guild_id = $1 AND (SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{specific_cat}') > 0"
                 )
+                order = "aura_count DESC, user_id ASC"
+                ahead = "(entry.aura_count > target.aura_count) OR (entry.aura_count = target.aura_count AND entry.user_id < target.user_id)"
                 final_value = "aura_count"
             else:
-                _count_exprs = [RawSQL(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}') AS count_{a}") for a in AURA_ORDER]
-                _total_expr = RawSQL("(" + " + ".join(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}')" for a in AURA_ORDER) + ") AS aura_total")
-                result = await Profile.collect_limit(
-                    ["user_id", *_count_exprs, _total_expr],
-                    "guild_id = $1 AND EXISTS (SELECT 1 FROM unnest(cat_auras) v WHERE v != ' ') ORDER BY "
-                    "count_r DESC, count_a DESC, count_p DESC, count_c DESC, count_y DESC, user_id ASC",
-                    guild_id,
+                # no yeah good luck
+                count_selects = ", ".join(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}') AS count_{a}" for a in AURA_ORDER)
+                total_select = "(" + " + ".join(f"(SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{a}')" for a in AURA_ORDER) + ") AS aura_total"
+                query = (
+                    f"SELECT user_id, {count_selects}, {total_select} FROM profile "
+                    "WHERE guild_id = $1 AND EXISTS (SELECT 1 FROM unnest(cat_auras) v WHERE v != ' ')"
                 )
+                order = "count_r DESC, count_a DESC, count_p DESC, count_c DESC, count_y DESC, user_id ASC"
+                aura_cols = [f"count_{a}" for a in AURA_ORDER]
+                ahead_parts = []
+                for i, col in enumerate(aura_cols):
+                    equal_prev = " AND ".join(f"entry.{c} = target.{c}" for c in aura_cols[:i])
+                    prefix = f"({equal_prev}) AND " if equal_prev else ""
+                    ahead_parts.append(f"({prefix}entry.{col} > target.{col})")
+                equal_all = " AND ".join(f"entry.{c} = target.{c}" for c in aura_cols)
+                ahead_parts.append(f"({equal_all} AND entry.user_id < target.user_id)")
+                ahead = " OR ".join(ahead_parts)
                 final_value = "aura_total"
         else:
-            query = order = ahead = None
-            args: list = [guild_id]
             match type:
                 case "Cats":
                     unit = "cats"
@@ -10986,7 +11014,10 @@ async def leaderboards(
                 case _:
                     # qhar
                     raise ValueError("Invalid leaderboard type")
-            result = await fetch_ranked(query, order, ahead, *args)
+
+        assert query is not None and order is not None and ahead is not None
+        page_rows, result = await fetch_ranked(query, order, ahead, *args)
+        offset = page_number * show_amount
 
         def lv_xp_req(level) -> int:
             assert bp_season is not None
@@ -10997,7 +11028,7 @@ async def leaderboards(
                 try:
                     placement = position["placement"]
                 except KeyError:
-                    placement = index + 1
+                    placement = offset + index + 1
                 if position["user_id"] == user_id:
                     value = position[final_value]
                     perc = math.floor((100 / lv_xp_req(value)) * position["progress"]) if type == "Cattlepass" else None
@@ -11036,12 +11067,15 @@ async def leaderboards(
                     return round(num / threshold, 2), name
             return (round(num, 2), "sec") if num >= 1 else (round(num, 3), "sec")
 
+        def on_page(placement: int) -> bool:
+            return placement > 0 and offset < placement <= offset + show_amount
+
         emoji = ""
 
         # the little place counter
-        current = 1
+        current = offset + 1
         leader = False
-        for i in result[:show_amount]:
+        for i in page_rows:
             num = i[final_value]
 
             if type == "Cattlepass":
@@ -11083,7 +11117,7 @@ async def leaderboards(
             emoji = aura_emoji(specific_cat)
 
         # add the messager and interactor
-        if messager_placement > show_amount or interactor_placement > show_amount:
+        if (messager_placement and not on_page(messager_placement)) or (interactor_placement and not on_page(interactor_placement)):
             string += "...\n"
 
             def rank_line(placement: int, value, perc, mention: str) -> str:
@@ -11093,9 +11127,9 @@ async def leaderboards(
                 return f"{placement}\\. {emoji} **{value:,}** {unit}: {mention}\n"
 
             lines = []
-            if interactor_placement > show_amount and str(interaction.user.id) not in string:
+            if interactor_placement and not on_page(interactor_placement) and str(interaction.user.id) not in string:
                 lines.append((interactor_placement, rank_line(interactor_placement, interactor, interactor_perc, interaction.user.mention)))
-            if messager_placement > show_amount and str(message.user.id) not in string:
+            if messager_placement and not on_page(messager_placement) and str(message.user.id) not in string:
                 lines.append((messager_placement, rank_line(messager_placement, messager, messager_perc, message.user.mention)))
 
             # sort them correctly! (higher placement number = worse rank = shown first)
@@ -11106,6 +11140,28 @@ async def leaderboards(
             string = "No entries yet. At least, that's my theory. A CAT BOT THE~~~"
 
         myview = LayoutView(timeout=VIEW_TIMEOUT)
+
+        async def on_lb_type(interaction: discord.Interaction, new_type: str) -> None:
+            nonlocal page_number
+            page_number = 0
+            await lb_handler(interaction, new_type, True)
+
+        async def on_filter_type(interaction: discord.Interaction, option: str) -> None:
+            nonlocal page_number
+            page_number = 0
+            await lb_handler(interaction, type, True, option)
+
+        async def change_page(interaction: discord.Interaction) -> None:
+            nonlocal page_number
+            wanted_page = interaction.custom_id
+            if wanted_page == "first":
+                page_number = 0
+            elif wanted_page == "last":
+                page_number = last_page
+            else:
+                assert wanted_page is not None
+                page_number = int(wanted_page)
+            await lb_handler(interaction, type, True, specific_cat)
 
         dropdown = None
         if type == "Cats":
@@ -11118,7 +11174,7 @@ async def leaderboards(
                 "cat_type_dd",
                 placeholder="Select a cat type",
                 options=dd_opts,
-                on_select=lambda interaction, option: lb_handler(interaction, type, True, option),
+                on_select=on_filter_type,
                 disabled=locked,
             )
         elif type == "Aura":
@@ -11136,7 +11192,7 @@ async def leaderboards(
                 "aura_type_dd",
                 placeholder="Select an aura type",
                 options=dd_opts,
-                on_select=lambda interaction, option: lb_handler(interaction, type, True, option),
+                on_select=on_filter_type,
                 disabled=locked,
             )
 
@@ -11145,7 +11201,7 @@ async def leaderboards(
             "lb_type",
             placeholder="Select a leaderboard type",
             options=options,
-            on_select=lambda interaction, type: lb_handler(interaction, type, True),
+            on_select=on_lb_type,
             disabled=locked,
         )
 
@@ -11163,6 +11219,18 @@ async def leaderboards(
             embedVar.add_item(ActionRow(dropdown))
 
         embedVar.add_item(TextDisplay(string.rstrip()))
+
+        if not locked and last_page > 0:
+            buttons = [
+                Button(emoji="⏪", disabled=page_number == 0, custom_id="first"),
+                Button(emoji="⬅️", disabled=page_number == 0, custom_id=str(page_number - 1)),
+                Button(emoji="➡️", disabled=page_number >= last_page, custom_id=str(page_number + 1)),
+                Button(emoji="⏩", disabled=page_number >= last_page, custom_id="last"),
+            ]
+            for button in buttons:
+                button.callback = change_page
+            embedVar.add_item(ActionRow(*buttons))
+
         embedVar.add_item(TextDisplay(rain_shill))
 
         myview.add_item(embedVar)
