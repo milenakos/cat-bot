@@ -11689,24 +11689,23 @@ async def owner_print(ctx: commands.Context, *, expr: str) -> None:
 @is_bot_owner()
 async def owner_eval(ctx: commands.Context, *, code: str) -> None:
     # complex eval, multi-line + async support
-    message = ctx.message  # noqa: F841 (referenced by the exec'd template below)
+    message = ctx.message
 
     spaced = ""
     for i in code.split("\n"):
         spaced += "  " + i + "\n"
 
-    wrapped = f"""async def go(message, bot):
- try:
-{spaced}
- except Exception:
-  await message.reply(str(traceback.format_exc())[-1900:])
-bot.loop.create_task(go(message, bot))
-    """
+    wrapped = "async def go(message, bot):\n" + spaced
 
     try:
-        exec(wrapped)  # noqa: S102
+        ns: dict = {}
+        exec(wrapped, globals(), ns)  # noqa: S102
+        await ns["go"](message, bot)
     except Exception:
-        await ctx.reply(str(traceback.format_exc())[-1900:])
+        try:
+            await ctx.reply(str(traceback.format_exc())[-1900:])
+        except Exception:
+            pass
 
 
 @bot.command(name="sql")
@@ -12095,9 +12094,15 @@ async def on_error(*args, **kwargs):
 
 
 async def on_command_error(ctx: commands.Context, error: commands.CommandError) -> None:
-    # CommandNotFound/CheckFailure/UserInputError are expected noise (typos, non-owner cat!x attempts,
-    # missing args on owner commands) - anything else is a real bug, let on_error/sentry see it
     if isinstance(error, (commands.CommandNotFound, commands.CheckFailure, commands.UserInputError)):
+        return
+    if ctx.command and ctx.command.name in ("print", "eval"):
+        # owner print/eval errors
+        original = getattr(error, "original", error)
+        try:
+            await ctx.reply("".join(traceback.format_exception(type(original), original, original.__traceback__))[-1900:])
+        except Exception:
+            pass
         return
     raise error
 
