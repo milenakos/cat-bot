@@ -508,7 +508,7 @@ async def inventory_row(profile: Profile, current: str) -> ActionRow:
     inventory_view_data = [
         {"emoji": "nicecat", "callback": inventory.callback, "label": f"{cat_count:,}" if cat_count else None},
         {"emoji": "goldpack", "callback": packs.callback, "label": f"{pack_count:,}" if pack_count else None},
-        {"emoji": "☔", "callback": rain.callback, "label": rain_count if rain_count else None},
+        {"emoji": "☔", "callback": rain.callback, "label": rain_count if rain_count != "0" else None},
         {"emoji": "prism", "callback": prism.callback if profile.collecter else None, "label": f"{prism_count:,}" if prism_count else None},
     ]
 
@@ -5644,8 +5644,6 @@ async def rain(message: discord.Interaction, minutes: int | None = None):
     shopbutton = Button(emoji="🛒", label="Store", url="https://catbot.shop")
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
-    view.add_item(await nav_row(profile, "🎒"))
-    view.add_item(await inventory_row(profile, "☔"))
     embed = Container(
         "## ☔ Cat Rains",
         "Cat Rains are power-ups which spawn cats super fast for a limited amounts of time in a channel of your choice.",
@@ -5662,7 +5660,7 @@ As a bonus, you will get access to `/supporter` commands!
     )
     view.add_item(embed)
 
-    await send_or_edit(message, view=view)
+    await message.response.edit_message(view=view)
 
 
 if config.DONOR_CHANNEL_ID:
