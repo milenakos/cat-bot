@@ -5660,7 +5660,7 @@ As a bonus, you will get access to `/supporter` commands!
     )
     view.add_item(embed)
 
-    await message.response.edit_message(view=view)
+    await message.response.send_message(view=view)
 
 
 if config.DONOR_CHANNEL_ID:
