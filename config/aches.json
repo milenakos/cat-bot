@@ -137,5 +137,5 @@
   "catgpt": {"title": "Make No Mistakes", "description": "ask /catgpt a question", "difficulty": 1, "parent": "Museum"},
   "randomizer": {"title": "Randomizer", "description": "look at a random cat", "difficulty": 1, "parent": "Museum"},
   "randomizer2": {"title": "Randomizer, Again", "description": "use /randomizer to travel around the world", "difficulty": 1, "parent": "Museum"},
-  "cathub": {"title": "CatHub", "description": "visit /hub", "difficulty": 1, "parent": "Economy"}
+  "cathub": {"title": "CatHub", "description": "visit /hub", "difficulty": 1, "parent": "Museum"}
 }

@@ -509,7 +509,7 @@ async def inventory_row(profile: Profile, current: str) -> ActionRow:
         {"emoji": "nicecat", "callback": inventory.callback, "label": f"{cat_count:,}" if cat_count else None},
         {"emoji": "goldpack", "callback": packs.callback, "label": f"{pack_count:,}" if pack_count else None},
         {"emoji": "☔", "callback": rain.callback, "label": rain_count if rain_count != "0" else None},
-        {"emoji": "prism", "callback": prism.callback if profile.collecter else None, "label": f"{prism_count:,}" if prism_count else None},
+        {"emoji": "prism", "callback": prism.callback if profile.collecter or prism_count else None, "label": f"{prism_count:,}" if prism_count else None},
     ]
 
     if not profile.dark_market_active:
