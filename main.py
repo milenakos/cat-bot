@@ -232,12 +232,6 @@ GuildMessageable = discord.TextChannel | discord.Thread | discord.VoiceChannel |
 # muted ach categories. they are ignored when counting total ach number
 muted_ach_categories = ["Museum"]
 
-# rain shill message for footers
-rain_shill = "-# ☔ Get tons of cats /rain"
-
-# unread news notice
-news_notice = "-# You have unread news! /news"
-
 try:
     COMMIT = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
 except subprocess.CalledProcessError:
@@ -386,6 +380,13 @@ async def fetch_dm_channel(user: User) -> discord.abc.Messageable:
         return person.dm_channel
 
 
+async def send_or_edit(interaction: discord.Interaction, *args, **kwargs) -> None:
+    if interaction.type == discord.InteractionType.application_command:
+        await interaction.response.send_message(*args, **kwargs)
+    else:
+        await interaction.response.edit_message(*args, **kwargs)
+
+
 async def is_rain_active(channel_id: int) -> bool:
     try:
         channel = await Channel.get_or_none(channel_id=channel_id)
@@ -434,6 +435,122 @@ def get_category_achs(category: str) -> list[str]:
         if parent == category:
             achs.append(ach_id)
     return achs
+
+
+def impostor_check(interaction: discord.Interaction) -> bool:
+    return bool(interaction.message) and bool(interaction.message.interaction_metadata) and interaction.message.interaction_metadata.user != interaction.user
+
+
+async def nav_row(profile: Profile, current: str) -> ActionRow:
+    nav_view_data = [
+        {"emoji": "🎒", "callback": inventory.callback},
+        {"emoji": "⬆️", "callback": battlepass.callback},
+        {"emoji": "ach", "callback": achievements.callback},
+        {"emoji": "🧩", "callback": minigames},
+    ]
+
+    # cta button
+    global_user = await User.get_or_create(user_id=profile.user_id)
+    if global_user.tutorial_state < 10:
+        # tutorial
+        nav_view_data.append({"emoji": "📚", "callback": tutorial.callback, "style": ButtonStyle.green})
+    elif len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
+        # unread news
+        nav_view_data.append({"emoji": "📰", "callback": news.callback, "style": ButtonStyle.green})
+    elif not global_user.premium:
+        # premium cta
+        nav_view_data.append({"emoji": "👑", "callback": premium})
+    else:
+        # rain cta
+        nav_view_data.append({"emoji": "☔", "url": "https://catbot.shop/"})
+
+    row = ActionRow()
+    for entry in nav_view_data:
+        style = entry.get("style", ButtonStyle.blurple if current == entry["emoji"] else ButtonStyle.gray)
+        button = Button(
+            label=entry.get("label", None),
+            url=entry.get("url", None),
+            emoji=get_emoji(entry["emoji"]),
+            style=style,
+        )
+        if entry.get("callback"):
+            button.callback = entry["callback"]
+        row.add_item(button)
+    return row
+
+
+def minigame_row(current: str | None) -> ActionRow:
+    minigame_view_data = [
+        {"emoji": "🎰", "callback": casino.callback},
+        {"emoji": "🐟", "callback": fish.callback},
+        {"emoji": "🍪", "callback": bakery.callback},
+        {"emoji": "🍎", "callback": snake.callback},
+        {"emoji": "🎲", "callback": pig.callback},
+    ]
+    row = ActionRow()
+    for entry in minigame_view_data:
+        button = Button(
+            label=entry.get("label", None),
+            emoji=entry["emoji"],
+            style=ButtonStyle.blurple if current == entry["emoji"] else ButtonStyle.gray,
+        )
+        button.callback = entry["callback"]
+        row.add_item(button)
+    return row
+
+
+async def inventory_row(profile: Profile, current: str) -> ActionRow:
+    global_user = await User.get_or_create(user_id=profile.user_id)
+    cat_count = sum(profile[f"cat_{cat}"] for cat in cattypes)
+    pack_count = sum(profile[f"pack_{pack['name'].lower()}"] for pack in data.pack_data)
+    rain_count = f"{global_user.rain_minutes:,}" + ("" if profile.rain_minutes == 0 else f"+{profile.rain_minutes:,}")
+    prism_count = await Prism.count("guild_id = $1 AND user_id = $2", profile.guild_id, profile.user_id)
+    inventory_view_data = [
+        {"emoji": "nicecat", "callback": inventory.callback, "label": f"{cat_count:,}" if cat_count else None},
+        {"emoji": "goldpack", "callback": packs.callback, "label": f"{pack_count:,}" if pack_count else None},
+        {"emoji": "☔", "callback": rain.callback, "label": rain_count if rain_count else None},
+        {"emoji": "prism", "callback": prism.callback if profile.collecter else None, "label": f"{prism_count:,}" if prism_count else None},
+    ]
+
+    if not profile.dark_market_active:
+        inventory_view_data.append({"emoji": "catnip_disabled", "callback": None})
+    else:
+        hours_left = math.ceil((profile.catnip_active - time.time()) / 3600)
+        inventory_view_data.append({"emoji": "catnip", "callback": catnip.callback, "label": f"{hours_left}h" if hours_left > 0 else None})
+
+    row = ActionRow()
+    for entry in inventory_view_data:
+        button = Button(
+            label=entry.get("label", None),
+            emoji=get_emoji(entry["emoji"]),
+            style=ButtonStyle.blurple if current == entry["emoji"] else ButtonStyle.gray,
+            disabled=entry["callback"] is None,
+        )
+        button.callback = entry["callback"]
+        row.add_item(button)
+    return row
+
+
+def casino_row(user: Profile, current: str) -> ActionRow:
+    casino_view_data = [
+        {"emoji": "↘️", "callback": None},
+        {"emoji": "🎰", "callback": slots},
+        {"emoji": "🎡", "callback": roulette},
+        {"emoji": "🃏", "callback": blackcat},
+        {"label": f"{user.casino_balance:,}", "emoji": "💰", "callback": casino.callback},
+    ]
+    row = ActionRow()
+    for entry in casino_view_data:
+        button = Button(
+            label=entry.get("label", None),
+            emoji=entry["emoji"],
+            style=ButtonStyle.blurple if current == entry["emoji"] else ButtonStyle.gray,
+            disabled=entry["callback"] is None,
+        )
+        if entry["callback"] is not None:
+            button.callback = entry["callback"]
+        row.add_item(button)
+    return row
 
 
 # this is some common code which is run whether someone gets an achievement
@@ -2195,7 +2312,7 @@ async def on_message(message: discord.Message) -> None:
                 f"""**You have recieved {rain_duration} minutes of Cat Rain!** ☔
 
 Thanks for your support!
-You can start a rain with `/rain`. By buying you also get access to `/editprofile` and `/customcat` commands as well as a role in [our Discord server](<https://discord.gg/staring>)!
+You can start a rain with `/rain`. By buying you also get access to `/supporter` commands as well as a role in [our Discord server](<https://discord.gg/staring>)!
 
 Enjoy your goods!"""
             )
@@ -3391,6 +3508,8 @@ async def restart_tutorial(interaction: discord.Interaction) -> None:
 
 @bot.tree.command(description="A guide to help you get started with Cat Bot!")
 async def tutorial(message: discord.Interaction):
+    if impostor_check(message):
+        return await do_funny(message)
     await message.response.send_message(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
 
@@ -3475,6 +3594,8 @@ Profiles: `{db_counts["profile"]:,}`, Users: `{db_counts["user"]:,}`, Channels: 
 
 @bot.tree.command(description="Read The Cat Bot Times™️")
 async def news(message: discord.Interaction):
+    if impostor_check(message):
+        return await do_funny(message)
     user = await User.get_or_create(user_id=message.user.id)
     buttons = []
     current_state = user.news_state.strip()
@@ -3491,7 +3612,7 @@ async def news(message: discord.Interaction):
                 await do_funny(interaction)
                 return
             await regen_buttons()
-            await interaction.response.edit_message(view=generate_page(current_page))
+            await interaction.response.edit_message(view=await generate_page(current_page))
 
         current_state = user.news_state.strip()
         if current_state[news_id] not in "123456789":
@@ -3989,7 +4110,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
             await do_funny(interaction)
             return
         current_page -= 1
-        await interaction.response.edit_message(view=generate_page(current_page))
+        await interaction.response.edit_message(view=await generate_page(current_page))
 
     async def next_page(interaction: discord.Interaction) -> None:
         nonlocal current_page
@@ -3997,7 +4118,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
             await do_funny(interaction)
             return
         current_page += 1
-        await interaction.response.edit_message(view=generate_page(current_page))
+        await interaction.response.edit_message(view=await generate_page(current_page))
 
     async def mark_all_as_read(interaction: discord.Interaction) -> None:
         if interaction.user.id != message.user.id:
@@ -4006,10 +4127,13 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
         user.news_state = "1" * len(data.news_list)
         await user.save()
         await regen_buttons()
-        await interaction.response.edit_message(view=generate_page(current_page))
+        await interaction.response.edit_message(view=await generate_page(current_page))
 
-    def generate_page(number: int) -> LayoutView:
+    async def generate_page(number: int) -> LayoutView:
+        assert message.guild is not None
         view = LayoutView(timeout=VIEW_TIMEOUT)
+        profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        view.add_item(await nav_row(profile, "📰"))
         view.add_item(TextDisplay("Choose an article:"))
 
         # article buttons
@@ -4053,7 +4177,7 @@ unrelated, cat rains were also increased from ~21.818 to a nice round 22 cats pe
 
         return view
 
-    await message.response.send_message(view=generate_page(current_page))
+    await send_or_edit(message, view=await generate_page(current_page))
     await achemb(message, "news", "followup")
 
 
@@ -4713,10 +4837,7 @@ def get_highlights(person: Profile, stats: list[list[str]]) -> list[str]:
 
 
 async def gen_inventory(
-    guild_id: int,
-    inv_user: discord.User | discord.Member,
-    me_msg: discord.Interaction | None = None,
-    run_debt_cutscene: bool = True,
+    guild_id: int, inv_user: discord.User | discord.Member, me_msg: discord.Interaction | None = None
 ) -> tuple[discord.ui.Container, list[str]]:
     person = await Profile.get_or_create(guild_id=guild_id, user_id=inv_user.id)
     user = await User.get_or_create(user_id=inv_user.id)
@@ -4858,10 +4979,6 @@ async def gen_inventory(
     things.append(", ".join(count_segments))
     things = "\n".join(things)
 
-    has_news = None
-    if me_msg and (len(data.news_list) > len(user.news_state.strip()) or user.news_state.strip()[last_active_article] == "0"):
-        has_news = news_notice
-
     uname = inv_user.name
     username = f"## {emoji_prefix}{uname.replace('_', r'\_')}"
 
@@ -4872,20 +4989,28 @@ async def gen_inventory(
 
     badges = f"### {badges}" if badges else None
 
+    row = None
+    if me_msg:
+        stats_button = Button(label="Stats")
+        stats_button.callback = stats_command.callback  # pyright: ignore[reportAttributeAccessIssue] (pyright cant understand the beauty of this)
+        lb_button = Button(label="Leaderboards")
+        lb_button.callback = leaderboards.callback  # pyright: ignore[reportAttributeAccessIssue]
+        row = ActionRow(stats_button, lb_button)
+
     if "discordapp" in user.image:
         embedVar = Container(
-            has_news,
             Section(username, badges, things, Thumbnail(user.image)),
             cat_desc,
+            row,
             accent_color=discord.Colour.from_str(color),
         )
     else:
         embedVar = Container(
-            has_news,
             username,
             badges,
             things,
             cat_desc,
+            row,
             accent_color=discord.Colour.from_str(color),
         )
 
@@ -4907,7 +5032,7 @@ async def gen_inventory(
         if total >= 10000:
             give_achs.append("fourth")
 
-        if debt and run_debt_cutscene:
+        if debt:
             bot.loop.create_task(debt_cutscene(me_msg, person))
 
     user.last_inventory_view = int(time.time())
@@ -4921,6 +5046,8 @@ async def gen_inventory(
 @discord.app_commands.describe(person_id="Person to view the inventory of!")
 async def inventory(message: discord.Interaction, person_id: discord.User | discord.Member | None = None):
     assert message.guild is not None
+    if impostor_check(message):
+        return await do_funny(message)
     if not person_id:
         person_id = message.user
     person = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
@@ -5066,18 +5193,25 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
         line_select()
 
         elements = [f"## {(user.emoji + ' ') if user.emoji else ''}Edit Profile"]
+        custom_cat = "*Not set*"
+        if user.custom:
+            key = str(user.user_id) + "cat"
+            if key in emojis:
+                custom_cat = f"{get_emoji(key)} **{user.custom}** {user.custom_num:,}"
         if user.premium:
             elements.append(f"""👑 __Supporter Settings__
-Global, change with `/editprofile`.
+Global, change with `/supporter` commands.
 **Color**: {user.color.lower() if user.color.upper() not in ["", "#6E593C"] else "Default"}
 **Emoji**: {user.emoji if user.emoji else "None"}
-**Image**: {"Yes" if "/attachments" in user.image else "No"}""")
+**Image**: {"Yes" if "/attachments" in user.image else "No"}
+**Custom Cat**: {custom_cat}""")
         else:
             elements.append("""👑 __Supporter Settings__
 Global, buy anything from [the store](https://catbot.shop) to unlock.
 👑 **Color**
 👑 **Emoji**
-👑 **Image**""")
+👑 **Image**
+👑 **Custom Cat**""")
 
         embed = Container(
             *(elements if "discordapp" not in user.image else [Section(*elements, Thumbnail(user.image))]),
@@ -5094,12 +5228,14 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
         else:
             await interaction.response.edit_message(view=view)
 
-    async def render_inventory(interaction: discord.Interaction, first: bool = False) -> None:
+    async def render_inventory(interaction: discord.Interaction) -> None:
         assert message.guild is not None
-        embed_view, give_achs = await gen_inventory(message.guild.id, person_id, message if person_id == message.user else None, run_debt_cutscene=first)
+        embed_view, give_achs = await gen_inventory(message.guild.id, person_id, message if person_id == message.user else None)
 
-        embed_view.add_item(TextDisplay(rain_shill))
         view = LayoutView(timeout=VIEW_TIMEOUT)
+        if person_id == message.user:
+            view.add_item(await nav_row(person, "🎒"))
+            view.add_item(await inventory_row(person, "nicecat"))
         view.add_item(embed_view)
 
         refresh_btn = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
@@ -5117,16 +5253,13 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
 
         view.add_item(ActionRow(*buttons))
 
-        if first:
-            await interaction.response.send_message(view=view)
-        else:
-            await interaction.response.edit_message(view=view)
+        await send_or_edit(interaction, view=view)
 
         if interaction.user.id == message.user.id:
             for ach in give_achs:
                 await achemb(interaction, ach, "followup")
 
-    await render_inventory(message, True)
+    await render_inventory(message)
 
     if user.tutorial_state == 4:
         user.tutorial_state = 5
@@ -5360,15 +5493,13 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
 
 @bot.tree.command(description="its raining cats")
 @discord.app_commands.describe(minutes="If specified, starts a rain, skipping the embed")
-async def rain(message: discord.Interaction, minutes: int | None):
+async def rain(message: discord.Interaction, minutes: int | None = None):
     assert message.guild is not None
+    if impostor_check(message):
+        return await do_funny(message)
     user = await User.get_or_create(user_id=message.user.id)
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     server = await Server.get_or_create(server_id=message.guild.id)
-
-    if not user.rain_minutes:
-        user.rain_minutes = 0
-        await user.save()
 
     # this is the silly popup when you click the button
     class RainModal(Modal):
@@ -5513,13 +5644,14 @@ async def rain(message: discord.Interaction, minutes: int | None):
     shopbutton = Button(emoji="🛒", label="Store", url="https://catbot.shop")
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
-
+    view.add_item(await nav_row(profile, "🎒"))
+    view.add_item(await inventory_row(profile, "☔"))
     embed = Container(
         "## ☔ Cat Rains",
         "Cat Rains are power-ups which spawn cats super fast for a limited amounts of time in a channel of your choice.",
         """You can get those by buying them at our [store](<https://catbot.shop>) or by winning them in an event.
 This bot is developed by a single person so buying one would be very appreciated.
-As a bonus, you will get access to `/editprofile` and `/customcat` commands!
+As a bonus, you will get access to `/supporter` commands!
 - 1 Rain Minute = 22 cats
 - Fastest times are not saved during rains.
 - Late catching time is reduced to 1 second.
@@ -5528,10 +5660,9 @@ As a bonus, you will get access to `/editprofile` and `/customcat` commands!
         balance_line,
         ActionRow(button, shopbutton),
     )
-
     view.add_item(embed)
 
-    await message.response.send_message(view=view)
+    await send_or_edit(message, view=view)
 
 
 if config.DONOR_CHANNEL_ID:
@@ -5901,6 +6032,8 @@ async def start_scratch_game(
 @bot.tree.command(description="View and open packs")
 async def packs(message: discord.Interaction):
     assert message.guild is not None
+    if impostor_check(message):
+        return await do_funny(message)
 
     open_at_once = 1
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
@@ -6283,6 +6416,8 @@ async def packs(message: discord.Interaction):
         assert last_container is not None
         buttons, _, total_packs, _ = gen_buttons(user)
         view = LayoutView(timeout=VIEW_TIMEOUT)
+        view.add_item(await nav_row(user, "🎒"))
+        view.add_item(await inventory_row(user, "goldpack"))
         last_container.add_item(Separator())
         for i in buttons:
             last_container.add_item(i)
@@ -6324,6 +6459,8 @@ async def packs(message: discord.Interaction):
         await asyncio.sleep(1)
         buttons, _, _, _ = gen_buttons(user)
         view = LayoutView(timeout=VIEW_TIMEOUT)
+        view.add_item(await nav_row(user, "🎒"))
+        view.add_item(await inventory_row(user, "goldpack"))
         embed.add_item(Separator())
         for i in buttons:
             embed.add_item(i)
@@ -6360,32 +6497,31 @@ async def packs(message: discord.Interaction):
 
     async def gen_main() -> LayoutView:
         view = LayoutView(timeout=VIEW_TIMEOUT)
-        buttons, has_special, total_packs, has_pumpkin = gen_buttons(user)
+
+        view.add_item(await nav_row(user, "🎒"))
+        view.add_item(await inventory_row(user, "goldpack"))
+
+        buttons, has_special, total_packs, has_exclusive = gen_buttons(user)
         pack_emojis = "".join(get_emoji(i["name"].lower() + "pack") for i in data.pack_data if not i["special"])
         embed = Container(
             Section(
                 f"## {get_emoji('goldpack')} Packs",
                 Button(label="Chances", url="https://catbot.wiki/packs"),
-            ),
-            (
-                f"There are 8 types of packs: {pack_emojis}. When opening a pack, there is a **30% chance** it upgrades to the next tier, "
-                f"then another 30% for another upgrade... That means even a {get_emoji('woodenpack')} can upgrade all the way to "
-                f"{get_emoji('celestialpack')} if you get lucky enough."
-            ),
+            )
+        )
+
+        description = (
+            f"There are 8 types of packs: {pack_emojis}. When opening a pack, there is a **30% chance** it upgrades to the next tier, "
+            f"then another 30% for another upgrade... That means even a {get_emoji('woodenpack')} can upgrade all the way to "
+            f"{get_emoji('celestialpack')} if you get lucky enough.\n\n"
         )
 
         if has_special:
-            embed.add_item(
-                TextDisplay(
-                    "Highlighted in *green* are **Special Packs** with a 70% upgrade chance instead of 30%. They start below Wooden.",
-                )
-            )
-        if has_pumpkin:
-            embed.add_item(
-                TextDisplay(
-                    "Highlighted in *red* are **Exclusive Packs** with a completely different opening mechanism.",
-                )
-            )
+            description += "**Special Packs** are highlighted in *green* and have a 70% upgrade chance instead of 30%. "
+        if has_exclusive:
+            description += "**Exclusive Packs** are highlighted in *red* and have a completely different opening mechanism."
+
+        embed.add_item(TextDisplay(description.strip()))
 
         if total_packs >= 10:
             amount_button = Button(label=str(open_at_once))
@@ -6397,18 +6533,17 @@ async def packs(message: discord.Interaction):
         for i in buttons:
             embed.add_item(i)
 
-        if total_packs >= 10:
-            embed.add_item(TextDisplay(f"-# {total_packs:,} total"))
-
         view.add_item(embed)
         return view
 
-    await message.response.send_message(view=await gen_main())
+    await send_or_edit(message, view=await gen_main())
 
 
 @bot.tree.command(description="why would anyone think a cattlepass would be a good idea (bp)")
 async def battlepass(message: discord.Interaction):
     assert message.guild is not None
+    if impostor_check(message):
+        return await do_funny(message)
     current_mode = ""
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     global_user = await User.get_or_create(user_id=message.user.id)
@@ -6436,7 +6571,8 @@ async def battlepass(message: discord.Interaction):
                 )
             except Exception:
                 await interaction.response.send_message(
-                    "Failed. Ensure you have DMs open by going to Server > Privacy Settings > Allow direct messages from server members."
+                    "Failed. Ensure you have DMs open by going to Server > Privacy Settings > Allow direct messages from server members.",
+                    ephemeral=True,
                 )
                 return
 
@@ -6449,7 +6585,7 @@ async def battlepass(message: discord.Interaction):
             ephemeral=True,
         )
 
-    async def gen_main(interaction: discord.Interaction, first: bool = False) -> None:
+    async def gen_main(interaction: discord.Interaction) -> None:
         nonlocal current_mode
         if interaction.user.id != message.user.id:
             await do_funny(interaction)
@@ -6480,14 +6616,11 @@ async def battlepass(message: discord.Interaction):
         has_bad = False
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
-        embed = Container()
-
-        if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
-            embed.add_item(TextDisplay(news_notice))
-
-        embed.add_item(TextDisplay(f"## Cattlepass Season {user.season}"))
-        embed.add_item(TextDisplay(f"Season ends <t:{timestamp}:R>"))
-        embed.add_item(Separator())
+        embed = Container(
+            f"## Cattlepass Season {user.season}",
+            f"Season ends <t:{timestamp}:R>",
+            "===",
+        )
 
         # weekly
         if user.weekly_quest:
@@ -6621,19 +6754,16 @@ async def battlepass(message: discord.Interaction):
             reminder_button = Button(label="Enable Reminders", emoji="🔔", style=ButtonStyle.green)
         reminder_button.callback = toggle_reminders
 
-        embed.add_item(TextDisplay(rain_shill))
+        view.add_item(await nav_row(user, "⬆️"))
         view.add_item(embed)
         view.add_item(ActionRow(refresh_button, reminder_button))
 
-        if first:
-            await interaction.response.send_message(view=view)
-        else:
-            await interaction.response.edit_message(view=view)
+        await send_or_edit(interaction, view=view)
 
         if not has_bad:
             await achemb(interaction, "all_done", "followup")
 
-    await gen_main(message, True)
+    await gen_main(message)
 
     if global_user.tutorial_state == 7:
         global_user.tutorial_state = 8
@@ -6645,6 +6775,11 @@ async def battlepass(message: discord.Interaction):
 @discord.app_commands.describe(person="Person to view the prisms of")
 async def prism(message: discord.Interaction, person: discord.User | discord.Member | None = None):
     assert message.guild is not None
+    if impostor_check(message):
+        return await do_funny(message)
+
+    if message.type != discord.InteractionType.application_command:
+        person = message.user
 
     icon = get_emoji("prism")
     page_number = 0
@@ -6785,12 +6920,17 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
         else:
             assert wanted_page is not None
             page_number = int(wanted_page)
-        await interaction.response.edit_message(view=gen_page())
+        await interaction.response.edit_message(view=await gen_page())
 
-    def gen_page() -> LayoutView:
+    async def gen_page() -> LayoutView:
+        assert message.guild is not None
         target = "" if not person else f" {person_id.name}'s"
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
+
+        profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
+        view.add_item(await nav_row(profile, "🎒"))
+        view.add_item(await inventory_row(profile, "prism"))
 
         last_page = max(0, (len(prism_texts) - 1) // 26)
         buttons = [
@@ -6813,7 +6953,7 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
                 person_id = person
             assert person_id is not None
             total_count, user_count, global_boost, user_boost, prism_texts = await regen_texts()
-            await interaction.response.edit_message(view=gen_page())
+            await interaction.response.edit_message(view=await gen_page())
 
         if person:
             user_select = discord.ui.UserSelect(placeholder="Filter by owner...", min_values=0, max_values=1, default_values=[person])
@@ -6843,11 +6983,13 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
         return view
 
     total_count, user_count, global_boost, user_boost, prism_texts = await regen_texts()
-    await message.response.send_message(view=gen_page())
+    await send_or_edit(message, view=await gen_page())
 
 
 @bot.tree.command(description="do cats even eat apples")
 async def snake(message: discord.Interaction):
+    if impostor_check(message):
+        return await do_funny(message)
     snake_data = await Snake.get_or_create(id=1)
 
     async def toggle_dms(interaction: discord.Interaction) -> None:
@@ -6886,8 +7028,14 @@ async def snake(message: discord.Interaction):
         await achemb(interaction, "snaker", "followup")
 
     async def gen_main():
+        assert message.guild is not None
         await snake_data.refresh_from_db()
+
         view = LayoutView(timeout=VIEW_TIMEOUT)
+        profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
+        view.add_item(await nav_row(profile, "🧩"))
+        view.add_item(minigame_row("🍎"))
+
         embed = Container(f"## {get_emoji('staring_cat')} snake", f"next update <t:{snake_data.next_update}:R>")
 
         board = [["⬛"] * 8 for _ in range(8)]
@@ -6989,7 +7137,7 @@ Currently winning: {winner}"""
     async def refresh(interaction: discord.Interaction) -> None:
         await interaction.response.edit_message(view=await gen_main())
 
-    await message.response.send_message(view=await gen_main())
+    await send_or_edit(message, view=await gen_main())
 
 
 @bot.tree.command(description="play a relaxing game of tic tac toe (ttt)")
@@ -7204,6 +7352,8 @@ async def tictactoe(message: discord.Interaction, person: discord.Member):
 @bot.tree.command(description="yeah i made this solely so i could name it catfishing")
 async def fish(message: discord.Interaction):
     assert message.guild is not None
+    if impostor_check(message):
+        return await do_funny(message)
     profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
 
     async def go_fishing(interaction: discord.Interaction) -> None:
@@ -7368,7 +7518,7 @@ async def fish(message: discord.Interaction):
     async def show_main(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
             return await do_funny(interaction)
-        await interaction.response.edit_message(view=main_view())
+        await interaction.response.edit_message(view=await main_view())
 
     async def upgrade_upgrade(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
@@ -7427,8 +7577,10 @@ async def fish(message: discord.Interaction):
         modal.on_submit = durability_callback
         await interaction.response.send_modal(modal)
 
-    def main_view() -> LayoutView:
+    async def main_view() -> LayoutView:
         view = LayoutView(timeout=VIEW_TIMEOUT)
+        view.add_item(await nav_row(profile, "🧩"))
+        view.add_item(minigame_row("🐟"))
 
         button = Button(emoji="🎣", label="Cast", style=ButtonStyle.blurple)
         button.callback = go_fishing
@@ -7476,7 +7628,7 @@ async def fish(message: discord.Interaction):
         view.add_item(ActionRow(button))
         return view
 
-    await message.response.send_message(view=main_view())
+    await send_or_edit(message, view=await main_view())
 
 
 @bot.tree.command(description="donate (give) cats now")
@@ -8108,6 +8260,9 @@ def get_timestamp_of_next_week() -> int:
 
 @bot.tree.command(description="Deliver orders, bake cookies and brew coffee!")
 async def bakery(message: discord.Interaction):
+    if impostor_check(message):
+        return await do_funny(message)
+
     async def refresh(interaction: discord.Interaction) -> None:
         if interaction.user != message.user:
             return await do_funny(interaction)
@@ -8177,6 +8332,8 @@ async def bakery(message: discord.Interaction):
         if user.last_bakegg_send == get_current_week():
             # order already delivered for this week
             view = LayoutView(timeout=VIEW_TIMEOUT)
+            view.add_item(await nav_row(profile, "🧩"))
+            view.add_item(minigame_row("🍪"))
             view.add_item(
                 Container(
                     "## ✅ Order Delivered!",
@@ -8244,6 +8401,8 @@ async def bakery(message: discord.Interaction):
                 await achemb(message, "baker", "followup")
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
+        view.add_item(await nav_row(profile, "🧩"))
+        view.add_item(minigame_row("🍪"))
         order_complete = profile.cookies >= 120 and profile.coffees >= 140 and profile.cat_Nice >= 2
         button = Button(label="Deliver!", style=ButtonStyle.green, disabled=not order_complete)
         button.callback = deliver
@@ -8265,30 +8424,40 @@ async def bakery(message: discord.Interaction):
         view.add_item(grind_row)
         return view
 
-    await message.response.send_message(view=await gen_bakery())
+    await send_or_edit(message, view=await gen_bakery())
 
 
-def casino_row(user: Profile, current: str) -> ActionRow:
-    casino_view_data = [
-        {"emoji": "🎰", "callback": slots},
-        {"emoji": "🎡", "callback": roulette},
-        {"emoji": "🃏", "callback": blackcat},
-        {"label": f"{user.casino_balance:,}", "emoji": "💰", "callback": casino.callback},
-    ]
-    row = ActionRow()
-    for entry in casino_view_data:
-        button = Button(
-            label=entry.get("label", None),
-            emoji=entry["emoji"],
-            style=ButtonStyle.green if current == entry["emoji"] else ButtonStyle.gray,
+async def minigames(interaction: discord.Interaction):
+    assert interaction.guild is not None
+    if impostor_check(interaction):
+        return await do_funny(interaction)
+    profile = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
+    view = LayoutView(timeout=VIEW_TIMEOUT)
+    view.add_item(await nav_row(profile, "🧩"))
+    view.add_item(minigame_row(None))
+    await interaction.response.edit_message(view=view)
+
+
+async def premium(interaction: discord.Interaction):
+    assert interaction.guild is not None
+    if impostor_check(interaction):
+        return await do_funny(interaction)
+    profile = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
+    view = LayoutView(timeout=VIEW_TIMEOUT)
+    view.add_item(await nav_row(profile, "👑"))
+    view.add_item(
+        Container(
+            "## ☔ Cat Rains",
+            "Cat Rains make cats spawn super fast for a limited period of time.\nIt's fun and chaotic!",
+            """🌠 Purchase Cat Rains at least once to unlock supporter perks:
+- Bless with Doubled Cats
+- Decorative Custom Cat
+- Custom Profile Emoji, Image and Color
+- Exclusive Cat Stand Role""",
+            ActionRow(Button(emoji="🛒", label="Cat Bot Shop", url="https://catbot.shop/")),
         )
-        button.callback = entry["callback"]
-        row.add_item(button)
-    return row
-
-
-def casino_impostor(interaction: discord.Interaction) -> bool:
-    return bool(interaction.message) and bool(interaction.message.interaction_metadata) and interaction.message.interaction_metadata.user != interaction.user
+    )
+    await interaction.response.edit_message(view=view)
 
 
 @bot.tree.command(description="play slots, roulette and blackcat!")
@@ -8306,11 +8475,13 @@ async def casino(
     if game == "blackcat":
         return await blackcat(message)
 
-    if casino_impostor(message):
+    if impostor_check(message):
         return await do_funny(message)
     assert message.guild is not None
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     view = LayoutView(timeout=VIEW_TIMEOUT)
+    view.add_item(await nav_row(profile, "🧩"))
+    view.add_item(minigame_row("🎰"))
     view.add_item(casino_row(profile, "💰"))
     view.add_item(
         Container(
@@ -8321,14 +8492,11 @@ async def casino(
             color=Colors.maroon,
         )
     )
-    if message.type == discord.InteractionType.application_command:
-        await message.response.send_message(view=view)
-    else:
-        await message.response.edit_message(view=view)
+    await send_or_edit(message, view=view)
 
 
 async def slots(message: discord.Interaction):
-    if casino_impostor(message):
+    if impostor_check(message):
         return await do_funny(message)
     assert message.guild is not None
 
@@ -8492,6 +8660,8 @@ async def slots(message: discord.Interaction):
         row.add_item(b2)
 
         myview = LayoutView(timeout=VIEW_TIMEOUT)
+        myview.add_item(await nav_row(profile, "🧩"))
+        myview.add_item(minigame_row("🎰"))
         myview.add_item(casino_row(profile, "🎰"))
 
         if big_win:
@@ -8531,6 +8701,8 @@ async def slots(message: discord.Interaction):
         await interaction.response.send_modal(SlotsModal())
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
+    view.add_item(await nav_row(profile, "🧩"))
+    view.add_item(minigame_row("🎰"))
     view.add_item(casino_row(profile, "🎰"))
     b = Button(label="spin", style=ButtonStyle.blurple)
     b.callback = modal_select
@@ -8542,10 +8714,7 @@ async def slots(message: discord.Interaction):
     )
     view.add_item(embed)
 
-    if message.type == discord.InteractionType.application_command:
-        await message.response.send_message(view=view)
-    else:
-        await message.response.edit_message(view=view)
+    await send_or_edit(message, view=view)
 
     if profile.casino_balance == 0:
         await achemb(message, "failed_gambler", "followup")
@@ -8554,7 +8723,7 @@ async def slots(message: discord.Interaction):
 
 
 async def roulette(message: discord.Interaction):
-    if casino_impostor(message):
+    if impostor_check(message):
         return await do_funny(message)
     assert message.guild is not None
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
@@ -8675,6 +8844,8 @@ async def roulette(message: discord.Interaction):
             await play(interaction, bet_type, bet_amount)
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
+        view.add_item(await nav_row(user, "🧩"))
+        view.add_item(minigame_row("🎰"))
         view.add_item(casino_row(user, "🎡"))
         b = Button(label="again", style=ButtonStyle.blurple)
         b.callback = again_callback
@@ -8711,6 +8882,8 @@ async def roulette(message: discord.Interaction):
         await interaction.response.send_modal(RouletteModal())
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
+    view.add_item(await nav_row(user, "🧩"))
+    view.add_item(minigame_row("🎰"))
     view.add_item(casino_row(user, "🎡"))
     b = Button(label="spin", style=ButtonStyle.blurple)
     b.callback = modal_select
@@ -8722,17 +8895,14 @@ async def roulette(message: discord.Interaction):
     )
     view.add_item(embed)
 
-    if message.type == discord.InteractionType.application_command:
-        await message.response.send_message(view=view)
-    else:
-        await message.response.edit_message(view=view)
+    await send_or_edit(message, view=view)
 
     if user.casino_balance == 0:
         await achemb(message, "failed_gambler", "followup")
 
 
 async def blackcat(message: discord.Interaction):
-    if casino_impostor(message):
+    if impostor_check(message):
         return await do_funny(message)
     assert message.guild is not None
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
@@ -8873,6 +9043,8 @@ async def blackcat(message: discord.Interaction):
                 await play(interaction, bet_amount)
 
             view = LayoutView(timeout=VIEW_TIMEOUT)
+            view.add_item(await nav_row(user, "🧩"))
+            view.add_item(minigame_row("🎰"))
             view.add_item(casino_row(user, "🃏"))
             b = Button(label="again", style=ButtonStyle.blurple)
             b.callback = again_callback
@@ -8911,6 +9083,8 @@ async def blackcat(message: discord.Interaction):
         await interaction.response.send_modal(BlackcatModal())
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
+    view.add_item(await nav_row(user, "🧩"))
+    view.add_item(minigame_row("🎰"))
     view.add_item(casino_row(user, "🃏"))
     b = Button(label="play", style=ButtonStyle.blurple)
     b.callback = modal_select
@@ -8926,10 +9100,7 @@ async def blackcat(message: discord.Interaction):
         )
     )
 
-    if message.type == discord.InteractionType.application_command:
-        await message.response.send_message(view=view)
-    else:
-        await message.response.edit_message(view=view)
+    await send_or_edit(message, view=view)
 
     if user.casino_balance == 0:
         await achemb(message, "failed_gambler", "followup")
@@ -9063,6 +9234,8 @@ async def eightball(message: discord.Interaction, question: str):
 @bot.tree.command(description="the most engaging boring game")
 async def pig(message: discord.Interaction):
     assert message.guild is not None
+    if impostor_check(message):
+        return await do_funny(message)
     score = 0
     profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
 
@@ -9082,23 +9255,24 @@ async def pig(message: discord.Interaction):
             # gg
             last_score = score
             score = 0
-            view = View(timeout=VIEW_TIMEOUT)
+            view = LayoutView(timeout=VIEW_TIMEOUT)
+            view.add_item(await nav_row(profile, "🧩"))
+            view.add_item(minigame_row("🎲"))
+            view.add_item(TextDisplay(f"*Oops!* You rolled a **1** and lost your {last_score} score...\nFinal score: 0\nBetter luck next time!"))
             button = Button(label="Play Again", emoji="🎲", style=ButtonStyle.blurple)
             button.callback = roll
-            view.add_item(button)
-            await interaction.response.edit_message(
-                content=f"*Oops!* You rolled a **1** and lost your {last_score} score...\nFinal score: 0\nBetter luck next time!", view=view
-            )
+            view.add_item(ActionRow(button))
+            await interaction.response.edit_message(view=view)
         else:
             score += roll_result
-            view = View(timeout=VIEW_TIMEOUT)
+            view = LayoutView(timeout=VIEW_TIMEOUT)
+            view.add_item(TextDisplay(f"🎲 +{roll_result}\nCurrent score: {score:,}"))
             button = Button(label="Roll", emoji="🎲", style=ButtonStyle.blurple)
             button.callback = roll
             button2 = Button(label="Save & Finish")
             button2.callback = finish
-            view.add_item(button)
-            view.add_item(button2)
-            await interaction.response.edit_message(content=f"🎲 +{roll_result}\nCurrent score: {score:,}", view=view)
+            view.add_item(ActionRow(button, button2))
+            await interaction.response.edit_message(view=view)
 
     async def finish(interaction: discord.Interaction):
         nonlocal score
@@ -9113,11 +9287,14 @@ async def pig(message: discord.Interaction):
 
         last_score = score
         score = 0
-        view = View(timeout=VIEW_TIMEOUT)
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        view.add_item(await nav_row(profile, "🧩"))
+        view.add_item(minigame_row("🎲"))
+        view.add_item(TextDisplay(f"*Congrats!*\nYou finished with {last_score} score!"))
         button = Button(label="Play Again", emoji="🎲", style=ButtonStyle.blurple)
         button.callback = roll
-        view.add_item(button)
-        await interaction.response.edit_message(content=f"*Congrats!*\nYou finished with {last_score} score!", view=view)
+        view.add_item(ActionRow(button))
+        await interaction.response.edit_message(view=view)
 
         if last_score >= 40:
             await progress(message, profile, "pig")
@@ -9126,18 +9303,22 @@ async def pig(message: discord.Interaction):
         if last_score >= 100:
             await achemb(interaction, "pig100", "followup")
 
-    view = View(timeout=VIEW_TIMEOUT)
+    view = LayoutView(timeout=VIEW_TIMEOUT)
     button = Button(label="Play!", emoji="🎲", style=ButtonStyle.blurple)
     button.callback = roll
-    view.add_item(button)
-    await message.response.send_message(
-        f"""🎲 Pig is a simple dice game.
+    view.add_item(await nav_row(profile, "🧩"))
+    view.add_item(minigame_row("🎲"))
+    view.add_item(
+        Container(
+            f"""🎲 Pig is a simple dice game.
 You repeatedly roll a die. The number it lands on gets added to your score, then you can either roll the die again, or finish and save your current score.
 *However*, if you roll a 1, you lose and your score gets voided.
 
 Your current best score is **{profile.best_pig_score:,}**.""",
-        view=view,
+            ActionRow(button),
+        )
     )
+    await send_or_edit(message, view=view)
 
 
 @bot.tree.command(description="get a reminder in the future (+- 1 minute)")
@@ -10362,6 +10543,8 @@ This will remove the remaining catnip time you have.""",
 @bot.tree.command(description="View your achievements (achs)")
 async def achievements(message: discord.Interaction):
     assert message.guild is not None
+    if impostor_check(message):
+        return await do_funny(message)
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     global_user = await User.get_or_create(user_id=message.user.id)
 
@@ -10369,6 +10552,8 @@ async def achievements(message: discord.Interaction):
 
     # this is a single page of the achievement list
     async def gen_page(interaction: discord.Interaction):
+        if message.user != interaction.user:
+            return await do_funny(interaction)
         category = interaction.custom_id
         assert category is not None
 
@@ -10380,11 +10565,8 @@ async def achievements(message: discord.Interaction):
         unlocked_achs = sum([bool(user[k]) for k in ach_ids])
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
-        embed = Container()
-        if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
-            embed.add_item(TextDisplay(news_notice))
+        embed = Container(f"## {get_emoji('ach')}{get_emoji(data.ach_categories[category])} {category}")
 
-        embed.add_item(TextDisplay(f"## {get_emoji('ach')}{get_emoji(data.ach_categories[category])} {category}"))
         if category == "Museum":
             embed.add_item(TextDisplay("Achievements in this category are no longer obtainable, and don't count towards anything."))
         else:
@@ -10453,34 +10635,21 @@ async def achievements(message: discord.Interaction):
 
         embed.add_item(Separator())
         embed.add_item(TextDisplay("\n".join(lines)))
-        embed.add_item(Separator())
-        embed.add_item(TextDisplay(rain_shill))
-
-        button = Button(label="Back", emoji="⬅️", style=ButtonStyle.blurple)
-        button.callback = gen_main
-        button2 = Button(label="Refresh", emoji="🔄", style=ButtonStyle.blurple, custom_id=category)
-        button2.callback = gen_page
-
         view.add_item(embed)
-        view.add_item(ActionRow(button, button2))
-        await interaction.response.edit_message(view=view)
+        await interaction.response.send_message(view=view, ephemeral=True)
 
-    async def gen_main(interaction: discord.Interaction, first: bool | None = None) -> None:
+    async def gen_main(interaction: discord.Interaction) -> None:
+        if message.user != interaction.user:
+            return await do_funny(interaction)
         await user.refresh_from_db()
         await global_user.refresh_from_db()
         unlocked, total_achs = count_achievements(user)
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
-        embed = Container()
-        if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
-            embed.add_item(TextDisplay(news_notice))
-
-        embed.add_item(TextDisplay(f"## {get_emoji('ach')} Achievements ({unlocked}/{total_achs})"))
-        embed.add_item(
-            TextDisplay(
-                "**Achievements** are goals within Cat Bot which let you discover various features and track your progress. "
-                "If you are ever unsure on what to do, try completing some!"
-            )
+        embed = Container(
+            f"## {get_emoji('ach')} Achievements ({unlocked}/{total_achs})",
+            "**Achievements** are goals within Cat Bot which let you discover various features and track your progress. "
+            "If you are ever unsure on what to do, try completing some!",
         )
 
         # recommended achs
@@ -10521,17 +10690,14 @@ async def achievements(message: discord.Interaction):
         for i in range(0, len(buttons), 2):
             embed.add_item(ActionRow(*buttons[i : i + 2]))
 
-        embed.add_item(TextDisplay(rain_shill))
         button = Button(label="Refresh", emoji="🔄", style=ButtonStyle.blurple)
         button.callback = gen_main
+        view.add_item(await nav_row(user, "ach"))
         view.add_item(embed)
         view.add_item(ActionRow(button))
-        if first:
-            await interaction.response.send_message(view=view, ephemeral=True)
-        else:
-            await interaction.response.edit_message(view=view)
+        await send_or_edit(interaction, view=view)
 
-    await gen_main(message, True)
+    await gen_main(message)
 
     if global_user.tutorial_state == 6:
         global_user.tutorial_state = 7
@@ -10802,6 +10968,7 @@ async def leaderboards(
         bp_season = None
         unit = None
         final_value = None
+        catalog_section = None
         guild_id = message.guild.id
         query = order = ahead = None
         args: list = [guild_id]
@@ -10839,12 +11006,16 @@ async def leaderboards(
             match type:
                 case "Cats":
                     unit = "cats"
+                    catalog_button = Button(label="Catalogue")
+                    catalog_button.callback = catalogue.callback  # pyright: ignore[reportAttributeAccessIssue]
                     if specific_cat != "All":
                         col = f'"cat_{specific_cat}"'
                         query = f"SELECT user_id, {col}, cat_auras FROM profile WHERE guild_id = $1 AND {col} > 0"
                         order = f"{col} DESC, user_id ASC"
                         ahead = f"(entry.{col} > target.{col}) OR (entry.{col} = target.{col} AND entry.user_id < target.user_id)"
                         final_value = f"cat_{specific_cat}"
+                        cat_count = await Profile.sum(final_value, f"guild_id = {guild_id}")
+                        catalog_section = Section(f"Total {specific_cat}s: {cat_count:,}", catalog_button)
                     else:
                         # dynamically generate sum expression, cast each value to bigint first to handle large totals
                         cat_columns = [f'CAST("cat_{c}" AS BIGINT)' for c in cattypes]
@@ -10871,7 +11042,7 @@ async def leaderboards(
                             )
                             catmoji = get_emoji(rarest.lower() + "cat")
                             joined = f"{holder_count} people" if holder_count > 10 else ", ".join(f"<@{row['user_id']}>" for row in holder_rows)
-                            string = f"Rarest cat: {catmoji} ({joined}'s)\n"
+                            catalog_section = Section(f"Rarest cat: {catmoji} ({joined}'s)", catalog_button)
                 case "Value":
                     unit = "value"
                     total_sum_expr = RawSQL("(" + " + ".join(f'({CAT_VALUES[i]}) * "cat_{i}"' for i in cattypes if i) + ") AS final_value")
@@ -11146,14 +11317,13 @@ async def leaderboards(
 
         global_user = await User.get_or_create(user_id=message.user.id)
 
-        if len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
-            news_string = news_notice.replace("You have", f"{message.user} has")
-            embedVar.add_item(TextDisplay(news_string))
-
         embedVar.add_item(ActionRow(lb_select))
         if type in ("Cats", "Aura"):
             assert dropdown is not None
             embedVar.add_item(ActionRow(dropdown))
+
+        if catalog_section:
+            embedVar.add_item(catalog_section)
 
         embedVar.add_item(TextDisplay(string.rstrip()))
         if self_string:
@@ -12006,7 +12176,7 @@ async def profile_embed(request: web.Request) -> web.Response:
     except Exception:
         return web.Response(text="Invalid user ID", status=400)
 
-    embed, _ = await gen_inventory(profile.guild_id, u, None, False)
+    embed, _ = await gen_inventory(profile.guild_id, u, None)
     embed.add_item(TextDisplay(f"-# in {server.name} as of <t:{int(time.time())}:s>"))
     view = LayoutView(timeout=1)
     view.add_item(embed)
@@ -12130,7 +12300,7 @@ def patch_view_store() -> None:
 
 
 async def setup(bot2: commands.AutoShardedBot) -> None:
-    global bot, COMMAND_IDS, vote_server, rain_shill, news_notice
+    global bot, COMMAND_IDS, vote_server
 
     # remove old commands
     bot2.tree.clear_commands(guild=None)
@@ -12192,8 +12362,6 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
 
     app_commands = await bot.tree.fetch_commands()
     COMMAND_IDS = {i.name: i.id for i in app_commands}
-    rain_shill = rain_shill.replace("/rain", get_command_mention("rain"))
-    news_notice = news_notice.replace("/news", get_command_mention("news"))
 
     if bot.is_ready() and not on_ready_debounce:
         await on_ready()

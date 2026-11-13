@@ -232,6 +232,8 @@ CREATE TABLE public.profile (
     weekly_cattypes smallint[] DEFAULT '{}'::smallint[],
     reminder_catch bigint DEFAULT 0,
     reminder_misc bigint DEFAULT 0,
+    reminder_weekly bigint DEFAULT 0,
+    reminder_season bigint DEFAULT 0,
     reminders_enabled boolean DEFAULT false,
     multilingual boolean DEFAULT false,
     debt boolean DEFAULT false,
