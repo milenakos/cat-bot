@@ -7449,7 +7449,7 @@ async def fish(message: discord.Interaction):
                 btn.callback = upgrade_upgrade
                 buttons.append(btn)
 
-            btn = Button(label="add...", style=ButtonStyle.blurple, custom_id=upgrade + "_durability")
+            btn = Button(label="add durability...", style=ButtonStyle.blurple, custom_id=upgrade + "_durability")
             btn.callback = durability_upgrade
             buttons.append(btn)
 
@@ -7458,25 +7458,17 @@ async def fish(message: discord.Interaction):
                 "## 🐟 catfishing",
                 f"🪙 fish coins: {profile.fish_coins:,}\ntotal fish caught: {profile.fish_caught:,}\nyour rarest fish: {rarest_fish}",
                 "===",
-                "### 🎣 fishing rod (speed)",
-                Section(
-                    f"level: **{profile.fish_rod_level:,}** ({data.fishing_upgrades['rod'][profile.fish_rod_level]['value']}x fishing duration)", buttons[0]
-                ),
-                Section(f"durability: **{profile.fish_rod_durability:,}**", buttons[1]),
+                f"### 🎣 fishing rod lvl {profile.fish_rod_level:,} - {data.fishing_upgrades['rod'][profile.fish_rod_level]['value']}x fishing duration "
+                f"({profile.fish_rod_durability:,} durability)",
+                ActionRow(buttons[0], buttons[1]),
                 "===",
-                "### 🍥 bait (rarity)",
-                Section(
-                    f"level: **{profile.fish_bait_level:,}** (best of {data.fishing_upgrades['bait'][profile.fish_bait_level]['value']} rarities)",
-                    buttons[2],
-                ),
-                Section(f"durability: **{profile.fish_bait_durability:,}**", buttons[3]),
+                f"### 🍥 bait lvl {profile.fish_bait_level:,} - best of {data.fishing_upgrades['bait'][profile.fish_bait_level]['value']} rarities "
+                f"({profile.fish_bait_durability:,} durability)",
+                ActionRow(buttons[2], buttons[3]),
                 "===",
-                "### 🍀 clover (money)",
-                Section(
-                    f"level: **{profile.fish_clover_level:,}** ({data.fishing_upgrades['clover'][profile.fish_clover_level]['value']}x coins on sell)",
-                    buttons[4],
-                ),
-                Section(f"durability: **{profile.fish_clover_durability:,}**", buttons[5]),
+                f"### 🍀 clover lvl {profile.fish_clover_level:,} - {data.fishing_upgrades['clover'][profile.fish_clover_level]['value']}x coins on sell "
+                f"({profile.fish_clover_durability:,} durability)",
+                ActionRow(buttons[4], buttons[5]),
                 "===",
                 "-# upgrades temporarily deactivate (act as lvl 0) if they run out of durability",
             )
