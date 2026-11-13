@@ -3231,30 +3231,19 @@ async def get_tutorial_view(user_id: int) -> LayoutView:
             if not user.claimed_free_rain:
                 user.claimed_free_rain = True
                 user.rain_minutes += 2
+            user.tutorial_state = 10
             container = Container(
-                f"Nice! Let's finish by running {get_command_mention('hub')}!",
-                "===",
-                f"-# Progress: {get_emoji('staring_square') * user.tutorial_state}{'⬛' * (10 - user.tutorial_state)} {get_emoji('2rain')}",
-            )
-            view.add_item(container)
-        case 10:
-            user.tutorial_state = 11
-            container = Container(
-                f"**Cat Bot Hub**, together with {get_emoji('ach')} *Achievements*, is your best friend for getting to know Cat Bot features.",
-                "One last thing - catching gets __a lot more fun__ if you use the various *power-ups* inside Cat Bot!",
+                "Nice! One last thing - catching gets __a lot more fun__ if you use the various *power-ups* inside Cat Bot!",
                 (
                     f"These include {get_emoji('prism')} {get_command_mention('prism')}s, {get_emoji('catnip')} {get_command_mention('catnip')}, "
                     f"💫 blessings, and ☔ {get_command_mention('rain')}."
                 ),
-                (
-                    "Speaking of the last one, for completing the tutorial you get **+2 free ☔ Rain Minutes**! "
-                    f'You can use them via {get_command_mention("rain")} or by clicking "☔ Rain" in the Hub.'
-                ),
+                f"Speaking of the latter, for completing the tutorial you get **+2 free ☔ Rain Minutes**! You can use them via {get_command_mention('rain')}.",
                 "===",
                 '-# ✅ Tutorial Complete! Go catch cats, do some achievements like saying "i read help", or discover the power-ups! Have fun!',
             )
             view.add_item(container)
-        case 11:
+        case 10 | 11:
             button = Button(label="Restart Tutorial")
             button.callback = restart_tutorial
             view.add_item(
@@ -3279,164 +3268,6 @@ async def restart_tutorial(interaction: discord.Interaction) -> None:
 @bot.tree.command(description="A guide to help you get started with Cat Bot!")
 async def tutorial(message: discord.Interaction):
     await message.response.send_message(view=await get_tutorial_view(message.user.id), ephemeral=True)
-
-
-@bot.tree.command(description="the hub of all things cat bot")
-async def hub(message: discord.Interaction):
-    assert message.guild is not None
-    profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
-    user = await User.get_or_create(user_id=message.user.id)
-    await refresh_quests(profile)
-    await profile.refresh_from_db()
-    stats = await gen_stats(profile, "")
-
-    def call_callback(command_callback: Callable[..., Awaitable[object]], *callback_args: object):
-        async def callback(interaction: discord.Interaction):
-            if interaction.user.id != message.user.id:
-                await do_funny(interaction)
-                return
-            await command_callback(interaction, *callback_args)
-
-        return callback
-
-    def make_command_button(
-        label: str,
-        emoji: str,
-        command_callback: Callable[..., Awaitable[object]],
-        *callback_args: object,
-    ) -> Button:
-        button = Button(emoji=emoji, label=label)
-        button.callback = call_callback(command_callback, *callback_args)
-        return button
-
-    # profile buttons
-    inv_buttons = []
-    total = sum(profile[f"cat_{cat}"] for cat in cattypes)
-    inv_buttons.append(make_command_button(f"Cats ({total:,})", get_emoji("nicecat"), inventory.callback))
-    if pack_count := sum(profile[f"pack_{pack['name'].lower()}"] for pack in data.pack_data):
-        inv_buttons.append(make_command_button(f"Packs ({pack_count:,})", get_emoji("goldpack"), packs.callback))
-    if prism_count := await Prism.count("guild_id = $1 AND user_id = $2", message.guild.id, message.user.id):
-        inv_buttons.append(make_command_button(f"Prisms ({prism_count:,})", get_emoji("prism"), prism.callback, message.user))
-    if user.rain_minutes or profile.rain_minutes:
-        bonus_amount = "" if profile.rain_minutes == 0 else f"+{profile.rain_minutes:,}"
-        inv_buttons.append(make_command_button(f"Rain ({user.rain_minutes:,}{bonus_amount})", "☔", rain.callback, None))
-    if profile.scratchcards:
-        inv_buttons.append(make_command_button(f"Scratchcards ({profile.scratchcards:,})", "🍀", scratch.callback))
-
-    rows = []
-    for i in range(0, len(inv_buttons), 2):
-        rows.append(ActionRow(*inv_buttons[i : i + 2]))
-
-    # cattlepass section
-    now = discord.utils.utcnow() + datetime.timedelta(hours=4)
-    if now.month == 12:
-        next_month = datetime.datetime(now.year + 1, 1, 1, tzinfo=datetime.UTC)
-    else:
-        next_month = datetime.datetime(now.year, now.month + 1, 1, tzinfo=datetime.UTC)
-    next_month -= datetime.timedelta(hours=4)
-    timestamp = int(next_month.timestamp())
-
-    unique_packs = []
-    for level in config.battle["seasons"][str(profile.season)]:
-        if level["reward"] not in pack_names:
-            continue
-        unique_packs.append(pack_names.index(level["reward"]))
-    chosen_packs = [pack_names[i] for i in sorted(set(unique_packs), key=lambda i: data.pack_data[i]["totalvalue"], reverse=True)[:5]]
-    pack_emojis = "".join([get_emoji(f"{i.lower()}pack") for i in chosen_packs])
-
-    quest_times = [profile.vote_cooldown, profile.misc_cooldown, profile.catch_cooldown]
-    if quest_times.count(0) != 0:
-        quest_line = f"{quest_times.count(0)} quests **uncomplete**"
-    else:
-        quest_line = f"Next quest <t:{min(min(quest_times) + 3600 * 12, timestamp)}:R>"
-
-    if profile.weekly_quest:
-        month_start = int((datetime.datetime(now.year, now.month, 1, tzinfo=datetime.UTC) - datetime.timedelta(hours=4)).timestamp())
-        refresh_time = month_start + 604800 * (int((time.time() - month_start) // 604800) + 1)
-        if config.battle["quests"]["weekly"][profile.weekly_quest]["progress"] <= profile.weekly_progress:
-            weekly_line = f"✅ Weekly Quest (next <t:{refresh_time}:R>)"
-        else:
-            weekly_line = f"Weekly Quest (**ends** <t:{refresh_time}:R>): *🍀 + XP*"
-    else:
-        weekly_line = f"Weekly Quest (next <t:{timestamp}:R>)"
-
-    cattlepass_section = Section(
-        f"⬆️ Season ends <t:{timestamp}:R>\n{quest_line}\n*Rewards:* ☔{pack_emojis}...",
-        weekly_line,
-        make_command_button("Cattlepass", "⬆️", battlepass.callback),
-    )
-
-    # vote streak section
-    next_vote_time = user.vote_time_topgg + 3600 * 12
-    vote_streak_text = "**can vote!**" if next_vote_time <= time.time() else f"next vote <t:{next_vote_time}:R>"
-    vote_streak_section = Section(
-        f"""🔥 {user.vote_streak:,}x streak, {vote_streak_text}
-*Rewards:* {get_emoji("diamondpack")}{get_emoji("platinumpack")}{get_emoji("goldpack")}""",
-        Button(label="Vote", emoji=get_emoji("topgg"), url="https://top.gg/bot/966695034340663367/vote"),
-    )
-
-    # bakery section
-    silver_done = "✅" if user.last_bakegg_send == get_current_week() else "❌"
-    chef_done = "✅" if user.last_bakegg_get == get_current_week() else "❌"
-    refresh_word = "refresh" if silver_done == "✅" and chef_done == "✅" else "**end**"
-    bakery_section = Section(
-        f"""🧑‍🍳 *Rewards* ({refresh_word} <t:{get_timestamp_of_next_week()}:R>):
-{silver_done} {get_emoji("bakegg_egg")}{get_emoji("silverpack")}; {chef_done} {get_emoji("chefpack")}""",
-        make_command_button("Bakery", "🧑‍🍳", bakery.callback),
-    )
-
-    # prism section
-    prism_section = Section(
-        f"""{get_emoji("prism")} {next(i for i in stats if i[0] == "prism_owned")[2]}
-*Boost: catch rarity increase*""",
-        make_command_button("Prisms", get_emoji("prism"), prism.callback, message.user),
-    )
-
-    # catnip section
-    if not profile.dark_market_active:
-        catnip_section = f"{get_emoji('catnip_disabled')} *Locked*"
-    else:
-        if profile.hibernation:
-            catnip_status = "hibernating"
-        elif profile.catnip_active > time.time():
-            catnip_status = f"expires <t:{profile.catnip_active}:R>"
-        else:
-            catnip_status = "expired"
-        catnip_section = Section(
-            f"""{get_emoji("catnip")} Level {profile.catnip_level}, {catnip_status}
-*Boost: multiplying, packs, rain...*""",
-            make_command_button("Catnip", get_emoji("catnip"), catnip.callback),
-        )
-
-    # news button
-    if len(data.news_list) > len(user.news_state.strip()) or user.news_state.strip()[last_active_article] == "0":
-        news_name = "News (unread!)"
-    else:
-        news_name = "News"
-
-    emoji_prefix = str(user.emoji) + " " if user.emoji else ""
-    view = LayoutView(timeout=VIEW_TIMEOUT)
-    profile_embed = Container(
-        Section(
-            f"# {emoji_prefix}{message.user.name.replace('_', r'\_')}",
-            make_command_button("Stats", "🧮", stats_command.callback),
-        ),
-        *rows,
-        accent_color=discord.Colour.from_str(user.color) if user.color else Colors.brown,
-    )
-    rewards_embed = Container("## Rewards", cattlepass_section, Separator(), vote_streak_section, Separator(), bakery_section)
-    boosts_embed = Container("## Boosts", prism_section, Separator(), catnip_section)
-    view.add_item(profile_embed)
-    view.add_item(rewards_embed)
-    view.add_item(boosts_embed)
-    view.add_item(ActionRow(make_command_button(news_name, "📰", news.callback)))
-    await message.response.send_message(view=view)
-    await achemb(message, "cathub", "followup")
-
-    if user.tutorial_state == 9:
-        user.tutorial_state = 10
-        await user.save()
-        await message.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
 
 
 @bot.tree.command(description="View Cat Bot info, credits, ping; wiki, invite, store, vote links")
