@@ -5492,8 +5492,8 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
 
 
 @bot.tree.command(description="its raining cats")
-@discord.app_commands.describe(minutes="If specified, starts a rain, skipping the embed")
-async def rain(message: discord.Interaction, minutes: int | None = None):
+@discord.app_commands.describe(minutes="If specified, starts a rain, skipping the embed", channel="Channel where the rain will happen (defaults to current channel)")
+async def rain(message: discord.Interaction, minutes: int | None = None, channel: discord.TextChannel | None = None):
     assert message.guild is not None
     if impostor_check(message):
         return await do_funny(message)
@@ -5525,12 +5525,13 @@ async def rain(message: discord.Interaction, minutes: int | None = None):
             except Exception:
                 await interaction.response.send_message("number pls", ephemeral=True)
                 return
-            await do_rain(interaction, duration, False)
+            target_channel = channel if channel else interaction.channel
+            await do_rain(interaction, duration, False, target_channel)
 
-    async def do_rain(interaction: discord.Interaction, rain_length: int, anon: bool) -> None:
+    async def do_rain(interaction: discord.Interaction, rain_length: int, anon: bool, target_channel: discord.TextChannel | None = None) -> None:
         # i LOOOOVE checks
         assert interaction.guild is not None
-        assert isinstance(interaction.channel, GuildMessageable)
+        assert isinstance(target_channel, GuildMessageable)
         await server.refresh_from_db()
 
         if not server.do_rain:
@@ -5540,6 +5541,8 @@ async def rain(message: discord.Interaction, minutes: int | None = None):
         if rain_length < 1:
             await interaction.response.send_message("last time i checked weather can not change for a negative amount of time", ephemeral=True)
             return
+
+        rain_channel = target_channel if target_channel else interaction.channel
 
         async with transaction() as conn:
             user = await User.get_or_create(conn, user_id=interaction.user.id)
@@ -5555,7 +5558,7 @@ async def rain(message: discord.Interaction, minutes: int | None = None):
                 )
                 return
 
-            channel_row = await conn.fetchrow("SELECT * FROM channel WHERE channel_id = $1 FOR UPDATE", interaction.channel.id)
+            channel_row = await conn.fetchrow("SELECT * FROM channel WHERE channel_id = $1 FOR UPDATE", rain_channel.id)
             if not channel_row:
                 await interaction.response.send_message("please run this in a setupped channel.", ephemeral=True)
                 return
@@ -5588,13 +5591,13 @@ async def rain(message: discord.Interaction, minutes: int | None = None):
             starter = interaction.user.mention if not anon else "Anonymous"
             await interaction.response.send_message(f"{rain_length:,}m cat rain was started by {starter}!")
             ch = bot.get_partial_messageable(config.RAIN_CHANNEL_ID)
-            await ch.send(f"{interaction.user.id} started {rain_length}m rain in {interaction.channel.id} ({user.rain_minutes} left)")
+            await ch.send(f"{interaction.user.id} started {rain_length}m rain in {rain_channel.id} ({user.rain_minutes} left)")
         except Exception:
             pass
 
         config.cat_cought_rain[channel.channel_id] = {}
         config.rain_starter[channel.channel_id] = interaction.user.id if not anon else 0
-        await spawn_cat(interaction.channel.id)
+        await spawn_cat(rain_channel.id)
         await rain_recovery_loop(channel)
 
     async def rain_modal(interaction: discord.Interaction) -> None:
@@ -5625,11 +5628,13 @@ async def rain(message: discord.Interaction, minutes: int | None = None):
 
         async def confirm_rain(interaction: discord.Interaction) -> None:
             await message.delete_original_response()
-            await do_rain(interaction, minutes, False)
+            target = channel if channel else interaction.channel
+            await do_rain(interaction, minutes, False, target)
 
         async def confirm_anon(interaction: discord.Interaction) -> None:
             await message.delete_original_response()
-            await do_rain(interaction, minutes, True)
+            target = channel if channel else interaction.channel
+            await do_rain(interaction, minutes, True, target)
 
         view = View(timeout=VIEW_TIMEOUT)
         button.callback = confirm_rain
