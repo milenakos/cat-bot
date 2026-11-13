@@ -434,7 +434,8 @@ CREATE TABLE public."user" (
     second_birthday_badge boolean DEFAULT false,
     tutorial_state smallint DEFAULT 0,
     snake_dms boolean DEFAULT true,
-    last_inventory_view bigint DEFAULT 0
+    last_inventory_view bigint DEFAULT 0,
+    premium_welcome_seen boolean DEFAULT false
 );
 
 ALTER TABLE public."user" OWNER TO cat_bot;

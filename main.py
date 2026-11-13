@@ -464,6 +464,17 @@ async def achemb(
     if profile[ach_id]:
         return
 
+    if ach_id == "collecter":
+        assert isinstance(message, discord.Interaction)
+        await message.followup.send(
+            f"""You just unlocked {get_emoji("prism")} __Prisms__!
+These are *permanent* power-ups which have a chance to *bump your cat rarity* by one whenever you catch a cat.
+Each prism you craft will increase the chance by a *small amount for everyone*, **and by a larger amount for you**!
+The cost of making a Prism is *one of every cat type*.
+Head over to {get_command_mention("prism")} to learn more!""",
+            ephemeral=True,
+        )
+
     profile[ach_id] = True
     log_stats("achievement", {"ach_id": ach_id})
     ach_data = ach_list[ach_id]
@@ -12062,6 +12073,21 @@ async def start_tutorial(ctx: discord.Interaction) -> None:
     global_user = await User.get_or_create(user_id=ctx.user.id)
     if global_user.tutorial_state == 0:
         await ctx.followup.send(view=await get_tutorial_view(ctx.user.id), ephemeral=True)
+    if global_user.premium and not global_user.premium_welcome_seen:
+        embed = Container(
+            "## ✨ Thanks for supporting Cat Bot!",
+            f"""Here is a list of perks you just unlocked:
+- 🎨 Use `/supporter editprofile` to add a custom image, color, and emoji to your profile!
+- {get_emoji("nicecat_r")} Use `/supporter customcat` to get a cosmetic custom cat for your profile!
+- 🌠 Use `/supporter bless` to bless random Cat Bot users worldwide with doubled cats!
+- 👥 [Join our Discord server](https://discord.gg/staring) for an exclusive role!""",
+            accent_color=Colors.yellow,
+        )
+        view = LayoutView(timeout=1)
+        view.add_item(embed)
+        await ctx.followup.send(view=view, ephemeral=True)
+        global_user.premium_welcome_seen = True
+        await global_user.save()
 
 
 def patch_view_store() -> None:
