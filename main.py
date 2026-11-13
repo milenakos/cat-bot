@@ -11151,9 +11151,7 @@ async def leaderboards(
         def tidy(placement: int, value):
             if not value:
                 return placement, value
-            if type == "Slow":
-                value = round(value / 3600, 2)
-            elif type == "Fast":
+            if type == "Fast":
                 value = round(value, 3)
             # dont show placements if they arent defined
             if type != "Fast":
@@ -11237,7 +11235,8 @@ async def leaderboards(
                 if type == "Cattlepass":
                     assert perc is not None
                     return f"{placement}\\. Level **{value}** *({perc}%)*: {mention}"
-                return f"{placement}\\. {emoji} **{value:,}** {unit}: {mention}"
+                display_value, display_unit = (format_duration(value) if type in ("Fast", "Slow") else (value, unit))
+                return f"{placement}\\. {emoji} **{display_value:,}** {display_unit}: {mention}"
 
             lines = []
             if interactor_placement and not on_page(interactor_placement):
