@@ -590,13 +590,40 @@ async def generate_quest(user: Profile, quest_type: str) -> None:
     await user.save()
 
 
-async def refresh_quests(user: Profile) -> None:
-    await user.refresh_from_db()
+def get_current_season() -> int:
     start_date = datetime.datetime(2024, 12, 1, tzinfo=datetime.UTC)
     current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
     full_months_passed = (current_date.year - start_date.year) * 12 + (current_date.month - start_date.month)
     if current_date.day < start_date.day:
         full_months_passed -= 1
+    return full_months_passed
+
+
+def get_next_season_start() -> int:
+    now = discord.utils.utcnow() + datetime.timedelta(hours=4)
+    if now.month == 12:
+        next_month = datetime.datetime(now.year + 1, 1, 1, tzinfo=datetime.UTC)
+    else:
+        next_month = datetime.datetime(now.year, now.month + 1, 1, tzinfo=datetime.UTC)
+    return int((next_month - datetime.timedelta(hours=4)).timestamp())
+
+
+def get_next_weekly_refresh() -> int:
+    now = discord.utils.utcnow() + datetime.timedelta(hours=4)
+    month_start = datetime.datetime(now.year, now.month, 1, tzinfo=datetime.UTC) - datetime.timedelta(hours=4)
+    month_start_ts = int(month_start.timestamp())
+    next_week = int((time.time() - month_start_ts) // 604800) + 1
+    next_season = get_next_season_start()
+    if next_week >= 4:
+        return next_season
+    next_refresh = month_start_ts + 604800 * next_week
+    return min(next_season, next_refresh)
+
+
+async def refresh_quests(user: Profile) -> None:
+    await user.refresh_from_db()
+    current_date = discord.utils.utcnow() + datetime.timedelta(hours=4)
+    full_months_passed = get_current_season()
     if user.season != full_months_passed:
         user.bp_history += f"{user.season},{user.battlepass},{user.progress};"
         user.battlepass = 0
@@ -617,6 +644,9 @@ async def refresh_quests(user: Profile) -> None:
         user.weekly_cattypes = []
 
         user.season = full_months_passed
+        await user.save()
+    elif user.battlepass >= 10 and user.reminder_season == 0:
+        user.reminder_season = get_next_season_start()
         await user.save()
     if 12 * 3600 < user.vote_cooldown + 12 * 3600 < time.time():
         await generate_quest(user, "vote")
@@ -782,6 +812,8 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         active_level_data = level_data
         while xp_progress >= active_level_data["xp"]:
             user.battlepass += 1
+            if user.battlepass >= 10 and user.reminder_season == 0:
+                user.reminder_season = get_next_season_start()
             xp_progress -= active_level_data["xp"]
             user.progress = xp_progress
             cat_emojis = None
@@ -1143,6 +1175,18 @@ async def postpone_reminder(interaction: discord.Interaction) -> None:
     await interaction.response.send_message(f"ok, i will remind you <t:{int(time.time()) + 30 * 60}:R>", ephemeral=True)
 
 
+async def resolve_reminder_guild_name(guild_id: int) -> str:
+    guild = await Server.get_or_create(server_id=guild_id)
+    try:
+        if not guild.name:
+            guild.name = (await bot.fetch_guild(guild_id)).name
+            await guild.save()
+    except Exception:
+        guild.name = "Unknown Server"
+        await guild.save()
+    return guild.name
+
+
 async def send_quest_reminders(quest_type: str, start_time: int) -> None:
     reminder_count = 0
     while True:
@@ -1172,19 +1216,12 @@ async def send_quest_reminders(quest_type: str, start_time: int) -> None:
         button.callback = postpone_reminder
         view.add_item(button)
 
-        guild = await Server.get_or_create(server_id=user.guild_id)
-        try:
-            if not guild.name:
-                guild.name = (await bot.fetch_guild(user.guild_id)).name
-                await guild.save()
-        except Exception:
-            guild.name = "Unknown Server"
-            await guild.save()
+        guild_name = await resolve_reminder_guild_name(user.guild_id)
 
         try:
             user_user = await User.get_or_create(user_id=user.user_id)
             user_dm = await fetch_dm_channel(user_user)
-            await user_dm.send(f"A new quest is available in {guild.name}!", embed=embed, view=view)
+            await user_dm.send(f"A new quest is available in {guild_name}!", embed=embed, view=view)
         except Exception:
             pass
         user[f"reminder_{quest_type}"] = 0
@@ -1192,6 +1229,73 @@ async def send_quest_reminders(quest_type: str, start_time: int) -> None:
         await user.save()
 
     log_stats("reminders", {"type": quest_type}, reminder_count)
+
+
+async def send_season_reminders(start_time: int) -> None:
+    reminder_count = 0
+    while True:
+        user = await Profile.collect(f"reminders_enabled = true AND reminder_season != 0 AND reminder_season < {start_time} LIMIT 1")
+        if not user or not user[0]:
+            break
+        user = user[0]
+        await asyncio.sleep(0.2)
+
+        await refresh_quests(user)
+        await user.refresh_from_db()
+
+        guild_name = await resolve_reminder_guild_name(user.guild_id)
+        try:
+            user_user = await User.get_or_create(user_id=user.user_id)
+            user_dm = await fetch_dm_channel(user_user)
+            await user_dm.send(f"A new Cattlepass season has started in {guild_name}! {get_command_mention('battlepass')}")
+        except Exception:
+            pass
+        user.reminder_season = 0
+        reminder_count += 1
+        await user.save()
+
+    log_stats("reminders", {"type": "season"}, reminder_count)
+
+
+async def send_weekly_reminders(start_time: int) -> None:
+    reminder_count = 0
+    while True:
+        user = await Profile.collect(f"reminders_enabled = true AND reminder_weekly != 0 AND reminder_weekly < {start_time} LIMIT 1")
+        if not user or not user[0]:
+            break
+        user = user[0]
+        await asyncio.sleep(0.2)
+
+        await refresh_quests(user)
+        await user.refresh_from_db()
+
+        if not user.weekly_quest:
+            user.reminder_weekly = 0
+            await user.save()
+            continue
+
+        quest_data = config.battle["quests"]["weekly"][user.weekly_quest]
+        title = quest_data["title"]
+        if user.weekly_quest == "bonus":
+            title = "Complete 2 bonus minigames"
+        embed = discord.Embed(
+            title=f"{get_emoji(quest_data['emoji'])} {title}",
+            description=f"Reward: **2000** XP + 1 {get_emoji('luckypack')} Lucky pack",
+            color=Colors.green,
+        )
+
+        guild_name = await resolve_reminder_guild_name(user.guild_id)
+        try:
+            user_user = await User.get_or_create(user_id=user.user_id)
+            user_dm = await fetch_dm_channel(user_user)
+            await user_dm.send(f"A new weekly quest is available in {guild_name}!", embed=embed)
+        except Exception:
+            pass
+        user.reminder_weekly = 0
+        reminder_count += 1
+        await user.save()
+
+    log_stats("reminders", {"type": "weekly"}, reminder_count)
 
 
 async def update_snake(snake_data: Snake) -> None:
@@ -1454,6 +1558,8 @@ async def background_loop() -> None:
     # catch and misc quest reminders
     await send_quest_reminders("catch", start_time)
     await send_quest_reminders("misc", start_time)
+    await send_season_reminders(start_time)
+    await send_weekly_reminders(start_time)
 
     # manual reminders
     async for reminder in Reminder.filter("time < $1", time.time()):
