@@ -313,7 +313,7 @@ CREATE TABLE public.profile (
     pro_fisher boolean DEFAULT false,
     bonus_catches integer DEFAULT 0,
     math_jumpscare boolean DEFAULT false,
-    scratchcards smallint DEFAULT 0,
+    pack_lucky integer DEFAULT 0,
     fish_coins bigint DEFAULT 0,
     fish_rod_level smallint DEFAULT 0,
     fish_rod_durability integer DEFAULT 0,

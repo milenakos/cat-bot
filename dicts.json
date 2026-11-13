@@ -97,6 +97,12 @@
       "special": true
     },
     {
+      "name": "Lucky",
+      "value": -1,
+      "totalvalue": 1085,
+      "special": true
+    },
+    {
       "name": "Wooden",
       "value": 65,
       "totalvalue": 75,

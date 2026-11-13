@@ -328,6 +328,14 @@ def get_emoji(name: str) -> str:
         return "🔳"
 
 
+def pack_field(name: str) -> str:
+    return f"pack_{name.lower()}"
+
+
+def is_exclusive_pack(pack: PackEntry | dict) -> bool:
+    return pack["value"] < 0
+
+
 def get_short_emoji(emoji: str) -> str:
     return re.sub(r":[A-Za-z0-9_]*:", ":i:", get_emoji(emoji), count=1)
 
@@ -784,7 +792,8 @@ async def progress(message: discord.Message | discord.Interaction, user: Profile
         if user.weekly_progress >= quest_data["progress"]:
             user.weekly_progress = quest_data["progress"]
             current_xp = user.progress + 2000
-            user.scratchcards += 1
+            user.pack_lucky += 1
+            user.reminder_weekly = get_next_weekly_refresh()
             await achemb(message, "weekly_demon", "send")
     else:
         return user
@@ -931,7 +940,7 @@ async def progress_embed(user: Profile, level_data: dict, current_xp: int, old_x
     if streak_data["reward"] and "top.gg" in quest_data["title"]:
         streak_reward = f"\n🔥 **Streak Bonus!** +1 {streak_data['emoji']} {streak_data['reward'].capitalize()} pack"
     elif quest_data in config.battle["quests"]["weekly"].values():
-        streak_reward = f"\n🍀 **Weekly Quest!** +1 {get_command_mention('scratch')} card!"
+        streak_reward = f"\n🍀 **Weekly Quest!** +1 {get_emoji('luckypack')} Lucky pack!"
     else:
         streak_reward = ""
 
@@ -1063,8 +1072,6 @@ async def gift_autocomplete(interaction: discord.Interaction, current: str) -> l
             choices.append(discord.app_commands.Choice(name=f"{choice} (x{user[f'cat_{choice}']})", value=choice))
     if current.lower() in "rain" and actual_user.rain_minutes > 0:
         choices.append(discord.app_commands.Choice(name=f"Rain ({actual_user.rain_minutes} {plural('minute', actual_user.rain_minutes)})", value="rain"))
-    if current.lower() in "scratchcards" and user.scratchcards > 0:
-        choices.append(discord.app_commands.Choice(name=f"Scratchcards (x{user.scratchcards})", value="scratchcards"))
     for choice in data.pack_data:
         if user[f"pack_{choice['name'].lower()}"] > 0:
             pack_name = choice["name"]
@@ -4479,7 +4486,7 @@ async def gen_stats(profile: Profile, star: str) -> list[list[str]]:
     stats = []
     user = await User.get_or_create(user_id=profile.user_id)
 
-    profile_value = profile.scratchcards * 1085
+    profile_value = 0
     for i in cattypes:
         profile_value += CAT_VALUES[i] * profile[f"cat_{i}"]
 
@@ -4827,16 +4834,13 @@ async def gen_inventory(
     if (pack_count := sum([person[f"pack_{pack['name'].lower()}"] for pack in data.pack_data])) != 0:
         # packs
         count_segments.append(f"{get_emoji('goldpack')} {pack_count:,}")
-    if (prism_count := await Prism.count("guild_id = $1 AND user_id = $2", guild_id, inv_user.id)) != 0:
-        # prisms
-        count_segments.append(f"{get_emoji('prism')} {prism_count:,}")
     if user.rain_minutes != 0 or person.rain_minutes != 0:
         # rain
         bonus_amount = "" if person.rain_minutes == 0 else f"+{person.rain_minutes:,}"
         count_segments.append(f"☔ {user.rain_minutes:,}{bonus_amount}")
-    if person.scratchcards != 0:
-        # scratchcards
-        count_segments.append(f"🍀 {person.scratchcards:,}")
+    if (prism_count := await Prism.count("guild_id = $1 AND user_id = $2", guild_id, inv_user.id)) != 0:
+        # prisms
+        count_segments.append(f"{get_emoji('prism')} {prism_count:,}")
     if not count_segments:
         count_segments.append("*This profile is empty.*")
 
@@ -5757,128 +5761,130 @@ Global bless chance is **{global_bless_chance:.4f}%**""",
         await message.response.send_message(view=view)
 
 
-@bot.tree.command(description="bumbum's scratch off game")
-async def scratch(message: discord.Interaction):
-    assert message.guild is not None
-    user = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
+async def start_scratch_game(
+    interaction: discord.Interaction,
+    user: Profile,
+    owner: discord.abc.User,
+    *,
+    finish_view: Callable[[LayoutView, Profile], Awaitable[None]] | None = None,
+    on_complete: Callable[[discord.Interaction], Awaitable[None]] | None = None,
+) -> bool:
+    await user.refresh_from_db()
+    if user.pack_lucky < 1:
+        return False
 
-    async def scratch_callback(interaction: discord.Interaction) -> None:
-        if interaction.user != message.user:
+    log_stats("pack_open", {"pack": "Lucky"})
+
+    opts = data.scratch_opts.copy()
+    random.shuffle(opts)
+
+    # the entire minigame is actually a lie whoopsie daisy!!!
+    # this is solely so people who fall asleep midgame wont lose on rewards
+    picks = opts[:10]
+    winnings = ["Winnings:"]
+    user.pack_lucky -= 1
+    user.packs_opened += 1
+    for opt in set(opts):
+        amount = picks.count(opt) // 2
+        if amount == 0:
+            continue
+        reward_emoji = get_emoji("1rain" if opt == "1m Rain" else f"{opt.lower()}pack")
+        winnings.append(f"{reward_emoji} x{amount}")
+        if opt == "1m Rain":
+            user.rain_minutes += amount
+        else:
+            user[pack_field(opt)] += amount
+    await user.save()
+
+    positions: dict[str, list[int]] = {}
+    for i, x in enumerate(picks):
+        positions.setdefault(x, []).append(i)
+
+    pairs = {}
+    for idxs in positions.values():
+        for i in range(0, len(idxs) - 1, 2):
+            a, b = idxs[i], idxs[i + 1]
+            pairs[a] = b
+            pairs[b] = a
+
+    move_spaces: list[int] = []
+
+    async def scratch_spot(interaction: discord.Interaction) -> None:
+        if not interaction.custom_id or interaction.user != owner:
             await do_funny(interaction)
             return
-
-        await user.refresh_from_db()
-        if user.scratchcards == 0:
-            await interaction.response.send_message("You have no scratch cards!", ephemeral=True)
-            return
-
-        log_stats("scratchcard")
-
-        opts = data.scratch_opts.copy()
-        random.shuffle(opts)
-
-        # the entire minigame is actually a lie whoopsie daisy!!!
-        # this is solely so people who fall asleep midgame wont lose on rewards
-        picks = opts[:10]
-        winnings = ["Winnings:"]
-        user.scratchcards -= 1
-        for opt in set(opts):
-            amount = picks.count(opt) // 2
-            if amount == 0:
-                continue
-            emoji = get_emoji("1rain" if opt == "1m Rain" else f"{opt.lower()}pack")
-            winnings.append(f"{emoji} x{amount}")
-            if opt == "1m Rain":
-                user.rain_minutes += amount
-            else:
-                user[f"pack_{opt.lower()}"] += amount
-        await user.save()
-
-        # each key has a list of indices where that item appears in picks
-        positions = {}
-        for i, x in enumerate(picks):
-            if x not in positions:
-                positions[x] = []
-            positions[x].append(i)
-
-        # this is used during minigame to determine when to reveal the pair
-        pairs = {}
-        for idxs in positions.values():
-            for i in range(0, len(idxs) - 1, 2):
-                a, b = idxs[i], idxs[i + 1]
-                pairs[a] = b
-                pairs[b] = a
-
-        move_spaces = []
-
-        async def scratch_spot(interaction: discord.Interaction) -> None:
-            if not interaction.custom_id or interaction.user != message.user:
-                await do_funny(interaction)
-                return
-            spot = int(interaction.custom_id)
-            if len(move_spaces) < 10 and spot not in move_spaces:
-                move_spaces.append(spot)
-            await refresh_board(interaction)
-
-        async def refresh_board(interaction: discord.Interaction) -> None:
-            nonlocal move_spaces
-            view = LayoutView(timeout=VIEW_TIMEOUT)
-            buttons = []
-            empty_idx = 10
-            if len(move_spaces) > 10:
-                move_spaces = move_spaces[:10]
-            for i in range(25):
-                if i not in move_spaces:
-                    if len(move_spaces) != 10:
-                        button = Button(emoji=get_emoji("empty"), custom_id=str(i), style=ButtonStyle.gray)
-                        button.callback = scratch_spot
-                    else:
-                        item = opts[empty_idx]
-                        empty_idx += 1
-                        button = Button(
-                            emoji=get_emoji("1rain" if item == "1m Rain" else f"{item.lower()}pack"),
-                            disabled=True,
-                            style=ButtonStyle.gray,
-                        )
-                    buttons.append(button)
-                    continue
-                move_number = move_spaces.index(i)
-                button = Button(
-                    emoji=get_emoji("1rain" if picks[move_number] == "1m Rain" else f"{picks[move_number].lower()}pack"),
-                    style=ButtonStyle.green if move_number in pairs and len(move_spaces) > pairs[move_number] else ButtonStyle.blurple,
-                    disabled=True,
-                )
-                buttons.append(button)
-
-            view.add_item(TextDisplay(f"Clicks remaining: {10 - len(move_spaces)}" if len(move_spaces) != 10 else "\n".join(winnings)))
-            for i in range(0, 25, 5):
-                view.add_item(ActionRow(*buttons[i : i + 5]))
-
-            if len(move_spaces) == 10:
-                await user.refresh_from_db()
-                button = Button(label=f"Scratch! ({user.scratchcards})", style=ButtonStyle.green, disabled=user.scratchcards == 0)
-                button.callback = scratch_callback
-                view.add_item(ActionRow(button))
-            await interaction.response.edit_message(view=view)
-
+        spot = int(interaction.custom_id)
+        if len(move_spaces) < 10 and spot not in move_spaces:
+            move_spaces.append(spot)
         await refresh_board(interaction)
 
-    view = LayoutView(timeout=VIEW_TIMEOUT)
-    button = Button(label=f"Scratch! ({user.scratchcards})", style=ButtonStyle.green, disabled=user.scratchcards == 0)
-    button.callback = scratch_callback
-    view.add_item(
-        Container(
-            "## 🍀 Scratch Off",
-            (
-                "You will be able to select **10 out of 25 spots**. Finding a __pair__ will give you it's respective prize. "
-                f"(example: finding 2x {get_emoji('diamondpack')} will give you a Diamond pack)"
-            ),
-            "Get scratch cards by completing *Weekly Quests*.",
-            "===",
-            ActionRow(button),
-        )
-    )
-    await message.response.send_message(view=view)
+    async def refresh_board(interaction: discord.Interaction) -> None:
+        nonlocal move_spaces
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        buttons = []
+        empty_idx = 10
+        if len(move_spaces) > 10:
+            move_spaces = move_spaces[:10]
+        for i in range(25):
+            if i not in move_spaces:
+                if len(move_spaces) != 10:
+                    button = Button(emoji=get_emoji("empty"), custom_id=str(i), style=ButtonStyle.gray)
+                    button.callback = scratch_spot
+                else:
+                    item = opts[empty_idx]
+                    empty_idx += 1
+                    button = Button(
+                        emoji=get_emoji("1rain" if item == "1m Rain" else f"{item.lower()}pack"),
+                        disabled=True,
+                        style=ButtonStyle.gray,
+                    )
+                buttons.append(button)
+                continue
+            move_number = move_spaces.index(i)
+            button = Button(
+                emoji=get_emoji("1rain" if picks[move_number] == "1m Rain" else f"{picks[move_number].lower()}pack"),
+                style=ButtonStyle.green if move_number in pairs and len(move_spaces) > pairs[move_number] else ButtonStyle.blurple,
+                disabled=True,
+            )
+            buttons.append(button)
+
+        view.add_item(TextDisplay(f"Clicks remaining: {10 - len(move_spaces)}" if len(move_spaces) != 10 else "\n".join(winnings)))
+        for i in range(0, 25, 5):
+            view.add_item(ActionRow(*buttons[i : i + 5]))
+
+        completed = len(move_spaces) == 10
+        if completed:
+            await user.refresh_from_db()
+            if finish_view:
+                await finish_view(view, user)
+            else:
+                again = Button(
+                    label=f"Scratch! ({user.pack_lucky})",
+                    style=ButtonStyle.green,
+                    disabled=user.pack_lucky == 0,
+                )
+
+                async def scratch_again(interaction: discord.Interaction) -> None:
+                    if interaction.user != owner:
+                        await do_funny(interaction)
+                        return
+                    if not await start_scratch_game(interaction, user, owner):
+                        await interaction.response.send_message("You have no Lucky packs!", ephemeral=True)
+
+                again.callback = scratch_again
+                view.add_item(ActionRow(again))
+
+        await interaction.response.edit_message(view=view)
+
+        if completed:
+            await achemb(interaction, "packer", "followup")
+            if user.packs_opened >= 25:
+                await achemb(interaction, "super_packer", "followup")
+            if on_complete:
+                await on_complete(interaction)
+
+    await refresh_board(interaction)
+    return True
 
 
 @bot.tree.command(description="View and open packs")
@@ -5889,10 +5895,17 @@ async def packs(message: discord.Interaction):
     user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
     global_user = await User.get_or_create(user_id=message.user.id)
 
+    # lucky pack is interactive, so it is excluded from bulk open
+    interactive_packs = {"Lucky"}
+
     async def process_pack_opening(pack_types: set[str] | None = None, max_packs: int | None = None) -> tuple[Container | None, int, bool]:
         await user.refresh_from_db()
 
-        total_packs = sum(user[f"pack_{pack['name'].lower()}"] for pack in data.pack_data if pack_types is None or pack["name"] in pack_types)
+        total_packs = sum(
+            user[pack_field(pack["name"])]
+            for pack in data.pack_data
+            if pack["name"] not in interactive_packs and (pack_types is None or pack["name"] in pack_types)
+        )
         if max_packs is not None:
             total_packs = min(total_packs, max_packs)
         if total_packs < 1:
@@ -5912,10 +5925,12 @@ async def packs(message: discord.Interaction):
                 break
 
             pack_name = pack_data["name"]
+            if pack_name in interactive_packs:
+                continue
             if pack_types is not None and pack_name not in pack_types:
                 continue
 
-            pack_id = f"pack_{pack_name.lower()}"
+            pack_id = pack_field(pack_name)
             pack_count = user[pack_id]
             if pack_count < 1:
                 continue
@@ -5952,8 +5967,8 @@ async def packs(message: discord.Interaction):
         title = f"## Opened {opened_packs:,} {plural('pack', opened_packs)}!"
         if len(reward_list) > 3995 - len(title) - len(pack_list):
             summary_lines = [f"{get_emoji(cat.lower() + 'cat')} x{cats_received[cat]:,}" for cat in cattypes if cats_received[cat] > 0]
-            if extras_received.get("scratchcards"):
-                summary_lines.append(f"🍀 x{extras_received['scratchcards']:,}")
+            if extras_received.get("pack_lucky"):
+                summary_lines.append(f"{get_emoji('luckypack')} x{extras_received['pack_lucky']:,}")
             if extras_received.get("rain_minutes"):
                 summary_lines.append(f"☔ {extras_received['rain_minutes']:,}m")
             reward_list = "\n".join(summary_lines)
@@ -5977,7 +5992,9 @@ async def packs(message: discord.Interaction):
         options = []
         for pack in sorted(data.pack_data, key=lambda pack: pack["special"]):
             pack_name = pack["name"]
-            pack_count = user[f"pack_{pack_name.lower()}"]
+            if pack_name in interactive_packs:
+                continue
+            pack_count = user[pack_field(pack_name)]
             if pack_count < 1:
                 continue
 
@@ -6002,18 +6019,19 @@ async def packs(message: discord.Interaction):
 
         await interaction.response.send_modal(modal)
 
-    def gen_buttons(user: Profile) -> tuple[list[ActionRow], bool, int, bool]:
+    def gen_buttons(profile: Profile) -> tuple[list[ActionRow], bool, int, bool]:
         buttons = []
         has_special = False
-        has_pumpkin = False
+        has_exclusive = False
         total_packs = 0
+        bulkable_packs = 0
         for pack in data.pack_data:
             pack_name = pack["name"]
-            pack_count = user[f"pack_{pack_name.lower()}"]
+            pack_count = profile[pack_field(pack_name)]
             if pack_count < 1:
                 continue
 
-            if pack_name == "Pumpkin":
+            if is_exclusive_pack(pack):
                 style = ButtonStyle.red
             elif pack["special"]:
                 style = ButtonStyle.green
@@ -6028,11 +6046,13 @@ async def packs(message: discord.Interaction):
             button.callback = open_pack
             buttons.append(button)
             total_packs += pack_count
-            has_special |= pack["special"]
-            has_pumpkin |= pack_name == "Pumpkin"
+            if pack_name not in interactive_packs:
+                bulkable_packs += pack_count
+            has_special |= pack["special"] and not is_exclusive_pack(pack)
+            has_exclusive |= is_exclusive_pack(pack)
         if total_packs == 0:
             buttons.append(Button(label="No packs left!", disabled=True))
-        if total_packs >= 5:
+        if bulkable_packs >= 5:
             button = Button(label="Bulk Open", style=ButtonStyle.gray)
             button.callback = ask_bulk
             buttons.append(button)
@@ -6041,17 +6061,18 @@ async def packs(message: discord.Interaction):
         for i in range(0, len(buttons), 4):
             rows.append(ActionRow(*buttons[i : i + 4]))
 
-        return rows, has_special, total_packs, has_pumpkin
+        return rows, has_special, total_packs, has_exclusive
 
     def get_pack_rewards(level: int, is_single: bool = True) -> tuple[str, int, int, str | list[str], dict[str, int]]:
         # returns cat_type, cat_amount, upgrades, verbal_output, extra profile rewards (profile key -> amount)
         reward_texts: list[str] = []
         build_string = ""
         upgrades = 0
+        pack_name = data.pack_data[level]["name"]
         if not is_single:
-            build_string = get_short_emoji(data.pack_data[level]["name"].lower() + "pack")
+            build_string = get_short_emoji(pack_name.lower() + "pack")
 
-        if data.pack_data[level]["name"] == "Pumpkin":
+        if pack_name == "Pumpkin":
             pumpkin_emoji = get_short_emoji("pumpkinpack")
             is_trick = random.random() < 0.5
             faces = ["😈 Trick", "😋 Treat"]
@@ -6068,7 +6089,7 @@ async def packs(message: discord.Interaction):
                     ("pack", "Platinum", 18),
                     ("pack", "Diamond", 12),
                     ("pack", "Celestial", 7),
-                    ("scratchcards", "", 13),
+                    ("pack_lucky", "", 13),
                     ("rain_minutes", "", 14),
                 ]
             reward_kind, reward_value, _ = random.choices(reward_table, weights=[i[2] for i in reward_table], k=1)[0]
@@ -6099,10 +6120,10 @@ async def packs(message: discord.Interaction):
                     cat_amount = 5
                     short_text = f"{fine_emoji} 5"
                     long_text = f"{fine_emoji} 5 Fine cats"
-                elif reward_kind == "scratchcards":
-                    extras["scratchcards"] = 1
-                    short_text = "🍀 1"
-                    long_text = "a 🍀 scratchcard"
+                elif reward_kind == "pack_lucky":
+                    extras["pack_lucky"] = 1
+                    short_text = f"{get_emoji('luckypack')} 1"
+                    long_text = f"a {get_emoji('luckypack')} Lucky pack"
                 else:
                     extras["rain_minutes"] = 1
                     short_text = "☔ 1m"
@@ -6189,12 +6210,37 @@ async def packs(message: discord.Interaction):
 
         pack = interaction.custom_id
 
+        if pack == "Lucky":
+
+            async def after_scratch(view: LayoutView, profile: Profile) -> None:
+                again = Button(
+                    label=f"Scratch! ({profile.pack_lucky})",
+                    style=ButtonStyle.green,
+                    disabled=profile.pack_lucky == 0,
+                )
+
+                async def scratch_again(interaction: discord.Interaction) -> None:
+                    if interaction.user != message.user:
+                        await do_funny(interaction)
+                        return
+                    if not await start_scratch_game(interaction, user, message.user, finish_view=after_scratch, on_complete=advance_tutorial):
+                        await interaction.response.send_message("You have no Lucky packs!", ephemeral=True)
+
+                again.callback = scratch_again
+                back_button = Button(label="Back", style=ButtonStyle.primary, emoji="⬅️")
+                back_button.callback = go_back
+                view.add_item(ActionRow(again, back_button))
+
+            if not await start_scratch_game(interaction, user, message.user, finish_view=after_scratch, on_complete=advance_tutorial):
+                await interaction.response.edit_message(view=await gen_main())
+            return
+
         if open_at_once > 1:
             await open_all_packs(interaction, {pack}, open_at_once)
             return
 
         await user.refresh_from_db()
-        if user[f"pack_{pack.lower()}"] < 1:
+        if user[pack_field(pack)] < 1:
             return
         level = next((i for i, p in enumerate(data.pack_data) if p["name"] == pack), 0)
 
@@ -6205,7 +6251,7 @@ async def packs(message: discord.Interaction):
             user[extra_key] += extra_amount
         user.pack_upgrades += upgrades
         user.packs_opened += 1
-        user[f"pack_{pack.lower()}"] -= 1
+        user[pack_field(pack)] -= 1
         await user.save()
 
         log_stats("pack_open", {"pack": pack})
@@ -6450,7 +6496,7 @@ async def battlepass(message: discord.Interaction):
                     for cat_index in user.weekly_cattypes:
                         description += get_emoji(cattypes[cat_index].lower() + "cat")
                     description += "⬛" * (weekly_quest["progress"] - user.weekly_progress)
-                description += "\nReward: 2000 XP + 1 Scratchcard"
+                description += f"\nReward: 2000 XP + 1 {get_emoji('luckypack')} Lucky pack"
             else:
                 description += f"✅ ~~{weekly_quest['title']}~~"
             embed.add_item(TextDisplay(description))
@@ -7483,11 +7529,8 @@ async def gift(
             key = f"cat_{gift_type}"
             thing = f"{gift_type} cat"
         elif gift_type.lower() in [i["name"].lower() for i in data.pack_data]:
-            key = f"pack_{gift_type.lower()}"
+            key = pack_field(gift_type)
             thing = f"{gift_type.capitalize()} pack"
-        elif gift_type.lower() == "scratchcards":
-            key = "scratchcards"
-            thing = "Scratchcard"
         else:
             await message.response.send_message("bro what", ephemeral=True)
             return
@@ -7625,7 +7668,6 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             self.gives_packs = {}
             self.gives_rain = 0
             self.gives_prisms = []
-            self.gives_scratchcards = 0
 
             if user.id == bot.user.id:
                 self.gives_cats["eGirl"] = 9999999
@@ -7696,12 +7738,10 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         if user.profile[f"cat_{item}"] < amount:
                             fail = f"You don't have enough {item} cats!"
                     for item, amount in user.gives_packs.items():
-                        if user.profile[f"pack_{item.lower()}"] < amount:
+                        if user.profile[pack_field(item)] < amount:
                             fail = f"You don't have enough {item} packs!"
                     if user.global_user.rain_minutes < user.gives_rain:
                         fail = "You don't have enough rain!"
-                    if user.profile.scratchcards < user.gives_scratchcards:
-                        fail = "You don't have enough scratchcards!"
                     for prism in user.gives_prisms:
                         if prism not in temp_prisms:
                             fail = f"Prism {prism} not found!"
@@ -7719,8 +7759,8 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         getter.profile[f"cat_{item}"] += amount
                         cat_count += amount
                     for item, amount in giver.gives_packs.items():
-                        giver.profile[f"pack_{item.lower()}"] -= amount
-                        getter.profile[f"pack_{item.lower()}"] += amount
+                        giver.profile[pack_field(item)] -= amount
+                        getter.profile[pack_field(item)] += amount
                     if giver.gives_rain:
                         giver.global_user.rain_minutes -= giver.gives_rain
                         getter.global_user.rain_minutes += giver.gives_rain
@@ -7729,9 +7769,6 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                             bot.loop.create_task(ch.send(f"{giver.user.id} traded {giver.gives_rain}m to {getter.user.id}"))
                         except Exception:
                             pass
-                    if giver.gives_scratchcards:
-                        giver.profile.scratchcards -= giver.gives_scratchcards
-                        getter.profile.scratchcards += giver.gives_scratchcards
                     for prism in giver.gives_prisms:
                         temp_prisms[prism].user_id = getter.user.id
 
@@ -7841,7 +7878,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         await active_user.profile.refresh_from_db()
 
                         current = active_user.gives_packs.get(packtype, 0)
-                        amount = await resolve_trade_delta(current, active_user.profile[f"pack_{packtype.lower()}"], amount, f"{packtype} packs", interaction2)
+                        amount = await resolve_trade_delta(current, active_user.profile[pack_field(packtype)], amount, f"{packtype} packs", interaction2)
                         if amount is None:
                             return
 
@@ -7851,22 +7888,6 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                             active_user.gives_packs[packtype] = amount + current
                             active_user.gives_packs = {k: active_user.gives_packs[k] for k in pack_names if k in active_user.gives_packs}
                         active_user.value += sum([i["totalvalue"] if i["name"] == packtype else 0 for i in data.pack_data]) * amount
-                    case "scratchcards":
-                        assert isinstance(item2, discord.ui.TextInput)
-                        amount = parse_trade_amount(item2.value)
-                        if amount is None:
-                            await interaction2.response.send_message("Amount must be an integer!", ephemeral=True)
-                            return
-
-                        await active_user.profile.refresh_from_db()
-
-                        current = active_user.gives_scratchcards
-                        amount = await resolve_trade_delta(current, active_user.profile.scratchcards, amount, "scratchcards", interaction2)
-                        if amount is None:
-                            return
-
-                        active_user.gives_scratchcards += amount
-                        active_user.value += amount * 1085
                     case "rain":
                         assert isinstance(item2, discord.ui.TextInput)
                         amount = parse_trade_amount(item2.value)
@@ -7952,7 +7973,7 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     options = []
                     await active_user.profile.refresh_from_db()
                     for pack in pack_names:
-                        if (pa := active_user.profile[f"pack_{pack.lower()}"]) > 0:
+                        if (pa := active_user.profile[pack_field(pack)]) > 0:
                             value = sum([i["totalvalue"] if i["name"] == pack else 0 for i in data.pack_data])
                             options.append(
                                 discord.SelectOption(
@@ -7967,19 +7988,6 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                         return
                     modal.add_item(discord.ui.Label(text="Pack Type", component=discord.ui.Select(options=options, id=67)))
                     modal.add_item(discord.ui.Label(text="Amount", component=discord.ui.TextInput(placeholder="1", min_length=1, id=69)))
-                case "scratchcards":
-                    modal = Modal(title="Offer scratchcards...")
-                    await active_user.profile.refresh_from_db()
-                    if active_user.profile.scratchcards == 0:
-                        await interaction.response.send_message("You don't have any scratchcards to offer!", ephemeral=True)
-                        return
-
-                    modal.add_item(
-                        discord.ui.Label(
-                            text="Amount (1085 value each)",
-                            component=discord.ui.TextInput(placeholder=f"Max: {active_user.profile.scratchcards:,}", min_length=1, id=69),
-                        )
-                    )
                 case "rain":
                     modal = Modal(title="Offer rain...")
                     await active_user.global_user.refresh_from_db()
@@ -8025,7 +8033,6 @@ async def trade(message: discord.Interaction, other_user: discord.User):
             discord.SelectOption(label="Cats", emoji=get_emoji("finecat"), value="cats"),
             discord.SelectOption(label="Packs", emoji=get_emoji("goldpack"), value="packs"),
             discord.SelectOption(label="Prisms", emoji=get_emoji("prism"), value="prisms"),
-            discord.SelectOption(label="Scratchcards", emoji="🍀", value="scratchcards"),
             discord.SelectOption(label="Rain", emoji="☔", value="rain"),
         ]
 
@@ -8056,9 +8063,6 @@ async def trade(message: discord.Interaction, other_user: discord.User):
                     offer_string += f"{get_short_emoji('prism')} {prism}\n"
             else:
                 offer_string += f"{get_short_emoji('prism')} {len(tradeuser.gives_prisms)} Prisms\n"
-
-            if tradeuser.gives_scratchcards:
-                offer_string += f"🍀 {tradeuser.gives_scratchcards:,} scratchcards\n"
 
             if tradeuser.gives_rain:
                 offer_string += f"☔ {tradeuser.gives_rain:,}m of Cat Rains\n"
