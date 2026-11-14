@@ -29,6 +29,9 @@ import config
 EMOJI_REPO = "https://github.com/staring-cat/emojis"
 
 # wipe every emoji already on the application before uploading (useful for switching themes cleanly)
+WIPE_EXISTING_EMOJIS = False
+
+# if an emoji with the same name is already uploaded, delete it first so the new one can take its place
 REPLACE_EXISTING_EMOJIS = False
 
 # the non-themed icons - achievements, packs, prisms, /fish icons, etc. - always needed regardless of theme
@@ -43,7 +46,11 @@ SPAWN_EMOJI_THEMES = {
 }
 
 
-async def upload_emoji_folder(client: discord.Client, folder: str) -> int:
+async def upload_emoji_folder(
+    client: discord.Client,
+    folder: str,
+    existing_by_name: dict[str, discord.Emoji] | None = None,
+) -> int:
     # walks subfolders too, since base/ is split into categories (packs/, badges/, etc.)
     found = 0
     for root, _dirs, filenames in os.walk(folder):
@@ -58,6 +65,8 @@ async def upload_emoji_folder(client: discord.Client, folder: str) -> int:
                 print(f"skipping symbolic link: {image_path}")
                 continue
             try:
+                if existing_by_name is not None and emoji_name in existing_by_name:
+                    await existing_by_name.pop(emoji_name).delete()
                 async with await anyio.open_file(image_path, "rb") as image:
                     await client.create_application_emoji(name=emoji_name, image=await image.read())
             except discord.HTTPException as e:
@@ -78,13 +87,17 @@ async def main() -> None:
             # login() only authenticates the HTTP session - no need to open a gateway connection for this
             await client.login(config.TOKEN)
 
-            if REPLACE_EXISTING_EMOJIS:
+            if WIPE_EXISTING_EMOJIS:
                 for existing_emoji in await client.fetch_application_emojis():
                     await existing_emoji.delete()
                 print("cleared all existing application emojis")
 
+            existing_by_name = None
+            if REPLACE_EXISTING_EMOJIS and not WIPE_EXISTING_EMOJIS:
+                existing_by_name = {e.name: e for e in await client.fetch_application_emojis()}
+
             if UPLOAD_BASE_EMOJIS:
-                found = await upload_emoji_folder(client, os.path.join(clone_dir, "base"))
+                found = await upload_emoji_folder(client, os.path.join(clone_dir, "base"), existing_by_name)
                 if found == 0:
                     raise RuntimeError("no base emojis found - does the cloned branch have a 'base/' folder?")
                 print(f"uploaded {found} base (non-spawning) emojis")
@@ -92,7 +105,7 @@ async def main() -> None:
             for theme, enabled in SPAWN_EMOJI_THEMES.items():
                 if not enabled:
                     continue
-                found = await upload_emoji_folder(client, os.path.join(clone_dir, "cattypes", theme))
+                found = await upload_emoji_folder(client, os.path.join(clone_dir, "cattypes", theme), existing_by_name)
                 if found == 0:
                     raise RuntimeError(f"no emojis found for the '{theme}' theme - does the cloned branch have 'cattypes/{theme}/'?")
                 print(f"uploaded {found} '{theme}' spawn emoji theme")
