@@ -10833,9 +10833,26 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
 AURA_DISPLAY_NAMES = {"r": "Rainbow", "a": "Red", "p": "Pink", "c": "Cyan", "y": "Yellow"}
 AURA_ORDER = AURA_DISPLAY_NAMES.keys()
 
+SIMPLE_LBS = {
+    "Cookies": ("cookies", "cookies", "cookies > 0"),
+    "Coffees": ("coffees", "coffees", "coffees > 0"),
+    "Pig": ("score", "best_pig_score", "best_pig_score > 0"),
+    "Cat Dollars": ("cat dollars", "casino_balance", "casino_balance != 100"),
+    "Fish": ("fishes", "fish_caught", "fish_caught != 0"),
+    "Rain Started": ("min started", "rain_minutes_started", "rain_minutes_started != 0"),
+}
+
 
 def aura_emoji(code: str) -> str:
     return get_emoji(AURA_DISPLAY_NAMES[code].lower())
+
+
+def ranked_metric(column: str, *, asc: bool = False) -> tuple[str, str]:
+    op = "<" if asc else ">"
+    return (
+        f"{column} {'ASC' if asc else 'DESC'}, user_id ASC",
+        f"(entry.{column} {op} target.{column}) OR (entry.{column} = target.{column} AND entry.user_id < target.user_id)",
+    )
 
 
 async def rainbow_aura_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
@@ -10927,7 +10944,6 @@ async def leaderboards(
         show_amount = 15
 
         async def fetch_ranked(query: str, order_by: str, ahead_of: str, *args) -> tuple[list, list]:
-            # uhhh
             nonlocal page_number, last_page
             user_parameter = len(args) + 1
             offset_parameter = user_parameter + 1
@@ -10942,20 +10958,16 @@ async def leaderboards(
             """
 
             offset = page_number * show_amount
-            if interaction.user.id == message.user.id:
-                top_rows, total_count, interaction_row = await asyncio.gather(
-                    _get_pool().fetch(top_query, *args, show_amount, offset),
-                    _get_pool().fetchval(count_query, *args),
-                    _get_pool().fetchrow(rank_query, *args, interaction.user.id),
-                )
-                message_row = interaction_row
-            else:
-                top_rows, total_count, interaction_row, message_row = await asyncio.gather(
-                    _get_pool().fetch(top_query, *args, show_amount, offset),
-                    _get_pool().fetchval(count_query, *args),
-                    _get_pool().fetchrow(rank_query, *args, interaction.user.id),
-                    _get_pool().fetchrow(rank_query, *args, message.user.id),
-                )
+            fetches = [
+                _get_pool().fetch(top_query, *args, show_amount, offset),
+                _get_pool().fetchval(count_query, *args),
+                _get_pool().fetchrow(rank_query, *args, interaction.user.id),
+            ]
+            if interaction.user.id != message.user.id:
+                fetches.append(_get_pool().fetchrow(rank_query, *args, message.user.id))
+            results = await asyncio.gather(*fetches)
+            top_rows, total_count, interaction_row = results[0], results[1], results[2]
+            message_row = interaction_row if interaction.user.id == message.user.id else results[3]
 
             total_count = total_count or 0
             last_page = max(0, (total_count - 1) // show_amount) if total_count else 0
@@ -10988,8 +11000,7 @@ async def leaderboards(
                     f"SELECT user_id, (SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{specific_cat}') AS aura_count "
                     f"FROM profile WHERE guild_id = $1 AND (SELECT COUNT(*) FROM unnest(cat_auras) v WHERE v = '{specific_cat}') > 0"
                 )
-                order = "aura_count DESC, user_id ASC"
-                ahead = "(entry.aura_count > target.aura_count) OR (entry.aura_count = target.aura_count AND entry.user_id < target.user_id)"
+                order, ahead = ranked_metric("aura_count")
                 final_value = "aura_count"
             else:
                 # no yeah good luck
@@ -11010,6 +11021,11 @@ async def leaderboards(
                 ahead_parts.append(f"({equal_all} AND entry.user_id < target.user_id)")
                 ahead = " OR ".join(ahead_parts)
                 final_value = "aura_total"
+        elif type in SIMPLE_LBS:
+            unit, col, where = SIMPLE_LBS[type]
+            query = f"SELECT user_id, {col} FROM profile WHERE guild_id = $1 AND {where}"
+            order, ahead = ranked_metric(col)
+            final_value = col
         else:
             match type:
                 case "Cats":
@@ -11019,8 +11035,7 @@ async def leaderboards(
                     if specific_cat != "All":
                         col = f'"cat_{specific_cat}"'
                         query = f"SELECT user_id, {col}, cat_auras FROM profile WHERE guild_id = $1 AND {col} > 0"
-                        order = f"{col} DESC, user_id ASC"
-                        ahead = f"(entry.{col} > target.{col}) OR (entry.{col} = target.{col} AND entry.user_id < target.user_id)"
+                        order, ahead = ranked_metric(col)
                         final_value = f"cat_{specific_cat}"
                         cat_count = await Profile.sum(final_value, f"guild_id = {guild_id}")
                         catalog_section = Section(f"Total {specific_cat}s: {cat_count:,}", catalog_button)
@@ -11029,8 +11044,7 @@ async def leaderboards(
                         cat_columns = [f'CAST("cat_{c}" AS BIGINT)' for c in cattypes]
                         sum_expression = RawSQL("(" + " + ".join(cat_columns) + ") AS final_value")
                         query = f"SELECT user_id, {sum_expression} FROM profile WHERE guild_id = $1"
-                        order = "final_value DESC, user_id ASC"
-                        ahead = "(entry.final_value > target.final_value) OR (entry.final_value = target.final_value AND entry.user_id < target.user_id)"
+                        order, ahead = ranked_metric("final_value")
                         final_value = "final_value"
 
                         # find rarest
@@ -11055,20 +11069,17 @@ async def leaderboards(
                     unit = "value"
                     total_sum_expr = RawSQL("(" + " + ".join(f'({CAT_VALUES[i]}) * "cat_{i}"' for i in cattypes if i) + ") AS final_value")
                     query = f"SELECT user_id, {total_sum_expr} FROM profile WHERE guild_id = $1"
-                    order = "final_value DESC, user_id ASC"
-                    ahead = "(entry.final_value > target.final_value) OR (entry.final_value = target.final_value AND entry.user_id < target.user_id)"
+                    order, ahead = ranked_metric("final_value")
                     final_value = "final_value"
                 case "Fast":
                     unit = "sec"
                     query = "SELECT user_id, time FROM profile WHERE guild_id = $1 AND time < 99999999999999"
-                    order = "time ASC, user_id ASC"
-                    ahead = "(entry.time < target.time) OR (entry.time = target.time AND entry.user_id < target.user_id)"
+                    order, ahead = ranked_metric("time", asc=True)
                     final_value = "time"
                 case "Slow":
                     unit = "h"
                     query = "SELECT user_id, timeslow FROM profile WHERE guild_id = $1 AND timeslow > 0"
-                    order = "timeslow DESC, user_id ASC"
-                    ahead = "(entry.timeslow > target.timeslow) OR (entry.timeslow = target.timeslow AND entry.user_id < target.user_id)"
+                    order, ahead = ranked_metric("timeslow")
                     final_value = "timeslow"
                 case "Cattlepass":
                     start_date = datetime.datetime(2024, 12, 1, tzinfo=datetime.UTC)
@@ -11085,55 +11096,11 @@ async def leaderboards(
                     )
                     args.append(full_months_passed)
                     final_value = "battlepass"
-                case "Cookies":
-                    unit = "cookies"
-                    query = "SELECT user_id, cookies FROM profile WHERE guild_id = $1 AND cookies > 0"
-                    order = "cookies DESC, user_id ASC"
-                    ahead = "(entry.cookies > target.cookies) OR (entry.cookies = target.cookies AND entry.user_id < target.user_id)"
-                    final_value = "cookies"
-                case "Coffees":
-                    unit = "coffees"
-                    query = "SELECT user_id, coffees FROM profile WHERE guild_id = $1 AND coffees > 0"
-                    order = "coffees DESC, user_id ASC"
-                    ahead = "(entry.coffees > target.coffees) OR (entry.coffees = target.coffees AND entry.user_id < target.user_id)"
-                    final_value = "coffees"
-                case "Pig":
-                    unit = "score"
-                    query = "SELECT user_id, best_pig_score FROM profile WHERE guild_id = $1 AND best_pig_score > 0"
-                    order = "best_pig_score DESC, user_id ASC"
-                    ahead = (
-                        "(entry.best_pig_score > target.best_pig_score) OR (entry.best_pig_score = target.best_pig_score AND entry.user_id < target.user_id)"
-                    )
-                    final_value = "best_pig_score"
-                case "Cat Dollars":
-                    unit = "cat dollars"
-                    query = "SELECT user_id, casino_balance FROM profile WHERE guild_id = $1 AND casino_balance != 100"
-                    order = "casino_balance DESC, user_id ASC"
-                    ahead = (
-                        "(entry.casino_balance > target.casino_balance) OR (entry.casino_balance = target.casino_balance AND entry.user_id < target.user_id)"
-                    )
-                    final_value = "casino_balance"
                 case "Prisms":
                     unit = "prisms"
                     query = "SELECT user_id, COUNT(*) AS prism_count FROM prism WHERE guild_id = $1 GROUP BY user_id"
-                    order = "prism_count DESC, user_id ASC"
-                    ahead = "(entry.prism_count > target.prism_count) OR (entry.prism_count = target.prism_count AND entry.user_id < target.user_id)"
+                    order, ahead = ranked_metric("prism_count")
                     final_value = "prism_count"
-                case "Fish":
-                    unit = "fishes"
-                    query = "SELECT user_id, fish_caught FROM profile WHERE guild_id = $1 AND fish_caught != 0"
-                    order = "fish_caught DESC, user_id ASC"
-                    ahead = "(entry.fish_caught > target.fish_caught) OR (entry.fish_caught = target.fish_caught AND entry.user_id < target.user_id)"
-                    final_value = "fish_caught"
-                case "Rain Started":
-                    unit = "min started"
-                    query = "SELECT user_id, rain_minutes_started FROM profile WHERE guild_id = $1 AND rain_minutes_started != 0"
-                    order = "rain_minutes_started DESC, user_id ASC"
-                    ahead = (
-                        "(entry.rain_minutes_started > target.rain_minutes_started) OR "
-                        "(entry.rain_minutes_started = target.rain_minutes_started AND entry.user_id < target.user_id)"
-                    )
-                    final_value = "rain_minutes_started"
                 case _:
                     # qhar
                     raise ValueError("Invalid leaderboard type")
@@ -11159,19 +11126,17 @@ async def leaderboards(
             return 0, None, None
 
         def tidy(placement: int, value):
-            if not value:
+            if value is None:
                 return placement, value
             if type == "Fast":
-                value = round(value, 3)
-            # dont show placements if they arent defined
-            if type != "Fast":
-                if value <= 0 and type != "Cat Dollars":
+                if value >= 99999999999999:
                     placement = 0
-                if type != "Slow":
-                    value = round(value)
-            elif value >= 99999999999999:
+                return placement, round(value, 3)
+            if type == "Slow":
+                return (0 if value <= 0 else placement), value
+            if value <= 0 and type not in ("Cat Dollars", "Cattlepass"):
                 placement = 0
-            return placement, value
+            return placement, round(value)
 
         # find the placement of the person who ran the command and optionally the person who pressed the button
         interactor_placement, interactor, interactor_perc = find_placement(interaction.user.id)
@@ -11203,18 +11168,15 @@ async def leaderboards(
                 prog_perc = math.floor((100 / lv_xp_req(num)) * i["progress"])
                 string += f"{current}. Level **{num}** *({prog_perc}%)*: <@{i['user_id']}>\n"
             else:
-                if type == "Value":
-                    if num <= 0:
-                        break
-                    num = round(num)
-                elif type in ("Fast", "Slow"):
+                if type in ("Fast", "Slow"):
                     if num >= 99999999999999 or num <= 0:
                         break
                     num, unit = format_duration(num)
-                elif (type in ["Cookies", "Coffees", "Cats", "Pig", "Prisms", "Fish", "Aura", "Rain Started"] and num <= 0) or (
-                    type == "Cat Dollars" and num == 1000
-                ):
+                elif type != "Cat Dollars" and num <= 0:
                     break
+                elif type == "Value":
+                    num = round(num)
+
                 if type == "Cats" and specific_cat != "All":
                     emoji = get_aura_emoji(specific_cat, i["cat_auras"], short=True)
                 assert unit is not None
