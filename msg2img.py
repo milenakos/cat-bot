@@ -36,6 +36,9 @@ TEXT_Y = 50
 LINE_HEIGHT = 45
 MAX_TEXT_WIDTH = 930
 MAX_ATTACH_WIDTH = 930
+MAX_ATTACH_HEIGHT = 3600
+MAX_CANVAS_HEIGHT = 4096
+MAX_DECODE_PIXELS = 25_000_000
 EMOJI_SCALE = 1.4
 
 BG_DEFAULT = (49, 51, 56)
@@ -85,7 +88,10 @@ def _fetch_image(url: str, size: tuple[int, int] | None = None) -> Image.Image |
         resp = _fetch_url(url)
         if not resp:
             return None
-        img = Image.open(io.BytesIO(resp)).convert("RGBA")
+        img = Image.open(io.BytesIO(resp))
+        if img.width * img.height > MAX_DECODE_PIXELS:
+            return None
+        img = img.convert("RGBA")
         if size:
             img = img.resize(size, Image.Resampling.LANCZOS)
         return img
@@ -103,11 +109,9 @@ def _circular_avatar(url: str, diameter: int, bg: tuple) -> Image.Image:
     return base.resize((diameter, diameter), Image.Resampling.LANCZOS)
 
 
-def _scale_to_width(img: Image.Image, max_width: int) -> Image.Image:
-    w, h = img.size
-    if w <= max_width:
-        return img
-    return img.resize((max_width, int(h * max_width / w)))
+def _scale_to_box(img: Image.Image, max_size: tuple[int, int]) -> Image.Image:
+    img.thumbnail(max_size, Image.Resampling.LANCZOS)
+    return img
 
 
 def _member_color(member: discord.User | discord.Member) -> tuple[int, int, int]:
@@ -305,7 +309,7 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
         raw = _fetch_image(a.url)
         if raw is None:
             continue
-        attachment = _scale_to_width(raw, MAX_ATTACH_WIDTH)
+        attachment = _scale_to_box(raw, (MAX_ATTACH_WIDTH, MAX_ATTACH_HEIGHT))
         break
 
     text_block_h = n_lines * LINE_HEIGHT
@@ -321,6 +325,8 @@ def msg2img(message: discord.Message, member: discord.User | discord.Member) -> 
     else:
         canvas_h = 60 + text_block_h
         attach_y = 0  # unused
+
+    canvas_h = min(canvas_h, MAX_CANVAS_HEIGHT)
 
     bg = BG_PINGED if is_pinged else BG_DEFAULT
     canvas = Image.new("RGBA", (CANVAS_WIDTH, canvas_h), bg)

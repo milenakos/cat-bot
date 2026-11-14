@@ -6821,47 +6821,49 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
         assert interaction.guild is not None
         assert message.guild is not None
 
-        if await Prism.count("guild_id = $1", interaction.guild.id) >= len(prism_names):
-            await interaction.response.send_message("This server has reached the prism limit.", ephemeral=True)
-            return
-
-        # determine the next name
-        selected_name = None
-        for selected_name in prism_names:
-            if not await Prism.get_or_none(guild_id=message.guild.id, name=selected_name):
-                break
-
-        if youngest_prism := await Prism.collect("guild_id = $1 ORDER BY time DESC LIMIT 1", message.guild.id):
-            selected_time = max(round(time.time()), youngest_prism[0].time + 1)
-        else:
-            selected_time = round(time.time())
-
-        if (
-            not selected_name
-            or await Prism.get_or_none(guild_id=message.guild.id, name=selected_name)
-            or await Prism.count("guild_id = $1", message.guild.id) >= len(prism_names)
-        ):
-            await interaction.response.send_message("This server has reached the prism limit.", ephemeral=True)
-            return
-
-        # actually take away cats
-        user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
-        for i in cattypes:
-            if user["cat_" + i] < 1:
-                await interaction.response.send_message("You don't have enough cats. Nice try though.", ephemeral=True)
-                return
-            user["cat_" + i] -= 1
-
-        # create the prism
         try:
-            await Prism.create(
-                guild_id=interaction.guild.id,
-                user_id=interaction.user.id,
-                creator=interaction.user.id,
-                time=selected_time,
-                name=selected_name,
-            )
-            await user.save()
+            async with transaction() as conn:
+                if await Prism.count("guild_id = $1", interaction.guild.id) >= len(prism_names):
+                    await interaction.response.send_message("This server has reached the prism limit.", ephemeral=True)
+                    return
+
+                # determine the next name
+                selected_name = None
+                for selected_name in prism_names:
+                    if not await Prism.get_or_none(guild_id=message.guild.id, name=selected_name):
+                        break
+
+                if youngest_prism := await Prism.collect("guild_id = $1 ORDER BY time DESC LIMIT 1", message.guild.id):
+                    selected_time = max(round(time.time()), youngest_prism[0].time + 1)
+                else:
+                    selected_time = round(time.time())
+
+                if (
+                    not selected_name
+                    or await Prism.get_or_none(guild_id=message.guild.id, name=selected_name)
+                    or await Prism.count("guild_id = $1", message.guild.id) >= len(prism_names)
+                ):
+                    await interaction.response.send_message("This server has reached the prism limit.", ephemeral=True)
+                    return
+
+                # actually take away cats
+                user = await Profile.get_or_create(conn, guild_id=interaction.guild.id, user_id=interaction.user.id)
+                for i in cattypes:
+                    if user["cat_" + i] < 1:
+                        await interaction.response.send_message("You don't have enough cats. Nice try though.", ephemeral=True)
+                        return
+                    user["cat_" + i] -= 1
+
+                # create the prism
+                await Prism.create(
+                    conn,
+                    guild_id=interaction.guild.id,
+                    user_id=interaction.user.id,
+                    creator=interaction.user.id,
+                    time=selected_time,
+                    name=selected_name,
+                )
+                await user.save()
         except asyncpg.UniqueViolationError:
             await interaction.response.send_message("Duplicate detected, try again.", ephemeral=True)
             return
@@ -10726,7 +10728,15 @@ async def catch(message: discord.Interaction, msg: discord.Message):
         member = await message.guild.fetch_member(msg.author.id)
     except Exception:
         member = msg.author
-    result = await bot.loop.run_in_executor(None, msg2img.msg2img, msg, member)
+
+    try:
+        result = await bot.loop.run_in_executor(None, msg2img.msg2img, msg, member)
+    except Exception:
+        try:
+            await message.response.send_message("failed")
+        except Exception:
+            pass
+        return
 
     try:
         await message.response.send_message("cought in 4k", file=result)
@@ -11235,7 +11245,7 @@ async def leaderboards(
                 if type == "Cattlepass":
                     assert perc is not None
                     return f"{placement}\\. Level **{value}** *({perc}%)*: {mention}"
-                display_value, display_unit = (format_duration(value) if type in ("Fast", "Slow") else (value, unit))
+                display_value, display_unit = format_duration(value) if type in ("Fast", "Slow") else (value, unit)
                 return f"{placement}\\. {emoji} **{display_value:,}** {display_unit}: {mention}"
 
             lines = []
@@ -12138,7 +12148,10 @@ async def check_supporter(request: web.Request) -> web.Response:
 
 
 async def bake_gg_reward(request: web.Request) -> web.Response:
-    if request.headers.get("Authorization", "") != os.environ.get("BAKE_GG_WEBHOOK_TOKEN", ""):
+    bake_gg_token = os.environ.get("BAKE_GG_WEBHOOK_TOKEN", "")
+    if bake_gg_token == "":
+        return web.Response(text="Bake.gg webhook token not set", status=500)
+    if request.headers.get("Authorization", "") != bake_gg_token:
         return web.Response(text="Invalid or missing authorization token", status=401)
 
     try:
