@@ -5901,6 +5901,43 @@ Global bless chance is **{global_bless_chance:.4f}%**""",
         await message.response.send_message(view=view)
 
 
+PACK_INDEX = {pack["name"]: i for i, pack in enumerate(data.pack_data)}
+
+PUMPKIN_TRICK = [("pack", "Wooden", 50), ("pack", "Stone", 25), ("cats", "Fine", 25)]
+PUMPKIN_TREAT = [
+    ("pack", "Gold", 36),
+    ("pack", "Platinum", 18),
+    ("pack", "Diamond", 12),
+    ("pack", "Celestial", 7),
+    ("pack_lucky", "", 13),
+    ("rain_minutes", "", 14),
+]
+
+
+def apply_pack_rewards(profile: Profile, cats: dict[str, int], extras: dict[str, int], upgrades: int, opened: int) -> None:
+    for cat_type, cat_amount in cats.items():
+        if cat_amount:
+            profile[f"cat_{cat_type}"] += cat_amount
+    for key, amount in extras.items():
+        profile[key] += amount
+    profile.pack_upgrades += upgrades
+    profile.packs_opened += opened
+
+
+async def grant_pack_aches(interaction: discord.Interaction, profile: Profile, *, upgrades: int = 0, has_fail: bool = False) -> None:
+    await achemb(interaction, "packer", "followup")
+    if has_fail:
+        await achemb(interaction, "failed", "followup")
+    if profile.packs_opened >= 25:
+        await achemb(interaction, "super_packer", "followup")
+    if upgrades >= 5:
+        await achemb(interaction, "lucky_packy", "followup")
+
+
+def scratch_emoji(item: str) -> str:
+    return get_emoji("1rain" if item == "1m Rain" else f"{item.lower()}pack")
+
+
 async def start_scratch_game(
     interaction: discord.Interaction,
     user: Profile,
@@ -5909,32 +5946,33 @@ async def start_scratch_game(
     finish_view: Callable[[LayoutView, Profile], Awaitable[None]] | None = None,
     on_complete: Callable[[discord.Interaction], Awaitable[None]] | None = None,
 ) -> bool:
+    async with transaction() as conn:
+        profile = await Profile.get_or_create(conn, guild_id=user.guild_id, user_id=user.user_id)
+        if profile.pack_lucky < 1:
+            return False
+
+        log_stats("pack_open", {"pack": "Lucky"})
+
+        opts = data.scratch_opts.copy()
+        random.shuffle(opts)
+
+        # the entire minigame is actually a lie whoopsie daisy!!!
+        # this is solely so people who fall asleep midgame wont lose on rewards
+        picks = opts[:10]
+        winnings = ["Winnings:"]
+        profile.pack_lucky -= 1
+        profile.packs_opened += 1
+        for opt in set(opts):
+            amount = picks.count(opt) // 2
+            if amount == 0:
+                continue
+            winnings.append(f"{scratch_emoji(opt)} x{amount}")
+            if opt == "1m Rain":
+                profile.rain_minutes += amount
+            else:
+                profile[pack_field(opt)] += amount
+        await profile.save()
     await user.refresh_from_db()
-    if user.pack_lucky < 1:
-        return False
-
-    log_stats("pack_open", {"pack": "Lucky"})
-
-    opts = data.scratch_opts.copy()
-    random.shuffle(opts)
-
-    # the entire minigame is actually a lie whoopsie daisy!!!
-    # this is solely so people who fall asleep midgame wont lose on rewards
-    picks = opts[:10]
-    winnings = ["Winnings:"]
-    user.pack_lucky -= 1
-    user.packs_opened += 1
-    for opt in set(opts):
-        amount = picks.count(opt) // 2
-        if amount == 0:
-            continue
-        reward_emoji = get_emoji("1rain" if opt == "1m Rain" else f"{opt.lower()}pack")
-        winnings.append(f"{reward_emoji} x{amount}")
-        if opt == "1m Rain":
-            user.rain_minutes += amount
-        else:
-            user[pack_field(opt)] += amount
-    await user.save()
 
     positions: dict[str, list[int]] = {}
     for i, x in enumerate(picks):
@@ -5965,35 +6003,32 @@ async def start_scratch_game(
         empty_idx = 10
         if len(move_spaces) > 10:
             move_spaces = move_spaces[:10]
+        done = len(move_spaces) == 10
         for i in range(25):
-            if i not in move_spaces:
-                if len(move_spaces) != 10:
-                    button = Button(emoji=get_emoji("empty"), custom_id=str(i), style=ButtonStyle.gray)
-                    button.callback = scratch_spot
-                else:
-                    item = opts[empty_idx]
-                    empty_idx += 1
-                    button = Button(
-                        emoji=get_emoji("1rain" if item == "1m Rain" else f"{item.lower()}pack"),
+            if i in move_spaces:
+                move_number = move_spaces.index(i)
+                matched = move_number in pairs and len(move_spaces) > pairs[move_number]
+                buttons.append(
+                    Button(
+                        emoji=scratch_emoji(picks[move_number]),
+                        style=ButtonStyle.green if matched else ButtonStyle.blurple,
                         disabled=True,
-                        style=ButtonStyle.gray,
                     )
-                buttons.append(button)
+                )
                 continue
-            move_number = move_spaces.index(i)
-            button = Button(
-                emoji=get_emoji("1rain" if picks[move_number] == "1m Rain" else f"{picks[move_number].lower()}pack"),
-                style=ButtonStyle.green if move_number in pairs and len(move_spaces) > pairs[move_number] else ButtonStyle.blurple,
-                disabled=True,
-            )
-            buttons.append(button)
+            if done:
+                buttons.append(Button(emoji=scratch_emoji(opts[empty_idx]), disabled=True, style=ButtonStyle.gray))
+                empty_idx += 1
+            else:
+                button = Button(emoji=get_emoji("empty"), custom_id=str(i), style=ButtonStyle.gray)
+                button.callback = scratch_spot
+                buttons.append(button)
 
-        view.add_item(TextDisplay(f"Clicks remaining: {10 - len(move_spaces)}" if len(move_spaces) != 10 else "\n".join(winnings)))
+        view.add_item(TextDisplay("\n".join(winnings) if done else f"Clicks remaining: {10 - len(move_spaces)}"))
         for i in range(0, 25, 5):
             view.add_item(ActionRow(*buttons[i : i + 5]))
 
-        completed = len(move_spaces) == 10
-        if completed:
+        if done:
             await user.refresh_from_db()
             if finish_view:
                 await finish_view(view, user)
@@ -6016,10 +6051,8 @@ async def start_scratch_game(
 
         await interaction.response.edit_message(view=view)
 
-        if completed:
-            await achemb(interaction, "packer", "followup")
-            if user.packs_opened >= 25:
-                await achemb(interaction, "super_packer", "followup")
+        if done:
+            await grant_pack_aches(interaction, user)
             if on_complete:
                 await on_complete(interaction)
 
@@ -6034,75 +6067,68 @@ async def packs(message: discord.Interaction):
         return await do_funny(message)
 
     open_at_once = 1
-    user = await Profile.get_or_create(guild_id=message.guild.id, user_id=message.user.id)
-    global_user = await User.get_or_create(user_id=message.user.id)
+    guild_id = message.guild.id
+    user_id = message.user.id
+    user = await Profile.get_or_create(guild_id=guild_id, user_id=user_id)
+    global_user = await User.get_or_create(user_id=user_id)
 
     # lucky pack is interactive, so it is excluded from bulk open
     interactive_packs = {"Lucky"}
 
     async def process_pack_opening(pack_types: set[str] | None = None, max_packs: int | None = None) -> tuple[Container | None, int, bool]:
+        async with transaction() as conn:
+            profile = await Profile.get_or_create(conn, guild_id=guild_id, user_id=user_id)
+
+            total_packs = sum(
+                profile[pack_field(pack["name"])]
+                for pack in data.pack_data
+                if pack["name"] not in interactive_packs and (pack_types is None or pack["name"] in pack_types)
+            )
+            if max_packs is not None:
+                total_packs = min(total_packs, max_packs)
+            if total_packs < 1:
+                return None, 0, False
+
+            pack_results: list[str] = []
+            reward_results: list[str] = []
+            cats_received = {cat: 0 for cat in cattypes}
+            extras_received: dict[str, int] = {}
+            total_upgrades = 0
+            opened_packs = 0
+            highest_upgrades = 0
+            has_fails = False
+
+            for level, pack_data in enumerate(data.pack_data):
+                if opened_packs >= total_packs:
+                    break
+                pack_name = pack_data["name"]
+                if pack_name in interactive_packs or (pack_types is not None and pack_name not in pack_types):
+                    continue
+                pack_id = pack_field(pack_name)
+                amount_to_open = min(profile[pack_id], total_packs - opened_packs)
+                if amount_to_open < 1:
+                    continue
+
+                log_stats("pack_open", {"pack": pack_name})
+                pack_results.append(f"{amount_to_open:,}x {get_short_emoji(pack_name.lower() + 'pack')}")
+                for _ in range(amount_to_open):
+                    chosen_type, cat_amount, ups, reward, extras = get_pack_rewards(level, is_single=False)
+                    assert isinstance(reward, str)
+                    for key, amount in extras.items():
+                        extras_received[key] = extras_received.get(key, 0) + amount
+                    total_upgrades += ups
+                    highest_upgrades = max(highest_upgrades, ups)
+                    reward_results.append(reward)
+                    cats_received[chosen_type] += cat_amount
+                    has_fails = has_fails or (chosen_type == "Fine" and cat_amount == 1)
+
+                profile[pack_id] -= amount_to_open
+                opened_packs += amount_to_open
+
+            apply_pack_rewards(profile, cats_received, extras_received, total_upgrades, opened_packs)
+            await profile.save()
+
         await user.refresh_from_db()
-
-        total_packs = sum(
-            user[pack_field(pack["name"])]
-            for pack in data.pack_data
-            if pack["name"] not in interactive_packs and (pack_types is None or pack["name"] in pack_types)
-        )
-        if max_packs is not None:
-            total_packs = min(total_packs, max_packs)
-        if total_packs < 1:
-            return None, 0, False
-
-        pack_results: list[str] = []
-        reward_results: list[str] = []
-        cats_received = {cat: 0 for cat in cattypes}
-        extras_received: dict[str, int] = {}
-        total_upgrades = 0
-        opened_packs = 0
-        highest_upgrades = 0
-        has_fails = False
-
-        for level, pack_data in enumerate(data.pack_data):
-            if opened_packs >= total_packs:
-                break
-
-            pack_name = pack_data["name"]
-            if pack_name in interactive_packs:
-                continue
-            if pack_types is not None and pack_name not in pack_types:
-                continue
-
-            pack_id = pack_field(pack_name)
-            pack_count = user[pack_id]
-            if pack_count < 1:
-                continue
-
-            log_stats("pack_open", {"pack": pack_name})
-            amount_to_open = min(pack_count, total_packs - opened_packs)
-            pack_results.append(f"{amount_to_open:,}x {get_short_emoji(pack_name.lower() + 'pack')}")
-
-            for _ in range(amount_to_open):
-                chosen_type, cat_amount, upgrades, reward, extras = get_pack_rewards(level, is_single=False)
-                assert isinstance(reward, str)
-                for extra_key, extra_amount in extras.items():
-                    extras_received[extra_key] = extras_received.get(extra_key, 0) + extra_amount
-                total_upgrades += upgrades
-                highest_upgrades = max(highest_upgrades, upgrades)
-                reward_results.append(reward)
-                cats_received[chosen_type] += cat_amount
-                if chosen_type == "Fine" and cat_amount == 1:
-                    has_fails = True
-
-            user[pack_id] -= amount_to_open
-            opened_packs += amount_to_open
-
-        user.packs_opened += opened_packs
-        user.pack_upgrades += total_upgrades
-        for cat_type, cat_amount in cats_received.items():
-            user[f"cat_{cat_type}"] += cat_amount
-        for extra_key, extra_amount in extras_received.items():
-            user[extra_key] += extra_amount
-        await user.save()
 
         pack_list = "**" + ", ".join(pack_results) + "**"
         reward_list = "\n".join(reward_results)
@@ -6123,11 +6149,9 @@ async def packs(message: discord.Interaction):
             return
 
         async def do_it(interaction: discord.Interaction) -> None:
-            await user.refresh_from_db()
             item = modal.find_item(67)
             assert isinstance(item, discord.ui.Select)
-            pack_types = set(item.values)
-            await open_all_packs(interaction, pack_types)
+            await open_all_packs(interaction, set(item.values))
 
         await user.refresh_from_db()
         modal = Modal(title="Bulk Open Packs")
@@ -6140,13 +6164,14 @@ async def packs(message: discord.Interaction):
             if pack_count < 1:
                 continue
 
-            option = discord.SelectOption(
-                emoji=get_emoji(pack_name.lower() + "pack"),
-                label=f"{pack_name} ({pack_count:,})",
-                default=not pack["special"],
-                value=pack_name,
+            options.append(
+                discord.SelectOption(
+                    emoji=get_emoji(pack_name.lower() + "pack"),
+                    label=f"{pack_name} ({pack_count:,})",
+                    default=not pack["special"],
+                    value=pack_name,
+                )
             )
-            options.append(option)
         if not options:
             await interaction.response.send_message("u have no packs", ephemeral=True)
             return
@@ -6158,7 +6183,6 @@ async def packs(message: discord.Interaction):
             )
         )
         modal.on_submit = do_it
-
         await interaction.response.send_modal(modal)
 
     def gen_buttons(profile: Profile) -> tuple[list[ActionRow], bool, int, bool]:
@@ -6199,151 +6223,140 @@ async def packs(message: discord.Interaction):
             button.callback = ask_bulk
             buttons.append(button)
 
-        rows = []
-        for i in range(0, len(buttons), 4):
-            rows.append(ActionRow(*buttons[i : i + 4]))
-
+        rows = [ActionRow(*buttons[i : i + 4]) for i in range(0, len(buttons), 4)]
         return rows, has_special, total_packs, has_exclusive
 
+    async def pack_result_view(container: Container, *, force_back: bool = False) -> LayoutView:
+        buttons, _, total_packs, _ = gen_buttons(user)
+        view = LayoutView(timeout=VIEW_TIMEOUT)
+        view.add_item(await nav_row(user, "🎒"))
+        view.add_item(await inventory_row(user, "goldpack"))
+        container.add_item(Separator())
+        for row in buttons:
+            container.add_item(row)
+        view.add_item(container)
+        if force_back or total_packs:
+            back_button = Button(label="Back", style=ButtonStyle.primary, emoji="⬅️")
+            back_button.callback = go_back
+            view.add_item(ActionRow(back_button))
+        return view
+
     def get_pack_rewards(level: int, is_single: bool = True) -> tuple[str, int, int, str | list[str], dict[str, int]]:
-        # returns cat_type, cat_amount, upgrades, verbal_output, extra profile rewards (profile key -> amount)
-        reward_texts: list[str] = []
-        build_string = ""
+        # roll outcome first, then format single-open frames or a bulk one-liner
+        path: list[str] = [data.pack_data[level]["name"]]
         upgrades = 0
-        pack_name = data.pack_data[level]["name"]
-        if not is_single:
-            build_string = get_short_emoji(pack_name.lower() + "pack")
+        extras: dict[str, int] = {}
+        pumpkin_face: str | None = None
 
-        if pack_name == "Pumpkin":
-            pumpkin_emoji = get_short_emoji("pumpkinpack")
+        if path[0] == "Pumpkin":
             is_trick = random.random() < 0.5
-            faces = ["😈 Trick", "😋 Treat"]
-            chosen_face = faces[0] if is_trick else faces[1]
-            if is_trick:
-                reward_table = [
-                    ("pack", "Wooden", 50),
-                    ("pack", "Stone", 25),
-                    ("cats", "Fine", 25),
-                ]
-            else:
-                reward_table = [
-                    ("pack", "Gold", 36),
-                    ("pack", "Platinum", 18),
-                    ("pack", "Diamond", 12),
-                    ("pack", "Celestial", 7),
-                    ("pack_lucky", "", 13),
-                    ("rain_minutes", "", 14),
-                ]
-            reward_kind, reward_value, _ = random.choices(reward_table, weights=[i[2] for i in reward_table], k=1)[0]
+            pumpkin_face = "😈 Trick" if is_trick else "😋 Treat"
+            table = PUMPKIN_TRICK if is_trick else PUMPKIN_TREAT
+            reward_kind, reward_value, _ = random.choices(table, weights=[row[2] for row in table], k=1)[0]
 
-            reveal_text = f"{chosen_face}!\nOpening {pumpkin_emoji} Pumpkin..."
-            if is_single:
-                reward_texts.append(f"{pumpkin_emoji} Pumpkin\n")
-                spin_start = random.randint(0, 1)
-                for i in range(5):
-                    reward_texts.append(f"{faces[(spin_start + i) % 2]}\nOpening {pumpkin_emoji} Pumpkin...")
-                reward_texts.append(reveal_text)
-            else:
-                build_string += f" -> {chosen_face.split(' ')[0]}"
-
-            if reward_kind == "pack":
-                level = next(i for i, p in enumerate(data.pack_data) if p["name"] == reward_value)
-                upgrades += 1
-                if is_single:
-                    build_string = f"Upgraded from {pumpkin_emoji} Pumpkin ({chosen_face})!\n" + build_string
-                else:
-                    build_string += f" -> {get_short_emoji(reward_value.lower() + 'pack')}"
-                # falls through to the normal pack logic below, starting from the reward pack
-            else:
+            if reward_kind != "pack":
                 fine_emoji = get_aura_emoji("Fine", user.cat_auras, short=True)
-                cat_amount = 0
-                extras: dict[str, int] = {}
                 if reward_kind == "cats":
-                    cat_amount = 5
-                    short_text = f"{fine_emoji} 5"
-                    long_text = f"{fine_emoji} 5 Fine cats"
+                    cat_amount, short_text, long_text = 5, f"{fine_emoji} 5", f"{fine_emoji} 5 Fine cats"
                 elif reward_kind == "pack_lucky":
                     extras["pack_lucky"] = 1
-                    short_text = f"{get_emoji('luckypack')} 1"
-                    long_text = f"a {get_emoji('luckypack')} Lucky pack"
+                    cat_amount, short_text, long_text = 0, f"{get_emoji('luckypack')} 1", f"a {get_emoji('luckypack')} Lucky pack"
                 else:
                     extras["rain_minutes"] = 1
-                    short_text = "☔ 1m"
-                    long_text = "☔ 1 minute of rain"
-                if is_single:
-                    reward_texts.append(f"{reveal_text}\n\nYou got {long_text}!")
-                    return "Fine", cat_amount, 0, reward_texts, extras
-                return "Fine", cat_amount, 0, f"{build_string} -> {short_text}", extras
+                    cat_amount, short_text, long_text = 0, "☔ 1m", "☔ 1 minute of rain"
 
-        final_level = data.pack_data[level]
-        is_special = final_level["special"]
+                pumpkin_emoji = get_short_emoji("pumpkinpack")
+                if is_single:
+                    frames = [f"{pumpkin_emoji} Pumpkin\n"]
+                    spin_start = random.randint(0, 1)
+                    faces = ["😈 Trick", "😋 Treat"]
+                    for i in range(5):
+                        frames.append(f"{faces[(spin_start + i) % 2]}\nOpening {pumpkin_emoji} Pumpkin...")
+                    frames.append(f"{pumpkin_face}!\nOpening {pumpkin_emoji} Pumpkin...\n\nYou got {long_text}!")
+                    return "Fine", cat_amount, 0, frames, extras
+                return "Fine", cat_amount, 0, f"{pumpkin_emoji} -> {pumpkin_face.split()[0]} -> {short_text}", extras
+
+            level = PACK_INDEX[reward_value]
+            path.append(reward_value)
+            upgrades = 1
+
         first_boost = 1
-        if is_special:
+        if data.pack_data[level]["special"]:
             upgrade_chance = 70
-            # find first non-special level
             while data.pack_data[level + first_boost]["special"]:
                 first_boost += 1
-        elif final_level["name"] == "Celestial":
+        elif data.pack_data[level]["name"] == "Celestial":
             upgrade_chance = 0
         else:
             upgrade_chance = 30
 
-        # bump rarity
         while random.uniform(1, 100) <= upgrade_chance:
-            if is_single:
-                name = data.pack_data[level]["name"]
-                reward_texts.append(f"{get_short_emoji(name.lower() + 'pack')} {name}\n" + build_string)
-                build_string = f"Upgraded from {get_short_emoji(name.lower() + 'pack')} {name}!\n" + build_string
-            else:
-                build_string += f" -> {get_short_emoji(data.pack_data[level + first_boost]['name'].lower() + 'pack')}"
             level += first_boost
             first_boost = 1
             upgrades += 1
-            final_level = data.pack_data[level]
-            if final_level["name"] == "Celestial":
+            path.append(data.pack_data[level]["name"])
+            if path[-1] == "Celestial":
                 break
-        if is_single:
-            reward_texts.append(f"{get_short_emoji(final_level['name'].lower() + 'pack')} {final_level['name']}\n" + build_string)
 
-        # select cat type
-        chosen_type = random.choice(cattypes)
-        cat_emoji = get_aura_emoji(chosen_type, user.cat_auras, short=True)
-        pre_cat_amount: float = final_level["value"] / CAT_VALUES[chosen_type]
+        rolled_type = random.choice(cattypes)
+        rolled_emoji = get_aura_emoji(rolled_type, user.cat_auras, short=True)
+        pre_cat_amount: float = data.pack_data[level]["value"] / CAT_VALUES[rolled_type]
         cat_amount = math.ceil(pre_cat_amount) if pre_cat_amount % 1 > random.random() else math.floor(pre_cat_amount)
-        if pre_cat_amount < 1:
-            if is_single:
-                reward_texts.append(
-                    reward_texts[-1]
-                    + f"\n{round(pre_cat_amount * 100, 2)}% chance for a {get_aura_emoji(chosen_type, user.cat_auras, short=True)} {chosen_type} cat"
-                )
-                reward_texts.append(reward_texts[-1] + ".")
-                reward_texts.append(reward_texts[-1] + ".")
-                reward_texts.append(reward_texts[-1] + ".")
+        chance_pct = round(pre_cat_amount * 100, 2) if pre_cat_amount < 1 else None
+
+        chosen_type, cat_emoji = rolled_type, rolled_emoji
+        won_chance = chance_pct is not None and cat_amount == 1
+        if chance_pct is not None and not won_chance:
+            chosen_type = "Fine"
+            cat_amount = 1
+            cat_emoji = get_aura_emoji("Fine", user.cat_auras, short=True)
+
+        def pe(name: str) -> str:
+            return get_short_emoji(name.lower() + "pack")
+
+        if not is_single:
+            parts = [pe(path[0])]
+            if pumpkin_face:
+                parts.append(pumpkin_face.split()[0])
+            parts.extend(pe(name) for name in path[1:])
+            line = " -> ".join(parts)
+            if chance_pct is not None:
+                line += f" {chance_pct}% {rolled_emoji}? {'✅' if won_chance else '❌'} -> {cat_emoji} 1"
             else:
-                build_string += f" {round(pre_cat_amount * 100, 2)}% {cat_emoji}? "
-            if cat_amount == 1:
-                # success
-                if is_single:
-                    reward_texts.append(reward_texts[-1] + "\n✅ Success!")
-                else:
-                    build_string += f"✅ -> {cat_emoji} 1"
-            else:
-                # fail
-                if is_single:
-                    reward_texts.append(reward_texts[-1] + "\n❌ Fail!")
-                else:
-                    build_string += f"❌ -> {get_aura_emoji('Fine', user.cat_auras, short=True)} 1"
-                chosen_type = "Fine"
-                cat_amount = 1
-        elif not is_single:
-            build_string += f" {cat_emoji} {cat_amount:,}"
-        if is_single:
-            reward_texts.append(
-                reward_texts[-1]
-                + f"\nYou got {get_aura_emoji(chosen_type, user.cat_auras, short=True)} {cat_amount:,} {chosen_type} {plural('cat', cat_amount)}!"
-            )
-            return chosen_type, cat_amount, upgrades, reward_texts, {}
-        return chosen_type, cat_amount, upgrades, build_string, {}
+                line += f" {cat_emoji} {cat_amount:,}"
+            return chosen_type, cat_amount, upgrades, line, extras
+
+        frames: list[str] = []
+        build = ""
+        start = 0
+        if pumpkin_face:
+            pumpkin_emoji = pe("Pumpkin")
+            frames.append(f"{pumpkin_emoji} Pumpkin\n")
+            spin_start = random.randint(0, 1)
+            faces = ["😈 Trick", "😋 Treat"]
+            for i in range(5):
+                frames.append(f"{faces[(spin_start + i) % 2]}\nOpening {pumpkin_emoji} Pumpkin...")
+            frames.append(f"{pumpkin_face}!\nOpening {pumpkin_emoji} Pumpkin...")
+            build = f"Upgraded from {pumpkin_emoji} Pumpkin ({pumpkin_face})!\n"
+            start = 1
+
+        for name in path[start:-1]:
+            frames.append(f"{pe(name)} {name}\n" + build)
+            build = f"Upgraded from {pe(name)} {name}!\n" + build
+
+        current = f"{pe(path[-1])} {path[-1]}\n" + build
+        frames.append(current)
+
+        if chance_pct is not None:
+            current += f"\n{chance_pct}% chance for a {rolled_emoji} {rolled_type} cat"
+            frames.append(current)
+            for dots in (".", "..", "..."):
+                frames.append(current + dots)
+            current = frames[-1] + ("\n✅ Success!" if won_chance else "\n❌ Fail!")
+            frames.append(current)
+
+        frames.append(current + f"\nYou got {cat_emoji} {cat_amount:,} {chosen_type} {plural('cat', cat_amount)}!")
+        return chosen_type, cat_amount, upgrades, frames, extras
 
     async def open_pack(interaction: discord.Interaction) -> None:
         if not interaction.custom_id or interaction.user != message.user:
@@ -6381,21 +6394,22 @@ async def packs(message: discord.Interaction):
             await open_all_packs(interaction, {pack}, open_at_once)
             return
 
+        opened: tuple[str, int, int, list[str]] | None = None
+        async with transaction() as conn:
+            profile = await Profile.get_or_create(conn, guild_id=guild_id, user_id=user_id)
+            if profile[pack_field(pack)] >= 1:
+                chosen_type, cat_amount, upgrades, reward_texts, extras = get_pack_rewards(PACK_INDEX[pack])
+                assert isinstance(reward_texts, list)
+                apply_pack_rewards(profile, {chosen_type: cat_amount}, extras, upgrades, 1)
+                profile[pack_field(pack)] -= 1
+                await profile.save()
+                opened = (chosen_type, cat_amount, upgrades, reward_texts)
         await user.refresh_from_db()
-        if user[pack_field(pack)] < 1:
+        if not opened:
+            await interaction.response.edit_message(view=await gen_main())
             return
-        level = next((i for i, p in enumerate(data.pack_data) if p["name"] == pack), 0)
 
-        chosen_type, cat_amount, upgrades, reward_texts, extras = get_pack_rewards(level)
-        assert isinstance(reward_texts, list)
-        user[f"cat_{chosen_type}"] += cat_amount
-        for extra_key, extra_amount in extras.items():
-            user[extra_key] += extra_amount
-        user.pack_upgrades += upgrades
-        user.packs_opened += 1
-        user[pack_field(pack)] -= 1
-        await user.save()
-
+        chosen_type, cat_amount, upgrades, reward_texts = opened
         log_stats("pack_open", {"pack": pack})
 
         view = LayoutView(timeout=1)
@@ -6412,29 +6426,8 @@ async def packs(message: discord.Interaction):
         await asyncio.sleep(1)
 
         assert last_container is not None
-        buttons, _, total_packs, _ = gen_buttons(user)
-        view = LayoutView(timeout=VIEW_TIMEOUT)
-        view.add_item(await nav_row(user, "🎒"))
-        view.add_item(await inventory_row(user, "goldpack"))
-        last_container.add_item(Separator())
-        for i in buttons:
-            last_container.add_item(i)
-        view.add_item(last_container)
-
-        if total_packs:
-            back_button = Button(label="Back", style=ButtonStyle.primary, emoji="⬅️")
-            back_button.callback = go_back
-            view.add_item(ActionRow(back_button))
-
-        await interaction.edit_original_response(view=view)
-
-        await achemb(interaction, "packer", "followup")
-        if chosen_type == "Fine" and cat_amount == 1:
-            await achemb(interaction, "failed", "followup")
-        if user.packs_opened >= 25:
-            await achemb(interaction, "super_packer", "followup")
-        if upgrades >= 5:
-            await achemb(interaction, "lucky_packy", "followup")
+        await interaction.edit_original_response(view=await pack_result_view(last_container))
+        await grant_pack_aches(interaction, user, upgrades=upgrades, has_fail=chosen_type == "Fine" and cat_amount == 1)
         await advance_tutorial(interaction)
 
     async def advance_tutorial(interaction: discord.Interaction) -> None:
@@ -6455,28 +6448,8 @@ async def packs(message: discord.Interaction):
         await interaction.response.edit_message(view=view)
 
         await asyncio.sleep(1)
-        buttons, _, _, _ = gen_buttons(user)
-        view = LayoutView(timeout=VIEW_TIMEOUT)
-        view.add_item(await nav_row(user, "🎒"))
-        view.add_item(await inventory_row(user, "goldpack"))
-        embed.add_item(Separator())
-        for i in buttons:
-            embed.add_item(i)
-        view.add_item(embed)
-
-        back_button = Button(label="Back", style=ButtonStyle.primary, emoji="⬅️")
-        back_button.callback = go_back
-        view.add_item(ActionRow(back_button))
-
-        await message.edit_original_response(view=view)
-
-        await achemb(interaction, "packer", "followup")
-        if has_fails:
-            await achemb(interaction, "failed", "followup")
-        if highest_upgrades >= 5:
-            await achemb(interaction, "lucky_packy", "followup")
-        if user.packs_opened >= 25:
-            await achemb(interaction, "super_packer", "followup")
+        await message.edit_original_response(view=await pack_result_view(embed, force_back=True))
+        await grant_pack_aches(interaction, user, upgrades=highest_upgrades, has_fail=has_fails)
         await advance_tutorial(interaction)
 
     async def go_back(interaction: discord.Interaction) -> None:
@@ -6495,7 +6468,6 @@ async def packs(message: discord.Interaction):
 
     async def gen_main() -> LayoutView:
         view = LayoutView(timeout=VIEW_TIMEOUT)
-
         view.add_item(await nav_row(user, "🎒"))
         view.add_item(await inventory_row(user, "goldpack"))
 
@@ -6513,24 +6485,19 @@ async def packs(message: discord.Interaction):
             f"then another 30% for another upgrade... That means even a {get_emoji('woodenpack')} can upgrade all the way to "
             f"{get_emoji('celestialpack')} if you get lucky enough.\n\n"
         )
-
         if has_special:
             description += "**Special Packs** are highlighted in *green* and have a 70% upgrade chance instead of 30%. "
         if has_exclusive:
             description += "**Exclusive Packs** are highlighted in *red* and have a completely different opening mechanism."
 
         embed.add_item(TextDisplay(description.strip()))
-
         if total_packs >= 10:
             amount_button = Button(label=str(open_at_once))
             amount_button.callback = switch_amount
             embed.add_item(Section("Packs to open at a time:", amount_button))
-
         embed.add_item(Separator())
-
-        for i in buttons:
-            embed.add_item(i)
-
+        for row in buttons:
+            embed.add_item(row)
         view.add_item(embed)
         return view
 
