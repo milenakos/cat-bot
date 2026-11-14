@@ -9368,24 +9368,27 @@ if config.WORDNIK_API_KEY:
 
 
 BOUNTY_SLOTS = ("one", "two", "three")
+CATNIP_RARITIES = ("Common", "Uncommon", "Rare", "Epic", "Legendary")
+
+
+def catnip_rarity_emojis() -> list[str]:
+    return [get_emoji(name.lower()) for name in CATNIP_RARITIES]
 
 
 def _bounty_title(bid: int, total: int, btype: str) -> str:
     if bid == 0:
         return f"Catch {total} {plural('cat', total)}"
-    elif bid == 1:
+    if bid == 1:
         return f"Catch {total} {btype} {plural('cat', total)}"
-    else:
-        return f"Catch {total} {btype} or rarer {plural('cat', total)}"
+    return f"Catch {total} {btype} or rarer {plural('cat', total)}"
 
 
 def _bounty_matches(bid: int, btype: str, cattype: str) -> bool:
     if bid == 0:
         return True
-    elif bid == 1:
+    if bid == 1:
         return cattype == btype
-    else:
-        return cattypes.index(cattype) >= cattypes.index(btype)
+    return cattypes.index(cattype) >= cattypes.index(btype)
 
 
 def _bounties_are_complete(user: Profile) -> bool:
@@ -9529,92 +9532,77 @@ async def set_bounties(level: int, user: Profile) -> None:
 
 async def get_bounties(level: int) -> list[dict]:
     level_data = catnip_list["levels"][level + 1]
-    bounties = []
+    bounties: list[dict] = []
     num_bounties = level_data["bounty_amount"]
     avg_cats_needed = level_data["bounty_difficulty"]
     num_max = level_data["max_amount"]
+    used_types: set[str] = set()
+    used_rarities: set[int] = set()
 
-    used_types = set()
-    used_rarities = set()
+    def try_add(bounty: dict) -> bool:
+        if bounty["amount"] > num_max:
+            return False
+        bounties.append(bounty)
+        return True
+
     tries = 0
     max_tries = 1000 * num_bounties
     while len(bounties) < num_bounties + 1 and tries < max_tries:
         tries += 1
         bounty_type = random.choice(["rarity", "specific", "any"])
-
-        # to add a bit of randomness
         variation = random.uniform(0.85, 1.15)
         if len(bounties) == num_bounties:
-            # bonus bounty
-            variation *= 1.5
-        if bounty_type == "rarity":
-            margin = 0.2
-            rarity_i = random.randint(2, len(cattypes) - 2)
+            variation *= 1.5  # bonus bounty
 
+        if bounty_type == "rarity":
+            rarity_i = random.randint(2, len(cattypes) - 2)
             while True:
                 rarity = cattypes[rarity_i]
-                eligible_types = cattypes[rarity_i:]
-
-                prob = sum(data.type_dict[t] for t in eligible_types) / TOTAL_CAT_WEIGHT
+                prob = sum(data.type_dict[t] for t in cattypes[rarity_i:]) / TOTAL_CAT_WEIGHT
                 base_amount = max(1, round(avg_cats_needed * prob))
                 expected_total = base_amount / prob if prob > 0 else float("inf")
-
-                if abs(expected_total - avg_cats_needed) / avg_cats_needed <= margin or rarity_i == 0:
+                if abs(expected_total - avg_cats_needed) / avg_cats_needed <= 0.2 or rarity_i == 0:
                     break
                 rarity_i -= 1
-
             if rarity_i in used_rarities:
                 continue
-
-            used_rarities.add(rarity_i)
             amount = max(1, round(base_amount * variation))
+            if try_add(
+                {
+                    "id": 2,
+                    "progress": 0,
+                    "cat_type": rarity,
+                    "amount": amount,
+                    "desc": f"Catch {amount} {plural('cat', amount)} of {rarity} rarity and above",
+                }
+            ):
+                used_rarities.add(rarity_i)
 
-            if amount > num_max:
-                continue
-
-            bounties.append(
-                {"id": 2, "progress": 0, "cat_type": rarity, "amount": amount, "desc": f"Catch {amount} {plural('cat', amount)} of {rarity} rarity and above"}
-            )
         elif bounty_type == "any":
             if any(b["id"] == 0 for b in bounties):
                 continue
-
             amount = max(1, round(avg_cats_needed * variation / 2))
+            try_add({"id": 0, "progress": 0, "cat_type": "", "amount": amount, "desc": f"Catch {amount} {plural('cat', amount)} of any kind"})
 
-            if amount > num_max:
-                continue
-
-            bounties.append({"id": 0, "progress": 0, "cat_type": "", "amount": amount, "desc": f"Catch {amount} {plural('cat', amount)} of any kind"})
         else:
-            # pick a specific cat type not already used
-            if not (available_types := [cat for cat in cattypes if cat not in used_types]):
+            available = [cat for cat in cattypes if cat not in used_types]
+            if not available:
                 continue
-
-            available_types1 = available_types.copy()
             base_amount = None
             cat_type = None
-            for _ in available_types:
-                cat_type = random.choices(available_types1)[0]
-                prob = data.type_dict[cat_type] / TOTAL_CAT_WEIGHT
-                base_amount = avg_cats_needed * prob
-                available_types1.remove(cat_type)
+            candidates = available.copy()
+            while candidates:
+                cat_type = random.choice(candidates)
+                candidates.remove(cat_type)
+                base_amount = avg_cats_needed * (data.type_dict[cat_type] / TOTAL_CAT_WEIGHT)
                 if base_amount > 0.8:
                     break
-
             if base_amount is None or cat_type is None:
                 continue
-
             amount = max(1, round(base_amount * variation))
-
-            if amount > num_max:
-                continue
-
             if level > 4 and amount < 4:
-                # prevent too "luck based" bounties
-                continue
-
-            used_types.add(cat_type)
-            bounties.append(
+                continue  # prevent too luck-based bounties
+            if try_add(
                 {
                     "id": 1,
                     "progress": 0,
@@ -9622,73 +9610,59 @@ async def get_bounties(level: int) -> list[dict]:
                     "amount": amount,
                     "desc": f"Catch {amount} {get_emoji(cat_type.lower() + 'cat')} {plural('cat', amount)}",
                 }
-            )
+            ):
+                used_types.add(cat_type)
 
     return bounties
 
 
 async def get_perks(level: int, user: Profile, do_rain: bool = True) -> list[dict]:
-    level_data = catnip_list["levels"][level]
-    rarities = [r for r in level_data["weights"]]
-    weights = {rarity: level_data["weights"][rarity] for rarity in rarities}
+    weights = catnip_list["levels"][level]["weights"]
+    rarity_names = list(weights.keys())
     perks = catnip_list["perks"]
-
-    current_perks = []
-    used_ids = set()
-    thelist = []
-    if user.perks:
-        for perk in user.perks:
-            p = perk.split("_")
-            thelist.append(perks[int(p[1]) - 1]["id"])
+    owned_ids = {perks[int(perk.split("_")[1]) - 1]["id"] for perk in user.perks or []}
+    current_perks: list[dict] = []
+    used_ids: set[str] = set()
 
     for _ in range(3):
-        luck = random.randint(1, 1000) / 10
-        total_weight = 0
-        current_rarity = "common"
+        roll = random.randint(1, 1000) / 10
+        cumulative = 0.0
+        current_rarity = rarity_names[0]
         for rarity, weight in weights.items():
-            total_weight += weight
-            if luck <= total_weight:
+            cumulative += weight
+            if roll <= cumulative:
                 current_rarity = rarity
                 break
+        rarity_index = rarity_names.index(current_rarity)
 
-        tries = 0
         selected_perk = None
-
-        while tries < 100:
-            luck = random.randint(1, 100)
-            total_weight = 0
-            i = 0
-            for perk in perks:
-                i += 1
-                total_weight += perk["weight"]
-
-                if perk["id"] in used_ids or (perk["exclusive"] == 1 and perk["id"] in thelist):
+        for _ in range(100):
+            roll = random.randint(1, 100)
+            cumulative = 0.0
+            for i, perk in enumerate(perks, start=1):
+                cumulative += perk["weight"]
+                if perk["id"] in used_ids or (perk["exclusive"] == 1 and perk["id"] in owned_ids):
                     continue
-
                 if perk["id"] == "rain_boost" and not do_rain:
                     continue
-
                 if all("pack" in p["id"] for p in current_perks) and "pack" in perk["id"]:
                     continue
-
-                if luck <= total_weight:
-                    effect = perk["values"][list(weights.keys()).index(current_rarity)]
-                    if effect == 0:
-                        continue
-
-                    selected_perk = {
-                        "id": perk["id"],
-                        "name": perk["name"],
-                        "values": perk["values"],
-                        "rarity": current_rarity,
-                        "uuid": f"{list(weights.keys()).index(current_rarity)}_{i}",
-                        "effect": effect,
-                    }
-
-                    break
+                if roll > cumulative:
+                    continue
+                effect = perk["values"][rarity_index]
+                if effect == 0:
+                    continue
+                selected_perk = {
+                    "id": perk["id"],
+                    "name": perk["name"],
+                    "values": perk["values"],
+                    "rarity": current_rarity,
+                    "uuid": f"{rarity_index}_{i}",
+                    "effect": effect,
+                }
+                break
             if selected_perk:
                 break
-            tries += 1
 
         if selected_perk:
             used_ids.add(selected_perk["id"])
@@ -9731,12 +9705,9 @@ async def level_down(user: Profile, message: discord.Interaction, ephemeral: boo
     removed_line = ""
 
     if user.perks and removed_perk:
-        rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
         perk_rarity = int(removed_perk.split("_")[0])
-        perk_type = int(removed_perk.split("_")[1])
-        perk_data = catnip_list["perks"][perk_type - 1]
-
-        removed_line = f"\nYou lost your **{perk_data['name']} ({rarities[perk_rarity]})** perk."
+        perk_data = catnip_list["perks"][int(removed_perk.split("_")[1]) - 1]
+        removed_line = f"\nYou lost your **{perk_data['name']} ({CATNIP_RARITIES[perk_rarity]})** perk."
 
     embed = Container(
         "## ❌ Mafia Level Failed",
@@ -9890,10 +9861,12 @@ def get_vote_streak_bonus(vote_streak: int) -> float:
     return duration_bonus
 
 
-def describe_perk(perk: str, perks: list, global_user: User) -> tuple[int, dict, str]:
+def describe_perk(perk: str, global_user: User, *, effect: float | None = None) -> tuple[int, dict, str]:
     perk_rarity = int(perk.split("_")[0])
-    perk_data = perks[int(perk.split("_")[1]) - 1]
-    effect = perk_data["values"][perk_rarity]
+    perk_data = catnip_list["perks"][int(perk.split("_")[1]) - 1]
+    if effect is None:
+        effect = perk_data["values"][perk_rarity]
+    assert effect is not None
     duration_bonus = get_vote_streak_bonus(global_user.vote_streak)
     desc = (
         perk_data.get("desc", "")
@@ -10019,18 +9992,20 @@ You can stop. That's okay. Seriously."""
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         await user.refresh_from_db()
 
-        perks = catnip_list["perks"]
-        rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
-        rarity_colors = [get_emoji("common"), get_emoji("uncommon"), get_emoji("rare"), get_emoji("epic"), get_emoji("legendary")]
+        rarity_colors = catnip_rarity_emojis()
         emojied_options = {}
         user_perks = user.perks or []
 
-        new_rarity, new_data, new_desc = describe_perk(new_perk, perks, global_user)
-        new_text = f"{rarity_colors[new_rarity]} __{new_data.get('name', '')}__ ({rarities[new_rarity]})\n{new_desc}"
+        new_rarity, new_data, new_desc = describe_perk(new_perk, global_user)
+        new_text = f"{rarity_colors[new_rarity]} __{new_data.get('name', '')}__ ({CATNIP_RARITIES[new_rarity]})\n{new_desc}"
 
         for index, perk in enumerate(user_perks):
-            perk_rarity, perk_data, desc = describe_perk(perk, perks, global_user)
-            emojied_options[index + 1] = (f"{perk_data.get('name', '')} ({rarities[perk_rarity]})", rarity_colors[perk_rarity], desc.replace("**", ""))
+            perk_rarity, perk_data, desc = describe_perk(perk, global_user)
+            emojied_options[index + 1] = (
+                f"{perk_data.get('name', '')} ({CATNIP_RARITIES[perk_rarity]})",
+                rarity_colors[perk_rarity],
+                desc.replace("**", ""),
+            )
 
         async def replace_perk(interaction: discord.Interaction, slot: str) -> None:
             await user.refresh_from_db()
@@ -10077,16 +10052,16 @@ You can stop. That's okay. Seriously."""
         user = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
         await user.refresh_from_db()
         perks = catnip_list["perks"]
-        rarity_colors = [get_emoji("common"), get_emoji("uncommon"), get_emoji("rare"), get_emoji("epic"), get_emoji("legendary")]
+        rarity_colors = catnip_rarity_emojis()
         user_perks = user.perks
 
-        perk_values = {}
-        perk_emojis = {}
+        perk_values: dict[str, float] = {}
+        perk_emojis: dict[str, list[str]] = {}
         for perk in user_perks:
-            perk_rarity, perk_data, _ = describe_perk(perk, perks, global_user)
+            perk_rarity, perk_data, _ = describe_perk(perk, global_user)
             perk_id = perk_data["id"]
             perk_values[perk_id] = perk_values.get(perk_id, 0) + perk_data["values"][perk_rarity]
-            perk_emojis[perk_id] = perk_emojis.get(perk_id, []) + [rarity_colors[perk_rarity]]
+            perk_emojis.setdefault(perk_id, []).append(rarity_colors[perk_rarity])
 
         myview = LayoutView(timeout=VIEW_TIMEOUT)
         perk_embed = Container("# Your Perks")
@@ -10153,7 +10128,7 @@ You can stop. That's okay. Seriously."""
             view = LayoutView(timeout=1)
             embed = Container()
             for level_num, perk in enumerate(user_perks):
-                perk_rarity, perk_data, desc = describe_perk(perk, perks, global_user)
+                perk_rarity, perk_data, desc = describe_perk(perk, global_user)
                 embed.add_item(TextDisplay(f"{rarity_colors[perk_rarity]} __{perk_data.get('name', '')}__ (Level {level_num + 2})\n{desc}"))
             view.add_item(embed)
             await interaction.response.send_message(view=view, ephemeral=True)
@@ -10176,7 +10151,6 @@ You can stop. That's okay. Seriously."""
 
         async def select_perk(interaction: discord.Interaction) -> None:
             await user.refresh_from_db()
-
             if user.perk_selected and not reroll:
                 await interaction.response.send_message("You have already selected a perk.", ephemeral=True)
                 return
@@ -10194,14 +10168,11 @@ You can stop. That's okay. Seriously."""
             user.perk_selected = True
             h.append(interaction.custom_id)
             user.perks = h.copy()
-
             user.perk1 = ""
             user.perk2 = ""
             user.perk3 = ""
             await user.save()
-
             log_stats("perk_select", {"level": str(user.catnip_level)})
-
             await interaction.response.edit_message(view=await gen_main())
 
         if user.perk_selected and not reroll:
@@ -10210,55 +10181,33 @@ You can stop. That's okay. Seriously."""
         if reroll and user.reroll:
             await interaction.response.send_message("your die rerolls through the floor", ephemeral=True)
             return
-        if reroll:
-            await user.refresh_from_db()
-            if user.reroll:
-                await interaction.response.send_message("your die rerolls through the floor", ephemeral=True)
-                return
 
-        perks_data = catnip_list["perks"]
-        rarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
-        rarity_colors = [get_emoji("common"), get_emoji("uncommon"), get_emoji("rare"), get_emoji("epic"), get_emoji("legendary")]
-
+        rarity_colors = catnip_rarity_emojis()
         myview = LayoutView(timeout=VIEW_TIMEOUT)
-
         perk_embed = Container("# Select one of these perks!")
         if reroll:
             perk_embed.add_item(TextDisplay("Pick a perk, then choose which of your current perks it replaces."))
 
         if user.perk1 and user.perk2 and user.perk3 and (not reroll or user.reroll_level == -1):
-            perks = [user.perk1, user.perk2, user.perk3]
+            perk_uuids = [user.perk1, user.perk2, user.perk3]
         else:
-            perks = [p["uuid"] for p in await get_perks(user.catnip_level, user, server.do_rain)]
+            perk_uuids = [p["uuid"] for p in await get_perks(user.catnip_level, user, server.do_rain)]
 
-        for i, perk in enumerate(perks):
-            perk_data = perks_data[int(perk.split("_")[1]) - 1]
-            effect = perk_data["values"][int(perk.split("_")[0])]
-
+        for perk in perk_uuids:
+            rarity, perk_data, desc = describe_perk(perk, global_user)
             button = Button(label="Select", style=ButtonStyle.blurple, custom_id=perk)
             button.callback = select_perk
-
-            duration_bonus = get_vote_streak_bonus(global_user.vote_streak)
             perk_embed.add_item(
                 Section(
-                    f"## {rarity_colors[int(perk.split('_')[0])]} {perk_data.get('name', '')} ({rarities[int(perk.split('_')[0])]})",
-                    f"{perk_data.get('desc', '')}".replace("percent", f"{effect:,}")
-                    .replace("triple_none", f"{effect / 2:g}")
-                    .replace("timer_add_streak", f"{duration_bonus / 60:g}"),
+                    f"## {rarity_colors[rarity]} {perk_data.get('name', '')} ({CATNIP_RARITIES[rarity]})",
+                    desc,
                     button,
                 )
             )
-            perks[i] = {
-                "uuid": perk,
-                "name": perk_data.get("name", ""),
-                "desc": perk_data.get("desc", ""),
-                "rarity": perk_data.get("rarity", ""),
-                "effect": effect,
-            }
 
-        user.perk1 = perks[0]["uuid"] if len(perks) > 0 else None
-        user.perk2 = perks[1]["uuid"] if len(perks) > 1 else None
-        user.perk3 = perks[2]["uuid"] if len(perks) > 2 else None
+        user.perk1 = perk_uuids[0] if len(perk_uuids) > 0 else None
+        user.perk2 = perk_uuids[1] if len(perk_uuids) > 1 else None
+        user.perk3 = perk_uuids[2] if len(perk_uuids) > 2 else None
         if reroll:
             user.reroll_level = -1
         await user.save()
