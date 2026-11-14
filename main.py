@@ -2471,7 +2471,7 @@ Enjoy your goods!"""
             log_stats("response", {"type": "please do the cat"})
         await achemb(message, "pleasedothecat", "reply")
 
-    if text.lower() == "car":
+    if text.lower() == "car" and not await is_rain_active(message.channel.id):
         if not server:
             server = await Server.get_or_create(server_id=guild_id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
@@ -2485,7 +2485,7 @@ Enjoy your goods!"""
             log_stats("response", {"type": "car"})
         await achemb(message, "car", "reply")
 
-    if text.lower() == "cart":
+    if text.lower() == "cart" and not await is_rain_active(message.channel.id):
         if not server:
             server = await Server.get_or_create(server_id=guild_id)
         if server.do_responses and await check_channel_setupped(server, message.channel):
