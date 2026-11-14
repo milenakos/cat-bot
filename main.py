@@ -5430,11 +5430,11 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
                 cat_types.sort(reverse=True, key=lambda x: dictdict[x])
                 pack_amount = 0
                 for cat_type_two in cat_types:
+                    if cat_type_two in pack_names:
+                        pack_amount += 1
                     if cat_type_two in evil_types:
                         shortened_types = True
                         continue
-                    if cat_type_two in pack_names:
-                        pack_amount += 1
                     show_cats += funny_emojis[cat_type_two + aura_suffixes.get(cat_type_two, "")]
                 if show_cats != "":
                     if shortened_types:
@@ -5462,7 +5462,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
             if epic_fail:
                 part_two = ""
                 for cat_type in thingtypes:
-                    if cat_type not in rain_server:
+                    if cat_type not in rain_server or len(rain_server[cat_type]) == 0:
                         continue
                     if len(rain_server[cat_type]) > 5:
                         part_two += f"{funny_emojis[cat_type]} *{len(rain_server[cat_type])} catches*\n"
@@ -6605,7 +6605,7 @@ async def battlepass(message: discord.Interaction):
                     for cat_index in user.weekly_cattypes:
                         description += get_emoji(cattypes[cat_index].lower() + "cat")
                     description += "⬛" * (weekly_quest["progress"] - user.weekly_progress)
-                description += f"\nReward: 2000 XP + 1 {get_emoji('luckypack')} Lucky pack"
+                description += f"\nReward: 2000 XP + {get_emoji('luckypack')} Lucky pack"
             else:
                 description += f"✅ ~~{weekly_quest['title']}~~"
             embed.add_item(TextDisplay(description))
