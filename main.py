@@ -5381,7 +5381,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
             rain_server = config.cat_cought_rain[channel.channel_id]
 
         pack_names = ["Wooden", "Stone", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Celestial"]
-        pack_yeah = {"Wooden": 1, "Stone": 0.9, "Bronze": 0.8, "Silver": 0.7, "Gold": 0.6, "Platinum": 0.5, "Diamond": 0.4, "Celestial": 0.3}
+        thing_values = CAT_VALUES | {p["name"]: p["totalvalue"] for p in data.pack_data if p["name"] in pack_names}
         rain_packs = []
         rain_cats = []
 
@@ -5416,7 +5416,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
         starter_id = config.rain_starter.get(channel.channel_id, 0)
         evil_types = []
         epic_fail = False
-        thingtypes = cattypes + pack_names
+        thingtypes = sorted(cattypes + pack_names, key=lambda t: thing_values[t])
         for cat_type in thingtypes:
             part_one = "## Rain Summary\n"
 
@@ -5426,8 +5426,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
                 aura_suffixes = {cattypes[k]: v.strip() for k, v in enumerate(profile.cat_auras)}
                 show_cats = ""
                 shortened_types = False
-                dictdict = data.type_dict | pack_yeah
-                cat_types.sort(reverse=True, key=lambda x: dictdict[x])
+                cat_types.sort(key=lambda x: thing_values[x])
                 pack_amount = 0
                 for cat_type_two in cat_types:
                     if cat_type_two in pack_names:
@@ -5461,7 +5460,7 @@ async def rain_end(message: discord.Message, channel: Channel, force_summary: di
 
             if epic_fail:
                 part_two = ""
-                for cat_type in thingtypes:
+                for cat_type in cattypes + pack_names:
                     if cat_type not in rain_server or len(rain_server[cat_type]) == 0:
                         continue
                     if len(rain_server[cat_type]) > 5:
