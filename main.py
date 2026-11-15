@@ -8278,15 +8278,22 @@ async def bakery(message: discord.Interaction):
         user = await User.get_or_create(user_id=message.user.id)
         profile = await Profile.get_or_create(user_id=message.user.id, guild_id=message.guild.id)
         if user.queued_chef_pack:
-            profile.pack_chef += 1
-            user.queued_chef_pack = False
-            await user.save()
-            await profile.save()
-            log_stats("chef_pack_get")
-            try:
-                await message.channel.send(f"{message.user.mention} got +1 {get_emoji('chefpack')} Chef Pack from Bake.gg!")
-            except Exception:
-                pass
+            claimed_chef = False
+            async with transaction() as conn:
+                user = await User.get_or_create(conn, user_id=message.user.id)
+                profile = await Profile.get_or_create(conn, user_id=message.user.id, guild_id=message.guild.id)
+                if user.queued_chef_pack:
+                    profile.pack_chef += 1
+                    user.queued_chef_pack = False
+                    claimed_chef = True
+                await user.save()
+                await profile.save()
+            if claimed_chef:
+                log_stats("chef_pack_get")
+                try:
+                    await message.channel.send(f"{message.user.mention} got +1 {get_emoji('chefpack')} Chef Pack from Bake.gg!")
+                except Exception:
+                    pass
 
         refresh_button = Button(label="Refresh", emoji="🔄")
         refresh_button.callback = refresh
@@ -8319,6 +8326,7 @@ async def bakery(message: discord.Interaction):
             return view
 
         async def deliver(interaction: discord.Interaction) -> None:
+            assert message.guild is not None
             if interaction.user != message.user:
                 await do_funny(interaction)
                 return
@@ -8346,14 +8354,23 @@ async def bakery(message: discord.Interaction):
                         logger.warning("Bake.gg reward failed: status=%s body=%s", response.status, await response.text())
                         raise ValueError
 
-                    profile.cookies -= 120
-                    profile.coffees -= 140
-                    profile.cat_Nice -= 2
-                    profile.pack_silver += 1
-                    await profile.save()
+                    async with transaction() as conn:
+                        u = await User.get_or_create(conn, user_id=message.user.id)
+                        p = await Profile.get_or_create(conn, guild_id=message.guild.id, user_id=message.user.id)
+                        if p.cookies < 120 or p.coffees < 140 or p.cat_Nice < 2:
+                            await interaction.response.send_message("Your order is not ready yet.", ephemeral=True)
+                            return
+                        if u.last_bakegg_send == get_current_week():
+                            await interaction.response.send_message("You've already delivered this order.", ephemeral=True)
+                            return
 
-                    user.last_bakegg_send = get_current_week()
-                    await user.save()
+                        p.cookies -= 120
+                        p.coffees -= 140
+                        p.cat_Nice -= 2
+                        p.pack_silver += 1
+                        u.last_bakegg_send = get_current_week()
+                        await u.save()
+                        await p.save()
 
                     log_stats("bakery_delivered")
 
