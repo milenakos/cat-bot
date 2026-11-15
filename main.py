@@ -126,6 +126,12 @@ class DataWrapper:
     nuke_confirmation_lines: list[str]
     fishing_upgrades: dict[str, list[FishingEntry]]
     ach_categories: dict[str, str]
+    muted_ach_categories: list[str]
+    aura_display_names: dict[str, str]
+    simple_lbs: dict[str, list[str]]
+    catnip_rarities: list[str]
+    pumpkin_trick: list[list]
+    pumpkin_treat: list[list]
 
     def __init__(self, data):
         self.data = data
@@ -228,9 +234,6 @@ class Colors:
 
 GuildMessageable = discord.TextChannel | discord.Thread | discord.VoiceChannel | discord.StageChannel | discord.PartialMessageable
 
-
-# muted ach categories. they are ignored when counting total ach number
-muted_ach_categories = ["Museum"]
 
 try:
     COMMIT = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
@@ -420,8 +423,8 @@ async def check_channel_setupped(guild: Server, channel: GuildMessageable) -> bo
 
 
 def count_achievements(profile) -> tuple[int, int]:
-    total = sum([1 if ach_list[k]["parent"] not in muted_ach_categories else 0 for k in ach_names])
-    unlocked = sum([int(profile[k]) if ach_list[k]["parent"] not in muted_ach_categories else 0 for k in ach_names])
+    total = sum([1 if ach_list[k]["parent"] not in data.muted_ach_categories else 0 for k in ach_names])
+    unlocked = sum([int(profile[k]) if ach_list[k]["parent"] not in data.muted_ach_categories else 0 for k in ach_names])
     return unlocked, total
 
 
@@ -5917,16 +5920,6 @@ Global bless chance is **{global_bless_chance:.4f}%**""",
 
 PACK_INDEX = {pack["name"]: i for i, pack in enumerate(data.pack_data)}
 
-PUMPKIN_TRICK = [("pack", "Wooden", 50), ("pack", "Stone", 25), ("cats", "Fine", 25)]
-PUMPKIN_TREAT = [
-    ("pack", "Gold", 36),
-    ("pack", "Platinum", 18),
-    ("pack", "Diamond", 12),
-    ("pack", "Celestial", 7),
-    ("pack_lucky", "", 13),
-    ("rain_minutes", "", 14),
-]
-
 
 def apply_pack_rewards(profile: Profile, cats: dict[str, int], extras: dict[str, int], upgrades: int, opened: int) -> None:
     for cat_type, cat_amount in cats.items():
@@ -6265,7 +6258,7 @@ async def packs(message: discord.Interaction):
         if path[0] == "Pumpkin":
             is_trick = random.random() < 0.5
             pumpkin_face = "😈 Trick" if is_trick else "😋 Treat"
-            table = PUMPKIN_TRICK if is_trick else PUMPKIN_TREAT
+            table = data.pumpkin_trick if is_trick else data.pumpkin_treat
             reward_kind, reward_value, _ = random.choices(table, weights=[row[2] for row in table], k=1)[0]
 
             if reward_kind != "pack":
@@ -9404,11 +9397,10 @@ if config.WORDNIK_API_KEY:
 
 
 BOUNTY_SLOTS = ("one", "two", "three")
-CATNIP_RARITIES = ("Common", "Uncommon", "Rare", "Epic", "Legendary")
 
 
 def catnip_rarity_emojis() -> list[str]:
-    return [get_emoji(name.lower()) for name in CATNIP_RARITIES]
+    return [get_emoji(name.lower()) for name in data.catnip_rarities]
 
 
 def _bounty_title(bid: int, total: int, btype: str) -> str:
@@ -9743,7 +9735,7 @@ async def level_down(user: Profile, message: discord.Interaction, ephemeral: boo
     if user.perks and removed_perk:
         perk_rarity = int(removed_perk.split("_")[0])
         perk_data = catnip_list["perks"][int(removed_perk.split("_")[1]) - 1]
-        removed_line = f"\nYou lost your **{perk_data['name']} ({CATNIP_RARITIES[perk_rarity]})** perk."
+        removed_line = f"\nYou lost your **{perk_data['name']} ({data.catnip_rarities[perk_rarity]})** perk."
 
     embed = Container(
         "## ❌ Mafia Level Failed",
@@ -10033,12 +10025,12 @@ You can stop. That's okay. Seriously."""
         user_perks = user.perks or []
 
         new_rarity, new_data, new_desc = describe_perk(new_perk, global_user)
-        new_text = f"{rarity_colors[new_rarity]} __{new_data.get('name', '')}__ ({CATNIP_RARITIES[new_rarity]})\n{new_desc}"
+        new_text = f"{rarity_colors[new_rarity]} __{new_data.get('name', '')}__ ({data.catnip_rarities[new_rarity]})\n{new_desc}"
 
         for index, perk in enumerate(user_perks):
             perk_rarity, perk_data, desc = describe_perk(perk, global_user)
             emojied_options[index + 1] = (
-                f"{perk_data.get('name', '')} ({CATNIP_RARITIES[perk_rarity]})",
+                f"{perk_data.get('name', '')} ({data.catnip_rarities[perk_rarity]})",
                 rarity_colors[perk_rarity],
                 desc.replace("**", ""),
             )
@@ -10235,7 +10227,7 @@ You can stop. That's okay. Seriously."""
             button.callback = select_perk
             perk_embed.add_item(
                 Section(
-                    f"## {rarity_colors[rarity]} {perk_data.get('name', '')} ({CATNIP_RARITIES[rarity]})",
+                    f"## {rarity_colors[rarity]} {perk_data.get('name', '')} ({data.catnip_rarities[rarity]})",
                     desc,
                     button,
                 )
@@ -10781,22 +10773,12 @@ async def refresh_auras(message: discord.Interaction | discord.Message, specific
     )
 
 
-# color-code order and metadata for the /leaderboards Aura tab (rainbow is most valuable)
-AURA_DISPLAY_NAMES = {"r": "Rainbow", "a": "Red", "p": "Pink", "c": "Cyan", "y": "Yellow"}
-AURA_ORDER = AURA_DISPLAY_NAMES.keys()
-
-SIMPLE_LBS = {
-    "Cookies": ("cookies", "cookies", "cookies > 0"),
-    "Coffees": ("coffees", "coffees", "coffees > 0"),
-    "Pig": ("score", "best_pig_score", "best_pig_score > 0"),
-    "Cat Dollars": ("cat dollars", "casino_balance", "casino_balance != 100"),
-    "Fish": ("fishes", "fish_caught", "fish_caught != 0"),
-    "Rain Started": ("min started", "rain_minutes_started", "rain_minutes_started != 0"),
-}
+# color-code order for the /leaderboards Aura tab (rainbow is most valuable)
+AURA_ORDER = data.aura_display_names.keys()
 
 
 def aura_emoji(code: str) -> str:
-    return get_emoji(AURA_DISPLAY_NAMES[code].lower())
+    return get_emoji(data.aura_display_names[code].lower())
 
 
 def ranked_metric(column: str, *, asc: bool = False) -> tuple[str, str]:
@@ -10973,8 +10955,8 @@ async def leaderboards(
                 ahead_parts.append(f"({equal_all} AND entry.user_id < target.user_id)")
                 ahead = " OR ".join(ahead_parts)
                 final_value = "aura_total"
-        elif type in SIMPLE_LBS:
-            unit, col, where = SIMPLE_LBS[type]
+        elif type in data.simple_lbs:
+            unit, col, where = data.simple_lbs[type]
             query = f"SELECT user_id, {col} FROM profile WHERE guild_id = $1 AND {where}"
             order, ahead = ranked_metric(col)
             final_value = col
@@ -11211,7 +11193,7 @@ async def leaderboards(
             for a in AURA_ORDER:
                 dd_opts.append(
                     discord.SelectOption(
-                        label=AURA_DISPLAY_NAMES[a],
+                        label=data.aura_display_names[a],
                         emoji=aura_emoji(a),
                         value=a,
                         default=specific_cat == a,

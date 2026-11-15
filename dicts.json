@@ -1079,5 +1079,35 @@
     "Commands": "🤖",
     "Silly": "sillycat",
     "Museum": "🖼️"
-  }
+  },
+  "muted_ach_categories": ["Museum"],
+  "aura_display_names": {
+    "r": "Rainbow",
+    "a": "Red",
+    "p": "Pink",
+    "c": "Cyan",
+    "y": "Yellow"
+  },
+  "simple_lbs": {
+    "Cookies": ["cookies", "cookies", "cookies > 0"],
+    "Coffees": ["coffees", "coffees", "coffees > 0"],
+    "Pig": ["score", "best_pig_score", "best_pig_score > 0"],
+    "Cat Dollars": ["cat dollars", "casino_balance", "casino_balance != 100"],
+    "Fish": ["fishes", "fish_caught", "fish_caught != 0"],
+    "Rain Started": ["min started", "rain_minutes_started", "rain_minutes_started != 0"]
+  },
+  "catnip_rarities": ["Common", "Uncommon", "Rare", "Epic", "Legendary"],
+  "pumpkin_trick": [
+    ["pack", "Wooden", 50],
+    ["pack", "Stone", 25],
+    ["cats", "Fine", 25]
+  ],
+  "pumpkin_treat": [
+    ["pack", "Gold", 36],
+    ["pack", "Platinum", 18],
+    ["pack", "Diamond", 12],
+    ["pack", "Celestial", 7],
+    ["pack_lucky", "", 13],
+    ["rain_minutes", "", 14]
+  ]
 }
