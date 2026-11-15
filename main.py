@@ -5272,7 +5272,7 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
         user.tutorial_state = 5
         await user.save()
         await message.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
-    elif not person.aura_tutorial_seen and any(a != " " for a in user.cat_auras):
+    elif not person.aura_tutorial_seen and any(a != " " for a in person.cat_auras):
         await message.followup.send(
             f"""{get_emoji("nicecat_r")} __You unlocked a Cat Aura!__
 Your cats gain cosmetic auras once you collect a bunch of them, to be specific:
