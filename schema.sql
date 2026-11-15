@@ -361,7 +361,8 @@ CREATE TABLE public.profile (
     ghost_buster boolean DEFAULT false,
     ghost_fast boolean DEFAULT false,
     ghost_fine boolean DEFAULT false,
-    ghost_rare boolean DEFAULT false
+    ghost_rare boolean DEFAULT false,
+    aura_tutorial_seen boolean DEFAULT false
 );
 
 ALTER TABLE public.profile OWNER TO cat_bot;

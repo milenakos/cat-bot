@@ -5265,6 +5265,21 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
         user.tutorial_state = 5
         await user.save()
         await message.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
+    elif not user.aura_tutorial_seen and any(a != " " for a in user.cat_auras):
+        await message.followup.send(
+            f"""{get_emoji("nicecat_r")} __You unlocked a Cat Aura!__
+Your cats gain cosmetic auras once you collect a bunch of them, to be specific:
+- {get_emoji("yellow")} Yellow aura: have atleast 2% of all cats of that type in the server
+- {get_emoji("cyan")} Cyan aura: atleast 4% of cats of type
+- {get_emoji("pink")} Pink aura: atleast 7% of cats of type
+- {get_emoji("red")} Red aura: have the most of that cat out of anyone in the server
+- {get_emoji("rainbow")} Rainbow aura: *very* small chance to unlock when catching that cat
+For example, if there is a total of 100,000 Fine cats in your server, you will need to own atleast 2,000 for Yellow, 4,000 for Cyan, and 7,000 for Pink auras.
+""",
+            ephemeral=True,
+        )
+        user.aura_tutorial_seen = True
+        await user.save()
 
 
 @bot.tree.command(description="Get a link which embeds to your Cat Bot profile in any server!")
