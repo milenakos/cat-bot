@@ -4859,7 +4859,12 @@ async def gen_inventory(
     # around here we count aches
     unlocked, total = count_achievements(person)
     highlighted_ach = person.highlighted_ach.strip() if person.highlighted_ach else None
-    if highlighted_ach and highlighted_ach in ach_list and person[highlighted_ach]:
+    if (
+        highlighted_ach
+        and highlighted_ach in ach_list
+        and person[highlighted_ach]
+        and ach_list[highlighted_ach]["parent"] not in data.muted_ach_categories
+    ):
         # highlighted ach
         things.append(f"{get_emoji('ach')} **{ach_list[highlighted_ach]['title']}** ({unlocked}/{total})")
     else:
@@ -5125,7 +5130,11 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
 
         def category_select() -> None:
             if "ach" in column:
-                options = [discord.SelectOption(emoji=get_emoji(v), label=k) for k, v in data.ach_categories.items()]
+                options = [
+                    discord.SelectOption(emoji=get_emoji(v), label=k)
+                    for k, v in data.ach_categories.items()
+                    if k not in data.muted_ach_categories
+                ]
                 options.insert(0, discord.SelectOption(label="None", emoji="❌", description="No featured achievement."))
             else:
                 options = [discord.SelectOption(emoji=stat[0], label=stat[1]) for stat in stats if len(stat) == 2]
@@ -5160,7 +5169,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
             options.append(
                 discord.SelectOption(
                     emoji=get_emoji("ach"),
-                    label="Achievement" if not highlighted_ach or highlighted_ach not in ach_list else ach_list[highlighted_ach]["title"],
+                    label="Achievement" if highlighted_ach_title == "None" else highlighted_ach_title,
                     description="Choose an unlocked achievement to highlight",
                     value="highlighted_ach",
                 )
@@ -5183,6 +5192,14 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
 
         highlights = get_highlights(person, stats)
         highlighted_ach = person.highlighted_ach.strip() if person.highlighted_ach else None
+        if (
+            not highlighted_ach
+            or highlighted_ach not in ach_list
+            or ach_list[highlighted_ach]["parent"] in data.muted_ach_categories
+        ):
+            highlighted_ach_title = "None"
+        else:
+            highlighted_ach_title = ach_list[highlighted_ach]["title"]
 
         view = LayoutView(timeout=VIEW_TIMEOUT)
         button = Button(style=discord.ButtonStyle.blurple, label="Compact Inventory", emoji="✅" if person.compact_inventory else "❌")
@@ -5190,7 +5207,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
 
         highlights_section = f"""__Highlights__
 {"\n".join(highlights)}
-{get_emoji("ach")} {"None" if not highlighted_ach or highlighted_ach not in ach_list else ach_list[highlighted_ach]["title"]}"""
+{get_emoji("ach")} {highlighted_ach_title}"""
 
         select = discord.ui.Select()
         line_select()
