@@ -4859,12 +4859,7 @@ async def gen_inventory(
     # around here we count aches
     unlocked, total = count_achievements(person)
     highlighted_ach = person.highlighted_ach.strip() if person.highlighted_ach else None
-    if (
-        highlighted_ach
-        and highlighted_ach in ach_list
-        and person[highlighted_ach]
-        and ach_list[highlighted_ach]["parent"] not in data.muted_ach_categories
-    ):
+    if highlighted_ach and highlighted_ach in ach_list and person[highlighted_ach] and ach_list[highlighted_ach]["parent"] not in data.muted_ach_categories:
         # highlighted ach
         things.append(f"{get_emoji('ach')} **{ach_list[highlighted_ach]['title']}** ({unlocked}/{total})")
     else:
@@ -5130,11 +5125,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
 
         def category_select() -> None:
             if "ach" in column:
-                options = [
-                    discord.SelectOption(emoji=get_emoji(v), label=k)
-                    for k, v in data.ach_categories.items()
-                    if k not in data.muted_ach_categories
-                ]
+                options = [discord.SelectOption(emoji=get_emoji(v), label=k) for k, v in data.ach_categories.items() if k not in data.muted_ach_categories]
                 options.insert(0, discord.SelectOption(label="None", emoji="❌", description="No featured achievement."))
             else:
                 options = [discord.SelectOption(emoji=stat[0], label=stat[1]) for stat in stats if len(stat) == 2]
@@ -5192,11 +5183,7 @@ async def inventory(message: discord.Interaction, person_id: discord.User | disc
 
         highlights = get_highlights(person, stats)
         highlighted_ach = person.highlighted_ach.strip() if person.highlighted_ach else None
-        if (
-            not highlighted_ach
-            or highlighted_ach not in ach_list
-            or ach_list[highlighted_ach]["parent"] in data.muted_ach_categories
-        ):
+        if not highlighted_ach or highlighted_ach not in ach_list or ach_list[highlighted_ach]["parent"] in data.muted_ach_categories:
             highlighted_ach_title = "None"
         else:
             highlighted_ach_title = ach_list[highlighted_ach]["title"]
@@ -5285,7 +5272,7 @@ Global, buy anything from [the store](https://catbot.shop) to unlock.
         user.tutorial_state = 5
         await user.save()
         await message.followup.send(view=await get_tutorial_view(message.user.id), ephemeral=True)
-    elif not user.aura_tutorial_seen and any(a != " " for a in user.cat_auras):
+    elif not person.aura_tutorial_seen and any(a != " " for a in user.cat_auras):
         await message.followup.send(
             f"""{get_emoji("nicecat_r")} __You unlocked a Cat Aura!__
 Your cats gain cosmetic auras once you collect a bunch of them, to be specific:
