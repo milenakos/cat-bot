@@ -8923,6 +8923,7 @@ async def blackcat(message: discord.Interaction):
         await user.save()
 
         score = 0
+        stand_debounce = False
 
         async def hit_callback(interaction: discord.Interaction) -> None:
             nonlocal score
@@ -8937,9 +8938,13 @@ async def blackcat(message: discord.Interaction):
                 await show_game(interaction)
 
         async def stand_callback(interaction: discord.Interaction) -> None:
+            nonlocal stand_debounce
+            if stand_debounce:
+                return
             if interaction.user != message.user:
                 await do_funny(interaction)
                 return
+            stand_debounce = True
             await finish(interaction, busted=False)
 
         async def show_game(interaction: discord.Interaction) -> None:
