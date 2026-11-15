@@ -5285,8 +5285,8 @@ For example, if there is a total of 100,000 Fine cats in your server, you will n
 """,
             ephemeral=True,
         )
-        user.aura_tutorial_seen = True
-        await user.save()
+        person.aura_tutorial_seen = True
+        await person.save()
 
 
 @bot.tree.command(description="Get a link which embeds to your Cat Bot profile in any server!")
