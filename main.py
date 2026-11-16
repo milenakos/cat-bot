@@ -366,7 +366,7 @@ def plural(word: str, count: int) -> str:
     return word + "s"
 
 
-def log_stats(key: str, tags: dict[str, str] | None = None, value: float = 1) -> None:
+def log_stats(key: str, tags: dict | None = None, value: float = 1) -> None:
     logger.debug("Cat Bot - %s", json.dumps({"name": str(key), "gauge": {"value": int(value)}, "tags": tags or {}}))
 
 
@@ -2566,7 +2566,7 @@ Enjoy your goods!"""
                         do_laugh = False
                         user[f"cat_{channel.cattype}"] += 1
                         user.total_catches += 1
-                        user.last_catch = time.time()
+                        user.last_catch = int(time.time())
                         user.last_catch_channel = message.channel.id
                         icon = get_emoji(channel.cattype.lower() + "cat")
                         new_count = user[f"cat_{channel.cattype}"]
@@ -2647,7 +2647,7 @@ Enjoy your goods!"""
 
             if channel.yet_to_spawn < time.time():
                 # if there isnt already a scheduled spawn
-                channel.yet_to_spawn = time.time() + decided_time + 10
+                channel.yet_to_spawn = int(time.time() + decided_time + 10)
             else:
                 channel.yet_to_spawn = 0
                 decided_time = 0
@@ -2655,7 +2655,7 @@ Enjoy your goods!"""
 
             try:
                 current_time = message.created_at.timestamp()
-                channel.lastcatches = current_time
+                channel.lastcatches = int(current_time)
                 cat_temp = channel.cat
                 channel.cat = 0
                 le_emoji = None
@@ -3172,10 +3172,10 @@ Enjoy your goods!"""
                 log_stats("postcatch", {"amount": str(silly_amount), "cattype": le_emoji})
 
                 user.total_catches += 1
-                user.last_catch = time.time()
+                user.last_catch = int(time.time())
                 user.last_catch_channel = message.channel.id
                 if do_time:
-                    user.total_catch_time += time_caught
+                    user.total_catch_time += int(time_caught)
 
                 # handle fastest and slowest catches
                 if do_time and time_caught < user.time:
@@ -7678,6 +7678,8 @@ async def gift(
             user[key] -= amount
             reciever[key] += amount
             if key.startswith("cat_"):
+                assert isinstance(user, Profile)
+                assert isinstance(reciever, Profile)
                 user.cats_gifted += amount
                 reciever.cat_gifts_recieved += amount
             await user.save()
@@ -10198,6 +10200,7 @@ You can stop. That's okay. Seriously."""
 
             h = list(user.perks) if user.perks else []
             user.perk_selected = True
+            assert interaction.custom_id is not None
             h.append(interaction.custom_id)
             user.perks = h.copy()
             user.perk1 = ""
@@ -10237,9 +10240,9 @@ You can stop. That's okay. Seriously."""
                 )
             )
 
-        user.perk1 = perk_uuids[0] if len(perk_uuids) > 0 else None
-        user.perk2 = perk_uuids[1] if len(perk_uuids) > 1 else None
-        user.perk3 = perk_uuids[2] if len(perk_uuids) > 2 else None
+        user.perk1 = perk_uuids[0] if len(perk_uuids) > 0 else "None"
+        user.perk2 = perk_uuids[1] if len(perk_uuids) > 1 else "None"
+        user.perk3 = perk_uuids[2] if len(perk_uuids) > 2 else "None"
         if reroll:
             user.reroll_level = -1
         await user.save()
@@ -11384,7 +11387,7 @@ async def swap(message: discord.Interaction, user1: discord.User, user2: discord
             profile1 = await Profile.get_or_create(guild_id=message.guild.id, user_id=user1.id)
             profile2 = await Profile.get_or_create(guild_id=message.guild.id, user_id=user2.id)
 
-            profile1.user_id = the_id  # temp swap
+            profile1.user_id = message.id  # temp swap
             await profile1.save()
             profile2.user_id = user1.id
             await profile2.save()
@@ -11417,8 +11420,7 @@ async def swap(message: discord.Interaction, user1: discord.User, user2: discord
     button.callback = confirmed
     view.add_item(button)
     thing = f"Are you sure you want to swap the Cat Bot data of {user1.mention} and {user2.mention}? Please use this responsibly."
-    res = await message.response.send_message(thing, view=view, allowed_mentions=discord.AllowedMentions(users=True))
-    the_id = res.message_id
+    await message.response.send_message(thing, view=view, allowed_mentions=discord.AllowedMentions(users=True))
 
 
 @admin_group.command(description="Reset people")
@@ -11432,12 +11434,12 @@ async def reset(message: discord.Interaction, person_id: discord.User):
 
         try:
             profile = await Profile.get_or_create(guild_id=message.guild.id, user_id=person_id.id)
-            profile.guild_id = the_id
+            profile.guild_id = message.id
             await profile.save()
             async for p in Prism.filter("guild_id = $1 AND user_id = $2", message.guild.id, person_id.id):
-                p.guild_id = the_id
+                p.guild_id = message.id
                 await p.save()
-            await Restore.create(guild_id=message.guild.id, user_id=person_id.id, username=person_id.name, id=the_id)
+            await Restore.create(guild_id=message.guild.id, user_id=person_id.id, username=person_id.name, id=message.id)
             await interaction.response.edit_message(
                 content=f"Done! rip {person_id.mention}. f's in chat.\nyou can revert this in the next 7 days via `/undo`. contact us for older reverts: <https://discord.gg/staring>",
                 view=None,
@@ -11457,8 +11459,7 @@ async def reset(message: discord.Interaction, person_id: discord.User):
         thing += " (this will make me sad)"
     else:
         thing += " Please use this responsibly."
-    res = await message.response.send_message(thing, view=view, allowed_mentions=discord.AllowedMentions(users=True))
-    the_id = res.message_id
+    await message.response.send_message(thing, view=view, allowed_mentions=discord.AllowedMentions(users=True))
 
 
 @admin_group.command(description="[VERY DANGEROUS] Reset/wipe all Cat Bot data of this server")
@@ -11987,7 +11988,7 @@ async def do_vote(user: User, created_at: float) -> None:
     else:
         user.vote_streak += 1
 
-    user.vote_time_topgg = created_at
+    user.vote_time_topgg = int(created_at)
 
     channeley = await fetch_dm_channel(user)
 

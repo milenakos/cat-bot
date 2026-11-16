@@ -24,7 +24,7 @@
 
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
-from typing import Any, ClassVar, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 import asyncpg
 import asyncpg.pool
@@ -75,11 +75,19 @@ class Model:
         else:
             self._connection = _get_pool()
 
-    # setter sugar
-    def __setattr__(self, name: str, value: Any) -> None:
-        if name[0] == "_":
-            return super().__setattr__(name, value)
-        self.__setitem__(name, value)
+    # hide dynamic getters/setters from the type checker so it uses subclass field annotations
+    if not TYPE_CHECKING:
+        # setter sugar
+        def __setattr__(self, name: str, value: Any) -> None:
+            if name[0] == "_":
+                return super().__setattr__(name, value)
+            self.__setitem__(name, value)
+
+        # getter sugar
+        def __getattr__(self, name: str) -> Any:
+            if name[0] == "_":
+                raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+            return self.__values[name]
 
     def __setitem__(self, name: str, value: Any) -> None:
         if name[0] == "_":
@@ -94,12 +102,6 @@ class Model:
                 self.__values[name] = value
         else:
             raise KeyError(name)
-
-    # getter sugar
-    def __getattr__(self, name: str) -> Any:
-        if name[0] == "_":
-            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
-        return self.__values[name]
 
     def __getitem__(self, name: str) -> Any:
         if name[0] == "_":
