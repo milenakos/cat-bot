@@ -8407,7 +8407,7 @@ async def bakery(message: discord.Interaction):
             "__Order Details__",
             f"""🍪 {min(profile.cookies, 120)}/120 {"✅" if profile.cookies >= 120 else ""}
 ☕ {min(profile.coffees, 140)}/140 {"✅" if profile.coffees >= 140 else ""}
-{get_emoji("nicecat")} {min(profile.cat_Nice, 2)}/2 {"✅" if profile.cat_Nice >= 2 else ""}""",
+{get_aura_emoji("Nice", profile.cat_auras)} {min(profile.cat_Nice, 2)}/2 {"✅" if profile.cat_Nice >= 2 else ""}""",
             "===",
             "__Order Reward__",
             f"""{get_emoji("bakegg_egg")} 1 Bake.gg Cat Egg\n{get_emoji("silverpack")} 1 Silver Pack""",
