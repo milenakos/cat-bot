@@ -4616,14 +4616,13 @@ async def last(message: discord.Interaction):
     assert message.guild is not None
     assert isinstance(message.channel, GuildMessageable)
 
-    view = LayoutView(timeout=VIEW_TIMEOUT)
-    view.add_item(TextDisplay(await build_last_text(message)))
+    view = View(timeout=VIEW_TIMEOUT)
     button = Button(emoji="🔄", label="Refresh", custom_id="refresh:last")
     button.callback = last.callback  # pyright: ignore[reportAttributeAccessIssue]
-    view.add_item(ActionRow(button))
+    view.add_item(button)
 
     kwargs = {"ephemeral": True} if message.type == discord.InteractionType.application_command else {}
-    await send_or_edit(message, view=view, **kwargs)
+    await send_or_edit(message, content=await build_last_text(message), view=view, **kwargs)
 
 
 async def build_last_text(message: discord.Interaction) -> str:
