@@ -593,6 +593,11 @@ def register_persistent_rows() -> None:
         ("casino:roulette", roulette),
         ("casino:blackcat", blackcat),
         ("casino:balance", casino.callback),
+        ("refresh:battlepass", battlepass.callback),
+        ("refresh:achievements", achievements.callback),
+        ("refresh:bakery", bakery.callback),
+        ("refresh:snake", snake.callback),
+        ("refresh:last", last.callback),
     ]
 
     row = ActionRow()
@@ -4611,17 +4616,14 @@ async def last(message: discord.Interaction):
     assert message.guild is not None
     assert isinstance(message.channel, GuildMessageable)
 
-    async def refresh(interaction: discord.Interaction):
-        await interaction.response.edit_message(content=await build_last_text(interaction), view=build_view())
+    view = LayoutView(timeout=VIEW_TIMEOUT)
+    view.add_item(TextDisplay(await build_last_text(message)))
+    button = Button(emoji="🔄", label="Refresh", custom_id="refresh:last")
+    button.callback = last.callback  # pyright: ignore[reportAttributeAccessIssue]
+    view.add_item(ActionRow(button))
 
-    def build_view():
-        view = View(timeout=VIEW_TIMEOUT)
-        button = Button(emoji="🔄", label="Refresh")
-        button.callback = refresh
-        view.add_item(button)
-        return view
-
-    await message.response.send_message(await build_last_text(message), view=build_view(), ephemeral=True)
+    kwargs = {"ephemeral": True} if message.type == discord.InteractionType.application_command else {}
+    await send_or_edit(message, view=view, **kwargs)
 
 
 async def build_last_text(message: discord.Interaction) -> str:
@@ -6772,8 +6774,8 @@ async def battlepass(message: discord.Interaction):
 
         embed.add_item(TextDisplay(description))
 
-        refresh_button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
-        refresh_button.callback = gen_main
+        refresh_button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple, custom_id="refresh:battlepass")
+        refresh_button.callback = battlepass.callback  # pyright: ignore[reportAttributeAccessIssue]
 
         if user.reminders_enabled:
             reminder_button = Button(emoji="🔕", style=ButtonStyle.blurple)
@@ -7156,15 +7158,12 @@ Currently winning: {winner}"""
             embed.add_item(TextDisplay("GG HOLY SHIT"))
         view.add_item(embed)
 
-        button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
-        button.callback = refresh
+        button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple, custom_id="refresh:snake")
+        button.callback = snake.callback  # pyright: ignore[reportAttributeAccessIssue]
         button2 = Button(emoji="🔔", label="Toggle Move DMs", style=ButtonStyle.blurple)
         button2.callback = toggle_dms
         view.add_item(ActionRow(button, button2))
         return view
-
-    async def refresh(interaction: discord.Interaction) -> None:
-        await interaction.response.edit_message(view=await gen_main())
 
     await send_or_edit(message, view=await gen_main())
 
@@ -8294,11 +8293,6 @@ async def bakery(message: discord.Interaction):
     if impostor_check(message):
         return await do_funny(message)
 
-    async def refresh(interaction: discord.Interaction) -> None:
-        if interaction.user != message.user:
-            return await do_funny(interaction)
-        await interaction.response.edit_message(view=await gen_bakery())
-
     async def grind(interaction: discord.Interaction, field: str, quest: str, emoji: str) -> None:
         assert message.guild is not None
         if interaction.user != message.user:
@@ -8316,8 +8310,8 @@ async def bakery(message: discord.Interaction):
             return
 
         count = profile[field]
-        back_button = Button(label="Back", style=ButtonStyle.gray, emoji="⬅️")
-        back_button.callback = refresh
+        back_button = Button(label="Back", style=ButtonStyle.gray, emoji="⬅️", custom_id="refresh:bakery")
+        back_button.callback = bakery.callback  # pyright: ignore[reportAttributeAccessIssue]
         view = LayoutView(timeout=VIEW_TIMEOUT)
         view.add_item(ActionRow(make_grind_button(field, quest, emoji, f"{count:,}"), back_button))
         await interaction.response.edit_message(view=view)
@@ -8360,8 +8354,8 @@ async def bakery(message: discord.Interaction):
                 except Exception:
                     pass
 
-        refresh_button = Button(label="Refresh", emoji="🔄")
-        refresh_button.callback = refresh
+        refresh_button = Button(label="Refresh", emoji="🔄", custom_id="refresh:bakery")
+        refresh_button.callback = bakery.callback  # pyright: ignore[reportAttributeAccessIssue]
         grind_row = ActionRow(
             make_grind_button("cookies", "cookie", "🍪", f"{profile.cookies:,}"),
             make_grind_button("coffees", "coffee", "☕", f"{profile.coffees:,}"),
@@ -10692,8 +10686,8 @@ async def achievements(message: discord.Interaction):
         for i in range(0, len(buttons), 2):
             embed.add_item(ActionRow(*buttons[i : i + 2]))
 
-        button = Button(label="Refresh", emoji="🔄", style=ButtonStyle.blurple)
-        button.callback = gen_main
+        button = Button(label="Refresh", emoji="🔄", style=ButtonStyle.blurple, custom_id="refresh:achievements")
+        button.callback = achievements.callback  # pyright: ignore[reportAttributeAccessIssue]
         view.add_item(await nav_row(user, "ach"))
         view.add_item(embed)
         view.add_item(ActionRow(button))
