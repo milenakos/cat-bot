@@ -446,23 +446,23 @@ def impostor_check(interaction: discord.Interaction) -> bool:
 
 async def nav_row(profile: Profile, current: str) -> ActionRow:
     nav_view_data = [
-        {"emoji": "🎒", "callback": inventory.callback},
-        {"emoji": "⬆️", "callback": battlepass.callback},
-        {"emoji": "ach", "callback": achievements.callback},
-        {"emoji": "🧩", "callback": minigames},
+        {"emoji": "🎒", "callback": inventory.callback, "custom_id": "nav:inventory"},
+        {"emoji": "⬆️", "callback": battlepass.callback, "custom_id": "nav:battlepass"},
+        {"emoji": "ach", "callback": achievements.callback, "custom_id": "nav:achievements"},
+        {"emoji": "🧩", "callback": minigames, "custom_id": "nav:minigames"},
     ]
 
     # cta button
     global_user = await User.get_or_create(user_id=profile.user_id)
     if global_user.tutorial_state < 10:
         # tutorial
-        nav_view_data.append({"emoji": "📚", "callback": tutorial.callback, "style": ButtonStyle.green})
+        nav_view_data.append({"emoji": "📚", "callback": tutorial.callback, "style": ButtonStyle.green, "custom_id": "nav:tutorial"})
     elif len(data.news_list) > len(global_user.news_state.strip()) or global_user.news_state.strip()[last_active_article] == "0":
         # unread news
-        nav_view_data.append({"emoji": "📰", "callback": news.callback, "style": ButtonStyle.green})
+        nav_view_data.append({"emoji": "📰", "callback": news.callback, "style": ButtonStyle.green, "custom_id": "nav:news"})
     elif not global_user.premium:
         # premium cta
-        nav_view_data.append({"emoji": "👑", "callback": premium})
+        nav_view_data.append({"emoji": "👑", "callback": premium, "custom_id": "nav:premium"})
     else:
         # rain cta
         nav_view_data.append({"emoji": "☔", "url": "https://catbot.shop/"})
@@ -475,6 +475,7 @@ async def nav_row(profile: Profile, current: str) -> ActionRow:
             url=entry.get("url", None),
             emoji=get_emoji(entry["emoji"]),
             style=style,
+            custom_id=entry.get("custom_id"),
         )
         if entry.get("callback"):
             button.callback = entry["callback"]
@@ -484,11 +485,11 @@ async def nav_row(profile: Profile, current: str) -> ActionRow:
 
 def minigame_row(current: str | None) -> ActionRow:
     minigame_view_data = [
-        {"emoji": "🎰", "callback": casino.callback},
-        {"emoji": "🐟", "callback": fish.callback},
-        {"emoji": "🍪", "callback": bakery.callback},
-        {"emoji": "🍎", "callback": snake.callback},
-        {"emoji": "🎲", "callback": pig.callback},
+        {"emoji": "🎰", "callback": casino.callback, "custom_id": "mini:casino"},
+        {"emoji": "🐟", "callback": fish.callback, "custom_id": "mini:fish"},
+        {"emoji": "🍪", "callback": bakery.callback, "custom_id": "mini:bakery"},
+        {"emoji": "🍎", "callback": snake.callback, "custom_id": "mini:snake"},
+        {"emoji": "🎲", "callback": pig.callback, "custom_id": "mini:pig"},
     ]
     row = ActionRow()
     for entry in minigame_view_data:
@@ -496,6 +497,7 @@ def minigame_row(current: str | None) -> ActionRow:
             label=entry.get("label", None),
             emoji=entry["emoji"],
             style=ButtonStyle.blurple if current == entry["emoji"] else ButtonStyle.gray,
+            custom_id=entry["custom_id"],
         )
         button.callback = entry["callback"]
         row.add_item(button)
@@ -508,18 +510,21 @@ async def inventory_row(profile: Profile, current: str) -> ActionRow:
     pack_count = sum(profile[f"pack_{pack['name'].lower()}"] for pack in data.pack_data)
     rain_count = f"{global_user.rain_minutes:,}" + ("" if profile.rain_minutes == 0 else f"+{profile.rain_minutes:,}")
     prism_count = await Prism.count("guild_id = $1 AND user_id = $2", profile.guild_id, profile.user_id)
+    prism_callback = prism.callback if profile.collecter or prism_count else None
     inventory_view_data = [
-        {"emoji": "nicecat", "callback": inventory.callback, "label": f"{cat_count:,}" if cat_count else None},
-        {"emoji": "goldpack", "callback": packs.callback, "label": f"{pack_count:,}" if pack_count else None},
-        {"emoji": "☔", "callback": rain.callback, "label": rain_count if rain_count != "0" else None},
-        {"emoji": "prism", "callback": prism.callback if profile.collecter or prism_count else None, "label": f"{prism_count:,}" if prism_count else None},
+        {"emoji": "nicecat", "callback": inventory.callback, "label": f"{cat_count:,}" if cat_count else None, "custom_id": "inv:cats"},
+        {"emoji": "goldpack", "callback": packs.callback, "label": f"{pack_count:,}" if pack_count else None, "custom_id": "inv:packs"},
+        {"emoji": "☔", "callback": rain.callback, "label": rain_count if rain_count != "0" else None, "custom_id": "inv:rain"},
+        {"emoji": "prism", "callback": prism_callback, "label": f"{prism_count:,}" if prism_count else None, "custom_id": "inv:prism"},
     ]
 
     if not profile.dark_market_active:
-        inventory_view_data.append({"emoji": "catnip_disabled", "callback": None})
+        inventory_view_data.append({"emoji": "catnip_disabled", "callback": None, "custom_id": "inv:catnip"})
     else:
         hours_left = math.ceil((profile.catnip_active - time.time()) / 3600)
-        inventory_view_data.append({"emoji": "catnip", "callback": catnip.callback, "label": f"{hours_left}h" if hours_left > 0 else None})
+        inventory_view_data.append(
+            {"emoji": "catnip", "callback": catnip.callback, "label": f"{hours_left}h" if hours_left > 0 else None, "custom_id": "inv:catnip"}
+        )
 
     row = ActionRow()
     for entry in inventory_view_data:
@@ -528,6 +533,7 @@ async def inventory_row(profile: Profile, current: str) -> ActionRow:
             emoji=get_emoji(entry["emoji"]),
             style=ButtonStyle.blurple if current == entry["emoji"] else ButtonStyle.gray,
             disabled=entry["callback"] is None,
+            custom_id=entry["custom_id"],
         )
         button.callback = entry["callback"]
         row.add_item(button)
@@ -537,10 +543,10 @@ async def inventory_row(profile: Profile, current: str) -> ActionRow:
 def casino_row(user: Profile, current: str) -> ActionRow:
     casino_view_data = [
         {"emoji": "↘️", "callback": None},
-        {"emoji": "🎰", "callback": slots},
-        {"emoji": "🎡", "callback": roulette},
-        {"emoji": "🃏", "callback": blackcat},
-        {"label": f"{user.casino_balance:,}", "emoji": "💰", "callback": casino.callback},
+        {"emoji": "🎰", "callback": slots, "custom_id": "casino:slots"},
+        {"emoji": "🎡", "callback": roulette, "custom_id": "casino:roulette"},
+        {"emoji": "🃏", "callback": blackcat, "custom_id": "casino:blackcat"},
+        {"label": f"{user.casino_balance:,}", "emoji": "💰", "callback": casino.callback, "custom_id": "casino:balance"},
     ]
     row = ActionRow()
     for entry in casino_view_data:
@@ -549,11 +555,56 @@ def casino_row(user: Profile, current: str) -> ActionRow:
             emoji=entry["emoji"],
             style=ButtonStyle.blurple if current == entry["emoji"] else ButtonStyle.gray,
             disabled=entry["callback"] is None,
+            custom_id=entry.get("custom_id"),
         )
         if entry["callback"] is not None:
             button.callback = entry["callback"]
         row.add_item(button)
     return row
+
+
+def register_persistent_rows() -> None:
+    for view in list(bot.persistent_views):
+        if getattr(view, "_catbot_persistent_rows", False):
+            view.stop()
+
+    persistent = LayoutView(timeout=None)
+    persistent._catbot_persistent_rows = True  # type: ignore[attr-defined]
+
+    buttons = [
+        ("nav:inventory", inventory.callback),
+        ("nav:battlepass", battlepass.callback),
+        ("nav:achievements", achievements.callback),
+        ("nav:minigames", minigames),
+        ("nav:tutorial", tutorial.callback),
+        ("nav:news", news.callback),
+        ("nav:premium", premium),
+        ("mini:casino", casino.callback),
+        ("mini:fish", fish.callback),
+        ("mini:bakery", bakery.callback),
+        ("mini:snake", snake.callback),
+        ("mini:pig", pig.callback),
+        ("inv:cats", inventory.callback),
+        ("inv:packs", packs.callback),
+        ("inv:rain", rain.callback),
+        ("inv:prism", prism.callback),
+        ("inv:catnip", catnip.callback),
+        ("casino:slots", slots),
+        ("casino:roulette", roulette),
+        ("casino:blackcat", blackcat),
+        ("casino:balance", casino.callback),
+    ]
+
+    row = ActionRow()
+    for i, (custom_id, callback) in enumerate(buttons):
+        if i and i % 5 == 0:
+            persistent.add_item(row)
+            row = ActionRow()
+        button = Button(label="\u200b", custom_id=custom_id)
+        button.callback = callback
+        row.add_item(button)
+    persistent.add_item(row)
+    bot.add_view(persistent)
 
 
 # this is some common code which is run whether someone gets an achievement
@@ -10304,7 +10355,7 @@ You can view your current bounties in the catnip menu."""
             await interaction.response.send_message(
                 f"""Your catnip expires <t:{user.catnip_active}:R>.
 Are you sure you want to start your bounties now?
-This will remove the remaining catnip time you have.""",
+This will remove the remaining perk time you have.""",
                 view=confirmation_view,
                 ephemeral=True,
             )
@@ -12250,6 +12301,7 @@ async def setup(bot2: commands.AutoShardedBot) -> None:
     bot = bot2
 
     patch_view_store()
+    register_persistent_rows()
 
     config.SOFT_RESTART_TIME = time.time()
 
