@@ -1550,7 +1550,7 @@ async def update_snake(snake_data: Snake) -> None:
 
     snake_data.next_update = round(time.time() - (time.time() % 3600) + 3600)
 
-    voter_ids = {int(i["user_id"]) for i in await _get_pool().fetch("SELECT user_id FROM profile WHERE voted_snake = true;")}
+    voter_ids = {p.user_id for p in await Profile.collect_limit(["user_id"], "voted_snake = true")}
     await _get_pool().execute("UPDATE profile SET voted_snake = false WHERE voted_snake = true;")
 
     if not snake_data.active:
@@ -5427,8 +5427,9 @@ def build_rain_summary_view(text: str, starter_id: int, guild_id: int, thankable
         if not starter_id:
             return
         try:
-            await Profile.get_or_create(user_id=starter_id, guild_id=guild_id)
-            await _get_pool().execute("UPDATE profile SET rain_thanks = rain_thanks + 1 WHERE user_id = $1 AND guild_id = $2", starter_id, guild_id)
+            u = await Profile.get_or_create(user_id=starter_id, guild_id=guild_id)
+            u.rain_thanks += 1
+            await u.save()
         except Exception:
             pass
 
@@ -6894,25 +6895,27 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
 
         try:
             async with transaction() as conn:
-                if await Prism.count("guild_id = $1", interaction.guild.id) >= len(prism_names):
+                # the upsert locks this guild's server row, so crafts in the same guild run one at a time
+                await Server.get_or_create(conn, server_id=interaction.guild.id)
+                if await Prism.count("guild_id = $1", interaction.guild.id, connection=conn) >= len(prism_names):
                     await interaction.response.send_message("This server has reached the prism limit.", ephemeral=True)
                     return
 
                 # determine the next name
                 selected_name = None
                 for selected_name in prism_names:
-                    if not await Prism.get_or_none(guild_id=message.guild.id, name=selected_name):
+                    if not await Prism.get_or_none(guild_id=message.guild.id, name=selected_name, connection=conn):
                         break
 
-                if youngest_prism := await Prism.collect("guild_id = $1 ORDER BY time DESC LIMIT 1", message.guild.id):
+                if youngest_prism := await Prism.collect("guild_id = $1 ORDER BY time DESC LIMIT 1", message.guild.id, connection=conn):
                     selected_time = max(round(time.time()), youngest_prism[0].time + 1)
                 else:
                     selected_time = round(time.time())
 
                 if (
                     not selected_name
-                    or await Prism.get_or_none(guild_id=message.guild.id, name=selected_name)
-                    or await Prism.count("guild_id = $1", message.guild.id) >= len(prism_names)
+                    or await Prism.get_or_none(guild_id=message.guild.id, name=selected_name, connection=conn)
+                    or await Prism.count("guild_id = $1", message.guild.id, connection=conn) >= len(prism_names)
                 ):
                     await interaction.response.send_message("This server has reached the prism limit.", ephemeral=True)
                     return
@@ -11905,16 +11908,16 @@ async def owner_find(ctx: commands.Context, user_id: int, guild_id: int | None =
         await ctx.reply(file=discord.File(io.StringIO(result), filename="result.txt"))  # pyright: ignore[reportArgumentType]
 
 
-async def move_prisms(conn, from_profile: asyncpg.Record, to_guild_id: int, to_user_id: int) -> int:
+async def move_prisms(conn, from_profile: Profile, to_guild_id: int, to_user_id: int) -> int:
     # moves prisms owned by from_profile, returns how many were deleted due to a name collision in the destination guild
-    taken = {r["name"] for r in await conn.fetch("SELECT name FROM prism WHERE guild_id = $1", to_guild_id)}
+    taken = {p.name for p in await Prism.collect("guild_id = $1", to_guild_id, connection=conn)}
     moved_ids = []
     deleted_ids = []
-    for p in await conn.fetch("SELECT id, name FROM prism WHERE guild_id = $1 AND user_id = $2", from_profile["guild_id"], from_profile["user_id"]):
-        if p["name"] in taken and from_profile["guild_id"] != to_guild_id:
-            deleted_ids.append(p["id"])
+    for p in await Prism.collect("guild_id = $1 AND user_id = $2", from_profile["guild_id"], from_profile["user_id"], connection=conn):
+        if p.name in taken and from_profile["guild_id"] != to_guild_id:
+            deleted_ids.append(p.id)
         else:
-            moved_ids.append(p["id"])
+            moved_ids.append(p.id)
     if deleted_ids:
         await conn.execute("DELETE FROM prism WHERE id = ANY($1)", deleted_ids)
     if moved_ids:
@@ -11927,7 +11930,8 @@ async def resolve_profile_id(conn, ref: str) -> int | None:
     try:
         if "." in ref:
             guild_id, user_id = ref.split(".")
-            return await conn.fetchval("SELECT id FROM profile WHERE guild_id = $1 AND user_id = $2", int(guild_id), int(user_id))
+            profile = await Profile.get_or_none(fields=["id"], connection=conn, guild_id=int(guild_id), user_id=int(user_id))
+            return profile.id if profile else None
         return int(ref)
     except ValueError:
         return None
@@ -11947,7 +11951,9 @@ async def owner_merge(ctx: commands.Context, from_ref: str, to_ref: str) -> None
             await ctx.reply("profiles must be different")
             return
 
-        rows = {r["id"]: r for r in await conn.fetch("SELECT * FROM profile WHERE id = ANY($1) ORDER BY id FOR UPDATE", [from_id, to_id])}
+        rows = {
+            r["id"]: Profile(r, connection=conn) for r in await conn.fetch("SELECT * FROM profile WHERE id = ANY($1) ORDER BY id FOR UPDATE", [from_id, to_id])
+        }
         if from_id not in rows or to_id not in rows:
             await ctx.reply("profile not found")
             return
@@ -11963,10 +11969,14 @@ async def owner_merge(ctx: commands.Context, from_ref: str, to_ref: str) -> None
             new_values[ach] = bool(src[ach] or dst[ach])
 
         # to profile gets everything, from profile is cleared
-        sets = ", ".join(f'"{col}" = ${i}' for i, col in enumerate(columns, start=1))
-        await conn.execute(f"UPDATE profile SET {sets} WHERE id = ${len(columns) + 1}", *(new_values[c] for c in columns), to_id)
-        clear = ", ".join(f'"cat_{c}" = 0' for c in cattypes) + ", " + ", ".join(f'"{a}" = false' for a in ach_names)
-        await conn.execute(f"UPDATE profile SET {clear} WHERE id = $1", from_id)
+        for col in columns:
+            dst[col] = new_values[col]
+        await dst.save()
+        for col in cattypes:
+            src[f"cat_{col}"] = 0
+        for ach in ach_names:
+            src[ach] = False
+        await src.save()
 
     await ctx.reply(f"merged profile {from_id} into {to_id} ({refunded} {plural('prism', refunded)} refunded as cats)")
 
@@ -11985,7 +11995,9 @@ async def owner_move(ctx: commands.Context, from_ref: str, to_ref: str) -> None:
             await ctx.reply("profiles must be different")
             return
 
-        rows = {r["id"]: r for r in await conn.fetch("SELECT * FROM profile WHERE id = ANY($1) ORDER BY id FOR UPDATE", [from_id, to_id])}
+        rows = {
+            r["id"]: Profile(r, connection=conn) for r in await conn.fetch("SELECT * FROM profile WHERE id = ANY($1) ORDER BY id FOR UPDATE", [from_id, to_id])
+        }
         if from_id not in rows or to_id not in rows:
             await ctx.reply("profile not found")
             return
@@ -11993,11 +12005,14 @@ async def owner_move(ctx: commands.Context, from_ref: str, to_ref: str) -> None:
         guild_id, user_id = dst["guild_id"], dst["user_id"]
 
         await conn.execute("DELETE FROM prism WHERE guild_id = $1 AND user_id = $2", guild_id, user_id)
-        await conn.execute("DELETE FROM profile WHERE id = $1", to_id)
+        await dst.delete()
 
         refunded = await move_prisms(conn, src, guild_id, user_id)
-        refund_sets = "".join(f', "cat_{c}" = LEAST(2147483647, "cat_{c}"::bigint + $4)' for c in cattypes)
-        await conn.execute(f"UPDATE profile SET guild_id = $1, user_id = $2{refund_sets} WHERE id = $3", guild_id, user_id, from_id, refunded)
+        src.guild_id = guild_id
+        src.user_id = user_id
+        for c in cattypes:
+            src[f"cat_{c}"] += refunded
+        await src.save()
 
     await ctx.reply(
         f"moved profile {from_id} to guild {guild_id} user {user_id}, deleted profile {to_id} ({refunded} {plural('prism', refunded)} refunded as cats)"
