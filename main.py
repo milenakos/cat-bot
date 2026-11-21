@@ -10357,6 +10357,12 @@ This will remove the remaining perk time you have.""",
         await start_bounties(interaction.user.id)
         await interaction.response.edit_message(view=await gen_main())
 
+    async def refresh(interaction: discord.Interaction) -> None:
+        if interaction.user != message.user:
+            return await do_funny(interaction)
+        await user.refresh_from_db()
+        await interaction.response.edit_message(view=await gen_main())
+
     async def gen_main() -> LayoutView:
         await user.refresh_from_db()
         level = user.catnip_level
@@ -10519,6 +10525,11 @@ This will remove the remaining perk time you have.""",
 
         embed.add_item(action_row)
         myview.add_item(embed)
+
+        refresh_button = Button(emoji="🔄", label="Refresh", style=ButtonStyle.blurple)
+        refresh_button.callback = refresh
+        myview.add_item(ActionRow(refresh_button))
+
         return myview
 
     await message.response.send_message(view=await gen_main(), ephemeral=True)
