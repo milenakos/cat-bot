@@ -1384,14 +1384,29 @@ async def resolve_reminder_guild_name(guild_id: int) -> str:
 async def send_quest_reminders(quest_type: str, start_time: int) -> None:
     reminder_count = 0
     while True:
-        user = await Profile.collect(
-            f"(reminders_enabled = true AND reminder_{quest_type} != 0) AND "
-            f"(({quest_type}_cooldown != 0 AND {quest_type}_cooldown + 43200 < {start_time}) OR "
-            f"(reminder_{quest_type} > 1 AND reminder_{quest_type} < {start_time})) LIMIT 1",
+        record = await _get_pool().fetchrow(
+            f"""
+            WITH due AS (
+                SELECT id
+                FROM profile
+                WHERE reminders_enabled = true AND reminder_{quest_type} != 0
+                    AND (({quest_type}_cooldown != 0 AND {quest_type}_cooldown + 43200 < $1)
+                    OR (reminder_{quest_type} > 1 AND reminder_{quest_type} < $1))
+                ORDER BY reminder_{quest_type}
+                LIMIT 1
+                FOR UPDATE SKIP LOCKED
+            )
+            UPDATE profile AS p
+            SET reminder_{quest_type} = 0
+            FROM due
+            WHERE p.id = due.id
+            RETURNING p.*
+            """,
+            start_time,
         )
-        if not user or not user[0]:
+        if not record:
             break
-        user = user[0]
+        user = Profile(record)
         await asyncio.sleep(0.2)
 
         await refresh_quests(user)
@@ -1418,9 +1433,7 @@ async def send_quest_reminders(quest_type: str, start_time: int) -> None:
             await user_dm.send(f"A new quest is available in {guild_name}!", embed=embed, view=view)
         except Exception:
             pass
-        user[f"reminder_{quest_type}"] = 0
         reminder_count += 1
-        await user.save()
 
     log_stats("reminders", {"type": quest_type}, reminder_count)
 
@@ -1428,10 +1441,27 @@ async def send_quest_reminders(quest_type: str, start_time: int) -> None:
 async def send_season_reminders(start_time: int) -> None:
     reminder_count = 0
     while True:
-        user = await Profile.collect(f"reminders_enabled = true AND reminder_season != 0 AND reminder_season < {start_time} LIMIT 1")
-        if not user or not user[0]:
+        record = await _get_pool().fetchrow(
+            """
+            WITH due AS (
+                SELECT id
+                FROM profile
+                WHERE reminders_enabled = true AND reminder_season != 0 AND reminder_season < $1
+                ORDER BY reminder_season
+                LIMIT 1
+                FOR UPDATE SKIP LOCKED
+            )
+            UPDATE profile AS p
+            SET reminder_season = 0
+            FROM due
+            WHERE p.id = due.id
+            RETURNING p.*
+            """,
+            start_time,
+        )
+        if not record:
             break
-        user = user[0]
+        user = Profile(record)
         await asyncio.sleep(0.2)
 
         await refresh_quests(user)
@@ -1444,9 +1474,7 @@ async def send_season_reminders(start_time: int) -> None:
             await user_dm.send(f"A new Cattlepass season has started in {guild_name}! {get_command_mention('battlepass')}")
         except Exception:
             pass
-        user.reminder_season = 0
         reminder_count += 1
-        await user.save()
 
     log_stats("reminders", {"type": "season"}, reminder_count)
 
@@ -1454,18 +1482,33 @@ async def send_season_reminders(start_time: int) -> None:
 async def send_weekly_reminders(start_time: int) -> None:
     reminder_count = 0
     while True:
-        user = await Profile.collect(f"reminders_enabled = true AND reminder_weekly != 0 AND reminder_weekly < {start_time} LIMIT 1")
-        if not user or not user[0]:
+        record = await _get_pool().fetchrow(
+            """
+            WITH due AS (
+                SELECT id
+                FROM profile
+                WHERE reminders_enabled = true AND reminder_weekly != 0 AND reminder_weekly < $1
+                ORDER BY reminder_weekly
+                LIMIT 1
+                FOR UPDATE SKIP LOCKED
+            )
+            UPDATE profile AS p
+            SET reminder_weekly = 0
+            FROM due
+            WHERE p.id = due.id
+            RETURNING p.*
+            """,
+            start_time,
+        )
+        if not record:
             break
-        user = user[0]
+        user = Profile(record)
         await asyncio.sleep(0.2)
 
         await refresh_quests(user)
         await user.refresh_from_db()
 
         if not user.weekly_quest:
-            user.reminder_weekly = 0
-            await user.save()
             continue
 
         quest_data = config.battle["quests"]["weekly"][user.weekly_quest]
@@ -1485,9 +1528,7 @@ async def send_weekly_reminders(start_time: int) -> None:
             await user_dm.send(f"A new weekly quest is available in {guild_name}!", embed=embed)
         except Exception:
             pass
-        user.reminder_weekly = 0
         reminder_count += 1
-        await user.save()
 
     log_stats("reminders", {"type": "weekly"}, reminder_count)
 
