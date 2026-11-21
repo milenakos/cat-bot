@@ -825,7 +825,7 @@
       "ttc": {"emoji": "⭕", "title": "Tie Cat Bot 3x in /tictactoe", "xp_min": 270, "xp_max": 370, "progress": 3},
       "roll": {"emoji": "🎲", "title": "/Roll a 6 on default dice", "xp_min": 175, "xp_max": 225, "progress": 1},
       "pig": {"emoji": "🎲", "title": "Get 40+ score in /pig", "xp_min": 300, "xp_max": 400, "progress": 1},
-      "roulette": {"emoji": "🎰", "title": "Win 3x in /casino roulette", "xp_min": 300, "xp_max": 400, "progress": 3},
+      "roulette": {"emoji": "🎡", "title": "Win 3x in /casino roulette", "xp_min": 300, "xp_max": 400, "progress": 3},
       "cookie": {"emoji": "🍪", "title": "Bake 50 /bakery cookies", "xp_min": 250, "xp_max": 350, "progress": 50},
       "coffee": {"emoji": "☕", "title": "Brew 50 /bakery coffees", "xp_min": 250, "xp_max": 350, "progress": 50},
       "fish": {"emoji": "🎣", "title": "Catch 5 /fish", "xp_min": 250, "xp_max": 350, "progress": 5},
