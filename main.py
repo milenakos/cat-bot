@@ -1430,7 +1430,7 @@ async def send_quest_reminders(quest_type: str, start_time: int) -> None:
         try:
             user_user = await User.get_or_create(user_id=user.user_id)
             user_dm = await fetch_dm_channel(user_user)
-            await user_dm.send(f"A new quest is available in {guild_name}!", embed=embed, view=view)
+            await user_dm.send(f"A new quest is available in [{guild_name}](<https://discord.com/channels/{user.guild_id}>)!", embed=embed, view=view)
         except Exception:
             pass
         reminder_count += 1
@@ -1471,7 +1471,9 @@ async def send_season_reminders(start_time: int) -> None:
         try:
             user_user = await User.get_or_create(user_id=user.user_id)
             user_dm = await fetch_dm_channel(user_user)
-            await user_dm.send(f"A new Cattlepass season has started in {guild_name}! {get_command_mention('battlepass')}")
+            await user_dm.send(
+                f"A new Cattlepass season has started in [{guild_name}](<https://discord.com/channels/{user.guild_id}>)! {get_command_mention('battlepass')}"
+            )
         except Exception:
             pass
         reminder_count += 1
@@ -1525,7 +1527,7 @@ async def send_weekly_reminders(start_time: int) -> None:
         try:
             user_user = await User.get_or_create(user_id=user.user_id)
             user_dm = await fetch_dm_channel(user_user)
-            await user_dm.send(f"A new weekly quest is available in {guild_name}!", embed=embed)
+            await user_dm.send(f"A new weekly quest is available in [{guild_name}](<https://discord.com/channels/{user.guild_id}>)!", embed=embed)
         except Exception:
             pass
         reminder_count += 1
