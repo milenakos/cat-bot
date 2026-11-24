@@ -505,17 +505,13 @@ def minigame_row(current: str | None) -> ActionRow:
 
 
 async def inventory_row(profile: Profile, current: str) -> ActionRow:
-    global_user = await User.get_or_create(user_id=profile.user_id)
-    cat_count = sum(profile[f"cat_{cat}"] for cat in cattypes)
-    pack_count = sum(profile[f"pack_{pack['name'].lower()}"] for pack in data.pack_data)
-    rain_count = f"{global_user.rain_minutes:,}" + ("" if profile.rain_minutes == 0 else f"+{profile.rain_minutes:,}")
     prism_count = await Prism.count("guild_id = $1 AND user_id = $2", profile.guild_id, profile.user_id)
     prism_callback = prism.callback if profile.collecter or prism_count else None
     inventory_view_data = [
-        {"emoji": "nicecat", "callback": inventory.callback, "label": f"{cat_count:,}" if cat_count else None, "custom_id": "inv:cats"},
-        {"emoji": "goldpack", "callback": packs.callback, "label": f"{pack_count:,}" if pack_count else None, "custom_id": "inv:packs"},
-        {"emoji": "☔", "callback": rain.callback, "label": rain_count if rain_count != "0" else None, "custom_id": "inv:rain"},
-        {"emoji": "prism", "callback": prism_callback, "label": f"{prism_count:,}" if prism_count else None, "custom_id": "inv:prism"},
+        {"emoji": "nicecat", "callback": inventory.callback, "custom_id": "inv:cats"},
+        {"emoji": "goldpack", "callback": packs.callback, "custom_id": "inv:packs"},
+        {"emoji": "☔", "callback": rain.callback, "custom_id": "inv:rain"},
+        {"emoji": "prism", "callback": prism_callback, "custom_id": "inv:prism"},
     ]
 
     if not profile.dark_market_active:
