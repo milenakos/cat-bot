@@ -5771,13 +5771,14 @@ As a bonus, you will get access to `/supporter` commands!
         balance_line,
         ActionRow(button, shopbutton),
     )
-    view.add_item(embed)
 
     if message.type == discord.InteractionType.application_command:
+        view.add_item(embed)
         await message.response.send_message(view=view)
     else:
         view.add_item(await nav_row(profile, "🎒"))
         view.add_item(await inventory_row(profile, "☔"))
+        view.add_item(embed)
         await message.response.edit_message(view=view)
 
 
