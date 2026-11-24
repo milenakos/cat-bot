@@ -6183,6 +6183,13 @@ async def packs(message: discord.Interaction):
     # lucky pack is interactive, so it is excluded from bulk open
     interactive_packs = {"Lucky"}
 
+    pack_emojis = "".join(get_emoji(i["name"].lower() + "pack") for i in data.pack_data if not i["special"])
+    description = (
+        f"There are 8 types of packs: {pack_emojis}. When opening a pack, there is a **30% chance** it upgrades to the next tier, "
+        f"then another 30% for another upgrade... That means even a {get_emoji('woodenpack')} can upgrade all the way to "
+        f"{get_emoji('celestialpack')} if you get lucky enough."
+    )
+
     async def process_pack_opening(pack_types: set[str] | None = None, max_packs: int | None = None) -> tuple[Container | None, int, bool]:
         async with transaction() as conn:
             profile = await Profile.get_or_create(conn, guild_id=guild_id, user_id=user_id)
@@ -6293,10 +6300,8 @@ async def packs(message: discord.Interaction):
         modal.on_submit = do_it
         await interaction.response.send_modal(modal)
 
-    def gen_buttons(profile: Profile) -> tuple[list[ActionRow], bool, int, bool]:
+    def gen_buttons(profile: Profile) -> tuple[list[ActionRow], int]:
         buttons = []
-        has_special = False
-        has_exclusive = False
         total_packs = 0
         bulkable_packs = 0
         for pack in data.pack_data:
@@ -6322,8 +6327,6 @@ async def packs(message: discord.Interaction):
             total_packs += pack_count
             if pack_name not in interactive_packs:
                 bulkable_packs += pack_count
-            has_special |= pack["special"] and not is_exclusive_pack(pack)
-            has_exclusive |= is_exclusive_pack(pack)
         if total_packs == 0:
             buttons.append(Button(label="No packs left!", disabled=True))
         if bulkable_packs >= 5:
@@ -6332,10 +6335,10 @@ async def packs(message: discord.Interaction):
             buttons.append(button)
 
         rows = [ActionRow(*buttons[i : i + 4]) for i in range(0, len(buttons), 4)]
-        return rows, has_special, total_packs, has_exclusive
+        return rows, total_packs
 
     async def pack_result_view(container: Container, *, force_back: bool = False) -> LayoutView:
-        buttons, _, total_packs, _ = gen_buttons(user)
+        buttons, total_packs = gen_buttons(user)
         view = LayoutView(timeout=VIEW_TIMEOUT)
         view.add_item(await nav_row(user, "🎒"))
         view.add_item(await inventory_row(user, "goldpack"))
@@ -6574,31 +6577,27 @@ async def packs(message: discord.Interaction):
         open_at_once = open_amounts[(open_amounts.index(open_at_once) + 1) % len(open_amounts)]
         await interaction.response.edit_message(view=await gen_main())
 
+    async def send_help(interaction: discord.Interaction) -> None:
+        help_text = f"""{description}
+
+**Special Packs** are highlighted in *green* and have a 70% upgrade chance instead of 30%.
+**Exclusive Packs** are highlighted in *red* and have a completely different opening mechanism.
+
+[Check the Cat Bot Wiki](<https://catbot.wiki/packs>) for exact pack values, rewards, and opening mechanics."""
+        await interaction.response.send_message(help_text, ephemeral=True)
+
     async def gen_main() -> LayoutView:
         view = LayoutView(timeout=VIEW_TIMEOUT)
         view.add_item(await nav_row(user, "🎒"))
         view.add_item(await inventory_row(user, "goldpack"))
 
-        buttons, has_special, total_packs, has_exclusive = gen_buttons(user)
-        pack_emojis = "".join(get_emoji(i["name"].lower() + "pack") for i in data.pack_data if not i["special"])
-        embed = Container(
-            Section(
-                f"## {get_emoji('goldpack')} Packs",
-                Button(label="Chances", url="https://catbot.wiki/packs"),
-            )
-        )
+        buttons, total_packs = gen_buttons(user)
+        help_button = Button(emoji="❓")
+        help_button.callback = send_help
+        embed = Container(Section(f"## {get_emoji('goldpack')} Packs", help_button))
 
-        description = (
-            f"There are 8 types of packs: {pack_emojis}. When opening a pack, there is a **30% chance** it upgrades to the next tier, "
-            f"then another 30% for another upgrade... That means even a {get_emoji('woodenpack')} can upgrade all the way to "
-            f"{get_emoji('celestialpack')} if you get lucky enough.\n\n"
-        )
-        if has_special:
-            description += "**Special Packs** are highlighted in *green* and have a 70% upgrade chance instead of 30%. "
-        if has_exclusive:
-            description += "**Exclusive Packs** are highlighted in *red* and have a completely different opening mechanism."
-
-        embed.add_item(TextDisplay(description.strip()))
+        if user.packs_opened < 20:
+            embed.add_item(TextDisplay(description))
         if total_packs >= 10:
             amount_button = Button(label=str(open_at_once))
             amount_button.callback = switch_amount
@@ -6606,6 +6605,8 @@ async def packs(message: discord.Interaction):
         embed.add_item(Separator())
         for row in buttons:
             embed.add_item(row)
+        if total_packs >= 10:
+            embed.add_item(TextDisplay(f"-# {total_packs:,} total"))
         view.add_item(embed)
         return view
 
