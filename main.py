@@ -2688,6 +2688,7 @@ Enjoy your goods!"""
                     user_count = prism_counts["mine"]
                     prism_boost = 0.06 * math.log(2 * total_count + 1) + 0.05 * math.log(2 * user_count + 1)
                     time_proxy = belated.get("time", 10) + current_time - belated.get("timestamp", 0)
+                    await refresh_quests(user)
                     quests = await build_catch_quests(user, channel.cattype, time_proxy, prism_boost > random.random())
                     await multi_progress(message, user, quests, True)
                     vote_time_user = await User.get_or_create(user_id=message.author.id)
@@ -3319,6 +3320,7 @@ Enjoy your goods!"""
                     await achemb(message, "certified_yapper", "send")
 
                 # handle battlepass
+                await refresh_quests(user)
                 quests = await build_catch_quests(user, channel.cattype, time_caught, did_boost)
 
                 # handle catnip bounties
