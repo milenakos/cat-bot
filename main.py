@@ -5777,7 +5777,12 @@ As a bonus, you will get access to `/supporter` commands!
     )
     view.add_item(embed)
 
-    await message.response.send_message(view=view)
+    if message.type == discord.InteractionType.application_command:
+        await message.response.send_message(view=view)
+    else:
+        view.add_item(await nav_row(profile, "🎒"))
+        view.add_item(await inventory_row(profile, "☔"))
+        await message.response.edit_message(view=view)
 
 
 if config.DONOR_CHANNEL_ID:
