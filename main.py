@@ -6632,10 +6632,13 @@ async def battlepass(message: discord.Interaction):
         await user.refresh_from_db()
 
         server = await Server.get_or_create(server_id=interaction.guild.id)
-        current_server = await bot.fetch_guild(interaction.guild.id)
-        if server.name != current_server.name:
-            server.name = current_server.name
-            await server.save()
+        try:
+            current_server = await bot.fetch_guild(interaction.guild.id)
+            if server.name != current_server.name:
+                server.name = current_server.name
+                await server.save()
+        except Exception:
+            pass
 
         if not user.reminders_enabled:
             try:
@@ -11644,8 +11647,11 @@ async def undo(message: discord.Interaction, operation: str):
         if interaction.user.id != message.user.id:
             return await do_funny(interaction)
 
-        await entry.refresh_from_db()
-        if not entry:
+        try:
+            await entry.refresh_from_db()
+            if not entry:
+                raise ValueError
+        except Exception:
             await interaction.response.send_message("operation not found", ephemeral=True)
             return
 
