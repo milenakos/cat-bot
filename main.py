@@ -12030,6 +12030,61 @@ async def owner_move(ctx: commands.Context, from_ref: str, to_ref: str) -> None:
     )
 
 
+@bot.command(name="copy")
+@is_bot_owner()
+async def owner_copy(ctx: commands.Context, from_ref: str, to_ref: str) -> None:
+    # syntax: cat!copy <from_profile_id | guild_id.user_id> <to_profile_id | guild_id.user_id>
+    async with transaction() as conn:
+        from_id = await resolve_profile_id(conn, from_ref)
+        to_id = await resolve_profile_id(conn, to_ref)
+        if from_id is None or to_id is None:
+            await ctx.reply("profile not found")
+            return
+        if from_id == to_id:
+            await ctx.reply("profiles must be different")
+            return
+
+        rows = {
+            r["id"]: Profile(r, connection=conn) for r in await conn.fetch("SELECT * FROM profile WHERE id = ANY($1) ORDER BY id FOR UPDATE", [from_id, to_id])
+        }
+        if from_id not in rows or to_id not in rows:
+            await ctx.reply("profile not found")
+            return
+        src, dst = rows[from_id], rows[to_id]
+        guild_id, user_id = dst["guild_id"], dst["user_id"]
+
+        await conn.execute("DELETE FROM prism WHERE guild_id = $1 AND user_id = $2", guild_id, user_id)
+        await dst.delete()
+
+        # prisms are unique per guild, so a copy can't keep the same name; colliding prisms are refunded as cats
+        taken = {p.name for p in await Prism.collect("guild_id = $1", guild_id, connection=conn)}
+        refunded = 0
+        for p in await Prism.collect("guild_id = $1 AND user_id = $2", src["guild_id"], src["user_id"], connection=conn):
+            if p.name in taken:
+                refunded += 1
+            else:
+                await Prism.create(
+                    connection=conn,
+                    user_id=user_id,
+                    guild_id=guild_id,
+                    time=p.time,
+                    creator=p.creator,
+                    name=p.name,
+                    catches_boosted=p.catches_boosted,
+                )
+
+        src_row = await conn.fetchrow("SELECT * FROM profile WHERE id = $1", from_id)
+        values = {k: v for k, v in src_row.items() if k not in ("id", "guild_id", "user_id")}
+        new = await Profile.create(connection=conn, guild_id=guild_id, user_id=user_id, **values)
+        for c in cattypes:
+            new[f"cat_{c}"] += refunded
+        await new.save()
+
+    await ctx.reply(
+        f"copied profile {from_id} to guild {guild_id} user {user_id}, replaced profile {to_id} ({refunded} {plural('prism', refunded)} refunded as cats)"
+    )
+
+
 async def discord_webhook(request: web.Request) -> web.Response:
     # verify signature
     try:
