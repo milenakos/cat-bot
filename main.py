@@ -1875,7 +1875,7 @@ async def on_ready() -> None:
             data = await response.json()
             for contributor in data:
                 login = contributor["login"].replace("_", r"\_")
-                if login not in ["milenakos", "ImgBotApp", "Neoexm"]:
+                if login not in ["milenakos", "ImgBotApp", "imgbot[bot]", "Neoexm"]:
                     contributors.append(login)
         else:
             logger.warning(f"Error: {response.status} - {await response.text()}")
@@ -1885,11 +1885,11 @@ async def on_ready() -> None:
             "Made by **Lia Milenakos**",
             "With contributions from **" + ", ".join(contributors) + "**",
             "Original Cat Image: **pathologicals**",
-            "APIs: **weilbyte.dev, wordnik.com**",
+            "APIs: **weilbyte.dev, the-trivia-api.com, wordnik.com**",
             "Open Source Projects: **[discord.py](https://github.com/Rapptz/discord.py), [asyncpg](https://github.com/MagicStack/asyncpg)**",
             "Art, suggestions, and a lot more: **TheTrashCell**",
             "Banner art: **2braincelledcreature**",
-            "Testers: **aflyde, azalichia, amethystultrakill, thetrashcell, ruby404._., sior_.**",
+            "Testers: **aflyde, azalichia, amethystultrakill, thetrashcell, ruby404.\\_., meryl.\\_n**",
             "Enjoying the bot: **You <3**",
         ]
     )
