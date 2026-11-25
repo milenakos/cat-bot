@@ -6982,7 +6982,8 @@ async def prism(message: discord.Interaction, person: discord.User | discord.Mem
             view = View(timeout=VIEW_TIMEOUT)
             confirm_button = Button(label="Craft!", style=ButtonStyle.blurple, emoji=icon)
             confirm_button.callback = confirm_craft
-            description = "The crafting recipe is __ONE of EVERY cat type__.\nContinue crafting?"
+            description = """The crafting recipe is __ONE of EVERY cat type__.
+If you craft a prism, you will ***lose*** one of every cat type in the proccess. Still continue?"""
         else:
             view = View(timeout=VIEW_TIMEOUT)
             confirm_button = Button(label="Not enough cats!", style=ButtonStyle.red, disabled=True)
