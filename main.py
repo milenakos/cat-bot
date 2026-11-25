@@ -1345,26 +1345,6 @@ async def spawn_cat(ch_id: int, localcat: str | None = None, force_spawn: bool =
     return f"ok, now i will send cats in <#{ch_id}>\nrun `/mod forget` to undo this"
 
 
-async def postpone_reminder(interaction: discord.Interaction) -> None:
-    if not interaction.custom_id:
-        return
-    reminder_type = interaction.custom_id
-    if reminder_type == "vote":
-        user = await User.get_or_create(user_id=interaction.user.id)
-        user.reminder_vote = int(time.time()) + 30 * 60
-        await user.save()
-    else:
-        guild_id = reminder_type.split("_")[1]
-        user = await Profile.get_or_create(guild_id=int(guild_id), user_id=interaction.user.id)
-        if reminder_type.startswith("catch"):
-            user.reminder_catch = int(time.time()) + 30 * 60
-        else:
-            user.reminder_misc = int(time.time()) + 30 * 60
-        await user.save()
-    log_stats("postpone_reminder", {"reminder_type": reminder_type})
-    await interaction.response.send_message(f"ok, i will remind you <t:{int(time.time()) + 30 * 60}:R>", ephemeral=True)
-
-
 async def resolve_reminder_guild_name(guild_id: int) -> str:
     guild = await Server.get_or_create(server_id=guild_id)
     try:
@@ -1417,16 +1397,15 @@ async def send_quest_reminders(quest_type: str, start_time: int) -> None:
         )
 
         view = View(timeout=VIEW_TIMEOUT)
-        button = Button(label="Postpone", custom_id=f"{quest_type}_{user.guild_id}")
-        button.callback = postpone_reminder
-        view.add_item(button)
+        jump_button = Button(label="Jump", url=f"https://discord.com/channels/{user.guild_id}")
+        view.add_item(jump_button)
 
         guild_name = await resolve_reminder_guild_name(user.guild_id)
 
         try:
             user_user = await User.get_or_create(user_id=user.user_id)
             user_dm = await fetch_dm_channel(user_user)
-            await user_dm.send(f"A new quest is available in [{guild_name}](<https://discord.com/channels/{user.guild_id}>)!", embed=embed, view=view)
+            await user_dm.send(f"A new quest is available in {guild_name}!", embed=embed, view=view)
         except Exception:
             pass
         reminder_count += 1
@@ -1463,12 +1442,17 @@ async def send_season_reminders(start_time: int) -> None:
         await refresh_quests(user)
         await user.refresh_from_db()
 
+        view = View(timeout=1)
+        jump_button = Button(label="Jump", url=f"https://discord.com/channels/{user.guild_id}")
+        view.add_item(jump_button)
+
         guild_name = await resolve_reminder_guild_name(user.guild_id)
         try:
             user_user = await User.get_or_create(user_id=user.user_id)
             user_dm = await fetch_dm_channel(user_user)
             await user_dm.send(
-                f"A new Cattlepass season has started in [{guild_name}](<https://discord.com/channels/{user.guild_id}>)! {get_command_mention('battlepass')}"
+                f"A new Cattlepass season has started in {guild_name}! {get_command_mention('battlepass')}",
+                view=view,
             )
         except Exception:
             pass
@@ -1519,11 +1503,15 @@ async def send_weekly_reminders(start_time: int) -> None:
             color=Colors.green,
         )
 
+        view = View(timeout=1)
+        jump_button = Button(label="Jump", url=f"https://discord.com/channels/{user.guild_id}")
+        view.add_item(jump_button)
+
         guild_name = await resolve_reminder_guild_name(user.guild_id)
         try:
             user_user = await User.get_or_create(user_id=user.user_id)
             user_dm = await fetch_dm_channel(user_user)
-            await user_dm.send(f"A new weekly quest is available in [{guild_name}](<https://discord.com/channels/{user.guild_id}>)!", embed=embed)
+            await user_dm.send(f"A new weekly quest is available in {guild_name}!", embed=embed, view=view)
         except Exception:
             pass
         reminder_count += 1
@@ -1762,10 +1750,6 @@ async def background_loop() -> None:
             label=random.choice(data.vote_button_texts),
             url="https://top.gg/bot/966695034340663367/vote",
         )
-        view.add_item(button)
-
-        button = Button(label="Postpone", custom_id="vote")
-        button.callback = postpone_reminder
         view.add_item(button)
 
         try:
