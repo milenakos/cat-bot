@@ -35,7 +35,7 @@ WORDNIK_API_KEY = os.environ.get("wordnik_api_key")
 # only post stats if server count is above this, to prevent wrong stats
 MIN_SERVER_SEND = 250_000
 
-# channel id for db backups, private extremely recommended
+# channel id for server count pulses, formerly db backups
 BACKUP_ID = 1060545763194707998
 
 # channel to store supporter/custom cat images, can also be used for moderation purposes

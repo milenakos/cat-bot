@@ -57,11 +57,6 @@ import msg2img
 from catpg import RawSQL, _get_pool, transaction
 from database import Channel, Prism, Profile, Reminder, Restore, Server, Snake, User
 
-try:
-    import exportbackup  # type: ignore
-except ImportError:
-    exportbackup = None
-
 logger = logging.getLogger()
 
 
@@ -1789,30 +1784,10 @@ async def background_loop() -> None:
             pass
         await reminder.delete()
 
-    # db backups
+    # pulses
     if config.BACKUP_ID:
         backupchannel = bot.get_partial_messageable(config.BACKUP_ID)
-
-        if current_loop % 60 == 0:
-            backup_file = "./backup.dump"
-            try:
-                os.remove(backup_file)
-            except Exception:
-                pass
-
-            try:
-                process = await asyncio.create_subprocess_shell(f"PGPASSWORD={config.DB_PASS} pg_dump -U cat_bot -Fc -Z 9 -f {backup_file} cat_bot")
-                await process.wait()
-
-                if exportbackup:
-                    await bot.loop.run_in_executor(None, exportbackup.export)
-                    await backupchannel.send(f"In {server_count} servers, loop {current_loop}.\nBackup exported.")
-                else:
-                    await backupchannel.send(f"In {server_count} servers, loop {current_loop}.", file=discord.File(backup_file))
-            except Exception as e:
-                logger.warning(f"Error during backup: {e}")
-        else:
-            await backupchannel.send(f"In {server_count} servers, loop {current_loop}.")
+        await backupchannel.send(f"In {server_count} servers, loop {current_loop}.")
 
 
 async def on_connect() -> None:
