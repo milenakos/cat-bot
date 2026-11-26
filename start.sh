@@ -5,6 +5,12 @@ set -eu
 : "${GIT_BRANCH:=main}"
 APP_DIR=/data/repo
 
+if [ -e "$APP_DIR" ] && [ ! -d "$APP_DIR/.git" ]; then
+    echo "Removing incomplete checkout at $APP_DIR"
+    rm -rf -- "$APP_DIR"
+fi
+
+
 if [ ! -d "$APP_DIR/.git" ]; then
     git clone --branch "$GIT_BRANCH" --single-branch "$GIT_REPO" "$APP_DIR"
 else
