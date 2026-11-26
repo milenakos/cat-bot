@@ -16,6 +16,7 @@ mkdir -p /data
 ln -sf /data/cursor.txt "$APP_DIR/cursor.txt"
 mkdir -p "$APP_DIR/config"
 ln -sf /data/emojis_cache.json "$APP_DIR/config/emojis_cache.json"
+ln -sfn /data/stats.py "$APP_DIR/stats.py"
 
 cd "$APP_DIR"
 exec python creator.py
