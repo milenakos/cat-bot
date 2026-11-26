@@ -1,0 +1,7 @@
+.git
+__pycache__
+*.pyc
+cursor.txt
+config/emojis_cache.json
+Dockerfile
+.dockerignore
