@@ -11,3 +11,4 @@ asyncpg
 sentry-sdk
 unidecode
 anyio
+pynacl
