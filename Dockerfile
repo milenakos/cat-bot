@@ -18,4 +18,4 @@ RUN mkdir -p /data \
     && ln -sf /data/emojis_cache.json config/emojis_cache.json
 
 # The bot serves its web routes on port 8069. Tokens and DB settings come from the environment.
-CMD ["python", "bot.py"]
+CMD ["python", "creator.py"]
