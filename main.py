@@ -446,11 +446,9 @@ async def nav_row(profile: Profile, current: str) -> ActionRow:
         {"emoji": "⬆️", "callback": battlepass.callback, "custom_id": "nav:battlepass"},
         {"emoji": "ach", "callback": achievements.callback, "custom_id": "nav:achievements"},
         {"emoji": "🧩", "callback": minigames, "custom_id": "nav:minigames"},
-        {"emoji": "⚡", "label": "-50%", "callback": premium, "custom_id": "nav:premium", "style": ButtonStyle.red},
     ]
 
     # cta button
-    """
     global_user = await User.get_or_create(user_id=profile.user_id)
     if global_user.tutorial_state < 10:
         # tutorial
@@ -464,7 +462,6 @@ async def nav_row(profile: Profile, current: str) -> ActionRow:
     else:
         # rain cta
         nav_view_data.append({"emoji": "☔", "url": "https://catbot.shop/"})
-    """
 
     row = ActionRow()
     for entry in nav_view_data:
@@ -3082,9 +3079,9 @@ Enjoy your goods!"""
                             config.cat_cought_rain[channel.channel_id][i] = []
                         config.cat_cought_rain[channel.channel_id][i].append(f"<@{user.user_id}>")
 
-                if random.randint(0, 5) == 0:
+                if random.randint(0, 7) == 0:
                     # shill rains
-                    suffix_string += f"\n⚡ black friday sale! -50% today only {get_command_mention('rain')}"
+                    suffix_string += f"\n☔ get tons of cats and have fun: {get_command_mention('rain')}"
                 if random.randint(1, 20) == 1:
                     # diplay a hint/fun fact
                     suffix_string += "\n💡 " + random.choice(data.hints)
@@ -5719,7 +5716,7 @@ async def rain(message: discord.Interaction, minutes: int | None = None):
 
     button.callback = rain_modal
 
-    shopbutton = Button(emoji="🛒", label="Store (-50%!)", url="https://catbot.shop")
+    shopbutton = Button(emoji="🛒", label="Store", url="https://catbot.shop")
 
     view = LayoutView(timeout=VIEW_TIMEOUT)
     embed = Container(
@@ -8503,13 +8500,19 @@ async def premium(interaction: discord.Interaction):
         return await do_funny(interaction)
     profile = await Profile.get_or_create(guild_id=interaction.guild.id, user_id=interaction.user.id)
     view = LayoutView(timeout=VIEW_TIMEOUT)
-    view.add_item(await nav_row(profile, "⚡"))
+    view.add_item(await nav_row(profile, "👑"))
     view.add_item(
         Container(
-            "## ⚡ BLACK FRIDAY SALE",
-            "-50% OFF TODAY ONLY, ENDS <t:1795809600:R>",
-            ActionRow(Button(emoji="🛒", label="Cat Bot Shop (-50%!)", url="https://catbot.shop/")),
-            accent_color=Colors.black,
+            "## ☔ Cat Rains",
+            "Cat Rains make cats spawn super fast for a limited period of time.\nIt's fun and chaotic!",
+            "===",
+            """🌠 Purchase Cat Rains at least once to unlock supporter perks:
+- Bless with Doubled Cats
+- Decorative Custom Cat
+- Custom Profile Emoji, Image and Color
+- Exclusive Cat Stand Role""",
+            ActionRow(Button(emoji="🛒", label="Cat Bot Shop", url="https://catbot.shop/")),
+            accent_color=Colors.yellow,
         )
     )
     await interaction.response.edit_message(view=view)
